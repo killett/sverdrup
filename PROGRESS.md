@@ -10,11 +10,23 @@
     metadata + `py.typed`; core deps + `dask`/`io`/`all` extras; Trusted-Publishing workflow
     shipped at `docs/superpowers/ci/release.yml` (Option B). User-gate (clean-venv install smoke)
     re-validated. Public repo `killett/sverdrup` created and `main` pushed.
-  - **Remaining user-side one-time steps (cannot automate):**
-    1. Copy `docs/superpowers/ci/release.yml` → `.github/workflows/release.yml` on GitHub.
-    2. Configure PyPI Trusted Publisher: project `sverdrup`, owner `killett`, repo `sverdrup`,
-       workflow `release.yml`, environment `pypi`.
-    3. Cut release: `git tag -a v0.1.0 -m "sverdrup 0.1.0" && git push origin v0.1.0`.
+  - **DONE end-to-end:** all three user-side steps completed by the user — workflow installed,
+    PyPI Trusted Publisher configured, `v0.1.0` tagged+pushed. `sverdrup 0.1.0` is **live on
+    PyPI** (wheel+sdist, Apache-2.0); `pip install sverdrup` verified in a clean venv.
+- **conda-forge distribution (in progress):**
+  - Recipe generated via `grayskull` (run with `pixi exec grayskull`, not added to manifest),
+    polished, and committed at `conda-recipe/meta.yaml` (+ `conda-recipe/README.md`).
+  - `noarch: python`; sdist sha256 verified against PyPI; confirmed the sdist builds **without
+    `.git`** (hatch-vcs reads version from PKG-INFO) — so conda-forge's sdist build works.
+  - **Auto-update mechanism (the goal):** after the one-time `conda-forge/staged-recipes` PR,
+    the conda-forge **autotick bot** watches PyPI and opens a version-bump PR on every PyPI
+    release. Steady state: push tag → PyPI Action publishes → bot opens feedstock PR → merge.
+  - **Remaining user-side one-time step:** fork `conda-forge/staged-recipes`, copy
+    `conda-recipe/meta.yaml` → `recipes/sverdrup/meta.yaml`, open the PR. (Assistant offered to
+    open it via `gh`; pending user go-ahead.)
+  - **Gotcha:** the autotick bot only bumps version+hash. When `pyproject.toml` runtime deps
+    change, mirror them into `requirements/run` in both `conda-recipe/meta.yaml` and the
+    feedstock PR.
 - **Phase 1: COMPLETE** — 22 tasks on `main`; suite 70 passed / 1 skipped; both user-gates
   re-validated. Plan: `docs/superpowers/plans/2026-06-21-regatta-phase1.md` (historical).
   Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.

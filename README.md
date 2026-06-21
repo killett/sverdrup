@@ -62,6 +62,10 @@ in the GitHub repo (a one-time step — the local tooling token cannot push work
 Configure the PyPI trusted publisher (project `sverdrup`, owner `killett`, repo `sverdrup`,
 workflow `release.yml`, environment `pypi`), then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
 
+conda-forge distribution tracks PyPI automatically: after the one-time `staged-recipes`
+submission, the conda-forge autotick bot opens a version-bump PR on every PyPI release —
+merge it and the conda package ships. See [`conda-recipe/`](conda-recipe/).
+
 ## Project structure
 
 ```
