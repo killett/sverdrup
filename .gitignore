@@ -1,13 +1,36 @@
-
+# Python bytecode
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Test / coverage / type caches
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
 .mypy_cache/
+.ruff_cache/
 
-.claude-project-id
-
-.sandbox_settings.json
-
-data/cache/
-
-src/sverdrup/_version.py
+# Build artefacts + generated version file
 dist/
+src/sverdrup/_version.py
+
+# Secrets — never commit env files or cloud creds
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*-sa.json
+
+# Editor / OS
+.DS_Store
+
+# Superpowers session state + logs
+.superpowers/
+*.log
+
+# Project-local
+.claude-project-id
+.sandbox_settings.json
+data/cache/
