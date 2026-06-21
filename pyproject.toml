@@ -1,8 +1,21 @@
 [project]
 name = "sverdrup"
-version = "0.1.0"  # Required by PEP 621. Keep set even without a [build-system] so any uv-using tool that walks up into this directory doesn't fail PEP 621 validation.
+dynamic = ["version"]
 requires-python = ">=3.12,<3.14"
-dependencies = []
+dependencies = []   # populated in Task 4
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/sverdrup/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sverdrup"]
 
 [tool.ruff.lint]
 select = [
