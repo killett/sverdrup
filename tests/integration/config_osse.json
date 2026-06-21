@@ -1,0 +1,15 @@
+{
+  "mode": "OSSE",
+  "method": "oi",
+  "obs_path": "tests/fixtures/natl60_tiny.nc",
+  "ref_path": "tests/fixtures/natl60_ref_tiny.nc",
+  "out_url": "file:///tmp/regatta_osse.zarr",
+  "lon_range": [-64, -56],
+  "lat_range": [34, 42],
+  "time_range": [0, 5],
+  "output_times": [2.0],
+  "params": {"length_scale": 300.0, "time_scale": 10.0, "variance": 0.05},
+  "grid_resolution_deg": 1.0,
+  "executor": {"n_processes": 2, "threads_per_process": 1},
+  "rank": 20
+}

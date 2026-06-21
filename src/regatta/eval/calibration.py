@@ -58,12 +58,11 @@ class Calibration:
     name = "calibration"
     required_context = frozenset({ContextKey.WITHHELD_OBS})
 
-    def evaluate(
-        self, result: dict[str, np.ndarray], context: EvalContext
-    ) -> dict[str, float]:
+    def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return calibration scores against the withheld observations."""
+        r = cast(Any, result)
         w = cast(Any, context.items[ContextKey.WITHHELD_OBS])
-        mean, var, truth = result["eval_mean"], result["eval_var"], w["values"]
+        mean, var, truth = r["eval_mean"], r["eval_var"], w["values"]
         return {
             "reduced_chi2": reduced_chi2(mean, var, truth),
             "coverage_1sigma": coverage(mean, var, truth, 1.0),

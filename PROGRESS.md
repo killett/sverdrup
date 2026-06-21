@@ -9,8 +9,9 @@
   (22 tasks, build order = design §11). Task tracker:
   `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
   Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
-- **Next action:** execute **Task 20 (fsspec result sink)** — the first unchecked task. Then
-  Tasks 21 and 22 (non-skippable user-gates). Tasks 0-19 done.
+- **Next action:** execute **Task 22 (correctness oracle + fixture smoke + docs)** — the last
+  task (non-skippable user-gate). Tasks 0-21 done; Task 21 user-gate passed (all 5 criteria
+  re-validated with captured output).
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
@@ -61,6 +62,12 @@
   caller seed + index, not `id(obs)` (the plan's id-based seed broke the reproducibility test).
   (2) Task 19 CRPS test: the plan's expected `0.23379` is CRPS at y=0, but the test uses y=0.5;
   correct closed-form value is `0.331404`. Implementation formula is the standard correct CRPS.
+  (3) Task 19/21: evaluators take `result: object` (not `dict[...]`) so they conform to the
+  `Evaluator` protocol and can go into `Registry([...])`. (4) Task 21 `_evaluate`: OSSE runs
+  calibration on the gridded truth (the plan only set TRUTH, so Calibration — which needs
+  WITHHELD_OBS — would never fire and the OSSE acceptance demands reduced_chi2/coverage); OSE
+  withholds CryoSat-2 by mission-splitting the obs window (the test passes a plain FixtureSource
+  with no `withheld()` method, so withholding must happen in the pipeline, not the source).
 
 - The 11 GB NATL60 reference is hourly — never pull it; use the daily file. Footprint stays a
   few hundred MB.

@@ -16,17 +16,16 @@ class Accuracy:
     # Fires if either TRUTH or WITHHELD_OBS is present (checked at runtime).
     required_context: frozenset[ContextKey] = frozenset()
 
-    def evaluate(
-        self, result: dict[str, np.ndarray], context: EvalContext
-    ) -> dict[str, float]:
+    def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return ``{"rmse": ...}`` using exact eval-point means (OSE) or truth (OSSE)."""
+        r = cast(Any, result)
         keys = context.keys()
         if ContextKey.WITHHELD_OBS in keys:
             truth = cast(Any, context.items[ContextKey.WITHHELD_OBS])["values"]
-            pred = result["eval_mean"]
+            pred = r["eval_mean"]
         elif ContextKey.TRUTH in keys:
             truth = cast(Any, context.items[ContextKey.TRUTH])["field"].ravel()
-            pred = result["grid_mean"].ravel()
+            pred = r["grid_mean"].ravel()
         else:
             return {}
         return {"rmse": float(np.sqrt(np.mean((pred - truth) ** 2)))}
