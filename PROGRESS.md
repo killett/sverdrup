@@ -5,9 +5,12 @@
 - **Design doc:** `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`
   (approved brainstorm; the *how* for Phase 1).
 - **Scope source of truth:** `phase1_scope_spec.md` (the *what* — settled).
-- **Implementation plan:** _not yet written_ — next step is the writing-plans skill,
-  which will produce the plan + `.tasks.json` task tracker. Link it here once it exists.
-- **Next action:** create the Phase-1 implementation plan from the approved design doc.
+- **Implementation plan:** `docs/superpowers/plans/2026-06-21-regatta-phase1.md`
+  (22 tasks, build order = design §11). Task tracker:
+  `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
+  Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
+- **Next action:** execute **Task 0 (package skeleton + core types)** — the first unchecked
+  task. Then proceed in DAG order (Tasks 21 and 22 are non-skippable user-gates).
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
