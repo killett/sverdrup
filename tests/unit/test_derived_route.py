@@ -1,5 +1,5 @@
-from regatta.core.derived import Route, select_route
-from regatta.core.types import CovFidelity, Linearity
+from sverdrup.core.derived import Route, select_route
+from sverdrup.core.types import CovFidelity, Linearity
 
 
 def test_linear_exact_uses_exact_covariance_path():

@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.adapters.odc.fixtures import FixtureSource
+from sverdrup.adapters.odc.fixtures import FixtureSource
 
 
 def test_window_yields_lazy_obswindow():
@@ -14,7 +14,7 @@ def test_truth_present_for_osse_absent_for_ose():
     osse = FixtureSource(
         "tests/fixtures/natl60_tiny.nc", ref_path="tests/fixtures/natl60_ref_tiny.nc"
     )
-    from regatta.core.grid import GridSpec
+    from sverdrup.core.grid import GridSpec
 
     grid = GridSpec.lonlat(np.linspace(-64, -56, 5), np.linspace(34, 42, 5))
     truth = osse.truth(time_days=2.0, grid=grid)

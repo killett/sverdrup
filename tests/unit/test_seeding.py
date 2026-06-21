@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.core.seeding import derive_seed
+from sverdrup.core.seeding import derive_seed
 
 
 def test_deterministic_and_member_varying():

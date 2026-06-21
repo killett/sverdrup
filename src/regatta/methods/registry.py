@@ -1,8 +1,0 @@
-"""Method registry (spec 5.2)."""
-
-from __future__ import annotations
-
-from regatta.methods.oi import OptimalInterpolation
-from regatta.methods.trivial import TrivialInterpolation
-
-METHODS = {"oi": OptimalInterpolation, "trivial": TrivialInterpolation}

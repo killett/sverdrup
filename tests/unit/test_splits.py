@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from regatta.application.splits import make_splits
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.application.splits import make_splits
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 
 
 def _obs(n=30):

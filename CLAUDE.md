@@ -1,4 +1,4 @@
-# Project: regatta
+# Project: sverdrup
 
 ## Session resume protocol (read this first, every session)
 This project may be built across multiple sessions, and a session can die

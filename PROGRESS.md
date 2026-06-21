@@ -1,4 +1,4 @@
-# Regatta — Progress notebook
+# Sverdrup — Progress notebook
 
 ## Current work (index — do not duplicate task state here)
 
@@ -7,8 +7,9 @@
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks).
     Tracker: same path + `.tasks.json`.
     Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md`.
-  - **Next action:** execute Task 1 (rename regatta→sverdrup). Task 6 is a non-skippable
-    user-gate (clean-venv install smoke). Task 7 creates the public repo `killett/sverdrup`.
+  - **Next action:** Task 1 (package rename) done; proceed to Task 2 (hatchling build
+    backend). Task 6 is a non-skippable user-gate (clean-venv install smoke). Task 7 creates
+    the public repo `killett/sverdrup`.
 - **Phase 1: COMPLETE** — 22 tasks on `main`; suite 70 passed / 1 skipped; both user-gates
   re-validated. Plan: `docs/superpowers/plans/2026-06-21-regatta-phase1.md` (historical).
   Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.

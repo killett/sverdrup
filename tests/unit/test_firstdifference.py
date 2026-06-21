@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from regatta.core.grid import GridSpec
-from regatta.core.provenance import UncertaintyProvenance
-from regatta.core.types import Linearity, UncertaintyCapability
-from regatta.derived.area_average import AreaAverage
-from regatta.derived.firstdifference import FirstDifference
-from regatta.distributions.gaussian import GaussianPredictiveDistribution
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.provenance import UncertaintyProvenance
+from sverdrup.core.types import Linearity, UncertaintyCapability
+from sverdrup.derived.area_average import AreaAverage
+from sverdrup.derived.firstdifference import FirstDifference
+from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
 from tests.unit._doubles import ToyExpOperator
 
 

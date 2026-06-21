@@ -1,10 +1,10 @@
-from regatta.core.provenance import (
+from sverdrup.core.provenance import (
     KnownBias,
     TransformKind,
     UncertaintyProvenance,
     UncertaintyTransform,
 )
-from regatta.core.types import UncertaintyCapability
+from sverdrup.core.types import UncertaintyCapability
 
 
 def test_native_provenance_not_synthesized():

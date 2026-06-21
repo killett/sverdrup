@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.core.types import CovFidelity
+from sverdrup.core.types import CovFidelity
 
 
 class ToyExpOperator:

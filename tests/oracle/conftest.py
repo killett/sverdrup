@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import os
 
-from regatta.adapters.executor_dask import ExecutorConfig
-from regatta.adapters.odc.natl60 import Natl60Source
-from regatta.application.pipeline import PipelineInputs
+from sverdrup.adapters.executor_dask import ExecutorConfig
+from sverdrup.adapters.odc.natl60 import Natl60Source
+from sverdrup.application.pipeline import PipelineInputs
 
 
 def cached_natl60_source() -> Natl60Source:
-    """Build a Natl60Source from the cached data pointed to by REGATTA_ODC_DATA."""
-    root = os.environ["REGATTA_ODC_DATA"]
+    """Build a Natl60Source from the cached data pointed to by SVERDRUP_ODC_DATA."""
+    root = os.environ["SVERDRUP_ODC_DATA"]
     return Natl60Source(f"{root}/natl60_obs.nc", f"{root}/natl60_ref_daily.nc")
 
 
@@ -21,7 +21,7 @@ def full_window_config(src: Natl60Source) -> PipelineInputs:
         mode="OSSE",
         method_name="oi",
         source=src,
-        out_url="file:///tmp/regatta_oracle.zarr",
+        out_url="file:///tmp/sverdrup_oracle.zarr",
         lon_range=(-65, -55),
         lat_range=(33, 43),
         time_range=(0, 42),

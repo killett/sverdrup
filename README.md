@@ -1,4 +1,4 @@
-# regatta
+# sverdrup
 
 A regional SSHA (sea-surface-height anomaly) reconstruction framework with first-class,
 rigorous predictive-distribution uncertainty. Phase 1 wires a single space-time tile
@@ -21,7 +21,7 @@ pixi install
 Run a config-driven pipeline over a regional tile (OSSE on the committed fixtures):
 
 ```
-pixi run python -m regatta tests/integration/config_osse.json
+pixi run python -m sverdrup tests/integration/config_osse.json
 ```
 
 This windows the observations, dispatches the solve through a `dask.distributed` LocalCluster,
@@ -31,8 +31,8 @@ calibration, ground-track power).
 Programmatically:
 
 ```python
-from regatta.adapters.odc.fixtures import FixtureSource
-from regatta.application.pipeline import PipelineInputs, run_pipeline
+from sverdrup.adapters.odc.fixtures import FixtureSource
+from sverdrup.application.pipeline import PipelineInputs, run_pipeline
 
 src = FixtureSource("tests/fixtures/natl60_tiny.nc", ref_path="tests/fixtures/natl60_ref_tiny.nc")
 product, scores = run_pipeline(PipelineInputs(
@@ -45,7 +45,7 @@ product, scores = run_pipeline(PipelineInputs(
 ## Common tasks
 
 ```
-pixi run test        # pytest (the opt-in oracle is skipped without REGATTA_ODC_DATA)
+pixi run test        # pytest (the opt-in oracle is skipped without SVERDRUP_ODC_DATA)
 pixi run lint        # ruff check
 pixi run format      # ruff format
 pixi run typecheck   # mypy
@@ -57,7 +57,7 @@ The correctness oracle (reproducing the ODC OI leaderboard number) is opt-in —
 ## Project structure
 
 ```
-src/regatta/
+src/sverdrup/
   core/          # pure protocols + value objects (grid, types, distribution, product, ports, ...)
   distributions/ # Gaussian / Ensemble / Persisted distributions + lifting adapters
   methods/       # space-time Matern-3/2 kernel, Cholesky solver, GP/OI (Method 1), trivial (Method 0)

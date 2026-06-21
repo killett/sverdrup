@@ -1,10 +1,10 @@
 import numpy as np
 
-from regatta.core.grid import GridSpec
-from regatta.core.provenance import UncertaintyProvenance
-from regatta.core.types import UncertaintyCapability
-from regatta.distributions.ensemble import EnsemblePredictiveDistribution
-from regatta.distributions.gaussian import GaussianPredictiveDistribution
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.provenance import UncertaintyProvenance
+from sverdrup.core.types import UncertaintyCapability
+from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
+from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
 from tests.unit._doubles import ToyExpOperator
 
 

@@ -1,9 +1,9 @@
 import numpy as np
 
-from regatta.core.grid import GridSpec
-from regatta.core.provenance import UncertaintyProvenance
-from regatta.core.types import UncertaintyCapability
-from regatta.distributions.persisted import PersistedDistribution, reduce_to_persisted
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.provenance import UncertaintyProvenance
+from sverdrup.core.types import UncertaintyCapability
+from sverdrup.distributions.persisted import PersistedDistribution, reduce_to_persisted
 from tests.unit._doubles import ToyExpOperator
 
 

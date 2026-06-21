@@ -1,8 +1,8 @@
-from regatta.adapters.executor_dask import ExecutorConfig
-from regatta.adapters.odc.fixtures import FixtureSource
-from regatta.application.pipeline import PipelineInputs, run_pipeline
-from regatta.core.evaluation import ContextKey
-from regatta.eval.calibration import assert_relaxes_to_prior
+from sverdrup.adapters.executor_dask import ExecutorConfig
+from sverdrup.adapters.odc.fixtures import FixtureSource
+from sverdrup.application.pipeline import PipelineInputs, run_pipeline
+from sverdrup.core.evaluation import ContextKey
+from sverdrup.eval.calibration import assert_relaxes_to_prior
 
 
 def _grid_cfg():

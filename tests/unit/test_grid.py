@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from regatta.core.grid import GridSpec
+from sverdrup.core.grid import GridSpec
 
 R_EARTH = 6_371_000.0
 

@@ -1,7 +1,7 @@
 import numpy as np
 
-from regatta.core.evaluation import ContextKey, EvalContext
-from regatta.eval.groundtrack import GroundTrack
+from sverdrup.core.evaluation import ContextKey, EvalContext
+from sverdrup.eval.groundtrack import GroundTrack
 
 
 def test_track_stripe_detected():

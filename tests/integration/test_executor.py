@@ -1,11 +1,11 @@
 import numpy as np
 
-from regatta.adapters.executor_dask import DaskExecutor, ExecutorConfig
-from regatta.application.solve import solve_unit
-from regatta.application.uow import UnitOfWork
-from regatta.core.grid import GridSpec
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
-from regatta.core.parameters import ConstantProvider
+from sverdrup.adapters.executor_dask import DaskExecutor, ExecutorConfig
+from sverdrup.application.solve import solve_unit
+from sverdrup.application.uow import UnitOfWork
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.parameters import ConstantProvider
 
 
 def _uow():
