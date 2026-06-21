@@ -3,14 +3,14 @@ import os
 import numpy as np
 import pytest
 
-from regatta.adapters.executor_dask import ExecutorConfig
-from regatta.adapters.odc.fixtures import FixtureSource
-from regatta.application.pipeline import PipelineInputs, _grid, run_pipeline
+from sverdrup.adapters.executor_dask import ExecutorConfig
+from sverdrup.adapters.odc.fixtures import FixtureSource
+from sverdrup.application.pipeline import PipelineInputs, _grid, run_pipeline
 
 ODC_OI_BASELINE_RMSE = (
     0.0907  # recorded NATL60 2020a OI leaderboard RMSE (metres); see runbook
 )
-_NO_DATA = os.environ.get("REGATTA_ODC_DATA") is None
+_NO_DATA = os.environ.get("SVERDRUP_ODC_DATA") is None
 
 
 def test_fixture_smoke_rmse_finite_and_sane(tmp_path):
@@ -44,7 +44,7 @@ def test_fixture_smoke_rmse_finite_and_sane(tmp_path):
 @pytest.mark.oracle
 @pytest.mark.skipif(
     _NO_DATA,
-    reason="set REGATTA_ODC_DATA to the cached NATL60 window to run the oracle",
+    reason="set SVERDRUP_ODC_DATA to the cached NATL60 window to run the oracle",
 )
 def test_oi_matches_odc_baseline_within_10pct():
     from tests.oracle.conftest import cached_natl60_source, full_window_config

@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.methods.kernel import Matern32SpaceTime
+from sverdrup.methods.kernel import Matern32SpaceTime
 
 
 def _pts(rows):

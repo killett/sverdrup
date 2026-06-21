@@ -3,7 +3,7 @@
   "method": "oi",
   "obs_path": "tests/fixtures/natl60_tiny.nc",
   "ref_path": "tests/fixtures/natl60_ref_tiny.nc",
-  "out_url": "file:///tmp/regatta_osse.zarr",
+  "out_url": "file:///tmp/sverdrup_osse.zarr",
   "lon_range": [-64, -56],
   "lat_range": [34, 42],
   "time_range": [0, 5],

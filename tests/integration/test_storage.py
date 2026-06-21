@@ -1,11 +1,11 @@
 import numpy as np
 
-from regatta.adapters.storage_fsspec import FsspecResultSink, read_product
-from regatta.application.solve import solve_unit
-from regatta.application.uow import UnitOfWork
-from regatta.core.grid import GridSpec
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
-from regatta.core.parameters import ConstantProvider
+from sverdrup.adapters.storage_fsspec import FsspecResultSink, read_product
+from sverdrup.application.solve import solve_unit
+from sverdrup.application.uow import UnitOfWork
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.parameters import ConstantProvider
 
 
 def _product():

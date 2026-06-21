@@ -1,4 +1,4 @@
-from regatta.core.types import CovFidelity, Linearity, UncertaintyCapability
+from sverdrup.core.types import CovFidelity, Linearity, UncertaintyCapability
 
 
 def test_cov_fidelity_members_distinct():

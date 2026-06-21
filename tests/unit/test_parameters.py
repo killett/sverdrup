@@ -1,7 +1,7 @@
 import numpy as np
 
-from regatta.core.grid import GridSpec
-from regatta.core.parameters import ConstantProvider, ParameterSpace
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.parameters import ConstantProvider, ParameterSpace
 
 
 def test_constant_provider_resolves_scalar():

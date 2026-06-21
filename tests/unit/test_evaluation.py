@@ -1,4 +1,4 @@
-from regatta.core.evaluation import ContextKey, EvalContext, Objective, Registry
+from sverdrup.core.evaluation import ContextKey, EvalContext, Objective, Registry
 
 
 class _TruthOnly:

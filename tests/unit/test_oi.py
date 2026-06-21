@@ -1,11 +1,11 @@
 import numpy as np
 
-from regatta.core.grid import GridSpec
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
-from regatta.core.parameters import ConstantProvider
-from regatta.core.types import CovFidelity, UncertaintyCapability
-from regatta.methods.kernel import Matern32SpaceTime
-from regatta.methods.oi import GPCovarianceOperator, OptimalInterpolation
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.parameters import ConstantProvider
+from sverdrup.core.types import CovFidelity, UncertaintyCapability
+from sverdrup.methods.kernel import Matern32SpaceTime
+from sverdrup.methods.oi import GPCovarianceOperator, OptimalInterpolation
 
 
 def _closed_form(kern, op_pts, obs_pts, y, noise):

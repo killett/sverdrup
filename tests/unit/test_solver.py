@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.methods.solver import DenseCholeskySolver
+from sverdrup.methods.solver import DenseCholeskySolver
 
 
 def test_solve_matches_numpy():

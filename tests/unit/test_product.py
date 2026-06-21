@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.core.product import EvalPointPredictions, PerTimeProduct, Product
+from sverdrup.core.product import EvalPointPredictions, PerTimeProduct, Product
 
 
 def test_eval_points_shapes():

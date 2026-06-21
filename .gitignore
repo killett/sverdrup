@@ -1,4 +1,8 @@
 
+__pycache__/
+*.pyc
+.mypy_cache/
+
 .claude-project-id
 
 .sandbox_settings.json

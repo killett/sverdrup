@@ -1,6 +1,6 @@
 import numpy as np
 
-from regatta.eval.calibration import (
+from sverdrup.eval.calibration import (
     assert_relaxes_to_prior,
     coverage,
     crps_gaussian,

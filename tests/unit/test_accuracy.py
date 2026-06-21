@@ -1,7 +1,7 @@
 import numpy as np
 
-from regatta.core.evaluation import ContextKey, EvalContext
-from regatta.eval.accuracy import Accuracy
+from sverdrup.core.evaluation import ContextKey, EvalContext
+from sverdrup.eval.accuracy import Accuracy
 
 
 def test_rmse_uses_exact_eval_point_mean():

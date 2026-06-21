@@ -1,11 +1,11 @@
 import numpy as np
 
-from regatta.application.solve import solve_unit
-from regatta.application.uow import UnitOfWork
-from regatta.core.grid import GridSpec
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
-from regatta.core.parameters import ConstantProvider
-from regatta.distributions.persisted import PersistedDistribution
+from sverdrup.application.solve import solve_unit
+from sverdrup.application.uow import UnitOfWork
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.parameters import ConstantProvider
+from sverdrup.distributions.persisted import PersistedDistribution
 
 
 def _inputs():
@@ -45,8 +45,8 @@ def test_solve_unit_returns_persisted_bundle_with_exact_eval_points():
     assert "firstdifference" in pt.derived
 
     # eval-point predictive must be the EXACT operator query, not grid interpolation.
-    from regatta.methods.kernel import Matern32SpaceTime
-    from regatta.methods.oi import GPCovarianceOperator
+    from sverdrup.methods.kernel import Matern32SpaceTime
+    from sverdrup.methods.oi import GPCovarianceOperator
 
     kern = Matern32SpaceTime(1.0, 200.0, 10.0)
     op = GPCovarianceOperator(kern, obs.coords(), obs.values(), np.full(2, 0.01))

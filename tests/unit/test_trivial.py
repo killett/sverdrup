@@ -1,10 +1,10 @@
 import numpy as np
 
-from regatta.core.grid import GridSpec
-from regatta.core.observations import DiagonalErrorModel, ObsWindow
-from regatta.core.types import UncertaintyCapability
-from regatta.distributions.adapters import perturb_and_ensemble
-from regatta.methods.trivial import TrivialInterpolation
+from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.types import UncertaintyCapability
+from sverdrup.distributions.adapters import perturb_and_ensemble
+from sverdrup.methods.trivial import TrivialInterpolation
 
 
 def _obs():

@@ -1,7 +1,7 @@
 import dask.array as da
 import numpy as np
 
-from regatta.core.observations import (
+from sverdrup.core.observations import (
     BandedErrorModel,
     DiagonalErrorModel,
     ObsWindow,
