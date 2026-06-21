@@ -2,14 +2,19 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Active milestone: rename to `sverdrup` + PyPI release.**
+- **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
-  - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks).
-    Tracker: same path + `.tasks.json`.
-    Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md`.
-  - **Next action:** Task 1 (package rename) done; proceed to Task 2 (hatchling build
-    backend). Task 6 is a non-skippable user-gate (clean-venv install smoke). Task 7 creates
-    the public repo `killett/sverdrup`.
+  - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
+    tracker `.tasks.json` all `completed`.
+  - Package renamed `regatta`→`sverdrup`; hatchling + hatch-vcs tag-driven build; Apache-2.0 +
+    metadata + `py.typed`; core deps + `dask`/`io`/`all` extras; Trusted-Publishing workflow
+    shipped at `docs/superpowers/ci/release.yml` (Option B). User-gate (clean-venv install smoke)
+    re-validated. Public repo `killett/sverdrup` created and `main` pushed.
+  - **Remaining user-side one-time steps (cannot automate):**
+    1. Copy `docs/superpowers/ci/release.yml` → `.github/workflows/release.yml` on GitHub.
+    2. Configure PyPI Trusted Publisher: project `sverdrup`, owner `killett`, repo `sverdrup`,
+       workflow `release.yml`, environment `pypi`.
+    3. Cut release: `git tag -a v0.1.0 -m "sverdrup 0.1.0" && git push origin v0.1.0`.
 - **Phase 1: COMPLETE** — 22 tasks on `main`; suite 70 passed / 1 skipped; both user-gates
   re-validated. Plan: `docs/superpowers/plans/2026-06-21-regatta-phase1.md` (historical).
   Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.
@@ -70,6 +75,11 @@
   withholds CryoSat-2 by mission-splitting the obs window (the test passes a plain FixtureSource
   with no `withheld()` method, so withholding must happen in the pipeline, not the source).
 
+- **Task-1 deviation (verified):** `.gitignore` never ignored `__pycache__`/`*.pyc`, so Phase 1
+  left 77 `.pyc` files tracked. The rename swept them in; untracked them (`git rm --cached`) and
+  added `__pycache__/`, `*.pyc`, `.mypy_cache/` to `.gitignore` so the soon-public repo stays
+  clean. `pixi.lock` (593 KB) exceeds the 500 KB hook only under `--all-files`; it is unmodified
+  so the staged-only commit hook passes.
 - The 11 GB NATL60 reference is hourly — never pull it; use the daily file. Footprint stays a
   few hundred MB.
 - NATL60 challenge has no observation error ⇒ `R` ≈ a nugget for the oracle.
