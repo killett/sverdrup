@@ -35,8 +35,18 @@
 - **Data (Decision B):** real `DataSource` against ODC THREDDS + `./data/cache/`; daily
   NATL60-CJM165 reference (NOT the 11 GB hourly) clipped to 42-day window
   **2012-10-22→2012-12-02**; OSSE nadir obs ~285 MB whole. Committed tiny NetCDF fixtures for
-  offline CI. Oracle = opt-in sanity-level OI-RMSE parity (skipif no data/network). OSE eval
-  uses the withheld **CryoSat-2** along-track.
+  offline CI. Oracle = opt-in OI-RMSE parity **within 10% of the ODC OI baseline** (skipif no
+  data/network; ≤25% for the tiny-fixture smoke run). OSE eval uses the withheld **CryoSat-2**
+  along-track.
+- **Space-time structure (load-bearing):** the GP covariance is space-time — spatial length
+  scale × **temporal correlation scale**, both through the `ParameterProvider`. The
+  unit-of-work window is space-time (spatial tile × temporal obs window around target output
+  time(s); the 21-day spin-up gives early times temporal neighbors and bounds `N_obs`).
+  **`GridSpec` stays purely spatial**; time is carried on the `Product` as a series of
+  per-time persisted fields. One factored `K_dd+R` serves all output times in the window.
+- **Kernel:** pinned to stationary **Matérn-3/2** (variance + spatial length + temporal
+  scale), behind a `methods/kernel.py::Kernel` interface so it can go nonstationary later
+  without touching `GPCovarianceOperator`.
 
 ## Gotchas
 
