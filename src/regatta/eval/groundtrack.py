@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 
 from regatta.core.evaluation import ContextKey, EvalContext
@@ -21,11 +23,10 @@ class GroundTrack:
         """
         self.k = track_wavenumber
 
-    def evaluate(
-        self, result: dict[str, np.ndarray], context: EvalContext
-    ) -> dict[str, float]:
+    def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return the relative spectral power at the track wavenumber."""
-        field = np.asarray(result["field"])
+        r = cast(Any, result)
+        field = np.asarray(r["field"])
         spec = (
             np.abs(np.fft.rfft(field - field.mean(axis=1, keepdims=True), axis=1)) ** 2
         )
