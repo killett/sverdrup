@@ -54,6 +54,14 @@ pixi run typecheck   # mypy
 The correctness oracle (reproducing the ODC OI leaderboard number) is opt-in — see
 [`docs/oracle-runbook.md`](docs/oracle-runbook.md).
 
+## Releasing
+
+Publishing to PyPI is automated via GitHub Actions Trusted Publishing on tag push. The
+workflow lives at `docs/superpowers/ci/release.yml`; copy it to `.github/workflows/release.yml`
+in the GitHub repo (a one-time step — the local tooling token cannot push workflow files).
+Configure the PyPI trusted publisher (project `sverdrup`, owner `killett`, repo `sverdrup`,
+workflow `release.yml`, environment `pypi`), then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
+
 ## Project structure
 
 ```
