@@ -2,16 +2,16 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Design doc:** `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`
-  (approved brainstorm; the *how* for Phase 1).
-- **Scope source of truth:** `phase1_scope_spec.md` (the *what* — settled).
-- **Implementation plan:** `docs/superpowers/plans/2026-06-21-regatta-phase1.md`
-  (22 tasks, build order = design §11). Task tracker:
-  `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
-  Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
-- **Next action:** Phase-1 plan COMPLETE — all 22 tasks done on `main`. Full suite: 70 passed,
-  1 skipped (opt-in oracle, no data). Both user-gates (Tasks 21, 22) re-validated with captured
-  output. Next milestone TBD.
+- **Active milestone: rename to `sverdrup` + PyPI release.**
+  - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
+  - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks).
+    Tracker: same path + `.tasks.json`.
+    Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md`.
+  - **Next action:** execute Task 1 (rename regatta→sverdrup). Task 6 is a non-skippable
+    user-gate (clean-venv install smoke). Task 7 creates the public repo `killett/sverdrup`.
+- **Phase 1: COMPLETE** — 22 tasks on `main`; suite 70 passed / 1 skipped; both user-gates
+  re-validated. Plan: `docs/superpowers/plans/2026-06-21-regatta-phase1.md` (historical).
+  Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
