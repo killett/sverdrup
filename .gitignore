@@ -8,3 +8,6 @@ __pycache__/
 .sandbox_settings.json
 
 data/cache/
+
+src/sverdrup/_version.py
+dist/
