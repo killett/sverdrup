@@ -27,6 +27,13 @@
   - **Gotcha:** the autotick bot only bumps version+hash. When `pyproject.toml` runtime deps
     change, mirror them into `requirements/run` in both `conda-recipe/meta.yaml` and the
     feedstock PR.
+  - **Gotcha (CI failure, fixed):** first staged-recipes build #1541860 FAILED on all platforms
+    in the *test* phase: `ModuleNotFoundError: No module named 'dask'`. Cause — the recipe test
+    ran `python -m sverdrup`, but `__main__.py` eagerly imports the dask executor + pipeline
+    (the `dask`/`io` *optional extras*, not core run deps). The conda test env has only core
+    deps. Fix: test only the core import surface (`import sverdrup`, `sverdrup.core.grid`,
+    `pip check`) — never the entry point — since core deps are all that's guaranteed installed.
+    Same trap will bite any feedstock test: do not add extras-dependent checks to `test:`.
 - **Phase 1: COMPLETE** — 22 tasks on `main`; suite 70 passed / 1 skipped; both user-gates
   re-validated. Plan: `docs/superpowers/plans/2026-06-21-regatta-phase1.md` (historical).
   Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.
