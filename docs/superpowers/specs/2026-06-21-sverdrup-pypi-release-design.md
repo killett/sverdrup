@@ -13,8 +13,8 @@ Publishing (OIDC). Land the source as a public repo `killett/sverdrup`.
 ## Decisions (settled)
 
 - **Name:** distribution **and** import name = `sverdrup`. `python -m sverdrup` is the entry point.
-  PyPI availability of `sverdrup` is **UNVERIFIED** — the user confirms it is free before the
-  first publish (they previously verified `halosphere`, not this name).
+  PyPI availability **verified free** — `GET https://pypi.org/pypi/sverdrup/json` → HTTP 404
+  (unregistered), checked 2026-06-21 from this environment (outbound HTTPS works).
 - **Build backend:** `hatchling` + `hatch-vcs` (both already in `pixi.toml`).
 - **Version source:** the **git tag** via hatch-vcs (`dynamic = ["version"]`). `v0.1.0` → `0.1.0`.
 - **Dependencies:** minimal required **core** + optional **extras** mirroring `core` vs `adapters`.
@@ -166,7 +166,7 @@ No API exists; the user configures it on pypi.org → *Publishing* → *Add a pe
 ## 8. Release procedure (cutting `v0.1.0`)
 
 1. clean `main`, full suite green, repo pushed, `release.yml` on GitHub, Trusted Publisher
-   configured, `sverdrup` confirmed free on PyPI.
+   configured (`sverdrup` already verified free on PyPI).
 2. `git tag -a v0.1.0 -m "..."` → `git push origin v0.1.0`.
 3. CI builds + publishes via OIDC; verify on pypi.org.
 
@@ -189,7 +189,9 @@ No API exists; the user configures it on pypi.org → *Publishing* → *Add a pe
 
 ## User-side prerequisites (cannot be automated here)
 
-1. Verify `sverdrup` is free on pypi.org.
-2. Add `.github/workflows/release.yml` to the GitHub repo (Option B — assistant cannot push it).
-3. Configure the PyPI Trusted Publisher (table in §7).
-4. Final `git push origin v0.1.0` to trigger the publish (or authorize the assistant to push the tag).
+1. Add `.github/workflows/release.yml` to the GitHub repo (Option B — assistant cannot push it
+   with a non-`workflow`-scoped token).
+2. Configure the PyPI Trusted Publisher (table in §7).
+3. Final `git push origin v0.1.0` to trigger the publish (or authorize the assistant to push the tag).
+
+(`sverdrup` PyPI-name availability is already verified — see Decisions.)
