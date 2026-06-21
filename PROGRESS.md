@@ -21,9 +21,9 @@
   - **Auto-update mechanism (the goal):** after the one-time `conda-forge/staged-recipes` PR,
     the conda-forge **autotick bot** watches PyPI and opens a version-bump PR on every PyPI
     release. Steady state: push tag → PyPI Action publishes → bot opens feedstock PR → merge.
-  - **Remaining user-side one-time step:** fork `conda-forge/staged-recipes`, copy
-    `conda-recipe/meta.yaml` → `recipes/sverdrup/meta.yaml`, open the PR. (Assistant offered to
-    open it via `gh`; pending user go-ahead.)
+  - **staged-recipes PR OPEN:** https://github.com/conda-forge/staged-recipes/pull/33814
+    (`killett:sverdrup`). Awaiting conda-forge CI + maintainer review/merge → feedstock
+    auto-created → conda package ships. User responds to any reviewer feedback.
   - **Gotcha:** the autotick bot only bumps version+hash. When `pyproject.toml` runtime deps
     change, mirror them into `requirements/run` in both `conda-recipe/meta.yaml` and the
     feedstock PR.
