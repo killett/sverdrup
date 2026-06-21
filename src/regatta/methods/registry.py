@@ -3,5 +3,6 @@
 from __future__ import annotations
 
 from regatta.methods.oi import OptimalInterpolation
+from regatta.methods.trivial import TrivialInterpolation
 
-METHODS = {"oi": OptimalInterpolation}
+METHODS = {"oi": OptimalInterpolation, "trivial": TrivialInterpolation}
