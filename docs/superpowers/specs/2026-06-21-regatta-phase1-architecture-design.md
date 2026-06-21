@@ -31,8 +31,16 @@ linear algebra is the Phase-1 *implementation*, not a baked-in assumption:
   whole-field ⇒ `S` = tile grid.
 - `R` is a **matrix/operator** (diagonal for nadir now; structured-ready for swath),
   honoring the first-class observation-error-model decision (§5.1).
-- Kernel length scale / variance read through `ParameterProvider` (constant now) so
-  even the baseline goes through the parameter seam (invariant 6).
+- **The covariance is space-time** (see §1.3): a spatial length scale **and** a temporal
+  correlation scale, both resolved through the `ParameterProvider` (the temporal scale
+  joins the param seam too). `K_dd`, `K_dg`, etc. evaluate the space-time kernel over
+  `(space, time)` coordinates, so kernel variance / spatial length / temporal scale all
+  go through the provider (invariant 6).
+- The **kernel family is pinned** to a stationary **Matérn-3/2** (variance + spatial
+  length + temporal scale; Gaussian/squared-exponential as a config option), kept behind
+  a small `methods/kernel.py::Kernel` interface so the operator never hard-codes the form
+  — that is what lets the kernel go nonstationary / spatially-varying later without
+  touching `GPCovarianceOperator`.
 - The linear solve sits behind an internal `LinearSolver` seam (dense Cholesky now;
   low-rank / iterative later) **within the kernel formulation**.
 
@@ -57,6 +65,29 @@ The three are complementary, not exclusive (network is available):
 - **OSE evaluation** uses the challenge's deliberately-withheld **CryoSat-2**
   along-track as the independent signal — which also exercises our withholding /
   evaluator design and keeps numbers literature-aligned.
+- **Oracle pass tolerance (concrete):** our OI lands **within 10% of the ODC OI
+  leaderboard RMSE** on the 42-day window (and does not exceed it by more than that).
+  This pairs with the pinned kernel family/params (Decision A); a looser bar (≤25%)
+  applies to the tiny-fixture smoke run, whose purpose is path-correctness, not parity.
+
+### 1.3 Space-time structure (load-bearing)
+
+SSH OI is fundamentally **space-time**: the deliverable is a *series of grids*, and the
+ODC OI baseline (the oracle target) maps each output time using a space-time covariance
+with a temporal correlation scale. The architecture reflects this explicitly:
+
+- **Space-time GP covariance** — spatial length scale × temporal correlation scale, both
+  via the `ParameterProvider` (Decision A). Without the temporal term the OI cannot match
+  the baseline.
+- **The unit-of-work window is space-time** — a spatial tile × a *temporal window* of
+  observations around the target output time(s). This is why the 42-day eval window ships
+  21 days of pre-window spin-up obs: early output times need temporal neighbors. The
+  temporal window also **bounds `N_obs` per solve**, keeping the dense Cholesky tractable.
+- **Time is carried on the output, not on `GridSpec`** — `GridSpec` stays purely spatial
+  (`cell_area` / projection logic is inherently 2-D). The `Product` carries the output
+  **time(s) as a series of per-time persisted fields**; `K_dd / K_dg / …` evaluate the
+  space-time kernel over `(space, time)` coordinates. One solve can produce several output
+  times sharing the same factored `K_dd + R`.
 
 ---
 
@@ -96,6 +127,7 @@ src/regatta/
     registry.py
     trivial.py                # Method 0 (POINT): naive interpolation
     oi.py                     # Method 1 (SAMPLES+COVARIANCE): dense GP/OI; builds GPCovarianceOperator
+    kernel.py                 # Kernel interface + space-time Matern-3/2 (variance, spatial len, temporal scale)
     solver.py                 # LinearSolver seam (DenseCholeskySolver now; sparse/iterative later)
 
   derived/                   # concrete derived-quantity operators (parallel to eval/)
@@ -133,7 +165,13 @@ tests/{unit,integration,fixtures}/
   true spherical area on lon/lat (`cos(lat)` metric), projected area on stereographic.
   `window()` returns a sub-grid of the same type, so "regional = one window" and
   "global = many windows" are the same code path. Instantiable lon/lat (default) or
-  polar-stereographic. (invariants 1, 3; spec §5.5)
+  polar-stereographic. **`GridSpec` is purely spatial (2-D)** — time is carried on the
+  `Product`'s output series, not here (§1.3). (invariants 1, 3; spec §5.5)
+
+- **Space-time window (observations.py)** — the unit-of-work window is a spatial tile ×
+  a temporal observation window around the target output time(s); `ObsWindow` carries the
+  `(lon, lat, time)` coordinates the space-time kernel is evaluated over. The temporal
+  window bounds `N_obs` per solve. (§1.3)
 
 - **`PredictiveDistribution` (distribution.py)** — `marginal_variance() · covariance(A,B)
   · sample(m, seed) · regrid(target)`. Three concrete impls (ring `distributions/`).
@@ -176,14 +214,17 @@ tests/{unit,integration,fixtures}/
 
 ## 4. Methods & distribution representations
 
-**Method 1 — `methods/oi.py` (SAMPLES + COVARIANCE).** `solve()` resolves kernel
-params via the provider, assembles `R` from per-observation error models, has
-`methods/solver.py::DenseCholeskySolver` factor `K_dd + R = L Lᵀ` **once**, and builds
-a `GPCovarianceOperator` (caches `L`; `cov`/`marginal_var`/`posterior_sample` per
-Decision A; `fidelity = EXACT`). Returns `GaussianPredictiveDistribution(mean=μ,
-cov=GPCovarianceOperator)`. `regrid(target)` = evaluate the operator at target points
-(operator-on-covariance; invariant 7). The GP-specific `K_AB − Vᵀ_A V_B` math lives
-here, not in `distributions/`.
+**Method 1 — `methods/oi.py` (SAMPLES + COVARIANCE).** `solve()` resolves kernel params
+(spatial length, temporal scale, variance) via the provider, builds a space-time
+`methods/kernel.py::Kernel` (Matérn-3/2), assembles `R` from per-observation error
+models, has `methods/solver.py::DenseCholeskySolver` factor `K_dd + R = L Lᵀ` **once**
+over the space-time observation set, and builds a `GPCovarianceOperator` (caches `L`;
+`cov`/`marginal_var`/`posterior_sample` per Decision A; `fidelity = EXACT`). Kernel
+blocks `K_dd / K_dg / K_gg` are evaluated over `(space, time)` coordinates, so **one
+factored `K_dd + R` serves all output times** in the window. Returns
+`GaussianPredictiveDistribution(mean=μ, cov=GPCovarianceOperator)` per output time.
+`regrid(target)` = evaluate the operator at target points (operator-on-covariance;
+invariant 7). The GP-specific `K_AB − Vᵀ_A V_B` math lives here, not in `distributions/`.
 
 **Method 0 — `methods/trivial.py` (POINT).** Naive interpolation (Gaussian-weighted /
 inverse-distance, scipy-only), returns a bare field. Lifted by
@@ -242,10 +283,11 @@ calibration runs on those exact eval-point predictives (coverage/χ²/CRPS/PIT c
 from `(mean, var)` for the Gaussian case, sample-based for Ensemble); accuracy uses the
 exact eval-point mean rather than interpolating the gridded mean.
 
-**`Product` bundle (core/product.py).** An explicit bundle: base SSHA Persisted product +
-derived Persisted products + eval-point predictions, with provenance linking the derived
-and eval products to the base (route + `CovFidelity` stamped on each). `ResultSink` writes
-the whole bundle.
+**`Product` bundle (core/product.py).** An explicit bundle, **carrying the output as a
+series of per-time persisted fields** (§1.3): for each output time, a base SSHA Persisted
+product + derived Persisted products + eval-point predictions, with provenance linking the
+derived and eval products to the base (route + `CovFidelity` stamped on each) and recording
+the output time(s). `ResultSink` writes the whole bundle (the series-of-grids deliverable).
 
 ---
 
@@ -369,6 +411,8 @@ concrete bug that would make it fail. Anchor tests:
 | `cell_area` shrinks as `cos(lat)`; varies on stereographic | flat-area assumption |
 | `cov(A,B)` symmetric, PSD, matches dense reference | dropped `Vᵀ` term / wrong solve |
 | 1-D GP posterior matches closed form | solve / sign error |
+| space-time kernel: obs at the same point but distant times are weakly correlated; one factored `K_dd+R` serves multiple output times | spatial-only kernel; time dropped |
+| oracle: OI RMSE within 10% of ODC OI baseline on cached window | wrong kernel/params; broken solve |
 | sampler determinism; sample-cov → operator-cov as M→∞ | unseeded / biased draws |
 | first-difference exact-path error ≪ sample-path error on `Var(a−b)` | index-space diff / sample-path on Gaussian |
 | perturb-ensemble void under-dispersion recorded, not native | synthesized-as-native |
