@@ -56,6 +56,9 @@ disallow_untyped_calls = false
 [tool.pytest.ini_options]
 addopts = "-v"
 pythonpath = ["src"]
+markers = [
+    "oracle: reproduces ODC leaderboard numbers; needs cached data + network",
+]
 
 [tool.coverage.run]
 source = ["src"]

@@ -9,9 +9,9 @@
   (22 tasks, build order = design §11). Task tracker:
   `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
   Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
-- **Next action:** execute **Task 22 (correctness oracle + fixture smoke + docs)** — the last
-  task (non-skippable user-gate). Tasks 0-21 done; Task 21 user-gate passed (all 5 criteria
-  re-validated with captured output).
+- **Next action:** Phase-1 plan COMPLETE — all 22 tasks done on `main`. Full suite: 70 passed,
+  1 skipped (opt-in oracle, no data). Both user-gates (Tasks 21, 22) re-validated with captured
+  output. Next milestone TBD.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
