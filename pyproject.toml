@@ -2,7 +2,27 @@
 name = "sverdrup"
 dynamic = ["version"]
 requires-python = ">=3.12,<3.14"
+description = "Regional sea-surface-height-anomaly reconstruction with first-class predictive uncertainty"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Emmy Killett", email = "emmykillett@gmail.com" }]
+keywords = ["oceanography", "sea surface height", "gaussian process", "optimal interpolation", "uncertainty quantification"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Typing :: Typed",
+]
 dependencies = []   # populated in Task 4
+
+[project.urls]
+Homepage = "https://github.com/killett/sverdrup"
+Repository = "https://github.com/killett/sverdrup"
+Issues = "https://github.com/killett/sverdrup/issues"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
