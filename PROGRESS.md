@@ -9,8 +9,8 @@
   (22 tasks, build order = design §11). Task tracker:
   `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
   Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
-- **Next action:** execute **Task 3 (observation model)** — the first unchecked task. Then
-  proceed in DAG order (Tasks 21 and 22 are non-skippable user-gates). Tasks 0-2 done.
+- **Next action:** execute **Task 20 (fsspec result sink)** — the first unchecked task. Then
+  Tasks 21 and 22 (non-skippable user-gates). Tasks 0-19 done.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
@@ -52,6 +52,15 @@
   without touching `GPCovarianceOperator`.
 
 ## Gotchas
+
+- **mypy runs `mypy .` (whole tree, tests included)** via the pre-commit hook — test files
+  must be type-clean too (e.g. assert `x is not None` before using an `Optional`). numpy ops
+  often infer `Any`; wrap returns in `np.asarray(...)` to satisfy `no-any-return`. scipy/dask/
+  distributed calls need `# type: ignore[import-untyped]` / `[no-untyped-call]`.
+- **Plan deviations made & verified:** (1) Task 10 perturb_and_ensemble seeds members from the
+  caller seed + index, not `id(obs)` (the plan's id-based seed broke the reproducibility test).
+  (2) Task 19 CRPS test: the plan's expected `0.23379` is CRPS at y=0, but the test uses y=0.5;
+  correct closed-form value is `0.331404`. Implementation formula is the standard correct CRPS.
 
 - The 11 GB NATL60 reference is hourly — never pull it; use the daily file. Footprint stays a
   few hundred MB.
