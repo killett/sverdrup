@@ -17,7 +17,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Typing :: Typed",
 ]
-dependencies = []   # populated in Task 4
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pyproj>=3.6",
+]
+
+[project.optional-dependencies]
+dask = ["dask[distributed]>=2024.1"]
+io = ["xarray>=2024.1", "fsspec>=2024.1", "netcdf4>=1.6", "requests>=2.31", "tenacity>=8.2"]
+all = ["sverdrup[dask,io]"]
 
 [project.urls]
 Homepage = "https://github.com/killett/sverdrup"
