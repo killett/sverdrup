@@ -9,8 +9,8 @@
   (22 tasks, build order = design §11). Task tracker:
   `docs/superpowers/plans/2026-06-21-regatta-phase1.md.tasks.json`.
   Resume with `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-21-regatta-phase1.md`.
-- **Next action:** execute **Task 1 (GridSpec)** — the first unchecked task. Then proceed in
-  DAG order (Tasks 21 and 22 are non-skippable user-gates). Task 0 done (commit 8ad9da0).
+- **Next action:** execute **Task 3 (observation model)** — the first unchecked task. Then
+  proceed in DAG order (Tasks 21 and 22 are non-skippable user-gates). Tasks 0-2 done.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
