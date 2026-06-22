@@ -107,4 +107,13 @@
 
 ## Deferred items / open questions
 
-- (none open — Phase-1 architecture is settled in the design doc.)
+- **Next release — relax the conda recipe Python cap.** `pyproject.toml` now declares
+  `requires-python = ">=3.12"` (cap dropped, commit `e236591`; source uses only stable stdlib
+  and numpy/scipy/pyproj all ship cp314 wheels). The **0.1.0** recipe deliberately keeps
+  `run: python >={{ python_min }},<3.14` to match the already-published 0.1.0 wheel (building
+  0.1.0 on 3.14 would fail `pip install .` — its metadata excludes 3.14). On the next release:
+  when the autotick bot opens the feedstock bump PR, drop the `,<3.14` from the `run` pin
+  (→ `python >={{ python_min }}`) and mirror the same in `conda-recipe/meta.yaml`. Do NOT do
+  this before a `>=3.12` wheel is on PyPI.
+- **Optional:** `pixi.toml` dev pin still `python = ">=3.12,<3.14"` (left capped to avoid a
+  `pixi.lock` re-solve; doesn't limit the published package). Relax only if CI should exercise 3.14.
