@@ -56,9 +56,6 @@ pytest-cov = "*"
 pre-commit = "*"
 # Group-derived conda packages are inserted on the line below.
 python-dotenv = "*"
-requests = "*"
-tenacity = "*"
-tqdm = "*"
 openjdk = "=25"
 ipython = "*"
 ipdb = "*"
@@ -111,6 +108,11 @@ h5netcdf = "*"
 h5py = "*"
 cftime = "*"
 cfchecker = "*"
+httpx = ">=0.28.1,<0.29"
+pydantic = ">=2.13.4,<3"
+typer = ">=0.26.7,<0.27"
+rich = ">=15.0.0,<16"
+stamina = ">=26.1.0,<27"
 
 [pypi-dependencies]
 

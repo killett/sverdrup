@@ -35,6 +35,9 @@ repos:
         name: check-added-large-files (limit 500 KB)
         entry: 'bash -c ''max=500000; rc=0; for f in "$@"; do sz=$(wc -c < "$f"); if (( sz > max )); then echo "$f: $sz bytes exceeds limit of $max" >&2; rc=1; fi; done; exit $rc'' --'
         language: system
+        # pixi.lock is a generated lockfile, not hand-authored source; it
+        # legitimately exceeds 500 KB. Exempt it from the large-file guard.
+        exclude: ^pixi\.lock$
 
       # Local reimplementation of pre-commit-hooks' check-toml. tomllib is
       # stdlib in 3.11+; this template requires 3.12+. Routed through
