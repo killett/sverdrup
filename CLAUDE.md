@@ -47,6 +47,25 @@ read them either way.
 
 - Use `rg` instead of `grep`, `fd` instead of `find`.
 
+## Preferred libraries (`[utils]` group)
+
+Standardized on these. Do NOT reintroduce the retired libraries — they may
+still be importable as *transitive* deps of other packages, which is a trap,
+not permission to use them.
+
+- **HTTP — `httpx`, not `requests`.** Gotchas vs requests: httpx's default
+  timeout is 5s (requests = infinite) and it does NOT follow redirects by
+  default. Pass `timeout=` / `follow_redirects=True` explicitly when you need
+  requests-like behavior. Stream with
+  `with httpx.stream("GET", url, ...) as r: ... r.iter_bytes(...)`.
+- **Retry — `stamina`, not `tenacity`.** `@stamina.retry(on=..., attempts=N)`.
+  `on=` is mandatory and must be an explicit exception type/tuple/predicate;
+  retry only transient faults — never `on=Exception`. See `_is_retryable` in
+  `adapters/odc/download.py` for the reference predicate (transport errors + 5xx).
+- **Progress — `rich.progress`, not `tqdm`.** `track(iterable, description=...)`
+  for loops; `Progress` for manual/multi-task bars.
+- **CLI — `typer`. Validation/models — `pydantic`. Console output — `rich`.**
+
 ## Workspace scaffolding
 
 This project has already been scaffolded. The following files
