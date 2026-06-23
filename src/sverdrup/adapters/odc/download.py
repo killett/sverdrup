@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-import requests
+import httpx
 import xarray as xr
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -42,11 +42,11 @@ class ODCCache:
         dest = self.path_for(url)
         if dest.exists():
             return dest
-        with requests.get(url, stream=True, timeout=120) as r:
+        with httpx.stream("GET", url, timeout=120, follow_redirects=True) as r:
             r.raise_for_status()
             tmp = dest.with_suffix(".part")
             with tmp.open("wb") as f:
-                for chunk in r.iter_content(1 << 20):
+                for chunk in r.iter_bytes(1 << 20):
                     f.write(chunk)
             tmp.replace(dest)
         return dest
