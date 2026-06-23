@@ -1,0 +1,12 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-22-requests-tenacity-tqdm-migration-plan.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Produce stage-3 paste-ready migration prompt",
+      "status": "completed",
+      "description": "**Goal:** Write a self-contained Claude Code prompt that performs the requests/tenacity/tqdm → httpx/stamina/rich.progress source-code migration in three commits per the spec.\n\n**Files:**\n- Create: `docs/superpowers/plans/2026-06-22-requests-tenacity-tqdm-migration-plan.md`\n\n**Acceptance Criteria:**\n- [x] Plan file at the path above, containing a \"Paste-ready prompt\" section with a self-contained prompt block.\n- [x] Pre-flight check matches spec: `pixi list | rg -q 'httpx|stamina' && ! pixi list | rg -q '^(requests|tenacity|tqdm)\\s'`.\n- [x] Three Conventional-Commits commit messages match spec wording.\n- [x] Verification command matches scaffolded-project convention (`pixi run pre-commit run --all-files` + `pixi run test` per phase; `pixi run test --cov` at end).\n- [x] All FLAG-TO-USER patterns from spec Section 4 are present in the prompt with explicit stop-and-ask instructions.\n- [x] All OUT-OF-SCOPE items from spec are in the prompt's DO-NOT-DO list.\n\n**Verify:** Open the plan file and confirm the seven acceptance criteria above. The plan's deliverable is the prompt artifact itself; there is no automated test for this plan because it's not executable code in this repo.\n\n**Steps:** Single step — write the file. Done by the existence of the plan at the path above.\n\n```json:metadata\n{\"files\": [\"docs/superpowers/plans/2026-06-22-requests-tenacity-tqdm-migration-plan.md\"], \"verifyCommand\": \"test -f docs/superpowers/plans/2026-06-22-requests-tenacity-tqdm-migration-plan.md\", \"acceptanceCriteria\": [\"plan file exists\", \"paste-ready prompt section present\", \"pre-flight check matches spec\", \"three commit messages match spec\", \"verification command matches scaffolded-project convention\", \"all FLAG-TO-USER patterns present\", \"all OUT-OF-SCOPE items in DO-NOT-DO list\"], \"modelTier\": \"mechanical\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-22T02:30:00-07:00"
+}
