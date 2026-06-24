@@ -57,7 +57,7 @@
     {
       "id": 8,
       "subject": "Task 8: Cross-seam derivative gate (structured-coherence)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "Cross-seam firstdifference variance not inflated vs single-tile reference; failure -> swap structured driver + owner escalation.\n\n```json:metadata\n{\"files\": [\"tests/test_cross_seam_derivative_gate.py\"], \"verifyCommand\": \"pixi run test -- tests/test_cross_seam_derivative_gate.py -v\", \"acceptanceCriteria\": [\"cross-seam derivative variance not inflated (seam <= 2x interior)\", \"failure routes to structured-driver swap + owner escalation, not tolerance loosening\"], \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"standard\"}\n```"
     },
