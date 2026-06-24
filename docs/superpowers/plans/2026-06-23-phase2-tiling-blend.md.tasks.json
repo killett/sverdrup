@@ -1,0 +1,119 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-23-phase2-tiling-blend.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 0: Core geometry value objects",
+      "status": "pending",
+      "description": "Window/Tile/HaloExtent (core/geometry.py) + PointSet (core/grid.py), frozen, math-free.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/geometry.py\", \"src/sverdrup/core/grid.py\", \"tests/test_geometry.py\"], \"verifyCommand\": \"pixi run test -- tests/test_geometry.py -v\", \"acceptanceCriteria\": [\"Window/Tile/HaloExtent frozen and math-free\", \"HaloExtent carries radius_km not degree pads\", \"PointSet holds (k,3) points + crs\", \"Tile.grid is GridSpec; core/extended are Window\"], \"modelTier\": \"mechanical\"}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 1: Blend enum + provenance extensions",
+      "status": "pending",
+      "description": "CovFidelity.BLENDED; TransformKind.BLEND; KnownBias.{CONSERVATIVE_HALO_RESIDUAL,STRUCTURED_BASIS_ORIENTATION}; blend_transform().\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/types.py\", \"src/sverdrup/core/provenance.py\", \"tests/test_blend_provenance.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_provenance.py -v\", \"acceptanceCriteria\": [\"CovFidelity.BLENDED distinct\", \"TransformKind.BLEND + two distinct KnownBias kinds\", \"blend_transform records conservative halo bias + k + distinct structured marker\"], \"modelTier\": \"mechanical\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Partition-of-unity weights (smootherstep)",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "partition_weights(tiles, points): Sw=1, quintic smootherstep, C1 across boundaries.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_weights.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_weights.py -v\", \"acceptanceCriteria\": [\"partition_weights columns sum to 1\", \"quintic smootherstep taper, core authoritative\", \"weight first derivative continuous across boundaries\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Blend cheap path (moment crossfade)",
+      "status": "pending",
+      "blockedBy": [1, 2],
+      "description": "BlendInput/BlendOperator/BlendedDistribution; mean crossfade + (Sigma w sigma)^2 variance; no-dip; conservative; BLENDED fidelity + BlendTransform.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_cheap_path.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_cheap_path.py -v\", \"acceptanceCriteria\": [\"blended mean = weight crossfade at shared nodes\", \"no mid-overlap variance dip (corr=1 formula)\", \"blended sigma >= max constituent sigma\", \"provenance carries BlendTransform + BLENDED fidelity\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Coherent sampler (z_r seam + global diagonal noise)",
+      "status": "pending",
+      "description": "CoherentSampler; StructuredNoiseSource seam; MemberSeededZr (member-only); diagonal_noise per global cell x member; realize_one = mean + B z_r + sqrt(d) z_diag.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/test_coherent_sampler.py\"], \"verifyCommand\": \"pixi run test -- tests/test_coherent_sampler.py -v\", \"acceptanceCriteria\": [\"MemberSeededZr is tile-independent\", \"diagonal_noise coherent per global cell x member\", \"realize_one = mean + B z_r + sqrt(d) z_diag\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Blend general path (coherent-sample crossfade)",
+      "status": "pending",
+      "blockedBy": [3, 4],
+      "description": "BlendedDistribution.sample()/covariance() via Sigma w_i X_i^m; NoiseSpec stored; samples seam-continuous.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_general_path.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_general_path.py -v\", \"acceptanceCriteria\": [\"blend stores NoiseSpec\", \"sample returns (m,ny,nx) coherent crossfade\", \"samples continuous across seam (no spike)\", \"covariance returns crossfaded sample covariance\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: FirstDifference composes on BlendedDistribution",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "Composition pre-check: FirstDifference.apply(blended) yields finite mean+variance, no NotImplementedError.\n\n```json:metadata\n{\"files\": [\"tests/test_blend_derived_composition.py\", \"src/sverdrup/distributions/blend.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_derived_composition.py -v\", \"acceptanceCriteria\": [\"FirstDifference.apply(blended) yields finite mean+variance\", \"no NotImplementedError on covariance reads\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 7: Cheap-vs-sample variance agreement (diagnostic gate)",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "Analytic vs sampled marginal variance agree in overlap within MC tolerance; divergence escalates per spec section 8.\n\n```json:metadata\n{\"files\": [\"tests/test_blend_cheap_vs_sample.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_cheap_vs_sample.py -v\", \"acceptanceCriteria\": [\"cheap vs sampled variance agree in overlap (median rel <= 0.15 at m=512)\", \"divergence escalated per spec section 8, not loosened\"], \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 8: Cross-seam derivative gate (structured-coherence)",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "Cross-seam firstdifference variance not inflated vs single-tile reference; failure -> swap structured driver + owner escalation.\n\n```json:metadata\n{\"files\": [\"tests/test_cross_seam_derivative_gate.py\"], \"verifyCommand\": \"pixi run test -- tests/test_cross_seam_derivative_gate.py -v\", \"acceptanceCriteria\": [\"cross-seam derivative variance not inflated (seam <= 2x interior)\", \"failure routes to structured-driver swap + owner escalation, not tolerance loosening\"], \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 9: Eval-point PersistedPoints + blend over PointSet",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "Shared-basis eval rows on-worker (never re-factor); PersistedPoints; blend over PointSet crossfades withheld points in overlaps.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/product.py\", \"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/application/solve.py\", \"tests/test_eval_point_blend.py\"], \"verifyCommand\": \"pixi run test -- tests/test_eval_point_blend.py -v\", \"acceptanceCriteria\": [\"EvalPointPredictions carries shared-basis factor+residual (back-compat defaults)\", \"Cov(eval,grid)=B_eval B_grid^T shared basis, not re-factored\", \"blend over PointSet crossfades eval points\", \"overlap withheld point mixes both tiles\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 10: LatitudeVaryingProvider",
+      "status": "pending",
+      "description": "ParameterProvider resolving correlation_length as equator->pole field; constants pass through; stable key.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/parameters.py\", \"tests/test_latitude_varying_provider.py\"], \"verifyCommand\": \"pixi run test -- tests/test_latitude_varying_provider.py -v\", \"acceptanceCriteria\": [\"correlation_length field decreases equator->pole\", \"constants pass through as scalars\", \"params_key stable + encodes profile\"], \"modelTier\": \"mechanical\"}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 11: ScaleAwareHalo + LonLatPartition",
+      "status": "pending",
+      "blockedBy": [0, 10],
+      "description": "km halos via correlation provider; lon/lat partition; tile grids are target.window sub-grids (co-registered overlap nodes).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"tests/test_tiling_partition.py\"], \"verifyCommand\": \"pixi run test -- tests/test_tiling_partition.py -v\", \"acceptanceCriteria\": [\"halo_km = max(k*corr_len, stencil), widest at equator\", \"extended contains core; cores tile target; overlaps non-empty\", \"tile grids are windows of target (co-registered nodes)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 12: TilingCoordinator + run_tiled_pipeline",
+      "status": "pending",
+      "blockedBy": [3, 11],
+      "description": "One UnitOfWork per tile via existing Executor; gather Persisted reps; blend over grid (+ eval PointSet); run_tiled_pipeline reuses Phase-1 prepare/evaluate.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"src/sverdrup/application/pipeline.py\", \"tests/test_tiling_coordinator.py\"], \"verifyCommand\": \"pixi run test -- tests/test_tiling_coordinator.py -v\", \"acceptanceCriteria\": [\"one submit per tile, no re-granularization\", \"gather -> blend over target per output time\", \"blended mean matches cheap-path crossfade\", \"run_tiled_pipeline reuses Phase-1 prepare/evaluate, no new ports\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 13,
+      "subject": "Task 13: Pluggable WithholdingStrategy + 2 exemplars",
+      "status": "pending",
+      "description": "WithholdingStrategy protocol; LeaveOneMissionOut; PerMissionTemporalFraction with disjoint buffer-discard; random_point rejected; Split.buffer_discard_idx.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/withholding.py\", \"src/sverdrup/application/splits.py\", \"tests/test_withholding.py\"], \"verifyCommand\": \"pixi run test -- tests/test_withholding.py -v\", \"acceptanceCriteria\": [\"WithholdingStrategy protocol with 4-way assignment\", \"LeaveOneMissionOut withholds whole mission\", \"PerMissionTemporalFraction has disjoint buffer-discard\", \"random_point still rejected; Split.buffer_discard_idx back-compat\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 14,
+      "subject": "Task 14: Area-weighted global aggregation",
+      "status": "pending",
+      "description": "area_weighted_mean/rmse using GridSpec.cell_area(); weighted != unweighted under cos(lat).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/aggregate.py\", \"tests/test_aggregate.py\"], \"verifyCommand\": \"pixi run test -- tests/test_aggregate.py -v\", \"acceptanceCriteria\": [\"area_weighted_mean uses cell_area, matches hand value\", \"weighted differs from unweighted under cos(lat)\", \"area_weighted_rmse correct\"], \"modelTier\": \"mechanical\"}\n```"
+    },
+    {
+      "id": 15,
+      "subject": "Task 15: Stage-A integration gate (CHECKPOINT)",
+      "status": "pending",
+      "blockedBy": [7, 8, 9, 12, 13, 14],
+      "description": "USER-ORDERED GATE — NON-SKIPPABLE. Regional multi-tile blend through LocalCluster matches single-tile reference, no seam, conservative sigma, withheld eval OSSE+OSE, provenance, both exemplars, random holdout rejected, Task7+Task8 gates pass.\n\n```json:metadata\n{\"files\": [\"tests/test_phase2_stage_a.py\", \"src/sverdrup/application/pipeline.py\", \"src/sverdrup/application/tiling.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase2_stage_a.py -v\", \"acceptanceCriteria\": [\"multi-tile blended mean matches single-tile reference rel L2 <= 0.05 with no seam in mean or sigma\", \"blended sigma >= single-tile reference sigma everywhere\", \"coherent samples seam-free, no mid-overlap variance dip on integrated product\", \"withheld-point eval in overlaps fires OSSE (vs truth) and OSE (vs withheld c2) with finite accuracy+calibration scores\", \"provenance carries BlendTransform with CONSERVATIVE_HALO_RESIDUAL and BLENDED fidelity\", \"both withholding exemplars run and random_point holdout raises\", \"Task 7 + Task 8 gates pass on the integrated regional product\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-a\", \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 16,
+      "subject": "Task 16: Stage B — global, projection-mixed (OPT-IN)",
+      "status": "pending",
+      "blockedBy": [15],
+      "description": "USER-ORDERED GATE — NON-SKIPPABLE. Stage B only after Stage A passes. ProjectionMixedPartition; Persisted.regrid (samples/cov, never variance-map); cross-CRS blend; polar-void relaxes to prior; opt-in area-weighted global 2023a OSE run (SVERDRUP_GLOBAL_DATA=1).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/distributions/blend.py\", \"tests/test_phase2_stage_b.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase2_stage_b.py -v\", \"acceptanceCriteria\": [\"ProjectionMixedPartition yields polar-stereographic caps + lon/lat mid-lat tiles, no single-projection assumption\", \"PersistedDistribution.regrid via samples/cov preserves mean on round-trip, never interpolates the variance map\", \"BlendOperator blends constituents with differing CRS by regridding onto union support\", \"polar-void test: blended sigma relaxes to >= 0.9 x prior sigma in a real data void\", \"opt-in global 2023a OSE run computes area-weighted global metrics, skipped cleanly without data\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-b\", \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"complex\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-23T00:00:00Z"
+}
