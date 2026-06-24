@@ -16,7 +16,7 @@
     {
       "id": 2,
       "subject": "Task 2: Partition-of-unity weights (smootherstep)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0],
       "description": "partition_weights(tiles, points): Sw=1, quintic smootherstep, C1 across boundaries.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_weights.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_weights.py -v\", \"acceptanceCriteria\": [\"partition_weights columns sum to 1\", \"quintic smootherstep taper, core authoritative\", \"weight first derivative continuous across boundaries\"], \"modelTier\": \"standard\"}\n```"
     },
