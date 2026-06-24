@@ -107,6 +107,7 @@ class BlendedDistribution:
     _parts: list[BlendInput] = field(default_factory=list)
     _noise: NoiseSpec | None = None
     _sampler: CoherentSampler = field(default_factory=CoherentSampler)
+    _cov_batch: np.ndarray | None = None
 
     def marginal_variance(self) -> Field:
         """Return the coherence-correct (corr=1) marginal-variance field."""
@@ -133,12 +134,31 @@ class BlendedDistribution:
             acc = acc + wi * xi
         return acc
 
+    def _grid_sample_batch(self, m: int = 256) -> np.ndarray:
+        """Return a cached ``(m, n_grid)`` coherent-member matrix over the grid points.
+
+        Computed once and reused so derived operators that read ``covariance`` node by
+        node share a single realization instead of regenerating members per query.
+        """
+        if self._cov_batch is None or self._cov_batch.shape[0] != m:
+            pts = self.grid.points(self.time_days)
+            self._cov_batch = np.stack(
+                [self._coherent_member(int(i), pts) for i in range(m)]
+            )
+        return self._cov_batch
+
     def covariance(self, a: Points, b: Points) -> np.ndarray:
-        """Return the crossfaded sample covariance between ``a`` and ``b`` (general path)."""
+        """Return the crossfaded sample covariance between ``a`` and ``b`` (general path).
+
+        Query points are matched to nearest grid nodes and read from one cached
+        coherent-member batch, so repeated node-by-node reads stay cheap.
+        """
         m = 256
-        members = np.arange(m)
-        sa = np.stack([self._coherent_member(int(i), a) for i in members])
-        sb = np.stack([self._coherent_member(int(i), b) for i in members])
+        s = self._grid_sample_batch(m)  # (m, n_grid)
+        ia = _nearest(self.grid, a, self.time_days)
+        ib = _nearest(self.grid, b, self.time_days)
+        sa = s[:, ia]
+        sb = s[:, ib]
         sa = sa - sa.mean(axis=0)
         sb = sb - sb.mean(axis=0)
         return np.asarray(sa.T @ sb / (m - 1))

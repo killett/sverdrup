@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 6 (FirstDifference composes on BlendedDistribution) — `pixi run test -- tests/test_blend_derived_composition.py -v`. (Tasks 0–5 done, committed.)
+  - **Next action:** Task 7 (cheap-vs-sample variance agreement gate) — `pixi run test -- tests/test_blend_cheap_vs_sample.py -v`. (Tasks 0–6 done, committed.) Tasks 7/8 are stop-and-escalate diagnostic gates: if they fail, do NOT loosen tolerance — escalate per design §5c/§8 (swap structured driver).
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
@@ -117,6 +117,14 @@
 - NATL60 challenge has no observation error ⇒ `R` ≈ a nugget for the oracle.
 - `pyinterp` / `GPSat` are NOT installed; Method 1 needs none. `pixi add` any new dep.
 - BLAS/OpenMP env vars must be set per-worker *before* numpy/BLAS loads (Nanny child env).
+- **Phase-2 Task 6 deviation (verified):** `FirstDifference._diff_var` calls
+  `dist.covariance(a,a/b,b/a,b)` node-by-node; the naive general-path covariance
+  (regenerate 256 members per query point) made the composition test take 67s. Fix:
+  `BlendedDistribution.covariance` now snaps query points to nearest grid nodes and reads
+  from one cached `_grid_sample_batch(256)` realization (lazily computed, memoized on the
+  instance). 67s → ~4s. Snapping is consistent with `PersistedDistribution.covariance`
+  (which also snaps via `_idx`); fine for grid-node derived ops. The plan explicitly
+  allowed this fast path (Task 6 Step 3).
 
 ## Deferred items / open questions
 
