@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 7 (cheap-vs-sample variance agreement gate) — `pixi run test -- tests/test_blend_cheap_vs_sample.py -v`. (Tasks 0–6 done, committed.) Tasks 7/8 are stop-and-escalate diagnostic gates: if they fail, do NOT loosen tolerance — escalate per design §5c/§8 (swap structured driver).
+  - **Next action:** Task 8 (cross-seam derivative gate) — `pixi run test -- tests/test_cross_seam_derivative_gate.py -v`. (Tasks 0–7 done, committed.) Tasks 7/8 are stop-and-escalate diagnostic gates: if they fail, do NOT loosen tolerance — escalate per design §5c/§8 (swap structured driver). Task 7 PASSED (coherence holds).
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
