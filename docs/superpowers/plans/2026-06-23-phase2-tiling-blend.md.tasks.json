@@ -23,7 +23,7 @@
     {
       "id": 3,
       "subject": "Task 3: Blend cheap path (moment crossfade)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1, 2],
       "description": "BlendInput/BlendOperator/BlendedDistribution; mean crossfade + (Sigma w sigma)^2 variance; no-dip; conservative; BLENDED fidelity + BlendTransform.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_cheap_path.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_cheap_path.py -v\", \"acceptanceCriteria\": [\"blended mean = weight crossfade at shared nodes\", \"no mid-overlap variance dip (corr=1 formula)\", \"blended sigma >= max constituent sigma\", \"provenance carries BlendTransform + BLENDED fidelity\"], \"modelTier\": \"standard\"}\n```"
     },
