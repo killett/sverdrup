@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 import numpy as np
 
 from sverdrup.core.geometry import Tile
+from sverdrup.core.grid import GridSpec, PointSet
+from sverdrup.core.provenance import UncertaintyProvenance, blend_transform
+from sverdrup.core.types import CovFidelity, Field, Points, Seed
+from sverdrup.distributions.persisted import PersistedDistribution
 
 
 def _smootherstep(t: np.ndarray) -> np.ndarray:
@@ -50,3 +55,125 @@ def partition_weights(tiles: Sequence[Tile], points: np.ndarray) -> np.ndarray:
     total = raw.sum(axis=0)
     safe = np.where(total > 0, total, 1.0)
     return np.asarray(raw / safe)
+
+
+@dataclass
+class BlendInput:
+    """One constituent: a Persisted distribution plus its tile core/halo geometry."""
+
+    distribution: PersistedDistribution
+    tile: Tile
+
+
+def _support_points(support: GridSpec | PointSet, time_days: float) -> Points:
+    """Return ``(n, 3)`` points for either support kind."""
+    if isinstance(support, PointSet):
+        return support.points()
+    return support.points(time_days)
+
+
+def _nearest(grid: GridSpec, pts: Points, t: float) -> np.ndarray:
+    """Return the nearest grid-node index for each point in ``pts`` at time ``t``."""
+    nodes = grid.points(t)
+    return np.asarray(
+        np.argmin(np.linalg.norm(pts[:, None, :2] - nodes[None, :, :2], axis=2), axis=1)
+    )
+
+
+def _constituent_moments(
+    parts: list[BlendInput], pts: Points
+) -> tuple[np.ndarray, np.ndarray]:
+    """Nearest-node mean and sigma of every constituent at ``pts`` -> (n_tiles, n)."""
+    means, sigmas = [], []
+    for p in parts:
+        d = p.distribution
+        idx = _nearest(d.grid, pts, d.time_days)
+        means.append(d.fields.mean.ravel()[idx])
+        sigmas.append(np.sqrt(d.fields.marginal_variance.ravel()[idx]))
+    return np.stack(means), np.stack(sigmas)
+
+
+@dataclass
+class BlendedDistribution:
+    """A PredictiveDistribution on the union support: weight crossfade of constituents."""
+
+    grid: GridSpec
+    mean: Field
+    _variance: Field
+    provenance: UncertaintyProvenance
+    fidelity: CovFidelity
+    time_days: float
+    _parts: list[BlendInput] = field(default_factory=list)
+
+    def marginal_variance(self) -> Field:
+        """Return the coherence-correct (corr=1) marginal-variance field."""
+        return self._variance
+
+    def covariance(self, a: Points, b: Points) -> np.ndarray:
+        """General-path covariance (added in Task 5)."""
+        raise NotImplementedError("covariance lands with the general path (Task 5).")
+
+    def sample(self, m: int, seed: Seed) -> np.ndarray:
+        """General-path coherent samples (added in Task 5)."""
+        raise NotImplementedError("sample lands with the general path (Task 5).")
+
+    def regrid(self, target: GridSpec) -> BlendedDistribution:
+        """Stage-B cross-projection regrid (Task 16)."""
+        raise NotImplementedError("regrid lands with Stage B (Task 16).")
+
+
+class BlendOperator:
+    """Partition-of-unity crossfade over a GridSpec or PointSet (one support math)."""
+
+    def blend(
+        self,
+        parts: Sequence[BlendInput],
+        support: GridSpec | PointSet,
+        *,
+        k: float = 3.0,
+        residual_bound: float = 0.0,
+        structured_residual: bool = True,
+    ) -> BlendedDistribution:
+        """Blend constituent Persisted distributions into one on ``support``.
+
+        Cheap path only here: mean = sum w_i mean_i; sigma = sum w_i sigma_i (corr=1, so
+        the mid-overlap variance does not dip). Samples/covariance arrive in Task 5.
+
+        Args:
+            parts: The constituent ``BlendInput``s (one per overlapping tile).
+            support: The union support to blend onto (``GridSpec`` or ``PointSet``).
+            k: The halo multiple, recorded in provenance.
+            residual_bound: Conservative finite-halo residual bound, recorded in provenance.
+            structured_residual: Whether the member-only ``z_r`` driver is in use.
+
+        Returns:
+            A ``BlendedDistribution`` with crossfaded mean and coherence-correct variance.
+        """
+        parts = list(parts)
+        t = parts[0].distribution.time_days
+        pts = _support_points(support, t)
+        w = partition_weights([p.tile for p in parts], pts)  # (n_tiles, n)
+        means, sigmas = _constituent_moments(parts, pts)
+        mean = (w * means).sum(axis=0)
+        sigma = (w * sigmas).sum(axis=0)  # coherence (corr=1) crossfade -> no dip
+        base = parts[0].distribution.provenance
+        prov = UncertaintyProvenance(
+            native_capability=base.native_capability,
+            transformations=[
+                *base.transformations,
+                blend_transform(
+                    k, residual_bound, structured_residual=structured_residual
+                ),
+            ],
+        )
+        grid = support if isinstance(support, GridSpec) else parts[0].distribution.grid
+        shape = grid.shape if isinstance(support, GridSpec) else (pts.shape[0],)
+        return BlendedDistribution(
+            grid=grid,
+            mean=mean.reshape(shape),
+            _variance=(sigma**2).reshape(shape),
+            provenance=prov,
+            fidelity=CovFidelity.BLENDED,
+            time_days=t,
+            _parts=parts,
+        )
