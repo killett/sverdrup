@@ -2,6 +2,19 @@
 
 ## Current work (index — do not duplicate task state here)
 
+- **Phase 2: tiling / blend / coherent uncertainty — ACTIVE (planned, not started).**
+  - Scope (source of truth): `phase2_scope_spec.md` (committed `fa93897`).
+  - Design doc: `docs/superpowers/specs/2026-06-23-phase2-tiling-blend-architecture-design.md`.
+  - Implementation plan: `docs/superpowers/plans/2026-06-23-phase2-tiling-blend.md`
+    (17 tasks, 0–16); tracker `.tasks.json` co-located, all `pending`.
+  - Two settled HOW-decisions: blend+sampler in `distributions/` (blend.py, coherent.py);
+    coherence = member-only `z_r` + global-cell diagonal noise behind a `StructuredNoiseSource`
+    swap seam (Option-2 spatial-square-root in reserve), basis-orientation residual recorded
+    distinct from the halo residual; smootherstep weights; km-based `HaloExtent`.
+  - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
+    conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
+    Both tagged `userGate`; revalidation hook is registered.
+  - **Next action:** start Task 0 (core geometry value objects) — `pixi run test -- tests/test_geometry.py -v`.
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
