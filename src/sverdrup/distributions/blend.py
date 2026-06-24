@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import cast
 
 import numpy as np
 
@@ -73,9 +74,9 @@ def _support_points(support: GridSpec | PointSet, time_days: float) -> Points:
     return support.points(time_days)
 
 
-def _nearest(grid: GridSpec, pts: Points, t: float) -> np.ndarray:
-    """Return the nearest grid-node index for each point in ``pts`` at time ``t``."""
-    nodes = grid.points(t)
+def _nearest(grid: GridSpec | PointSet, pts: Points, t: float) -> np.ndarray:
+    """Return the nearest support-node index for each point in ``pts`` at time ``t``."""
+    nodes = grid.points() if isinstance(grid, PointSet) else grid.points(t)
     return np.asarray(
         np.argmin(np.linalg.norm(pts[:, None, :2] - nodes[None, :, :2], axis=2), axis=1)
     )
@@ -98,7 +99,7 @@ def _constituent_moments(
 class BlendedDistribution:
     """A PredictiveDistribution on the union support: weight crossfade of constituents."""
 
-    grid: GridSpec
+    support: GridSpec | PointSet
     mean: Field
     _variance: Field
     provenance: UncertaintyProvenance
@@ -108,6 +109,16 @@ class BlendedDistribution:
     _noise: NoiseSpec | None = None
     _sampler: CoherentSampler = field(default_factory=CoherentSampler)
     _cov_batch: np.ndarray | None = None
+
+    @property
+    def grid(self) -> GridSpec:
+        """Return the GridSpec support (PredictiveDistribution contract; grid support only)."""
+        return cast(GridSpec, self.support)
+
+    @grid.setter
+    def grid(self, value: GridSpec) -> None:
+        """Set the support (keeps ``grid`` a settable variable per the Protocol)."""
+        self.support = value
 
     def marginal_variance(self) -> Field:
         """Return the coherence-correct (corr=1) marginal-variance field."""
@@ -141,7 +152,7 @@ class BlendedDistribution:
         node share a single realization instead of regenerating members per query.
         """
         if self._cov_batch is None or self._cov_batch.shape[0] != m:
-            pts = self.grid.points(self.time_days)
+            pts = _support_points(self.support, self.time_days)
             self._cov_batch = np.stack(
                 [self._coherent_member(int(i), pts) for i in range(m)]
             )
@@ -155,8 +166,8 @@ class BlendedDistribution:
         """
         m = 256
         s = self._grid_sample_batch(m)  # (m, n_grid)
-        ia = _nearest(self.grid, a, self.time_days)
-        ib = _nearest(self.grid, b, self.time_days)
+        ia = _nearest(self.support, a, self.time_days)
+        ib = _nearest(self.support, b, self.time_days)
         sa = s[:, ia]
         sb = s[:, ib]
         sa = sa - sa.mean(axis=0)
@@ -164,11 +175,17 @@ class BlendedDistribution:
         return np.asarray(sa.T @ sb / (m - 1))
 
     def sample(self, m: int, seed: Seed) -> np.ndarray:
-        """Return ``m`` coherent crossfaded field draws, shape ``(m, ny, nx)``."""
-        pts = self.grid.points(self.time_days)
+        """Return ``m`` coherent crossfaded draws.
+
+        Shape is ``(m, ny, nx)`` over a ``GridSpec`` support or ``(m, k)`` over a
+        ``PointSet`` support.
+        """
+        pts = _support_points(self.support, self.time_days)
         rng = np.random.default_rng(seed)
         members = rng.integers(0, 2**31 - 1, size=m)
         draws = np.stack([self._coherent_member(int(i), pts) for i in members])
+        if isinstance(self.support, PointSet):
+            return np.asarray(draws.reshape(m, pts.shape[0]))
         ny, nx = self.grid.shape
         return np.asarray(draws.reshape(m, ny, nx))
 
@@ -229,13 +246,12 @@ class BlendOperator:
                 ),
             ],
         )
-        grid = support if isinstance(support, GridSpec) else parts[0].distribution.grid
-        shape = grid.shape if isinstance(support, GridSpec) else (pts.shape[0],)
+        shape = support.shape if isinstance(support, GridSpec) else (pts.shape[0],)
         noise = NoiseSpec(
             method=method, params_key=params_key, lattice_step=lattice_step
         )
         return BlendedDistribution(
-            grid=grid,
+            support=support,
             mean=mean.reshape(shape),
             _variance=(sigma**2).reshape(shape),
             provenance=prov,

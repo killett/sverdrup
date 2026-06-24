@@ -64,7 +64,7 @@
     {
       "id": 9,
       "subject": "Task 9: Eval-point PersistedPoints + blend over PointSet",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "Shared-basis eval rows on-worker (never re-factor); PersistedPoints; blend over PointSet crossfades withheld points in overlaps.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/product.py\", \"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/application/solve.py\", \"tests/test_eval_point_blend.py\"], \"verifyCommand\": \"pixi run test -- tests/test_eval_point_blend.py -v\", \"acceptanceCriteria\": [\"EvalPointPredictions carries shared-basis factor+residual (back-compat defaults)\", \"Cov(eval,grid)=B_eval B_grid^T shared basis, not re-factored\", \"blend over PointSet crossfades eval points\", \"overlap withheld point mixes both tiles\"], \"modelTier\": \"complex\"}\n```"
     },

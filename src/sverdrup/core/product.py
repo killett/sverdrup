@@ -10,12 +10,19 @@ import numpy as np
 
 @dataclass(frozen=True)
 class EvalPointPredictions:
-    """Exact off-grid predictive at evaluation/withheld locations (computed on-worker)."""
+    """Exact off-grid predictive at evaluation/withheld locations (computed on-worker).
+
+    Phase-2 widens this with shared-basis structured rows (``factor``/``residual``) so a
+    withheld point can be blended in the gridded block's basis. Both default to ``None`` to
+    keep the Phase-1 contract back-compatible.
+    """
 
     locations: np.ndarray  # (k, 3) lon, lat, time
     mean: np.ndarray  # (k,)
     variance: np.ndarray  # (k,)
     samples: np.ndarray | None  # (m, k) for non-Gaussian reps, else None
+    factor: np.ndarray | None = None  # (k, r) rows in the gridded block's basis
+    residual: np.ndarray | None = None  # (k,)
 
 
 @dataclass(frozen=True)

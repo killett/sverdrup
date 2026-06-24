@@ -14,9 +14,11 @@ from sverdrup.core.product import EvalPointPredictions, PerTimeProduct, Product
 from sverdrup.core.provenance import ProductProvenance
 from sverdrup.derived.firstdifference import FirstDifference
 from sverdrup.distributions.persisted import (
+    GridBasis,
     PersistedDistribution,
     PersistedFields,
-    reduce_to_persisted,
+    eval_rows_in_grid_basis,
+    reduce_with_basis,
 )
 from sverdrup.methods.registry import METHODS
 
@@ -42,13 +44,13 @@ def solve_unit(uow: UnitOfWork) -> Product:
     per_time: list[PerTimeProduct] = []
     for t in uow.output_times:
         dist = method.solve(uow.obs, uow.grid, uow.params, t)  # operator live here
-        base_fields = _reduce(dist, uow)
+        base_fields, basis = _reduce(dist, uow)
         base = PersistedDistribution(uow.grid, base_fields, dist.provenance, t)
         derived = {
             name: _reduce_derived(_DERIVED[name](), dist, uow)
             for name in uow.derived_names
         }
-        eval_pts = _eval_points(dist, uow)
+        eval_pts = _eval_points(dist, uow, basis)
         prov = ProductProvenance(
             method=uow.method_name,
             params_key=uow.params.params_key(),
@@ -66,11 +68,15 @@ def solve_unit(uow: UnitOfWork) -> Product:
     )
 
 
-def _reduce(dist: object, uow: UnitOfWork) -> PersistedFields:
-    """Reduce a live distribution to Persisted fields (matrix-free for Gaussian)."""
+def _reduce(dist: object, uow: UnitOfWork) -> tuple[PersistedFields, GridBasis | None]:
+    """Reduce a live distribution to Persisted fields (matrix-free for Gaussian).
+
+    Returns the reduced fields and, for the Gaussian path, the ``GridBasis`` so eval-point
+    rows can be projected into the same basis. The ensemble path returns ``None`` (no basis).
+    """
     d = cast(Any, dist)
     if hasattr(dist, "cov_op"):  # Gaussian: matrix-free reduction of the exact operator
-        return reduce_to_persisted(
+        return reduce_with_basis(
             d.mean,
             d.cov_op,
             uow.grid.points(d.time_days),
@@ -80,7 +86,7 @@ def _reduce(dist: object, uow: UnitOfWork) -> PersistedFields:
     # Ensemble (Method 0): reduce empirically.
     flat = d.samples.reshape(d.samples.shape[0], -1)
     var = flat.var(axis=0, ddof=1)
-    return PersistedFields(
+    fields = PersistedFields(
         mean=d.samples.mean(axis=0),
         marginal_variance=var.reshape(uow.grid.shape),
         factor=np.zeros((flat.shape[1], 0)),
@@ -89,6 +95,7 @@ def _reduce(dist: object, uow: UnitOfWork) -> PersistedFields:
         seed=uow.seed,
         captured_energy=0.0,
     )
+    return fields, None
 
 
 def _reduce_derived(
@@ -113,8 +120,14 @@ def _reduce_derived(
     return PersistedDistribution(diff_grid, fields, d.provenance, d.time_days)
 
 
-def _eval_points(dist: object, uow: UnitOfWork) -> EvalPointPredictions | None:
-    """Compute exact (operator) eval-point predictions, or sample-based for ensembles."""
+def _eval_points(
+    dist: object, uow: UnitOfWork, basis: GridBasis | None
+) -> EvalPointPredictions | None:
+    """Compute exact (operator) eval-point predictions, or sample-based for ensembles.
+
+    For the Gaussian path the structured eval rows are projected into the gridded block's
+    ``basis`` (shared SVD basis), never re-factored, so withheld points blend consistently.
+    """
     if uow.eval_locations is None:
         return None
     locs = uow.eval_locations
@@ -122,7 +135,14 @@ def _eval_points(dist: object, uow: UnitOfWork) -> EvalPointPredictions | None:
     if hasattr(dist, "cov_op"):
         mean = d.cov_op.posterior_mean(locs)
         var = d.cov_op.marginal_var(locs)
-        return EvalPointPredictions(locs, mean, var, samples=None)
+        factor = residual = None
+        if basis is not None:
+            factor, residual = eval_rows_in_grid_basis(
+                d.cov_op, locs, uow.grid.points(d.time_days), basis
+            )
+        return EvalPointPredictions(
+            locs, mean, var, samples=None, factor=factor, residual=residual
+        )
     # Ensemble: sample-based eval-point predictive.
     s = _ensemble_at(dist, locs)
     return EvalPointPredictions(locs, s.mean(axis=0), s.var(axis=0, ddof=1), samples=s)
