@@ -103,7 +103,7 @@
     {
       "id": 15,
       "subject": "Task 15: Stage-A integration gate (CHECKPOINT)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [7, 8, 9, 12, 13, 14],
       "description": "USER-ORDERED GATE — NON-SKIPPABLE. Regional multi-tile blend through LocalCluster matches single-tile reference, no seam, conservative sigma, withheld eval OSSE+OSE, provenance, both exemplars, random holdout rejected, Task7+Task8 gates pass.\n\n```json:metadata\n{\"files\": [\"tests/test_phase2_stage_a.py\", \"src/sverdrup/application/pipeline.py\", \"src/sverdrup/application/tiling.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase2_stage_a.py -v\", \"acceptanceCriteria\": [\"multi-tile blended mean matches single-tile reference rel L2 <= 0.05 with no seam in mean or sigma\", \"blended sigma >= single-tile reference sigma everywhere\", \"coherent samples seam-free, no mid-overlap variance dip on integrated product\", \"withheld-point eval in overlaps fires OSSE (vs truth) and OSE (vs withheld c2) with finite accuracy+calibration scores\", \"provenance carries BlendTransform with CONSERVATIVE_HALO_RESIDUAL and BLENDED fidelity\", \"both withholding exemplars run and random_point holdout raises\", \"Task 7 + Task 8 gates pass on the integrated regional product\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-a\", \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"complex\"}\n```"
     },

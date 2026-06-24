@@ -196,6 +196,59 @@ class TilingCoordinator:
         Returns:
             A list of ``BlendedDistribution``, one per output time, over ``target``.
         """
+        products = self.gather(
+            target,
+            partition,
+            method,
+            params,
+            split,
+            seed,
+            output_times,
+            executor,
+            obs_for_tile=obs_for_tile,
+        )
+        return self.blend_grid(
+            products,
+            target,
+            output_times,
+            k=k,
+            method=method,
+            params_key=params.params_key(),
+        )
+
+    def gather(
+        self,
+        target: GridSpec,
+        partition: TilePartition,
+        method: str,
+        params: ParameterProvider,
+        split: object,
+        seed: int,
+        output_times: Sequence[float],
+        executor: Executor,
+        *,
+        obs_for_tile: Callable[[Tile], ObsWindow] | None = None,
+        eval_for_tile: Callable[[Tile], np.ndarray | None] | None = None,
+        derived_names: Sequence[str] | None = None,
+    ) -> list[tuple[Tile, Product]]:
+        """Emit one ``UnitOfWork`` per tile and gather the per-tile ``Product``s.
+
+        Args:
+            target: The full target grid.
+            partition: The partition producing overlapping tiles.
+            method: The method name for each unit.
+            params: The parameter provider.
+            split: The split object (its ``id`` is recorded; ``None`` -> "train").
+            seed: The run-level seed folded into each tile's derived seed.
+            output_times: The output times to solve.
+            executor: The scatter-gather port.
+            obs_for_tile: Optional callable windowing the obs over a tile.
+            eval_for_tile: Optional callable returning a tile's eval locations (or None).
+            derived_names: Optional derived-quantity names requested on each unit.
+
+        Returns:
+            A list of ``(tile, product)`` pairs, one per tile (one submit each).
+        """
         tiles = list(partition.tiles(target))
         products: list[tuple[Tile, Product]] = []
         for n, tile in enumerate(tiles):
@@ -209,8 +262,37 @@ class TilingCoordinator:
                 output_times=list(output_times),
                 obs=(obs_for_tile(tile) if obs_for_tile is not None else None),
                 grid=tile.grid,
+                eval_locations=(
+                    eval_for_tile(tile) if eval_for_tile is not None else None
+                ),
+                derived_names=list(derived_names) if derived_names else [],
             )
             products.append((tile, executor.submit(uow)))
+        return products
+
+    def blend_grid(
+        self,
+        products: list[tuple[Tile, Product]],
+        target: GridSpec,
+        output_times: Sequence[float],
+        *,
+        k: float = 3.0,
+        method: str = "oi",
+        params_key: str = "",
+    ) -> list[BlendedDistribution]:
+        """Blend the gathered per-tile bases over the target grid, one per output time.
+
+        Args:
+            products: The ``(tile, product)`` pairs from :meth:`gather`.
+            target: The full target grid to blend onto.
+            output_times: The output times (indexes the per-time series).
+            k: The halo multiple recorded in blend provenance.
+            method: The method identity for the driving-noise spec.
+            params_key: The resolved-parameter identity for the driving-noise spec.
+
+        Returns:
+            One ``BlendedDistribution`` per output time over ``target``.
+        """
         blended_by_time: list[BlendedDistribution] = []
         for ti, _t in enumerate(output_times):
             parts = [
@@ -218,11 +300,7 @@ class TilingCoordinator:
             ]
             blended_by_time.append(
                 self.blend_op.blend(
-                    parts,
-                    support=target,
-                    k=k,
-                    method=method,
-                    params_key=params.params_key(),
+                    parts, support=target, k=k, method=method, params_key=params_key
                 )
             )
         return blended_by_time
