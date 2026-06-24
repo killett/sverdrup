@@ -50,7 +50,7 @@
     {
       "id": 7,
       "subject": "Task 7: Cheap-vs-sample variance agreement (diagnostic gate)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "Analytic vs sampled marginal variance agree in overlap within MC tolerance; divergence escalates per spec section 8.\n\n```json:metadata\n{\"files\": [\"tests/test_blend_cheap_vs_sample.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_cheap_vs_sample.py -v\", \"acceptanceCriteria\": [\"cheap vs sampled variance agree in overlap (median rel <= 0.15 at m=512)\", \"divergence escalated per spec section 8, not loosened\"], \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"standard\"}\n```"
     },
