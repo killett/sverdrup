@@ -2,22 +2,18 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Phase 2: tiling / blend / coherent uncertainty — ACTIVE (planned, not started).**
+- **Phase 2: tiling / blend / coherent uncertainty — COMPLETE (all 17 tasks 0–16).**
   - Scope (source of truth): `phase2_scope_spec.md` (committed `fa93897`).
   - Design doc: `docs/superpowers/specs/2026-06-23-phase2-tiling-blend-architecture-design.md`.
   - Implementation plan: `docs/superpowers/plans/2026-06-23-phase2-tiling-blend.md`
-    (17 tasks, 0–16); tracker `.tasks.json` co-located, all `pending`.
-  - Two settled HOW-decisions: blend+sampler in `distributions/` (blend.py, coherent.py);
-    coherence = member-only `z_r` + global-cell diagonal noise behind a `StructuredNoiseSource`
-    swap seam (Option-2 spatial-square-root in reserve), basis-orientation residual recorded
-    distinct from the halo residual; smootherstep weights; km-based `HaloExtent`.
-  - **Gate:** Task 15 = Stage-A integration gate — **PASSED** (all 7 ACs proven; see commit
-    + AC evidence). `run_tiled_pipeline` built (deferred from Task 12). Stage B (Task 16,
-    global/opt-in) MAY now start. Both tagged `userGate`; revalidation hook registered.
-  - **Next action:** Task 16 = Stage B (USER GATE, opt-in/global). `ProjectionMixedPartition`,
-    `PersistedDistribution.regrid` (samples/cov, never variance-map), cross-CRS blend,
-    polar-void relax-to-prior, opt-in area-weighted global run (`SVERDRUP_GLOBAL_DATA=1`).
-    `pixi run test -- tests/test_phase2_stage_b.py -v`. (Tasks 0–15 done, committed.)
+    (17 tasks, 0–16); tracker `.tasks.json` co-located, all `completed`.
+  - **Both user gates PASSED with captured AC evidence:** Stage A (Task 15 — regional blend
+    == single-tile, no seam, conservative σ, withheld OSSE+OSE eval, provenance, both
+    withholding exemplars) and Stage B (Task 16 — projection-mixed partition, sample-based
+    `regrid`, cross-CRS blend, polar-void relax-to-prior, opt-in global skipped cleanly).
+  - **Key §8 resolution (see Cross-cutting decisions):** the structured coherent-sample
+    driver is the shared-overlap-basis (Löwdin) construction, NOT member-only `z_r`.
+  - Suite: 129 passed / 2 skipped (Stage-B global run + one pre-existing skip).
   - **DEFERRED to Task 15:** `run_tiled_pipeline` in `application/pipeline.py`. The plan's Task-12 Step 3 only implements `TilingCoordinator` (which IS done + tested) and says the pipeline wiring is "exercised in Task 15". The eval impedance — `_evaluate` reads `product.per_time[].base.fields.mean`, but the coordinator returns `BlendedDistribution`s — is resolved when Task 15's integration test defines the contract. Build `run_tiled_pipeline` there.
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).

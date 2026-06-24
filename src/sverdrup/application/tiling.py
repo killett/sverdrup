@@ -74,6 +74,81 @@ class ScaleAwareHalo:
         return HaloExtent(radius_km=max(self.k * float(np.max(cl)), stencil_radius_km))
 
 
+@dataclass(frozen=True)
+class ProjectionMixedPartition:
+    """Global partition: lon/lat tiles mid-latitude, polar-stereographic caps at the poles.
+
+    Makes no single-projection assumption — mid-latitude cores tile the geographic target
+    while the polar caps carry projected ``GridSpec``s so the poles are not distorted. The
+    blend matches constituents in lon/lat, so cross-CRS overlaps regrid onto the union support.
+
+    Attributes:
+        cap_lat: Absolute latitude above which the polar-stereographic caps take over.
+        n_lon: Number of mid-latitude core columns along longitude.
+        n_lat: Number of mid-latitude core rows along latitude.
+        halo_deg: Mid-latitude halo pad in degrees (caps use a fixed projected extent).
+        time_range: The time range carried on each ``Window``.
+    """
+
+    cap_lat: float
+    n_lon: int
+    n_lat: int
+    halo_deg: float = 3.0
+    time_range: tuple[float, float] = (0.0, 21.0)
+
+    def tiles(self, target: GridSpec) -> Sequence[Tile]:
+        """Return mid-latitude lon/lat tiles plus north and south polar-stereographic caps.
+
+        Args:
+            target: The global geographic target grid.
+
+        Returns:
+            The mixed-projection tiles covering ``target``.
+        """
+        out: list[Tile] = []
+        lon_edges = np.linspace(target.x.min(), target.x.max(), self.n_lon + 1)
+        lat_edges = np.linspace(-self.cap_lat, self.cap_lat, self.n_lat + 1)
+        for i in range(self.n_lon):
+            for j in range(self.n_lat):
+                core = Window(
+                    (lon_edges[i], lon_edges[i + 1]),
+                    (lat_edges[j], lat_edges[j + 1]),
+                    self.time_range,
+                )
+                ext = Window(
+                    (
+                        core.lon_range[0] - self.halo_deg,
+                        core.lon_range[1] + self.halo_deg,
+                    ),
+                    (
+                        core.lat_range[0] - self.halo_deg,
+                        core.lat_range[1] + self.halo_deg,
+                    ),
+                    self.time_range,
+                )
+                grid = target.window(lon_range=ext.lon_range, lat_range=ext.lat_range)
+                if grid.shape[0] > 0 and grid.shape[1] > 0:
+                    out.append(Tile(core, ext, grid))
+        # polar-stereographic caps (projected; not a single-projection assumption)
+        cap_extent_m = (90.0 - self.cap_lat) * _KM_PER_DEG_LAT * 1000.0
+        npix = max(2 * self.n_lon, 8)
+        xy = np.linspace(-cap_extent_m, cap_extent_m, npix)
+        for lat_lo, lat_hi in ((self.cap_lat, 90.0), (-90.0, -self.cap_lat)):
+            cap_grid = GridSpec.polar_stereographic(
+                xy, xy, lat_ts=self.cap_lat, lon0=0.0
+            )
+            core = Window(
+                (target.x.min(), target.x.max()), (lat_lo, lat_hi), self.time_range
+            )
+            ext = Window(
+                (target.x.min(), target.x.max()),
+                (lat_lo - self.halo_deg, lat_hi + self.halo_deg),
+                self.time_range,
+            )
+            out.append(Tile(core, ext, cap_grid))
+        return out
+
+
 @runtime_checkable
 class TilePartition(Protocol):
     """Splits a target grid into overlapping tiles."""

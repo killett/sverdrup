@@ -110,7 +110,7 @@
     {
       "id": 16,
       "subject": "Task 16: Stage B — global, projection-mixed (OPT-IN)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [15],
       "description": "USER-ORDERED GATE — NON-SKIPPABLE. Stage B only after Stage A passes. ProjectionMixedPartition; Persisted.regrid (samples/cov, never variance-map); cross-CRS blend; polar-void relaxes to prior; opt-in area-weighted global 2023a OSE run (SVERDRUP_GLOBAL_DATA=1).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/distributions/blend.py\", \"tests/test_phase2_stage_b.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase2_stage_b.py -v\", \"acceptanceCriteria\": [\"ProjectionMixedPartition yields polar-stereographic caps + lon/lat mid-lat tiles, no single-projection assumption\", \"PersistedDistribution.regrid via samples/cov preserves mean on round-trip, never interpolates the variance map\", \"BlendOperator blends constituents with differing CRS by regridding onto union support\", \"polar-void test: blended sigma relaxes to >= 0.9 x prior sigma in a real data void\", \"opt-in global 2023a OSE run computes area-weighted global metrics, skipped cleanly without data\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-b\", \"failurePolicy\": \"stop-and-escalate\", \"modelTier\": \"complex\"}\n```"
     }

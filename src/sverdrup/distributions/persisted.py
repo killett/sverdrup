@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NoReturn
 
 import numpy as np
 
@@ -191,11 +190,56 @@ class PersistedDistribution:
         ny, nx = self.grid.shape
         return np.asarray(self.fields.mean[None, :, :] + draws.reshape(m, ny, nx))
 
-    def regrid(self, target: GridSpec) -> NoReturn:
-        """Not implemented in Phase 1 (lands with the blend layer)."""
-        raise NotImplementedError(
-            "Persisted regrid lands with the blend layer (Phase 2)."
+    def regrid(self, target: GridSpec) -> PersistedDistribution:
+        """Re-express this distribution on ``target`` via samples (never the variance map).
+
+        Draws coherent member fields, interpolates each in lon/lat onto ``target`` (so a
+        cross-projection regrid works), and rebuilds a low-rank+diagonal Persisted from the
+        interpolated ensemble. The mean is interpolated directly (exact for affine means);
+        the variance is recomputed from the interpolated samples — the marginal-variance map
+        is never interpolated (invariant 4/7).
+
+        Args:
+            target: The grid to regrid onto (any CRS; matched in lon/lat).
+
+        Returns:
+            A ``PersistedDistribution`` on ``target``.
+        """
+        from scipy.interpolate import griddata  # type: ignore[import-untyped]
+
+        t = self.time_days
+        src = self.grid.points(t)[:, :2]
+        tgt = target.points(t)[:, :2]
+
+        def _interp(values: np.ndarray) -> np.ndarray:
+            lin = griddata(src, values, tgt, method="linear")
+            near = griddata(src, values, tgt, method="nearest")
+            return np.asarray(np.where(np.isfinite(lin), lin, near))
+
+        m = 128
+        samples = self.sample(m, self.fields.seed).reshape(m, -1)
+        mean_t = _interp(self.fields.mean.ravel())
+        ts = np.stack([_interp(samples[k]) for k in range(m)])  # (m, n_tgt)
+        cen = ts - ts.mean(axis=0)
+        var_t = cen.var(axis=0, ddof=1)
+        r = min(self.fields.rank, m - 1, tgt.shape[0])
+        if r > 0:
+            _, s, vt = np.linalg.svd(cen / np.sqrt(m - 1), full_matrices=False)
+            factor = vt[:r].T * s[:r]  # (n_tgt, r)
+        else:
+            factor = np.zeros((tgt.shape[0], 0))
+        residual = np.clip(var_t - np.sum(factor**2, axis=1), 0.0, None)
+        ny, nx = target.shape
+        fields = PersistedFields(
+            mean=mean_t.reshape(ny, nx),
+            marginal_variance=(np.sum(factor**2, axis=1) + residual).reshape(ny, nx),
+            factor=factor,
+            residual=residual,
+            rank=r,
+            seed=self.fields.seed,
+            captured_energy=1.0,
         )
+        return PersistedDistribution(target, fields, self.provenance, t)
 
 
 def _idx(grid: GridSpec, pts: Points, t: float) -> np.ndarray:
