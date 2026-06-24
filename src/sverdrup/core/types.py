@@ -27,6 +27,7 @@ class CovFidelity(Enum):
     EXACT = auto()
     LOW_RANK = auto()
     SAMPLE = auto()
+    BLENDED = auto()  # a blended product never beats its constituents' fidelity
 
 
 class Linearity(Enum):

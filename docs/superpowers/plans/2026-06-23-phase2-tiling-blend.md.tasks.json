@@ -10,7 +10,7 @@
     {
       "id": 1,
       "subject": "Task 1: Blend enum + provenance extensions",
-      "status": "pending",
+      "status": "completed",
       "description": "CovFidelity.BLENDED; TransformKind.BLEND; KnownBias.{CONSERVATIVE_HALO_RESIDUAL,STRUCTURED_BASIS_ORIENTATION}; blend_transform().\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/types.py\", \"src/sverdrup/core/provenance.py\", \"tests/test_blend_provenance.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_provenance.py -v\", \"acceptanceCriteria\": [\"CovFidelity.BLENDED distinct\", \"TransformKind.BLEND + two distinct KnownBias kinds\", \"blend_transform records conservative halo bias + k + distinct structured marker\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {

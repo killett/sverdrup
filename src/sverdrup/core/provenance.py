@@ -15,6 +15,7 @@ class TransformKind(Enum):
     DIAGONAL_INFLATION = auto()
     POSTERIOR_RECALIBRATED = auto()
     DERIVED = auto()
+    BLEND = auto()
 
 
 class KnownBias(Enum):
@@ -22,6 +23,8 @@ class KnownBias(Enum):
 
     NONE = auto()
     UNDER_DISPERSED_IN_VOIDS = auto()
+    CONSERVATIVE_HALO_RESIDUAL = auto()
+    STRUCTURED_BASIS_ORIENTATION = auto()
 
 
 @dataclass(frozen=True)
@@ -57,3 +60,28 @@ class ProductProvenance:
     code_version: str
     input_manifest: dict[str, object]
     uncertainty: UncertaintyProvenance
+
+
+def blend_transform(
+    k: float, residual_bound: float, *, structured_residual: bool
+) -> UncertaintyTransform:
+    """Build the BlendTransform recording the blend's conservative residual(s).
+
+    Args:
+        k: The halo multiple used (the finite-halo residual shrinks as k grows).
+        residual_bound: The recorded conservative bound on the finite-halo residual.
+        structured_residual: Whether the member-only ``z_r`` structured driver was used,
+            which introduces a distinct basis-orientation residual.
+
+    Returns:
+        An ``UncertaintyTransform`` of kind ``BLEND`` with the conservative halo bias and,
+        when ``structured_residual`` is set, a distinct structured-coherence marker.
+    """
+    params: dict[str, object] = {"k": k, "residual_bound": residual_bound}
+    if structured_residual:
+        params["structured_coherence"] = KnownBias.STRUCTURED_BASIS_ORIENTATION.name
+    return UncertaintyTransform(
+        kind=TransformKind.BLEND,
+        known_bias=KnownBias.CONSERVATIVE_HALO_RESIDUAL,
+        params=params,
+    )
