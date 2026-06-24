@@ -4,7 +4,7 @@
     {
       "id": 0,
       "subject": "Task 0: Core geometry value objects",
-      "status": "pending",
+      "status": "completed",
       "description": "Window/Tile/HaloExtent (core/geometry.py) + PointSet (core/grid.py), frozen, math-free.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/geometry.py\", \"src/sverdrup/core/grid.py\", \"tests/test_geometry.py\"], \"verifyCommand\": \"pixi run test -- tests/test_geometry.py -v\", \"acceptanceCriteria\": [\"Window/Tile/HaloExtent frozen and math-free\", \"HaloExtent carries radius_km not degree pads\", \"PointSet holds (k,3) points + crs\", \"Tile.grid is GridSpec; core/extended are Window\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
