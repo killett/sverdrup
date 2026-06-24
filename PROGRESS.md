@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 5 (blend general path — coherent-sample crossfade) — `pixi run test -- tests/test_blend_general_path.py -v`. (Tasks 0–4 done, committed.)
+  - **Next action:** Task 6 (FirstDifference composes on BlendedDistribution) — `pixi run test -- tests/test_blend_derived_composition.py -v`. (Tasks 0–5 done, committed.)
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);

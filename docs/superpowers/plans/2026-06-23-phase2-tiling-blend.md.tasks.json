@@ -36,7 +36,7 @@
     {
       "id": 5,
       "subject": "Task 5: Blend general path (coherent-sample crossfade)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 4],
       "description": "BlendedDistribution.sample()/covariance() via Sigma w_i X_i^m; NoiseSpec stored; samples seam-continuous.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/blend.py\", \"tests/test_blend_general_path.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_general_path.py -v\", \"acceptanceCriteria\": [\"blend stores NoiseSpec\", \"sample returns (m,ny,nx) coherent crossfade\", \"samples continuous across seam (no spike)\", \"covariance returns crossfaded sample covariance\"], \"modelTier\": \"standard\"}\n```"
     },
