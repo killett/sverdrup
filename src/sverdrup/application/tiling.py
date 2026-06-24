@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 import numpy as np
 
+from sverdrup.application.uow import UnitOfWork
 from sverdrup.core.geometry import HaloExtent, Tile, Window
 from sverdrup.core.grid import GridSpec
+from sverdrup.core.observations import ObsWindow
 from sverdrup.core.parameters import ParameterProvider
+from sverdrup.core.product import Product
+from sverdrup.core.seeding import derive_seed
+from sverdrup.distributions.blend import BlendedDistribution, BlendInput, BlendOperator
 
 _KM_PER_DEG_LAT = 111.195
 
@@ -134,3 +139,90 @@ class LonLatPartition:
                 grid = target.window(lon_range=ext.lon_range, lat_range=ext.lat_range)
                 out.append(Tile(core, ext, grid))
         return out
+
+
+@runtime_checkable
+class Executor(Protocol):
+    """The existing scatter-gather port: submit one unit, get its Persisted Product."""
+
+    def submit(self, uow: UnitOfWork) -> Product:
+        """Run one unit of work and return its Persisted ``Product``."""
+        ...
+
+
+class TilingCoordinator:
+    """Partition -> one UnitOfWork per tile via the existing Executor -> gather -> blend."""
+
+    def __init__(self, blend: BlendOperator | None = None) -> None:
+        """Store the blend operator (defaults to the standard partition-of-unity blend).
+
+        Args:
+            blend: The blend operator to combine gathered tile products.
+        """
+        self.blend_op = blend or BlendOperator()
+
+    def run(
+        self,
+        target: GridSpec,
+        partition: TilePartition,
+        method: str,
+        params: ParameterProvider,
+        split: object,
+        seed: int,
+        output_times: Sequence[float],
+        executor: Executor,
+        *,
+        obs_for_tile: Callable[[Tile], ObsWindow] | None = None,
+        k: float = 3.0,
+    ) -> list[BlendedDistribution]:
+        """Run the tiled solve and return one ``BlendedDistribution`` per output time.
+
+        Emits exactly one ``UnitOfWork`` per tile through the existing ``Executor`` port
+        (no re-granularization), gathers the per-tile ``Persisted`` bases, then blends them
+        over the full target grid per output time.
+
+        Args:
+            target: The full target grid the tiles cover.
+            partition: The partition producing overlapping tiles.
+            method: The method name for each unit.
+            params: The parameter provider (its ``params_key`` stamps each unit's seed).
+            split: The split object (its ``id`` is recorded; ``None`` -> "train").
+            seed: The run-level seed folded into each tile's derived seed.
+            output_times: The output times to solve and blend.
+            executor: The scatter-gather port submitting each unit.
+            obs_for_tile: Optional callable windowing the obs over a tile (None -> no obs).
+            k: The halo multiple recorded in blend provenance.
+
+        Returns:
+            A list of ``BlendedDistribution``, one per output time, over ``target``.
+        """
+        tiles = list(partition.tiles(target))
+        products: list[tuple[Tile, Product]] = []
+        for n, tile in enumerate(tiles):
+            wid = f"tile{n}"
+            uow = UnitOfWork(
+                window_id=wid,
+                method_name=method,
+                params=params,
+                split_id=getattr(split, "id", "train"),
+                seed=derive_seed(method, params.params_key(), f"{wid}:{seed}", 0),
+                output_times=list(output_times),
+                obs=(obs_for_tile(tile) if obs_for_tile is not None else None),
+                grid=tile.grid,
+            )
+            products.append((tile, executor.submit(uow)))
+        blended_by_time: list[BlendedDistribution] = []
+        for ti, _t in enumerate(output_times):
+            parts = [
+                BlendInput(prod.per_time[ti].base, tile) for tile, prod in products
+            ]
+            blended_by_time.append(
+                self.blend_op.blend(
+                    parts,
+                    support=target,
+                    k=k,
+                    method=method,
+                    params_key=params.params_key(),
+                )
+            )
+        return blended_by_time

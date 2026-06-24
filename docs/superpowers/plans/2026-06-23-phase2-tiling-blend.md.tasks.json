@@ -84,7 +84,7 @@
     {
       "id": 12,
       "subject": "Task 12: TilingCoordinator + run_tiled_pipeline",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 11],
       "description": "One UnitOfWork per tile via existing Executor; gather Persisted reps; blend over grid (+ eval PointSet); run_tiled_pipeline reuses Phase-1 prepare/evaluate.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"src/sverdrup/application/pipeline.py\", \"tests/test_tiling_coordinator.py\"], \"verifyCommand\": \"pixi run test -- tests/test_tiling_coordinator.py -v\", \"acceptanceCriteria\": [\"one submit per tile, no re-granularization\", \"gather -> blend over target per output time\", \"blended mean matches cheap-path crossfade\", \"run_tiled_pipeline reuses Phase-1 prepare/evaluate, no new ports\"], \"modelTier\": \"complex\"}\n```"
     },

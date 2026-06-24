@@ -21,7 +21,9 @@ class UnitOfWork:
     split_id: str
     seed: int
     output_times: list[float]
-    obs: ObsWindow
+    obs: (
+        ObsWindow | None
+    )  # None only for obs-less coordinator probes (tests); real solves set it
     grid: GridSpec
     eval_locations: np.ndarray | None = None
     derived_names: list[str] = field(default_factory=list)
