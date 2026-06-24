@@ -97,7 +97,7 @@
     {
       "id": 14,
       "subject": "Task 14: Area-weighted global aggregation",
-      "status": "pending",
+      "status": "completed",
       "description": "area_weighted_mean/rmse using GridSpec.cell_area(); weighted != unweighted under cos(lat).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/aggregate.py\", \"tests/test_aggregate.py\"], \"verifyCommand\": \"pixi run test -- tests/test_aggregate.py -v\", \"acceptanceCriteria\": [\"area_weighted_mean uses cell_area, matches hand value\", \"weighted differs from unweighted under cos(lat)\", \"area_weighted_rmse correct\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
