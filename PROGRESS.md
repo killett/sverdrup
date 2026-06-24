@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 11 (ScaleAwareHalo + LonLatPartition) — `pixi run test -- tests/test_tiling_partition.py -v`. (Tasks 0–10 done, committed.) Remaining: 11, 12, 13, 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
+  - **Next action:** Task 12 (TilingCoordinator + run_tiled_pipeline) — `pixi run test -- tests/test_tiling_coordinator.py -v`. (Tasks 0–11 done, committed.) Remaining: 12, 13, 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
@@ -117,6 +117,12 @@
 - NATL60 challenge has no observation error ⇒ `R` ≈ a nugget for the oracle.
 - `pyinterp` / `GPSat` are NOT installed; Method 1 needs none. `pixi add` any new dep.
 - BLAS/OpenMP env vars must be set per-worker *before* numpy/BLAS loads (Nanny child env).
+- **Phase-2 Task 11 deviation (verified):** `ScaleAwareHalo.halo_for` evaluates the
+  correlation length at the band's *equatorward-most* latitude (`clamp(0, lat_lo, lat_hi)`),
+  not at the band's lat nodes as the plan literal showed. The plan test asserts the halo for
+  band (-5,5) equals `k*800` (equator cl), which the node-based version (cl at ±5 ≈ 797)
+  would miss. Correlation length is monotone-decreasing in |lat|, so the widest over a band
+  is at min|lat| — this is the correct "widest over the core band".
 - **Phase-2 Task 6 deviation (verified):** `FirstDifference._diff_var` calls
   `dist.covariance(a,a/b,b/a,b)` node-by-node; the naive general-path covariance
   (regenerate 256 members per query point) made the composition test take 67s. Fix:
