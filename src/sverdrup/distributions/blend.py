@@ -11,6 +11,7 @@ from sverdrup.core.geometry import Tile
 from sverdrup.core.grid import GridSpec, PointSet
 from sverdrup.core.provenance import UncertaintyProvenance, blend_transform
 from sverdrup.core.types import CovFidelity, Field, Points, Seed
+from sverdrup.distributions.coherent import CoherentSampler, NoiseSpec
 from sverdrup.distributions.persisted import PersistedDistribution
 
 
@@ -104,18 +105,52 @@ class BlendedDistribution:
     fidelity: CovFidelity
     time_days: float
     _parts: list[BlendInput] = field(default_factory=list)
+    _noise: NoiseSpec | None = None
+    _sampler: CoherentSampler = field(default_factory=CoherentSampler)
 
     def marginal_variance(self) -> Field:
         """Return the coherence-correct (corr=1) marginal-variance field."""
         return self._variance
 
+    def _coherent_member(self, member_index: int, pts: Points) -> np.ndarray:
+        """Crossfade one coherent member across constituents at ``pts``."""
+        noise = self._noise
+        if noise is None:
+            raise RuntimeError("general path needs a NoiseSpec (set by BlendOperator)")
+        w = partition_weights([p.tile for p in self._parts], pts)
+        acc = np.zeros(pts.shape[0])
+        for wi, p in zip(w, self._parts, strict=True):
+            d = p.distribution
+            idx = _nearest(d.grid, pts, d.time_days)
+            xi = self._sampler.realize_one(
+                mean=d.fields.mean.ravel()[idx],
+                factor=d.fields.factor[idx],
+                residual=d.fields.residual[idx],
+                points=pts,
+                member_index=member_index,
+                noise_spec=noise,
+            )
+            acc = acc + wi * xi
+        return acc
+
     def covariance(self, a: Points, b: Points) -> np.ndarray:
-        """General-path covariance (added in Task 5)."""
-        raise NotImplementedError("covariance lands with the general path (Task 5).")
+        """Return the crossfaded sample covariance between ``a`` and ``b`` (general path)."""
+        m = 256
+        members = np.arange(m)
+        sa = np.stack([self._coherent_member(int(i), a) for i in members])
+        sb = np.stack([self._coherent_member(int(i), b) for i in members])
+        sa = sa - sa.mean(axis=0)
+        sb = sb - sb.mean(axis=0)
+        return np.asarray(sa.T @ sb / (m - 1))
 
     def sample(self, m: int, seed: Seed) -> np.ndarray:
-        """General-path coherent samples (added in Task 5)."""
-        raise NotImplementedError("sample lands with the general path (Task 5).")
+        """Return ``m`` coherent crossfaded field draws, shape ``(m, ny, nx)``."""
+        pts = self.grid.points(self.time_days)
+        rng = np.random.default_rng(seed)
+        members = rng.integers(0, 2**31 - 1, size=m)
+        draws = np.stack([self._coherent_member(int(i), pts) for i in members])
+        ny, nx = self.grid.shape
+        return np.asarray(draws.reshape(m, ny, nx))
 
     def regrid(self, target: GridSpec) -> BlendedDistribution:
         """Stage-B cross-projection regrid (Task 16)."""
@@ -133,11 +168,16 @@ class BlendOperator:
         k: float = 3.0,
         residual_bound: float = 0.0,
         structured_residual: bool = True,
+        lattice_step: float = 0.25,
+        method: str = "oi",
+        params_key: str = "",
     ) -> BlendedDistribution:
         """Blend constituent Persisted distributions into one on ``support``.
 
-        Cheap path only here: mean = sum w_i mean_i; sigma = sum w_i sigma_i (corr=1, so
-        the mid-overlap variance does not dip). Samples/covariance arrive in Task 5.
+        The mean and marginal variance follow the cheap moment crossfade
+        (mean = sum w_i mean_i; sigma = sum w_i sigma_i, corr=1 so the mid-overlap
+        variance does not dip). ``sample()``/``covariance()`` use the coherent-sample
+        crossfade driven by the stored ``NoiseSpec``.
 
         Args:
             parts: The constituent ``BlendInput``s (one per overlapping tile).
@@ -145,6 +185,9 @@ class BlendOperator:
             k: The halo multiple, recorded in provenance.
             residual_bound: Conservative finite-halo residual bound, recorded in provenance.
             structured_residual: Whether the member-only ``z_r`` driver is in use.
+            lattice_step: Degrees per global driving-noise cell (coherence lattice).
+            method: Method identity for the driving-noise seed derivation.
+            params_key: Resolved-parameter identity for the driving-noise seed derivation.
 
         Returns:
             A ``BlendedDistribution`` with crossfaded mean and coherence-correct variance.
@@ -168,6 +211,9 @@ class BlendOperator:
         )
         grid = support if isinstance(support, GridSpec) else parts[0].distribution.grid
         shape = grid.shape if isinstance(support, GridSpec) else (pts.shape[0],)
+        noise = NoiseSpec(
+            method=method, params_key=params_key, lattice_step=lattice_step
+        )
         return BlendedDistribution(
             grid=grid,
             mean=mean.reshape(shape),
@@ -176,4 +222,6 @@ class BlendOperator:
             fidelity=CovFidelity.BLENDED,
             time_days=t,
             _parts=parts,
+            _noise=noise,
+            _sampler=CoherentSampler(),
         )
