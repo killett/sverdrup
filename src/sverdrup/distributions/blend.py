@@ -12,8 +12,13 @@ from sverdrup.core.geometry import Tile
 from sverdrup.core.grid import GridSpec, PointSet
 from sverdrup.core.provenance import UncertaintyProvenance, blend_transform
 from sverdrup.core.types import CovFidelity, Field, Points, Seed
-from sverdrup.distributions.coherent import CoherentSampler, NoiseSpec
-from sverdrup.distributions.persisted import PersistedDistribution
+from sverdrup.distributions.coherent import (
+    CoherentSampler,
+    NoiseSpec,
+    coherent_structured_field,
+    diagonal_noise,
+)
+from sverdrup.distributions.persisted import PersistedDistribution, PersistedPoints
 
 
 def _smootherstep(t: np.ndarray) -> np.ndarray:
@@ -61,9 +66,9 @@ def partition_weights(tiles: Sequence[Tile], points: np.ndarray) -> np.ndarray:
 
 @dataclass
 class BlendInput:
-    """One constituent: a Persisted distribution plus its tile core/halo geometry."""
+    """One constituent: a Persisted distribution (grid or PointSet) plus its tile geometry."""
 
-    distribution: PersistedDistribution
+    distribution: PersistedDistribution | PersistedPoints
     tile: Tile
 
 
@@ -125,25 +130,35 @@ class BlendedDistribution:
         return self._variance
 
     def _coherent_member(self, member_index: int, pts: Points) -> np.ndarray:
-        """Crossfade one coherent member across constituents at ``pts``."""
+        """Realize one cross-tile-coherent member at ``pts`` (shared-overlap-basis driver).
+
+        The structured part is driven by ONE shared latent over a common orthonormal basis
+        spanning the union of the tile factors (so tiles agree at shared points — no
+        basis-orientation cancellation, no cross-seam derivative inflation); the diagonal
+        part is the coherent per-global-cell white noise. Both are scaled so the realized
+        field's marginal variance equals the cheap-path ``(Σ wᵢσᵢ)²`` exactly.
+        """
         noise = self._noise
         if noise is None:
             raise RuntimeError("general path needs a NoiseSpec (set by BlendOperator)")
-        w = partition_weights([p.tile for p in self._parts], pts)
-        acc = np.zeros(pts.shape[0])
-        for wi, p in zip(w, self._parts, strict=True):
+        parts = self._parts
+        w = partition_weights([p.tile for p in parts], pts)  # (T, n)
+        n = pts.shape[0]
+        means = np.zeros((len(parts), n))
+        sqd = np.zeros((len(parts), n))  # per-tile diagonal std √d
+        cols: list[np.ndarray] = []
+        for i, p in enumerate(parts):
             d = p.distribution
             idx = _nearest(d.grid, pts, d.time_days)
-            xi = self._sampler.realize_one(
-                mean=d.fields.mean.ravel()[idx],
-                factor=d.fields.factor[idx],
-                residual=d.fields.residual[idx],
-                points=pts,
-                member_index=member_index,
-                noise_spec=noise,
-            )
-            acc = acc + wi * xi
-        return acc
+            means[i] = d.fields.mean.ravel()[idx]
+            f_i = d.fields.factor[idx] * (w[i] > 0)[:, None]  # zero where not covering
+            cols.append(f_i)
+            sqd[i] = np.sqrt(d.fields.residual[idx])
+        mean_blend = (w * means).sum(axis=0)
+        diag_amp = (w * sqd).sum(axis=0)  # coherent diagonal std (corr=1)
+        struct_field = coherent_structured_field(cols, w, member_index, noise)
+        diag_field = diag_amp * diagonal_noise(pts, member_index, noise)
+        return np.asarray(mean_blend + struct_field + diag_field)
 
     def _grid_sample_batch(self, m: int = 256) -> np.ndarray:
         """Return a cached ``(m, n_grid)`` coherent-member matrix over the grid points.

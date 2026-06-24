@@ -11,10 +11,13 @@
     coherence = member-only `z_r` + global-cell diagonal noise behind a `StructuredNoiseSource`
     swap seam (Option-2 spatial-square-root in reserve), basis-orientation residual recorded
     distinct from the halo residual; smootherstep weights; km-based `HaloExtent`.
-  - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
-    conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
-    Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 15 = Stage-A integration gate (USER GATE, non-skippable). Build `run_tiled_pipeline` (deferred from Task 12) + `tests/test_phase2_stage_a.py`; run through real LocalCluster. `pixi run test -- tests/test_phase2_stage_a.py -v`. (Tasks 0–14 done, committed.) After 15 passes: Task 16 (Stage B opt-in, also a user gate).
+  - **Gate:** Task 15 = Stage-A integration gate — **PASSED** (all 7 ACs proven; see commit
+    + AC evidence). `run_tiled_pipeline` built (deferred from Task 12). Stage B (Task 16,
+    global/opt-in) MAY now start. Both tagged `userGate`; revalidation hook registered.
+  - **Next action:** Task 16 = Stage B (USER GATE, opt-in/global). `ProjectionMixedPartition`,
+    `PersistedDistribution.regrid` (samples/cov, never variance-map), cross-CRS blend,
+    polar-void relax-to-prior, opt-in area-weighted global run (`SVERDRUP_GLOBAL_DATA=1`).
+    `pixi run test -- tests/test_phase2_stage_b.py -v`. (Tasks 0–15 done, committed.)
   - **DEFERRED to Task 15:** `run_tiled_pipeline` in `application/pipeline.py`. The plan's Task-12 Step 3 only implements `TilingCoordinator` (which IS done + tested) and says the pipeline wiring is "exercised in Task 15". The eval impedance — `_evaluate` reads `product.per_time[].base.fields.mean`, but the coordinator returns `BlendedDistribution`s — is resolved when Task 15's integration test defines the contract. Build `run_tiled_pipeline` there.
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
@@ -90,6 +93,32 @@
 - **Kernel:** pinned to stationary **Matérn-3/2** (variance + spatial length + temporal
   scale), behind a `methods/kernel.py::Kernel` interface so it can go nonstationary later
   without touching `GPCovarianceOperator`.
+
+## Cross-cutting decisions (canonical — Phase 2)
+
+- **Coherent-sample structured driver = shared-overlap-basis (Löwdin), NOT member-only z_r.**
+  The design's default Option-1 (member-only `z_r` applied to each tile's own factor) was
+  escalated and rejected at the Stage-A gate (design §8). Diagnostics proved it was NOT a
+  sampler bug (diagonal exact; core/aligned ≈ MC floor) but a genuine, *large, k-independent*
+  basis-orientation residual: each tile builds an independent rank-20 randomized-SVD basis, so
+  the structured factors are ~orthogonal across tiles (structured ratio ≈ 0.39) and member-only
+  `z_r` makes them add as if independent → coherent samples underdispersed ~40–67% vs the
+  reported cheap-path variance, *growing* with k. Fix (`coherent_structured_field` in
+  `distributions/coherent.py`, used by `BlendedDistribution._coherent_member`): project every
+  tile factor into ONE common orthonormal basis `Q` (QR of the stacked factors over the
+  support), take the symmetric square root `Aᵢ=(QᵀFᵢ Fᵢᵀ Q)^½` to strip the SVD rotational
+  ambiguity, and drive `G=Σ wᵢ Q Aᵢ` with ONE shared member-seeded latent `g`. Result: cheap≈
+  sampled rel 0.45→0.03 and k-direction flipped growing→flat; cross-seam derivative recovers.
+  The reported marginal (`BlendOperator.blend`'s `(Σwσ)²`) is UNCHANGED (still conservative;
+  Task-3 cheap path untouched) — only the *sampler* changed. `MemberSeededZr`/`realize_one`
+  remain for single-tile use. If Stage B's larger overlaps degrade `Q` conditioning, the next
+  lever is the retained per-tile rank, NOT the driver (owner directive).
+- **`run_tiled_pipeline`** (`application/pipeline.py`) reuses Phase-1 `_prepare`/evaluators:
+  per-tile obs windowed to `extended_window`, eval locations windowed per tile, one submit per
+  tile via the existing `Executor`, grid blend + OSE eval-point `PointSet` blend, then the
+  Phase-1 `Registry`. OSSE scores the blended grid vs truth; OSE scores blended eval-point
+  predictives vs withheld CryoSat-2. `UnitOfWork.obs` relaxed to `ObsWindow | None` (None only
+  for obs-less coordinator probes in tests; real solves always set it).
 
 ## Gotchas
 

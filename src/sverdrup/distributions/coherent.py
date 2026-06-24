@@ -111,6 +111,54 @@ class MemberSeededZr:
         ]
 
 
+def coherent_structured_field(
+    factors: list[np.ndarray],
+    weights: np.ndarray,
+    member_index: int,
+    noise_spec: NoiseSpec,
+) -> np.ndarray:
+    """Return a cross-tile-coherent structured field over the support (shared-basis driver).
+
+    The shared-overlap-basis structured driver (design §5c, Option-2 realized). Each tile's
+    factor is projected into one common orthonormal basis ``Q`` (QR of the stacked factors),
+    symmetrically square-rooted there (``Aᵢ = (CᵢCᵢᵀ)^½``, ``Cᵢ = QᵀFᵢ``) to remove the
+    SVD rotational ambiguity, and the weighted sum ``G = Σ wᵢ Q Aᵢ`` is driven by ONE shared
+    member-seeded latent ``g``. Tiles therefore agree at shared points (no basis-orientation
+    cancellation, no cross-seam derivative inflation) and the field's structured covariance
+    is the weighted blend of the per-tile structured covariances — no per-point renormalization.
+
+    Args:
+        factors: Per-tile ``(n, rᵢ)`` factors at the support (rows zeroed where the tile
+            does not cover the point).
+        weights: ``(T, n)`` partition-of-unity weights.
+        member_index: The ensemble member index (seeds the shared latent only).
+        noise_spec: The global driving-noise spec (method/params identity for the seed).
+
+    Returns:
+        A length-``n`` coherent structured field (zeros if the stacked rank is 0).
+    """
+    n = weights.shape[1]
+    cat = np.hstack(factors) if factors else np.zeros((n, 0))
+    if cat.shape[1] == 0:
+        return np.zeros(n)
+    q, _ = np.linalg.qr(cat)  # (n, p) common orthonormal basis
+    p = q.shape[1]
+    g_sum = np.zeros((n, p))
+    for i, f_i in enumerate(factors):
+        if f_i.shape[1] == 0:
+            continue
+        c_i = q.T @ f_i  # (p, rᵢ)
+        k_i = c_i @ c_i.T  # (p, p) structured covariance in Q-space
+        evals, evecs = np.linalg.eigh(k_i)
+        a_i = (evecs * np.sqrt(np.clip(evals, 0.0, None))) @ evecs.T  # symmetric sqrt
+        g_sum += weights[i][:, None] * (q @ a_i)  # (n, p), aligned + weight-crossfaded
+    seed = derive_seed(
+        noise_spec.method, noise_spec.params_key, "structured-shared", member_index
+    )
+    g = np.random.default_rng(seed).standard_normal(p)
+    return np.asarray(g_sum @ g)
+
+
 class CoherentSampler:
     """Realizes coherent sample fields from Persisted reps + global driving noise."""
 
