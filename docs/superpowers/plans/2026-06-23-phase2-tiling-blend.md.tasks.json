@@ -91,7 +91,7 @@
     {
       "id": 13,
       "subject": "Task 13: Pluggable WithholdingStrategy + 2 exemplars",
-      "status": "pending",
+      "status": "completed",
       "description": "WithholdingStrategy protocol; LeaveOneMissionOut; PerMissionTemporalFraction with disjoint buffer-discard; random_point rejected; Split.buffer_discard_idx.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/withholding.py\", \"src/sverdrup/application/splits.py\", \"tests/test_withholding.py\"], \"verifyCommand\": \"pixi run test -- tests/test_withholding.py -v\", \"acceptanceCriteria\": [\"WithholdingStrategy protocol with 4-way assignment\", \"LeaveOneMissionOut withholds whole mission\", \"PerMissionTemporalFraction has disjoint buffer-discard\", \"random_point still rejected; Split.buffer_discard_idx back-compat\"], \"modelTier\": \"standard\"}\n```"
     },
     {

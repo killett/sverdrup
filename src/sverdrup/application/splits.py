@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -11,12 +11,20 @@ from sverdrup.core.observations import ObsWindow
 
 @dataclass(frozen=True)
 class Split:
-    """A train / validation / locked-test partition of observation indices."""
+    """A train / validation / locked-test partition of observation indices.
+
+    Attributes:
+        buffer_discard_idx: Indices severed between train and validation to break
+            autocorrelation (empty by default for Phase-1 back-compat).
+    """
 
     train_idx: np.ndarray
     validation_idx: np.ndarray
     locked_test_idx: np.ndarray
     id: str
+    buffer_discard_idx: np.ndarray = field(
+        default_factory=lambda: np.array([], dtype=int)
+    )
 
 
 def make_splits(
