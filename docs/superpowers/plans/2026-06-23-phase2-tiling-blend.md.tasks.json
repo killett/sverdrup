@@ -77,7 +77,7 @@
     {
       "id": 11,
       "subject": "Task 11: ScaleAwareHalo + LonLatPartition",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0, 10],
       "description": "km halos via correlation provider; lon/lat partition; tile grids are target.window sub-grids (co-registered overlap nodes).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tiling.py\", \"tests/test_tiling_partition.py\"], \"verifyCommand\": \"pixi run test -- tests/test_tiling_partition.py -v\", \"acceptanceCriteria\": [\"halo_km = max(k*corr_len, stencil), widest at equator\", \"extended contains core; cores tile target; overlaps non-empty\", \"tile grids are windows of target (co-registered nodes)\"], \"modelTier\": \"standard\"}\n```"
     },
