@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 10 (LatitudeVaryingProvider) — `pixi run test -- tests/test_latitude_varying_provider.py -v`. (Tasks 0–9 done, committed.) Tasks 7 & 8 PASSED (member-only z_r coherence holds). Remaining: 10, 11, 12, 13, 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
+  - **Next action:** Task 11 (ScaleAwareHalo + LonLatPartition) — `pixi run test -- tests/test_tiling_partition.py -v`. (Tasks 0–10 done, committed.) Remaining: 11, 12, 13, 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);

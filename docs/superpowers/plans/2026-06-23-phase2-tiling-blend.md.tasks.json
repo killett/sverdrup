@@ -71,7 +71,7 @@
     {
       "id": 10,
       "subject": "Task 10: LatitudeVaryingProvider",
-      "status": "pending",
+      "status": "completed",
       "description": "ParameterProvider resolving correlation_length as equator->pole field; constants pass through; stable key.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/parameters.py\", \"tests/test_latitude_varying_provider.py\"], \"verifyCommand\": \"pixi run test -- tests/test_latitude_varying_provider.py -v\", \"acceptanceCriteria\": [\"correlation_length field decreases equator->pole\", \"constants pass through as scalars\", \"params_key stable + encodes profile\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
