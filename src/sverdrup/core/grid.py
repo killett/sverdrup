@@ -133,6 +133,32 @@ class GridSpec:
         return GridSpec(self.x[col_mask], self.y[row_mask], self.crs)
 
 
+@dataclass(frozen=True)
+class PointSet:
+    """A bag of ``(k, 3)`` space-time points with a CRS — the non-grid blend support.
+
+    Attributes:
+        crs: The coordinate reference system of the points.
+    """
+
+    _points: np.ndarray
+    crs: pyproj.CRS
+
+    def __init__(self, points: np.ndarray, crs: pyproj.CRS) -> None:
+        """Store points and CRS (custom init keeps the public kwarg name ``points``).
+
+        Args:
+            points: ``(k, 3)`` space-time points ``(lon, lat, time)``.
+            crs: The coordinate reference system of the points.
+        """
+        object.__setattr__(self, "_points", np.asarray(points, float))
+        object.__setattr__(self, "crs", crs)
+
+    def points(self) -> np.ndarray:
+        """Return the ``(k, 3)`` space-time points ``(lon, lat, time)``."""
+        return self._points
+
+
 def _edge_widths(centers: np.ndarray) -> np.ndarray:
     """Per-node spacing from midpoints between neighbouring node centres.
 
