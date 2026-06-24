@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 1 (blend enum + provenance extensions) — `pixi run test -- tests/test_blend_provenance.py -v`. (Task 0 done, committed.)
+  - **Next action:** Task 2 (partition-of-unity smootherstep weights) — `pixi run test -- tests/test_blend_weights.py -v`. (Tasks 0–1 done, committed.)
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
   - Implementation plan: `docs/superpowers/plans/2026-06-21-sverdrup-pypi-release.md` (7 tasks);
