@@ -14,7 +14,7 @@
   - **Gate:** Task 15 = Stage-A integration gate (regional blend == single-tile, no seam,
     conservative σ). Stage B (Task 16, global/opt-in) MUST NOT start until Stage A passes.
     Both tagged `userGate`; revalidation hook is registered.
-  - **Next action:** Task 13 (pluggable WithholdingStrategy + 2 exemplars) — `pixi run test -- tests/test_withholding.py -v`. (Tasks 0–12 done, committed.) Remaining: 13, 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
+  - **Next action:** Task 14 (area-weighted global aggregation) — `pixi run test -- tests/test_aggregate.py -v`. (Tasks 0–13 done, committed.) Remaining: 14, then gate 15 (Stage A), then 16 (Stage B opt-in).
   - **DEFERRED to Task 15:** `run_tiled_pipeline` in `application/pipeline.py`. The plan's Task-12 Step 3 only implements `TilingCoordinator` (which IS done + tested) and says the pipeline wiring is "exercised in Task 15". The eval impedance — `_evaluate` reads `product.per_time[].base.fields.mean`, but the coordinator returns `BlendedDistribution`s — is resolved when Task 15's integration test defines the contract. Build `run_tiled_pipeline` there.
 - **Milestone: rename to `sverdrup` + PyPI release — COMPLETE (Tasks 1–7).**
   - Design doc: `docs/superpowers/specs/2026-06-21-sverdrup-pypi-release-design.md` (approved).
