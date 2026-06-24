@@ -30,7 +30,7 @@
     {
       "id": 4,
       "subject": "Task 4: Coherent sampler (z_r seam + global diagonal noise)",
-      "status": "pending",
+      "status": "completed",
       "description": "CoherentSampler; StructuredNoiseSource seam; MemberSeededZr (member-only); diagonal_noise per global cell x member; realize_one = mean + B z_r + sqrt(d) z_diag.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/test_coherent_sampler.py\"], \"verifyCommand\": \"pixi run test -- tests/test_coherent_sampler.py -v\", \"acceptanceCriteria\": [\"MemberSeededZr is tile-independent\", \"diagonal_noise coherent per global cell x member\", \"realize_one = mean + B z_r + sqrt(d) z_diag\"], \"modelTier\": \"standard\"}\n```"
     },
     {
