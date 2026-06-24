@@ -43,7 +43,7 @@
     {
       "id": 6,
       "subject": "Task 6: FirstDifference composes on BlendedDistribution",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "Composition pre-check: FirstDifference.apply(blended) yields finite mean+variance, no NotImplementedError.\n\n```json:metadata\n{\"files\": [\"tests/test_blend_derived_composition.py\", \"src/sverdrup/distributions/blend.py\"], \"verifyCommand\": \"pixi run test -- tests/test_blend_derived_composition.py -v\", \"acceptanceCriteria\": [\"FirstDifference.apply(blended) yields finite mean+variance\", \"no NotImplementedError on covariance reads\"], \"modelTier\": \"standard\"}\n```"
     },
