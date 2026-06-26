@@ -25,13 +25,24 @@
     realization (single forward sweep, values-not-seeds, transitive) — see spec §5.3.1
     (amendment) and the dedicated plan
     `docs/superpowers/plans/2026-06-25-phase3-task9-gmrf-kriging-sampler.md`.
-  - **Next action: implement Task-9 rework from that plan, starting 9a** (cross-cov columns
-    `(Q⁻¹)[:,S]` via per-shared-node back-solves on `GMRFFactor`/`PrecisionDistribution`),
-    then 9b (`GmrfKrigingSolve` driver + **Q-separator precondition assertion**), 9c (joint-cov
-    oracle + separator **negative control**), 9d (promoted gate: distinct-tiles-by-construction
-    + cross-seam derived-quantity parity). Standing rule: if the separator assertion / negative
-    control reds saying the *chain construction* is wrong (not the fixture), STOP and surface
-    before reaching for the documented pre-drawn-joint fallback.
+  - **Task-9 rework 9a–9c COMPLETE (committed); 9d IS THE NEXT ACTION.**
+    - 9a (`posterior_cov_columns` full `(Q⁻¹)[:,S]` via cached per-node back-solves on
+      `GMRFFactor`/`PrecisionDistribution`) — pinned vs dense oracle.
+    - 9b (`GmrfKrigingSolve` forward-sweep driver, values-not-seeds, **Q-separator assertion**
+      overlap ≥ `STENCIL_REACH=2`) — replaced the disproven `GmrfPrecisionSolve` (class removed)
+      under `sampler_spec="sparse-precision"`.
+    - 9c (joint-cov oracle `tests/unit/test_gmrf_kriging_oracle.py`): per-tile full-cov ==
+      exact posterior; cross-seam joint (incl. across-seam blocks) == global; 3-tile
+      transitivity; separator negative control. All EXACT by construction.
+  - **Next action: 9d — promoted Task-9 user-gate** (rewrite `tests/test_gmrf_blend.py` Stage-B
+    section): distinct-tiles-by-construction fixture (`nL,nR<nFull`, `Q_L≠Q_R`, region/halo so
+    `k≥2` can't collapse to identical); **cross-seam `firstdifference` variance parity** vs
+    single-tile reference (conservative direction) as the contracted assertion; pointwise
+    σ-upper-bound retained; member-correlation demoted to supporting check. Keep passing
+    OSSE+OSE / provenance / first-class tests. **This is the gate — spec-§8 escalation on
+    failure.** Standing rule: if the separator assertion / negative control reds saying the
+    *chain construction* is wrong (not the fixture), STOP and surface before reaching for the
+    documented pre-drawn-joint fallback.
   - **Working-tree state at this checkpoint (committed):** `pipeline._blend_eval_points` has the
     sparse-precision no-factor **moment-crossfade** OSE path + the `eval_point_cov` provenance
     marker (Task-9 §B6, keeper); `GmrfPrecisionSolve` carries a shape-bug fix but the whole class
@@ -304,6 +315,28 @@
   `distributions.coherent` (where it now lives) not `distributions.blend` — mypy's
   `--no-implicit-reexport` rejects the re-exported name. The plan literal said import from blend;
   importing from coherent is equivalent (same function) and the only change vs the plan text.
+
+- **Phase-3 Task-9b finding (load-bearing) — GMRF kriging sweep uses INDEPENDENT per-tile
+  white, NOT the shared-lattice `diagonal_noise`.** The kriging theorem requires each tile's
+  *unconditional* draw to be independent of the handed-forward target values. The old
+  native-shared-w mechanism shared white across tiles by global cell, which correlated each
+  tile's draw with the targets and **biased** the correction (spurious long-range correlation;
+  the per-tile-validity oracle caught it). `GmrfKrigingSolve._sweep` now seeds white per tile via
+  `derive_seed(method, params, f"gmrf-tile:{pos}", member)`. The single-tile coherent-member
+  tests assert against this per-tile white (NOT `diagonal_noise`). `diagonal_noise` is still used
+  by `LowRankSharedBasis` (OI), unchanged.
+- **Phase-3 Task-9c finding — negative-control fixture limitation (recorded so 9d/Phase-4 don't
+  re-derive it).** The separator assertion (`overlap ≥ reach=2`) is a STRUCTURAL *sufficient*
+  condition for joint exactness at all κ — correctly conservative. Demonstrating "1-col overlap →
+  wrong joint" with the exact-marginal fixture is regime-dependent: at well-conditioned κ (≈0.7)
+  a 1-col overlap is *benign* (short correlation ⇒ the distance-2 precision edge barely affects
+  the joint), and the long-correlation regime where it genuinely breaks makes the
+  `inv(Σ_global[tile,tile])` construction ill-conditioned (double-inverse of a near-singular Σ).
+  So `test_separator_negative_control` proves wrongness via the **weighted-blend seam-column
+  collapse** (a 1-col overlap leaves no room for the partition-of-unity crossfade → seam variance
+  collapses; joint Frobenius ≫ MC) **plus** the assertion firing — both real reasons the
+  `≥reach` policy holds. The positive joint-cov oracles (≥2-col) match global EXACTLY; the chain
+  construction is sound.
 
 ## Deferred items / open questions
 
