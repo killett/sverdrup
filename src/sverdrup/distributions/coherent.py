@@ -8,6 +8,7 @@ from typing import Any, Protocol, cast, runtime_checkable
 
 import numpy as np
 
+from sverdrup.core.geometry import Window
 from sverdrup.core.grid import GridSpec, PointSet
 from sverdrup.core.seeding import derive_seed
 from sverdrup.core.types import Field, Points
@@ -261,14 +262,83 @@ class LowRankSharedBasis:
         return np.asarray(mean_blend + struct + diag)
 
 
-class GmrfPrecisionSolve:
-    """GMRF driver: per-tile ``mean + L^-T w`` with a SHARED global ``w``; weight-crossfaded.
+# α=2 (κ²−Δ)² precision couples nodes within grid-distance 2; the handed-forward overlap
+# must be at least this thick (in the sweep direction) to Q-separate the interiors.
+STENCIL_REACH = 2
 
-    Native coherence: every tile is forced by the SAME global-lattice white noise
-    ``diagonal_noise`` over the support, so overlapping tiles agree wherever ``Q_i == Q_j``.
-    The only residual is the conservative ``Q_i != Q_j`` halo-agreement term (recorded in
-    provenance by the blend). No QR-basis trick.
+
+def _node_keys(points: Points, decimals: int = 6) -> list[tuple[float, float]]:
+    """Round (lon, lat) to stable tuple keys so coincident nodes across tiles match."""
+    r = np.round(points[:, :2], decimals)
+    return [(float(a), float(b)) for a, b in r]
+
+
+def _in_window(pt: np.ndarray, win: Window, eps: float = 1e-6) -> bool:
+    """Return whether ``pt`` (lon, lat) lies inside a geometry ``Window`` (inclusive)."""
+    lo_lon, hi_lon = win.lon_range
+    lo_lat, hi_lat = win.lat_range
+    return bool(
+        lo_lon - eps <= pt[0] <= hi_lon + eps and lo_lat - eps <= pt[1] <= hi_lat + eps
+    )
+
+
+class GmrfKrigingSolve:
+    """GMRF driver: conditioning-by-kriging toward ONE global realization (spec §5.3.1).
+
+    Per member, a single forward sweep over the tile chain (ordered by core lon) draws each
+    tile's unconditional exact posterior sample ``x_u = mean + L^-T w`` and krige-corrects it
+    toward the **values** already fixed on its overlap with the already-processed neighbour:
+
+        x_c = x_u + Σ_{:,S} (Σ_{S,S})^-1 (x_S − x_u|_S)
+
+    with ``Σ_{:,S}`` the full ``Q^-1`` columns for the shared nodes (back-solves on the tile
+    factor, exact). The corrected overlap with the NEXT tile is handed forward as fixed values
+    (NOT a shared seed — same seed through a different ``L^-T`` decorrelates), so tile k inherits
+    tile k-1's values which were conditioned on tile k-2: transitive by construction.
+
+    Validity is exact for a **tree-structured tile chain** (Phase-3 ``n_lon×1``) when each
+    handed-forward overlap Q-separates the processed/unprocessed interiors. That precondition
+    is ASSERTED (overlap ≥ ``STENCIL_REACH`` columns in the sweep direction), not assumed; a
+    2-D / FEM tiling needs the pre-drawn-joint or junction-tree variant (out of Phase-3 scope).
     """
+
+    def _sweep(
+        self,
+        parts: Sequence[Any],
+        time_days: float,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> list[np.ndarray]:
+        """Return each tile's kriging-corrected node-space field (parts order)."""
+        order = sorted(
+            range(len(parts)),
+            key=lambda i: sum(parts[i].tile.core_window.lon_range) / 2.0,
+        )
+        corrected: list[np.ndarray | None] = [None] * len(parts)
+        targets: dict[tuple[float, float], float] = {}
+        for pos, i in enumerate(order):
+            d = parts[i].distribution
+            gpts = _support_points(d.grid, time_days)
+            keys = _node_keys(gpts)
+            white = diagonal_noise(gpts, member_index, noise)
+            x_u = d.fields.mean.ravel() + d._factor_obj().sample(white)
+            s_idx = np.array([n for n, k in enumerate(keys) if k in targets], dtype=int)
+            if s_idx.size:
+                x_s = np.array([targets[keys[n]] for n in s_idx])
+                cols = d.posterior_cov_columns(s_idx)  # (n_i, |S|)
+                sigma_ss = cols[s_idx, :]  # (|S|, |S|)
+                x_c = x_u + cols @ np.linalg.solve(sigma_ss, x_s - x_u[s_idx])
+            else:
+                x_c = x_u
+            corrected[i] = x_c
+            targets = {}
+            if pos + 1 < len(order):
+                nxt_win = parts[order[pos + 1]].tile.extended_window
+                ov = [n for n, p in enumerate(gpts) if _in_window(p, nxt_win)]
+                _assert_separates(gpts, ov)
+                for n in ov:
+                    targets[keys[n]] = float(x_c[n])
+        return [np.asarray(c) for c in corrected]
 
     def crossfaded_member(
         self,
@@ -278,29 +348,46 @@ class GmrfPrecisionSolve:
         member_index: int,
         noise: NoiseSpec,
     ) -> np.ndarray:
-        """Realize one coherent member from per-tile native precision draws, shared-forced."""
+        """Realize one coherent member: forward-sweep kriging + weight-crossfade onto ``pts``."""
+        t = cast(Any, parts[0].distribution).time_days
+        corrected = self._sweep(parts, t, member_index, noise)
         n = pts.shape[0]
         out = np.zeros(n)
         for i, p in enumerate(parts):
             d = p.distribution
-            idx = _nearest(d.grid, pts, d.time_days)  # support point -> tile node
+            idx = _nearest(d.grid, pts, d.time_days)
             cover = weights[i] > 0
-            # White forcing evaluated on the TILE's OWN nodes, keyed by global lattice cell:
-            # two tiles whose nodes share a global cell see the same white value, so the
-            # native L^-T draws agree wherever the tiles' precisions agree (shared-w).
-            tile_white = diagonal_noise(
-                _support_points(d.grid, d.time_days), member_index, noise
-            )
-            node = d.fields.mean.ravel() + d._factor_obj().sample(tile_white)
             field_i = np.zeros(n)
-            field_i[cover] = node[idx[cover]]
+            field_i[cover] = corrected[i][idx[cover]]
             out += weights[i] * field_i
         return np.asarray(out)
 
 
+def _assert_separates(gpts: Points, ov_indices: list[int]) -> None:
+    """Raise unless the overlap strip is a Q-separator (≥ ``STENCIL_REACH`` lon columns).
+
+    The forward sweep is exact for the joint law only when the handed-forward overlap cuts the
+    Q graph between processed and unprocessed interiors. For the α=2 stencil (reach 2) that
+    needs ≥ 2 grid columns in the sweep (lon) direction; the ``k·corr_len`` halo policy
+    satisfies it comfortably. A red here means the chain construction / halo is wrong — surface
+    it, do not loosen (spec §5.3.1, Task-9 standing rule).
+    """
+    if not ov_indices:
+        raise AssertionError(
+            "no overlap between consecutive tiles — cannot separate / hand boundary forward"
+        )
+    cols = np.unique(np.round(gpts[np.asarray(ov_indices), 0], 6))
+    if cols.size < STENCIL_REACH:
+        raise AssertionError(
+            f"overlap strip {cols.size} column(s) < stencil reach {STENCIL_REACH}: "
+            "handed-forward boundary does not Q-separate processed/unprocessed interiors "
+            "(joint law would be wrong). Widen the halo (k·corr_len) so overlap ≥ reach."
+        )
+
+
 _DRIVERS: dict[str, type] = {
     "lowrank+diag": LowRankSharedBasis,
-    "sparse-precision": GmrfPrecisionSolve,
+    "sparse-precision": GmrfKrigingSolve,
 }
 
 
