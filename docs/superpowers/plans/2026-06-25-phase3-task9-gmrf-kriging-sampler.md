@@ -114,9 +114,24 @@ the driver docstring.
   conditioning above; replaces `GmrfPrecisionSolve` under `sampler_spec="sparse-precision"` in
   `_DRIVERS` (keep the old class importable only if a test references it — otherwise remove, it
   is the disproven mechanism). Spatial ordering + shared-node detection from tile geometry +
-  nearest-node value handoff.
+  nearest-node value handoff. **Separator precondition (asserted, not assumed):** the
+  handed-forward overlap strip must be a **graph-separator in `Q`** between the already-processed
+  interior and the not-yet-processed interior — otherwise the sweep is exact for the per-tile
+  *marginal* but **wrong for the joint law** (the "passes per-tile marginals, wrong joint" bug).
+  For the α=2 `(κ²−Δ)²` stencil the precision couples nodes within **grid-distance 2** (reach =
+  2), so the overlap must be **≥ 2 grid columns thick** in the sweep direction. The driver checks
+  it cheaply (no `Q` edge bridges from a pre-overlap-interior node to a post-overlap-interior node
+  / overlap strip width ≥ `stencil_reach`) and **fails loudly** if violated. **Halo-policy
+  confirmation:** `ScaleAwareHalo(k·corr_len)` with `corr_len`≈300 km on a ~111 km/1° grid gives
+  a halo of ≈2.7 nodes even at `k=1` (many stencil-widths at the policy default `k≥1`), so the
+  overlap comfortably separates — confirm this in the gate fixture and state the
+  `overlap ≥ stencil_reach` implication in the docstring.
 - **9c — validity oracle** `tests/unit/test_gmrf_kriging_oracle.py`: the three joint-covariance
-  checks in (2), on 2-tile and 3-tile dense-formable grids.
+  checks in (2), on 2-tile and 3-tile dense-formable grids, **plus a fourth — the separator
+  negative control:** a deliberately **too-narrow overlap (1 column, < reach)** must produce a
+  **wrong joint covariance** (cross-seam cov departs from the dense reference) and trip the 9b
+  separator assertion. This tests the **boundary of validity** — proving the separator property
+  is the real precondition, not folklore, rather than assuming "exact for a chain."
 - **9d — promoted Task-9 gate** (rewrite `tests/test_gmrf_blend.py` Stage-B section):
   distinct-tiles-by-construction fixture (`nL,nR<nFull`, `Q_L≠Q_R`, region/halo chosen so
   `k≥2` cannot collapse tiles to identical); **cross-seam `firstdifference` variance parity**
@@ -130,12 +145,32 @@ the driver docstring.
 **Verify (per task, TDD red→green):** `9a` unit oracle; `9c` joint oracle; full
 `tests/test_gmrf_blend.py`; `pixi run test -q` (no Phase-2 regression); `pixi run typecheck && lint`.
 
-## Open sub-question surfaced for the review (does not block the plan)
+## Resolved: sweep, with separation as a checked-and-bounded property (owner decision)
 
-The forward sweep conditions tile `i` only on its **already-processed** boundary (with tile
-`i−1`). Tile `i`'s draw on its overlap with tile `i+1` is then handed forward as the target for
-`i+1`. This is exact for a chain. If the owner later wants every tile conditioned on a *pre-drawn*
-global field on the **entire** union shared-node set (rather than swept), that is an alternative
-generator for `targets` (one auxiliary joint draw over the union strips) with the same downstream
-correction — heavier, and unnecessary for a chain. Plan assumes the sweep; flag if you want the
-pre-drawn variant instead.
+The forward sweep is exact for the **joint law** only when each handed-forward overlap is a
+**`Q`-separator** between the already-processed and not-yet-processed interiors (the Markov
+factorization a GMRF on a tree-structured tile chain provides *iff* the separator is a full cut).
+For a chain of tiles with halos sized by the existing policy (a multiple of the local correlation
+length — many stencil-widths for a Matérn field), the overlap separates comfortably, so the sweep
+is exact and far cheaper than the alternative. We keep the sweep, but convert "exact for a chain"
+from an **assumption** into a **checked-and-bounded property**: 9b asserts separation and fails
+loudly; 9c's negative control proves the joint law goes wrong exactly when separation is violated.
+Standing rule: if the separator assertion or the negative control reds in a way that says the
+**chain construction** is wrong (not the fixture), **stop and surface before** reaching for the
+pre-drawn variant.
+
+**The pre-drawn-joint variant — documented unconditional fallback (not built now).** Draw ONE
+auxiliary joint sample over the *entire* union of shared strips up front, hand every tile its
+overlap values from that single pre-drawn field; correctness then **does not depend on the
+overlaps being separators** — every tile conditions on values already mutually consistent by
+construction, regardless of `Q`'s cross-strip connectivity. Heavier (one joint draw over all
+strips). It is explicitly the variant a **2-D / FEM tiling needs** (see the Phase-4 note below):
+when the tile-adjacency graph stops being a chain (tiles meeting at corners and along multiple
+edges), single-pass sequential conditioning is no longer exact, and the pre-drawn-joint (or a
+junction-tree generalization) is required. Phase 3 inherits the known alternative rather than
+rediscovering it.
+
+**Phase-4 caveat (mirrored into `phase3_scope_spec.md §5.3.1`):** GMRF cross-tile coherence via
+the single-pass sweep is exact **only for tree-structured tile adjacency**; 2-D / FEM tilings
+require the pre-drawn-joint or junction-tree variant. Written down now so the conditionally-true
+property is not inherited as unconditionally true.
