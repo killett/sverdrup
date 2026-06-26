@@ -184,38 +184,72 @@ def _blend_eval_points(
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
     """Crossfade per-tile withheld eval-point predictives over the full eval ``PointSet``.
 
-    Returns ``(None, None)`` when there are no eval points (OSSE) or no tile produced
-    shared-basis eval rows. Non-covering tiles contribute zero weight, so each point mixes
-    only the tiles whose halo reaches it.
+    Low-rank (OI) constituents blend coherently in the shared basis. Sparse-precision (GMRF)
+    constituents have no low-rank eval factor, so they take the representation-agnostic moment
+    crossfade (exact per-tile variance from Takahashi; cross-eval-point covariance in overlaps
+    is not represented — recorded as a known simplification, not a hidden assumption). Returns
+    ``(None, None)`` when there are no eval points (OSSE) or no tile produced eval predictives.
     """
     if eval_locs is None:
         return None, None
-    parts: list[BlendInput] = []
+    from sverdrup.distributions.blend import partition_weights
+
+    tiles = [t for t, _ in products]
+    eps = [p.per_time[0].eval_points for _, p in products]
+    if all(ep is None for ep in eps):
+        return None, None
+    has_factor = any(ep is not None and ep.factor is not None for ep in eps)
+    if has_factor:
+        parts: list[BlendInput] = []
+        for tile, prod in products:
+            ep = prod.per_time[0].eval_points
+            if ep is None or ep.factor is None or ep.locations.shape[0] == 0:
+                continue
+            residual = (
+                ep.residual
+                if ep.residual is not None
+                else np.zeros(ep.locations.shape[0])
+            )
+            pp = PersistedPoints(
+                PointSet(ep.locations, grid.crs),
+                mean=ep.mean,
+                factor=ep.factor,
+                residual=residual,
+                provenance=prod.per_time[0].base.provenance,
+                time_days=inp.output_times[0],
+            )
+            parts.append(BlendInput(cast(PredictiveDistribution, pp), tile))
+        if not parts:
+            return None, None
+        eb = BlendOperator().blend(
+            parts,
+            support=PointSet(eval_locs, grid.crs),
+            method=inp.method_name,
+            params_key=params_key,
+        )
+        return eb.mean.ravel(), eb.marginal_variance().ravel()
+    # sparse-precision (or any factor-less) path: moment crossfade at the eval points
+    means, sigmas = [], []
     for tile, prod in products:
         ep = prod.per_time[0].eval_points
-        if ep is None or ep.factor is None or ep.locations.shape[0] == 0:
+        if ep is None or ep.locations.shape[0] == 0:
             continue
-        residual = (
-            ep.residual if ep.residual is not None else np.zeros(ep.locations.shape[0])
+        w = partition_weights([tile], eval_locs)[
+            0
+        ]  # (k,) coverage weight for this tile
+        idx = np.argmin(
+            np.linalg.norm(eval_locs[:, None, :2] - ep.locations[None, :, :2], axis=2),
+            axis=1,
         )
-        pp = PersistedPoints(
-            PointSet(ep.locations, grid.crs),
-            mean=ep.mean,
-            factor=ep.factor,
-            residual=residual,
-            provenance=prod.per_time[0].base.provenance,
-            time_days=inp.output_times[0],
-        )
-        parts.append(BlendInput(cast(PredictiveDistribution, pp), tile))
-    if not parts:
+        means.append(w * ep.mean[idx])
+        sigmas.append(w * np.sqrt(ep.variance[idx]))
+    if not means:
         return None, None
-    eb = BlendOperator().blend(
-        parts,
-        support=PointSet(eval_locs, grid.crs),
-        method=inp.method_name,
-        params_key=params_key,
-    )
-    return eb.mean.ravel(), eb.marginal_variance().ravel()
+    wsum = partition_weights(list(tiles), eval_locs).sum(axis=0)
+    safe = np.where(wsum > 0, wsum, 1.0)
+    mean = np.sum(means, axis=0) / safe
+    sigma = np.sum(sigmas, axis=0) / safe
+    return mean, sigma**2
 
 
 def _evaluate_blended(
@@ -253,6 +287,13 @@ def _evaluate_blended(
     scores["context_keys"] = {k.name for k in ctx.keys()}
     scores["fidelity"] = gb.fidelity.name
     scores["blend_transforms"] = [t.kind.name for t in gb.provenance.transformations]
+    # Record the GMRF eval-point moment-crossfade simplification (a flag, not a hidden
+    # assumption): cross-eval-point covariance in overlaps is not represented.
+    scores["eval_point_cov"] = (
+        "moment-crossfade; cross-eval-point covariance not represented"
+        if eval_mean is not None
+        else "n/a"
+    )
     return scores
 
 
