@@ -75,6 +75,11 @@ def test_single_tile_member_is_native_draw():
 
 
 def _gmrf_region_inputs(tmp_path_factory, mode="OSSE"):
+    # NOTE (numerical headroom): this tiny data-poor fixture's GMRF prior is near-degenerate —
+    # the oscillatory mode of the (κ²−Δ)² stencil on a small grid drives adjacent nodes to
+    # ~ −0.998 correlation (present IDENTICALLY in the single-tile reference, not a seam artifact).
+    # The joint-covariance gates compare blend-vs-reference structure, so they are robust to it;
+    # but if a joint check ever flakes, suspect this grid degeneracy FIRST, not the kriging sampler.
     from sverdrup.adapters.executor_dask import ExecutorConfig
     from sverdrup.adapters.odc.fixtures import FixtureSource
     from sverdrup.application.pipeline import PipelineInputs
