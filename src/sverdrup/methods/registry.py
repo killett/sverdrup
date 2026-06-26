@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from sverdrup.methods.gmrf import MaternGMRF
 from sverdrup.methods.oi import OptimalInterpolation
 from sverdrup.methods.trivial import TrivialInterpolation
 
-METHODS = {"oi": OptimalInterpolation, "trivial": TrivialInterpolation}
+METHODS = {
+    "oi": OptimalInterpolation,
+    "gmrf": MaternGMRF,
+    "trivial": TrivialInterpolation,
+}
