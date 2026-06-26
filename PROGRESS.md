@@ -225,6 +225,20 @@
   (which also snaps via `_idx`); fine for grid-node derived ops. The plan explicitly
   allowed this fast path (Task 6 Step 3).
 
+- **Phase-3 Task-5 deviation (verified) — sksparse 0.5.0 has a NEW scipy-style API.**
+  `pixi add scikit-sparse` installed **scikit-sparse 0.5.0**, a rewrite — NOT the classic
+  0.4.x `Factor` object the plan assumed. The plan's `cholesky(Q, ordering_method=..., mode=
+  "simplicial")` + `factor.L_D()`/`.P()`/`.solve_Lt()`/`.apply_Pt()` DO NOT EXIST. Real API:
+  `from sksparse.cholmod import cho_factor`; `cf = cho_factor(Q, order="amd", lower=True)`
+  returns a `CholeskyFactor` with `cf.L` (sparse lower, `L Lᵀ = Q[P][:,P]`, `is_ll=True` for
+  SPD), `cf.D`, `cf.perm` (the permutation P, factor is of the *permuted* matrix
+  `Q[perm][:,perm]`), `cf.solve(b)` solves `Q x = b` (perm internal), `cf.is_ll`.
+  `GMRFFactor` (`methods/gmrf_linalg.py`) wraps this: deterministic perm via `order="amd"`;
+  one lower `Lc` (`cf.L`, or `cf.L·√diag(D)` if a future matrix factors LDLᵀ) drives sample
+  (`spsolve_triangular(Lcᵀ, w)` then scatter `x[perm]=y`), Takahashi, and the back-map.
+  **Permutation back-map indexes by `perm` directly** (NOT `argsort(perm)` as the plan's snippet
+  did): original entry `(perm[k], perm[l])` carries permuted value `(k,l)`. Pinned correct by
+  the dense-Q⁻¹ oracle (diag + adjacent rtol 1e-9). Takahashi recursion math is verbatim plan.
 - **Phase-3 Task-2 deviation (verified):** widening `BlendInput.distribution` to the abstract
   `PredictiveDistribution` protocol (which declares only `grid`/`provenance`/`marginal_variance`/
   `covariance`/`sample`/`regrid`) means the duck-typed `.fields`/`.time_days` reads in `blend.py`
