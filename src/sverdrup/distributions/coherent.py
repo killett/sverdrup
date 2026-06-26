@@ -393,9 +393,47 @@ def _assert_separates(gpts: Points, ov_indices: list[int]) -> None:
         )
 
 
+class PerturbEnsembleDegradation:
+    """Degradation driver: per-tile INDEPENDENT members, weight-crossfaded (coherence lost).
+
+    Each tile is forced by a tile-distinct seed (sweep position x member), so members do NOT
+    agree across the seam — cross-tile coherence is deliberately not guaranteed. The blend
+    records ``DEGRADED_COHERENCE`` (the seam is flagged, not silent) and the crossfaded MEAN
+    stays continuous via the partition-of-unity weights. This is the OPPOSITE contract from
+    ``GmrfKrigingSolve``: it must not be held to the coherence bar.
+    """
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one member from per-tile INDEPENDENT draws, weight-crossfaded onto ``pts``."""
+        n = pts.shape[0]
+        out = np.zeros(n)
+        for i, p in enumerate(parts):
+            d = p.distribution
+            idx = _nearest(d.grid, pts, d.time_days)
+            cover = weights[i] > 0
+            mean_i = d.fields.mean.ravel()[idx]
+            sig_i = np.sqrt(d.fields.marginal_variance.ravel()[idx])
+            # tile-distinct seed -> independent member (coherence deliberately not shared)
+            seed = derive_seed(
+                noise.method, noise.params_key, f"degrade:tile{i}", member_index
+            )
+            z = np.random.default_rng(seed).standard_normal(n)
+            field_i = np.where(cover, mean_i + sig_i * z, 0.0)
+            out += weights[i] * field_i
+        return np.asarray(out)
+
+
 _DRIVERS: dict[str, type] = {
     "lowrank+diag": LowRankSharedBasis,
     "sparse-precision": GmrfKrigingSolve,
+    "perturb-ensemble": PerturbEnsembleDegradation,
 }
 
 
