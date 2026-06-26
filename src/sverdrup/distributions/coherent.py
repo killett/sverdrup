@@ -4,12 +4,28 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 import numpy as np
 
+from sverdrup.core.grid import GridSpec, PointSet
 from sverdrup.core.seeding import derive_seed
 from sverdrup.core.types import Field, Points
+
+
+def _support_points(support: GridSpec | PointSet, time_days: float) -> Points:
+    """Return ``(n, 3)`` points for either support kind."""
+    if isinstance(support, PointSet):
+        return support.points()
+    return support.points(time_days)
+
+
+def _nearest(grid: GridSpec | PointSet, pts: Points, t: float) -> np.ndarray:
+    """Return the nearest support-node index for each point in ``pts`` at time ``t``."""
+    nodes = grid.points() if isinstance(grid, PointSet) else grid.points(t)
+    return np.asarray(
+        np.argmin(np.linalg.norm(pts[:, None, :2] - nodes[None, :, :2], axis=2), axis=1)
+    )
 
 
 @dataclass(frozen=True)
@@ -198,3 +214,56 @@ class CoherentSampler:
         z_r = MemberSeededZr().draw_one(member_index, r, noise_spec)
         z_d = diagonal_noise(points, member_index, noise_spec)
         return np.asarray(mean + factor @ z_r + np.sqrt(residual) * z_d)
+
+
+@runtime_checkable
+class CoherentMemberDriver(Protocol):
+    """Relocated coherence seam: one cross-tile-coherent, weight-crossfaded realization."""
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one coherent member over ``pts`` from the constituents + global noise."""
+        ...
+
+
+class LowRankSharedBasis:
+    """OI driver: mean crossfade + shared-overlap-basis structured field + coherent diagonal."""
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one coherent member: mean blend + shared-basis struct + coherent diagonal."""
+        n = pts.shape[0]
+        means = np.zeros((len(parts), n))
+        sqd = np.zeros((len(parts), n))
+        cols: list[np.ndarray] = []
+        for i, p in enumerate(parts):
+            d = p.distribution
+            idx = _nearest(d.grid, pts, d.time_days)
+            means[i] = d.fields.mean.ravel()[idx]
+            cols.append(d.fields.factor[idx] * (weights[i] > 0)[:, None])
+            sqd[i] = np.sqrt(d.fields.residual[idx])
+        mean_blend = (weights * means).sum(axis=0)
+        diag_amp = (weights * sqd).sum(axis=0)
+        struct = coherent_structured_field(cols, weights, member_index, noise)
+        diag = diag_amp * diagonal_noise(pts, member_index, noise)
+        return np.asarray(mean_blend + struct + diag)
+
+
+_DRIVERS: dict[str, type] = {"lowrank+diag": LowRankSharedBasis}
+
+
+def select_driver(sampler_spec: str) -> CoherentMemberDriver:
+    """Pick the coherence driver by the persisted representation tag (never by method)."""
+    return cast(CoherentMemberDriver, _DRIVERS[sampler_spec]())
