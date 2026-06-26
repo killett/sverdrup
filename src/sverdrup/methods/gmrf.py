@@ -91,10 +91,15 @@ class MaternGMRF:
         time_days: float,
     ) -> GaussianPredictiveDistribution:
         """Solve the GMRF posterior over ``grid`` at ``time_days`` (temporal taper into R)."""
-        rng_km = float(params.resolve("range", grid))
+        rng_resolved = params.resolve("range", grid)
         tau = float(params.resolve("variance", grid))
         taper = float(params.resolve("temporal_taper_scale", grid))
-        kappa = kappa_from_range(rng_km)
+        if np.isscalar(rng_resolved) or np.asarray(rng_resolved).ndim == 0:
+            kappa: float | np.ndarray = kappa_from_range(float(rng_resolved))
+            range_repr: float | str = float(rng_resolved)
+        else:
+            kappa = kappa_from_range(np.asarray(rng_resolved))  # elementwise κ field
+            range_repr = "field(lat-varying)"
         q_prior = matern_precision(grid, kappa, tau)
 
         a_op = bilinear_weights(grid, obs.coords())  # (n_obs, n_nodes): grid -> obs
@@ -119,6 +124,8 @@ class MaternGMRF:
                         "(conservative). OI carries a full space-time kernel; GMRF "
                         "carries spatial cov + temporally-tapered likelihood.",
                         "temporal_taper_scale": taper,
+                        "range": range_repr,
+                        "kappa_range_mapping": "range = sqrt(8*nu)/kappa, nu=1",
                     },
                 )
             ],
