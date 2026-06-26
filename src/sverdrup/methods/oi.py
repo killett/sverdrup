@@ -18,6 +18,7 @@ class GPCovarianceOperator:
     """Exact GP posterior covariance via a cached Cholesky of ``K_dd + R``."""
 
     fidelity = CovFidelity.EXACT
+    representation = "lowrank+diag"
 
     def __init__(
         self,
