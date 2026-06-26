@@ -2,7 +2,17 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Phase 3: GMRF method + representation-agnostic generalization — IN PROGRESS.**
+- **Phase 3: GMRF method + representation-agnostic generalization — COMPLETE (all 11 tasks).**
+  - **Stage C COMPLETE (Tasks 10–11):** Task 10 `PerturbEnsembleDegradation` driver end-to-end
+    (per-tile independent members, weight-crossfaded; `EmpiricalReduction` retagged
+    `perturb-ensemble`; blend appends `degradation_transform`/`KnownBias.DEGRADED_COHERENCE`;
+    asserts the OPPOSITE contract — coherence loss recorded, mean continuous, sampler honestly
+    under-dispersed vs the conservative marginal, NOT held to the coherence bar). Task 11
+    nonstationary-κ GMRF (`MaternGMRF.solve` resolves `range` scalar OR field → elementwise κ
+    field → spatially-varying `Q`; `kappa_from_range`/`range_from_kappa` polymorphic;
+    κ↔range mapping recorded). Full suite **178 passed / 2 skipped**, typecheck + lint clean.
+  - All three user-gates PASSED (Task 3 Stage-A regression, Task 5 Takahashi-vs-oracle, Task 9
+    Stage-B kriging coherence). Plan `.tasks.json` all `completed`.
   - **Stage A COMPLETE (Tasks 1–3).** Three seams generalized OI-first under green:
     `ReductionStrategy` (`distributions/reduction.py`, selected by live-operator
     `representation`) + `CoherentMemberDriver` (`LowRankSharedBasis`, selected by persisted
@@ -36,9 +46,10 @@
     - 9c (joint-cov oracle `tests/unit/test_gmrf_kriging_oracle.py`): per-tile full-cov ==
       exact posterior; cross-seam joint (incl. across-seam blocks) == global; 3-tile
       transitivity; separator negative control. All EXACT by construction.
-  - **Next action: Stage C — Task 10** (`PerturbEnsembleDegradation` driver end-to-end, closes
-    a Phase-2 gap) then Task 11 (nonstationary-κ GMRF demonstration). Gated on owner sign-off
-    of the Task-9 user-gate above.
+  - **Next action: Phase 3 is DONE.** Phase 4 (autotune) is the next milestone (deferred,
+    scoped after Phase 3 runs — spec §6). Before Phase 4 build: the GMRF cross-tile sweep is
+    exact only for tree-structured tile adjacency; 2-D/FEM tilings need the pre-drawn-joint or
+    junction-tree variant (spec §5.3.1 Phase-4 caveat — do NOT inherit as unconditionally true).
   - **Working-tree state at this checkpoint (committed):** `pipeline._blend_eval_points` has the
     sparse-precision no-factor **moment-crossfade** OSE path + the `eval_point_cov` provenance
     marker (Task-9 §B6, keeper); `GmrfPrecisionSolve` carries a shape-bug fix but the whole class
