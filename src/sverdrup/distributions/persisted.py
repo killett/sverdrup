@@ -295,6 +295,20 @@ class PrecisionDistribution:
         """Return the stored exact marginal-variance field, shape ``(ny, nx)``."""
         return self.fields.marginal_variance
 
+    def posterior_cov_columns(self, shared_idx: np.ndarray) -> np.ndarray:
+        """Return the full ``(Q^-1)[:, shared_idx]`` columns for kriging conditioning.
+
+        Delegates to the cached factor (per-column back-solves, cached). Node space, not
+        projected to the output grid — the kriging driver works directly in node space.
+
+        Args:
+            shared_idx: 1-D array of node indices (original order).
+
+        Returns:
+            A dense ``(n_nodes, |shared_idx|)`` array of posterior covariance columns.
+        """
+        return np.asarray(self._factor_obj().posterior_cov_columns(shared_idx))
+
     def covariance(self, a: Points, b: Points) -> np.ndarray:
         """Return ``W_a Σ W_b^T`` from the cached factor's selective inverse."""
         from sverdrup.methods.gmrf_grid import bilinear_weights

@@ -71,6 +71,23 @@ def test_precision_distribution_marginal_var_exact():
     )
 
 
+def test_precision_distribution_posterior_cov_columns_delegate():
+    # Behavior: the distribution exposes the factor's full Q^-1 columns for kriging conditioning.
+    # Bug caught: the kriging driver would have no representation-level handle on cross-cov,
+    #   forcing it to reach past the persisted rep into a raw factor.
+    dist = _dist()
+    pts = _grid().points(2.0)
+    unit = GMRFPrecisionReduction().reduce(dist, pts, None, rank=20, seed=1)
+    pd = PrecisionDistribution(
+        _grid(), cast(PrecisionFields, unit.base_fields), dist.provenance, 2.0
+    )
+    shared = np.array([4, 17, 40])
+    cols = pd.posterior_cov_columns(shared)
+    q = pd.fields.precision
+    dense = np.linalg.inv(q.toarray())  # type: ignore[attr-defined]
+    np.testing.assert_allclose(cols, dense[:, shared], rtol=1e-9)
+
+
 def test_precision_distribution_eval_points_have_no_factor():
     # Behavior: off-grid eval predictions carry (mean, var), factor is None for GMRF.
     # Bug caught: forcing GMRF eval rows into the low-rank basis (representation leak).
