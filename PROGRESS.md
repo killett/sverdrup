@@ -2,6 +2,23 @@
 
 ## Current work (index — do not duplicate task state here)
 
+- **Phase 3: GMRF method + representation-agnostic generalization — PLANNED, ready to execute.**
+  - Scope (source of truth): `phase3_scope_spec.md` (settled; §5.1 now records the two
+    settled forks — scikit-sparse/CHOLMOD backend + temporal-taper-into-R conditioning — and
+    the forward-compat Projection abstraction).
+  - Design = the spec; Implementation plan: `docs/superpowers/plans/2026-06-25-phase3-gmrf-representation-generalization.md`
+    (11 tasks; tracker `.tasks.json` co-located, all `pending`).
+  - **Hard-gated sequencing:** Stage A (Tasks 1–3, generalize OI under green) → Stage B
+    (Tasks 4–9, add GMRF) → Stage C (Tasks 10–11). Three user-gates: Task 3 (Stage-A
+    regression, 129/2 must stay green — if OI changes, surface it, don't adjust tests),
+    Task 5 (Takahashi vs dense-Q⁻¹ oracle — red = math bug, not a tolerance loosen),
+    Task 9 (Stage-B GMRF blend validation — spec-§8 escalation on failure).
+  - **Key architecture decisions (canonical — see Cross-cutting decisions Phase 3):**
+    two-point dispatch split (reduction by live-operator representation pre-persistence;
+    coherence driver by persisted `sampler_spec` post-persistence); `to_persisted` is a
+    `ReductionStrategy` in `distributions/reduction.py`, NOT on the core Protocol
+    (invariant 1 + one-way dependency rule); GMRF read off the precision via a `Projection`
+    (grid=identity, off-grid=bilinear) so a later FEM phase needs only a new projection.
 - **Phase 2: tiling / blend / coherent uncertainty — COMPLETE (all 17 tasks 0–16).**
   - Scope (source of truth): `phase2_scope_spec.md` (committed `fa93897`).
   - Design doc: `docs/superpowers/specs/2026-06-23-phase2-tiling-blend-architecture-design.md`.
@@ -89,6 +106,49 @@
 - **Kernel:** pinned to stationary **Matérn-3/2** (variance + spatial length + temporal
   scale), behind a `methods/kernel.py::Kernel` interface so it can go nonstationary later
   without touching `GPCovarianceOperator`.
+
+## Cross-cutting decisions (canonical — Phase 3)
+
+- **Two-point dispatch split (load-bearing).** Reduction strategy is selected by the LIVE
+  operator's `representation` (pre-persistence): `select_reduction(dist)` in
+  `distributions/reduction.py` reads `getattr(dist.cov_op, "representation", "lowrank+diag")`
+  → `LowRankReduction` ("lowrank+diag") / `GMRFPrecisionReduction` ("sparse-precision"), or
+  `EmpiricalReduction` when there is no operator. The coherence driver is selected by the
+  PERSISTED `sampler_spec` (post-persistence): `select_driver(sampler_spec)` in `coherent.py`
+  → `LowRankSharedBasis` / `GmrfPrecisionSolve` / `PerturbEnsembleDegradation`. Never dispatch
+  on method identity.
+- **`to_persisted` is NOT on the core Protocol.** §5.4's illustrative on-`CovarianceOperator`
+  signature was self-inconsistent (it returns a `distributions/` type from `core/`, breaking
+  the one-way `application/→distributions/` rule, and modifies the Protocol, violating
+  invariant 1). Realized as the `ReductionStrategy` Protocol in `distributions/reduction.py`,
+  selected by representation. Operators carry a `representation` class attr only (not on the
+  Protocol). Spec §5 permits this ("signatures illustrative; correct where it differs").
+- **GMRF reads off the precision via a `Projection`.** Precision-node space and output-grid
+  space kept distinct even though they coincide on a regular grid. `mean→W·mean`,
+  `cov→W Σ Wᵀ` (Σ = selective-inverse entries in W's stencil, never dense). Grid block =
+  `GridIdentityProjection` (W=identity-on-nodes); off-grid = `BilinearProjection`; `A`
+  (grid→obs conditioning) is itself a projection into node space. A later FEM phase supplies
+  a new `Projection` + mesh-assembly only — precision rep, coherence driver, persistence, and
+  blend untouched. (Recorded in `phase3_scope_spec.md` §5.1.)
+- **GMRF time = temporal taper into R (not a temporal SPDE axis).** `Q_post = Q_prior +
+  AᵀR⁻¹A`; R per-obs variance inflated by `exp(|t_obs−t_out|/temporal_taper_scale)`; the
+  taper scale is a tunable in `parameter_space()` resolved via the provider. Conservative
+  diagonal-R approximation (under-uses temporal structure) recorded as a `known_bias`. The
+  OI-vs-GMRF asymmetry (OI = full space-time kernel; GMRF = spatial cov + tapered likelihood)
+  is deliberate and read into the Stage-B comparison.
+- **One sparse factor serves all three (invariant 6).** `GMRFFactor` (CHOLMOD simplicial)
+  serves `sample` (L⁻ᵀw), `solve` (posterior mean), and the hand-rolled Takahashi selective
+  inverse (`diag(Q⁻¹)` + adjacent entries on the L+Lᵀ pattern). Dense `Q⁻¹` exists ONLY as a
+  small-grid test oracle. Adjacency precondition (W's 4-node stencil + firstdifference's
+  adjacent-node cov inside the selective-inverse pattern) is asserted — guards a future wider
+  κ-stencil from silently breaking eval var / cancellation.
+- **GMRF eval-point OSE blend = moment crossfade.** GMRF has no low-rank eval factor; cross-
+  tile eval-point scoring uses `mean=Σwμ`, `var=(Σwσ)²` (exact per-tile var from Takahashi).
+  Cross-eval-point covariance in overlaps is NOT represented (not consumed by per-point OSE
+  accuracy/calibration) — recorded in provenance (`eval_point_cov` marker), a flag not a
+  hidden assumption. Full coherent eval-point GMRF sampling is out of Phase-3 scope.
+- **α = 2 (ν = 1)** fixed integer smoothness — the canonical `(κ²I−Δ)` 5-point stencil
+  squared. Continuous ν deferred to Phase 4.
 
 ## Cross-cutting decisions (canonical — Phase 2)
 
