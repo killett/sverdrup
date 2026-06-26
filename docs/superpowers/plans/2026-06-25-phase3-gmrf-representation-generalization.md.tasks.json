@@ -45,7 +45,7 @@
     {
       "id": 7,
       "subject": "Task 7: PrecisionFields + PrecisionDistribution + GMRFPrecisionReduction (genuine-first-class)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [6],
       "description": "**Goal:** Representation-tagged sparse-precision storable + distribution + GMRF reduction persisting Q+permutation+exact-var directly — no low-rank factor for GMRF anywhere.\n\n**Files:** Modify src/sverdrup/distributions/persisted.py, src/sverdrup/distributions/reduction.py; Test tests/unit/test_precision_distribution.py.\n\n**Acceptance Criteria:** PrecisionFields sparse-precision tag, no factor; PrecisionDistribution implements PredictiveDistribution; select_reduction routes sparse-precision operator to GMRFPrecisionReduction; genuine-first-class: no low-rank factor materialized for GMRF.\n\n**Verify:** pixi run test tests/unit/test_precision_distribution.py -v && pixi run test -q\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/distributions/reduction.py\", \"tests/unit/test_precision_distribution.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_precision_distribution.py -v && pixi run test -q\", \"acceptanceCriteria\": [\"PrecisionFields sparse-precision tag, no factor\", \"PrecisionDistribution implements PredictiveDistribution\", \"select_reduction routes sparse-precision to GMRFPrecisionReduction\", \"genuine-first-class: no low-rank factor for GMRF\"], \"modelTier\": \"standard\"}\n```"
     },

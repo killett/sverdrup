@@ -16,6 +16,8 @@ from sverdrup.derived.firstdifference import FirstDifference
 from sverdrup.distributions.persisted import (
     PersistedDistribution,
     PersistedFields,
+    PrecisionDistribution,
+    PrecisionFields,
 )
 from sverdrup.distributions.reduction import select_reduction
 from sverdrup.methods.registry import METHODS
@@ -50,7 +52,14 @@ def solve_unit(uow: UnitOfWork) -> Product:
             rank=uow.rank,
             seed=uow.seed,
         )
-        base = PersistedDistribution(uow.grid, unit.base_fields, dist.provenance, t)
+        base_fields = unit.base_fields
+        base: Any
+        # First-class dispatch by representation: GMRF persists sparse precision, never a
+        # low-rank factor, so it must wrap in a PrecisionDistribution (not PersistedDistribution).
+        if isinstance(base_fields, PrecisionFields):
+            base = PrecisionDistribution(uow.grid, base_fields, dist.provenance, t)
+        else:
+            base = PersistedDistribution(uow.grid, base_fields, dist.provenance, t)
         derived = {
             name: _reduce_derived(_DERIVED[name](), dist, uow)
             for name in uow.derived_names
