@@ -2,7 +2,14 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Phase 3: GMRF method + representation-agnostic generalization — PLANNED, ready to execute.**
+- **Phase 3: GMRF method + representation-agnostic generalization — IN PROGRESS.**
+  - **Stage A COMPLETE (Tasks 1–3).** Three seams generalized OI-first under green:
+    `ReductionStrategy` (`distributions/reduction.py`, selected by live-operator
+    `representation`) + `CoherentMemberDriver` (`LowRankSharedBasis`, selected by persisted
+    `sampler_spec`). Stage-A user-gate PASSED with captured AC evidence — Phase-2 subset
+    129/2 green and untouched (full suite 134/2 = 129 + 5 new Stage-A tests), typecheck/lint
+    clean, zero Phase-2 test files modified (diffed vs pre-Phase-3 baseline `793297e`).
+  - **Next action: Task 4** (Stage B) — GMRF grid topology, bilinear primitive, Projection seam.
   - Scope (source of truth): `phase3_scope_spec.md` (settled; §5.1 now records the two
     settled forks — scikit-sparse/CHOLMOD backend + temporal-taper-into-R conditioning — and
     the forward-compat Projection abstraction).
@@ -217,6 +224,17 @@
   instance). 67s → ~4s. Snapping is consistent with `PersistedDistribution.covariance`
   (which also snaps via `_idx`); fine for grid-node derived ops. The plan explicitly
   allowed this fast path (Task 6 Step 3).
+
+- **Phase-3 Task-2 deviation (verified):** widening `BlendInput.distribution` to the abstract
+  `PredictiveDistribution` protocol (which declares only `grid`/`provenance`/`marginal_variance`/
+  `covariance`/`sample`/`regrid`) means the duck-typed `.fields`/`.time_days` reads in `blend.py`
+  (`_constituent_moments`, `_coherent_member`, `BlendOperator.blend`) need `cast(Any, dist)` to
+  pass `mypy .`; the `PersistedPoints` eval-point constituent in `pipeline.py` is `cast(
+  PredictiveDistribution, pp)` at the `BlendInput(...)` call (it exposes the fields by duck
+  typing but isn't a structural match). The Stage-A seam test imports `_nearest` from
+  `distributions.coherent` (where it now lives) not `distributions.blend` — mypy's
+  `--no-implicit-reexport` rejects the re-exported name. The plan literal said import from blend;
+  importing from coherent is equivalent (same function) and the only change vs the plan text.
 
 ## Deferred items / open questions
 
