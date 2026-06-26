@@ -21,14 +21,20 @@ _DEG2KM = 111.195
 _NU = 1.0  # alpha = 2 in 2-D -> nu = alpha - d/2 = 1
 
 
-def kappa_from_range(range_km: float) -> float:
-    """Return κ for an empirical correlation range (km): ``range = sqrt(8ν)/κ`` (ν=1)."""
-    return float(np.sqrt(8.0 * _NU) / range_km)
+def kappa_from_range(range_km: float | np.ndarray) -> float | np.ndarray:
+    """Return κ for an empirical correlation range (km): ``range = sqrt(8ν)/κ`` (ν=1).
+
+    Polymorphic: a scalar returns a ``float`` (stationary path); a ``(ny, nx)`` range field
+    returns the elementwise κ field (nonstationary path; spatially-varying ``Q`` coefficients).
+    """
+    k = np.sqrt(8.0 * _NU) / np.asarray(range_km, dtype=float)
+    return float(k) if k.ndim == 0 else np.asarray(k)
 
 
-def range_from_kappa(kappa: float) -> float:
+def range_from_kappa(kappa: float | np.ndarray) -> float | np.ndarray:
     """Return the empirical correlation range (km) for κ (inverse of :func:`kappa_from_range`)."""
-    return float(np.sqrt(8.0 * _NU) / kappa)
+    r = np.sqrt(8.0 * _NU) / np.asarray(kappa, dtype=float)
+    return float(r) if r.ndim == 0 else np.asarray(r)
 
 
 def _node_spacing_km(grid: GridSpec) -> tuple[np.ndarray, np.ndarray]:

@@ -83,7 +83,7 @@
     {
       "id": 10,
       "subject": "Task 10: PerturbEnsembleDegradation driver end-to-end (close Phase-2 gap)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         9
       ],
