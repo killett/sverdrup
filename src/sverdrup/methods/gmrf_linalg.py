@@ -38,10 +38,40 @@ class GMRFFactor:
             d = np.asarray(sparse.csc_matrix(self._cf.D).diagonal())
             lc = (lc @ sparse.diags(np.sqrt(d))).tocsc()
         self._lc = lc
+        self._cov_cols: dict[int, np.ndarray] = {}
 
     def solve(self, b: np.ndarray) -> np.ndarray:
         """Return ``Q^-1 b`` via the cached factor (permutation handled internally)."""
         return np.asarray(self._cf.solve(np.asarray(b, float)))
+
+    def posterior_cov_columns(self, shared_idx: np.ndarray) -> np.ndarray:
+        """Return the FULL columns ``(Q^-1)[:, shared_idx]`` via per-node back-solves.
+
+        Each column ``z_j = Q^-1 e_j`` is a dense back-solve on the cached factor — these
+        are the long-range cross-covariances OUTSIDE the Takahashi/selective-inverse pattern
+        that the kriging correction conditions on (spec §5.3.1, Task-9a). Columns are cached
+        per node index so the per-member kriging apply reuses them across all ``M`` members.
+
+        Args:
+            shared_idx: 1-D array of node indices (original order) whose ``Q^-1`` columns
+                are wanted.
+
+        Returns:
+            A dense ``(n, |shared_idx|)`` array; column ``k`` is ``(Q^-1)[:, shared_idx[k]]``.
+        """
+        idx = np.asarray(shared_idx).ravel()
+        n = self._lc.shape[0]
+        out = np.empty((n, idx.size), float)
+        for k, j in enumerate(idx):
+            jj = int(j)
+            col = self._cov_cols.get(jj)
+            if col is None:
+                e = np.zeros(n)
+                e[jj] = 1.0
+                col = self.solve(e)
+                self._cov_cols[jj] = col
+            out[:, k] = col
+        return out
 
     def sample(self, w: np.ndarray) -> np.ndarray:
         """Return one zero-mean draw ``L^-T w`` (so ``Cov = Q^-1``), in original node order.

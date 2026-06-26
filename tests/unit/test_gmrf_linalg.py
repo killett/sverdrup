@@ -67,6 +67,36 @@ def test_sample_is_zero_mean_with_right_covariance():
     np.testing.assert_allclose(emp, np.diag(np.linalg.inv(q.toarray())), rtol=0.15)
 
 
+def test_posterior_cov_columns_match_dense_full_columns():
+    # Behavior: posterior_cov_columns(S) == the FULL columns (Q^-1)[:, S], not the
+    #   selective-inverse pattern. These off-pattern entries are what kriging conditions on.
+    # Bug caught: returning the Takahashi/selective-inverse block (sparse, pattern-only) would
+    #   zero out the long-range cross-cov entries the kriging correction needs -> wrong joint law.
+    _, q = _q()
+    fac = GMRFFactor(q)
+    shared = np.array([2, 5, 11])
+    cols = fac.posterior_cov_columns(shared)
+    dense = np.linalg.inv(q.toarray())
+    assert cols.shape == (q.shape[0], shared.size)
+    np.testing.assert_allclose(cols, dense[:, shared], rtol=1e-9)
+
+
+def test_posterior_cov_columns_off_pattern_entries_are_nonzero():
+    # Behavior: the returned columns carry genuine long-range entries OUTSIDE the L+L^T pattern.
+    # Bug caught: a selective-inverse-based shortcut that silently drops off-pattern coupling
+    #   (the exact defect that made the marginal-only checks pass on the broken sampler).
+    g, q = _q()
+    fac = GMRFFactor(q)
+    far = np.array(
+        [0]
+    )  # corner node; row 0 vs the opposite corner is off the sparse pattern
+    cols = fac.posterior_cov_columns(far)
+    opposite = q.shape[0] - 1
+    sinv = fac.selective_inverse()
+    assert sinv[opposite, 0] == 0.0  # off the selective-inverse pattern
+    assert abs(cols[opposite, 0]) > 0.0  # but present in the true full column
+
+
 def test_adjacency_precondition_holds_for_alpha2():
     # Behavior: every 5-point-adjacent pair lies inside the selective-inverse pattern.
     # Bug caught: a future wider kappa-stencil would silently break eval var / cancellation.
