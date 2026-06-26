@@ -225,6 +225,15 @@
   (which also snaps via `_idx`); fine for grid-node derived ops. The plan explicitly
   allowed this fast path (Task 6 Step 3).
 
+- **Phase-3 Task-7 addition (verified):** `solve_unit` (`application/solve.py`) now dispatches the
+  base distribution on `unit.base_fields` type — `PrecisionFields → PrecisionDistribution`, else
+  `PersistedDistribution`. The plan's Task-7 file list omitted solve.py, but widening
+  `ReducedUnit.base_fields` to `PersistedFields | PrecisionFields` forced it (and it is *required*
+  for genuine-first-class GMRF to flow through the executor into the Task-9 blend as a
+  `PrecisionDistribution`, not silently wrapped in `PersistedDistribution`). `PerTimeProduct.base`
+  is typed `Any`, so no product-type churn. `PrecisionDistribution._factor_obj` is annotated via a
+  `TYPE_CHECKING` import of `GMRFFactor` (ANN401 forbids `-> Any`); the runtime import stays lazy so
+  `persisted.py` does not hard-require sksparse.
 - **Phase-3 Task-5 deviation (verified) — sksparse 0.5.0 has a NEW scipy-style API.**
   `pixi add scikit-sparse` installed **scikit-sparse 0.5.0**, a rewrite — NOT the classic
   0.4.x `Factor` object the plan assumed. The plan's `cholesky(Q, ordering_method=..., mode=

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 from sverdrup.core.grid import GridSpec
-from sverdrup.distributions.persisted import reduce_with_basis
+from sverdrup.distributions.persisted import PersistedFields, reduce_with_basis
 from sverdrup.distributions.reduction import (
     EmpiricalReduction,
     LowRankReduction,
@@ -69,9 +71,10 @@ def test_lowrank_reduction_matches_reduce_with_basis():
     pts = g.points(0.0)
     unit = LowRankReduction().reduce(dist, pts, None, rank=6, seed=3)
     ref, _ = reduce_with_basis(dist.mean, dist.cov_op, pts, rank=6, seed=3)
-    np.testing.assert_array_equal(unit.base_fields.factor, ref.factor)
-    np.testing.assert_array_equal(unit.base_fields.residual, ref.residual)
-    assert unit.base_fields.sampler_spec == "lowrank+diag"
+    base = cast(PersistedFields, unit.base_fields)
+    np.testing.assert_array_equal(base.factor, ref.factor)
+    np.testing.assert_array_equal(base.residual, ref.residual)
+    assert base.sampler_spec == "lowrank+diag"
 
 
 def test_lowrank_reduction_builds_eval_rows_in_basis():

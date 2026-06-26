@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from sverdrup.methods.gmrf_linalg import GMRFFactor
 
 from sverdrup.core.distribution import CovarianceOperator
 from sverdrup.core.grid import GridSpec, PointSet
@@ -248,6 +252,72 @@ def _idx(grid: GridSpec, pts: Points, t: float) -> np.ndarray:
     return np.asarray(
         np.argmin(np.linalg.norm(pts[:, None, :2] - nodes[None, :, :2], axis=2), axis=1)
     )
+
+
+@dataclass(frozen=True)
+class PrecisionFields:
+    """Storable sufficient stats for a sparse-precision (GMRF) generator — first-class.
+
+    Deliberately has NO ``factor``/``residual``: the GMRF representation is never reduced
+    to low-rank. ``sampler_spec`` is the discriminator the coherence driver dispatches on.
+    """
+
+    mean: Field
+    precision: object  # scipy.sparse CSC posterior precision over the grid nodes
+    permutation: np.ndarray  # fill-reducing permutation (persisted with Q)
+    marginal_variance: Field  # exact, from selective inversion
+    seed: Seed
+    sampler_spec: str = "sparse-precision"
+
+
+@dataclass
+class PrecisionDistribution:
+    """A predictive distribution backed by persisted sparse precision (GMRF)."""
+
+    grid: GridSpec
+    fields: PrecisionFields
+    provenance: UncertaintyProvenance
+    time_days: float
+
+    def __post_init__(self) -> None:
+        """Cache a factor lazily on first sampling/cov use."""
+        self._factor: object | None = None
+
+    def _factor_obj(self) -> GMRFFactor:
+        """Return the cached ``GMRFFactor`` of the stored precision (built once)."""
+        from sverdrup.methods.gmrf_linalg import GMRFFactor
+
+        if self._factor is None:
+            self._factor = GMRFFactor(cast(Any, self.fields.precision))
+        return cast("GMRFFactor", self._factor)
+
+    def marginal_variance(self) -> Field:
+        """Return the stored exact marginal-variance field, shape ``(ny, nx)``."""
+        return self.fields.marginal_variance
+
+    def covariance(self, a: Points, b: Points) -> np.ndarray:
+        """Return ``W_a Σ W_b^T`` from the cached factor's selective inverse."""
+        from sverdrup.methods.gmrf_grid import bilinear_weights
+
+        sinv = self._factor_obj().selective_inverse()
+        wa = bilinear_weights(self.grid, a)
+        wb = bilinear_weights(self.grid, b)
+        return np.asarray((wa @ sinv @ wb.T).toarray())
+
+    def sample(self, m: int, seed: Seed) -> np.ndarray:
+        """Return ``m`` field draws ``mean + L^-T w``, shape ``(m, ny, nx)``."""
+        rng = np.random.default_rng(seed)
+        fac = self._factor_obj()
+        n = cast(Any, self.fields.precision).shape[0]
+        draws = np.stack([fac.sample(rng.standard_normal(n)) for _ in range(m)])
+        ny, nx = self.grid.shape
+        return np.asarray(self.fields.mean[None, :, :] + draws.reshape(m, ny, nx))
+
+    def regrid(self, target: GridSpec) -> PrecisionDistribution:
+        """Re-express on ``target`` via samples (never the variance map)."""
+        raise NotImplementedError(
+            "GMRF regrid lands only if a cross-CRS GMRF blend is needed."
+        )
 
 
 @dataclass

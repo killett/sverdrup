@@ -15,6 +15,7 @@ import numpy as np
 from sverdrup.core.product import EvalPointPredictions
 from sverdrup.distributions.persisted import (
     PersistedFields,
+    PrecisionFields,
     eval_rows_in_grid_basis,
     reduce_with_basis,
 )
@@ -24,7 +25,7 @@ from sverdrup.distributions.persisted import (
 class ReducedUnit:
     """Everything extracted before the live operator goes out of scope."""
 
-    base_fields: PersistedFields
+    base_fields: PersistedFields | PrecisionFields
     eval_points: EvalPointPredictions | None
 
 
@@ -123,7 +124,44 @@ class EmpiricalReduction:
         )
 
 
-_REDUCTIONS: dict[str, type] = {"lowrank+diag": LowRankReduction}
+class GMRFPrecisionReduction:
+    """GMRF reduction: persist Q + permutation + exact var directly; NO low-rank factor."""
+
+    def reduce(
+        self,
+        dist: object,
+        grid_points: np.ndarray,
+        eval_points: np.ndarray | None,
+        *,
+        rank: int,
+        seed: int,
+    ) -> ReducedUnit:
+        """Persist the sparse precision + permutation + exact var (no factor materialized)."""
+        from sverdrup.distributions.persisted import PrecisionFields
+        from sverdrup.methods.gmrf_grid import bilinear_weights
+
+        d = cast(Any, dist)
+        op = d.cov_op
+        base = PrecisionFields(
+            mean=d.mean,
+            precision=op.q_post,
+            permutation=op._factor.permutation,
+            marginal_variance=op.marginal_var(grid_points).reshape(d.grid.shape),
+            seed=seed,
+        )
+        if eval_points is None:
+            return ReducedUnit(base, None)
+        mean = np.asarray(bilinear_weights(d.grid, eval_points) @ d.mean.ravel())
+        var = op.marginal_var(eval_points)
+        return ReducedUnit(
+            base, EvalPointPredictions(eval_points, mean, var, samples=None)
+        )
+
+
+_REDUCTIONS: dict[str, type] = {
+    "lowrank+diag": LowRankReduction,
+    "sparse-precision": GMRFPrecisionReduction,
+}
 
 
 def select_reduction(dist: object) -> ReductionStrategy:
