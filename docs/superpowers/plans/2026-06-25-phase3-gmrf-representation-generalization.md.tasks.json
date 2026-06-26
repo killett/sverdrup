@@ -52,7 +52,7 @@
     {
       "id": 8,
       "subject": "Task 8: GmrfPrecisionSolve coherent driver (native shared-w)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [7],
       "description": "**Goal:** GmrfPrecisionSolve CoherentMemberDriver — per tile mean + L⁻ᵀw with w the shared global-lattice diagonal_noise field, weight-crossfaded; no QR trick. Register under sampler_spec \"sparse-precision\".\n\n**Files:** Modify src/sverdrup/distributions/coherent.py; Test tests/test_gmrf_blend.py (driver section).\n\n**Acceptance Criteria:** select_driver sparse-precision returns GmrfPrecisionSolve; single-tile member == mean + L⁻ᵀw (native shared diagonal_noise); overlapping identical-Q tiles agree on shared nodes; crossfade stays representation-agnostic.\n\n**Verify:** pixi run test tests/test_gmrf_blend.py -v -k driver && pixi run test -q\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/test_gmrf_blend.py\"], \"verifyCommand\": \"pixi run test tests/test_gmrf_blend.py -v -k driver && pixi run test -q\", \"acceptanceCriteria\": [\"select_driver sparse-precision returns GmrfPrecisionSolve\", \"single-tile member == mean + L^-T w (native shared diagonal_noise)\", \"overlapping identical-Q tiles agree on shared nodes\", \"crossfade stays representation-agnostic\"], \"modelTier\": \"complex\"}\n```"
     },
