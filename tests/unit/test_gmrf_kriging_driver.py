@@ -18,11 +18,11 @@ from sverdrup.core.geometry import Tile, Window  # noqa: E402
 from sverdrup.core.grid import GridSpec  # noqa: E402
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow  # noqa: E402
 from sverdrup.core.parameters import ConstantProvider  # noqa: E402
+from sverdrup.core.seeding import derive_seed  # noqa: E402
 from sverdrup.distributions.blend import BlendInput, partition_weights  # noqa: E402
 from sverdrup.distributions.coherent import (  # noqa: E402
     GmrfKrigingSolve,
     NoiseSpec,
-    diagonal_noise,
 )
 from sverdrup.distributions.persisted import (  # noqa: E402
     PrecisionDistribution,
@@ -76,7 +76,8 @@ def test_single_tile_reduces_to_native_draw():
     got = GmrfKrigingSolve().crossfaded_member(
         [BlendInput(pd, tile)], pts, w, 4, _NOISE
     )
-    white = diagonal_noise(pts, 4, _NOISE)
+    seed = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:0", 4)
+    white = np.random.default_rng(seed).standard_normal(pts.shape[0])
     expected = pd.fields.mean.ravel() + pd._factor_obj().sample(white)
     np.testing.assert_allclose(got, expected, rtol=1e-9)
 
