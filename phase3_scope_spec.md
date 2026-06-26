@@ -172,6 +172,20 @@ where `Σ_shared`, `Σ_cross` are blocks of the tile posterior covariance (read 
 - **Conservative marginal direction:** reported `σ ≥ sampled σ` pointwise (retained; necessary, not sufficient).
 - **Validity oracle:** corrected draws equal exact posterior samples vs a dense reference on a small grid.
 
+**Validity is bounded by a separator precondition (checked, not assumed).** The single-pass
+forward sweep is exact for the **joint law** only when each handed-forward overlap is a
+`Q`-**graph-separator** between the already-processed and not-yet-processed interiors; for the α=2
+`(κ²−Δ)²` stencil (reach 2) that means the overlap must be **≥ 2 grid columns thick**, which the
+`k·corr_len` halo policy satisfies comfortably (`k≥1` ⇒ many stencil-widths). The driver
+**asserts** this and fails loudly; the oracle includes a **negative control** (a too-narrow
+overlap must produce a wrong joint covariance), so the boundary of validity is tested, not folklore.
+**Phase-4 caveat:** the single-pass sweep is exact **only for tree-structured tile adjacency**
+(the Phase-3 `n_lon×1` chain). A 2-D / FEM tiling — tiles meeting at corners and along multiple
+edges — is **not** a chain, single-pass sequential conditioning is no longer exact, and the
+**pre-drawn-joint-realization** (one auxiliary joint draw over the union of all shared strips,
+handed to every tile) or a junction-tree generalization is required. Recorded now so the
+conditionally-true property is not inherited by Phase 4 as unconditionally true.
+
 **Scope honesty.** This is the **most invasive addition since Phase 2**: sampling becomes **cross-tile-coupled** — a tile's draw now depends on a shared realization, not its own solve alone. It repairs the under-specified Checkpoint-2 "native shared-`w`, no QR trick" line, which was simply wrong for non-identical `Q`; the distinct-tiles positive control is the evidence. It is **not** the QR-basis trick (that note guarded against low-rank's basis-orientation fix, which has no bearing on a precision representation). **It buys FEM for free:** conditioning-by-kriging is representation-native and **projection-agnostic** — it operates on the precision and the shared node-space realization, both of which the `Projection` abstraction already keeps in node space — so the FEM phase inherits coherent cross-tile sampling with no further work. The cost lands once, here, and the canonical case Phase 4 cares about gets it gratis.
 
 ### 5.4 The per-operator reduction strategy — `core/distribution.py` + `application/solve.py`
