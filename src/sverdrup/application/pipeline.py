@@ -12,6 +12,7 @@ from sverdrup.adapters.storage_fsspec import FsspecResultSink
 from sverdrup.application.splits import make_splits
 from sverdrup.application.tiling import TilePartition, TilingCoordinator
 from sverdrup.application.uow import UnitOfWork
+from sverdrup.core.distribution import PredictiveDistribution
 from sverdrup.core.evaluation import ContextKey, EvalContext, Registry
 from sverdrup.core.geometry import Tile, Window
 from sverdrup.core.grid import GridSpec, PointSet
@@ -205,7 +206,7 @@ def _blend_eval_points(
             provenance=prod.per_time[0].base.provenance,
             time_days=inp.output_times[0],
         )
-        parts.append(BlendInput(pp, tile))
+        parts.append(BlendInput(cast(PredictiveDistribution, pp), tile))
     if not parts:
         return None, None
     eb = BlendOperator().blend(

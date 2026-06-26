@@ -10,7 +10,7 @@
     {
       "id": 2,
       "subject": "Task 2: Relocate coherence seam to CoherentMemberDriver (OI-identical)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Introduce the CoherentMemberDriver seam at _coherent_member, dispatched by persisted sampler_spec; OI low-rank path becomes LowRankSharedBasis (verbatim math). Widen BlendInput.distribution to PredictiveDistribution. Keep MemberSeededZr historical driver.\n\n**Files:** Modify src/sverdrup/distributions/coherent.py, src/sverdrup/distributions/blend.py; Test tests/test_coherent_driver_seam.py.\n\n**Acceptance Criteria:** select_driver(\"lowrank+diag\") returns LowRankSharedBasis; driver reproduces inlined _coherent_member; historical MemberSeededZr tests still pass; Phase-2 suite 129/2.\n\n**Verify:** pixi run test -q && pixi run test tests/test_coherent_driver_seam.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"src/sverdrup/distributions/blend.py\", \"tests/test_coherent_driver_seam.py\"], \"verifyCommand\": \"pixi run test -q && pixi run test tests/test_coherent_driver_seam.py -v\", \"acceptanceCriteria\": [\"select_driver returns LowRankSharedBasis\", \"driver reproduces inlined _coherent_member\", \"historical MemberSeededZr tests still pass\", \"Phase-2 suite 129/2\"], \"modelTier\": \"standard\"}\n```"
     },
