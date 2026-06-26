@@ -82,7 +82,7 @@ class EmpiricalReduction:
     """Ensemble (Method 0) empirical reduction: sample mean/variance, no factor."""
 
     sampler_spec = (
-        "lowrank+diag"  # Phase-2 default; retagged "perturb-ensemble" in Task 10
+        "perturb-ensemble"  # degradation driver (per-tile independent members)
     )
 
     def reduce(

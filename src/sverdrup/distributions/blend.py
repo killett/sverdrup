@@ -223,14 +223,18 @@ class BlendOperator:
         mean = (w * means).sum(axis=0)
         sigma = (w * sigmas).sum(axis=0)  # coherence (corr=1) crossfade -> no dip
         base = parts[0].distribution.provenance
+        transforms = [
+            *base.transformations,
+            blend_transform(k, residual_bound, structured_residual=structured_residual),
+        ]
+        spec0 = cast(Any, parts[0].distribution).fields.sampler_spec
+        if spec0 == "perturb-ensemble":
+            from sverdrup.core.provenance import degradation_transform
+
+            transforms.append(degradation_transform())
         prov = UncertaintyProvenance(
             native_capability=base.native_capability,
-            transformations=[
-                *base.transformations,
-                blend_transform(
-                    k, residual_bound, structured_residual=structured_residual
-                ),
-            ],
+            transformations=transforms,
         )
         shape = support.shape if isinstance(support, GridSpec) else (pts.shape[0],)
         noise = NoiseSpec(

@@ -25,6 +25,7 @@ class KnownBias(Enum):
     UNDER_DISPERSED_IN_VOIDS = auto()
     CONSERVATIVE_HALO_RESIDUAL = auto()
     STRUCTURED_BASIS_ORIENTATION = auto()
+    DEGRADED_COHERENCE = auto()
 
 
 @dataclass(frozen=True)
@@ -84,4 +85,23 @@ def blend_transform(
         kind=TransformKind.BLEND,
         known_bias=KnownBias.CONSERVATIVE_HALO_RESIDUAL,
         params=params,
+    )
+
+
+def degradation_transform() -> UncertaintyTransform:
+    """Build the transform recording cross-tile coherence loss for the degradation driver.
+
+    The perturb-ensemble driver forces each tile with independent members, so cross-tile
+    coherence is not guaranteed. The blend records this explicitly (``DEGRADED_COHERENCE``)
+    rather than presenting an incoherent product as coherent.
+
+    Returns:
+        An ``UncertaintyTransform`` of kind ``BLEND`` carrying ``DEGRADED_COHERENCE``.
+    """
+    return UncertaintyTransform(
+        kind=TransformKind.BLEND,
+        known_bias=KnownBias.DEGRADED_COHERENCE,
+        params={
+            "coherence": "per-tile-independent members; cross-tile coherence not guaranteed"
+        },
     )
