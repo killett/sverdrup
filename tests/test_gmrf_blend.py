@@ -1,4 +1,11 @@
-"""GMRF blend: native shared-w coherence driver + (Task 9) seam-free blended product."""
+"""GMRF blend: kriging-conditioning coherence driver + (Task 9) seam-free blended product.
+
+The Stage-B user-gate (Task 9) is ``test_gmrf_blend_cross_seam_firstdifference_parity``: the
+contracted assertion is that the blended product's cross-seam gradient (``firstdifference``)
+variance is NOT under-dispersed vs the single-tile reference — the property the disproven
+native-shared-w driver failed at −0.51 (≈0.49 ratio). A red here is spec-§8 escalation, not a
+tolerance to loosen.
+"""
 
 from __future__ import annotations
 
@@ -125,12 +132,79 @@ def test_gmrf_blend_matches_single_tile_conservative(tmp_path_factory):
     )
 
 
-# NOTE: test_gmrf_blend_no_variance_dip removed — it encoded the pre-amendment contract
-# (sampled variance ~= conservative (Sum w sigma)^2). The Stage-B validation found the
-# native shared-w driver leaves cross-seam derived quantities ~50% under-dispersed
-# (phase3_scope_spec.md §5.3.1); the gate is reworked in Task 9 (kriging-conditioning sampler)
-# as a cross-seam DERIVED-quantity parity check on a distinct-tiles-by-construction fixture.
-# See docs/superpowers/plans/2026-06-25-phase3-task9-gmrf-kriging-sampler.md.
+def _adjacent_lon_fdvar(samples, shape):
+    """Per adjacent lon pair, the empirical firstdifference variance ``Var(x_a − x_b)``.
+
+    ``samples`` is ``(M, ny*nx)`` row-major coherent draws; adjacent lon pairs straddle the
+    tile seams. Sample-based (M draws) rather than the 256-member ``covariance()`` so the gate
+    ratio is tight and reproducible (deterministic given the draw seed).
+    """
+    ny, nx = shape
+    out = {}
+    for j in range(ny):
+        for i in range(nx - 1):
+            a = j * nx + i
+            out[(j, i)] = float(np.var(samples[:, a] - samples[:, a + 1]))
+    return out
+
+
+def test_gmrf_blend_cross_seam_firstdifference_parity(tmp_path_factory):
+    # STAGE-B USER GATE (Task 9). Behavior: the 3-tile blended product's cross-seam gradient
+    #   (firstdifference) variance is NOT under-dispersed vs the single-tile reference — the
+    #   coherence the kriging-conditioning sampler delivers across distinct tiles.
+    # Bug caught: the disproven native-shared-w driver left overlapping tiles ~independent, so
+    #   cross-seam gradient variance collapsed to ~0.49 of the reference (§5.3.1 measured −0.51).
+    #   A red is spec-§8 escalation (a real coherence defect), never a tolerance to loosen.
+    from sverdrup.application.pipeline import run_tiled_pipeline
+
+    ref = run_tiled_pipeline(_gmrf_region_inputs(tmp_path_factory), _partition(1))[0][0]
+    multi = run_tiled_pipeline(_gmrf_region_inputs(tmp_path_factory), _partition(3))[0][
+        0
+    ]
+    sr = ref.sample(3000, seed=1).reshape(3000, -1)
+    sm = multi.sample(3000, seed=1).reshape(3000, -1)
+    fr = _adjacent_lon_fdvar(sr, ref.grid.shape)
+    fm = _adjacent_lon_fdvar(sm, multi.grid.shape)
+    ratios = np.array([fm[k] / fr[k] for k in fr if fr[k] > 0])
+    # conservative direction: no adjacent-pair gradient variance is under-dispersed. The old
+    # driver bottomed out near 0.49 at the seams; 0.8 sits far above that and below MC slack.
+    assert ratios.min() >= 0.8, (
+        f"cross-seam gradient under-dispersed: min ratio {ratios.min()}"
+    )
+    # parity holds (coherent, not grossly inflated — finite-halo seams add mild conservatism).
+    assert ratios.max() <= 2.5, (
+        f"cross-seam gradient grossly inflated: max ratio {ratios.max()}"
+    )
+
+
+def test_gmrf_blend_reproduces_reference_correlation_structure(tmp_path_factory):
+    # Supporting check (member-correlation, demoted from the old contract): the 3-tile blend
+    #   reproduces the single-tile reference's adjacent-node correlation everywhere — no seam
+    #   decorrelation. (Direct positive-corr probing is uninformative here: this tiny data-poor
+    #   fixture's GMRF prior is itself oscillatory, so the reference has strong ± adjacent
+    #   correlations the blend must match, not blanket positivity.)
+    # Bug caught: the native-shared-w driver decorrelated overlapping tiles, so blend corr would
+    #   drop toward 0 at seams while the reference keeps the field's ±0.5–1.0 dependence.
+    from sverdrup.application.pipeline import run_tiled_pipeline
+
+    ref = run_tiled_pipeline(_gmrf_region_inputs(tmp_path_factory), _partition(1))[0][0]
+    multi = run_tiled_pipeline(_gmrf_region_inputs(tmp_path_factory), _partition(3))[0][
+        0
+    ]
+    sr = ref.sample(3000, seed=1).reshape(3000, -1)
+    sm = multi.sample(3000, seed=1).reshape(3000, -1)
+    ny, nx = multi.grid.shape
+    devs = [
+        abs(
+            np.corrcoef(sm[:, j * nx + i], sm[:, j * nx + i + 1])[0, 1]
+            - np.corrcoef(sr[:, j * nx + i], sr[:, j * nx + i + 1])[0, 1]
+        )
+        for j in range(ny)
+        for i in range(nx - 1)
+    ]
+    assert max(devs) <= 0.25, (
+        f"blend departs from reference correlation structure: {max(devs)}"
+    )
 
 
 def test_gmrf_pipeline_osse_and_ose(tmp_path_factory):
