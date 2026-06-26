@@ -13,11 +13,11 @@ from sverdrup.core.geometry import Tile, Window  # noqa: E402
 from sverdrup.core.grid import GridSpec  # noqa: E402
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow  # noqa: E402
 from sverdrup.core.parameters import ConstantProvider  # noqa: E402
+from sverdrup.core.seeding import derive_seed  # noqa: E402
 from sverdrup.distributions.blend import BlendInput, partition_weights  # noqa: E402
 from sverdrup.distributions.coherent import (  # noqa: E402
     GmrfKrigingSolve,
     NoiseSpec,
-    diagonal_noise,
     select_driver,
 )
 from sverdrup.distributions.persisted import (  # noqa: E402
@@ -51,7 +51,7 @@ def test_select_driver_sparse_precision():
 
 def test_single_tile_member_is_native_draw():
     # Behavior: one GMRF tile's coherent member == mean + L^-T w (kriging is a no-op with no
-    #   shared boundary), with w the global-cell white noise.
+    #   shared boundary), with w the per-tile white keyed by sweep position x member.
     # Bug caught: a QR-basis trick (low-rank emulation) instead of native precision sampling.
     grid = GridSpec.lonlat(np.linspace(0.0, 6.0, 7), np.linspace(0.0, 6.0, 7))
     pd = _gmrf_pd(grid)
@@ -61,7 +61,8 @@ def test_single_tile_member_is_native_draw():
     noise = NoiseSpec(method="gmrf", params_key="p", lattice_step=0.5)
     w = partition_weights([tile], pts)
     got = GmrfKrigingSolve().crossfaded_member(parts, pts, w, 4, noise)
-    white = diagonal_noise(pts, 4, noise)
+    seed = derive_seed(noise.method, noise.params_key, "gmrf-tile:0", 4)
+    white = np.random.default_rng(seed).standard_normal(pts.shape[0])
     expected = pd.fields.mean.ravel() + pd._factor_obj().sample(white)
     np.testing.assert_allclose(got, expected, rtol=1e-9)
 

@@ -320,7 +320,15 @@ class GmrfKrigingSolve:
             d = parts[i].distribution
             gpts = _support_points(d.grid, time_days)
             keys = _node_keys(gpts)
-            white = diagonal_noise(gpts, member_index, noise)
+            # Independent white per tile (keyed by sweep position x member): the kriging
+            # theorem needs each tile's unconditional draw INDEPENDENT of the handed-forward
+            # targets. The old shared-lattice diagonal_noise correlated the draws across
+            # overlapping tiles, biasing the correction (spec §5.3.1: white choice is free,
+            # conditioning enforces coherence).
+            seed = derive_seed(
+                noise.method, noise.params_key, f"gmrf-tile:{pos}", member_index
+            )
+            white = np.random.default_rng(seed).standard_normal(len(gpts))
             x_u = d.fields.mean.ravel() + d._factor_obj().sample(white)
             s_idx = np.array([n for n, k in enumerate(keys) if k in targets], dtype=int)
             if s_idx.size:
