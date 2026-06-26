@@ -15,16 +15,18 @@
     sparse-precision operator + temporal-taper conditioning (`methods/gmrf.py`, registered);
     `PrecisionFields`/`PrecisionDistribution` + `GMRFPrecisionReduction` (genuine-first-class,
     no factor); `solve_unit` dispatches `PrecisionFields → PrecisionDistribution`.
-  - **Task 9 (Stage-B gate) IN PROGRESS — REWORKED after a validation finding.** The original
-    `GmrfPrecisionSolve` "native shared-w" coherent driver (Task 8) is **DISPROVEN**: Stage-B
-    validation showed it leaves cross-tile members ~independent (overlap corr ≈0 at every halo
-    on a distinct-tiles positive control; the earlier corr→1 was a degenerate identical-tiles
-    artifact), so cross-seam derived quantities are ~50% under-dispersed (a smoothing seam).
-    The marginal σ=`Σwσ` stays a valid pointwise upper bound but is structurally blind to the
-    joint defect. **Owner-approved fix:** conditioning-by-kriging toward ONE global node-space
-    realization (single forward sweep, values-not-seeds, transitive) — see spec §5.3.1
-    (amendment) and the dedicated plan
-    `docs/superpowers/plans/2026-06-25-phase3-task9-gmrf-kriging-sampler.md`.
+  - **Task 9 (Stage-B gate) COMPLETE — reworked via conditioning-by-kriging; GATE PASSES.**
+    The original `GmrfPrecisionSolve` "native shared-w" driver (Task 8) was DISPROVEN
+    (cross-seam derived quantities ~50% under-dispersed) and is REMOVED. Replaced by
+    `GmrfKrigingSolve` (9a–9d, all committed): per-tile exact posterior draw krige-corrected
+    toward ONE global node-space realization (single forward sweep, values-not-seeds, Q-separator
+    precondition asserted). **Gate evidence (captured):** cross-seam `firstdifference` variance
+    ratio blend/ref **min 0.93** (conservative; old driver ~0.49 / −0.51), correlation-structure
+    fidelity max-dev **0.10**, pointwise σ-upper-bound held, OSSE+OSE + provenance +
+    first-class all green; full suite **171 passed / 2 skipped**, typecheck + lint clean. Joint-cov
+    oracle (9c) pins exactness vs a dense global reference (per-tile, cross-seam, 3-tile
+    transitivity) + separator negative control. **USER-GATE: awaiting owner sign-off before
+    Stage C** (spec-§8 escalation was NOT triggered — gate passed).
   - **Task-9 rework 9a–9c COMPLETE (committed); 9d IS THE NEXT ACTION.**
     - 9a (`posterior_cov_columns` full `(Q⁻¹)[:,S]` via cached per-node back-solves on
       `GMRFFactor`/`PrecisionDistribution`) — pinned vs dense oracle.
@@ -34,15 +36,9 @@
     - 9c (joint-cov oracle `tests/unit/test_gmrf_kriging_oracle.py`): per-tile full-cov ==
       exact posterior; cross-seam joint (incl. across-seam blocks) == global; 3-tile
       transitivity; separator negative control. All EXACT by construction.
-  - **Next action: 9d — promoted Task-9 user-gate** (rewrite `tests/test_gmrf_blend.py` Stage-B
-    section): distinct-tiles-by-construction fixture (`nL,nR<nFull`, `Q_L≠Q_R`, region/halo so
-    `k≥2` can't collapse to identical); **cross-seam `firstdifference` variance parity** vs
-    single-tile reference (conservative direction) as the contracted assertion; pointwise
-    σ-upper-bound retained; member-correlation demoted to supporting check. Keep passing
-    OSSE+OSE / provenance / first-class tests. **This is the gate — spec-§8 escalation on
-    failure.** Standing rule: if the separator assertion / negative control reds saying the
-    *chain construction* is wrong (not the fixture), STOP and surface before reaching for the
-    documented pre-drawn-joint fallback.
+  - **Next action: Stage C — Task 10** (`PerturbEnsembleDegradation` driver end-to-end, closes
+    a Phase-2 gap) then Task 11 (nonstationary-κ GMRF demonstration). Gated on owner sign-off
+    of the Task-9 user-gate above.
   - **Working-tree state at this checkpoint (committed):** `pipeline._blend_eval_points` has the
     sparse-precision no-factor **moment-crossfade** OSE path + the `eval_point_cov` provenance
     marker (Task-9 §B6, keeper); `GmrfPrecisionSolve` carries a shape-bug fix but the whole class
