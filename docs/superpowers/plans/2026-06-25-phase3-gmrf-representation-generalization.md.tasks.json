@@ -38,7 +38,7 @@
     {
       "id": 6,
       "subject": "Task 6: GMRFCovarianceOperator + MaternGMRF (temporal-taper conditioning)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "**Goal:** EXACT sparse-precision operator (cov/marginal_var/posterior_sample + posterior_mean via Projection) + MaternGMRF conditioning on the space-time obs window via temporal taper into R; register \"gmrf\".\n\n**Files:** Create src/sverdrup/methods/gmrf.py; Modify src/sverdrup/methods/registry.py; Test tests/unit/test_gmrf_method.py.\n\n**Acceptance Criteria:** operator EXACT + representation sparse-precision; marginal_var == dense diag(Q_post⁻¹); posterior_mean conditions on obs; off-grid var via W Σ Wᵀ not interpolation; temporal taper inflates far obs; METHODS gmrf registered with range/variance/temporal_taper_scale.\n\n**Verify:** pixi run test tests/unit/test_gmrf_method.py -v && pixi run test -q\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/gmrf.py\", \"src/sverdrup/methods/registry.py\", \"tests/unit/test_gmrf_method.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_gmrf_method.py -v && pixi run test -q\", \"acceptanceCriteria\": [\"operator EXACT + representation sparse-precision\", \"marginal_var == dense diag(Q_post^-1)\", \"posterior_mean conditions on obs\", \"off-grid var via W Σ W^T not interpolation\", \"temporal taper inflates far-in-time obs\", \"METHODS gmrf registered\"], \"modelTier\": \"complex\"}\n```"
     },
