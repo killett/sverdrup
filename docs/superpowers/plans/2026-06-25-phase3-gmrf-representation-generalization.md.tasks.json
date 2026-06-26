@@ -17,7 +17,7 @@
     {
       "id": 3,
       "subject": "Task 3: Stage-A regression gate [USER GATE]",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1, 2],
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every acceptanceCriteria item is re-validated independently with output captured. If OI behavior changed, SURFACE it — do NOT adjust Phase-2 tests to pass (escalate per spec §8).\n\n**Goal:** Prove the three-seam generalization preserved OI behavior exactly — full Phase-2 suite stays 129 passed / 2 skipped.\n\n**Files:** none (verification; fixes land in Tasks 1-2 if red).\n\n**Acceptance Criteria:** pixi run test -q reports exactly 129 passed 2 skipped; typecheck and lint clean; no existing Phase-2 test modified (git diff --name-only main -- tests/ shows only test_reduction.py + test_coherent_driver_seam.py).\n\n**Verify:** pixi run test -q && pixi run typecheck && pixi run lint && git diff --name-only main -- tests/\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && git diff --name-only main -- tests/\", \"acceptanceCriteria\": [\"pixi run test -q reports exactly 129 passed 2 skipped\", \"typecheck and lint clean\", \"no existing Phase-2 test file modified\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requiresUserSpecification\": false, \"gateScope\": \"all\", \"failurePolicy\": \"surface-do-not-adjust-tests\", \"modelTier\": \"standard\"}\n```"
     },
