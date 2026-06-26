@@ -261,7 +261,45 @@ class LowRankSharedBasis:
         return np.asarray(mean_blend + struct + diag)
 
 
-_DRIVERS: dict[str, type] = {"lowrank+diag": LowRankSharedBasis}
+class GmrfPrecisionSolve:
+    """GMRF driver: per-tile ``mean + L^-T w`` with a SHARED global ``w``; weight-crossfaded.
+
+    Native coherence: every tile is forced by the SAME global-lattice white noise
+    ``diagonal_noise`` over the support, so overlapping tiles agree wherever ``Q_i == Q_j``.
+    The only residual is the conservative ``Q_i != Q_j`` halo-agreement term (recorded in
+    provenance by the blend). No QR-basis trick.
+    """
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one coherent member from per-tile native precision draws, shared-forced."""
+        white = diagonal_noise(
+            pts, member_index, noise
+        )  # shared global forcing over support
+        n = pts.shape[0]
+        out = np.zeros(n)
+        for i, p in enumerate(parts):
+            d = p.distribution
+            idx = _nearest(d.grid, pts, d.time_days)
+            cover = weights[i] > 0
+            # node-space draw on the tile's own lattice, forced by the shared white noise
+            node = d.fields.mean.ravel() + d._factor_obj().sample(white[idx])
+            field_i = np.zeros(n)
+            field_i[cover] = node[idx[cover]]
+            out += weights[i] * field_i
+        return np.asarray(out)
+
+
+_DRIVERS: dict[str, type] = {
+    "lowrank+diag": LowRankSharedBasis,
+    "sparse-precision": GmrfPrecisionSolve,
+}
 
 
 def select_driver(sampler_spec: str) -> CoherentMemberDriver:
