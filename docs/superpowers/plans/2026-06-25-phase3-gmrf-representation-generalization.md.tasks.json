@@ -24,7 +24,7 @@
     {
       "id": 4,
       "subject": "Task 4: GMRF grid topology, bilinear primitive, Projection seam",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3],
       "description": "**Goal:** Build the regular-grid (κ²−Δ) α=2 sparse precision Q (scalar or κ-field), the single bilinear primitive, the Projection abstraction (GridIdentity/Bilinear), and κ↔range — node-space vs grid-space kept distinct.\n\n**Files:** Modify pixi.toml (add scikit-sparse); Create src/sverdrup/methods/gmrf_grid.py; Test tests/unit/test_gmrf_grid.py.\n\n**Acceptance Criteria:** matern_precision symmetric SPD sparse CSC; bilinear_weights rows sum to 1 with <=4 nonzeros, on-node selector; GridIdentityProjection identity + BilinearProjection == bilinear_weights; kappa<->range round-trips; scikit-sparse resolves under pixi.\n\n**Verify:** pixi run test tests/unit/test_gmrf_grid.py -v\n\n```json:metadata\n{\"files\": [\"pixi.toml\", \"src/sverdrup/methods/gmrf_grid.py\", \"tests/unit/test_gmrf_grid.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_gmrf_grid.py -v\", \"acceptanceCriteria\": [\"matern_precision symmetric SPD sparse CSC\", \"bilinear_weights rows sum to 1 with <=4 nonzeros, on-node selector\", \"GridIdentityProjection identity + BilinearProjection == bilinear_weights\", \"kappa<->range round-trips\", \"scikit-sparse resolves under pixi\"], \"modelTier\": \"standard\"}\n```"
     },
