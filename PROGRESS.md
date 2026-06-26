@@ -9,7 +9,34 @@
     `sampler_spec`). Stage-A user-gate PASSED with captured AC evidence — Phase-2 subset
     129/2 green and untouched (full suite 134/2 = 129 + 5 new Stage-A tests), typecheck/lint
     clean, zero Phase-2 test files modified (diffed vs pre-Phase-3 baseline `793297e`).
-  - **Next action: Task 4** (Stage B) — GMRF grid topology, bilinear primitive, Projection seam.
+  - **Stage B Tasks 4–8 COMPLETE** (committed): GMRF grid topology + bilinear/Projection
+    (`methods/gmrf_grid.py`); CHOLMOD factor + hand-rolled Takahashi selective inverse
+    (`methods/gmrf_linalg.py`, **USER-GATE PASSED** vs dense-Q⁻¹ oracle); `MaternGMRF` EXACT
+    sparse-precision operator + temporal-taper conditioning (`methods/gmrf.py`, registered);
+    `PrecisionFields`/`PrecisionDistribution` + `GMRFPrecisionReduction` (genuine-first-class,
+    no factor); `solve_unit` dispatches `PrecisionFields → PrecisionDistribution`.
+  - **Task 9 (Stage-B gate) IN PROGRESS — REWORKED after a validation finding.** The original
+    `GmrfPrecisionSolve` "native shared-w" coherent driver (Task 8) is **DISPROVEN**: Stage-B
+    validation showed it leaves cross-tile members ~independent (overlap corr ≈0 at every halo
+    on a distinct-tiles positive control; the earlier corr→1 was a degenerate identical-tiles
+    artifact), so cross-seam derived quantities are ~50% under-dispersed (a smoothing seam).
+    The marginal σ=`Σwσ` stays a valid pointwise upper bound but is structurally blind to the
+    joint defect. **Owner-approved fix:** conditioning-by-kriging toward ONE global node-space
+    realization (single forward sweep, values-not-seeds, transitive) — see spec §5.3.1
+    (amendment) and the dedicated plan
+    `docs/superpowers/plans/2026-06-25-phase3-task9-gmrf-kriging-sampler.md`.
+  - **Next action: implement Task-9 rework from that plan, starting 9a** (cross-cov columns
+    `(Q⁻¹)[:,S]` via per-shared-node back-solves on `GMRFFactor`/`PrecisionDistribution`),
+    then 9b (`GmrfKrigingSolve` driver + **Q-separator precondition assertion**), 9c (joint-cov
+    oracle + separator **negative control**), 9d (promoted gate: distinct-tiles-by-construction
+    + cross-seam derived-quantity parity). Standing rule: if the separator assertion / negative
+    control reds saying the *chain construction* is wrong (not the fixture), STOP and surface
+    before reaching for the documented pre-drawn-joint fallback.
+  - **Working-tree state at this checkpoint (committed):** `pipeline._blend_eval_points` has the
+    sparse-precision no-factor **moment-crossfade** OSE path + the `eval_point_cov` provenance
+    marker (Task-9 §B6, keeper); `GmrfPrecisionSolve` carries a shape-bug fix but the whole class
+    is superseded by `GmrfKrigingSolve` in 9b; the obsolete `test_gmrf_blend_no_variance_dip`
+    (pre-amendment contract) was removed (9d writes the derived-quantity-parity replacement).
   - Scope (source of truth): `phase3_scope_spec.md` (settled; §5.1 now records the two
     settled forks — scikit-sparse/CHOLMOD backend + temporal-taper-into-R conditioning — and
     the forward-compat Projection abstraction).
@@ -156,6 +183,25 @@
   hidden assumption. Full coherent eval-point GMRF sampling is out of Phase-3 scope.
 - **α = 2 (ν = 1)** fixed integer smoothness — the canonical `(κ²I−Δ)` 5-point stencil
   squared. Continuous ν deferred to Phase 4.
+- **GMRF cross-tile coherence = conditioning-by-kriging, NOT native shared-w (amendment, spec
+  §5.3.1).** The Checkpoint-2 "GmrfPrecisionSolve: mean + L⁻ᵀw, native shared-w" line was wrong
+  for non-identical Q — `L⁻ᵀ` is a global map, so shared factor-space white noise yields
+  decorrelated physical fields across distinct tiles (proven by a distinct-tiles positive
+  control: overlap corr ≈0 at all halos; cross-seam derived-quantity error −0.51). Fix:
+  **conditioning-by-kriging** `x_c = x_u + Σ_cross Σ_shared⁻¹ (x_shared − x_u|S)`, each tile
+  conditioned toward ONE global node-space realization via a single forward sweep
+  (values-handed-forward, NOT seed-shared; transitive by construction for a tile chain).
+  Cross-cov blocks `Σ_{·,S}` = full `Q⁻¹` columns via **factor back-solves** (outside Takahashi's
+  pattern; computed once per tile, reused across members). **Validity invariant:** corrected
+  draws are exact posterior samples (kriging-preserves-conditional-law theorem), verified by a
+  **joint-covariance** oracle on a dense small grid — marginal checks are the blind spot.
+  **Separator precondition (asserted, checked):** the handed-forward overlap must Q-graph-separate
+  processed/unprocessed interiors (overlap ≥ stencil reach = 2 for α=2; the `k·corr_len` halo
+  policy satisfies it); a negative control proves the joint law breaks when it doesn't. **Exact
+  only for tree-structured tile adjacency** — 2-D/FEM (Phase 4) needs the documented
+  pre-drawn-joint or junction-tree variant. The marginal `σ=Σwσ` bound is unchanged
+  (pointwise-conservative; only the *sampler* changes). Plan:
+  `docs/superpowers/plans/2026-06-25-phase3-task9-gmrf-kriging-sampler.md`.
 
 ## Cross-cutting decisions (canonical — Phase 2)
 

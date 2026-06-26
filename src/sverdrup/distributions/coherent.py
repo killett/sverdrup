@@ -279,17 +279,19 @@ class GmrfPrecisionSolve:
         noise: NoiseSpec,
     ) -> np.ndarray:
         """Realize one coherent member from per-tile native precision draws, shared-forced."""
-        white = diagonal_noise(
-            pts, member_index, noise
-        )  # shared global forcing over support
         n = pts.shape[0]
         out = np.zeros(n)
         for i, p in enumerate(parts):
             d = p.distribution
-            idx = _nearest(d.grid, pts, d.time_days)
+            idx = _nearest(d.grid, pts, d.time_days)  # support point -> tile node
             cover = weights[i] > 0
-            # node-space draw on the tile's own lattice, forced by the shared white noise
-            node = d.fields.mean.ravel() + d._factor_obj().sample(white[idx])
+            # White forcing evaluated on the TILE's OWN nodes, keyed by global lattice cell:
+            # two tiles whose nodes share a global cell see the same white value, so the
+            # native L^-T draws agree wherever the tiles' precisions agree (shared-w).
+            tile_white = diagonal_noise(
+                _support_points(d.grid, d.time_days), member_index, noise
+            )
+            node = d.fields.mean.ravel() + d._factor_obj().sample(tile_white)
             field_i = np.zeros(n)
             field_i[cover] = node[idx[cover]]
             out += weights[i] * field_i
