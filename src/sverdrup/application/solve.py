@@ -10,16 +10,14 @@ import numpy as np
 
 from sverdrup.application.uow import UnitOfWork
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.product import EvalPointPredictions, PerTimeProduct, Product
+from sverdrup.core.product import PerTimeProduct, Product
 from sverdrup.core.provenance import ProductProvenance
 from sverdrup.derived.firstdifference import FirstDifference
 from sverdrup.distributions.persisted import (
-    GridBasis,
     PersistedDistribution,
     PersistedFields,
-    eval_rows_in_grid_basis,
-    reduce_with_basis,
 )
+from sverdrup.distributions.reduction import select_reduction
 from sverdrup.methods.registry import METHODS
 
 _DERIVED: dict[str, Callable[[], FirstDifference]] = {
@@ -44,13 +42,19 @@ def solve_unit(uow: UnitOfWork) -> Product:
     per_time: list[PerTimeProduct] = []
     for t in uow.output_times:
         dist = method.solve(uow.obs, uow.grid, uow.params, t)  # operator live here
-        base_fields, basis = _reduce(dist, uow)
-        base = PersistedDistribution(uow.grid, base_fields, dist.provenance, t)
+        strat = select_reduction(dist)
+        unit = strat.reduce(
+            dist,
+            uow.grid.points(t),
+            uow.eval_locations,
+            rank=uow.rank,
+            seed=uow.seed,
+        )
+        base = PersistedDistribution(uow.grid, unit.base_fields, dist.provenance, t)
         derived = {
             name: _reduce_derived(_DERIVED[name](), dist, uow)
             for name in uow.derived_names
         }
-        eval_pts = _eval_points(dist, uow, basis)
         prov = ProductProvenance(
             method=uow.method_name,
             params_key=uow.params.params_key(),
@@ -60,42 +64,12 @@ def solve_unit(uow: UnitOfWork) -> Product:
             input_manifest={"window": uow.window_id},
             uncertainty=dist.provenance,
         )
-        per_time.append(PerTimeProduct(t, base, derived, eval_pts, prov))
+        per_time.append(PerTimeProduct(t, base, derived, unit.eval_points, prov))
         # dist (and its operator/L) goes out of scope here — nothing exact leaks downstream.
     return Product(
         per_time=per_time,
         run_manifest={"window": uow.window_id, "method": uow.method_name},
     )
-
-
-def _reduce(dist: object, uow: UnitOfWork) -> tuple[PersistedFields, GridBasis | None]:
-    """Reduce a live distribution to Persisted fields (matrix-free for Gaussian).
-
-    Returns the reduced fields and, for the Gaussian path, the ``GridBasis`` so eval-point
-    rows can be projected into the same basis. The ensemble path returns ``None`` (no basis).
-    """
-    d = cast(Any, dist)
-    if hasattr(dist, "cov_op"):  # Gaussian: matrix-free reduction of the exact operator
-        return reduce_with_basis(
-            d.mean,
-            d.cov_op,
-            uow.grid.points(d.time_days),
-            rank=uow.rank,
-            seed=uow.seed,
-        )
-    # Ensemble (Method 0): reduce empirically.
-    flat = d.samples.reshape(d.samples.shape[0], -1)
-    var = flat.var(axis=0, ddof=1)
-    fields = PersistedFields(
-        mean=d.samples.mean(axis=0),
-        marginal_variance=var.reshape(uow.grid.shape),
-        factor=np.zeros((flat.shape[1], 0)),
-        residual=var,
-        rank=0,
-        seed=uow.seed,
-        captured_energy=0.0,
-    )
-    return fields, None
 
 
 def _reduce_derived(
@@ -118,44 +92,6 @@ def _reduce_derived(
     )
     diff_grid = _shrunk_grid(uow.grid)
     return PersistedDistribution(diff_grid, fields, d.provenance, d.time_days)
-
-
-def _eval_points(
-    dist: object, uow: UnitOfWork, basis: GridBasis | None
-) -> EvalPointPredictions | None:
-    """Compute exact (operator) eval-point predictions, or sample-based for ensembles.
-
-    For the Gaussian path the structured eval rows are projected into the gridded block's
-    ``basis`` (shared SVD basis), never re-factored, so withheld points blend consistently.
-    """
-    if uow.eval_locations is None:
-        return None
-    locs = uow.eval_locations
-    d = cast(Any, dist)
-    if hasattr(dist, "cov_op"):
-        mean = d.cov_op.posterior_mean(locs)
-        var = d.cov_op.marginal_var(locs)
-        factor = residual = None
-        if basis is not None:
-            factor, residual = eval_rows_in_grid_basis(
-                d.cov_op, locs, uow.grid.points(d.time_days), basis
-            )
-        return EvalPointPredictions(
-            locs, mean, var, samples=None, factor=factor, residual=residual
-        )
-    # Ensemble: sample-based eval-point predictive.
-    s = _ensemble_at(dist, locs)
-    return EvalPointPredictions(locs, s.mean(axis=0), s.var(axis=0, ddof=1), samples=s)
-
-
-def _ensemble_at(dist: object, locs: np.ndarray) -> np.ndarray:
-    """Return the ensemble member values at the nearest nodes to ``locs``."""
-    d = cast(Any, dist)
-    nodes = d.grid.points(d.time_days)
-    idx = np.argmin(
-        np.linalg.norm(locs[:, None, :2] - nodes[None, :, :2], axis=2), axis=1
-    )
-    return np.asarray(d.samples.reshape(d.samples.shape[0], -1)[:, idx])
 
 
 def _shrunk_grid(grid: GridSpec) -> GridSpec:

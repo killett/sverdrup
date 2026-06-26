@@ -4,7 +4,7 @@
     {
       "id": 1,
       "subject": "Task 1: ReductionStrategy seam (OI + ensemble, behavior-identical)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Move on-worker reduction out of solve.py's hardcode into a per-operator ReductionStrategy selected by the live operator's representation; OI and ensemble paths byte-identical.\n\n**Files:** Create src/sverdrup/distributions/reduction.py; Modify src/sverdrup/application/solve.py, src/sverdrup/methods/oi.py; Test tests/unit/test_reduction.py.\n\n**Acceptance Criteria:** select_reduction dispatches on operator representation; LowRankReduction matches reduce_with_basis exactly; Phase-2 suite 129 passed 2 skipped.\n\n**Verify:** pixi run test -q && pixi run test tests/unit/test_reduction.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/reduction.py\", \"src/sverdrup/application/solve.py\", \"src/sverdrup/methods/oi.py\", \"tests/unit/test_reduction.py\"], \"verifyCommand\": \"pixi run test -q && pixi run test tests/unit/test_reduction.py -v\", \"acceptanceCriteria\": [\"select_reduction dispatches on operator representation\", \"LowRankReduction matches reduce_with_basis exactly\", \"Phase-2 suite 129 passed 2 skipped\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -78,5 +78,5 @@
       "description": "**Goal:** Provider-driven nonstationary κ — a latitude-varying correlation-length field flows into the GMRF stencil, producing spatially-varying Q coefficients (range ~100→800 km); record κ↔range; no hardcoded κ.\n\n**Files:** Modify src/sverdrup/methods/gmrf.py (resolve \"range\" scalar OR field → κ field); Test tests/test_nonstationary_kappa.py.\n\n**Acceptance Criteria:** range field → κ field → spatially-varying Q coefficients; latitude-varying case marginal variance varies with latitude; stationary scalar range path still works; κ↔range mapping recorded in provenance.\n\n**Verify:** pixi run test tests/test_nonstationary_kappa.py tests/unit/test_gmrf_method.py -v && pixi run test -q\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/gmrf.py\", \"tests/test_nonstationary_kappa.py\"], \"verifyCommand\": \"pixi run test tests/test_nonstationary_kappa.py tests/unit/test_gmrf_method.py -v && pixi run test -q\", \"acceptanceCriteria\": [\"range field -> kappa field -> spatially-varying Q\", \"latitude-varying marginal variance varies with latitude\", \"stationary scalar range path still works\", \"kappa<->range mapping recorded\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-06-25"
+  "lastUpdated": "2026-06-25T00:00:01Z"
 }
