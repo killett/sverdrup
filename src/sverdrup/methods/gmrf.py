@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
@@ -17,48 +19,70 @@ from sverdrup.core.provenance import (
 from sverdrup.core.types import CovFidelity, Points, Seed, UncertaintyCapability
 from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
 from sverdrup.methods.gmrf_grid import (
-    bilinear_weights,
     kappa_from_range,
     matern_precision,
 )
-from sverdrup.methods.gmrf_linalg import GMRFFactor, assert_adjacency_in_pattern
+from sverdrup.methods.gmrf_linalg import GMRFFactor
+
+if TYPE_CHECKING:
+    from sverdrup.core.projection import Projection
 
 
 class GMRFCovarianceOperator:
-    """EXACT posterior covariance of a regular-grid GMRF, backed by one sparse factor."""
+    """EXACT posterior covariance of a GMRF, backed by one sparse factor; projection-driven."""
 
     fidelity = CovFidelity.EXACT
     representation = "sparse-precision"
 
     def __init__(
-        self, grid: GridSpec, q_post: sparse.csc_matrix, time_days: float
+        self,
+        projection_or_grid: object,
+        q_post: sparse.csc_matrix,
+        time_days: float,
+        q_prior: sparse.csc_matrix | None = None,
     ) -> None:
-        """Cache the posterior precision and its factor; verify the adjacency precondition."""
-        assert_adjacency_in_pattern(q_post, grid.shape)
-        self.grid = grid
+        """Cache the posterior precision + factor; hold a Projection; verify adjacency.
+
+        Args:
+            projection_or_grid: A ``Projection`` the read-off routes through, OR a
+                legacy ``GridSpec`` (wrapped in ``GridIdentityProjection``).
+            q_post: Posterior precision (CSC).
+            time_days: Output time.
+            q_prior: Prior precision (CSC), persisted for the Stage-B strip-prior draw.
+        """
+        from sverdrup.methods.gmrf_grid import GridIdentityProjection
+
+        proj = (
+            GridIdentityProjection(projection_or_grid)
+            if isinstance(projection_or_grid, GridSpec)
+            else projection_or_grid
+        )
+        self.projection = cast("Projection", proj)
+        self.projection.assert_adjacency(q_post)
+        self.grid = getattr(self.projection, "grid", self.projection.node_space)
         self.q_post = q_post
+        self.q_prior = q_prior
         self.time_days = time_days
         self._factor = GMRFFactor(q_post)
         self._sinv = self._factor.selective_inverse()  # sparse, on L+L^T pattern
         self._diag = np.asarray(self._sinv.diagonal())
 
-    def _is_grid(self, a: Points) -> bool:
-        """True if ``a`` matches the grid nodes (the identity-projection fast path)."""
-        return a.shape[0] == self.grid.shape[0] * self.grid.shape[1] and np.allclose(
-            a[:, :2], self.grid.points(self.time_days)[:, :2]
-        )
+    def _is_native_nodes(self, a: Points) -> bool:
+        """True if ``a`` matches the precision node points (the identity fast path)."""
+        nodes = self.projection.node_points(self.time_days)
+        return a.shape[0] == nodes.shape[0] and np.allclose(a[:, :2], nodes[:, :2])
 
     def marginal_var(self, a: Points) -> np.ndarray:
-        """Return exact marginal variance: ``diag(Q^-1)`` on-grid, ``diag(W Σ W^T)`` off-grid."""
-        if self._is_grid(a):
+        """Return exact marginal variance: cached ``diag`` on native nodes, else ``diag(W Σ Wᵀ)``."""
+        if self._is_native_nodes(a):
             return self._diag
-        w = bilinear_weights(self.grid, a)
+        w = self.projection.weights(a)
         return np.asarray((w @ self._sinv @ w.T).diagonal())
 
     def cov(self, a: Points, b: Points) -> np.ndarray:
         """Return ``W_a Σ W_b^T`` using selective-inverse entries (adjacent pairs in pattern)."""
-        wa = bilinear_weights(self.grid, a)
-        wb = bilinear_weights(self.grid, b)
+        wa = self.projection.weights(a)
+        wb = self.projection.weights(b)
         return np.asarray((wa @ self._sinv @ wb.T).toarray())
 
     def posterior_sample(self, s: Points, seed: Seed, m: int) -> np.ndarray:
@@ -68,9 +92,9 @@ class GMRFCovarianceOperator:
         node_draws = np.stack(
             [self._factor.sample(rng.standard_normal(n)) for _ in range(m)]
         )  # (m, n)
-        if self._is_grid(s):
+        if self._is_native_nodes(s):
             return node_draws
-        w = bilinear_weights(self.grid, s)  # (k, n)
+        w = self.projection.weights(s)  # (k, n)
         return np.asarray((w @ node_draws.T).T)  # (m, k)
 
     def node_sample(self, w_white: np.ndarray) -> np.ndarray:
@@ -102,16 +126,19 @@ class MaternGMRF:
             range_repr = "field(lat-varying)"
         q_prior = matern_precision(grid, kappa, tau)
 
-        a_op = bilinear_weights(grid, obs.coords())  # (n_obs, n_nodes): grid -> obs
+        from sverdrup.methods.gmrf_grid import GridIdentityProjection
+
+        projection = GridIdentityProjection(grid)
+        a_op = projection.weights(obs.coords())  # (n_obs, n_nodes): node -> obs
         r_diag = np.diag(obs.error_model.as_matrix(len(obs))).astype(float)
         dt = np.abs(obs.coords()[:, 2] - time_days)
         r_inflated = r_diag * np.exp(dt / max(taper, 1e-9))  # temporal taper into R
         r_inv = sparse.diags(1.0 / r_inflated)
 
         q_post = (q_prior + a_op.T @ r_inv @ a_op).tocsc()
-        op = GMRFCovarianceOperator(grid, q_post, time_days)
+        op = GMRFCovarianceOperator(projection, q_post, time_days, q_prior=q_prior)
         rhs = a_op.T @ (r_inv @ obs.values())
-        mean = op._factor.solve(np.asarray(rhs)).reshape(grid.shape)
+        mean = op._factor.solve(np.asarray(rhs)).reshape(projection.field_shape())
 
         prov = UncertaintyProvenance(
             native_capability=self.native_capability,
