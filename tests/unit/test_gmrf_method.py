@@ -82,3 +82,23 @@ def test_temporal_taper_inflates_far_obs():
     near = MaternGMRF().solve(_obs(t=2.0), _grid(), _params(taper=2.0), 2.0)
     far = MaternGMRF().solve(_obs(t=10.0), _grid(), _params(taper=2.0), 2.0)
     assert near.mean[3, 3] > far.mean[3, 3]
+
+
+def test_diag_fastpath_equals_slowpath_on_native_nodes():
+    # Behavior (C3): the cached _diag equals diag(W Σ W^T) computed through the
+    #   projection's weights() on the native node points — the fast path is the slow path.
+    # Bug caught: the projection layer drifting from the cached diagonal, producing a
+    #   plausible-but-wrong marginal variance that no other test would notice.
+    op = cast(Any, MaternGMRF().solve(_obs(), _grid(), _params(), 2.0).cov_op)
+    nodes = op.projection.node_points(op.time_days)
+    w = op.projection.weights(nodes)
+    slow = np.asarray((w @ op._sinv @ w.T).diagonal())
+    np.testing.assert_allclose(op._diag, slow, rtol=1e-9, atol=1e-12)
+
+
+def test_operator_carries_prior_precision():
+    # Behavior (Stage B prep): the operator persists q_prior for the strip-prior draw.
+    # Bug caught: a dropped prior precision leaves Stage B unable to assemble the strip sub-GMRF.
+    op = cast(Any, MaternGMRF().solve(_obs(), _grid(), _params(), 2.0).cov_op)
+    assert op.q_prior is not None
+    assert op.q_prior.shape == op.q_post.shape

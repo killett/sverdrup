@@ -10,7 +10,7 @@
     {
       "id": 2,
       "subject": "Task 2: Operator consumes Projection; carries q_prior; _diag equivalence (C3)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** GMRFCovarianceOperator routes read-off through held Projection; accepts grid or projection; carries q_prior; pins _diag==slow path (C3).\n\n**Verify:** pixi run test tests/unit/test_gmrf_method.py tests/unit/test_gmrf_grid.py -v && rg bilinear_weights(self.grid|self.grid.shape src/sverdrup/methods/gmrf.py\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/gmrf.py\", \"tests/unit/test_gmrf_method.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_gmrf_method.py tests/unit/test_gmrf_grid.py tests/unit/test_nonstationary_kappa.py -v\", \"acceptanceCriteria\": [\"operator holds Projection, no hardcoded read-off (grep clean)\", \"carries q_prior\", \"C3 _diag fast-path equals slow path\", \"existing operator tests green\"], \"modelTier\": \"standard\"}\n```"
     },
