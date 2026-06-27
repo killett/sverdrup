@@ -31,7 +31,7 @@
     {
       "id": 5,
       "subject": "Task 5: _strip_network — strip nodes + induced Q-subgraph (C1, C6)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [4],
       "description": "**Goal:** topology-agnostic strip-network: union strip nodes + per-tile local maps; corner covered by >=3 tiles (C1); disjoint pair raises (C6).\n\n**Verify:** pixi run test tests/unit/test_strip_network.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_strip_network.py\", \"tests/unit/_strip_fixtures.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_strip_network.py -v\", \"acceptanceCriteria\": [\"_strip_network returns global keys + per-tile local maps\", \"corner node covered by >=3 tiles (C1)\", \"disjoint adjacent tiles raise AssertionError (C6)\"], \"modelTier\": \"standard\"}\n```"
     },

@@ -393,6 +393,80 @@ def _assert_separates(gpts: Points, ov_indices: list[int]) -> None:
         )
 
 
+def _strip_network(
+    parts: Sequence[Any],
+) -> tuple[list[tuple[float, float]], list[dict[int, int]]]:
+    """Return the union strip-node keys and per-tile ``{global_idx -> local node idx}``.
+
+    A strip node of tile ``i`` is a node of tile ``i`` that falls inside ANOTHER tile's
+    extended window (an overlap node). The returned ``global_keys`` is the ordered set of
+    unique ``(lon,lat)`` keys over all tiles; ``per_tile[i][g]`` is tile ``i``'s local node
+    index for global strip node ``g`` (absent if tile ``i`` does not contain it). Corner
+    nodes shared by >=3 tiles appear once in ``global_keys`` and in every covering tile's map
+    — so the induced connectivity assembled in ``_draw_joint`` spans the junction (C1).
+
+    Raises:
+        AssertionError: if a multi-tile ``parts`` produces an empty strip network, or if any
+            pair of tiles whose extended windows overlap shares no strip node (C6 —
+            silent-empty-conditioning must be a loud red).
+    """
+    t = cast(Any, parts[0].distribution).time_days
+    tile_pts = []
+    tile_keys = []
+    for p in parts:
+        gpts = _support_points(p.distribution.grid, t)
+        tile_pts.append(gpts)
+        tile_keys.append(_node_keys(gpts))
+
+    # strip nodes: tile-i nodes inside any other tile's extended window
+    strip_local: list[set[int]] = [set() for _ in parts]
+    for i, _p_i in enumerate(parts):
+        for j, p_j in enumerate(parts):
+            if i == j:
+                continue
+            win_j = p_j.tile.extended_window
+            for n, pt in enumerate(tile_pts[i]):
+                if _in_window(pt, win_j):
+                    strip_local[i].add(n)
+
+    global_index: dict[tuple[float, float], int] = {}
+    global_keys: list[tuple[float, float]] = []
+    per_tile: list[dict[int, int]] = [{} for _ in parts]
+    for i in range(len(parts)):
+        for n in sorted(strip_local[i]):
+            key = tile_keys[i][n]
+            g = global_index.get(key)
+            if g is None:
+                g = len(global_keys)
+                global_index[key] = g
+                global_keys.append(key)
+            per_tile[i][g] = n
+
+    # C6: a multi-tile blend whose tiles never connect would condition on an empty strip.
+    if len(parts) > 1 and not global_keys:
+        raise AssertionError(
+            "tiles share no strip node — conditioning set would be silently empty (C6)"
+        )
+    # C6: adjacent (extended-window-overlapping) tiles must share at least one strip node
+    for i in range(len(parts)):
+        for j in range(i + 1, len(parts)):
+            wi, wj = parts[i].tile.extended_window, parts[j].tile.extended_window
+            overlap = (
+                wi.lon_range[0] <= wj.lon_range[1]
+                and wj.lon_range[0] <= wi.lon_range[1]
+                and wi.lat_range[0] <= wj.lat_range[1]
+                and wj.lat_range[0] <= wi.lat_range[1]
+            )
+            if overlap:
+                shared = set(per_tile[i]) & set(per_tile[j])
+                if not shared:
+                    raise AssertionError(
+                        f"tiles {i},{j} overlap but share no strip node — "
+                        "conditioning set would be silently empty (C6)"
+                    )
+    return global_keys, per_tile
+
+
 class PerturbEnsembleDegradation:
     """Degradation driver: per-tile INDEPENDENT members, weight-crossfaded (coherence lost).
 
