@@ -1,5 +1,224 @@
 # Sverdrup — Progress notebook
 
+## RESUME HERE (Stage B — CORRECTED after a 7-investigation diagnosis) — read this first
+
+**Status:** Phase 4 Stage B coherent sampler is BLOCKED on a CONFIRMED, LOCALIZED defect whose
+mechanism is now MEASURED. `src/sverdrup/distributions/coherent.py` is reverted to the committed
+max-overlap MST; nothing committed this session. The fix is NOT yet applied (fix-locus just resolved
+to the sampler; owner to confirm direction). **The prior-session RESUME block further down is
+SUPERSEDED** — its causal model (sibling-seams / min-ecc star / depth) was refuted by measurement;
+do not act on it.
+
+### Exact git state
+- HEAD = `eb3d15c`. `coherent.py` RESTORED to committed MST (the dirty min-ecc→star change was
+  discarded — it was a measured regression, see §1).
+- Working tree dirty (uncommitted): `PROGRESS.md`, the spec doc, `tests/unit/_tree_gate.py`
+  (import-broken — still imports `_min_eccentricity_spanning_tree`/`_condition_root_scores`, now
+  removed from coherent.py; to be reworked), untracked `tests/test_tree_kriging_gate.py`.
+
+### 1. CONSTRUCTION — star reverted, MST restored, UNCERTIFIED
+- The dirty `_min_eccentricity_spanning_tree` (star) was a measured REGRESSION: it manufactured the
+  0.565/0.605 "sibling collapse" on the 1-D 3-tile (the star's dropped SIBLING edge; median 1.000
+  laundered it). The committed max-overlap MST builds a sibling-free PATH on 1-D (that edge = 0.905).
+  Reverted to MST.
+- Construction is UNCERTIFIED, NOT "Stage-B done". The gate fixtures `make_natl60(2,2)/(3,3)` are
+  DEGENERATE COMPLETE GRAPHS (K4/K9): every tile shares a reach-spanning overlap with every other
+  (8° domain, ~3° halo). Measured: a 2×2 is structurally K4 (even at 12° tiles); the production
+  regime at corr_len=300 is grid+DIAGONALS (maxdeg ~5–8), NOT grid-4-neighbour — clean grid adjacency
+  appears only at corr_len ≲ 100 km. The prior "BFS-adjacency / L-path / no-sibling" reasoning
+  silently assumed grid-4-neighbour and is a no-op on a complete graph (BFS = star). Certification
+  needs a PRODUCTION-REPRESENTATIVE fixture (more tiles, large-vs-halo → grid+diagonal adjacency).
+
+### 2. RULE (i) / strict-min — survived an adversarial multi-turn test
+- median, p25, AND a physical near-null exclusion were each proposed and each shown by measurement to
+  LAUNDER a real seam-node contract violation that strict-min catches. STANDING RULE (sharp form):
+  coherence conservative-direction is gated by STRICT-MIN over physical seam pairs — no median, no
+  percentile, no aggregate — because the defects are localized and every aggregate tested laundered a
+  real one.
+- The gate's median direction metric (`_tree_gate.py::edge_dir_ratio` returns `np.median`) is a
+  CONFIRMED BUG → must become strict-min. The recorded Stage-B gate evidence **"dir 1.012 PASSED" is
+  ANTI-EVIDENCE** (the median laundered the collapse) — struck; do not trust it.
+
+### 3. METHOD LESSON — the analysis oscillation (load-bearing for future sessions)
+- The defect's apparent magnitude swung "1e6× sampler collapse" → "no defect, reference artifact" →
+  "real contract violation" across turns, because intermediate measurements compared the blend
+  against a CHOSEN reference (max-over-tiles exact variance) that was misattributed — it picked a
+  low-weight HALO tile's near-improper variance as the node's "exact" variance. STANDING METHOD RULE:
+  **when a defect's magnitude depends on which reference you pick, the reference is the bug in the
+  analysis** — measure against the INVARIANT the artifact promises about itself (here: the blend's
+  OWN reported `(Σwσ)²` marginal contract), not an external quantity. That test resolved the
+  three-turn oscillation in one shot.
+
+### 4. CONFIRMED PHENOMENON + fix locus (mechanism measured; fix NOT yet applied)
+- At ~16% of 2-D seam nodes, the coherent blend SAMPLE variance falls up to 7 orders BELOW its own
+  reported `(Σwσ)²` marginal — a real conservative-contract violation (sample ≪ reported σ),
+  localized to the seam, invisible to median/p25, caught by strict-min.
+- Per-tile unconditional samplers are individually HEALTHY (each matches its own exact marginal:
+  uncond/exact median ~0.99, min ~0.84, zero nodes <0.5). Crossfade weights are sound (sum to 1).
+- **FIX LOCUS = THE SAMPLER (hand-forward over-pins).** PROBE B (decisive): blend seam variance
+  WITHOUT the kriging correction = 0.91× contract (fine); WITH correction = 2.3e-6× contract
+  (collapsed) — the hand-forward conditioning IS the collapse. PROBE A: at the collapsed nodes the
+  AUTHORITATIVE (core, high-weight) tiles are the NEAR-IMPROPER ones (σ~280); the well-determined
+  σ~0.11 tiles see the node only in their HALO. The conditioning chain pins the authoritative
+  near-improper tiles to an over-confident HALO tile's draw → seam dispersion collapses below the
+  (correct) reported marginal. Reported `Σwσ` is CORRECT (matches authoritative core tiles + global).
+  NOT malformed weights, NOT mis-reported marginal, NOT junction-tree (per-tile-disagreement +
+  pinning, not cycle-exactness).
+- ROOT CAUSE (physical): small halo tiles cannot support the domain-spanning near-null mode → they
+  are artificially confident at seam nodes the core/global find near-improper; the hand-forward
+  propagates that halo over-confidence into the authoritative tiles.
+
+### Exact next action
+**Design APPROVED + committed:** `docs/superpowers/specs/2026-06-27-stageb-seam-overpinning-fix-design.md`
+— per-node **core-authoritative two-pass** coherent sampler (`GmrfCoreAuthoritativeSolve`), **OVERWRITE
+leading** (halo node ← owning core's actual draw; no `Σ_ss` solve; measured: marginal strict-min 0.881
+vs the MST's 1.76e-7). The spanning-tree machinery dissolves. Certification is a **`range` sweep on a
+production-representative (grid+diagonal) fixture** under strict-min (NOT a single pass) — distinguishes
+case (a) overwrite-sufficient from case (b) core-mode-disagreement/reconciliation (which is not cheap;
+possible phase-boundary). Overwrite cleanliness gate = compute every cross-seam derived quantity from
+BOTH adjacent tiles and assert agreement. eigmin machinery retirement DEFERRED until the sweep rules
+out (b). **Next: writing-plans → implementation plan (holds for owner approval before any code).**
+**IN-PROGRESS, not a closed gate.**
+
+### THE STRUCTURAL ANTAGONIST (organizing fact of the whole Stage-B arc — first-class method constraint)
+The **near-improper global SPDE mode** (sparse nadir obs leave the `(κ²−Δ)²` low-frequency mode
+under-determined ⇒ global `Q_post` eigmin ~1e-7) is the **structural antagonist of the tiled-GMRF
+approach**: it is a *domain-spanning* mode with **no local representation**, so **every per-tile
+operation misjudges it.** It has now produced **three distinct failures**, one disease:
+1. the **synthesized strip-field sampler** (376×) — the strip sub-GMRF couldn't represent the global
+   mode (error 90% in the complement of the near-null subspace);
+2. the **conditioning floor** (residual monotone in eigmin) — conditioning a tile with eigmin~2.5e-7
+   onto anything is ill-posed;
+3. the **halo over-confidence / seam collapse** (this turn) — small halo tiles can't support the
+   mode ⇒ spuriously confident ⇒ the hand-forward propagates that into authoritative tiles.
+
+**Tiling and a near-null global mode are in fundamental tension.** This is a **boundary-of-validity
+constraint on the method**, not a Stage-B closeout note. **Phase 5 drives `range` DOWN → the mode is
+MORE improper → the tension is WORSE**; the autotuner must treat cross-seam coherence residual as a
+CONSTRAINT, not a free variable. Any future per-tile coherent-sampler work must enter expecting this
+mode to be the adversary and gate the joint/contract behavior at the seam (strict-min), never an
+aggregate.
+
+---
+
+## SUPERSEDED — prior-session RESUME block (kept for the trail; DO NOT act on it). Its sibling-seam / min-ecc-star / depth causal model was refuted by measurement — see the CORRECTED block above.
+
+## RESUME HERE (Stage B, mid-diagnosis) — read this first
+
+**Status:** Phase 4 Stage A DONE + gated. Stage B sampler redesign (spanning-tree hand-forward) is
+implemented and ~90% validated, but **blocked on ONE measured defect with a known fix not yet
+applied**. Do NOT resurrect any prior approach; do NOT re-run the whole diagnosis — the decision is
+made, only the final tree-construction tweak + its measurement remain.
+
+### Exact git state (verify before touching anything)
+- **HEAD = `eb3d15c`** (`test(phase4): Stage-B spanning-tree oracles …`). **Tasks 1–8 are committed
+  and green** at this commit. The committed driver `GmrfTreeKrigingSolve` uses the **max-overlap
+  Kruskal MST** (`_max_overlap_spanning_tree`) — that committed state passes `tests/test_gmrf_blend.py`.
+- **Working tree is DIRTY** (uncommitted Stage-B-gate work — the live diagnosis):
+  - `M src/sverdrup/distributions/coherent.py` — added `_min_eccentricity_spanning_tree`,
+    `_posterior_eigmin`, `_condition_root_scores`; driver `_sweep_tree` switched to
+    **min-eccentricity + eigmin-rooting**. (This is what regresses the 1-D chain — see defect below.)
+  - `M tests/unit/_tree_gate.py` — Stage-B gate harness: `GateFixture(parts, grid, gop)`,
+    `make_2x2/make_chain/make_natl60` (real pipeline tiles), `matched_chain_edge_baseline`,
+    sample-based `edge_dir_ratio`.
+  - `?? tests/test_tree_kriging_gate.py` — the Stage-B gate (4 tests): stationary, nonstationary,
+    conditioning-floor-monotone, two-tree-invariance. All 4 PASS as written (but see the metric caveat).
+  - `M PROGRESS.md`, `M docs/superpowers/specs/2026-06-26-…-design.md` — canonical record + spec
+    amendments (eigmin-rooting + conditioning floor; §3.1/§3.1b/§3.1c/§3.4a).
+- **DISPROVED + REMOVED — do NOT resurrect:** the synthesized strip-field sampler
+  `_draw_joint`/`_strip_prior`/`_interiorness` + `GmrfJointKrigingSolve` (376× cross-seam blow-up;
+  deleted in commit `d960f15`). `_strip_network` is KEPT (shared-node sets). The Kruskal
+  `_max_overlap_spanning_tree` is kept ONLY for the Task-6 unit tests — the SHIPPED selection is the
+  min-eccentricity tree.
+
+### Dirty-diff KEEP / REPLACE inventory (what survives the fix)
+- **KEEP** (correct, settled — do not touch):
+  - `_posterior_eigmin`, `_condition_root_scores`, and the **eigmin-rooting** logic in the driver
+    (root at max-eigmin tile; the 31× worst-root negative control is permanent).
+  - the whole `tests/unit/_tree_gate.py` harness (`GateFixture`, `make_2x2/make_chain/make_natl60`,
+    `matched_chain_edge_baseline`, the conditioning-floor monotonicity machinery).
+  - `tests/test_tree_kriging_gate.py` structure (4 tests) — but its direction metric gets swapped
+    (see REPLACE).
+- **REPLACE:**
+  - `_min_eccentricity_spanning_tree` → a **BFS / shortest-path tree over the adjacency graph**
+    (every tree edge ∈ `_tile_adjacency`; eigmin-rooted). The min-ecc tree IS the star that regressed
+    the 1-D chain — it is the thing to remove. (Keep the function only if Task-6 tests reference it;
+    the DRIVER must call the new BFS-adjacency tree.)
+  - the **median** conservative-direction metric → **strict-min over adjacent seam pairs**,
+    **everywhere** (both the gate `tests/test_tree_kriging_gate.py` and the harness
+    `_tree_gate.py::edge_dir_ratio`). The median is banned (rule i).
+- **KEEP-as-is:** Kruskal `_max_overlap_spanning_tree` — ONLY for the Task-6 unit tests, never the driver.
+
+### The live decision — stated as the FIX, not the symptom
+The Stage-B coherent sampler must root its hand-forward tree as a **BFS/shortest-path spanning tree
+over the tile-ADJACENCY graph where every tree edge is a real adjacency (a seam), rooted at the
+max-eigmin (best-conditioned) tile.** Why:
+- The **star** (what min-eccentricity produced on the 2×2 / 3-tile line) FAILED: it forces two real
+  seams into **sibling** pairs — both leaves conditioned on a common parent → seam **over-correlation
+  → under-dispersion** (strict-min cross-seam ratio **0.605** on the 1-D 3-tile case; overconfident
+  at the seam columns).
+- **Depth was NOT the cause; SIBLING-SEAMS are.** A line / BFS-adjacency tree has **zero sibling
+  seams** because every seam is a parent→child tree edge.
+- **eigmin-rooting** (avoids the 31× deep-conditioning blow-up at the worst-conditioned root) and
+  **seam-alignment** (every tree edge is an adjacency; no sibling-seams) are **two SEPARATE
+  constraints, both required.** On a 2×2 the proper BFS adjacency tree is the **L-path**, not the star
+  (the star illegally uses the diagonal/corner edge as a tree edge, orphaning the two side seams into
+  sibling/dropped edges).
+
+### Exact next action (the measurement that unblocks Stage B)
+1. Build the tree as a **BFS/shortest-path tree over the adjacency graph**, eigmin-rooted; **assert no
+   tree edge is a non-adjacency edge** (every tree edge ∈ `_tile_adjacency`). On the 2×2 this yields
+   the L-path; verify it has no sibling-seams.
+2. **Measure strict-min conservative-direction** (min over adjacent cross-seam node pairs of the
+   blend/single-tile-ref firstdifference variance ratio) on the **1-D 3-tile** case AND the **2×2**
+   (and **3×3** if cheap).
+3. **Pass condition — DISAMBIGUATED BY SEAM TYPE:**
+   - **Tree-edge seams** (directly conditioned parent→child): **strict-min cross-seam variance ratio
+     ≥ 0.9** at the worst tree-edge seam, on BOTH the 1-D 3-tile case and the 2×2 (3×3 if cheap).
+     These must be conservative — they are the seams the hand-forward directly stitches.
+   - **Dropped-edge seams** (non-tree cycle edges, transitive coherence): NOT governed by the 0.9
+     tree-edge strict-min. Governed by the existing assertions — **(2)** `max_dropped_edge_residual ≤
+     C·max_tree_edge` (`C ∈ [2,3]`, with the per-tile conditioning-matched chain-baseline floor) AND
+     **(3)** cross-seam variance ratio `≥ 1−ε` (never under-dispersed). A **2×2 L-path tree has
+     exactly ONE dropped edge** (the 4-cycle minus the 3 L-path edges); that single dropped seam is
+     bounded by assertion (2) + the non-under-dispersion of (3), NOT by the 0.9 tree-edge floor.
+   - If tree-edge seams clear strict-min ≥ 0.9 in BOTH cases → Stage B is DONE (commit Tasks 6–9, run
+     full suite, hold for gate review). If even seam-aligned (BFS-adjacency) trees can't clear it →
+     **junction-tree (spec §6) is earned** (the real escalation, now justified by measurement).
+
+### Three LOCKED rules (do not relitigate)
+- **(i) Conservative-direction is gated by STRICT-MIN over adjacent seam pairs, permanently — never
+  median/aggregate.** The median laundered exactly this 0.605 failure (my gate's median-direction
+  passed while the strict-min Phase-3 test caught it). Revert any median direction metric to strict-min.
+  - **EXPECTED RED (do not "fix" it the wrong way):** applying strict-min (reverting the median) WILL
+    turn the 4 currently-green gate tests **RED on the stationary case** (strict-min **0.605 < 0.9**).
+    **That red is CORRECT and EXPECTED** — it is the known sibling-seam defect surfacing, NOT a new
+    regression. The gate returns to green **only** after the BFS-adjacency-tree fix removes the
+    sibling-seams. A fresh session must **not** make this red go away by any means other than the
+    BFS-adjacency-tree construction (no threshold change, no metric swap-back, no fixture tweak).
+- **(ii) The rooting contract is TWO-PART, both with permanent negative-control tests:** max-eigmin
+  root (neg control: rooting at worst-conditioned tile → **31×** blow-up) AND seam-aligned tree edges
+  / no sibling-seams (neg control: the star's **0.605** sibling-seam under-dispersion).
+- **(iii) The conditioning floor is a MONOTONE LAW in eigmin**, with `tree_edge == chain_edge` at
+  equal conditioning (measured `0.644 == 0.644`), gated against a **per-tile conditioning-matched
+  chain baseline** (`matched_chain_edge_baseline`), recorded as a characterized `known_bias`. This is
+  settled and in the spec.
+
+### Standing meta-lesson (canonical — for Phase 5 too)
+Every Stage-B failure was a **localized joint-law property invisible to whatever AGGREGATE statistic
+was certifying it** (marginal variance → gradient ratio → median direction). **Coherence is gated on
+worst-case LOCALIZED seam behavior, never aggregate anything.** Phase 5's tuner searches `range` →
+drives `eigmin` down → raises the conditioning floor; **cross-seam coherence residual is a CONSTRAINT,
+not a free variable**, and junction-tree is the documented short-range escalation.
+
+### Spec lag (must fix when the measurement confirms)
+The spec (§3.1/§3.1b/§3.1c/§3.4a) **already** reflects **eigmin-rooting** and the **conditioning-floor
+law**. It does **NOT yet** contain the **BFS-adjacency-tree / no-sibling-seams** refinement or the
+**strict-min (not median)** conservative-direction rule — **add both to §3.1b/§3.3 once step (2)–(3)
+above confirm them**, so the spec stops lagging the decision.
+
+---
+
 ## Current work (index — do not duplicate task state here)
 
 - **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — IN PROGRESS.**
@@ -24,9 +243,18 @@
     hand-forward" below. **Working tree is clean at `809a570`** (Task-7 synthesized-field code was
     written, disproved, and reverted uncommitted — nothing wrong is on disk). `_strip_network` is
     kept (it computes the tile-adjacency / shared-node sets the spanning tree needs); `_draw_joint`
-    and `_strip_prior` are removed in the re-architected Task 6. **Next action: AWAIT OWNER APPROVAL
-    of the re-architected Stage-B plan (Tasks 6–9 + spec §3/contracts amended), then implement the
-    spanning-tree sampler.**
+    and `_strip_prior` are removed in the re-architected Task 6.
+  - **Stage B COMPLETE (Tasks 6–9); Stage-B GATE PASSED (uncommitted at this checkpoint — awaiting
+    owner gate review before Stage C).** The spanning-tree hand-forward sampler is implemented and
+    the gate is GREEN on the real near-singular natl60 regime. Final construction + the four-turn
+    finding are in "Cross-cutting decisions (Phase 4)" below ("Stage-B sampler …", esp. the
+    **conditioning-floor law** and the **eigmin-rooting contract**). Gate evidence (real natl60 2×2):
+    stationary tree-edge **0.681 ≤ matched_chain 0.706·1.15**, dropped 0.681, dir 1.012;
+    nonstationary tree 0.688, dir 1.006; conditioning floor **monotone in eigmin** `[0.706,0.624,
+    0.551]` with tree==chain at equal conditioning; two-tree invariance PASSED (well-conditioned
+    roots agree 0.68/0.84, worst-conditioned root 31.4 is the negative control the eigmin rule
+    avoids). **Next action: owner Stage-B gate review → on sign-off, commit Tasks 6–9 + Stage C
+    Task 10.**
   - Scope (source of truth): `phase4_scope_spec.md` (settled + owner-amended, `00519b1`).
   - Design: `docs/superpowers/specs/2026-06-26-phase4-fem-and-nonchain-sampler-design.md` (`f7960f8`).
   - Plan: `docs/superpowers/plans/2026-06-26-phase4-fem-and-nonchain-sampler.md`
@@ -285,6 +513,56 @@
     near-improper `(κ²−Δ)²` ⇒ `Q_post` eigmin ~1e-7) is the regime that excites all four — and
     **Phase 5's autotuner searches `range`, which drives the posterior straight into it.** Re-enter
     this regime with this context, not from scratch.
+
+- **Stage-B sampler — FINAL construction (supersedes the spanning-tree decision above with the
+  selection rule + the intrinsic floor; all measured on real natl60).** The non-chain sampler is
+  `GmrfTreeKrigingSolve`: hand-forward conditioning along a **minimum-eccentricity, max-overlap
+  spanning tree, rooted at the BEST-CONDITIONED tile**, with the dropped (non-tree) edges carrying a
+  bounded, recorded transitive-coherence residual. Four findings, each measured, each a contract:
+  - **Depth governs stability, not overlap.** Hand-forward kriging accumulates drift per hop; a deep
+    tree routes the conditioning through the near-singular `Σ_ss` (`cond≈4e8`) in an order that
+    amplifies (measured 10× at a depth-3 edge vs ~1.4× at depth 1; the max-overlap Kruskal MST can be
+    deep → unstable). Fix: **minimum-eccentricity** root + shortest-hop BFS tree → shallow (a star,
+    depth 1, on the `k·corr_len` heavy-overlap regime); rel stays bounded (0.40–0.45) as the domain
+    scales to 3×2 / 3×3 where the naive MST reaches depth 3–4 and risks blow-up.
+  - **EIGMIN-ROOTING CONTRACT (load-bearing, pinned with a negative control).** The blow-up root is
+    the **most near-singular tile** (smallest `eigmin(Q_post)`): drawn unconditionally, its huge
+    near-null draw is a toxic anchor (measured **31×** rel rooting there, vs 0.36–0.84 at any
+    better-conditioned root). `_condition_root_scores` = `-eigmin(Q_post)` per tile; the tree roots
+    at max-eigmin. **Negative control (must stay in the gate):** rooting at the worst-conditioned
+    tile blows up >1.5× the well-conditioned roots — a future refactor that roots arbitrarily
+    reintroduces the 31× and fails loudly. `eigmin` ≠ accuracy-rank among the *non-toxic* roots, but
+    it cleanly avoids the toxic one.
+  - **THE CONDITIONING FLOOR (the central finding; a characterized `known_bias`).** With every
+    topology issue fixed, an elevated cross-seam residual remains around a near-singular tile and
+    **no tree removes it** — it is not topology, it is that conditioning a tile with `eigmin≈2.5e-7`
+    onto anything is ill-posed, and hand-forward inherits that. Measured: the residual is **MONOTONE
+    in `eigmin(Q_post)`** (`[0.706, 0.624, 0.551]` as eigmin rises) and **`tree_edge == chain_edge`
+    EXACTLY at equal conditioning** — i.e. the tree sweep is NOT worse than the plain chain on a
+    near-singular tile; the chain pays the identical floor. The gate therefore compares each tree
+    edge to the **per-tile conditioning-matched chain baseline** (`matched_chain_edge_baseline`,
+    same tile, same eigmin), not to an easier well-conditioned chain — like-for-like, so the floor is
+    not mistaken for a defect, while a multi-hop tree degrading past the fresh chain conditioning
+    still fails.
+  - **Gate (Task 9, three coupled assertions, PASSED):** (1) `max_tree_edge ≤ matched_chain·1.15`
+    (hand-forward no worse than chain at equal conditioning); (2) `max_dropped ≤ max(2.5·max_tree,
+    matched_chain)`; (3) conservative direction (median seam firstdifference variance ratio vs the
+    single-tile reference) `≥ 0.9` — never under-dispersed. Plus two-tree invariance (well-conditioned
+    roots agree + worst-root 31× negative control) and the nonstationary-κ case. Conservative
+    everywhere, bounded under eigmin-rooting, chain-quality where conditioning allows.
+  - **PHASE-5 OPERATIONAL WARNING (the bridge — do not let the tuner re-derive this arc).** The
+    coherent sampler's accuracy floor is a **function of `eigmin(Q_post)`, which the `range`
+    parameter controls**: short range → near-improper posterior → eigmin↓ → the cross-seam residual
+    rises toward the 2.2 / 31 seen when unguarded. **The Phase-5 autotuner MUST treat cross-seam
+    coherence residual as a CONSTRAINT, not a free variable** — searching `range` down drives the
+    posterior into the regime this whole arc characterized. **Junction-tree (spec §6) is the
+    documented exact escalation** for the short-range regime where the floor exceeds tolerance; it
+    was deliberately NOT built now (measured proof it is unneeded at tested conditioning: 3 of 4
+    trees nail 0.30 with zero cycle correction, and tree==chain at equal conditioning — cycle
+    exactness is not what is broken; the floor is intrinsic).
+  - **Obsolete (removed):** `_draw_joint`/`_strip_prior`/`_interiorness` (synthesized strip field,
+    disproved 376×); the Kruskal `_max_overlap_spanning_tree` is retained only for the Task-6 unit
+    tests — the SHIPPED selection is `_min_eccentricity_spanning_tree(adjacency, n, root_score)`.
 
 ## Cross-cutting decisions (canonical — Phase 3)
 
