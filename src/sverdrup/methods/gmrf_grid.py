@@ -141,25 +141,71 @@ def bilinear_weights(grid: GridSpec, pts: Points) -> sparse.csr_matrix:
 
 @dataclass(frozen=True)
 class GridIdentityProjection:
-    """The gridded block read-off: ``W = identity-on-nodes`` (not baked into the operator)."""
+    """The gridded node projection: ``W = bilinear`` (identity on nodes); ``(ny,nx)`` fields."""
 
     grid: GridSpec
 
     @property
+    def node_space(self) -> GridSpec:
+        """Return the node layout (the grid)."""
+        return self.grid
+
+    @property
     def matrix(self) -> sparse.csr_matrix:
-        """Return the ``(n, n)`` identity projection over the grid nodes."""
+        """Return the ``(n, n)`` identity projection over the grid nodes (legacy hook)."""
         n = self.grid.shape[0] * self.grid.shape[1]
         return sparse.identity(n, format="csr")
+
+    def weights(self, pts: Points) -> sparse.csr_matrix:
+        """Return the bilinear ``W`` to ``pts`` (a unit selector on nodes ⇒ identity there)."""
+        return bilinear_weights(self.grid, pts)
+
+    def field_shape(self) -> tuple[int, ...]:
+        """Return ``(ny, nx)``."""
+        return self.grid.shape
+
+    def node_points(self, time_days: float) -> Points:
+        """Return the grid node coordinates at ``time_days``."""
+        return self.grid.points(time_days)
+
+    def assert_adjacency(self, q: sparse.spmatrix) -> None:
+        """Delegate to the 5-point-pattern precondition for the grid."""
+        from sverdrup.methods.gmrf_linalg import assert_adjacency_in_pattern
+
+        assert_adjacency_in_pattern(q.tocsc(), self.grid.shape)
 
 
 @dataclass(frozen=True)
 class BilinearProjection:
-    """The off-grid read-off: bilinear ``W`` from grid nodes to arbitrary points."""
+    """The off-grid read-off: bilinear ``W`` from grid nodes to fixed query points."""
 
     grid: GridSpec
     pts: Points
 
     @property
+    def node_space(self) -> GridSpec:
+        """Return the node layout (the grid)."""
+        return self.grid
+
+    @property
     def matrix(self) -> sparse.csr_matrix:
-        """Return the ``(k, n)`` bilinear projection to ``pts``."""
+        """Return the ``(k, n)`` bilinear projection to ``pts`` (legacy hook)."""
         return bilinear_weights(self.grid, self.pts)
+
+    def weights(self, pts: Points) -> sparse.csr_matrix:
+        """Return the bilinear ``W`` to ``pts`` (ignores the stored ``self.pts``)."""
+        return bilinear_weights(self.grid, pts)
+
+    def field_shape(self) -> tuple[int, ...]:
+        """Return ``(k,)`` — the number of fixed query points."""
+        return (self.pts.shape[0],)
+
+    def node_points(self, time_days: float) -> Points:
+        """Return the grid node coordinates at ``time_days``."""
+        return self.grid.points(time_days)
+
+    def assert_adjacency(self, q: sparse.spmatrix) -> None:
+        """Delegate to the 5-point-pattern precondition for the grid."""
+        from sverdrup.methods.gmrf_linalg import assert_adjacency_in_pattern
+
+        assert_adjacency_in_pattern(q.tocsc(), self.grid.shape)
