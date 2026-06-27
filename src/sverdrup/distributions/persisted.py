@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 if TYPE_CHECKING:
+    from sverdrup.core.projection import Projection
     from sverdrup.methods.gmrf_linalg import GMRFFactor
 
 from sverdrup.core.distribution import CovarianceOperator
@@ -268,6 +269,12 @@ class PrecisionFields:
     marginal_variance: Field  # exact, from selective inversion
     seed: Seed
     sampler_spec: str = "sparse-precision"
+    projection: object | None = (
+        None  # Projection over the node space (None -> grid identity)
+    )
+    prior_precision: object | None = (
+        None  # CSC prior Q, for the Stage-B strip-prior draw
+    )
 
 
 @dataclass
@@ -280,8 +287,14 @@ class PrecisionDistribution:
     time_days: float
 
     def __post_init__(self) -> None:
-        """Cache a factor lazily on first sampling/cov use."""
+        """Cache a factor lazily; resolve the held projection (grid identity by default)."""
         self._factor: object | None = None
+        proj = self.fields.projection
+        if proj is None:
+            from sverdrup.methods.gmrf_grid import GridIdentityProjection
+
+            proj = GridIdentityProjection(cast(Any, self.grid))
+        self._projection = cast("Projection", proj)
 
     def _factor_obj(self) -> GMRFFactor:
         """Return the cached ``GMRFFactor`` of the stored precision (built once)."""
@@ -310,22 +323,20 @@ class PrecisionDistribution:
         return np.asarray(self._factor_obj().posterior_cov_columns(shared_idx))
 
     def covariance(self, a: Points, b: Points) -> np.ndarray:
-        """Return ``W_a Σ W_b^T`` from the cached factor's selective inverse."""
-        from sverdrup.methods.gmrf_grid import bilinear_weights
-
+        """Return ``W_a Σ W_b^T`` from the cached factor's selective inverse (via the projection)."""
         sinv = self._factor_obj().selective_inverse()
-        wa = bilinear_weights(self.grid, a)
-        wb = bilinear_weights(self.grid, b)
+        wa = self._projection.weights(a)
+        wb = self._projection.weights(b)
         return np.asarray((wa @ sinv @ wb.T).toarray())
 
     def sample(self, m: int, seed: Seed) -> np.ndarray:
-        """Return ``m`` field draws ``mean + L^-T w``, shape ``(m, ny, nx)``."""
+        """Return ``m`` field draws ``mean + L^-T w`` in the projection's field shape."""
         rng = np.random.default_rng(seed)
         fac = self._factor_obj()
         n = cast(Any, self.fields.precision).shape[0]
         draws = np.stack([fac.sample(rng.standard_normal(n)) for _ in range(m)])
-        ny, nx = self.grid.shape
-        return np.asarray(self.fields.mean[None, :, :] + draws.reshape(m, ny, nx))
+        shape = self._projection.field_shape()
+        return np.asarray(self.fields.mean[None, ...] + draws.reshape(m, *shape))
 
     def regrid(self, target: GridSpec) -> PrecisionDistribution:
         """Re-express on ``target`` via samples (never the variance map)."""

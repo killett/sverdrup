@@ -17,7 +17,7 @@
     {
       "id": 3,
       "subject": "Task 3: De-grid persisted form + reduction + solve threading",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2],
       "description": "**Goal:** PrecisionFields/PrecisionDistribution carry Projection + prior_precision; route cov/sample through projection; thread reduction + solve.\n\n**Verify:** pixi run test tests/unit/test_precision_distribution.py tests/unit/test_reduction.py tests/test_gmrf_blend.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/distributions/reduction.py\", \"src/sverdrup/application/solve.py\", \"tests/unit/test_precision_distribution.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_precision_distribution.py tests/unit/test_reduction.py tests/test_gmrf_blend.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/integration/test_solve_unit.py -v\", \"acceptanceCriteria\": [\"persisted form carries projection + prior_precision\", \"covariance/sample route through projection, grep clean\", \"reduction threads projection+prior\", \"phase-3 GMRF persisted/reduction/kriging tests green\"], \"modelTier\": \"standard\"}\n```"
     },

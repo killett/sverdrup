@@ -100,3 +100,21 @@ def test_precision_distribution_eval_points_have_no_factor():
     np.testing.assert_allclose(
         unit.eval_points.variance, dist.cov_op.marginal_var(evals), rtol=1e-6
     )
+
+
+def test_precision_distribution_routes_cov_through_projection_and_carries_prior():
+    # Behavior: covariance goes through the held projection (not bilinear_weights(self.grid)),
+    #   and the persisted form carries the prior precision for the Stage-B strip draw.
+    # Bug caught: a grid-hardcoded read-off (invariant 2) or a dropped prior (Stage B can't
+    #   assemble the strip sub-GMRF).
+    dist = _dist()
+    pts = _grid().points(2.0)
+    unit = GMRFPrecisionReduction().reduce(dist, pts, None, rank=0, seed=1)
+    pd = PrecisionDistribution(
+        _grid(), cast(PrecisionFields, unit.base_fields), dist.provenance, 2.0
+    )
+    assert pd.fields.prior_precision is dist.cov_op.q_prior
+    a = np.array([[2.5, 3.5, 2.0]])
+    wa = pd._projection.weights(a)
+    cov_proj = wa @ pd._factor_obj().selective_inverse() @ wa.T
+    np.testing.assert_allclose(pd.covariance(a, a), cov_proj.toarray(), rtol=1e-9)
