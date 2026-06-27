@@ -4,7 +4,7 @@
     {
       "id": 1,
       "subject": "Task 1: Projection seam + grid dataclasses conform",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** core/projection.py Projection Protocol; grid dataclasses conform additively (keep .matrix).\n\n**Verify:** pixi run test tests/unit/test_projection.py tests/unit/test_gmrf_grid.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/projection.py\", \"src/sverdrup/methods/gmrf_grid.py\", \"tests/unit/test_projection.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_projection.py tests/unit/test_gmrf_grid.py -v\", \"acceptanceCriteria\": [\"Projection protocol with weights/field_shape/node_points/assert_adjacency\", \"both grid dataclasses conform and keep .matrix\", \"existing test_projection_identity_and_bilinear unchanged green\"], \"modelTier\": \"standard\"}\n```"
     },
     {
