@@ -1,0 +1,49 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-27-stageb-core-authoritative-sampler.md",
+  "note": "SUPERSEDED 2026-06-27 by the Stage-B PHASE BOUNDARY disposition (see PROGRESS 'RESUME HERE (2026-06-27)'). The range-sweep cert proved case (b): overwrite zeroes operational cross-seam covariance, carrier is the near-improper mode, near-null deflation killed by measurement. Overwrite landed as a NON-DEFAULT reference; sparse-precision default stays GmrfTreeKrigingSolve; default choice + decomposition redesign are a Phase-5 milestone. Original Tasks 2/4/5/6 superseded.",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 1: Core-ownership map + ownership==weights agreement",
+      "status": "completed",
+      "commit": "d173561",
+      "description": "Per-node disjoint-core ownership map (_core_owner_of_points/_core_owner_of_keys) asserted == argmax(partition_weights); repaired _tree_gate.py imports (removed dead min-ecc symbols, repointed tree() to live MST); removed dead untracked test_tree_kriging_gate.py."
+    },
+    {
+      "id": 1,
+      "subject": "Disp-A: GmrfCoreAuthoritativeSolve as non-default short-range reference",
+      "status": "completed",
+      "commit": "64a2b32",
+      "supersedes": "Task 2 (overwrite driver + registry repoint) — registry NOT repointed; overwrite is non-default reference.",
+      "description": "Two-pass overwrite driver landed as documented NON-DEFAULT reference (correct only at core/range>=~25). Registry default unchanged (GmrfTreeKrigingSolve). Harness: sigma_contract/marginal_contract_ratios + make_grid_diagonal/_scattered_obs_over production fixture. Marginal collapse fixed (overwrite strict-min>=0.5 vs tree 1.76e-7)."
+    },
+    {
+      "id": 2,
+      "subject": "Disp-B: case-(b) boundary-characterization + acceptance gate",
+      "status": "completed",
+      "commit": "006aa7a",
+      "supersedes": "Task 3 (overwrite cleanliness gate) + Task 5 (range-sweep user-gate expecting case a).",
+      "description": "tests/test_core_authoritative_gate.py: ownership (green) + marginal-fix/non-default (green) + case-(b) boundary-characterization (green: 400km substantial true seam corr overwrite zeroes, direction PASSES masking it, 50km overwrite correct) + acceptance (strict xfail: overwrite recovers operational cross-seam covariance — Phase-5 fix must flip to xpass). Strict-min/worst-pair throughout (rule i)."
+    },
+    {
+      "id": 3,
+      "subject": "Disp-C: record phase boundary — PROGRESS + plan + tracker; default deferred to Phase 5",
+      "status": "completed",
+      "supersedes": "Task 4 (range-sweep cert) reframed as characterization; Task 6 (retire tree machinery) cancelled — tree driver stays as deferred default.",
+      "description": "PROGRESS RESUME block + two-antagonist frame + deflation kill + Phase-5 handoff (core/range>=~25 constraint, acceptance xfail pointer, deferred default). Plan doc annotated superseded. .tasks.json synced."
+    },
+    {
+      "id": 4,
+      "subject": "Task 5 (range-sweep cert user-gate) — SUPERSEDED",
+      "status": "deleted",
+      "description": "Executed early; proved case (b) not case (a). Became the boundary-characterization + strict-xfail acceptance gate (Disp-B). Not a pass/fail ship gate."
+    },
+    {
+      "id": 5,
+      "subject": "Task 6 (retire eigmin + spanning-tree machinery) — CANCELLED",
+      "status": "deleted",
+      "description": "Conditional on Task 5 case (a). Case (b) proven, so the tree machinery STAYS as the deferred sparse-precision default. Not retired."
+    }
+  ],
+  "lastUpdated": "2026-06-27T00:00:02Z"
+}
