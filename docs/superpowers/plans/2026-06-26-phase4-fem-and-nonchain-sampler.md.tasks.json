@@ -52,7 +52,7 @@
     {
       "id": 8,
       "subject": "Task 8: Stage-B oracles — tree-edge/dropped-edge/conservative-direction/two-tree-invariance",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [7],
       "description": "**Goal:** pin the spanning-tree contracts with thresholds derived from the MEASURED chain baseline (~0.30, computed in-test, not hardcoded). Rebuild the 3 blend-routed oracle fixtures as REAL solved tiles (hand-stubbed prior_precision=None rotted). Oracles: per-tile full-cov ==(Q^i)^-1; two-stream independent white (C2'); tree-edge <= chain baseline; dropped-edge <= C*tree-edge (C in [2,3]); conservative direction (no under-dispersion); two-tree invariance; thin-tree-edge loud red.\n\n**Verify:** pixi run test tests/unit/test_tree_kriging_oracle.py tests/unit/test_gmrf_kriging_oracle.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_tree_kriging_oracle.py\", \"tests/unit/test_gmrf_kriging_oracle.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_tree_kriging_oracle.py tests/unit/test_gmrf_kriging_oracle.py -v\", \"acceptanceCriteria\": [\"per-tile corrected cov == exact (Q^i)^-1 MC tol\", \"two white streams independent (C2')\", \"tree-edge relerr <= chain_baseline*(1+slack), baseline measured in-test\", \"dropped-edge relerr <= C*tree-edge (C in [2,3])\", \"conservative direction: cross-seam var ratio >= 1-eps on dropped edges\", \"two-tree invariance: blend within tol under MST + alt tree\", \"3 oracle fixtures rebuilt as real solved tiles\"], \"modelTier\": \"complex\"}\n```"
     },
