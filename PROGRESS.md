@@ -273,6 +273,18 @@
     tests (`tests/unit/test_draw_joint.py`). `_strip_network` is **kept** (adjacency + shared-node
     sets). Stage-A (Tasks 1–4) is **unaffected** — the Projection seam / de-grid generalization is
     orthogonal and already gated green.
+  - **STANDING STAGE-B CAUTION (read before touching the GMRF coherent sampler, esp. in Phase 5).**
+    Across four consecutive review turns the failure (or the fix) lived in a **joint-law property
+    invisible to a magnitude/gradient-only gate**: (1) the value-conditioning singularity
+    `cond(Σ_ss)≈4e8`, (2) coarse-mode mislocalization (error in the complement, not the near-null),
+    (3) jitter laundering (gradient green / joint-cov 0.6+ wrong), (4) the relative-bound degeneracy
+    (a near-zero tree-edge residual would spuriously red a bounded dropped edge — hence the
+    chain-baseline floor on assertion 2). **The GMRF coherent sampler's failure modes are joint-law
+    properties; gate the joint covariance vs a dense reference and the conservative DIRECTION at the
+    seam, never just magnitude/gradient.** The **near-singular short-range posterior** (sparse obs +
+    near-improper `(κ²−Δ)²` ⇒ `Q_post` eigmin ~1e-7) is the regime that excites all four — and
+    **Phase 5's autotuner searches `range`, which drives the posterior straight into it.** Re-enter
+    this regime with this context, not from scratch.
 
 ## Cross-cutting decisions (canonical — Phase 3)
 
