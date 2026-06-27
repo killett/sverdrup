@@ -142,6 +142,26 @@ def four_tile_corner_parts_nonstationary() -> list[BlendInput]:
     return four_tile_corner_parts(provider=prov)
 
 
+def narrow_overlap_parts() -> list[BlendInput]:
+    """Two horizontally-adjacent tiles sharing exactly ONE lon column (< stencil reach)."""
+    return [
+        _part(
+            np.arange(0.0, 5.0),
+            np.arange(0.0, 5.0),
+            1.0,
+            ((0.0, 3.0), (0.0, 4.0)),
+            ((0.0, 4.0), (0.0, 4.0)),
+        ),
+        _part(
+            np.arange(4.0, 9.0),
+            np.arange(0.0, 5.0),
+            2.0,
+            ((5.0, 8.0), (0.0, 4.0)),
+            ((4.0, 8.0), (0.0, 4.0)),
+        ),
+    ]
+
+
 def disjoint_pair_parts() -> list[BlendInput]:
     """Two tiles whose extended windows do not touch — the strip network is empty (C6)."""
     return [

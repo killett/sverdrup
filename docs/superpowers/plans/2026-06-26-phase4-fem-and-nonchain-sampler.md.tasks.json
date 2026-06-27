@@ -38,7 +38,7 @@
     {
       "id": 6,
       "subject": "Task 6: Tile-adjacency graph + max-overlap spanning tree (Stage-B redesign)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "**DESIGN PIVOT (owner-confirmed):** synthesized strip field (`_draw_joint`/`_strip_prior`) DISPROVED (376x cross-seam, jitter cover-up, intrinsic near-singular Sigma_ss) and REMOVED. Replaced by spanning-tree hand-forward. See PROGRESS Phase-4 cross-cutting decisions.\n\n**Goal:** remove `_draw_joint`/`_strip_prior`/`_interiorness` + test_draw_joint.py; keep `_strip_network`; add `_tile_adjacency` (shared-node weighted graph), `_max_overlap_spanning_tree` (parent/order/dropped + connectivity assert), `_assert_tree_edge_separates`.\n\n**Verify:** pixi run test tests/unit/test_spanning_tree.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_spanning_tree.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_spanning_tree.py -v\", \"acceptanceCriteria\": [\"_tile_adjacency: shared-node-count weighted edges, sub-reach pairs excluded\", \"_max_overlap_spanning_tree: max-weight ST + parent/order/dropped\", \"disconnected adjacency raises (C6)\", \"per-tree-edge separation assert (thin tree edge raises)\", \"2x2: 3 tree edges + non-empty dropped + max-overlap optimal\", \"_draw_joint/_strip_prior removed; _strip_network kept\"], \"modelTier\": \"complex\"}\n```"
     },
