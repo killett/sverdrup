@@ -492,6 +492,56 @@ def _spans_reach(keys: set[tuple[float, float]]) -> bool:
     return min(lon_cols, lat_rows) >= STENCIL_REACH
 
 
+def _core_owner_of_points(
+    parts: Sequence[Any], pts: Points, time_days: float
+) -> np.ndarray:
+    """Return the owning-tile index for each point, by disjoint-core membership.
+
+    Cores partition the domain, so each point lies in exactly one core. Boundary
+    points are assigned to the lowest-index core that contains them (closed lower /
+    closed upper membership, first-wins) — which coincides with ``argmax`` of the
+    partition-of-unity weights (asserted by the gate). A point in no core is a loud
+    red: the cores do not cover the output grid.
+    """
+    n = pts.shape[0]
+    owner = np.full(n, -1, dtype=int)
+    for i, p in enumerate(parts):
+        (lo_lon, hi_lon) = p.tile.core_window.lon_range
+        (lo_lat, hi_lat) = p.tile.core_window.lat_range
+        inside = (
+            (pts[:, 0] >= lo_lon - 1e-9)
+            & (pts[:, 0] <= hi_lon + 1e-9)
+            & (pts[:, 1] >= lo_lat - 1e-9)
+            & (pts[:, 1] <= hi_lat + 1e-9)
+        )
+        take = inside & (owner < 0)
+        owner[take] = i
+    if (owner < 0).any():
+        raise AssertionError(
+            f"{int((owner < 0).sum())} output node(s) lie in no tile core — the cores "
+            "do not cover the output grid (would be silently unowned)"
+        )
+    return owner
+
+
+def _core_owner_of_keys(
+    parts: Sequence[Any], time_days: float
+) -> dict[tuple[float, float], int]:
+    """Return ``{node-key: owning-tile index}`` over the union of tile supports."""
+    keys: dict[tuple[float, float], int] = {}
+    for i, p in enumerate(parts):
+        (lo_lon, hi_lon) = p.tile.core_window.lon_range
+        (lo_lat, hi_lat) = p.tile.core_window.lat_range
+        for k in _node_keys(_support_points(p.distribution.grid, time_days)):
+            if (
+                lo_lon - 1e-9 <= k[0] <= hi_lon + 1e-9
+                and lo_lat - 1e-9 <= k[1] <= hi_lat + 1e-9
+                and k not in keys
+            ):
+                keys[k] = i
+    return keys
+
+
 def _tile_adjacency(
     parts: Sequence[Any],
 ) -> dict[tuple[int, int], set[tuple[float, float]]]:
