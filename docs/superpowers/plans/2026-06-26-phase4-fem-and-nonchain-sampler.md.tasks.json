@@ -1,0 +1,117 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-26-phase4-fem-and-nonchain-sampler.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Projection seam + grid dataclasses conform",
+      "status": "pending",
+      "description": "**Goal:** core/projection.py Projection Protocol; grid dataclasses conform additively (keep .matrix).\n\n**Verify:** pixi run test tests/unit/test_projection.py tests/unit/test_gmrf_grid.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/projection.py\", \"src/sverdrup/methods/gmrf_grid.py\", \"tests/unit/test_projection.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_projection.py tests/unit/test_gmrf_grid.py -v\", \"acceptanceCriteria\": [\"Projection protocol with weights/field_shape/node_points/assert_adjacency\", \"both grid dataclasses conform and keep .matrix\", \"existing test_projection_identity_and_bilinear unchanged green\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Operator consumes Projection; carries q_prior; _diag equivalence (C3)",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** GMRFCovarianceOperator routes read-off through held Projection; accepts grid or projection; carries q_prior; pins _diag==slow path (C3).\n\n**Verify:** pixi run test tests/unit/test_gmrf_method.py tests/unit/test_gmrf_grid.py -v && rg bilinear_weights(self.grid|self.grid.shape src/sverdrup/methods/gmrf.py\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/gmrf.py\", \"tests/unit/test_gmrf_method.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_gmrf_method.py tests/unit/test_gmrf_grid.py tests/unit/test_nonstationary_kappa.py -v\", \"acceptanceCriteria\": [\"operator holds Projection, no hardcoded read-off (grep clean)\", \"carries q_prior\", \"C3 _diag fast-path equals slow path\", \"existing operator tests green\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: De-grid persisted form + reduction + solve threading",
+      "status": "pending",
+      "blockedBy": [2],
+      "description": "**Goal:** PrecisionFields/PrecisionDistribution carry Projection + prior_precision; route cov/sample through projection; thread reduction + solve.\n\n**Verify:** pixi run test tests/unit/test_precision_distribution.py tests/unit/test_reduction.py tests/test_gmrf_blend.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/persisted.py\", \"src/sverdrup/distributions/reduction.py\", \"src/sverdrup/application/solve.py\", \"tests/unit/test_precision_distribution.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_precision_distribution.py tests/unit/test_reduction.py tests/test_gmrf_blend.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/integration/test_solve_unit.py -v\", \"acceptanceCriteria\": [\"persisted form carries projection + prior_precision\", \"covariance/sample route through projection, grep clean\", \"reduction threads projection+prior\", \"phase-3 GMRF persisted/reduction/kriging tests green\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: STAGE-A GATE — Phase-3 suite reproduces exactly",
+      "status": "pending",
+      "blockedBy": [3],
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Generalization changed no behavior: whole suite green, no hardcoded read-off, zero phase-3 test edits.\n\n**Verify:** pixi run test 2>&1 | tail -5 && pixi run typecheck && pixi run lint\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"pixi run test 2>&1 | tail -8 && pixi run typecheck && pixi run lint\", \"acceptanceCriteria\": [\"pixi run test 0 failed (>=178 passed/2 skipped)\", \"typecheck + lint clean\", \"invariant-2 grep empty in operator+persisted\", \"no phase-3 test assertions edited (git diff --stat vs 31a58c6 additions only)\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requiresUserSpecification\": false, \"gateScope\": \"stage-a\", \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: _strip_network — strip nodes + induced Q-subgraph (C1, C6)",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** topology-agnostic strip-network: union strip nodes + per-tile local maps; corner covered by >=3 tiles (C1); disjoint pair raises (C6).\n\n**Verify:** pixi run test tests/unit/test_strip_network.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_strip_network.py\", \"tests/unit/_strip_fixtures.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_strip_network.py -v\", \"acceptanceCriteria\": [\"_strip_network returns global keys + per-tile local maps\", \"corner node covered by >=3 tiles (C1)\", \"disjoint adjacent tiles raise AssertionError (C6)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: _draw_joint — one auxiliary field over the strip sub-GMRF (C1, C2, C4)",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "**Goal:** strip prior = induced submatrix of per-tile PRIOR precisions (interior-source rows → per-node kappa C4; corner edges C1); draw ONE field with own independent white (C2).\n\n**Verify:** pixi run test tests/unit/test_draw_joint.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_draw_joint.py\", \"tests/unit/_strip_fixtures.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_draw_joint.py -v\", \"acceptanceCriteria\": [\"strip prior is induced submatrix with corner cross-edges (C1)\", \"joint white independent of tile seeds (C2)\", \"nonstationary kappa carried per-node (C4)\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 7: GmrfJointKrigingSolve — krige toward joint field; repoint registry",
+      "status": "pending",
+      "blockedBy": [6],
+      "description": "**Goal:** topology-agnostic driver: per-tile independent white → unconditional draw → krige toward one joint field → crossfade. Repoint _DRIVERS; keep GmrfKrigingSolve (1-D regression); update only the one wiring assertion.\n\n**Verify:** pixi run test tests/unit/test_joint_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_joint_kriging_driver.py\", \"tests/test_gmrf_blend.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_joint_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v\", \"acceptanceCriteria\": [\"joint driver kriges toward one shared field with independent per-tile white\", \"registry repointed to GmrfJointKrigingSolve\", \"GmrfKrigingSolve chain tests stay green untouched\", \"only the single wiring assertion changed\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 8: Stage-B oracles + negative control (C2 three streams, per-tile full-cov, too-narrow)",
+      "status": "pending",
+      "blockedBy": [7],
+      "description": "**Goal:** per-tile full-cov oracle (==(Q^i)^-1), three-stream independent-white (C2), too-narrow-overlap loud red.\n\n**Verify:** pixi run test tests/unit/test_joint_kriging_oracle.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_joint_kriging_oracle.py\", \"tests/unit/_strip_fixtures.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_joint_kriging_oracle.py -v\", \"acceptanceCriteria\": [\"per-tile corrected cov == exact (Q^i)^-1 within MC tol\", \"three white streams independent (C2)\", \"too-narrow overlap fails loudly\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 9: STAGE-B GATE — distinct-tiles positive control (cross-seam + corner C1 + nonstationary C4)",
+      "status": "pending",
+      "blockedBy": [8],
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Distinct-tiles cross-seam parity + corner-junction joint cov vs dense reference (C1) + nonstationary (C4); residual measured-vs-reference, recorded; junction-tree fallback only if out-of-tolerance.\n\n**Verify:** pixi run test tests/test_joint_kriging_positive_control.py -v -s 2>&1 | tail -20\n\n```json:metadata\n{\"files\": [\"tests/test_joint_kriging_positive_control.py\"], \"verifyCommand\": \"pixi run test tests/test_joint_kriging_positive_control.py -v -s 2>&1 | tail -20\", \"acceptanceCriteria\": [\"cross-seam variance ratio min >= 0.9 (conservative, recorded)\", \"corner-junction joint cov dev <= 0.15 vs dense reference (C1)\", \"nonstationary case conservative (C4)\", \"residual recorded as known_bias; out-of-tolerance fails loudly\", \"1-D chain regression still green\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requiresUserSpecification\": false, \"gateScope\": \"stage-b\", \"requireEvidenceTokens\": [[\"blend\", \"stage-b\"], [\"reference\", \"single-tile\"]], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 10: fem_mesh.py — Mesh, Delaunay generation, sliver guard",
+      "status": "pending",
+      "blockedBy": [9],
+      "description": "**Goal:** Mesh value object + build_mesh (scipy.spatial.Delaunay; boundary ring + densified points) + assert_mesh_quality (loud sliver guard).\n\n**Verify:** pixi run test tests/unit/test_fem_mesh.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem_mesh.py\", \"tests/unit/test_fem_mesh.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_fem_mesh.py -v\", \"acceptanceCriteria\": [\"Mesh with PointSet-like .points() and (n,) shape\", \"build_mesh via Delaunay with boundary ring / refine points\", \"sliver guard raises loudly, passes on grid mesh\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 11: fem_precision — P1 mass+stiffness; exact marginal var vs dense Q-inverse",
+      "status": "pending",
+      "blockedBy": [10],
+      "description": "**Goal:** LRL FEM precision (lumped C + stiffness G, alpha=2); exact Takahashi var vs dense Q^-1 on a small mesh; scalar/per-node kappa.\n\n**Verify:** pixi run test tests/unit/test_fem_precision.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/unit/test_fem_precision.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_fem_precision.py -v\", \"acceptanceCriteria\": [\"fem_precision symmetric SPD, lumped C + stiffness G, alpha=2\", \"scalar and per-node kappa\", \"exact selective-inverse var matches dense Q^-1 rtol 1e-7\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 12: FEMBasisProjection — P1 basis read-off conforming to Projection",
+      "status": "pending",
+      "blockedBy": [11],
+      "description": "**Goal:** FEMBasisProjection.weights = P1 basis via find_simplex + barycentric; conforms to Projection, field_shape (n,); assert_adjacency requires mesh edges in Q.\n\n**Verify:** pixi run test tests/unit/test_fem_projection.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/unit/test_fem_projection.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_fem_projection.py -v\", \"acceptanceCriteria\": [\"FEMBasisProjection conforms to Projection, field_shape (n,)\", \"P1 weights partition of unity; vertex unit selector\", \"assert_adjacency requires mesh edges in Q pattern\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 13,
+      "subject": "Task 13: FEMMatern.solve + register fem; no-grid-path guard (C5)",
+      "status": "pending",
+      "blockedBy": [12],
+      "description": "**Goal:** FEM method → GMRFCovarianceOperator over same machinery; register 'fem'; C5 monkeypatch proves bilinear_weights never called during FEM solve+reduce.\n\n**Verify:** pixi run test tests/unit/test_fem_method.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"src/sverdrup/methods/registry.py\", \"tests/unit/test_fem_method.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_fem_method.py -v\", \"acceptanceCriteria\": [\"FEMMatern registered, returns GMRFCovarianceOperator holding FEMBasisProjection\", \"C5: bilinear_weights never called during FEM solve+reduce\", \"FEM uses same operator/reduction classes as grid-GMRF\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 14,
+      "subject": "Task 14: FEM blends through inherited joint sampler + mesh shared-node match (C6)",
+      "status": "pending",
+      "blockedBy": [13],
+      "description": "**Goal:** two FEM tiles on ONE global mesh blend seam-free through GmrfJointKrigingSolve; shared mesh nodes match (C6); non-coincident pair raises.\n\n**Verify:** pixi run test tests/test_fem_blend.py -v\n\n```json:metadata\n{\"files\": [\"tests/test_fem_blend.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_blend.py -v\", \"acceptanceCriteria\": [\"FEM tiles on one global mesh blend finite + seam-free through inherited driver\", \"shared mesh nodes match (C6) non-empty\", \"non-coincident mesh tiles raise C6 loudly\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 15,
+      "subject": "Task 15: Payoff demo — boundary extension removes edge variance inflation (C7) + OSSE/OSE",
+      "status": "pending",
+      "blockedBy": [14],
+      "description": "**Goal:** boundary-extended FEM mesh removes near-boundary variance inflation (C7, measured at boundary band); FEM OSSE accuracy + OSE calibration fire; figure via cmocean.\n\n**Verify:** pixi run test tests/test_fem_payoff.py -v -s 2>&1 | tail -20\n\n```json:metadata\n{\"files\": [\"tests/test_fem_payoff.py\", \"docs/superpowers/figures/phase4_fem_boundary_payoff.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_payoff.py -v -s 2>&1 | tail -20\", \"acceptanceCriteria\": [\"edge_var(FEM) < edge_var(grid) at near-boundary nodes, ratio<0.9 (C7)\", \"FEM OSSE accuracy + OSE calibration fire\", \"figure via cmocean\"], \"modelTier\": \"complex\"}\n```"
+    },
+    {
+      "id": 16,
+      "subject": "Task 16: STAGE-C GATE — FEM definition of done",
+      "status": "pending",
+      "blockedBy": [15],
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** FEM DoD: whole suite green, C5 genuine-swap, exact var + sliver guard + boundary payoff + FEM OSSE/OSE; provenance sparse-precision + residual; invariant-2 grep empty.\n\n**Verify:** pixi run test 2>&1 | tail -6 && pixi run typecheck && pixi run lint\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"pixi run test 2>&1 | tail -6 && pixi run typecheck && pixi run lint && pixi run test tests/unit/test_fem_method.py::test_no_grid_path_for_fem -v\", \"acceptanceCriteria\": [\"whole suite 0 failed, typecheck+lint clean\", \"C5 genuine-discretization-swap green (no grid path for FEM)\", \"exact FEM var + sliver guard + boundary payoff + FEM OSSE/OSE green\", \"invariant-2 grep empty across gmrf.py/fem.py/persisted.py\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requiresUserSpecification\": false, \"gateScope\": \"stage-c\", \"requireEvidenceTokens\": [[\"grid\", \"gmrf\"], [\"fem\"]], \"modelTier\": \"complex\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-26T00:00:00Z"
+}
