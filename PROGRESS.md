@@ -2,6 +2,26 @@
 
 ## Current work (index — do not duplicate task state here)
 
+- **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — PLANNED (awaiting execution).**
+  - Scope (source of truth): `phase4_scope_spec.md` (settled + owner-amended, `00519b1`).
+  - Design: `docs/superpowers/specs/2026-06-26-phase4-fem-and-nonchain-sampler-design.md` (`f7960f8`).
+  - Plan: `docs/superpowers/plans/2026-06-26-phase4-fem-and-nonchain-sampler.md`
+    (16 tasks; tracker `.tasks.json` co-located, all `pending`).
+  - **Hard-gated sequencing:** Stage A (Tasks 1–4, generalize under green) → Stage B
+    (Tasks 5–9, non-chain joint-kriging sampler on the grid) → Stage C (Tasks 10–16, FEM).
+    Three user-gates: Task 4 (Stage-A regression — Phase-3 suite reproduces exactly), Task 9
+    (Stage-B positive control — distinct-tiles cross-seam + corner-junction joint cov +
+    nonstationary, residual recorded; junction-tree fallback only if out-of-tolerance), Task 16
+    (Stage-C FEM DoD).
+  - **Five pinned correctness contracts (tested, not assumed — see design §0):** C1 strip prior
+    on the induced subgraph (corner-junction joint cov), C2 three white-noise streams, C3 `_diag`
+    fast-path equivalence, C4 per-node strip-prior κ (nonstationary), C5 mechanically-enforced
+    no-grid-path-for-FEM; + C6 shared mesh-node match, C7 boundary-measured payoff margin.
+  - **Key decisions:** scipy.spatial.Delaunay + hand-rolled P1 assembly (no new dep, Shewchuk
+    upgrade behind the same seam); strip-prior = induced submatrix of the persisted per-tile
+    PRIOR precisions (so PrecisionFields gains `projection` + `prior_precision`); `GmrfKrigingSolve`
+    kept intact as the 1-D chain regression oracle (registry repoints to `GmrfJointKrigingSolve`,
+    one wiring assertion updated). **Next action: Task 1 (Projection seam).**
 - **Phase 3: GMRF method + representation-agnostic generalization — COMPLETE (all 11 tasks).**
   - **Stage C COMPLETE (Tasks 10–11):** Task 10 `PerturbEnsembleDegradation` driver end-to-end
     (per-tile independent members, weight-crossfaded; `EmpiricalReduction` retagged
