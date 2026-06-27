@@ -24,7 +24,7 @@
     {
       "id": 4,
       "subject": "Task 4: STAGE-A GATE — Phase-3 suite reproduces exactly",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3],
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Generalization changed no behavior: whole suite green, no hardcoded read-off, zero phase-3 test edits.\n\n**Verify:** pixi run test 2>&1 | tail -5 && pixi run typecheck && pixi run lint\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"pixi run test 2>&1 | tail -8 && pixi run typecheck && pixi run lint\", \"acceptanceCriteria\": [\"pixi run test 0 failed (>=178 passed/2 skipped)\", \"typecheck + lint clean\", \"invariant-2 grep empty in operator+persisted\", \"no phase-3 test assertions edited (git diff --stat vs 31a58c6 additions only)\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requiresUserSpecification\": false, \"gateScope\": \"stage-a\", \"modelTier\": \"standard\"}\n```"
     },
