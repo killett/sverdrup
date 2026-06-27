@@ -1,6 +1,59 @@
 # Sverdrup — Progress notebook
 
-## RESUME HERE (Stage B — CORRECTED after a 7-investigation diagnosis) — read this first
+## RESUME HERE (2026-06-27 — STAGE-B PHASE BOUNDARY REACHED; overwrite landed non-default) — read this first
+
+**Status:** Phase 4 Stage B is CLOSED-OUT-AT-A-PHASE-BOUNDARY, not "done" and not "blocked". The
+overwrite redesign was planned, executed, and its certification probe PROVED a phase boundary: there
+is **NO correct sparse-precision coherent sampler for the operational range**. Overwrite
+(`GmrfCoreAuthoritativeSolve`) is correct only at core/range ≳ 25 (short range); the tree driver
+collapses the marginal. Both candidate defaults are known-broken, differently. Disposition shipped:
+**overwrite landed as a documented NON-DEFAULT reference; the `sparse-precision` default STAYS
+`GmrfTreeKrigingSolve`; the default-sampler choice is DEFERRED to Phase 5.** The real fix
+(decomposition redesign: cores≫range / overlapping-Schwarz+coarse / global low-rank seam basis) is a
+**Phase-5 milestone** — it depends on the tuner's chosen range, so designing it now is designing
+against an unknown (the junction-tree premature-build error again). Do NOT start it here.
+
+### What the arc proved (full record below in "THE SECOND ANTAGONIST" + "DEFLATION IS DEAD")
+- **Two antagonists pull OPPOSITE ways on the range axis.** SHORT range: near-improper mode breaks
+  per-tile CONDITIONING (eigmin→0, the original Stage-B saga). LONG range: correlation length spans
+  the tile boundary, so independent cores destroy cross-seam COVARIANCE (overwrite's zero). They are
+  the SAME object (the near-null mode IS the cross-seam correlation carrier), so no per-tile seam
+  construction fixes both ends.
+- **Gate THREE invariants at the seam, not two:** (1) marginal contract, (2) direction strict-min,
+  (3) cross-seam COVARIANCE vs a dense reference. (3) is decisive and was previously unmeasured —
+  direction PASSES at long range while the covariance is destroyed (the masking the median once did).
+- **Near-null deflation is DEAD** (probed adversarially to kill it): the cross-seam correlation is
+  carried entirely by the near-improper modes; deflating them to make the solve well-posed installs
+  ZERO cross-seam covariance (worst-pair ratio −0.000 across 400/200/150 km). Proven, not argued.
+
+### Exact git state (this session)
+- Task 1 committed `d173561` (ownership map + `_tree_gate` import repair; removed dead untracked
+  `test_tree_kriging_gate.py`). Disp-A `64a2b32` (`GmrfCoreAuthoritativeSolve` non-default reference +
+  `make_grid_diagonal` production fixture + `sigma_contract`/`marginal_contract_ratios`). Disp-B
+  `006aa7a` (`tests/test_core_authoritative_gate.py`: ownership + marginal-fix + case-(b)
+  boundary-characterization (green) + acceptance (strict xfail)). Disp-C = this PROGRESS/tracker
+  commit. Registry default UNCHANGED from HEAD (`GmrfTreeKrigingSolve`).
+- `test_gmrf_blend.py` is GREEN (it exercises the tree-driver default on the 1-D chain, the validated
+  regime). It is NOT the case-(b) gate — that is the explicit overwrite-on-production test in
+  `test_core_authoritative_gate.py`.
+
+### THE PHASE-5 HANDOFF (the deliverable — do not re-derive this arc)
+- **Constraint:** overwrite's zero-seam is acceptable only for core-size/range ≳ 25 (measured: true
+  seam corr 0.68@400km → 0.08@50km for 12° cores). The Phase-5 tuner must treat cross-seam coherence
+  as a CONSTRAINT on tile-size-vs-range, not a free variable.
+- **Acceptance test already on disk:** `test_core_authoritative_gate.py::
+  test_acceptance_operational_cross_seam_covariance_recovered` (strict xfail). The Phase-5
+  decomposition fix must make it xpass (recover operational cross-seam covariance at the worst pair).
+- **Open decision parked for Phase 5:** which `sparse-precision` default sampler to register, and the
+  decomposition redesign scope (separate milestone conversation when Phase 5 starts).
+
+### The original plan's Tasks 2–6 are SUPERSEDED by this disposition
+`docs/superpowers/plans/2026-06-27-stageb-core-authoritative-sampler.md` Tasks 2 (repoint registry),
+4 (range-sweep cert as a pass/fail user-gate expecting case a), 5, 6 (retire tree machinery) are
+superseded: case (b) was proven, the registry default is NOT repointed, and the tree machinery STAYS
+(it is the deferred default). Tasks 1 + the (rewritten) Disp-A/B/C are the executed reality.
+
+## RESUME HERE (Stage B — CORRECTED after a 7-investigation diagnosis) — SUPERSEDED 2026-06-27 by the phase-boundary block above; kept for the trail
 
 **Status:** Phase 4 Stage B coherent sampler is BLOCKED on a CONFIRMED, LOCALIZED defect whose
 mechanism is now MEASURED. `src/sverdrup/distributions/coherent.py` is reverted to the committed
@@ -98,6 +151,84 @@ MORE improper → the tension is WORSE**; the autotuner must treat cross-seam co
 CONSTRAINT, not a free variable. Any future per-tile coherent-sampler work must enter expecting this
 mode to be the adversary and gate the joint/contract behavior at the seam (strict-min), never an
 aggregate.
+
+### THE SECOND ANTAGONIST — long-range cross-seam covariance (measured 2026-06-27; reframes the phase)
+The overwrite sampler probe surfaced a SECOND structural antagonist that pulls OPPOSITE to the first
+across the range axis. The two together mean **no single per-tile construction is correct across the
+operational range band.** This is a method-level finding, not a Stage-B detail.
+
+- **Antagonist 1 (SHORT range): near-improper global mode breaks per-tile CONDITIONING.** eigmin→0,
+  `cond(Σ_ss)`→4e8, the whole Stage-B saga above. Worse as range ↓.
+- **Antagonist 2 (LONG range): correlation length spans the tile boundary, so INDEPENDENT cores
+  destroy real cross-seam COVARIANCE.** Overwrite makes adjacent cross-core-boundary nodes
+  independent BY CONSTRUCTION (per-tile Pass-1 draws), so it reports cross-seam correlation as ZERO
+  regardless of the truth. Worse as range ↑.
+
+**Measured (production grid+diagonal 3×3 fixture, dense-global reference, overwrite driver):**
+Overwrite fixes the MARGINAL (strict-min 0.63–0.84 across [400,200,100,50] km, collapse gone) but
+zeroes the seam correlation at every range (blend corr ≈ 0). True seam corr is range-dependent:
++0.684 @ 400, +0.515 @ 200, +0.247 @ 100, +0.080 @ 50 km. So overwrite is CORRECT only at short
+range (true corr ≈ 0 ⇒ a-real); at operational 200–400 km it destroys 0.5–0.68 real correlation
+(case b). **DIRECTION-strict-min ALONE MISSES THIS** — it PASSES at 400/200 (0.967/0.920 ≥ 0.9)
+because zero-correlation is conservative for the GRADIENT; only the third invariant (cross-seam
+COVARIANCE vs dense ref) sees the destruction. **Gate THREE invariants at the seam, not two:**
+(1) marginal contract, (2) direction strict-min, (3) cross-seam covariance/correlation vs a dense
+reference. (3) is decisive and was previously unmeasured.
+
+**Decisive local-vs-global probe (is the deficit the global mode or a local property?):**
+- (a) **The cross-seam correlation deficit is LOCAL/high-frequency, NOT the global mode.** True
+  cross-seam corr decays below 1/e within **1°** of the boundary and is **exactly 0.000** for deep
+  interiors (measured at 400 & 200 km). A boundary strip ~1–2 nodes wide carries essentially all of
+  it. §4's "expensive global, no spectral gap" pessimism was about the WRONG object.
+- (b) **But the strip `Σ_ss` solve is globally contaminated → ill-posed at LONG range.**
+  `cond(Σ_ss)` of the per-tile shared-strip block = 4.8e9 @ 400, 6.3e8 @ 200, well-posed (~2.7) by
+  100 km; at 50 km the strips VANISH (halo < 2 nodes). The near-null low-frequency mode leaks into
+  even a 2-node strip block, so naive strip value-conditioning reignites the 4e8 collapse exactly
+  where the deficit is largest.
+
+**The refined bind (for whoever designs the seam fix):** the thing to install is LOCAL (a), but the
+obvious operator to install it (`Σ_ss` solve) is GLOBALLY contaminated (b). The opening: the target
+lives in the near-null COMPLEMENT (deficit is high-frequency per (a); §4 measured 90% of the
+joint-cov error in the complement of the bottom-k near-null subspace). A coupling that installs the
+seam correlation in the high-frequency band only — **deflating the near-null mode out of `Σ_ss`
+before conditioning** — could carry the local correlation while never exciting the 4.8e9 direction.
+That is a bounded, range-adaptive construction, far cheaper than global reconciliation. The geometry
+hands off cleanly: short range → overwrite (correct, strips vanish anyway); long range →
+near-null-deflated local strip coupling. The plan's overwrite Task 3–5 as written cannot certify
+this (they gate ≤ 2 invariants). Tiny-fixture cross-seam reds in `test_gmrf_blend.py` are CORRECT —
+they are the small-core / long-corr-length = case-b regime, now explained.
+
+**DEFLATION IS DEAD — and the kill PROVES the phase boundary (measured 2026-06-27, adversarial probe).**
+The elegant "deflate the near-null mode out of `Σ_ss`, condition in the complement" reconciliation was
+probed to KILL it (elegant-and-reconciling has been the signature of wrong all arc). Two measurements:
+- **(1) `Σ_ss` spectrum.** A ×3e7 gap exists, but it is the OBS-vs-PRIOR gap: ~k tiny obs-pinned modes
+  (λ≈1e-3 = obs noise floor) | gap | a high-variance near-improper CONTINUUM (λ 8e4→4.8e6, ratios
+  ~1.0–1.5, the near-null global mode is its top, NO internal gap). "Deflate k near-null" leaves the
+  continuum behind; to reach well-posed you must project out the ENTIRE high-variance bulk and keep
+  only the ~8 obs-pinned modes.
+- **(2) correctness — DECISIVE.** Strip S is a Markov separator (anchor: FULL inverse reconstructs the
+  true cross-seam cov to ~1e-9). But conditioning in the well-determined complement (deflating the
+  high-variance bulk) installs `cov_defl/true` strict-min = **−0.000 at 400/200/150 km, −0.141 at
+  100 km** (true ≈ +88…+721 → defl ≈ 0). The cross-seam correlation is carried ENTIRELY by the
+  near-improper modes deflation removes. Fails across the WHOLE operational band; (3)/handoff moot.
+
+**The two antagonists are the SAME object.** The cross-seam correlation is LOCAL in space but
+LOW-FREQUENCY in spectrum — adjacent nodes correlate because they share the smooth large-scale
+(near-null) modes, so the correlation's CARRIER *is* the near-null mode. The mode that breaks per-tile
+CONDITIONING at short range IS the cross-seam CORRELATION CARRIER at long range. You cannot deflate it
+to stabilize the solve without deleting the correlation; full inversion installs it but is the 4e8
+ill-posed solve that collapses the sampler on inconsistent residuals. **No separation exists.**
+
+**THE GENUINE PHASE BOUNDARY (proven, not argued).** Tiling a field whose cross-seam correlation is
+carried by the near-improper global mode is the WRONG DECOMPOSITION. Overwrite's zero-seam is correct
+ONLY where the true boundary correlation is genuinely ~0 — i.e. core-size/range large enough (measured:
+true seam corr 0.68@400 → 0.08@50 km for 12° cores ⇒ core/range ≳ ~25). This is a **Phase-5
+tile-sizing-vs-range constraint, NOT a seam patch.** No per-tile seam construction recovers the
+correlation in the operational band; the fix is the tiling geometry (cores ≫ range) or a different
+(non-tiled / overlapping-Schwarz-with-coarse-correction / global-low-rank-seam-basis) decomposition.
+**OWNER DECISION PENDING:** what to do with the current overwrite plan (Tasks 2–6) given the boundary —
+park it as the short-range-correct construction behind a 3-invariant + core/range gate, or halt for a
+decomposition redesign milestone. Nothing committed; tiny-fixture reds stay red.
 
 ---
 
