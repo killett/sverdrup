@@ -38,7 +38,7 @@
     {
       "id": 6,
       "subject": "Task 6: _draw_joint — one auxiliary field over the strip sub-GMRF (C1, C2, C4)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "**Goal:** strip prior = induced submatrix of per-tile PRIOR precisions (interior-source rows → per-node kappa C4; corner edges C1); draw ONE field with own independent white (C2).\n\n**Verify:** pixi run test tests/unit/test_draw_joint.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_draw_joint.py\", \"tests/unit/_strip_fixtures.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_draw_joint.py -v\", \"acceptanceCriteria\": [\"strip prior is induced submatrix with corner cross-edges (C1)\", \"joint white independent of tile seeds (C2)\", \"nonstationary kappa carried per-node (C4)\"], \"modelTier\": \"complex\"}\n```"
     },

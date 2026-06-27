@@ -7,6 +7,7 @@ Real import paths (the plan's draft used stale ones): ``Tile``/``Window`` live i
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 
 import numpy as np
@@ -15,6 +16,7 @@ from sverdrup.core.geometry import Tile, Window
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider, ParameterProvider
+from sverdrup.core.types import ScalarOrField
 from sverdrup.distributions.blend import BlendInput
 from sverdrup.distributions.persisted import PrecisionDistribution, PrecisionFields
 from sverdrup.distributions.reduction import GMRFPrecisionReduction
@@ -23,6 +25,27 @@ from sverdrup.methods.gmrf import MaternGMRF
 _STATIONARY = ConstantProvider(
     {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 5.0}
 )
+
+
+@dataclass(frozen=True)
+class LatVaryingRange:
+    """Resolve ``range`` as an equator->pole cos(lat) field (nonstationary κ, C4)."""
+
+    equator_km: float
+    pole_km: float
+    constants: dict[str, float]
+
+    def resolve(self, name: str, grid: GridSpec) -> ScalarOrField:
+        """Return a lat-varying ``range`` field; other params constant."""
+        if name == "range":
+            _, lat = grid._lonlat_nodes()
+            c = np.cos(np.deg2rad(lat))
+            return np.asarray(self.pole_km + (self.equator_km - self.pole_km) * c)
+        return self.constants[name]
+
+    def params_key(self) -> str:
+        """Return a canonical key string for seed derivation."""
+        return f"latrange(eq={self.equator_km},pole={self.pole_km})"
 
 
 def _pd(
@@ -109,6 +132,14 @@ def four_tile_corner_parts(
             provider,
         ),
     ]
+
+
+def four_tile_corner_parts_nonstationary() -> list[BlendInput]:
+    """The 2x2 corner partition with a latitude-varying κ field (C4)."""
+    prov = LatVaryingRange(
+        800.0, 100.0, {"variance": 0.05, "temporal_taper_scale": 10.0}
+    )
+    return four_tile_corner_parts(provider=prov)
 
 
 def disjoint_pair_parts() -> list[BlendInput]:
