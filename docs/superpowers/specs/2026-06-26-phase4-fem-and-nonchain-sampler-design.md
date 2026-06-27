@@ -11,31 +11,46 @@ B positive-control passes → C.
 
 ---
 
-## 0. The five owner-pinned correctness contracts (read first)
+## 0. The owner-pinned correctness contracts (read first)
 
 Phase-after-phase the failures have been *a correctness assumption riding inside a step that looks
-like plumbing*. These five are pinned here so each is a **test**, not a discovery. They are
+like plumbing*. These are pinned here so each is a **test**, not a discovery. They are
 referenced inline at the stage they bind; collected here so none is lost.
 
-- **C1 — the strip-network is a graph; its prior is assembled on the induced subgraph of Q.**
-  Overlap strips intersect (a corner where ≥3 tiles meet shares nodes across multiple strips; two
-  crossing strips share their crossing nodes). `_draw_joint` must assemble `(κ²I−Δ)²` over the strip
-  node set honoring **every Q edge with both endpoints in the strip set** (corner nodes included) —
-  NOT as a union of independent ribbons. Dropping inter-strip edges makes the auxiliary field
-  discontinuous exactly at the junctions, where 2-D coherence is hardest and where the chain sweep
-  died. **Test (Stage B positive control):** joint covariance **across a strip junction** (an
-  interior corner, ≥3 tiles) vs a dense reference — a 2×2 partition has exactly one interior corner
-  and is the minimal fixture. A right-marginal-variance check does NOT catch this; the corner-junction
-  joint-covariance check does.
+> **AMENDMENT (Stage-B design pivot, owner-confirmed).** Contracts **C1, C2, C4 below are RETIRED.**
+> They pinned the spec-literal *synthesized strip-field* sampler (`_draw_joint`/`_strip_prior`), which
+> was **disproved by measurement** (376× cross-seam, joint-cov rel-err 1.617; jitter is a cover-up;
+> no low-dimensional coarse space; `cond(Σ_ss)≈4e8` intrinsic to the near-singular posterior). The
+> Stage-B sampler is now **hand-forward conditioning along a max-overlap spanning tree of the tile
+> adjacency** — non-tree edges carry a **bounded, recorded** coherence residual; junction-tree (§6) is
+> the exact escalation only if a measured residual exceeds tolerance. Full trail + the three-assertion
+> gate: PROGRESS.md "Cross-cutting decisions (canonical — Phase 4)". The replacement contracts are
+> **C1′/C2′/C4′** stated immediately under each retired one. C3, C5, C6, C7 stand unchanged.
 
-- **C2 — three white-noise streams, three pairwise-independence checks.** Phase 3 had two streams
-  (tile draw ⟂ handed-forward target). The joint construction adds a third: the auxiliary field's
-  white. The kriging correction is unbiased only if each tile's unconditional white is independent of
-  the joint field's white (shared noise between a draw and the target it is conditioned toward
-  re-biases the correction — invariant 4 / the Phase-3 lesson). **Test (independent-white oracle):**
-  assert all three pairwise independences — tile-white ⟂ tile-white, tile-white ⟂ joint-white,
-  (and the joint draw is a single shared field across tiles). The pairing not tested is the one that
-  regresses.
+- **C1 — RETIRED (synthesized strip-prior on the induced subgraph).** Replaced by **C1′ — the
+  spanning-tree sampler is correct on tree edges and bounded on dropped edges.** Build the tile-adjacency
+  graph (edge weight = shared-node count), take its **max-overlap spanning tree**, hand-forward-condition
+  each tile on its parent's already-drawn overlap **values** (the proven chain mechanism, which never
+  excites the 4e8 `Σ_ss` because the residual `x_s − x_u|_S` is consistent). **Test (Stage-B gate):**
+  on a 2×2 partition, tree-edge joint covariance vs a dense reference is **≤ the measured chain
+  baseline** (~0.30, the halo-truncation residual already shipped green); the **dropped-edge** (the
+  non-tree cycle edge) joint-cov residual is **≤ C·(tree-edge residual), C∈[2,3]** — a bounded
+  transitive-coherence residual, NOT discontinuity. Marginal-variance checks do not catch this; the
+  per-edge joint-covariance-vs-reference check does.
+
+- **C2 — RETIRED (three white streams incl. joint-white).** Replaced by **C2′ — two white streams,
+  reverting to the Phase-3 contract.** There is no synthesized joint field, hence no joint-white. The
+  only streams are per-tile unconditional white, which must be pairwise independent (tile-white ⟂
+  tile-white) so a child's unconditional draw is independent of the parent values it is conditioned
+  toward (invariant 4). **Test:** distinct per-tile seeds; empirical cross-correlation between two
+  tiles' unconditional draws ≈ 0 at the MC floor.
+
+- **C4 — RETIRED (strip-prior per-node κ).** Replaced by **C4′ — nonstationary κ rides on the per-tile
+  posteriors, no separate strip prior.** Each tile's `Q_post` already carries its provider-resolved
+  per-node κ (Stage A / Task 2–3); the spanning-tree sweep conditions on those posteriors directly, so
+  the nonstationary case needs no special strip-prior handling. **Test:** repeat the Stage-B gate
+  (C1′ tree/dropped residuals + conservative direction) with a latitude-varying κ field; still
+  conservative and within tolerance.
 
 - **C3 — the `_diag` fast-path equivalence is a green, not a comment.** The cached `_diag`
   (native-node marginal variance) is "documented equivalent" to the projection slow path — exactly
@@ -153,41 +168,56 @@ flat-node capable; full Phase-3 suite + OI + grid-GMRF blend reproduce **exactly
 
 ## 3. Stage B — non-chain coherent sampler, validated on the grid (gate before C)
 
-### 3.1 `GmrfJointKrigingSolve` — `distributions/coherent.py`
+### 3.1 `GmrfTreeKrigingSolve` — `distributions/coherent.py` (spanning-tree hand-forward)
 
-Repoint `_DRIVERS["sparse-precision"]` to the new driver. Reuse `posterior_cov_columns`,
-`_node_keys`, `_nearest`, the weight-crossfade. Drop tile ordering, hand-forward, and the lon-column
-`_assert_separates`. Steps:
+> **AMENDED — replaces the synthesized `GmrfJointKrigingSolve` (disproved; see §0 amendment +
+> PROGRESS Phase-4 decisions).** The auxiliary strip field (`_draw_joint`/`_strip_prior`) is removed.
 
-1. **`_strip_network(parts)` → (strip nodes, induced Q-subgraph).** Strip nodes = nodes of tile *i*
-   falling in any other tile's `extended_window`, matched across tiles by `_node_keys`. Returns the
-   strip node set **and the induced subgraph of Q** over them — every Q edge with both endpoints in
-   the set, corner/junction nodes included (**C1**). Topology-agnostic: no chain/tree assumption.
-   Asserts the cross-tile shared strip node set is non-empty for adjacent tiles (**C6**).
+Repoint `_DRIVERS["sparse-precision"]` to `GmrfTreeKrigingSolve`. Reuse `posterior_cov_columns`,
+`_node_keys`, `_nearest`, the weight-crossfade, and the proven chain solve. Steps:
 
-2. **`_draw_joint(strip_nodes, induced_graph, provider, seed)` → x_joint.** Assemble the **prior**
-   SPDE sub-precision `(κ²I−Δ)²` over the strip node set honoring the full induced connectivity
-   (**C1**), with κ (and τ) evaluated **per strip node via the provider** — the same field the tiles
-   use, including nonstationary (**C4**). Draw `x_joint = mean + L_strip⁻ᵀ w_joint` with its **own
-   independent** white (**C2**). This is spec-literal "global prior restricted to strips" (a thin
-   sub-GMRF). Boundary truncation + the prior↔posterior strip mismatch **is** the residual, measured
-   and recorded (invariant 7).
+1. **`_strip_network(parts)` → per-pair shared-node sets (kept).** Strip nodes = nodes of tile *i*
+   falling in any other tile's `extended_window`, matched across tiles by `_node_keys`. Asserts the
+   cross-tile shared node set is non-empty for adjacent tiles (**C6**).
 
-3. **Per tile.** Independent per-tile white (`gmrf-tile:pos × member`, unchanged) → `x_u = mean +
-   L⁻ᵀ w`; krige toward this tile's strip values read from the **one** joint field:
-   `x_c = x_u + cols @ solve(Σ_ss, x_joint|_S − x_u|_S)`, `cols = posterior_cov_columns(s_idx)`.
+2. **`_tile_adjacency` + `_max_overlap_spanning_tree`.** Build the tile-adjacency graph (edge weight
+   = shared-node count; edges below `STENCIL_REACH` per axis are not edges), take the **maximum-weight
+   spanning tree** (parent map + BFS order), and the **dropped** = real overlap edges not in the tree.
+   Assert connectivity (a tile reachable by no edge ≥ reach is a loud red, **C6**) and per-tree-edge
+   separation (`_assert_tree_edge_separates`, the per-edge analogue of `_assert_separates`).
+
+3. **Per tile, in BFS order.** Independent per-tile white (`gmrf-tile:i × member`) → `x_u = mean +
+   L⁻ᵀ w`. **Root:** unconditional. **Child:** krige toward its **parent's already-drawn** overlap
+   **values** on the shared nodes: `x_c = x_u + cols @ solve(Σ_ss, x_parent|_S − x_u|_S)`,
+   `cols = posterior_cov_columns(s_idx)`. Because `x_parent` is an actual draw from the same posterior
+   family, the residual `x_parent|_S − x_u|_S` is **consistent (small)**, so the near-singular `Σ_ss`
+   (`cond ≈ 4e8` on near-improper posteriors) is **never excited** — the mechanism the chain already
+   relied on, now over a tree instead of a line.
 
 4. **Weight-crossfade** onto output pts (unchanged).
 
-The only change from `GmrfKrigingSolve`: conditioning targets come from one pre-drawn joint field over
-*all* strips (assembled on the strip graph) rather than handed forward along a chain. No
-tree/separator requirement.
+The change from `GmrfKrigingSolve`: the line sweep becomes a max-overlap **spanning-tree** sweep. Exact
+(chain-quality) on tree edges; **non-tree edges carry a bounded, recorded** transitive-coherence
+residual. There is **no synthesized field** and **no joint-white** (C2′).
 
-### 3.2 Negative control (replaces the lon-column separator check)
+### 3.1a Why not the synthesized joint field, and why not junction-tree (recorded)
 
-Too-narrow overlap → the strip cannot separate interiors → the measured residual blows up / the
-partition-of-unity crossfade has no room and seam variance collapses → **loud red**,
-topology-agnostic. Mirrors `_assert_separates` without assuming a sweep direction.
+Measured on real natl60 tiles: a synthesized strip field (any precision — prior, posterior, or true
+marginal — they are byte-identical at the strips) yields a draw inconsistent at strip scale with each
+tile's unconditional draw; the near-singular `Σ_ss` amplifies that O(1) inconsistency into a 376×
+cross-seam blowup / joint-cov rel-err 1.617. The error is **high-frequency** (90% in the complement of
+the near-null subspace; a shared coarse-mode draw does not close it) and `cond(Σ_ss)≈4e8` is **flat
+across halo width and resolution** (intrinsic, not a strip-resolution mismatch). **Jitter is a
+cover-up** (gradient ratio 324→3.2 while joint-cov stays 0.61–0.73 wrong). **Junction-tree (§6)**
+restores exactness on cycles but re-introduces tile-topology dependence and √(#tiles) treewidth — the
+costs Stage B exists to remove; it is the **exact escalation**, taken only if a measured dropped-edge
+residual exceeds tolerance, never by default.
+
+### 3.2 Negative control (per-tree-edge separation)
+
+A **tree** edge whose shared overlap is thinner than `STENCIL_REACH` in the adjacency direction cannot
+hand forward a consistent conditional → **loud red** per edge (`_assert_tree_edge_separates`). A tile
+disconnected from the spanning tree (no edge ≥ reach) is also a loud red — never silently independent.
 
 ### 3.3 Validation on 2-D grid (topology isolated from mesh)
 
@@ -196,34 +226,53 @@ strip-junction exerciser), genuinely-distinct tiles (distinct obs ⇒ distinct p
 fixture where tiles collapse to identical Q — invariant 6). Tests (each states behavior + the bug it
 catches, per test-design):
 
-- **Positive control (the standing gate).** (a) cross-seam (two-tile edge) `firstdifference`
-  variance parity blend-vs-single-tile reference, min ratio ≥ tol, conservative direction; (b)
-  **corner-junction joint covariance vs a dense reference** (**C1**) — the load-bearing case;
-  (c) the **nonstationary-κ** case (**C4**). The control **measures the residual against the
-  single-tile reference and records it** (conservative `known_bias`); it is not pass/fail in
-  isolation. *Bug it catches:* dropped inter-strip Q edges (discontinuous joint at the corner);
-  scalar-κ joint draw in the nonstationary case.
+- **Positive control = the three coupled gate assertions, thresholds derived from the measured chain
+  baseline (~0.30 on the 1-D natl60 case, the halo-truncation residual already shipped green):**
+  **(1) tree-edge parity** `max_tree_edge_relerr ≤ chain_baseline·(1+slack)` (tree edges no worse than
+  the validated chain); **(2) dropped-edge relative bound** `max_dropped_edge_relerr ≤ C·max_tree_edge,
+  C∈[2,3]` (a bounded transitive residual at the cycle edge); **(3) conservative direction** cross-seam
+  firstdifference variance ratio (blend/ref) `≥ 0.9` on tree edges and `≥ 1−ε` on dropped edges — never
+  under-dispersed. Recorded as a conservative `known_bias`. *Bug it catches:* (1) a broken hand-forward
+  on a shared edge; (2) a discontinuity instead of transitive agreement at a non-tree seam; (3) a
+  residual that is small **but overconfident** — the Phase-3 disease wearing a small number.
+- **Two-tree invariance (property test).** The shipped blend passes (1)–(3) under the MST AND one
+  alternative valid spanning tree. *Bug:* correctness depends on which tree → topology-fragility has
+  silently returned.
+- **Nonstationary-κ (C4′).** Repeat (1)–(3) with a latitude-varying κ field — conservative, within tol.
+  No special handling: κ rides on the per-tile posteriors.
 - **Per-tile full-covariance oracle.** Corrected ensemble cov == exact `(Qⁱ)⁻¹`. *Bug:* the
   correction distorts the per-tile posterior.
-- **Independent-white oracle (C2).** Three pairwise independences: tile-white ⟂ tile-white,
-  tile-white ⟂ joint-white, and the joint field is a single shared draw across tiles. *Bug:* shared
-  noise between a tile draw and the joint target re-biases the correction (spurious long-range corr).
-- **1-D chain regression.** The existing chain tests stay green under the joint driver (it subsumes
-  the chain: full strip separation ⇒ residual → 0).
+- **Independent-white oracle (C2′).** Two pairwise independences: tile-white ⟂ tile-white (a child's
+  unconditional draw is independent of the parent values it conditions toward). *Bug:* shared noise
+  between a draw and its conditioning target re-biases the correction.
+- **1-D chain regression.** The existing chain tests stay green; the tree sweep over a line IS the chain.
 
-### 3.4 Escalation (spec §5.3 / §8)
+### 3.4 Escalation (spec §5.3 / §6 / §8)
 
-If the positive control shows the **recorded residual exceeds tolerance**, the construction is
-*inadequate* (not merely approximate) → **stop and surface**; the junction-tree fallback is built
-only then. Do not ship a silently-wrong sampler; do not loosen the tolerance to pass.
+If the gate shows a **recorded residual exceeds tolerance** (e.g. the Phase-5 tuner wanders to short
+range and a dropped-edge residual breaks bound (2) or the conservative direction (3)), the spanning-tree
+construction is *inadequate for that regime* → **stop and surface**; the **junction-tree** fallback
+(§6) — exact on cycles, at the topology/treewidth cost — is built only then. Do not ship a silently
+overconfident sampler; do not loosen the tolerance to pass.
+
+### 3.4a Product-facing residual disclosure (load-bearing honesty)
+
+The shipped global SSHA uncertainty carries a **bounded, recorded cross-seam coherence residual on
+non-tree tile adjacencies** — coherence across a non-tree seam is **transitive (through a common
+neighbour), not direct**. This is a permanent, measured property of the deliverable, not a fixture
+artifact. A downstream consumer computing a derived quantity (e.g. transport) across a non-tree seam is
+entitled to know the coherence there is transitive; the §5.3/§4 product sentence and provenance
+`known_bias` must say so. Junction-tree is the documented exact escalation if that residual is ever
+unacceptable for a use case.
 
 ### 3.5 Stage-B gate (definition of done)
 
-`GmrfJointKrigingSolve` replaces the lon-chain sweep; grid GMRF tiles in 2-D, seam-free, no
-mid-overlap variance dip, matches the single-tile reference within tol, conservative; per-tile-full-cov
-and three-stream independent-white oracles pass; the distinct-tiles positive control (cross-seam +
-corner-junction + nonstationary) passes with recorded residual; the too-narrow-overlap negative
-control fails loudly; the 1-D chain case still passes.
+`GmrfTreeKrigingSolve` replaces the lon-chain sweep with a max-overlap spanning-tree sweep; grid GMRF
+tiles in 2-D, seam-free, conservative, tree edges ≤ the measured chain baseline and dropped edges
+within `C·tree-edge`; the three coupled assertions + two-tree invariance + nonstationary all pass on
+real solved tiles with the residual recorded; per-tile-full-cov and two-stream independent-white
+oracles pass; the per-tree-edge separation + disconnected-tile negative controls fail loudly; the 1-D
+chain case still passes.
 
 ---
 

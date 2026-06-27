@@ -797,541 +797,176 @@ git commit -m "feat(phase4): topology-agnostic strip-network with induced connec
 
 ---
 
-## Task 6: `_draw_joint` — one auxiliary field over the strip sub-GMRF (C1, C2, C4)
+## Task 6: Tile-adjacency graph + max-overlap spanning tree (replaces the synthesized strip field)
 
-**Goal:** Assemble the strip-network prior precision as the induced submatrix of the per-tile **prior** precisions (interior-source rows → per-node κ for free = C4; full induced connectivity = C1) and draw ONE auxiliary field from it with its OWN independent white (C2), deterministically seeded.
+**Goal:** Replace the disproved synthesized-field machinery with the topology object the spanning-tree
+sampler needs: the tile-adjacency graph (edge weight = shared-node count), its max-overlap spanning
+tree (parent map + sweep order), and the dropped-edge set — with a per-tree-edge separation assert.
+
+> **DESIGN PIVOT (owner-confirmed).** The spec-literal `_draw_joint`/`_strip_prior` synthesized strip
+> field was disproved by measurement (376× cross-seam, joint-cov rel-err 1.617; jitter is a cover-up;
+> no coarse space; intrinsic near-singular `Σ_ss`). See PROGRESS "Cross-cutting decisions (Phase 4) —
+> Stage-B sampler = spanning-tree hand-forward". `_strip_network` is **kept** (it computes shared-node
+> sets); `_draw_joint`, `_strip_prior`, `_interiorness` and `tests/unit/test_draw_joint.py` are
+> **removed**.
 
 **Files:**
-- Modify: `src/sverdrup/distributions/coherent.py` (add `_strip_prior`, `_draw_joint`)
-- Test: `tests/unit/test_draw_joint.py` (new)
+- Modify: `src/sverdrup/distributions/coherent.py` (remove `_draw_joint`/`_strip_prior`/`_interiorness`;
+  add `_tile_adjacency`, `_max_overlap_spanning_tree`, `_assert_tree_edge_separates`)
+- Remove: `tests/unit/test_draw_joint.py`
+- Test: `tests/unit/test_spanning_tree.py` (new)
 
 **Acceptance Criteria:**
-- [ ] `_strip_prior(parts, global_keys, per_tile)` returns a symmetric SPD CSC `(G, G)` over the `G` global strip nodes, assembled by, for each strip node, taking the prior-Q row from the tile in which the node is **most interior** (max distance to that tile's extended-window boundary), restricted to strip columns; symmetrized.
-- [ ] The strip prior includes off-diagonal edges between corner-junction nodes (an entry exists between two stencil-adjacent strip nodes covered by different overlaps) — C1.
-- [ ] `_draw_joint(parts, seed)` returns `(global_keys, per_tile, x_joint)` where `x_joint = mean_blend + L_S^{-T} w_joint`, `w_joint` from a deterministic seed independent of any tile seed (C2).
-- [ ] In the nonstationary-κ case the assembled strip prior differs from a scalar-κ assembly (C4) — asserted by comparing the strip-prior diagonal spread.
+- [ ] `_tile_adjacency(parts) -> dict[tuple[int,int], set[key]]` returns, for every tile pair whose
+  `extended_window`s overlap, the shared strip-node key set (reusing `_strip_network`'s shared-node
+  logic). Pairs sharing `< STENCIL_REACH` distinct nodes per adjacency axis are **not** edges.
+- [ ] `_max_overlap_spanning_tree(adjacency, n) -> (parent: dict[int,int|None], order: list[int],
+  tree_edges: set, dropped: list)`: a maximum-weight spanning tree by shared-node count (Kruskal/Prim),
+  rooted, BFS order, with `dropped` = real overlap edges not in the tree.
+- [ ] Disconnected adjacency (a tile reachable by no edge ≥ reach) raises `AssertionError` (C6 — a tile
+  that cannot be hand-forward-conditioned is a loud red, never silently independent).
+- [ ] `_assert_tree_edge_separates` raises if any **tree** edge's shared strip is thinner than
+  `STENCIL_REACH` in the adjacency direction (per-tree-edge analogue of `_assert_separates`).
+- [ ] On the 2×2 corner fixture: tree has exactly `n-1 = 3` edges; `dropped` is non-empty; the chosen
+  tree maximizes total shared-node weight (a higher-overlap edge is never dropped in favour of a
+  lower-overlap tree edge).
 
-**Verify:** `pixi run test tests/unit/test_draw_joint.py -v` → pass.
+**Verify:** `pixi run test tests/unit/test_spanning_tree.py -v` → pass.
 
 **Steps:**
-
-- [ ] **Step 1: Write the failing test** — `tests/unit/test_draw_joint.py`:
-
-```python
-"""The auxiliary joint field: strip sub-GMRF from prior Q, corner edges, independent white."""
-
-from __future__ import annotations
-
-import numpy as np
-
-from sverdrup.distributions.coherent import NoiseSpec, _draw_joint, _strip_network, _strip_prior
-from tests.unit._strip_fixtures import four_tile_corner_parts
-
-
-_NOISE = NoiseSpec(method="gmrf", params_key="k", lattice_step=0.25)
-
-
-def test_strip_prior_has_corner_cross_edges():
-    # Behavior (C1): the induced strip prior connects junction nodes across overlaps; the
-    #   matrix has off-diagonal entries between strip nodes that come from different tiles.
-    # Bug caught: assembling per-overlap ribbons leaves the strip prior block-diagonal at the
-    #   junction, so the auxiliary field is discontinuous there.
-    parts = four_tile_corner_parts()
-    gk, pt = _strip_network(parts)
-    q_s = _strip_prior(parts, gk, pt).tocoo()
-    off = q_s.row != q_s.col
-    assert off.sum() > 0  # there ARE cross-node edges, not a diagonal matrix
-
-
-def test_joint_white_independent_of_tile_seed():
-    # Behavior (C2): the auxiliary field's white noise is seeded independently of any tile's
-    #   unconditional-draw white. Re-deriving the joint seed must not collide with a tile seed.
-    # Bug caught: sharing noise between the joint target and a tile draw re-biases kriging.
-    from sverdrup.core.seeding import derive_seed
-
-    parts = four_tile_corner_parts()
-    gk, pt, xj = _draw_joint(parts, member_index=2, noise=_NOISE)
-    joint_seed = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-joint-strip", 2)
-    tile0_seed = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:0", 2)
-    assert joint_seed != tile0_seed
-    assert xj.shape[0] == len(gk)
-
-
-def test_nonstationary_strip_prior_differs_from_constant():
-    # Behavior (C4): with a lat-varying kappa field the strip prior carries per-node kappa.
-    # Bug caught: drawing the joint field from a single scalar kappa biases the nonstationary
-    #   case only (invisible to stationary tests).
-    from tests.unit._strip_fixtures import four_tile_corner_parts_nonstationary
-
-    parts = four_tile_corner_parts_nonstationary()
-    gk, pt = _strip_network(parts)
-    q_s = _strip_prior(parts, gk, pt)
-    diag = np.asarray(q_s.diagonal())
-    assert diag.std() / diag.mean() > 1e-3  # spatially-varying coefficients, not constant
-```
-
-Add `four_tile_corner_parts_nonstationary()` to `_strip_fixtures.py` — same 2×2 layout but the provider resolves `range` as a latitude-varying field (reuse the nonstationary-κ provider pattern from `tests/test_nonstationary_kappa.py`).
-
-- [ ] **Step 2: Run to verify it fails** — FAIL (`_strip_prior` / `_draw_joint` undefined).
-
-- [ ] **Step 3: Implement `_strip_prior` + `_draw_joint`** in `coherent.py`:
-
-```python
-def _interiorness(pt: np.ndarray, win: Window) -> float:
-    """Return the min distance from ``pt`` (lon,lat) to the extended-window edges (>0 inside)."""
-    lo_lon, hi_lon = win.lon_range
-    lo_lat, hi_lat = win.lat_range
-    return float(min(pt[0] - lo_lon, hi_lon - pt[0], pt[1] - lo_lat, hi_lat - pt[1]))
-
-
-def _strip_prior(
-    parts: Sequence[Any],
-    global_keys: list[tuple[float, float]],
-    per_tile: list[dict[int, int]],
-) -> "sparse.csc_matrix":
-    """Assemble the strip-network prior precision as the induced submatrix of the per-tile priors.
-
-    For each global strip node pick the tile in which it is MOST interior (largest distance to
-    that tile's extended-window boundary) — that tile's prior-Q row is the least truncated, so
-    its coefficients carry the correct per-node kappa (C4). Restrict each such row to the strip
-    columns and symmetrize. Off-diagonal entries between stencil-adjacent strip nodes (incl.
-    junction nodes from different overlaps) are retained (C1).
-    """
-    from scipy import sparse  # local import; module already imports numpy
-
-    t = cast(Any, parts[0].distribution).time_days
-    g_n = len(global_keys)
-    # choose the interior-source tile per global node
-    src_tile = np.full(g_n, -1, dtype=int)
-    best = np.full(g_n, -np.inf)
-    tile_pts = [_support_points(p.distribution.grid, t) for p in parts]
-    for i, p in enumerate(parts):
-        win = p.tile.extended_window
-        for g, local in per_tile[i].items():
-            score = _interiorness(tile_pts[i][local], win)
-            if score > best[g]:
-                best[g] = score
-                src_tile[g] = i
-    # local index of each global node within its source tile
-    rows, cols, vals = [], [], []
-    for g in range(g_n):
-        i = int(src_tile[g])
-        q_i = cast(Any, parts[i].distribution.fields.prior_precision).tocsr()
-        local_g = per_tile[i][g]
-        # map this tile's local node idx -> global strip idx for the strip columns present here
-        local_to_global = {local: gg for gg, local in per_tile[i].items()}
-        row = q_i.getrow(local_g).tocoo()
-        for c_local, v in zip(row.col.tolist(), row.data.tolist(), strict=False):
-            gg = local_to_global.get(c_local)
-            if gg is not None:
-                rows.append(g)
-                cols.append(gg)
-                vals.append(v)
-    m = sparse.csc_matrix((vals, (rows, cols)), shape=(g_n, g_n))
-    q_s = (0.5 * (m + m.T)).tocsc()
-    # guard SPD: a tiny ridge if any zero diagonal slipped through (boundary-only node)
-    d = np.asarray(q_s.diagonal())
-    if (d <= 0).any():
-        q_s = (q_s + sparse.diags(np.where(d <= 0, 1e-6, 0.0))).tocsc()
-    return q_s
-
-
-def _draw_joint(
-    parts: Sequence[Any], member_index: int, noise: NoiseSpec
-) -> tuple[list[tuple[float, float]], list[dict[int, int]], np.ndarray]:
-    """Draw ONE auxiliary field over the strip network from the prior sub-GMRF.
-
-    Returns ``(global_keys, per_tile, x_joint)`` with ``x_joint = mean_blend + L_S^{-T} w``.
-    The white ``w`` is seeded with a key DISTINCT from every tile's unconditional-draw seed
-    (C2), so the kriging targets are independent of each tile's own white.
-    """
-    from sverdrup.methods.gmrf_linalg import GMRFFactor
-
-    global_keys, per_tile = _strip_network(parts)
-    q_s = _strip_prior(parts, global_keys, per_tile)
-    fac = GMRFFactor(q_s)
-    seed = derive_seed(noise.method, noise.params_key, "gmrf-joint-strip", member_index)
-    w = np.random.default_rng(seed).standard_normal(len(global_keys))
-    # mean over the strip nodes: average of the covering tiles' means (continuous, deterministic)
-    t = cast(Any, parts[0].distribution).time_days
-    mean = np.zeros(len(global_keys))
-    cnt = np.zeros(len(global_keys))
-    for i, p in enumerate(parts):
-        mvec = p.distribution.fields.mean.ravel()
-        for g, local in per_tile[i].items():
-            mean[g] += float(mvec[local])
-            cnt[g] += 1.0
-    mean = mean / np.where(cnt > 0, cnt, 1.0)
-    x_joint = mean + fac.sample(w)
-    return global_keys, per_tile, x_joint
-```
-
-- [ ] **Step 4: Run** — `pixi run test tests/unit/test_draw_joint.py -v` → PASS.
-
-- [ ] **Step 5: Typecheck + commit**
-
-```bash
-pixi run typecheck && pixi run pre-commit run --files src/sverdrup/distributions/coherent.py tests/unit/test_draw_joint.py tests/unit/_strip_fixtures.py
-git add src/sverdrup/distributions/coherent.py tests/unit/test_draw_joint.py tests/unit/_strip_fixtures.py
-git commit -m "feat(phase4): strip sub-GMRF + one auxiliary joint draw (C1, C2, C4)"
-```
+- [ ] **Step 1: Remove** `_draw_joint`, `_strip_prior`, `_interiorness` from `coherent.py` and delete
+  `tests/unit/test_draw_joint.py`. Keep `_strip_network` (it is now the shared-node primitive).
+- [ ] **Step 2: Write the failing test** `tests/unit/test_spanning_tree.py`: a 2×2 fixture asserts
+  3 tree edges + ≥1 dropped + max-overlap optimality; `disjoint_pair_parts` raises (disconnected);
+  a deliberately thin-overlap pair as a forced tree edge raises via `_assert_tree_edge_separates`.
+- [ ] **Step 3: Implement** `_tile_adjacency` (shared-node sets via `_strip_network` per pair, filtered
+  by `≥ STENCIL_REACH` per axis), `_max_overlap_spanning_tree` (max-weight ST + connectivity assert),
+  `_assert_tree_edge_separates`.
+- [ ] **Step 4: Run → green. Step 5: typecheck + pre-commit + commit**
+  `feat(phase4): tile-adjacency graph + max-overlap spanning tree (Stage B redesign)`.
 
 ---
 
-## Task 7: `GmrfJointKrigingSolve` — krige toward the joint field; repoint the registry
+## Task 7: `GmrfTreeKrigingSolve` — spanning-tree hand-forward; repoint the registry
 
-**Goal:** Implement the topology-agnostic driver: per tile, independent per-tile white → unconditional posterior draw → krige toward this tile's strip values read from the ONE joint field → weight-crossfade. Re-point `_DRIVERS["sparse-precision"]`; keep `GmrfKrigingSolve` intact (its direct-instantiation tests ARE the 1-D chain regression). Update the single registry-wiring assertion.
+**Goal:** Implement the topology-agnostic-in-correctness driver: generalize the proven chain
+`GmrfKrigingSolve._sweep` (line) to a **max-overlap spanning tree** — each tile draws its independent
+unconditional posterior sample and is hand-forward-conditioned on its **parent's** already-drawn
+overlap **values** (consistent residual ⇒ the 4e8 `Σ_ss` singularity is never excited). Re-point
+`_DRIVERS["sparse-precision"]`; keep `GmrfKrigingSolve` (chain) as the 1-D regression.
 
 **Files:**
-- Modify: `src/sverdrup/distributions/coherent.py` (`GmrfJointKrigingSolve`, `_DRIVERS`)
-- Modify: `tests/test_gmrf_blend.py` (the one wiring assertion at line 56 — intended Stage-B change)
-- Test: `tests/unit/test_joint_kriging_driver.py` (new)
+- Modify: `src/sverdrup/distributions/coherent.py` (`GmrfTreeKrigingSolve`, `_DRIVERS`)
+- Modify: `tests/test_gmrf_blend.py` (the one wiring assertion — the only pre-existing assertion changed)
+- Test: `tests/unit/test_tree_kriging_driver.py` (new)
 
 **Acceptance Criteria:**
-- [ ] `GmrfJointKrigingSolve.crossfaded_member(parts, pts, weights, member_index, noise)` returns a length-`len(pts)` field; uses independent per-tile white keyed `gmrf-tile:{i} × member` and kriges toward `x_joint` on each tile's strip nodes.
-- [ ] `_DRIVERS["sparse-precision"] is GmrfJointKrigingSolve`.
-- [ ] `GmrfKrigingSolve` class is unchanged; `tests/unit/test_gmrf_kriging_driver.py` and `test_gmrf_kriging_oracle.py` (which instantiate it directly) stay green untouched.
-- [ ] `tests/test_gmrf_blend.py::test_select_driver_sparse_precision` updated to assert the new class — the ONLY pre-existing assertion changed in Phase 4, justified: the registry deliberately re-points; chain *behavior* is still pinned by the kept `GmrfKrigingSolve` tests.
+- [ ] `GmrfTreeKrigingSolve._sweep_tree(parts, t, member, noise) -> list[field]`: build adjacency →
+  max-overlap ST → BFS order; per tile, independent white keyed `gmrf-tile:{i}×member`; root drawn
+  unconditionally; each child kriged toward its parent's drawn values on the shared nodes via
+  `x_c = x_u + cols @ solve(Σ_ss, x_parent|_S − x_u|_S)`, `cols = posterior_cov_columns(s_idx)`.
+- [ ] Independent-white discipline: **two** streams only (tile-white ⟂ tile-white). The synthesized
+  joint-white stream is gone (C2 reverts to the Phase-3 two-stream contract).
+- [ ] `_DRIVERS["sparse-precision"] is GmrfTreeKrigingSolve`; on a **single tile** the member reduces
+  to `mean + L⁻ᵀw` (no parent ⇒ no-op), bit-identical to the chain's single-tile result.
+- [ ] `GmrfKrigingSolve` unchanged; `tests/unit/test_gmrf_kriging_{driver,oracle}.py` stay green
+  untouched (they instantiate the chain directly via `._sweep`). **Note:** the 3 oracle tests that
+  route through `BlendOperator().blend()` move to the new driver — addressed in Task 8 by rebuilding
+  their fixtures as real solved tiles (the hand-stubbed `prior_precision=None` synthetic tiles were
+  always going to rot) and treating the 2 chain-gate blend tests as the Stage-B gate that moves with
+  the cross-seam number (see Task 9), not as independent repairs.
+- [ ] `tests/test_gmrf_blend.py::test_select_driver_sparse_precision` asserts the new class (the ONLY
+  pre-existing assertion changed in Phase 4).
 
-**Verify:** `pixi run test tests/unit/test_joint_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v` → all pass.
+**Verify:** `pixi run test tests/unit/test_tree_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py
+tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v` → all pass (oracle/blend fixtures
+rebuilt in Task 8 land here too; sequence Task 8 fixtures before re-running if needed).
 
 **Steps:**
-
-- [ ] **Step 1: Write the failing test** — `tests/unit/test_joint_kriging_driver.py`:
-
-```python
-"""The joint-kriging driver: per-tile draw kriged toward one shared joint field; crossfade."""
-
-from __future__ import annotations
-
-import numpy as np
-
-from sverdrup.distributions.coherent import (
-    GmrfJointKrigingSolve,
-    NoiseSpec,
-    select_driver,
-)
-from tests.unit._strip_fixtures import four_tile_corner_parts
-
-_NOISE = NoiseSpec(method="gmrf", params_key="k", lattice_step=0.25)
-
-
-def test_registry_points_to_joint_driver():
-    # Behavior: the sparse-precision coherence driver is now the topology-agnostic one.
-    assert isinstance(select_driver("sparse-precision"), GmrfJointKrigingSolve)
-
-
-def test_crossfaded_member_is_finite_and_full_length():
-    # Behavior: a 2x2 partition produces one coherent field over the output points, no NaN.
-    # Bug caught: an empty conditioning set or a singular strip solve would NaN the seam.
-    parts = four_tile_corner_parts()
-    grid = parts[0].distribution.grid
-    pts = grid.points(2.0)  # use one tile's grid as the (small) output support for the unit test
-    w = np.ones((len(parts), pts.shape[0])) / len(parts)
-    out = GmrfJointKrigingSolve().crossfaded_member(parts, pts, w, member_index=1, noise=_NOISE)
-    assert out.shape == (pts.shape[0],)
-    assert np.all(np.isfinite(out))
-```
-
-- [ ] **Step 2: Run to verify it fails** — FAIL (`GmrfJointKrigingSolve` undefined).
-
-- [ ] **Step 3: Implement `GmrfJointKrigingSolve`** in `coherent.py` (place after `GmrfKrigingSolve`):
-
-```python
-class GmrfJointKrigingSolve:
-    """Topology-agnostic GMRF driver: krige each tile toward ONE pre-drawn joint field (spec §5.3).
-
-    No tile ordering, no hand-forward, no tree/separator requirement. One auxiliary field is
-    drawn over the overlap-strip network (``_draw_joint``); each tile draws its INDEPENDENT
-    unconditional posterior sample and kriges it toward its strip values read from that one
-    field, so every tile conditions toward a single globally-consistent target — coherence no
-    longer depends on tile adjacency. Replaces ``GmrfKrigingSolve``'s lon-chain sweep; the chain
-    class is kept as the 1-D regression reference.
-    """
-
-    def _corrected(
-        self, parts: Sequence[Any], member_index: int, noise: NoiseSpec
-    ) -> list[np.ndarray]:
-        """Return each tile's kriging-corrected node-space field (parts order)."""
-        t = cast(Any, parts[0].distribution).time_days
-        global_keys, per_tile, x_joint = _draw_joint(parts, member_index, noise)
-        corrected: list[np.ndarray] = []
-        for i, p in enumerate(parts):
-            d = p.distribution
-            gpts = _support_points(d.grid, t)
-            # independent per-tile white (C2): keyed by tile index x member, distinct from
-            # the joint-strip seed.
-            seed = derive_seed(noise.method, noise.params_key, f"gmrf-tile:{i}", member_index)
-            white = np.random.default_rng(seed).standard_normal(len(gpts))
-            x_u = d.fields.mean.ravel() + d._factor_obj().sample(white)
-            local_to_global = per_tile[i]
-            if local_to_global:
-                s_idx = np.array(sorted(local_to_global.keys(), key=lambda g: local_to_global[g]))
-                s_local = np.array([local_to_global[g] for g in s_idx])
-                # order both by local node index for a stable system
-                order = np.argsort(s_local)
-                s_local = s_local[order]
-                s_global = s_idx[order]
-                x_s = x_joint[s_global]
-                cols = d.posterior_cov_columns(s_local)  # (n_i, |S|)
-                sigma_ss = cols[s_local, :]
-                x_c = x_u + cols @ np.linalg.solve(sigma_ss, x_s - x_u[s_local])
-            else:
-                x_c = x_u
-            corrected.append(np.asarray(x_c))
-        return corrected
-
-    def crossfaded_member(
-        self,
-        parts: Sequence[Any],
-        pts: Points,
-        weights: np.ndarray,
-        member_index: int,
-        noise: NoiseSpec,
-    ) -> np.ndarray:
-        """Realize one coherent member: joint-kriging + weight-crossfade onto ``pts``."""
-        corrected = self._corrected(parts, member_index, noise)
-        n = pts.shape[0]
-        out = np.zeros(n)
-        for i, p in enumerate(parts):
-            d = p.distribution
-            idx = _nearest(d.grid, pts, d.time_days)
-            cover = weights[i] > 0
-            field_i = np.zeros(n)
-            field_i[cover] = corrected[i][idx[cover]]
-            out += weights[i] * field_i
-        return np.asarray(out)
-```
-
-- [ ] **Step 4: Repoint the registry** — change `_DRIVERS` in `coherent.py`:
-
-```python
-_DRIVERS: dict[str, type] = {
-    "lowrank+diag": LowRankSharedBasis,
-    "sparse-precision": GmrfJointKrigingSolve,
-    "perturb-ensemble": PerturbEnsembleDegradation,
-}
-```
-
-- [ ] **Step 5: Update the single wiring assertion** — `tests/test_gmrf_blend.py:56`:
-
-```python
-def test_select_driver_sparse_precision():
-    # Stage B: the sparse-precision driver is now the topology-agnostic joint-kriging one.
-    # Chain behaviour is still pinned by the kept GmrfKrigingSolve tests (kriging_driver/oracle).
-    from sverdrup.distributions.coherent import GmrfJointKrigingSolve
-
-    assert isinstance(select_driver("sparse-precision"), GmrfJointKrigingSolve)
-```
-
-- [ ] **Step 6: Run** — `pixi run test tests/unit/test_joint_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v` → PASS.
-
-- [ ] **Step 7: Typecheck + commit**
-
-```bash
-pixi run typecheck && pixi run pre-commit run --files src/sverdrup/distributions/coherent.py tests/unit/test_joint_kriging_driver.py tests/test_gmrf_blend.py
-git add src/sverdrup/distributions/coherent.py tests/unit/test_joint_kriging_driver.py tests/test_gmrf_blend.py
-git commit -m "feat(phase4): GmrfJointKrigingSolve replaces lon-chain sweep; repoint registry (Stage B)"
-```
+- [ ] **Step 1:** failing test `test_tree_kriging_driver.py` — registry points to `GmrfTreeKrigingSolve`;
+  2×2 member is finite + full-length; single-tile == `mean + L⁻ᵀw`.
+- [ ] **Step 2:** implement `GmrfTreeKrigingSolve` (sweep over the ST, hand-forward parent values).
+- [ ] **Step 3:** repoint `_DRIVERS`; update the one wiring assertion.
+- [ ] **Step 4: Run → green. Step 5: typecheck + pre-commit + commit**
+  `feat(phase4): GmrfTreeKrigingSolve spanning-tree hand-forward; repoint registry (Stage B)`.
 
 ---
 
-## Task 8: Stage-B oracles + negative control (C2 three streams, per-tile full-cov, too-narrow)
+## Task 8: Stage-B oracles — tree-edge exactness, dropped-edge bound, conservative direction, two-tree invariance
 
-**Goal:** Pin the three correctness oracles before the gate: (a) the per-tile full-covariance oracle (corrected ensemble cov == exact `(Qⁱ)⁻¹`), (b) the three-stream independent-white oracle (C2), (c) the too-narrow-overlap negative control fails loudly.
+**Goal:** Pin the construction's contracts before the gate, with thresholds derived from the **measured
+chain baseline** (not constants): per-tile full-cov exactness; tree-edge ≤ chain baseline; dropped-edge
+bounded relative to tree-edge; conservative-direction (non-under-dispersion); two-tree invariance;
+thin-tree-edge loud red. Rebuild the 3 blend-routed oracle fixtures as **real solved tiles**.
 
 **Files:**
-- Test: `tests/unit/test_joint_kriging_oracle.py` (new)
-- Modify: `src/sverdrup/distributions/coherent.py` (add the too-narrow-overlap precondition with a loud red)
+- Modify: `tests/unit/test_gmrf_kriging_oracle.py` (rebuild the 3 blend-routed fixtures as real
+  `MaternGMRF` solved tiles so `prior_precision`/`q_post` exist; the chain `._sweep` per-tile oracle
+  stays as-is)
+- Test: `tests/unit/test_tree_kriging_oracle.py` (new)
+- Modify: `src/sverdrup/distributions/coherent.py` if a residual-recording hook is needed
 
 **Acceptance Criteria:**
-- [ ] Per-tile oracle: over many members, a single tile's corrected-draw empirical covariance matches its exact posterior `(Qⁱ)⁻¹` (dense, small grid) within MC tolerance — proving the kriging correction does not distort the per-tile marginal/joint.
-- [ ] Three-stream independence (C2): the joint-strip white, tile-0 white, and tile-1 white are pairwise distinct seeds AND the empirical cross-correlation between an unconditional tile draw and the joint field (before correction) is ≈ 0 at MC floor.
-- [ ] Negative control: shrinking a tile overlap below the stencil reach raises a loud `AssertionError` (mirrors `_assert_separates`), OR the recorded residual is flagged out-of-tolerance — the failure is never silent.
+- [ ] **Per-tile full-cov:** a single tile's corrected-draw empirical covariance == its exact posterior
+  `(Qⁱ)⁻¹` within MC tol (kriging toward the parent does not distort the tile's own law).
+- [ ] **Two-stream independence (C2):** tile-white ⟂ tile-white (distinct seeds; empirical
+  cross-correlation ≈ 0 at MC floor). No joint-white stream exists.
+- [ ] **Tree-edge parity:** on the 2×2 fixture, `max_tree_edge_joint_cov_relerr ≤ chain_baseline·(1+slack)`
+  where `chain_baseline` is **measured in-test** from the 1-D 3-tile chain on the same fixture
+  (≈0.30 on natl60-scale; do not hardcode — compute it).
+- [ ] **Dropped-edge relative bound:** `max_dropped_edge_relerr ≤ C · max_tree_edge_relerr`, `C ∈ [2,3]`.
+- [ ] **Conservative direction:** cross-seam derived-quantity (firstdifference) variance ratio
+  (blend/single-tile-reference) on dropped edges `≥ 1 − ε` (never under-dispersed; over-dispersion OK).
+- [ ] **Two-tree invariance:** the shipped blend joint-cov rel-err is within tolerance under the MST AND
+  one alternative valid spanning tree (correctness tree-invariant; only the residual distribution moves).
+- [ ] **Thin tree edge:** forcing a sub-reach overlap as a tree edge raises loudly (`_assert_tree_edge_separates`).
 
-**Verify:** `pixi run test tests/unit/test_joint_kriging_oracle.py -v` → pass.
+**Verify:** `pixi run test tests/unit/test_tree_kriging_oracle.py tests/unit/test_gmrf_kriging_oracle.py -v` → pass.
 
-**Steps:**
-
-- [ ] **Step 1: Add the too-narrow-overlap precondition** to `_strip_network` (or `_strip_prior`) — after building `per_tile`, assert each adjacent pair's shared strip spans ≥ `STENCIL_REACH` distinct nodes in *each* axis where the tiles are adjacent:
-
-```python
-def _assert_strip_wide_enough(
-    parts: Sequence[Any],
-    global_keys: list[tuple[float, float]],
-    per_tile: list[dict[int, int]],
-) -> None:
-    """Raise if any adjacent pair's shared strip is thinner than the stencil reach (any axis).
-
-    The topology-agnostic analogue of ``_assert_separates``: the α=2 stencil couples nodes
-    within grid-distance ``STENCIL_REACH``; a shared strip thinner than that in the adjacency
-    direction cannot carry a consistent joint target and the partition-of-unity crossfade has
-    no room — a loud red, never a silent seam.
-    """
-    for i in range(len(parts)):
-        for j in range(i + 1, len(parts)):
-            shared = set(per_tile[i]) & set(per_tile[j])
-            if not shared:
-                continue
-            pts = np.array([global_keys[g] for g in shared])
-            lon_cols = np.unique(np.round(pts[:, 0], 6)).size
-            lat_rows = np.unique(np.round(pts[:, 1], 6)).size
-            if max(lon_cols, lat_rows) < STENCIL_REACH:
-                raise AssertionError(
-                    f"shared strip for tiles {i},{j} is {lon_cols}x{lat_rows} nodes < "
-                    f"stencil reach {STENCIL_REACH}: joint target cannot separate interiors. "
-                    "Widen the halo (k·corr_len)."
-                )
-```
-
-Call `_assert_strip_wide_enough(parts, global_keys, per_tile)` at the end of `_draw_joint` (after `_strip_network`), before assembling the prior.
-
-- [ ] **Step 2: Write the oracle tests** — `tests/unit/test_joint_kriging_oracle.py`:
-
-```python
-"""Stage-B oracles: per-tile full-cov exactness, three-stream independence, narrow-strip red."""
-
-from __future__ import annotations
-
-import numpy as np
-import pytest
-
-from sverdrup.core.seeding import derive_seed
-from sverdrup.distributions.coherent import (
-    GmrfJointKrigingSolve,
-    NoiseSpec,
-    _draw_joint,
-)
-from tests.unit._strip_fixtures import four_tile_corner_parts, narrow_overlap_parts
-
-_NOISE = NoiseSpec(method="gmrf", params_key="k", lattice_step=0.25)
-
-
-def test_per_tile_corrected_cov_matches_exact_posterior():
-    # Behavior (invariant 4): kriging toward the joint field does not distort a tile's own
-    #   posterior — the corrected-draw empirical covariance equals (Q^i)^-1.
-    # Bug caught: a correction that re-correlates the interior (the old shared-w failure).
-    parts = four_tile_corner_parts()
-    driver = GmrfJointKrigingSolve()
-    M = 4000
-    draws = np.stack([driver._corrected(parts, m, _NOISE)[0] for m in range(M)])
-    emp = np.cov(draws.T)
-    q0 = parts[0].distribution.fields.precision.toarray()
-    exact = np.linalg.inv(q0)
-    # compare on the tile interior (exclude the strip rows the field is pinned through)
-    np.testing.assert_allclose(np.diag(emp), np.diag(exact), rtol=0.15)
-
-
-def test_three_white_streams_are_independent():
-    # Behavior (C2): joint-strip white, tile-0 white, tile-1 white use three distinct seeds.
-    # Bug caught: a shared seed between the joint target and a tile draw re-biases kriging.
-    s_joint = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-joint-strip", 7)
-    s_t0 = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:0", 7)
-    s_t1 = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:1", 7)
-    assert len({s_joint, s_t0, s_t1}) == 3
-
-
-def test_narrow_overlap_fails_loudly():
-    # Behavior: a sub-stencil-reach shared strip is a loud AssertionError, never a silent seam.
-    parts = narrow_overlap_parts()  # overlap of 1 column
-    with pytest.raises(AssertionError, match="stencil reach"):
-        _draw_joint(parts, member_index=0, noise=_NOISE)
-```
-
-Add `narrow_overlap_parts()` to `_strip_fixtures.py`: two tiles sharing exactly one column of nodes (extended windows touching on a single lon line).
-
-- [ ] **Step 3: Run** — `pixi run test tests/unit/test_joint_kriging_oracle.py -v` → PASS.
-
-- [ ] **Step 4: Typecheck + commit**
-
-```bash
-pixi run typecheck && pixi run pre-commit run --files src/sverdrup/distributions/coherent.py tests/unit/test_joint_kriging_oracle.py tests/unit/_strip_fixtures.py
-git add src/sverdrup/distributions/coherent.py tests/unit/test_joint_kriging_oracle.py tests/unit/_strip_fixtures.py
-git commit -m "test(phase4): Stage-B oracles + too-narrow-overlap negative control (C2)"
-```
+**Steps:** Step 1 rebuild the 3 oracle fixtures as real solved tiles; Step 2 write the oracle tests
+above (measure chain baseline in-test, assert the relative bounds + direction + invariance); Step 3
+run → green; Step 4 typecheck + pre-commit + commit
+`test(phase4): Stage-B spanning-tree oracles — tree/dropped/direction/invariance (chain-baseline-derived)`.
 
 ---
 
-## Task 9: STAGE-B GATE — distinct-tiles positive control (cross-seam + corner-junction C1 + nonstationary C4)
+## Task 9: STAGE-B GATE — spanning-tree sampler on real tiles; three coupled assertions + invariance
 
-**Goal:** Certify the non-chain sampler on genuinely-distinct 2-D tiles: cross-seam derived-quantity parity AND corner-junction joint covariance vs a dense reference, including the nonstationary-κ case, with the residual measured-vs-single-tile-reference and recorded as a conservative `known_bias`.
+**Goal:** Certify the spanning-tree sampler on genuinely-distinct real-solved tiles (2×2 + 3-tile),
+with the three coupled gate assertions and the two-tree invariance test, the dropped-edge residual
+**recorded** as a conservative `known_bias`; junction-tree escalation only on out-of-tolerance.
 
-> **USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it "verified inline", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.
+> **USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every `acceptanceCriteria` item is
+> re-validated independently with captured output. The thresholds are derived from the measured chain
+> baseline, never loosened to pass.
 
 **Files:**
-- Test: `tests/test_joint_kriging_positive_control.py` (new)
+- Test: `tests/test_tree_kriging_gate.py` (new) — real natl60-style solved tiles via the pipeline spine
+- Modify: `tests/test_gmrf_blend.py` — the 2 cross-seam tests are the Stage-B gate; they move with the
+  spanning-tree number (re-baseline against the chain, conservative direction), not independent repairs
 
 **Acceptance Criteria:**
-- [ ] On a 2×2 partition of one global grid with **genuinely-distinct** tiles (distinct obs ⇒ distinct posteriors; never collapsed to identical Q): cross-seam `firstdifference` variance ratio blend/single-tile-reference has **min ≥ 0.9** (conservative direction; record the actual min).
-- [ ] **Corner-junction joint covariance** (C1): the blend's joint covariance across the interior corner (≥3 tiles) matches a dense global reference within tolerance (record max relative deviation); a block-diagonal strip prior would fail this even if marginals pass.
-- [ ] **Nonstationary-κ** (C4): repeat the cross-seam + corner checks with a latitude-varying κ field; both still conservative (record the min ratio).
-- [ ] The measured residual is **recorded** (printed + asserted within tolerance) as the conservative `known_bias`; if it exceeds tolerance the test fails LOUDLY and the junction-tree fallback is triggered (surface to owner) — never loosen the tolerance.
-- [ ] No mid-overlap variance dip; the 1-D chain case (kept `GmrfKrigingSolve` tests) still green.
+- [ ] **(1) Tree-edge parity:** `max_tree_edge_relerr ≤ chain_baseline·(1+slack)` (chain baseline
+  measured in-test ≈0.30; record the actual numbers). Tree edges no worse than the validated chain.
+- [ ] **(2) Dropped-edge bound:** `max_dropped_edge_relerr ≤ C·max_tree_edge_relerr`, `C ∈ [2,3]`
+  (record actual; the residual is printed and stored as `KnownBias`/provenance `known_bias`).
+- [ ] **(3) Conservative direction:** cross-seam firstdifference variance ratio (blend/ref) min `≥ 0.9`
+  on tree edges AND `≥ 1−ε` on dropped edges — never the under-dispersed 0.45 the synthesized field gave.
+- [ ] **Two-tree invariance:** the shipped blend passes (1)–(3) under MST AND one alternative tree.
+- [ ] **Nonstationary-κ:** repeat (1)–(3) with a latitude-varying κ field (conservative, recorded).
+- [ ] **Out-of-tolerance ⇒ STOP:** if any residual exceeds tolerance, fail LOUDLY, record the measured
+  residual, surface that junction-tree escalation (spec §6) is triggered — never loosen.
+- [ ] **1-D chain regression** (`GmrfKrigingSolve` direct tests) still green.
 
-**Verify:** `pixi run test tests/test_joint_kriging_positive_control.py -v 2>&1 | tail -20` → pass, with the recorded ratios/residuals in the captured output.
+**Verify:** `pixi run test tests/test_tree_kriging_gate.py -v -s 2>&1 | tail -25` → pass with recorded
+ratios/residuals; then `pixi run test 2>&1 | tail -5` whole-suite green.
 
-**Steps:**
-
-- [ ] **Step 1: Write the positive-control test** — `tests/test_joint_kriging_positive_control.py`. Build the 2×2 distinct-tiles fixture (reuse `four_tile_corner_parts`), run the full blend through `GmrfJointKrigingSolve`, and a single-tile GMRF reference over the union grid. Assert and PRINT:
-
-```python
-"""Stage-B positive control: distinct-tiles cross-seam parity + corner-junction joint cov (C1, C4)."""
-
-from __future__ import annotations
-
-import numpy as np
-
-# imports: BlendOperator, single-tile MaternGMRF reference, firstdifference derived op,
-# the four-tile fixtures (stationary + nonstationary). Adjust to the real blend entry point
-# used by tests/test_gmrf_blend.py.
-from tests.unit._strip_fixtures import (
-    four_tile_corner_parts,
-    four_tile_corner_parts_nonstationary,
-    single_tile_reference,  # add: one MaternGMRF over the union 10x10 grid, same obs set
-)
-
-
-def _cross_seam_ratio_and_corner_dev(parts, ref):
-    """Return (min cross-seam first-difference variance ratio, max corner joint-cov rel dev)."""
-    # ... realize many coherent members via the blend; compute cross-seam first-difference
-    # variance from the ensemble; compute the joint covariance across the corner node block;
-    # compare to the dense reference `ref`. Return the two scalars.
-    ...
-
-
-def test_distinct_tiles_cross_seam_and_corner_conservative():
-    parts = four_tile_corner_parts()
-    ref = single_tile_reference()
-    ratio, corner_dev = _cross_seam_ratio_and_corner_dev(parts, ref)
-    print(f"[stage-b] stationary cross-seam min ratio={ratio:.3f} corner_dev={corner_dev:.3f}")
-    assert ratio >= 0.9, f"cross-seam under-dispersed (ratio {ratio:.3f}) — NOT conservative"
-    assert corner_dev <= 0.15, f"corner-junction joint cov off by {corner_dev:.3f} (C1)"
-
-
-def test_nonstationary_distinct_tiles_conservative():
-    parts = four_tile_corner_parts_nonstationary()
-    ref = single_tile_reference(nonstationary=True)
-    ratio, corner_dev = _cross_seam_ratio_and_corner_dev(parts, ref)
-    print(f"[stage-b] nonstationary cross-seam min ratio={ratio:.3f} corner_dev={corner_dev:.3f}")
-    assert ratio >= 0.9, f"nonstationary cross-seam under-dispersed (ratio {ratio:.3f}) (C4)"
-    assert corner_dev <= 0.15, f"nonstationary corner joint cov off by {corner_dev:.3f}"
-```
-
-Fill `_cross_seam_ratio_and_corner_dev` and `single_tile_reference` concretely against the real blend API used in `tests/test_gmrf_blend.py` (which already realizes coherent members and computes cross-seam first-difference variance — reuse that machinery; do not invent a new path). The corner joint covariance is read from the ensemble at the 2×2 interior-corner node block and compared to the dense `(Q_global)^-1` sub-block of the single-tile reference.
-
-- [ ] **Step 2: Run, capture the recorded ratios** — `pixi run test tests/test_joint_kriging_positive_control.py -v -s 2>&1 | tail -20`. Expected: both pass; the printed min ratios ≥ 0.9 and corner devs ≤ 0.15.
-
-- [ ] **Step 3: If the residual exceeds tolerance** — STOP. Do not loosen the tolerance. Record the measured residual, surface to the owner that the global-prior-over-strips residual is out of tolerance, and that the junction-tree fallback (spec §6) is now triggered. (This is the spec-§8 escalation; the gate is residual-vs-reference, not pass/fail in isolation.)
-
-- [ ] **Step 4: Record gate evidence + commit**
-
-```bash
-pixi run test 2>&1 | tail -5   # whole suite still green incl. 1-D chain
-git add tests/test_joint_kriging_positive_control.py PROGRESS.md
-git commit -m "test(phase4): Stage-B gate PASSED — distinct-tiles positive control (C1, C4); residual recorded"
-```
-
-Update `PROGRESS.md` "next action" → "Stage C Task 10" and record the captured min ratios / corner devs in the Cross-cutting decisions Phase-4 section.
+**Steps:** Step 1 build the real-tile 2×2 + 3-tile fixtures via the pipeline spine; Step 2 write the
+three coupled assertions + invariance + nonstationary, measuring the chain baseline in-test and
+recording the dropped-edge residual as `known_bias`; Step 3 run, capture evidence; Step 4 if
+out-of-tolerance STOP and surface §6 escalation; Step 5 record gate evidence in PROGRESS, update
+"next action" → Stage C Task 10, commit
+`test(phase4): Stage-B gate PASSED — spanning-tree sampler, residual recorded (chain-baseline gate)`.
 
 ---
 
