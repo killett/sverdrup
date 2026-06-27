@@ -610,11 +610,29 @@ class GmrfTreeKrigingSolve:
         member_index: int,
         noise: NoiseSpec,
     ) -> list[np.ndarray]:
-        """Return each tile's kriging-corrected node-space field (parts order)."""
-        adjacency = _tile_adjacency(parts)
+        """Return each tile's kriging-corrected field over the max-overlap spanning tree."""
         parent, order, tree_edges, _dropped = _max_overlap_spanning_tree(
-            adjacency, len(parts)
+            _tile_adjacency(parts), len(parts)
         )
+        return self._sweep_with_tree(
+            parts, time_days, member_index, noise, parent, order, tree_edges
+        )
+
+    def _sweep_with_tree(
+        self,
+        parts: Sequence[Any],
+        time_days: float,
+        member_index: int,
+        noise: NoiseSpec,
+        parent: dict[int, int | None],
+        order: list[int],
+        tree_edges: set[tuple[int, int]],
+    ) -> list[np.ndarray]:
+        """Return each tile's kriging-corrected node-space field for a GIVEN spanning tree.
+
+        Factored out so the two-tree invariance oracle can inject an alternative valid tree:
+        correctness must be tree-invariant (only the dropped-edge residual distribution moves).
+        """
         _assert_tree_edge_separates(parts, tree_edges)
         keymaps = [
             _node_keys(_support_points(p.distribution.grid, time_days)) for p in parts
@@ -658,6 +676,34 @@ class GmrfTreeKrigingSolve:
         """Realize one coherent member: spanning-tree hand-forward + weight-crossfade onto ``pts``."""
         t = cast(Any, parts[0].distribution).time_days
         corrected = self._sweep_tree(parts, t, member_index, noise)
+        return self._crossfade(parts, pts, weights, corrected)
+
+    def crossfaded_member_with_tree(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+        parent: dict[int, int | None],
+        order: list[int],
+        tree_edges: set[tuple[int, int]],
+    ) -> np.ndarray:
+        """Realize one member for a GIVEN spanning tree (two-tree invariance oracle)."""
+        t = cast(Any, parts[0].distribution).time_days
+        corrected = self._sweep_with_tree(
+            parts, t, member_index, noise, parent, order, tree_edges
+        )
+        return self._crossfade(parts, pts, weights, corrected)
+
+    @staticmethod
+    def _crossfade(
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        corrected: list[np.ndarray],
+    ) -> np.ndarray:
+        """Weight-crossfade the per-tile corrected fields onto ``pts``."""
         n = pts.shape[0]
         out = np.zeros(n)
         for i, p in enumerate(parts):
