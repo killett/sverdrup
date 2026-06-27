@@ -766,6 +766,81 @@ class GmrfTreeKrigingSolve:
         return np.asarray(out)
 
 
+class GmrfCoreAuthoritativeSolve:
+    """GMRF coherent driver: per-node core-authoritative two-pass (overwrite), spec 2026-06-27.
+
+    Pass 1: every tile draws its INDEPENDENT unconditional posterior ``x_u = mean + L⁻ᵀw``
+    (per-tile white, C2′). Each node's authoritative value is its disjoint-core owner's Pass-1
+    draw. Pass 2: every tile's nodes are OVERWRITTEN with the authoritative value (core nodes are
+    already authoritative; halo nodes take the owning neighbour's value) — no ``Σ_ss`` solve, so the
+    near-improper posterior is never excited. Coherence is exact at shared nodes by construction and
+    the marginal contract is honored because each node carries its authoritative core variance.
+
+    NON-DEFAULT — REFERENCE CONSTRUCTION FOR THE SHORT-RANGE REGIME ONLY (Stage-B phase boundary,
+    measured 2026-06-27; see PROGRESS "THE SECOND ANTAGONIST" + "DEFLATION IS DEAD"). Because cores
+    are drawn INDEPENDENTLY, overwrite reports the cross-seam correlation between adjacent
+    core-boundary nodes as ZERO by construction. That is correct ONLY where the true boundary
+    correlation is itself ~0 — i.e. core-size/range >= ~25 (short range). At operational range the
+    true seam correlation is substantial (measured +0.68 @ 400 km on the production fixture) and
+    overwrite DESTROYS it — invisibly to the marginal and direction gates; only the cross-seam
+    COVARIANCE invariant sees it. The carrier of that correlation IS the near-improper global mode,
+    so no per-tile seam construction (incl. near-null-deflated strip conditioning, killed by
+    measurement) recovers it; the fix is a Phase-5 tile-sizing-vs-range / decomposition decision.
+    Therefore this driver is NOT registered as the ``sparse-precision`` default — the default stays
+    ``GmrfTreeKrigingSolve`` and the default-sampler choice is deferred to Phase 5. Kept as the
+    documented short-range-correct reference and as the construction the boundary gate characterizes.
+    """
+
+    def _authoritative_fields(
+        self,
+        parts: Sequence[Any],
+        time_days: float,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> list[np.ndarray]:
+        keymaps = [
+            _node_keys(_support_points(p.distribution.grid, time_days)) for p in parts
+        ]
+        owner = _core_owner_of_keys(parts, time_days)
+        # Pass 1: independent per-tile unconditional draws
+        drawn: list[np.ndarray] = []
+        for i, p in enumerate(parts):
+            d = p.distribution
+            gpts = _support_points(d.grid, time_days)
+            seed = derive_seed(
+                noise.method, noise.params_key, f"gmrf-tile:{i}", member_index
+            )
+            white = np.random.default_rng(seed).standard_normal(len(gpts))
+            drawn.append(d.fields.mean.ravel() + d._factor_obj().sample(white))
+        # authoritative value per key = owning tile's Pass-1 draw at that key
+        auth: dict[tuple[float, float], float] = {}
+        for i, km in enumerate(keymaps):
+            for n, k in enumerate(km):
+                if owner.get(k) == i:
+                    auth[k] = float(drawn[i][n])
+        # Pass 2: overwrite every node with the authoritative value
+        out: list[np.ndarray] = []
+        for i, km in enumerate(keymaps):
+            f = drawn[i].copy()
+            for n, k in enumerate(km):
+                f[n] = auth[k]
+            out.append(np.asarray(f))
+        return out
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one coherent member: core-authoritative patchwork, weight-crossfaded onto pts."""
+        t = cast(Any, parts[0].distribution).time_days
+        fields = self._authoritative_fields(parts, t, member_index, noise)
+        return GmrfTreeKrigingSolve._crossfade(parts, pts, weights, fields)
+
+
 class PerturbEnsembleDegradation:
     """Degradation driver: per-tile INDEPENDENT members, weight-crossfaded (coherence lost).
 

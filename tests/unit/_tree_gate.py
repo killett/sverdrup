@@ -184,6 +184,28 @@ class GateFixture:
             np.linalg.norm(emp[blk] - self.sig_g[blk]) / np.linalg.norm(self.sig_g[blk])
         )
 
+    def sigma_contract(self) -> np.ndarray:
+        """Reported marginal std field (Σ_i w_i σ_i) over output points."""
+        w = partition_weights([p.tile for p in self.parts], self.pts)  # (T, n)
+        sig = np.zeros((len(self.parts), self.pts.shape[0]))
+        for i, p in enumerate(self.parts):
+            mv = np.ravel(cast(Any, p.distribution).marginal_variance())
+            for nn, k in enumerate(
+                _node_keys(_support_points(p.distribution.grid, _T))
+            ):
+                g = self.key2g.get((round(k[0], 6), round(k[1], 6)))
+                if g is not None:
+                    sig[i, g] = np.sqrt(max(float(mv[nn]), 0.0))
+        return np.asarray((w * sig).sum(axis=0))
+
+    def marginal_contract_ratios(self, samples: np.ndarray) -> np.ndarray:
+        """sample variance / (Σwσ)² at seam nodes with non-trivial reported variance."""
+        contract = self.sigma_contract() ** 2
+        sv = samples.var(axis=0)
+        adj = _tile_adjacency(self.parts)
+        seam = sorted({int(x) for (i, j) in adj for x in self._shared_gidx(i, j)})
+        return np.array([sv[g] / contract[g] for g in seam if contract[g] > 10.0])
+
     def edge_dir_ratio(
         self, blend_s: np.ndarray, ref_s: np.ndarray, i: int, j: int
     ) -> float:
@@ -395,6 +417,85 @@ def make_natl60(n_lon: int, n_lat: int, nonstationary: bool = False) -> GateFixt
     gop = (
         MaternGMRF()
         .solve(_obs_in_window(train, gtl.extended_window), grid, prov, _T)
+        .cov_op
+    )
+    return GateFixture(parts, grid, gop)
+
+
+def _scattered_obs_over(
+    lon: np.ndarray, lat: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """A deterministic obs lattice spanning the domain so every tile has seam data."""
+    glon, glat = np.meshgrid(
+        np.linspace(lon[0] + 1, lon[-1] - 1, 12),
+        np.linspace(lat[0] + 1, lat[-1] - 1, 6),
+    )
+    olon, olat = glon.ravel(), glat.ravel()
+    oval = np.sin(0.3 * olon) + np.cos(0.4 * olat)
+    return olon, olat, oval
+
+
+def make_grid_diagonal(n_lon: int, n_lat: int, range_km: float = 150.0) -> GateFixture:
+    """A real-solved n_lon x n_lat partition with GRID+DIAGONAL adjacency (not K_n).
+
+    Larger domain + short-enough range so each tile's extended window overlaps only its
+    grid/diagonal neighbours (maxdeg ~5-8), unlike the 8 deg / K_n natl60 fixtures. ``range_km``
+    is swept by the certification gate (short range -> more near-improper).
+    """
+    lon = np.arange(0.0, 36.0)
+    lat = np.arange(30.0, 42.0)
+    grid = GridSpec.lonlat(lon, lat)
+    from sverdrup.application.tiling import LonLatPartition, ScaleAwareHalo
+
+    prov = ConstantProvider(
+        {"range": range_km, "variance": 0.05, "temporal_taper_scale": 10.0}
+    )
+    tiles = list(
+        LonLatPartition(
+            n_lon,
+            n_lat,
+            ScaleAwareHalo(1.0),
+            ConstantProvider({"correlation_length": range_km}),
+            10.0,
+        ).tiles(grid)
+    )
+    olon, olat, oval = _scattered_obs_over(lon, lat)
+    parts = []
+    for tl in tiles:
+        d = MaternGMRF().solve(
+            _obs_in(
+                olon,
+                olat,
+                oval,
+                (tl.extended_window.lon_range, tl.extended_window.lat_range),
+            ),
+            tl.grid,
+            prov,
+            _T,
+        )
+        u = GMRFPrecisionReduction().reduce(d, tl.grid.points(_T), None, rank=0, seed=3)
+        parts.append(
+            BlendInput(
+                PrecisionDistribution(
+                    tl.grid, cast(PrecisionFields, u.base_fields), d.provenance, _T
+                ),
+                tl,
+            )
+        )
+    gop = (
+        MaternGMRF()
+        .solve(
+            ObsWindow.from_arrays(
+                olon,
+                olat,
+                np.full(olon.size, _T),
+                oval,
+                DiagonalErrorModel(np.full(olon.size, 1e-3)),
+            ),
+            grid,
+            prov,
+            _T,
+        )
         .cov_op
     )
     return GateFixture(parts, grid, gop)
