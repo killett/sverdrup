@@ -30,7 +30,6 @@ from sverdrup.core.geometry import Tile, Window  # noqa: E402
 from sverdrup.core.grid import GridSpec  # noqa: E402
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow  # noqa: E402
 from sverdrup.core.parameters import ConstantProvider  # noqa: E402
-from sverdrup.distributions import coherent  # noqa: E402
 from sverdrup.distributions.blend import (  # noqa: E402
     BlendInput,
     BlendOperator,
@@ -172,13 +171,13 @@ def test_three_tile_transitivity_and_joint():
 
 
 def test_separator_negative_control():
-    # Behavior(4): a 1-column overlap (< stencil reach 2) (a) trips the separator assertion AND
-    #   (b) with the assertion bypassed, yields a materially WRONG blended joint covariance vs
-    #   the global reference — proving the >= reach overlap policy is a real precondition, not
-    #   folklore. With only ONE shared column there is no room for the partition-of-unity
-    #   crossfade: the lone seam column loses all weight, its variance collapses, and the joint
-    #   departs far beyond MC noise (the >=2-col fixtures above matched global to <0.1*scale per
-    #   entry). The structural Q-separator guarantee is gone exactly when overlap < reach.
+    # Behavior(4): a 1-column overlap (< stencil reach 2) is a loud red, never a silent wrong joint.
+    #   (a) the CHAIN's per-link separator assertion fires (GmrfKrigingSolve unchanged); (b) the
+    #   redesigned spanning-tree driver (now the sparse-precision blend driver) rejects the
+    #   sub-reach overlap STRUCTURALLY — a 1-column overlap is not a usable adjacency edge, so the
+    #   tile-adjacency graph is disconnected and `_max_overlap_spanning_tree` raises. The structural
+    #   guard fires earlier than the chain's bypass-detection; the magnitude blow-up the old test
+    #   probed is now pre-empted, which is the stronger contract.
     # global lon 0..5: tile L lon{0,1,2}, tile R lon{2,3,4,5}; overlap = lon{2} only (1 column).
     gg, q, sig = _global(6)
     prov = _prov()
@@ -188,28 +187,12 @@ def test_separator_negative_control():
     pts = gg.points(0.0)
     w = partition_weights([p.tile for p in parts], pts)
 
-    # (a) the precondition fires
+    # (a) the chain's per-link separator precondition fires
     with pytest.raises(AssertionError, match="separat"):
         GmrfKrigingSolve().crossfaded_member(parts, pts, w, 1, _NOISE)
 
-    # (b) bypass it -> the blended joint covariance is provably wrong
-    orig = coherent._assert_separates
-    coherent._assert_separates = lambda *a, **k: None
-    try:
-        bd = BlendOperator().blend(
+    # (b) the spanning-tree blend driver rejects the sub-reach overlap structurally (disconnected)
+    with pytest.raises(AssertionError, match="disconnected|stencil reach"):
+        BlendOperator().blend(
             parts, gg, method="gmrf", params_key="p", lattice_step=0.5
-        )
-        emp = _emp_cov(bd.sample(8000, seed=7).reshape(8000, -1))
-    finally:
-        coherent._assert_separates = orig
-    gp = gg.points(0.0)
-    seam = int(
-        np.argmin(np.abs(gp[:, 0] - 2.0) + np.abs(gp[:, 1] - 0.0))
-    )  # lon=2 column
-    scale = float(np.mean(np.diag(sig)))
-    assert (
-        abs(emp[seam, seam] - sig[seam, seam]) > 0.5 * scale
-    )  # seam variance collapses
-    assert (
-        np.linalg.norm(emp - sig) > 2.0
-    )  # joint departs far beyond MC (~0.5 when valid)
+        ).sample(64, seed=7)
