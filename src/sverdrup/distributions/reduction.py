@@ -136,9 +136,8 @@ class GMRFPrecisionReduction:
         rank: int,
         seed: int,
     ) -> ReducedUnit:
-        """Persist the sparse precision + permutation + exact var (no factor materialized)."""
+        """Persist the sparse precision + permutation + projection + prior + exact var."""
         from sverdrup.distributions.persisted import PrecisionFields
-        from sverdrup.methods.gmrf_grid import bilinear_weights
 
         d = cast(Any, dist)
         op = d.cov_op
@@ -146,12 +145,16 @@ class GMRFPrecisionReduction:
             mean=d.mean,
             precision=op.q_post,
             permutation=op._factor.permutation,
-            marginal_variance=op.marginal_var(grid_points).reshape(d.grid.shape),
+            marginal_variance=op.marginal_var(grid_points).reshape(
+                op.projection.field_shape()
+            ),
             seed=seed,
+            projection=op.projection,
+            prior_precision=op.q_prior,
         )
         if eval_points is None:
             return ReducedUnit(base, None)
-        mean = np.asarray(bilinear_weights(d.grid, eval_points) @ d.mean.ravel())
+        mean = np.asarray(op.projection.weights(eval_points) @ d.mean.ravel())
         var = op.marginal_var(eval_points)
         return ReducedUnit(
             base, EvalPointPredictions(eval_points, mean, var, samples=None)
