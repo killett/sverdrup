@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol, cast, runtime_checkable
 
 import numpy as np
+from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.core.geometry import Window
 from sverdrup.core.grid import GridSpec, PointSet
@@ -465,6 +466,93 @@ def _strip_network(
                         "conditioning set would be silently empty (C6)"
                     )
     return global_keys, per_tile
+
+
+def _interiorness(pt: np.ndarray, win: Window) -> float:
+    """Return the min distance from ``pt`` (lon,lat) to the extended-window edges (>0 inside)."""
+    lo_lon, hi_lon = win.lon_range
+    lo_lat, hi_lat = win.lat_range
+    return float(min(pt[0] - lo_lon, hi_lon - pt[0], pt[1] - lo_lat, hi_lat - pt[1]))
+
+
+def _strip_prior(
+    parts: Sequence[Any],
+    global_keys: list[tuple[float, float]],
+    per_tile: list[dict[int, int]],
+) -> sparse.csc_matrix:
+    """Assemble the strip-network prior precision as the induced submatrix of the per-tile priors.
+
+    For each global strip node pick the tile in which it is MOST interior (largest distance to
+    that tile's extended-window boundary) — that tile's prior-Q row is the least truncated, so
+    its coefficients carry the correct per-node kappa (C4). Restrict each such row to the strip
+    columns and symmetrize. Off-diagonal entries between stencil-adjacent strip nodes (incl.
+    junction nodes from different overlaps) are retained (C1).
+    """
+    t = cast(Any, parts[0].distribution).time_days
+    g_n = len(global_keys)
+    tile_pts = [_support_points(p.distribution.grid, t) for p in parts]
+    # choose the interior-source tile per global node
+    src_tile = np.full(g_n, -1, dtype=int)
+    best = np.full(g_n, -np.inf)
+    for i, p in enumerate(parts):
+        win = p.tile.extended_window
+        for g, local in per_tile[i].items():
+            score = _interiorness(tile_pts[i][local], win)
+            if score > best[g]:
+                best[g] = score
+                src_tile[g] = i
+    rows: list[int] = []
+    cols: list[int] = []
+    vals: list[float] = []
+    for g in range(g_n):
+        i = int(src_tile[g])
+        q_i = cast(Any, parts[i].distribution.fields.prior_precision).tocsr()
+        local_g = per_tile[i][g]
+        # map this tile's local node idx -> global strip idx for the strip columns present here
+        local_to_global = {local: gg for gg, local in per_tile[i].items()}
+        row = q_i.getrow(local_g).tocoo()
+        for c_local, v in zip(row.col.tolist(), row.data.tolist(), strict=False):
+            gg = local_to_global.get(c_local)
+            if gg is not None:
+                rows.append(g)
+                cols.append(gg)
+                vals.append(v)
+    m = sparse.csc_matrix((vals, (rows, cols)), shape=(g_n, g_n))
+    q_s = (0.5 * (m + m.T)).tocsc()
+    # guard SPD: a tiny ridge if any zero diagonal slipped through (boundary-only node)
+    d = np.asarray(q_s.diagonal())
+    if (d <= 0).any():
+        q_s = (q_s + sparse.diags(np.where(d <= 0, 1e-6, 0.0))).tocsc()
+    return q_s
+
+
+def _draw_joint(
+    parts: Sequence[Any], member_index: int, noise: NoiseSpec
+) -> tuple[list[tuple[float, float]], list[dict[int, int]], np.ndarray]:
+    """Draw ONE auxiliary field over the strip network from the prior sub-GMRF.
+
+    Returns ``(global_keys, per_tile, x_joint)`` with ``x_joint = mean_blend + L_S^{-T} w``.
+    The white ``w`` is seeded with a key DISTINCT from every tile's unconditional-draw seed
+    (C2), so the kriging targets are independent of each tile's own white.
+    """
+    from sverdrup.methods.gmrf_linalg import GMRFFactor
+
+    global_keys, per_tile = _strip_network(parts)
+    q_s = _strip_prior(parts, global_keys, per_tile)
+    fac = GMRFFactor(q_s)
+    seed = derive_seed(noise.method, noise.params_key, "gmrf-joint-strip", member_index)
+    w = np.random.default_rng(seed).standard_normal(len(global_keys))
+    # mean over the strip nodes: average of the covering tiles' means (continuous, deterministic)
+    mean = np.zeros(len(global_keys))
+    cnt = np.zeros(len(global_keys))
+    for i, p in enumerate(parts):
+        mvec = p.distribution.fields.mean.ravel()
+        for g, local in per_tile[i].items():
+            mean[g] += float(mvec[local])
+            cnt[g] += 1.0
+    mean = mean / np.where(cnt > 0, cnt, 1.0)
+    x_joint = mean + fac.sample(w)
+    return global_keys, per_tile, x_joint
 
 
 class PerturbEnsembleDegradation:
