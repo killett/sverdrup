@@ -2,11 +2,24 @@
 
 ## Current work (index — do not duplicate task state here)
 
-- **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — PLANNED (awaiting execution).**
+- **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — IN PROGRESS.**
+  - **Stage A COMPLETE (Tasks 1–4); Stage-A GATE PASSED.** Projection seam
+    (`core/projection.py`) consumed by `GMRFCovarianceOperator` (carries `q_prior`, C3
+    `_diag` fast==slow pinned) and de-gridded `PrecisionFields`/`PrecisionDistribution`
+    (`projection` + `prior_precision`, cov/sample route through `projection.weights`/
+    `field_shape`); `GMRFPrecisionReduction` threads both; `solve.py` unchanged (projection
+    rides on `base_fields`). Gate evidence: **185 passed / 2 skipped** (178 + 7 new), typecheck
+    + lint clean; tests diff vs `31a58c6` = 96 insertions / 0 deletions (additions only);
+    invariant-2 grep clean on the GMRF path. **Scoping note (gotcha):** the Task-4 gate grep's
+    sole hit is `persisted.py` `PersistedDistribution.sample` (`ny, nx = self.grid.shape`) — the
+    **OI low-rank** rep, which is inherently grid-bound and NOT in Phase-4 de-grid scope. The
+    GMRF precision read-off (`PrecisionDistribution` + `GMRFCovarianceOperator`) is grep-clean.
+    Interpret invariant-2 as "the precision/GMRF path is projection-driven", not "persisted.py
+    contains no `.shape`". **Next action: Stage B Task 5 (`_strip_network`).**
   - Scope (source of truth): `phase4_scope_spec.md` (settled + owner-amended, `00519b1`).
   - Design: `docs/superpowers/specs/2026-06-26-phase4-fem-and-nonchain-sampler-design.md` (`f7960f8`).
   - Plan: `docs/superpowers/plans/2026-06-26-phase4-fem-and-nonchain-sampler.md`
-    (16 tasks; tracker `.tasks.json` co-located, all `pending`).
+    (16 tasks; tracker `.tasks.json` co-located, Tasks 1–4 `completed`).
   - **Hard-gated sequencing:** Stage A (Tasks 1–4, generalize under green) → Stage B
     (Tasks 5–9, non-chain joint-kriging sampler on the grid) → Stage C (Tasks 10–16, FEM).
     Three user-gates: Task 4 (Stage-A regression — Phase-3 suite reproduces exactly), Task 9
