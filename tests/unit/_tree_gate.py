@@ -69,48 +69,11 @@ class GateFixture:
     data and their posteriors are mutually consistent — the regime the spanning-tree sweep targets.
     """
 
-    def __init__(
-        self,
-        quads: list[_Quad],
-        grid: GridSpec,
-        prov: ParameterProvider,
-    ) -> None:
+    def __init__(self, parts: list[BlendInput], grid: GridSpec, gop: object) -> None:
         self.grid = grid
-        self.prov = prov
-        olon, olat, oval = _scattered_obs()
-        self.parts = []
-        for lon, lat, _val, core, ext in quads:
-            tgrid = GridSpec.lonlat(lon, lat)
-            obs = _obs_in(olon, olat, oval, ext)
-            dist = MaternGMRF().solve(obs, tgrid, prov, _T)
-            unit = GMRFPrecisionReduction().reduce(
-                dist, tgrid.points(_T), None, rank=0, seed=3
-            )
-            pd = PrecisionDistribution(
-                tgrid, cast(PrecisionFields, unit.base_fields), dist.provenance, _T
-            )
-            tile = Tile(
-                Window(core[0], core[1], (0.0, 0.0)),
-                Window(ext[0], ext[1], (0.0, 0.0)),
-                tgrid,
-            )
-            self.parts.append(BlendInput(pd, tile))
-        gdist = MaternGMRF().solve(
-            ObsWindow.from_arrays(
-                olon,
-                olat,
-                np.full(olon.size, _T),
-                oval,
-                DiagonalErrorModel(np.full(olon.size, 1e-3)),
-            ),
-            grid,
-            prov,
-            _T,
-        )
-        self.gop = (
-            gdist.cov_op
-        )  # single global-tile operator (the conservative reference)
-        self.sig_g = np.asarray(np.linalg.inv(cast(Any, self.gop).q_post.toarray()))
+        self.parts = parts
+        self.gop = gop  # single global-tile operator (the conservative reference)
+        self.sig_g = np.asarray(np.linalg.inv(cast(Any, gop).q_post.toarray()))
         gp = grid.points(_T)
         self.key2g = {
             (round(gp[i, 0], 6), round(gp[i, 1], 6)): i for i in range(gp.shape[0])
@@ -137,7 +100,10 @@ class GateFixture:
     ) -> tuple[
         dict[int, int | None], list[int], set[tuple[int, int]], list[tuple[int, int]]
     ]:
-        return _max_overlap_spanning_tree(_tile_adjacency(self.parts), len(self.parts))
+        return _max_overlap_spanning_tree(
+            _tile_adjacency(self.parts),
+            len(self.parts),
+        )
 
     def _ensemble(self, driver: object, m: int, seed0: int = 0) -> np.ndarray:
         w = partition_weights([p.tile for p in self.parts], self.pts)
@@ -163,6 +129,47 @@ class GateFixture:
     @staticmethod
     def cov(samples: np.ndarray) -> np.ndarray:
         return np.asarray(np.cov(samples.T))
+
+    def matched_chain_edge_baseline(
+        self,
+        tree_edges: set[tuple[int, int]],
+        parent: dict[int, int | None],
+        m: int = 1200,
+    ) -> float:
+        """Per-tile CONDITIONING-MATCHED chain baseline: max over tree edges of the 2-tile chain
+        edge residual for that ``(parent, child)`` pair.
+
+        The honest reference for assertion (1): each tree edge conditions a specific child tile, so
+        compare its residual against the residual the plain CHAIN incurs conditioning that SAME tile
+        at its SAME eigmin — a near-singular tile is gated against a near-singular tile's chain cost,
+        not against an easier well-conditioned chain. ``tree_edge == chain_edge`` at equal
+        conditioning, so a shallow eigmin-rooted tree matches this with equality; a multi-hop tree
+        whose child is conditioned on an already-corrected parent would exceed it (the real defect
+        this gate draws the line at).
+        """
+        worst = 0.0
+        for a, b in tree_edges:
+            child = b if parent.get(b) == a else a
+            par = a if child == b else b
+            parts = [self.parts[par], self.parts[child]]
+            w = partition_weights([x.tile for x in parts], self.pts)
+            s = np.stack(
+                [
+                    GmrfKrigingSolve().crossfaded_member(parts, self.pts, w, k, _NOISE)
+                    for k in range(m)
+                ]
+            )
+            gi = self._shared_gidx(par, child)
+            blk = np.ix_(gi, gi)
+            emp = np.cov(s.T)
+            worst = max(
+                worst,
+                float(
+                    np.linalg.norm(emp[blk] - self.sig_g[blk])
+                    / np.linalg.norm(self.sig_g[blk])
+                ),
+            )
+        return worst
 
     def _shared_gidx(self, i: int, j: int) -> np.ndarray:
         ki = set(_node_keys(_support_points(self.parts[i].distribution.grid, _T)))
@@ -214,6 +221,40 @@ class GateFixture:
         return float(np.median(ratios)) if ratios else 1.0
 
 
+def _build(quads: list[_Quad], grid: GridSpec, prov: ParameterProvider) -> GateFixture:
+    """Solve each quad (obs windowed to its extended window) + the global reference."""
+    olon, olat, oval = _scattered_obs()
+    parts = []
+    for lon, lat, _val, core, ext in quads:
+        tgrid = GridSpec.lonlat(lon, lat)
+        dist = MaternGMRF().solve(_obs_in(olon, olat, oval, ext), tgrid, prov, _T)
+        unit = GMRFPrecisionReduction().reduce(
+            dist, tgrid.points(_T), None, rank=0, seed=3
+        )
+        pd = PrecisionDistribution(
+            tgrid, cast(PrecisionFields, unit.base_fields), dist.provenance, _T
+        )
+        tile = Tile(
+            Window(core[0], core[1], (0.0, 0.0)),
+            Window(ext[0], ext[1], (0.0, 0.0)),
+            tgrid,
+        )
+        parts.append(BlendInput(pd, tile))
+    gdist = MaternGMRF().solve(
+        ObsWindow.from_arrays(
+            olon,
+            olat,
+            np.full(olon.size, _T),
+            oval,
+            DiagonalErrorModel(np.full(olon.size, 1e-3)),
+        ),
+        grid,
+        prov,
+        _T,
+    )
+    return GateFixture(parts, grid, gdist.cov_op)
+
+
 def make_2x2(prov: ParameterProvider | None = None) -> GateFixture:
     """A real-solved 2x2 partition of one global 0..9 grid + dense reference (one interior corner).
 
@@ -221,16 +262,15 @@ def make_2x2(prov: ParameterProvider | None = None) -> GateFixture:
     well-posed and the dropped-edge transitive residual at the corner is small (the real ``k·corr_len``
     halo regime; minimal 2-node overlaps starve the corner and inflate the residual).
     """
-    p = prov or _DEFAULT
     lo, hi = np.arange(0.0, 7.0), np.arange(3.0, 10.0)
-    quads = [
+    quads: list[_Quad] = [
         (lo, lo, 1.0, ((0.0, 4.0), (0.0, 4.0)), ((0.0, 6.0), (0.0, 6.0))),
         (hi, lo, 2.0, ((5.0, 9.0), (0.0, 4.0)), ((3.0, 9.0), (0.0, 6.0))),
         (lo, hi, 3.0, ((0.0, 4.0), (5.0, 9.0)), ((0.0, 6.0), (3.0, 9.0))),
         (hi, hi, 4.0, ((5.0, 9.0), (5.0, 9.0)), ((3.0, 9.0), (3.0, 9.0))),
     ]
     grid = GridSpec.lonlat(np.arange(0.0, 10.0), np.arange(0.0, 10.0))
-    return GateFixture(quads, grid, p)
+    return _build(quads, grid, prov or _DEFAULT)
 
 
 def make_chain(prov: ParameterProvider | None = None) -> GateFixture:
@@ -238,9 +278,8 @@ def make_chain(prov: ParameterProvider | None = None) -> GateFixture:
 
     Same 4-node overlap regime as :func:`make_2x2` so the baseline is comparable.
     """
-    p = prov or _DEFAULT
     lat = np.arange(0.0, 10.0)
-    quads = [
+    quads: list[_Quad] = [
         (
             np.arange(0.0, 6.0),
             lat,
@@ -264,4 +303,98 @@ def make_chain(prov: ParameterProvider | None = None) -> GateFixture:
         ),
     ]
     grid = GridSpec.lonlat(np.arange(0.0, 10.0), lat)
-    return GateFixture(quads, grid, p)
+    return _build(quads, grid, prov or _DEFAULT)
+
+
+_NATL60_PARAMS = {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 10.0}
+
+
+class _LatVaryingRange:
+    """Latitude-varying range field (nonstationary κ, C4') for the gate's nonstationary case."""
+
+    def resolve(self, name: str, grid: GridSpec) -> object:
+        if name == "range":
+            _, lat = grid._lonlat_nodes()
+            c = np.cos(np.deg2rad(lat))
+            return np.asarray(100.0 + 700.0 * c)
+        return _NATL60_PARAMS[name]
+
+    def params_key(self) -> str:
+        return "latrange(eq=800,pole=100)"
+
+
+def make_natl60(n_lon: int, n_lat: int, nonstationary: bool = False) -> GateFixture:
+    """Real natl60_tiny tiles (the near-singular short-range regime) via the pipeline spine.
+
+    The decisive Stage-B regime: sparse nadir obs leave the ``(κ²−Δ)²`` low-frequency mode
+    under-determined (global ``Q_post`` eigmin ~1e-7), exactly where the synthesized-field sampler
+    blew up 376x. ``nonstationary`` swaps in a latitude-varying κ field (C4').
+    """
+    from sverdrup.adapters.odc.fixtures import FixtureSource
+    from sverdrup.application.pipeline import (
+        PipelineInputs,
+        _grid,
+        _obs_in_window,
+        _prepare,
+    )
+    from sverdrup.application.tiling import LonLatPartition, ScaleAwareHalo
+
+    prov: ParameterProvider = cast(
+        ParameterProvider,
+        _LatVaryingRange() if nonstationary else ConstantProvider(_NATL60_PARAMS),
+    )
+    inp = PipelineInputs(
+        mode="OSSE",
+        method_name="gmrf",
+        source=FixtureSource(
+            "tests/fixtures/natl60_tiny.nc",
+            ref_path="tests/fixtures/natl60_ref_tiny.nc",
+        ),
+        out_url="file:///tmp/x",
+        lon_range=(-64.0, -56.0),
+        lat_range=(34.0, 42.0),
+        grid_resolution_deg=1.0,
+        time_range=(0.0, 5.0),
+        output_times=[2.0],
+        params=_NATL60_PARAMS,
+        executor=cast(Any, None),
+        rank=20,
+    )
+    grid = _grid(inp)
+    obs = cast(Any, inp.source).window(
+        lon_range=inp.lon_range, lat_range=inp.lat_range, time_range=inp.time_range
+    )
+    train, _, _ = _prepare(inp, obs)
+
+    def tiles(nl: int, na: int) -> list[Any]:
+        return list(
+            LonLatPartition(
+                nl,
+                na,
+                ScaleAwareHalo(1.0),
+                ConstantProvider({"correlation_length": 300.0}),
+                10.0,
+            ).tiles(grid)
+        )
+
+    parts = []
+    for tl in tiles(n_lon, n_lat):
+        d = MaternGMRF().solve(
+            _obs_in_window(train, tl.extended_window), tl.grid, prov, _T
+        )
+        u = GMRFPrecisionReduction().reduce(d, tl.grid.points(_T), None, rank=0, seed=3)
+        parts.append(
+            BlendInput(
+                PrecisionDistribution(
+                    tl.grid, cast(PrecisionFields, u.base_fields), d.provenance, _T
+                ),
+                tl,
+            )
+        )
+    gtl = tiles(1, 1)[0]
+    gop = (
+        MaternGMRF()
+        .solve(_obs_in_window(train, gtl.extended_window), grid, prov, _T)
+        .cov_op
+    )
+    return GateFixture(parts, grid, gop)
