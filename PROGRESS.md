@@ -15,7 +15,18 @@
     **OI low-rank** rep, which is inherently grid-bound and NOT in Phase-4 de-grid scope. The
     GMRF precision read-off (`PrecisionDistribution` + `GMRFCovarianceOperator`) is grep-clean.
     Interpret invariant-2 as "the precision/GMRF path is projection-driven", not "persisted.py
-    contains no `.shape`". **Next action: Stage B Task 5 (`_strip_network`).**
+    contains no `.shape`".
+  - **Stage B Tasks 5–6 COMMITTED then SUPERSEDED by a design pivot (`_strip_network` kept,
+    `_draw_joint`/`_strip_prior` to be removed).** Tasks 5 (`a619265`) and 6 (`809a570`) built the
+    spec-literal **synthesized strip-field** sampler (`_draw_joint`: one auxiliary field drawn from
+    the prior-induced strip sub-GMRF; tiles kriged toward it). Task 7's verification **disproved that
+    construction** — see the canonical Phase-4 cross-cutting decision "Stage-B sampler = spanning-tree
+    hand-forward" below. **Working tree is clean at `809a570`** (Task-7 synthesized-field code was
+    written, disproved, and reverted uncommitted — nothing wrong is on disk). `_strip_network` is
+    kept (it computes the tile-adjacency / shared-node sets the spanning tree needs); `_draw_joint`
+    and `_strip_prior` are removed in the re-architected Task 6. **Next action: AWAIT OWNER APPROVAL
+    of the re-architected Stage-B plan (Tasks 6–9 + spec §3/contracts amended), then implement the
+    spanning-tree sampler.**
   - Scope (source of truth): `phase4_scope_spec.md` (settled + owner-amended, `00519b1`).
   - Design: `docs/superpowers/specs/2026-06-26-phase4-fem-and-nonchain-sampler-design.md` (`f7960f8`).
   - Plan: `docs/superpowers/plans/2026-06-26-phase4-fem-and-nonchain-sampler.md`
@@ -191,6 +202,77 @@
 - **Kernel:** pinned to stationary **Matérn-3/2** (variance + spatial length + temporal
   scale), behind a `methods/kernel.py::Kernel` interface so it can go nonstationary later
   without touching `GPCovarianceOperator`.
+
+## Cross-cutting decisions (canonical — Phase 4)
+
+- **Stage-B non-chain sampler = spanning-tree hand-forward (NOT a synthesized strip field).**
+  The spec-literal Task-6 construction (`_draw_joint`: draw ONE auxiliary field over the
+  overlap-strip sub-GMRF, krige every tile toward it) was **disproved by measurement** and replaced.
+  This decision is owner-confirmed across a multi-turn adversarial review; the measurement trail is
+  recorded here because it is load-bearing and lives nowhere else.
+  - **Disproof (real natl60_tiny fixture, 3-tile + 2×2):** the synthesized-field driver blows the
+    cross-seam first-difference variance ratio to **376×** (bound ≤2.5) and joint-cov rel-err vs the
+    dense global posterior to **1.617**. On a well-conditioned synthetic corner fixture the same
+    driver is fine (cross-seam 0.77–1.33) — so the construction is not trivially broken; the natl60
+    fixture is the discriminator.
+  - **Mechanism (measured, not guessed):**
+    1. prior-vs-posterior is a **non-issue** — obs sit at tile centres, so `AᵀR⁻¹A≈0` at the strip
+       nodes and `Q_post ≡ Q_prior` there to machine precision (strip submatrices byte-identical;
+       `x_joint` std 613 either way). The "diffuse prior was wrong scale" hypothesis is **refuted**.
+    2. the joint-cov error is **high-frequency**, **90% in the complement** of the bottom-k near-null
+       subspace, and a shared global coarse-mode draw does **not** close it (1.617→1.393 at k=6).
+       There is **no spectral gap** (global `Q_post` bottom eigenvalues `2.5e-7, 4.95e-7, …`, a
+       continuum) — so the near-improper behaviour is an O(n) low-frequency tail, NOT a low-dimensional
+       coarse space. Coarse-space deflation is **refuted**.
+    3. `cond(sigma_ss) ≈ 4e8` (the value-conditioning operator `solve(Σ_ss, x_s − x_u|_S)`), **flat
+       across halo width k=1,2,3 and resolution 0.5°/1.0°**, pinned by `Q_post`'s near-null eigenvalue
+       2.5e-7 — i.e. **intrinsic** (sparse nadir obs leave the `(κ²−Δ)²` low-frequency mode
+       under-determined), NOT a strip-resolution mismatch. A resolution precondition would not fix it.
+    4. **jitter is a cover-up** (proven): adding `λI` to `Σ_ss` collapses the gradient ratio
+       (324→3.2) while joint-cov rel-err **stays 0.61–0.73** — gradient parity goes green while the
+       joint law is still 60–70% wrong. `pinv(rcond)` is a no-op (modes are physically huge-variance,
+       not numerically tiny). **Gradient parity ≠ joint-law fidelity; gate the joint cov.**
+  - **The fix:** the 4e8 singularity is *never excited* when conditioning targets are **consistent**
+    (a residual `x_s − x_u|_S` that is tiny because `x_s` is an actual neighbour draw from the same
+    posterior). That is exactly what the Phase-3 **chain** sweep does (`GmrfKrigingSolve._sweep`,
+    still green). Generalize the line to a **max-overlap spanning tree of the tile-adjacency graph**:
+    each tile is hand-forward-conditioned on its parent's already-drawn overlap values (the proven
+    chain mechanism), non-tree edges carry a **bounded, recorded** transitive-coherence residual.
+  - **Validation (2×2 natl60):** spanning-tree sweep drops overall joint-cov rel-err **1.617 → 0.313**
+    (no 4e8 excitation). Tree edges **0.18–0.24**, dropped edges **0.19–0.43**. The plain **chain
+    baseline** on the green 3-tile natl60 case is **0.298 overall, edges 0.294/0.313** — i.e. the
+    ~0.30 halo-truncation residual already accepted & shipped green. Tree edges are **no worse than
+    that baseline**; the dropped-edge max (0.43, a BFS-star artifact that kept a low-overlap diagonal
+    and dropped a high-overlap side) is **1.4× the baseline** and improves under max-overlap MST.
+  - **Task-9 gate = three coupled assertions (thresholds derived from the 0.30 chain baseline, not
+    guessed):** (1) **tree-edge parity** — `max_tree_edge_residual ≤ chain_baseline·(1+slack)`,
+    chain_baseline measured on the 1-D natl60 case; (2) **dropped-edge relative bound** —
+    `max_dropped_edge_residual ≤ C · max_tree_edge_residual`, `C ∈ [2,3]`; (3) **conservative
+    direction** — cross-seam derived-quantity variance ratio (blend/ref) on dropped edges `≥ 1−ε`,
+    never under-dispersed (the real protection; magnitude-bounded-but-overconfident must fail).
+    Plus a **two-tree invariance property test**: the shipped blend is within tolerance under the MST
+    AND one alternative spanning tree (correctness is tree-invariant; only the residual distribution
+    moves — if correctness depends on the tree, topology-fragility has returned → loud red).
+  - **Per-tree-edge separation assert:** the MST is built from existing `extended_window` overlap
+    strengths; every selected tree edge must have overlap ≥ the stencil-separation requirement
+    (`_assert_separates` content, now per-tree-edge not per-chain-link) — a too-thin tree edge cannot
+    hand forward and is a loud red per edge.
+  - **Spec amendment (replaces two wrong sentences):** §5.3/§4 becomes *"hand-forward conditioning
+    along a max-overlap spanning tree of the tile adjacency; non-tree edges carry a bounded, recorded
+    coherence residual; junction-tree is the exact escalation if a measured residual exceeds
+    tolerance."* **Product-facing disclosure (load-bearing, honest):** the shipped global SSHA
+    uncertainty carries a bounded, recorded cross-seam coherence residual on **non-tree** tile
+    adjacencies — coherence there is **transitive, not direct**; a downstream consumer computing a
+    transport across a non-tree seam is entitled to know this. Junction-tree (a) is the documented
+    **exact escalation** if the Phase-5 tuner wanders to short range and pushes a measured residual
+    past the gate; it is NOT adopted now because it re-introduces tile-topology dependence and
+    √(#tiles) treewidth — the very costs Stage B exists to avoid.
+  - **Contracts C1/C2/C4 (synthesized-field) are RETIRED** and replaced by the spanning-tree
+    contracts above. C3, C5, C6, C7 stand. Obsolete on-disk code to remove in the re-architected
+    Task 6: `_draw_joint`, `_strip_prior`, `_interiorness` (`distributions/coherent.py`) and their
+    tests (`tests/unit/test_draw_joint.py`). `_strip_network` is **kept** (adjacency + shared-node
+    sets). Stage-A (Tasks 1–4) is **unaffected** — the Projection seam / de-grid generalization is
+    orthogonal and already gated green.
 
 ## Cross-cutting decisions (canonical — Phase 3)
 
