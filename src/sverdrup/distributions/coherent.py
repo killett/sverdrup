@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any, Protocol, cast, runtime_checkable
 
 import numpy as np
-from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.core.geometry import Window
 from sverdrup.core.grid import GridSpec, PointSet
@@ -468,91 +467,123 @@ def _strip_network(
     return global_keys, per_tile
 
 
-def _interiorness(pt: np.ndarray, win: Window) -> float:
-    """Return the min distance from ``pt`` (lon,lat) to the extended-window edges (>0 inside)."""
-    lo_lon, hi_lon = win.lon_range
-    lo_lat, hi_lat = win.lat_range
-    return float(min(pt[0] - lo_lon, hi_lon - pt[0], pt[1] - lo_lat, hi_lat - pt[1]))
-
-
-def _strip_prior(
-    parts: Sequence[Any],
-    global_keys: list[tuple[float, float]],
-    per_tile: list[dict[int, int]],
-) -> sparse.csc_matrix:
-    """Assemble the strip-network prior precision as the induced submatrix of the per-tile priors.
-
-    For each global strip node pick the tile in which it is MOST interior (largest distance to
-    that tile's extended-window boundary) — that tile's prior-Q row is the least truncated, so
-    its coefficients carry the correct per-node kappa (C4). Restrict each such row to the strip
-    columns and symmetrize. Off-diagonal entries between stencil-adjacent strip nodes (incl.
-    junction nodes from different overlaps) are retained (C1).
-    """
+def _shared_keys(parts: Sequence[Any], i: int, j: int) -> set[tuple[float, float]]:
+    """Return the (lon,lat) keys shared by tiles ``i`` and ``j`` (coincident nodes)."""
     t = cast(Any, parts[0].distribution).time_days
-    g_n = len(global_keys)
-    tile_pts = [_support_points(p.distribution.grid, t) for p in parts]
-    # choose the interior-source tile per global node
-    src_tile = np.full(g_n, -1, dtype=int)
-    best = np.full(g_n, -np.inf)
-    for i, p in enumerate(parts):
-        win = p.tile.extended_window
-        for g, local in per_tile[i].items():
-            score = _interiorness(tile_pts[i][local], win)
-            if score > best[g]:
-                best[g] = score
-                src_tile[g] = i
-    rows: list[int] = []
-    cols: list[int] = []
-    vals: list[float] = []
-    for g in range(g_n):
-        i = int(src_tile[g])
-        q_i = cast(Any, parts[i].distribution.fields.prior_precision).tocsr()
-        local_g = per_tile[i][g]
-        # map this tile's local node idx -> global strip idx for the strip columns present here
-        local_to_global = {local: gg for gg, local in per_tile[i].items()}
-        row = q_i.getrow(local_g).tocoo()
-        for c_local, v in zip(row.col.tolist(), row.data.tolist(), strict=False):
-            gg = local_to_global.get(c_local)
-            if gg is not None:
-                rows.append(g)
-                cols.append(gg)
-                vals.append(v)
-    m = sparse.csc_matrix((vals, (rows, cols)), shape=(g_n, g_n))
-    q_s = (0.5 * (m + m.T)).tocsc()
-    # guard SPD: a tiny ridge if any zero diagonal slipped through (boundary-only node)
-    d = np.asarray(q_s.diagonal())
-    if (d <= 0).any():
-        q_s = (q_s + sparse.diags(np.where(d <= 0, 1e-6, 0.0))).tocsc()
-    return q_s
+    ki = set(_node_keys(_support_points(parts[i].distribution.grid, t)))
+    kj = set(_node_keys(_support_points(parts[j].distribution.grid, t)))
+    return ki & kj
 
 
-def _draw_joint(
-    parts: Sequence[Any], member_index: int, noise: NoiseSpec
-) -> tuple[list[tuple[float, float]], list[dict[int, int]], np.ndarray]:
-    """Draw ONE auxiliary field over the strip network from the prior sub-GMRF.
+def _spans_reach(keys: set[tuple[float, float]]) -> bool:
+    """True if the rectangular shared node set is >= ``STENCIL_REACH`` thick in BOTH axes.
 
-    Returns ``(global_keys, per_tile, x_joint)`` with ``x_joint = mean_blend + L_S^{-T} w``.
-    The white ``w`` is seeded with a key DISTINCT from every tile's unconditional-draw seed
-    (C2), so the kriging targets are independent of each tile's own white.
+    A hand-forward overlap Q-separates the interiors only if it is at least the stencil reach
+    thick in the seam-perpendicular direction. Tile windows are rectangular, so the shared region
+    is a rectangle and its band width is the SMALLER axis extent: ``min(distinct lon, distinct lat)
+    >= reach`` is the topology-agnostic separator condition (a 1-column × N-row seam must FAIL, even
+    though its longer axis is wide). The ``k·corr_len`` halo policy satisfies it for real adjacencies.
     """
-    from sverdrup.methods.gmrf_linalg import GMRFFactor
+    if not keys:
+        return False
+    arr = np.array(sorted(keys))
+    lon_cols = np.unique(np.round(arr[:, 0], 6)).size
+    lat_rows = np.unique(np.round(arr[:, 1], 6)).size
+    return min(lon_cols, lat_rows) >= STENCIL_REACH
 
-    global_keys, per_tile = _strip_network(parts)
-    q_s = _strip_prior(parts, global_keys, per_tile)
-    fac = GMRFFactor(q_s)
-    seed = derive_seed(noise.method, noise.params_key, "gmrf-joint-strip", member_index)
-    w = np.random.default_rng(seed).standard_normal(len(global_keys))
-    # mean over the strip nodes: average of the covering tiles' means (continuous, deterministic)
-    mean = np.zeros(len(global_keys))
-    cnt = np.zeros(len(global_keys))
-    for i, p in enumerate(parts):
-        mvec = p.distribution.fields.mean.ravel()
-        for g, local in per_tile[i].items():
-            mean[g] += float(mvec[local])
-            cnt[g] += 1.0
-    mean = mean / np.where(cnt > 0, cnt, 1.0)
-    x_joint = mean + fac.sample(w)
-    return global_keys, per_tile, x_joint
+
+def _tile_adjacency(
+    parts: Sequence[Any],
+) -> dict[tuple[int, int], set[tuple[float, float]]]:
+    """Return the tile-adjacency graph: ``{(i,j): shared_keys}`` for usable overlaps.
+
+    An edge exists between tiles ``i<j`` iff their shared coincident-node set spans at least the
+    stencil reach (``_spans_reach``) — a thinner overlap cannot hand a consistent conditional
+    forward and is not a usable edge. The edge weight is ``len(shared_keys)`` (overlap strength),
+    used by :func:`_max_overlap_spanning_tree` to prefer the strongest overlaps.
+    """
+    n = len(parts)
+    adjacency: dict[tuple[int, int], set[tuple[float, float]]] = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            shared = _shared_keys(parts, i, j)
+            if _spans_reach(shared):
+                adjacency[(i, j)] = shared
+    return adjacency
+
+
+def _max_overlap_spanning_tree(
+    adjacency: dict[tuple[int, int], set[tuple[float, float]]], n: int
+) -> tuple[
+    dict[int, int | None], list[int], set[tuple[int, int]], list[tuple[int, int]]
+]:
+    """Return a maximum-overlap spanning tree of the tile-adjacency graph.
+
+    Maximum-weight spanning tree by shared-node count (Kruskal on descending weight); the
+    strongest overlaps become tree edges, so the hand-forward residual is smallest where it
+    matters most. Returns ``(parent, bfs_order, tree_edges, dropped)`` with ``dropped`` the real
+    overlap edges NOT in the tree (their coherence is transitive, a recorded residual).
+
+    Raises:
+        AssertionError: if the adjacency graph does not connect all ``n`` tiles — a tile that
+            cannot be hand-forward-conditioned would be silently independent (C6, loud red).
+    """
+    edges = sorted(adjacency, key=lambda e: len(adjacency[e]), reverse=True)
+    root_p: list[int] = list(range(n))
+
+    def find(a: int) -> int:
+        while root_p[a] != a:
+            root_p[a] = root_p[root_p[a]]
+            a = root_p[a]
+        return a
+
+    tree_edges: set[tuple[int, int]] = set()
+    for i, j in edges:
+        ri, rj = find(i), find(j)
+        if ri != rj:
+            root_p[ri] = rj
+            tree_edges.add((i, j))
+    if n > 1 and len({find(k) for k in range(n)}) != 1:
+        raise AssertionError(
+            "tile-adjacency graph is disconnected — a tile shares no usable overlap with the "
+            "rest and cannot be hand-forward-conditioned (would be silently independent, C6)"
+        )
+    # BFS from tile 0 over the tree edges to get parent pointers + a processing order
+    nbr: dict[int, list[int]] = {k: [] for k in range(n)}
+    for i, j in tree_edges:
+        nbr[i].append(j)
+        nbr[j].append(i)
+    parent: dict[int, int | None] = {0: None}
+    order: list[int] = [0]
+    seen = {0}
+    queue = [0]
+    while queue:
+        u = queue.pop(0)
+        for v in nbr[u]:
+            if v not in seen:
+                seen.add(v)
+                parent[v] = u
+                order.append(v)
+                queue.append(v)
+    dropped = [e for e in adjacency if e not in tree_edges]
+    return parent, order, tree_edges, dropped
+
+
+def _assert_tree_edge_separates(
+    parts: Sequence[Any], tree_edges: set[tuple[int, int]]
+) -> None:
+    """Raise unless every tree edge's shared overlap spans >= the stencil reach (per-edge guard).
+
+    The spanning-tree analogue of the chain ``_assert_separates``: a tree edge thinner than the
+    stencil reach cannot hand a consistent conditional forward, so the kriging residual it feeds
+    ``Σ_ss`` is no longer guaranteed small. A loud red per edge — never a silent thin seam.
+    """
+    for i, j in tree_edges:
+        if not _spans_reach(_shared_keys(parts, i, j)):
+            raise AssertionError(
+                f"tree edge {i}-{j} overlap spans < stencil reach {STENCIL_REACH}: cannot "
+                "hand a consistent conditional forward. Widen the halo (k·corr_len)."
+            )
 
 
 class PerturbEnsembleDegradation:
