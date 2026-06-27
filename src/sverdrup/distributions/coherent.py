@@ -586,6 +586,90 @@ def _assert_tree_edge_separates(
             )
 
 
+class GmrfTreeKrigingSolve:
+    """GMRF driver: hand-forward conditioning along a max-overlap spanning tree (spec §3.1).
+
+    Generalizes ``GmrfKrigingSolve``'s lon-chain (a line) to a maximum-overlap spanning tree of the
+    tile-adjacency graph. Per member, each tile draws its INDEPENDENT unconditional posterior sample
+    ``x_u = mean + L⁻ᵀ w`` and (non-root) is kriged toward its **parent's already-drawn** overlap
+    **values**:
+
+        x_c = x_u + Σ_{:,S} (Σ_{S,S})⁻¹ (x_parent|_S − x_u|_S)
+
+    Because ``x_parent`` is an actual draw from the same posterior family, the residual
+    ``x_parent|_S − x_u|_S`` is *consistent* (small), so the near-singular ``Σ_ss`` on near-improper
+    posteriors (``cond ≈ 4e8``) is never excited — the mechanism the chain already relied on, now over
+    a tree. Coherence is exact (chain-quality) on tree edges; non-tree (cycle) edges carry a bounded,
+    transitive, recorded residual. No synthesized field, no joint-white (two white streams only, C2′).
+    """
+
+    def _sweep_tree(
+        self,
+        parts: Sequence[Any],
+        time_days: float,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> list[np.ndarray]:
+        """Return each tile's kriging-corrected node-space field (parts order)."""
+        adjacency = _tile_adjacency(parts)
+        parent, order, tree_edges, _dropped = _max_overlap_spanning_tree(
+            adjacency, len(parts)
+        )
+        _assert_tree_edge_separates(parts, tree_edges)
+        keymaps = [
+            _node_keys(_support_points(p.distribution.grid, time_days)) for p in parts
+        ]
+        drawn: list[np.ndarray | None] = [None] * len(parts)
+        for i in order:
+            d = parts[i].distribution
+            gpts = _support_points(d.grid, time_days)
+            # independent per-tile white (C2′): keyed by tile index × member.
+            seed = derive_seed(
+                noise.method, noise.params_key, f"gmrf-tile:{i}", member_index
+            )
+            white = np.random.default_rng(seed).standard_normal(len(gpts))
+            x_u = d.fields.mean.ravel() + d._factor_obj().sample(white)
+            par = parent[i]
+            if par is None:
+                drawn[i] = x_u
+                continue
+            # condition on the parent's already-drawn values at the shared (coincident) nodes
+            parent_vals = {
+                keymaps[par][n]: float(cast(Any, drawn[par])[n])
+                for n in range(len(keymaps[par]))
+            }
+            s_local = np.array(
+                [n for n, k in enumerate(keymaps[i]) if k in parent_vals], dtype=int
+            )
+            x_s = np.array([parent_vals[keymaps[i][n]] for n in s_local])
+            cols = d.posterior_cov_columns(s_local)  # (n_i, |S|)
+            sigma_ss = cols[s_local, :]
+            drawn[i] = x_u + cols @ np.linalg.solve(sigma_ss, x_s - x_u[s_local])
+        return [np.asarray(c) for c in drawn]
+
+    def crossfaded_member(
+        self,
+        parts: Sequence[Any],
+        pts: Points,
+        weights: np.ndarray,
+        member_index: int,
+        noise: NoiseSpec,
+    ) -> np.ndarray:
+        """Realize one coherent member: spanning-tree hand-forward + weight-crossfade onto ``pts``."""
+        t = cast(Any, parts[0].distribution).time_days
+        corrected = self._sweep_tree(parts, t, member_index, noise)
+        n = pts.shape[0]
+        out = np.zeros(n)
+        for i, p in enumerate(parts):
+            d = p.distribution
+            idx = _nearest(d.grid, pts, d.time_days)
+            cover = weights[i] > 0
+            field_i = np.zeros(n)
+            field_i[cover] = corrected[i][idx[cover]]
+            out += weights[i] * field_i
+        return np.asarray(out)
+
+
 class PerturbEnsembleDegradation:
     """Degradation driver: per-tile INDEPENDENT members, weight-crossfaded (coherence lost).
 
@@ -625,7 +709,7 @@ class PerturbEnsembleDegradation:
 
 _DRIVERS: dict[str, type] = {
     "lowrank+diag": LowRankSharedBasis,
-    "sparse-precision": GmrfKrigingSolve,
+    "sparse-precision": GmrfTreeKrigingSolve,
     "perturb-ensemble": PerturbEnsembleDegradation,
 }
 

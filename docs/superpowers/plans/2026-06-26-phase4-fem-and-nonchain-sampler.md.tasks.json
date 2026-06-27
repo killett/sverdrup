@@ -45,7 +45,7 @@
     {
       "id": 7,
       "subject": "Task 7: GmrfTreeKrigingSolve — spanning-tree hand-forward; repoint registry",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [6],
       "description": "**Goal:** generalize the proven chain `GmrfKrigingSolve._sweep` (line) to a max-overlap spanning tree: per tile independent white -> unconditional draw -> root unconditional, child kriged toward PARENT's already-drawn overlap VALUES (consistent residual => 4e8 Sigma_ss never excited) -> crossfade. Repoint _DRIVERS to GmrfTreeKrigingSolve; keep GmrfKrigingSolve (1-D regression); update only the one wiring assertion. Two white streams (no joint-white, C2').\n\n**Verify:** pixi run test tests/unit/test_tree_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/coherent.py\", \"tests/unit/test_tree_kriging_driver.py\", \"tests/test_gmrf_blend.py\"], \"verifyCommand\": \"pixi run test tests/unit/test_tree_kriging_driver.py tests/unit/test_gmrf_kriging_driver.py tests/unit/test_gmrf_kriging_oracle.py tests/test_gmrf_blend.py -v\", \"acceptanceCriteria\": [\"spanning-tree sweep: child kriged toward parent drawn values\", \"single tile == mean + L^-T w (chain-identical)\", \"registry repointed to GmrfTreeKrigingSolve\", \"GmrfKrigingSolve chain ._sweep tests stay green untouched\", \"only the single wiring assertion changed\"], \"modelTier\": \"complex\"}\n```"
     },

@@ -53,7 +53,11 @@ def _gmrf_pd(grid, value=1.0):
 
 
 def test_select_driver_sparse_precision():
-    assert isinstance(select_driver("sparse-precision"), GmrfKrigingSolve)
+    # Stage B (redesign): the sparse-precision driver is the spanning-tree hand-forward one.
+    # Chain behaviour stays pinned by the kept GmrfKrigingSolve tests (kriging_driver/oracle).
+    from sverdrup.distributions.coherent import GmrfTreeKrigingSolve
+
+    assert isinstance(select_driver("sparse-precision"), GmrfTreeKrigingSolve)
 
 
 def test_single_tile_member_is_native_draw():
