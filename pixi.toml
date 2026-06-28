@@ -114,6 +114,8 @@ typer = ">=0.26.7,<0.27"
 rich = ">=15.0.0,<16"
 stamina = ">=26.1.0,<27"
 scikit-sparse = ">=0.5.0,<0.6"
+pyinterp = ">=2026.6.0,<2027"
+paramiko = ">=5.0.0,<6"
 
 [pypi-dependencies]
 
