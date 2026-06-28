@@ -21,6 +21,7 @@ import numpy as np
 
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.parameters import ConstantProvider
+from sverdrup.methods.kernel import GaussianSpaceTimeDegrees
 
 # --- exact scalars from baseline_oi.ipynb cell 7 ---
 SIGNAL_VARIANCE = 1.0  # OI uses a correlation (B with unit variance); noise is relative
@@ -65,3 +66,19 @@ def baseline_config() -> tuple[ConstantProvider, GridSpec, float]:
         lats=np.arange(LAT_MIN, LAT_MAX + GRID_RES_DEG, GRID_RES_DEG),
     )
     return provider, grid, TEMPORAL_HALF_WINDOW_DAYS
+
+
+def baseline_kernel() -> GaussianSpaceTimeDegrees:
+    """Return the faithful challenge BASELINE covariance kernel.
+
+    The exact ``oi_core`` covariance: Gaussian, anisotropic, degree-space, with
+    ``Lx = Ly = 1.0°``, ``Lt = 7 days`` and unit signal variance. Pass this to
+    ``OptimalInterpolation.solve(..., kernel=baseline_kernel())`` to reproduce the
+    BASELINE OI (the gate-1 option-(a) decision).
+    """
+    return GaussianSpaceTimeDegrees(
+        variance=SIGNAL_VARIANCE,
+        lx_deg=SPATIAL_CORR_DEG,
+        ly_deg=SPATIAL_CORR_DEG,
+        time_scale=TEMPORAL_CORR_DAYS,
+    )

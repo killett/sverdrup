@@ -56,7 +56,7 @@
       "id": 6,
       "nativeId": 7,
       "subject": "Task 6: Run driver — 2017 single-tile OI to daily maps to NetCDF",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3, 4, 5],
       "description": "**Goal:** Drive OI over 2017 single tile with a sliding temporal window; assemble daily map stack; write through output adapter.\n\n**Verify:** pixi run test tests/validation/test_run.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/run.py\", \"tests/validation/test_run.py\"], \"verifyCommand\": \"pixi run test tests/validation/test_run.py -v\", \"acceptanceCriteria\": [\"run_year emits one map per output day over 2017\", \"each day's solve windowed to +/-temporal_half_window_days; spin-up feeds early days\", \"fixture run completes and output is schema-valid\"], \"modelTier\": \"standard\"}\n```"
     },

@@ -10,7 +10,11 @@ from sverdrup.core.parameters import ParameterProvider, ParameterSpace
 from sverdrup.core.provenance import UncertaintyProvenance
 from sverdrup.core.types import CovFidelity, Points, Seed, UncertaintyCapability
 from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
-from sverdrup.methods.kernel import Kernel, Matern32SpaceTime
+from sverdrup.methods.kernel import (
+    GaussianSpaceTimeDegrees,
+    Kernel,
+    Matern32SpaceTime,
+)
 from sverdrup.methods.solver import DenseCholeskySolver, LinearSolver
 
 
@@ -79,7 +83,7 @@ class GPCovarianceOperator:
 
 def _stationary(kernel: Kernel) -> bool:
     """Return True if the kernel is stationary (constant prior variance)."""
-    return isinstance(kernel, Matern32SpaceTime)
+    return isinstance(kernel, Matern32SpaceTime | GaussianSpaceTimeDegrees)
 
 
 class OptimalInterpolation:
@@ -93,6 +97,7 @@ class OptimalInterpolation:
         grid: GridSpec,
         params: ParameterProvider,
         time_days: float,
+        kernel: Kernel | None = None,
     ) -> GaussianPredictiveDistribution:
         """Solve the GP posterior over ``grid`` at ``time_days``.
 
@@ -101,15 +106,20 @@ class OptimalInterpolation:
             grid: The output grid.
             params: The parameter provider (variance, length_scale, time_scale).
             time_days: The output time in days.
+            kernel: Optional explicit covariance kernel. When ``None`` (default),
+                a ``Matern32SpaceTime`` is built from ``params``; pass an explicit
+                kernel (e.g. the challenge's ``GaussianSpaceTimeDegrees``) to
+                override without touching the default behaviour.
 
         Returns:
             A native Gaussian predictive distribution (EXACT operator).
         """
-        kernel = Matern32SpaceTime(
-            variance=float(params.resolve("variance", grid)),
-            length_scale=float(params.resolve("length_scale", grid)),
-            time_scale=float(params.resolve("time_scale", grid)),
-        )
+        if kernel is None:
+            kernel = Matern32SpaceTime(
+                variance=float(params.resolve("variance", grid)),
+                length_scale=float(params.resolve("length_scale", grid)),
+                time_scale=float(params.resolve("time_scale", grid)),
+            )
         obs_pts = obs.coords()
         noise = np.diag(obs.error_model.as_matrix(len(obs)))
         op = GPCovarianceOperator(kernel, obs_pts, obs.values(), noise_diag=noise)
