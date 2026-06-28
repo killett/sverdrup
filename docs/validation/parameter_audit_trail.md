@@ -154,3 +154,82 @@ BASELINE-equivalent map (Task 6) — that generated map is what Task 7 scores.
 | µ(RMSE) | 0.85 | _n/a — map unobtainable_ | covered 3× by DUACS/MIOST/BFN |
 | σ(RMSE) | 0.09 | _n/a_ | |
 | λx (km) | 140  | _n/a_ | |
+
+---
+
+## Task 3 — baseline_oi parameter extraction (gate 1)
+
+Source: `vendor/2021a_SSH_mapping_OSE/notebooks/baseline_oi.ipynb` (v1.0),
+read end-to-end. The OI kernel itself is `src/mod_oi.py::oi_core`.
+
+### Parameter mapping (value → notebook → our setting)
+
+| Quantity | Notebook (cell) | Value | Our setting (`params.py`) |
+|---|---|---|---|
+| Domain lon | cell 7 `lon_min/lon_max` | 295–305 | `LON_MIN/LON_MAX` → `GridSpec` |
+| Domain lat | cell 7 `lat_min/lat_max` | 33–43 | `LAT_MIN/LAT_MAX` → `GridSpec` |
+| Grid step | cell 7 `dx`,`dy` | 0.2° | `GRID_RES_DEG` |
+| Grid time | cell 7 `time_min/max`,`dt` | 2017-01-01…12-31, 1 day | `TIME_MIN/MAX` |
+| Zonal decorrelation | cell 7 `Lx` | 1.0° | `SPATIAL_CORR_DEG` → `length_scale` (km, analog) |
+| Merid. decorrelation | cell 7 `Ly` | 1.0° | `SPATIAL_CORR_DEG` (Lx==Ly) |
+| Temporal decorrelation | cell 7 `Lt` | 7 days | `TEMPORAL_CORR_DAYS` → `time_scale` |
+| Noise level | cell 7 `noise` | 0.05 (5%) | `OBS_NOISE_STD`; `OBS_NOISE_VARIANCE = 0.0025` → `DiagonalErrorModel` (Task 4) |
+| Signal variance | implicit (`oi_core`) | 1.0 (B is a correlation) | `SIGNAL_VARIANCE` → `variance` |
+| Obs influence window | `oi_core` `< 2*Lt` | ±14 days | `TEMPORAL_HALF_WINDOW_DAYS` |
+| Obs time-coarsening | cell 14 `coarsening` | mean every 5 | `COARSEN_TIME` (applied in Task 4) |
+| Mapping inputs | cell 11 | alg, j3, s3a, h2g, j2g, j2n (NOT c2) | Task 4 |
+
+`baseline_config()` returns `(ConstantProvider, GridSpec, 14.0)` and is accepted
+by `OptimalInterpolation.solve` (smoke: output mean shape (52,51) == grid.shape).
+
+### Reference frame (SLA / SSH / MDT) — RESOLVED
+
+- **Mapping space = SLA.** `oi_core` maps the obs variable **`sla_unfiltered`**
+  (NB: unfiltered, not `sla_filtered`). The OI output field `gssh` is SLA.
+- **Output conversion.** `reformate_oi_output` renames `gssh`→`sla` and writes
+  **`ssh = sla + mdt`**, with `mdt` interpolated from the challenge `mdt.nc`.
+  The shipped map therefore carries both `sla` and `ssh`; the eval reads `ssh`.
+- **Eval space = SSH.** `interp_on_alongtrack` reconstructs the track as
+  `ssh = sla_unfiltered + mdt − lwe`. So: map SLA → add MDT → compare SSH.
+- **Implication for us:** our OI maps `sla_unfiltered`; the output adapter
+  (Task 5) must add MDT to produce `ssh`. We need `mdt.nc` — it is on the MEOM
+  mirror's grid-data area (to fetch in Task 4/5).
+
+### DECISIVE FINDING — kernel mismatch (needs an owner decision before Task 6)
+
+Their BASELINE covariance (`oi_core`) is:
+
+    B = exp( −(Δlon/Lx)² − (Δlat/Ly)² − (Δt/Lt)² )      # Gaussian, degrees, anisotropic
+    R = diag(noise²)                                     # signal variance ≡ 1
+
+Our `OptimalInterpolation.solve` hardcodes `Matern32SpaceTime`:
+
+    B = variance · M32(‖Δx‖_km / length_scale) · M32(Δt / time_scale)   # Matérn-3/2, km, isotropic
+
+These differ on **three** axes: (1) **shape** — Gaussian vs Matérn-3/2;
+(2) **geometry** — degrees (no cos-lat) vs great-circle km (with cos-lat);
+(3) **anisotropy** — separate Lx/Ly vs a single isotropic length. At Lx=Ly=1°
+the degree-space isotropy is physical *an*isotropy (1° lon ≈ 88 km at 38°N vs
+1° lat ≈ 111 km). `baseline_config` maps `length_scale = 1.0° × 111.195 km/° ≈
+111 km` as an **analog only**.
+
+**Consequence:** our current engine cannot reproduce the literal BASELINE row
+(0.85/0.09/140). The two options for Task 6:
+
+- **(a) Faithful** — add a Gaussian, anisotropic, degree-space kernel
+  (`variance, Lx, Ly, Lt`) and a kernel-selection seam in `solve`. Reproduces
+  BASELINE exactly; touches the core engine (the project pins Matérn-3/2, so
+  this is an additive seam, not a replacement).
+- **(b) Matérn analog** — run the Matérn config above and accept it scores
+  *differently* from BASELINE; report it as a Matérn-OI variant, not a
+  reproduction.
+
+This is the gate-1 decision to confirm before Task 6.
+
+**OWNER DECISION (gate 1, 2026-06-27): option (a) — add a faithful Gaussian,
+anisotropic, degree-space kernel + a kernel-selection seam in
+`OptimalInterpolation.solve` (Matérn-3/2 left untouched), so Task 6 reproduces
+the literal BASELINE row. Parameter mapping + SLA→+MDT→SSH reference frame
+CONFIRMED.** The Gaussian kernel is implemented in Task 6 (where it is used);
+`baseline_config` keeps the Matérn-analog provider for back-compat, and a
+`baseline_kernel()` factory will supply the faithful kernel to the run.
