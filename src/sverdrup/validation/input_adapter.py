@@ -16,10 +16,16 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
+from scipy.interpolate import griddata  # type: ignore[import-untyped]
 
+from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ParameterProvider
 from sverdrup.validation.params import COARSEN_TIME, OBS_NOISE_VARIANCE
+
+# Cap for gridding the (static) MDT — it is smooth, so a subsample suffices and
+# keeps the Delaunay triangulation fast. Deterministic via a fixed seed.
+_MDT_SUBSAMPLE = 150_000
 
 # day 0 == 2017-01-01; spin-up obs carry negative day numbers.
 EPOCH = np.datetime64("2017-01-01")
@@ -102,6 +108,46 @@ def load_mapping_obs(paths: list[Path], params: ParameterProvider) -> ObsWindow:
         error,
         mission=np.concatenate(miss),
     )
+
+
+def load_mdt_grid(paths: list[Path], grid: GridSpec) -> np.ndarray:
+    """Grid the mapping tracks' own MDT onto ``grid`` (reference-frame fix).
+
+    The challenge maps SLA and writes ``ssh = sla + mdt`` (audit trail Task 3).
+    We build the gridded MDT from the **mapping** tracks' per-point ``mdt`` (the
+    same CNES MDT product the withheld c2 track carries, so the two MDTs cancel
+    in the eval to ~1 mm — verified). c2 is never read here.
+
+    Args:
+        paths: Mapping-mission L3 paths (NO Cryosat-2).
+        grid: The output grid.
+
+    Returns:
+        A ``(ny, nx)`` gridded MDT aligned with ``grid``.
+    """
+    lons, lats, mdts = [], [], []
+    for path in paths:
+        _mission_code(path)  # withheld-leak guard (rejects c2/unknown)
+        ds = xr.open_dataset(path)
+        lons.append(np.asarray(ds["longitude"], dtype=float))
+        lats.append(np.asarray(ds["latitude"], dtype=float))
+        mdts.append(np.asarray(ds["mdt"], dtype=float))
+    lon = np.concatenate(lons)
+    lat = np.concatenate(lats)
+    mdt = np.concatenate(mdts)
+    ok = np.isfinite(mdt)
+    lon, lat, mdt = lon[ok], lat[ok], mdt[ok]
+    if lon.size > _MDT_SUBSAMPLE:
+        sel = np.random.default_rng(0).choice(lon.size, _MDT_SUBSAMPLE, replace=False)
+        lon, lat, mdt = lon[sel], lat[sel], mdt[sel]
+
+    glon, glat = np.unique(grid._lonlat_nodes()[0]), np.unique(grid._lonlat_nodes()[1])
+    gx, gy = np.meshgrid(glon, glat)
+    out = griddata((lon, lat), mdt, (gx, gy), method="linear")
+    holes = ~np.isfinite(out)
+    if holes.any():  # fill outside the convex hull with nearest-neighbour
+        out[holes] = griddata((lon, lat), mdt, (gx[holes], gy[holes]), method="nearest")
+    return np.asarray(out, dtype=float)
 
 
 def load_eval_track(path: Path) -> EvalTrack:

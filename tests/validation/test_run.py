@@ -72,3 +72,28 @@ def test_run_year_window_excludes_distant_obs(
         run_year(temporal_half_window_days=14.0, dest=tmp_path / "f.nc", **common)
     )["ssh"].values
     assert np.nanmax(np.abs(fed)) > np.nanmax(np.abs(starved))
+
+
+def test_run_year_adds_mdt_grid(
+    tmp_path, mapping_fixture_obs, baseline_provider, small_grid
+):
+    """A constant MDT grid offsets every map by that constant (SLA -> SSH).
+
+    Catches a reference-frame bug where MDT is dropped (the exact defect that
+    collapsed the first full-year run's mu).
+    """
+    lon, lat = small_grid._lonlat_nodes()
+    ny, nx = np.unique(lat).size, np.unique(lon).size
+    offset = np.full((ny, nx), 0.5)
+    common = dict(
+        mapping_obs=mapping_fixture_obs,
+        params=baseline_provider,
+        grid=small_grid,
+        temporal_half_window_days=10.0,
+        output_days=[0.0],
+    )
+    base = xr.open_dataset(run_year(dest=tmp_path / "b.nc", **common))["ssh"].values
+    shifted = xr.open_dataset(
+        run_year(dest=tmp_path / "s.nc", mdt_grid=offset, **common)
+    )["ssh"].values
+    assert np.allclose(shifted - base, 0.5, atol=1e-9)

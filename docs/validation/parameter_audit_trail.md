@@ -247,3 +247,37 @@ CONFIRMED.** The Gaussian kernel is implemented in Task 6 (where it is used);
   vars `sla_unfiltered/sla_filtered/mdt/lwe` — `l3_alg_subset.nc` (mapping,
   spans the 2017 boundary) and `l3_c2_subset.nc` (withheld eval, 402 spin-up +
   503 2017 points).
+
+## Task 7 — Dual-eval result (gate 3) — PASS
+
+**Our OI reproduces the published BASELINE leaderboard row.** Full-year 2017 run
+(`python -m sverdrup.validation.report`), our map scored by THEIR eval:
+
+| Method | µ(RMSE) | σ(RMSE) | λx (km) |
+|---|---|---|---|
+| **ours (OI)** | **0.853** | **0.090** | **140.9** |
+| BASELINE (published) | 0.85 | 0.09 | 140 |
+| DUACS (published) | 0.88 | 0.07 | 152 |
+
+- **Sanity anchor:** their eval reproduces DUACS 0.877/0.065/152.3 (harness valid).
+- **Parallel cross-check:** our global skill 0.858 vs their µ 0.853 on our map
+  (Δ 0.005) — our eval and theirs agree, so no eval-layer bug.
+- **Verdict: PASS** (µ tolerance ±0.03, set from the ≤0.01 reproduction spread,
+  never loosened). Full read in `docs/validation/RESULT.md`.
+
+### Bug found + fixed by the decomposed read (the value of Task 7)
+
+The FIRST full-year run scored µ=0.212 (case (i)). The decomposition isolated it:
+harness reproduced DUACS, our eval agreed with theirs, λx was already correct
+(141 vs 140) — so the miss was a **DC offset in our map**, not a length-scale or
+eval problem. Root cause: the **MDT step was missing** — `run`/`output_adapter`
+wrote the OI SLA directly as `ssh`, omitting `ssh = sla + mdt` (the reference
+frame confirmed at gate 1). Our map mean 0.108 m (≈ SLA) vs track ssh mean
+0.409 m — a +0.31 m MDT offset.
+
+**Fix:** `input_adapter.load_mdt_grid` grids the **mapping tracks' own** `mdt`
+(same CNES MDT product as the withheld c2 track) onto the OI grid; `run_year`
+adds it to each daily SLA map. Verified self-consistent: gridded MDT vs the c2
+track `mdt` agrees to ~1 mm RMS (max 1 cm), so map-MDT and track-MDT cancel in
+the eval. External MDT files (CNES-CLS18-global on AVISO SFTP) mismatched the
+track product by ~5 cm and were rejected in favour of the grid-from-tracks MDT.
