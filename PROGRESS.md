@@ -186,6 +186,8 @@ reference. (3) is decisive and was previously unmeasured.
   even a 2-node strip block, so naive strip value-conditioning reignites the 4e8 collapse exactly
   where the deficit is largest.
 
+**[PRE-KILL HYPOTHESIS — this "deflation could work" opening was KILLED by the DEFLATION IS DEAD block
+immediately below; kept for the trail of what was tried and why it failed. Do NOT act on it.]**
 **The refined bind (for whoever designs the seam fix):** the thing to install is LOCAL (a), but the
 obvious operator to install it (`Σ_ss` solve) is GLOBALLY contaminated (b). The opening: the target
 lives in the near-null COMPLEMENT (deficit is high-frequency per (a); §4 measured 90% of the
@@ -226,9 +228,17 @@ true seam corr 0.68@400 → 0.08@50 km for 12° cores ⇒ core/range ≳ ~25). T
 tile-sizing-vs-range constraint, NOT a seam patch.** No per-tile seam construction recovers the
 correlation in the operational band; the fix is the tiling geometry (cores ≫ range) or a different
 (non-tiled / overlapping-Schwarz-with-coarse-correction / global-low-rank-seam-basis) decomposition.
-**OWNER DECISION PENDING:** what to do with the current overwrite plan (Tasks 2–6) given the boundary —
-park it as the short-range-correct construction behind a 3-invariant + core/range gate, or halt for a
-decomposition redesign milestone. Nothing committed; tiny-fixture reds stay red.
+**OWNER DECISION — MADE + SHIPPED 2026-06-27 (commits `d173561`, `64a2b32`, `006aa7a`, `ea96f08`):**
+overwrite landed as a documented NON-DEFAULT short-range reference; the `sparse-precision` default
+STAYS `GmrfTreeKrigingSolve`; the default-sampler choice + the decomposition redesign are a Phase-5
+milestone (designing it now = designing against the tuner's unknown range — the junction-tree
+premature-build error). The case-(b) finding is pinned on disk by
+`test_core_authoritative_gate.py::test_case_b_boundary_characterization` (green characterization) and
+`::test_acceptance_operational_cross_seam_covariance_recovered` (strict xfail the Phase-5 fix must
+flip to xpass). **Correction to the mid-investigation note above:** the `test_gmrf_blend.py`
+cross-seam tests are NOT red in the shipped state — they exercise the tree-driver DEFAULT on the 1-D
+chain (the validated regime) and are GREEN; the case-(b) acceptance lives in the explicit
+overwrite-on-production test, not there.
 
 ---
 
