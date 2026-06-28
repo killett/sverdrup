@@ -47,7 +47,7 @@
       "id": 5,
       "nativeId": 6,
       "subject": "Task 5: Output adapter — OI map to challenge NetCDF schema",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "userGate": true,
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Write our OI map to NetCDF matching OSE_ssh_mapping_BASELINE.nc field-for-field; round-trips through their_eval.score.\n\n**Verify:** pixi run test tests/validation/test_output_adapter.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/output_adapter.py\", \"tests/validation/test_output_adapter.py\", \"tests/validation/fixtures\"], \"verifyCommand\": \"pixi run test tests/validation/test_output_adapter.py -v\", \"acceptanceCriteria\": [\"output NetCDF matches BASELINE schema field-for-field (dims/coords/var/units/time/fill)\", \"file round-trips through their_eval.score unchanged\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"

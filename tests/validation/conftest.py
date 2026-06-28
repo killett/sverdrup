@@ -33,3 +33,9 @@ def baseline_grid():
     """The baseline_oi output grid."""
     _provider, grid, _half = baseline_config()
     return grid
+
+
+@pytest.fixture
+def map_schema_ref() -> Path:
+    """Path to the tiny real challenge-map schema reference (DUACS subset)."""
+    return _FIXTURES / "map_schema_ref.nc"
