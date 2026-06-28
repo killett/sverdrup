@@ -1,0 +1,74 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-27-oi-validation-2021a-ose.md",
+  "tasks": [
+    {
+      "id": 0,
+      "nativeId": 1,
+      "subject": "Task 0: Config + secrets wiring",
+      "status": "pending",
+      "description": "**Goal:** Load .env into a validated ValidationConfig that fails loud on missing creds; finalize .gitignore so .env is ignored and .env.example tracked.\n\n**Verify:** pixi run test tests/validation/test_config.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/config.py\", \"src/sverdrup/validation/__init__.py\", \"tests/validation/test_config.py\", \".gitignore\"], \"verifyCommand\": \"pixi run test tests/validation/test_config.py -v\", \"acceptanceCriteria\": [\".env ignored, .env.example tracked\", \"fail-loud on empty creds under thredds/ftp\", \"empty creds allowed under meom_mirror\"], \"modelTier\": \"mechanical\"}\n```"
+    },
+    {
+      "id": 1,
+      "nativeId": 2,
+      "subject": "Task 1: Vendor submodule + their-eval de-risk spike",
+      "status": "pending",
+      "blockedBy": [0],
+      "userGate": true,
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Pin challenge repo as submodule at the leaderboard-matching commit, import their scoring function, run on their own shipped BASELINE map, reproduce all three published numbers (mu 0.85 / sigma 0.09 / lambda_x 140).\n\n**Verify:** pixi run test tests/validation/test_their_eval_spike.py -v -m external\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/their_eval.py\", \"tests/validation/test_their_eval_spike.py\", \".gitmodules\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_their_eval_spike.py -v -m external\", \"acceptanceCriteria\": [\"submodule pinned to leaderboard-matching commit, SHA recorded\", \"score() returns (mu,sigma,lambda_x)\", \"reproduces published mu 0.85 / sigma 0.09 / lambda_x 140 from their own BASELINE map\", \"SHA + numbers in audit trail\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"mu\"], [\"sigma\"], [\"lambda_x\"]], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "nativeId": 3,
+      "subject": "Task 2: Access adapter + live smoke test",
+      "status": "pending",
+      "blockedBy": [0],
+      "userGate": true,
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Verify the live THREDDS catalog URL + auth mechanism; fetch one small remote NetCDF and confirm it reads.\n\n**Verify:** pixi run test tests/validation/test_access.py -v + captured live smoke read\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/access.py\", \"tests/validation/test_access.py\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_access.py -v\", \"acceptanceCriteria\": [\"live catalog URL resolves; auth mechanism recorded\", \"fetch downloads + opens one remote NetCDF\", \"retry transient-only; 401 surfaces clearly\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "nativeId": 4,
+      "subject": "Task 3: Parameter extraction + audit trail",
+      "status": "pending",
+      "blockedBy": [1],
+      "userGate": true,
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Read baseline_oi.ipynb in full; extract every OI param; resolve SLA-vs-SSH/MDT reference frame explicitly; produce the audit trail; baseline_config() accepted by OI.solve.\n\n**Verify:** pixi run test tests/validation/test_params.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/params.py\", \"tests/validation/test_params.py\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_params.py -v\", \"acceptanceCriteria\": [\"every OI param extracted with cell/line source\", \"audit trail maps value->notebook->our setting\", \"SLA-vs-SSH/MDT reference frame stated explicitly\", \"baseline_config() accepted by OI.solve; OBS_NOISE_VARIANCE exposed\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "nativeId": 5,
+      "subject": "Task 4: Input adapter — five missions to ObsWindow, Cryosat-2 held out",
+      "status": "pending",
+      "blockedBy": [2, 3],
+      "description": "**Goal:** Five-mission L3 -> ObsWindow (per-obs noise in DiagonalErrorModel); Cryosat-2 -> separate EvalTrack; spin-up included; reference-frame handling per audit trail.\n\n**Verify:** pixi run test tests/validation/test_input_adapter.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/input_adapter.py\", \"tests/validation/test_input_adapter.py\", \"tests/validation/conftest.py\", \"tests/validation/fixtures\"], \"verifyCommand\": \"pixi run test tests/validation/test_input_adapter.py -v\", \"acceptanceCriteria\": [\"mapping ObsWindow contains only the five missions, never Cryosat-2\", \"Cryosat-2 loaded as separate eval-only EvalTrack\", \"spin-up obs in mapping window; eval track 2017-only\", \"loaded quantity matches audit-trail reference frame\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "nativeId": 6,
+      "subject": "Task 5: Output adapter — OI map to challenge NetCDF schema",
+      "status": "pending",
+      "blockedBy": [1],
+      "userGate": true,
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Write our OI map to NetCDF matching OSE_ssh_mapping_BASELINE.nc field-for-field; round-trips through their_eval.score.\n\n**Verify:** pixi run test tests/validation/test_output_adapter.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/output_adapter.py\", \"tests/validation/test_output_adapter.py\", \"tests/validation/fixtures\"], \"verifyCommand\": \"pixi run test tests/validation/test_output_adapter.py -v\", \"acceptanceCriteria\": [\"output NetCDF matches BASELINE schema field-for-field (dims/coords/var/units/time/fill)\", \"file round-trips through their_eval.score unchanged\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "nativeId": 7,
+      "subject": "Task 6: Run driver — 2017 single-tile OI to daily maps to NetCDF",
+      "status": "pending",
+      "blockedBy": [3, 4, 5],
+      "description": "**Goal:** Drive OI over 2017 single tile with a sliding temporal window; assemble daily map stack; write through output adapter.\n\n**Verify:** pixi run test tests/validation/test_run.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/run.py\", \"tests/validation/test_run.py\"], \"verifyCommand\": \"pixi run test tests/validation/test_run.py -v\", \"acceptanceCriteria\": [\"run_year emits one map per output day over 2017\", \"each day's solve windowed to +/-temporal_half_window_days; spin-up feeds early days\", \"fixture run completes and output is schema-valid\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 7,
+      "nativeId": 8,
+      "subject": "Task 7: Dual evaluation + result report — the BASELINE result",
+      "status": "pending",
+      "blockedBy": [1, 6],
+      "userGate": true,
+      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Full 2017 OI; their eval on our map AND shipped BASELINE map (three-number sanity anchor, lambda_x flagged); our area_weighted_rmse cross-check; RESULT.md table + decomposed read.\n\n**Verify:** pixi run test tests/validation/test_report.py -v + captured RESULT.md\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/report.py\", \"tests/validation/test_report.py\", \"docs/validation/RESULT.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_report.py -v\", \"acceptanceCriteria\": [\"their eval on our map AND shipped BASELINE; sanity anchor reproduces published mu/sigma/lambda_x with lambda_x flagged\", \"our area_weighted_rmse on same map; delta reported\", \"RESULT.md has table + sanity number + parallel-eval delta + decomposed read\", \"no tolerance loosened; PASS tolerance stated as recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"ours\", \"our-map\"], [\"baseline\", \"their-map\"]], \"modelTier\": \"standard\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-27"
+}
