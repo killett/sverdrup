@@ -211,6 +211,26 @@ variance, coherent samples, off-grid eval-point predictions, and the typed uncer
 RMSE vs truth, calibration (reduced χ², 1σ coverage) for OSSE; withheld-track RMSE for OSE; plus
 ground-track power.
 
+## Validation — reproduces the 2021a SSH-mapping OSE BASELINE
+
+Sverdrup's OI engine reproduces the published **2021a SSH Mapping Data Challenge**
+BASELINE leaderboard row, scored by the challenge's *own* evaluation code (vendored
+as a submodule and driven through `sverdrup.validation`):
+
+| Method | µ(RMSE) | σ(RMSE) | λx (km) |
+|--------|---------|---------|---------|
+| **sverdrup OI** | **0.853** | **0.090** | **140.9** |
+| BASELINE (published) | 0.85 | 0.09 | 140 |
+| DUACS (published) | 0.88 | 0.07 | 152 |
+
+**Verdict: PASS** (µ tolerance ±0.03, never loosened). The challenge's eval is
+independently trusted — it reproduces the published DUACS, MIOST, and BFN rows to
+within tolerance — and our own parallel skill score agrees with it on our map
+(Δ 0.005). The reproduction required a faithful Gaussian, anisotropic,
+degree-space kernel (`GaussianSpaceTimeDegrees`) and the SLA→SSH MDT reference
+frame; details, the decomposed read, and the data-source notes are in the
+[`docs/validation/`](docs/validation/) records below.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -223,6 +243,7 @@ ground-track power.
 
 ## Links and license
 
+- [`docs/validation/RESULT.md`](docs/validation/RESULT.md) — the 2021a BASELINE reproduction result (table + decomposed read); [`docs/validation/parameter_audit_trail.md`](docs/validation/parameter_audit_trail.md) — full parameter/eval/MDT audit trail
 - [`docs/oracle-runbook.md`](docs/oracle-runbook.md) — opt-in correctness oracle (reproduce the ODC OI leaderboard number)
 - [`docs/`](docs/) — architecture design + implementation plans; [`conda-recipe/`](conda-recipe/) — conda-forge packaging
 - `PROGRESS.md` — running project notebook (decisions, gotchas, deviations)
