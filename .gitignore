@@ -19,6 +19,8 @@ src/sverdrup/_version.py
 .env
 .env.*
 !.env.example
+.netrc
+.dodsrc
 *.pem
 *.key
 *-sa.json
@@ -34,3 +36,11 @@ src/sverdrup/_version.py
 .claude-project-id
 .sandbox_settings.json
 data/cache/
+
+# Downloaded challenge data (large, not ours to redistribute)
+/data/2021a_ssh_mapping_ose/
+data/2021a_ssh_mapping_ose/
+
+# Challenge results / reconstructions (the challenge's own results dir is git-ignored too)
+/results/
+results/

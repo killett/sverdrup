@@ -5,7 +5,7 @@
       "id": 0,
       "nativeId": 1,
       "subject": "Task 0: Config + secrets wiring",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Load .env into a validated ValidationConfig that fails loud on missing creds; finalize .gitignore so .env is ignored and .env.example tracked.\n\n**Verify:** pixi run test tests/validation/test_config.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/config.py\", \"src/sverdrup/validation/__init__.py\", \"tests/validation/test_config.py\", \".gitignore\"], \"verifyCommand\": \"pixi run test tests/validation/test_config.py -v\", \"acceptanceCriteria\": [\".env ignored, .env.example tracked\", \"fail-loud on empty creds under thredds/ftp\", \"empty creds allowed under meom_mirror\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
@@ -70,5 +70,5 @@
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Full 2017 OI; their eval on our map AND shipped BASELINE map (three-number sanity anchor, lambda_x flagged); our area_weighted_rmse cross-check; RESULT.md table + decomposed read.\n\n**Verify:** pixi run test tests/validation/test_report.py -v + captured RESULT.md\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/report.py\", \"tests/validation/test_report.py\", \"docs/validation/RESULT.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_report.py -v\", \"acceptanceCriteria\": [\"their eval on our map AND shipped BASELINE; sanity anchor reproduces published mu/sigma/lambda_x with lambda_x flagged\", \"our area_weighted_rmse on same map; delta reported\", \"RESULT.md has table + sanity number + parallel-eval delta + decomposed read\", \"no tolerance loosened; PASS tolerance stated as recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"ours\", \"our-map\"], [\"baseline\", \"their-map\"]], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-06-27"
+  "lastUpdated": "2026-06-27T00:00:00Z"
 }
