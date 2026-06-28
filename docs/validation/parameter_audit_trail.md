@@ -233,3 +233,17 @@ the literal BASELINE row. Parameter mapping + SLA→+MDT→SSH reference frame
 CONFIRMED.** The Gaussian kernel is implemented in Task 6 (where it is used);
 `baseline_config` keeps the Matérn-analog provider for back-compat, and a
 `baseline_kernel()` factory will supply the faithful kernel to the run.
+
+## Task 4 — Input adapter + test fixtures
+
+- `load_mapping_obs` loads `sla_unfiltered` (the variable `oi_core` maps),
+  time-coarsened (mean every `COARSEN_TIME=5`), labelled by mission; spin-up
+  (pre-2017) obs kept. Withheld-leak guard: `_mission_code` raises on any file
+  not in `MAPPING_MISSIONS` (so the Cryosat-2 `c2` file is rejected).
+- `load_eval_track` returns an `EvalTrack` (not an `ObsWindow`) in SSH space
+  (`sla_unfiltered + mdt - lwe`), restricted to 2017.
+- **Fixture provenance** (`tests/validation/fixtures/`, committed, ~40-60 KB):
+  subsets of the MEOM-mirror L3 files, box 300-304/36-39, late-2016→early-2017,
+  vars `sla_unfiltered/sla_filtered/mdt/lwe` — `l3_alg_subset.nc` (mapping,
+  spans the 2017 boundary) and `l3_c2_subset.nc` (withheld eval, 402 spin-up +
+  503 2017 points).
