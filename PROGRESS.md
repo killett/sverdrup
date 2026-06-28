@@ -1,5 +1,25 @@
 # Sverdrup — Progress notebook
 
+## ⏳ PENDING ACTION — conda feedstock bump for v0.2.0 (do this when the PR appears)
+
+**`sverdrup 0.2.0` was tagged + published to PyPI (2026-06-28).** The conda-forge
+**autotick bot** watches PyPI and should open a feedstock **version-bump PR for
+0.2.0** within ~a day. When that PR appears:
+
+- **Drop `,<3.14`** from the `run:` python pin (→ `python >={{ python_min }}`) in
+  the feedstock PR **and** mirror the same edit in `conda-recipe/meta.yaml`. This
+  is now valid: **0.2.0 is the first `>=3.12` wheel on PyPI**, so the old `<3.14`
+  cap (kept only to match the 0.1.0 wheel) is no longer needed.
+- **No `requirements/run` dep changes** — the package deps
+  (`numpy` / `scipy` / `pyproj`) are unchanged from 0.1.0. (The new
+  `pyinterp`/`paramiko`/`httpx`/`stamina` are pixi-dev-only, not package deps.)
+- Reminder (still applies): the recipe `test:` must check only the core import
+  surface (`import sverdrup`, `pip check`) — never `python -m sverdrup`.
+
+(Background detail lives in the "conda-forge distribution" section further down.)
+
+---
+
 ## RESUME HERE (2026-06-27 — OI VALIDATION MILESTONE COMPLETE, gate 3 PASS) — read this first
 
 **Status:** The "OI vs 2021a SSH-mapping OSE BASELINE" validation milestone is
