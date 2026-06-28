@@ -1,5 +1,54 @@
 # Sverdrup — Progress notebook
 
+## RESUME HERE (2026-06-27 — OI VALIDATION MILESTONE COMPLETE, gate 3 PASS) — read this first
+
+**Status:** The "OI vs 2021a SSH-mapping OSE BASELINE" validation milestone is
+**DONE — all 8 tasks committed, all 5 user-gates passed, final verdict PASS.**
+Our hand-rolled OI (driven from `baseline_oi.ipynb`, faithful Gaussian
+degree-space kernel + MDT reference frame) **reproduces the published BASELINE
+leaderboard row**: ours **0.853 / 0.090 / 140.9** vs published **0.85 / 0.09 /
+140** (µ tol ±0.03, never loosened). See `docs/validation/RESULT.md`.
+
+- Plan: `docs/superpowers/plans/2026-06-27-oi-validation-2021a-ose.md` (tracker
+  `.tasks.json` all `completed`). Canonical record: the audit trail
+  `docs/validation/parameter_audit_trail.md` (every parameter, the eval recon,
+  gate evidence, and the bugs found/fixed).
+- New package `src/sverdrup/validation/` (config, access, their_eval, params,
+  input_adapter, output_adapter, run, report). Challenge code vendored as a
+  submodule `vendor/2021a_SSH_mapping_OSE` pinned to **v1.0 (`f5c6af8`)**.
+
+### Load-bearing findings (live nowhere else — read before any follow-up)
+- **Eval harness validated 3×:** their scoring (via `their_eval.score`, on
+  modern pyinterp through faithful API-compat shims) reproduces DUACS/MIOST/BFN
+  published rows to within tolerance. "Their eval is ground truth" is proven.
+- **Data-source reality:** the ODC THREDDS (`tds.aviso.altimetry.fr`) is **dead**
+  (unresolvable globally). The live unauthenticated source is the **MEOM mirror**
+  (tracks + DUACS/MIOST/BFN/4dvarNet/neurost/convlstm maps, but **NOT** the
+  BASELINE or DYMOST maps). AVISO **SFTP** (`ftp-access.aviso.altimetry.fr:2221`)
+  has operational products + `auxiliary/mdt`, not the challenge maps. The literal
+  BASELINE map is unobtainable → the sanity anchor is DUACS, and our own OI
+  *generates* the BASELINE-equivalent map anyway.
+- **Kernel:** the challenge BASELINE is Gaussian/anisotropic/degree-space, NOT
+  our default Matérn-3/2/isotropic/km. Added `GaussianSpaceTimeDegrees` +
+  a kernel-selection seam in `OptimalInterpolation.solve` (Matérn default
+  untouched) — owner gate-1 decision (a).
+- **MDT reference frame (the bug the decomposed read caught):** OI maps SLA;
+  the eval compares SSH. `input_adapter.load_mdt_grid` grids the **mapping
+  tracks' own** MDT (same CNES product as the withheld c2 track, ~1mm
+  self-consistent — external CNES-CLS18 mismatched by ~5cm and was rejected);
+  `run_year` adds it (`ssh = sla + mdt`). Without it µ collapsed 0.85→0.21.
+- **Methods inventory** for "what to implement next" lives in
+  `docs/validation/methods_and_data_inventory.md` (all 8 methods, published vs
+  reproduced scores, per-method notes). Downloaded challenge data (~1GB) is
+  under `data/2021a_ssh_mapping_ose/` (git-ignored).
+
+### Next action
+Milestone complete. Optional follow-ups (owner's call): implement MIOST
+(multiscale OI) or a DUACS-tuned variant next (maps on disk as targets); the
+Phase-4 Stage-B coherent-sampler work below is unrelated and remains where it was.
+
+---
+
 ## RESUME HERE (2026-06-27 — STAGE-B PHASE BOUNDARY REACHED; overwrite landed non-default) — read this first
 
 **Status:** Phase 4 Stage B is CLOSED-OUT-AT-A-PHASE-BOUNDARY, not "done" and not "blocked". The
