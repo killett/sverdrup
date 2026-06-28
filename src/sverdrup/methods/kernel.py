@@ -49,6 +49,32 @@ class Matern32SpaceTime:
         return np.asarray(np.sqrt(dlon**2 + dlat**2) * _DEG2KM)
 
 
+@dataclass(frozen=True)
+class GaussianSpaceTimeDegrees:
+    """Separable Gaussian (squared-exponential) covariance in degree-space.
+
+    Reproduces the 2021a challenge BASELINE OI (``src/mod_oi.py::oi_core``):
+
+        B(a, b) = variance · exp( −(Δlon/Lx)² − (Δlat/Ly)² − (Δt/Lt)² )
+
+    Spatial differences are **raw degrees** (no cos-lat correction, no km
+    conversion), so the kernel is anisotropic in physical space. ``lx_deg`` and
+    ``ly_deg`` are in degrees; ``time_scale`` in days.
+    """
+
+    variance: float
+    lx_deg: float
+    ly_deg: float
+    time_scale: float
+
+    def evaluate(self, a: Points, b: Points) -> np.ndarray:
+        """Return the separable Gaussian covariance between ``a`` and ``b``."""
+        dlon = (a[:, None, 0] - b[None, :, 0]) / self.lx_deg
+        dlat = (a[:, None, 1] - b[None, :, 1]) / self.ly_deg
+        dt = (a[:, None, 2] - b[None, :, 2]) / self.time_scale
+        return np.asarray(self.variance * np.exp(-(dlon**2) - dlat**2 - dt**2))
+
+
 def _m32(r: np.ndarray) -> np.ndarray:
     """Matern-3/2 correlation as a function of scaled distance ``r``."""
     s = np.sqrt(3.0) * r
