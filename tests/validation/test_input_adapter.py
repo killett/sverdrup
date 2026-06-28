@@ -9,6 +9,7 @@ from sverdrup.validation.input_adapter import (
     EvalTrack,
     load_eval_track,
     load_mapping_obs,
+    load_mdt_grid,
 )
 
 
@@ -75,3 +76,19 @@ def test_mapping_values_are_sla_unfiltered(mapping_fixture_paths, baseline_provi
     raw = np.asarray(ds["sla_unfiltered"]).astype(float)
     assert np.nanmin(raw) - 1e-6 <= obs.values().min()
     assert obs.values().max() <= np.nanmax(raw) + 1e-6
+
+
+def test_load_mdt_grid_shape_finite_and_rejects_c2(
+    mapping_fixture_paths, cryosat2_fixture_path, small_grid
+):
+    """Gridded MDT has grid shape, is fully finite, and rejects the c2 file.
+
+    Catches (a) a shape/orientation mismatch with the grid, (b) unfilled holes
+    that would make ssh NaN, and (c) the withheld c2 file leaking in via MDT.
+    """
+    g = load_mdt_grid(mapping_fixture_paths, small_grid)
+    lon, lat = small_grid._lonlat_nodes()
+    assert g.shape == (np.unique(lat).size, np.unique(lon).size)
+    assert np.isfinite(g).all()
+    with pytest.raises(ValueError, match="c2|mission"):
+        load_mdt_grid([cryosat2_fixture_path], small_grid)

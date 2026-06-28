@@ -64,7 +64,7 @@
       "id": 7,
       "nativeId": 8,
       "subject": "Task 7: Dual evaluation + result report — the BASELINE result",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1, 6],
       "userGate": true,
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Full 2017 OI; their eval on our map AND shipped BASELINE map (three-number sanity anchor, lambda_x flagged); our area_weighted_rmse cross-check; RESULT.md table + decomposed read.\n\n**Verify:** pixi run test tests/validation/test_report.py -v + captured RESULT.md\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/report.py\", \"tests/validation/test_report.py\", \"docs/validation/RESULT.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_report.py -v\", \"acceptanceCriteria\": [\"their eval on our map AND shipped BASELINE; sanity anchor reproduces published mu/sigma/lambda_x with lambda_x flagged\", \"our area_weighted_rmse on same map; delta reported\", \"RESULT.md has table + sanity number + parallel-eval delta + decomposed read\", \"no tolerance loosened; PASS tolerance stated as recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"ours\", \"our-map\"], [\"baseline\", \"their-map\"]], \"modelTier\": \"standard\"}\n```"
