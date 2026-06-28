@@ -231,6 +231,12 @@ degree-space kernel (`GaussianSpaceTimeDegrees`) and the SLA→SSH MDT reference
 frame; details, the decomposed read, and the data-source notes are in the
 [`docs/validation/`](docs/validation/) records below.
 
+> **`sverdrup.validation` is a from-source tool, not part of the PyPI/conda
+> package.** It needs the vendored challenge submodule (`git submodule update
+> --init`), the downloaded challenge data, and extra deps (`httpx`, `stamina`,
+> `paramiko`, `pyinterp`) that ship only in the pixi dev environment — so it is
+> not exercised by a bare `pip install sverdrup`. Run it from a clone.
+
 ## Troubleshooting
 
 | Symptom | Fix |
