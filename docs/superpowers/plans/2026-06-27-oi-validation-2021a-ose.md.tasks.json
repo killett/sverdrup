@@ -30,7 +30,7 @@
       "id": 3,
       "nativeId": 4,
       "subject": "Task 3: Parameter extraction + audit trail",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "userGate": true,
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Read baseline_oi.ipynb in full; extract every OI param; resolve SLA-vs-SSH/MDT reference frame explicitly; produce the audit trail; baseline_config() accepted by OI.solve.\n\n**Verify:** pixi run test tests/validation/test_params.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/params.py\", \"tests/validation/test_params.py\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_params.py -v\", \"acceptanceCriteria\": [\"every OI param extracted with cell/line source\", \"audit trail maps value->notebook->our setting\", \"SLA-vs-SSH/MDT reference frame stated explicitly\", \"baseline_config() accepted by OI.solve; OBS_NOISE_VARIANCE exposed\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"
