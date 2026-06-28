@@ -39,7 +39,7 @@
       "id": 4,
       "nativeId": 5,
       "subject": "Task 4: Input adapter — five missions to ObsWindow, Cryosat-2 held out",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2, 3],
       "description": "**Goal:** Five-mission L3 -> ObsWindow (per-obs noise in DiagonalErrorModel); Cryosat-2 -> separate EvalTrack; spin-up included; reference-frame handling per audit trail.\n\n**Verify:** pixi run test tests/validation/test_input_adapter.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/input_adapter.py\", \"tests/validation/test_input_adapter.py\", \"tests/validation/conftest.py\", \"tests/validation/fixtures\"], \"verifyCommand\": \"pixi run test tests/validation/test_input_adapter.py -v\", \"acceptanceCriteria\": [\"mapping ObsWindow contains only the five missions, never Cryosat-2\", \"Cryosat-2 loaded as separate eval-only EvalTrack\", \"spin-up obs in mapping window; eval track 2017-only\", \"loaded quantity matches audit-trail reference frame\"], \"modelTier\": \"standard\"}\n```"
     },
