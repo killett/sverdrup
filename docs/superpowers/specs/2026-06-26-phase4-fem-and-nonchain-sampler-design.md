@@ -213,6 +213,45 @@ restores exactness on cycles but re-introduces tile-topology dependence and √(
 costs Stage B exists to remove; it is the **exact escalation**, taken only if a measured dropped-edge
 residual exceeds tolerance, never by default.
 
+### 3.1b Tree selection: minimum-eccentricity + eigmin-rooting (AMENDED — load-bearing)
+
+> **SUPERSEDED 2026-06-27 (read PROGRESS "RESUME HERE (2026-06-27)" first).** Two corrections to the
+> text below: (i) `_min_eccentricity_spanning_tree` was **reverted as a measured regression** (it
+> manufactured a sibling-seam collapse; PROGRESS §1) — the live tree driver is the **max-overlap MST**
+> (`_max_overlap_spanning_tree`), and the min-ecc / `_condition_root_scores` symbols are **removed from
+> `coherent.py`**; (ii) the whole tree-driver sampler is now the **deferred `sparse-precision` default
+> at a proven PHASE BOUNDARY** — it collapses the marginal, while the overwrite reference zeroes
+> cross-seam covariance at operational range. The eigmin-rooting / conditioning-floor *reasoning* below
+> is kept as Phase-5-relevant trail; the **shipped construction** is in `2026-06-27-stageb-…-design.md`
+> + the phase-boundary disposition. Do NOT read §3.1b/§3.1c as live shipped design.
+
+Two measured findings make the tree SELECTION part of the construction, not a free choice:
+
+1. **Depth → instability.** Hand-forward kriging accumulates drift per hop; a deep tree routes the
+   conditioning through the near-singular `Σ_ss` in an order that amplifies (10× at a depth-3 edge vs
+   ~1.4× at depth 1). The shipped tree is therefore the **minimum-eccentricity, max-overlap** spanning
+   tree (`_min_eccentricity_spanning_tree`) — a shallow star on the `k·corr_len` heavy-overlap regime;
+   rel stays bounded (0.40–0.45) at 3×2/3×3 where the naive Kruskal MST reaches depth 3–4 and blows up.
+2. **Eigmin-rooting (contract).** The blow-up root is the most near-singular tile (smallest
+   `eigmin(Q_post)`): rooting there gives 31× rel vs 0.36–0.84 at any better-conditioned root. The tree
+   roots at the **maximum-eigmin (best-conditioned) tile** (`_condition_root_scores = -eigmin`). **Test
+   (negative control, in the gate):** rooting at the worst-conditioned tile blows up >1.5× the
+   well-conditioned roots — a refactor that roots arbitrarily reintroduces the 31× and fails loudly.
+
+### 3.1c The conditioning floor (the central finding — intrinsic, recorded)
+
+With depth and rooting fixed, an elevated cross-seam residual remains around a near-singular tile and
+**no tree removes it**: conditioning a tile with `eigmin≈2.5e-7` onto anything is ill-posed, and
+hand-forward inherits that. Measured: the residual is **monotone in `eigmin(Q_post)`** and
+**`tree_edge == chain_edge` EXACTLY at equal conditioning** — the tree sweep is not worse than the
+plain chain on a near-singular tile. Therefore the construction has an **accuracy floor set by the
+worst-conditioned tile's eigmin**, and the gate compares each tree edge to the **per-tile
+conditioning-matched chain baseline** (same tile, same eigmin), not an easier well-conditioned chain.
+The floor is a **characterized, recorded `known_bias`** (monotone in eigmin); junction-tree (§6) is the
+exact escalation if a use case cannot tolerate it near near-singular tiles. **Phase-5 caveat:** the
+floor is a function of `eigmin`, which `range` controls — the autotuner must treat cross-seam coherence
+residual as a constraint, not a free variable (short range drives eigmin down and the floor up).
+
 ### 3.2 Negative control (per-tree-edge separation)
 
 A **tree** edge whose shared overlap is thinner than `STENCIL_REACH` in the adjacency direction cannot
