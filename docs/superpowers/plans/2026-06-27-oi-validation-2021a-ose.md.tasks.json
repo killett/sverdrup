@@ -21,7 +21,7 @@
       "id": 2,
       "nativeId": 3,
       "subject": "Task 2: Access adapter + live smoke test",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0],
       "userGate": true,
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Verify the live THREDDS catalog URL + auth mechanism; fetch one small remote NetCDF and confirm it reads.\n\n**Verify:** pixi run test tests/validation/test_access.py -v + captured live smoke read\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/access.py\", \"tests/validation/test_access.py\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_access.py -v\", \"acceptanceCriteria\": [\"live catalog URL resolves; auth mechanism recorded\", \"fetch downloads + opens one remote NetCDF\", \"retry transient-only; 401 surfaces clearly\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"modelTier\": \"standard\"}\n```"

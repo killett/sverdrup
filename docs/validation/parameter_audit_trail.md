@@ -100,6 +100,24 @@ The shims are **validated**: with them, their eval on the shipped DUACS map
 reproduces the published DUACS leaderboard row to within tolerance (below), so
 the modern pyinterp is numerically faithful through this path.
 
+## Task 2 — Access adapter + live smoke read (gate 2)
+
+- **Verified live source:** the MEOM mirror catalog resolves and serves files,
+  e.g. `…/thredds/fileServer/meomopendap/extract/MEOM/OCEAN_DATA_CHALLENGES/`
+  `2021a-SSH-mapping-OSE/{dc_obs,dc_maps}/`. **Auth mechanism: none**
+  (`access_method == "meom_mirror"`, unauthenticated).
+- **Spec discrepancy from recon (important):** the plan/notebooks assume AVISO
+  THREDDS (`tds.aviso.altimetry.fr`, HTTP Basic) — that host is **dead**
+  (unresolvable everywhere). `access.fetch` therefore sends auth only for the
+  `thredds`/`ftp` methods and none for `meom_mirror`. AVISO **SFTP**
+  (`ftp-access.aviso.altimetry.fr:2221`, paramiko, AVISO creds) is alive but
+  carries only operational products, not the challenge maps.
+- **Captured live smoke read:** `access.fetch` downloaded
+  `dc_maps/OSE_ssh_mapping_DUACS.nc` (4,684,262 bytes) and `xarray.open_dataset`
+  succeeded — dims `time=365, lat=40, lon=40`, var `ssh`, coords `lat/lon/time`.
+- **Retry:** `is_retryable` retries transport errors + 5xx only; 401/404 raise
+  (unit-tested in `tests/validation/test_access.py`).
+
 ## Task 1 — Reproduced numbers
 
 > **PREMISE PROVEN VIA DUACS. LITERAL BASELINE STILL PENDING ITS MAP.**
