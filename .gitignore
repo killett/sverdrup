@@ -40,6 +40,11 @@ data/cache/
 # Downloaded challenge data (large, not ours to redistribute)
 /data/2021a_ssh_mapping_ose/
 data/2021a_ssh_mapping_ose/
+# 2023 Ocean Data Challenges data (large, not ours to redistribute)
+data/2023a_ssh_mapping_ose/
+data/2023a_ssh_mapmed_ose/
+data/2023b_sshmapping_hf_california/
+data/2023_ssh_mapping_enatl60_natl60/
 
 # Challenge results / reconstructions (the challenge's own results dir is git-ignored too)
 /results/
