@@ -12,7 +12,7 @@
       "id": 1,
       "nativeId": 2,
       "subject": "Task 1: Vendor submodule + their-eval de-risk spike",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [0],
       "userGate": true,
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.**\n\n**Goal:** Pin challenge repo as submodule at the leaderboard-matching commit, import their scoring function, run on their own shipped BASELINE map, reproduce all three published numbers (mu 0.85 / sigma 0.09 / lambda_x 140).\n\n**Verify:** pixi run test tests/validation/test_their_eval_spike.py -v -m external\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/their_eval.py\", \"tests/validation/test_their_eval_spike.py\", \".gitmodules\", \"docs/validation/parameter_audit_trail.md\"], \"verifyCommand\": \"pixi run test tests/validation/test_their_eval_spike.py -v -m external\", \"acceptanceCriteria\": [\"submodule pinned to leaderboard-matching commit, SHA recorded\", \"score() returns (mu,sigma,lambda_x)\", \"reproduces published mu 0.85 / sigma 0.09 / lambda_x 140 from their own BASELINE map\", \"SHA + numbers in audit trail\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"mu\"], [\"sigma\"], [\"lambda_x\"]], \"modelTier\": \"standard\"}\n```"

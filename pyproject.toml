@@ -47,6 +47,9 @@ version-file = "src/sverdrup/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/sverdrup"]
 
+[tool.ruff]
+extend-exclude = ["vendor"]
+
 [tool.ruff.lint]
 select = [
     "F",      # Pyflakes — unused imports, undefined names, etc.
@@ -69,6 +72,9 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN", "D", "S"]  # Otherwise Claude would either over-annotate every test or fight ruff constantly.
+# their_eval bridges the untyped, version-skewed vendored pyinterp surface;
+# Any is the honest type at that boundary.
+"src/sverdrup/validation/their_eval.py" = ["ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -82,11 +88,13 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 mypy_path = "src"
+exclude = ["^vendor/"]
 
-# Uncomment when using rasterio or netCDF4:
-# [[tool.mypy.overrides]]
-# module = ["rasterio.*", "netCDF4.*"]
-# ignore_missing_imports = true
+# The vendored challenge code (imported as ``src.mod_*``) ships no type stubs;
+# treat it as untyped at the import boundary.
+[[tool.mypy.overrides]]
+module = ["src.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]  # Tests often have untyped functions and use dynamic features, so relax mypy rules for them.
 module = ["tests.*"]
@@ -99,8 +107,10 @@ disallow_untyped_calls = false
 [tool.pytest.ini_options]
 addopts = "-v"
 pythonpath = ["src"]
+norecursedirs = ["vendor", ".pixi", ".git"]
 markers = [
     "oracle: reproduces ODC leaderboard numbers; needs cached data + network",
+    "external: needs the vendored challenge submodule + downloaded challenge data; skipped offline",
 ]
 
 [tool.coverage.run]
