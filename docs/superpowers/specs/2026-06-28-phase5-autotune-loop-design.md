@@ -273,35 +273,58 @@ silent bug in the loop.
 ```python
 @dataclass(frozen=True)
 class ConstrainedObjective:
-    primary: str = "lambda_x"        # minimize (finer effective resolution)
-    bars: tuple[HardBar, ...] = ...  # mu_rmse, coverage_1sigma — hard admissibility gates
+    primary: str = "lambda_x"         # minimize (finer effective resolution)
+    bars: tuple[HardBar, ...] = ...   # mu_score >= BASELINE, coverage_1sigma within tol
     def admissible(self, scores: dict[str, float]) -> bool: ...   # ALL bars pass
     def rank(self, records: list[TrialRecord]) -> list[TrialRecord]:
         admissible = [r for r in records if r.feasible and self.admissible(r.scores)]
         if not admissible:
-            raise NoAdmissibleTrial(...)   # fail loud — see below
+            raise NoAdmissibleTrial(...)   # fail loud — see §8.2
         return sorted(admissible, key=lambda r: r.scores[self.primary])
 ```
 
-### 8.1 The DUACS bar — sourced, with provenance (revision 2)
+### 8.1 The µ bar — BASELINE floor, DUACS aspiration (revision 2)
 
-`mu_rmse` is the published 2021a SSH-mapping OSE RMSE-based score (higher is better in this
-metric). The DUACS-class hard bar is the **published DUACS leaderboard row**:
+**Metric direction — CONFIRMED `>=` (higher is better).** Verified from source: the vendored
+`compute_stats` returns `leaderboard_nrmse`, a **normalized-RMSE skill score** (1 = perfect), and
+the leaderboard has DUACS 0.880 > BASELINE 0.850 with DUACS the stronger product. So the
+admissibility gate is `mu_score >= bar`, not `≤`. The spec §3 invariant-8 phrasing "`µ_RMSE ≤`"
+was **wrong** for this metric and is corrected here.
+
+> **Naming guard:** the score variable is `mu_score`, **not** `mu_rmse`. A `*_rmse` name reads as
+> lower-better and would tempt a future reader to reintroduce `≤`. Carry the meaning in the name:
+> `mu_score` (higher-better skill score). The internal `Accuracy` evaluator emits raw `rmse`
+> (lower-better); the µ **bar** is evaluated on the normalized `mu_score` — see the metric-source
+> note below.
+
+**The bar is BASELINE, not DUACS** — and DUACS is the aspiration, never a hard gate:
 
 ```
-DUACS_BAR_MU = 0.88     # published 2021a leaderboard DUACS µ_RMSE
-                        # provenance: README.md:224 / docs/validation/RESULT.md:9
-                        # our their_eval harness reproduces 0.877/0.065/152.3 (harness-valid)
+BASELINE_BAR_MU = 0.85   # hard admissibility floor — "do not regress below the published baseline"
+                         # provenance: published 2021a leaderboard BASELINE row
+                         # sverdrup OI scores 0.853 (RESULT.md), so it CLEARS this floor at the start
+DUACS_TARGET_MU = 0.88   # aspirational ACCEPTANCE target — reported/compared via their_eval at
+                         # acceptance, NEVER a hard admissibility gate
+                         # provenance: README.md:224 / RESULT.md:9; harness reproduces 0.877/0.065/152.3
 ```
 
-**⚠ Direction flag for owner review (surfaced, not silently re-architected).** Spec §3 invariant 8
-phrases the bar as "`µ_RMSE ≤` a DUACS-class bar". But on the 2021a leaderboard the µ metric is a
-normalized RMSE *score* where **higher is better** (DUACS 0.88 > BASELINE 0.85; DUACS is the
-stronger product). So the admissibility gate must be `mu_rmse >= DUACS_BAR_MU`, not `≤`. This
-design writes the bar as `>=` because `≤` would admit every worse-than-baseline trial. The spec's
-"≤" reads as shorthand for "at least DUACS-class," not a literal inequality on this score — but
-because it touches a settled decision, **confirm the direction at review** before implementation
-bakes it in. (λx remains minimize: finer resolution is better; lower km is better.)
+Why not DUACS as the hard bar: sverdrup OI starts at µ 0.853, **below** 0.88. A hard gate at 0.88
+makes the admissible set **empty at the starting point** — the 0.853→0.88 gap is the full
+BASELINE→DUACS spread, not closable by three scalar knobs — so `NoAdmissibleTrial` would fire every
+run and Stage A could never go green. That collides test 1 (loop proven) with test 10 (empty →
+`NoAdmissibleTrial`). The loud-empty safety net must **catch** that miscalibration, not **be** it.
+With the BASELINE floor, `NoAdmissibleTrial` now guards the genuine "can't even hold BASELINE" case.
+
+Note sverdrup OI already sits on the accuracy/resolution frontier — finer λx than DUACS (140.9 vs
+152) at µ 0.853 — so scalar-tuning headroom is small, but the loop is still validly **proven**,
+which is Stage A's purpose.
+
+**Metric source for the bar (mirrors the λx shared-helper discipline).** `mu_score` is the
+leaderboard-comparable normalized skill score computed **on the blocked validation track**, not raw
+RMSE. As with λx (§6.1), the normalization is the *same* computation `their_eval` uses, applied to a
+different track — so the per-trial validation µ and the acceptance µ are comparable by construction
+(invariant 10). A thin normalized-score wrapper over `Accuracy`'s residuals supplies `mu_score`; it
+never touches c2 or `their_eval`.
 
 ### 8.2 Empty admissible set fails loud (revision 2)
 
@@ -376,10 +399,14 @@ parallel as the proven cross-check.
 `method='oi'`; `space = OptimalInterpolation.parameter_space()`; `strategy = SobolSearch(seed)`;
 `predicate = CoherenceFeasibility` (returns `True` — `required_capabilities` lacks
 `{SAMPLES|COVARIANCE}`, single tile, no seams); `objective = ConstrainedObjective("lambda_x",
-bars=[mu_rmse >= 0.88, coverage_1sigma within tol])`; per-trial scoring on the blocked validation
-split via `pointwise_registry = {Accuracy, Calibration, EffectiveResolution}`; acceptance via
-`run_challenge_map('oi', winner) → their_eval.score` on the c2 locked test, touched once.
-**Gate:** tuned OI lands DUACS-class; the whole loop is proven.
+bars=[mu_score >= BASELINE_BAR_MU (0.85), coverage_1sigma within tol])`; per-trial scoring on the
+blocked validation split via `pointwise_registry = {Accuracy(+normalized mu_score), Calibration,
+EffectiveResolution}`; acceptance via `run_challenge_map('oi', winner) → their_eval.score` on the
+c2 locked test, touched once, reported against the DUACS target.
+**Gate:** the loop runs and holds `mu_score >= BASELINE` with calibration within tol, improves or
+holds λx, and the acceptance run reports `(µ, σ, λx)` versus the DUACS row — the whole loop (search
++ constrained multi-objective + challenge scorer + three-way split, locked test touched once) is
+proven. **Not** "achieves µ ≥ 0.88" (DUACS is the aspiration, not the gate — §8.1).
 
 **Stage B — grid-GMRF per-gridpoint against the challenge (single-tile, no constraint).** Swap
 `method='gmrf'`, `space = MaternGMRF.parameter_space()` — *nothing else changes*. The
@@ -406,7 +433,7 @@ forbids that until the redesign). Do not loosen the predicate to manufacture a r
 
 | # | Behavior under test | Bug it catches |
 | --- | --- | --- |
-| 1 | Stage-A end-to-end: tuned OI lands DUACS-class via `their_eval` | The loop doesn't actually optimize toward the challenge objective |
+| 1 | Stage-A end-to-end: loop runs, holds `mu_score >= BASELINE` + calibration within tol, improves/holds λx; acceptance reports `(µ,σ,λx)` vs the DUACS row | The loop doesn't actually optimize toward the challenge objective (NOT "achieves µ ≥ 0.88" — DUACS is aspiration, §8.1) |
 | 2 | Locked test touched **exactly once** (spy `their_eval.score`) | Search peeks at c2 — `call_count` must be 0 during search, 1 at acceptance |
 | 3 | Method-agnosticism: same strategy/objective/acceptance drive OI + GMRF | An OI param name (`length_scale`) is baked into `tuning/` |
 | 4 | Hard barrier: `executor.submit` spy **not called** for an infeasible `(range, tile)` | Feasibility implemented as a soft penalty that still solves/scores |
@@ -415,7 +442,7 @@ forbids that until the redesign). Do not loosen the predicate to manufacture a r
 | 7 | Shared-helper λx: a **real track** fed end-to-end through *both* call sites gives identical λx | The two paths prepare residuals differently (revision 4) — false invariant-10 assurance |
 | 8 | Determinism: same `(window, method, params, split, seed)` reproduces | Unseeded search / unrecorded seed |
 | 9 | Segment-length guard fails loud on a too-short validation track | A noisy λx silently emitted and chased |
-| 10 | Empty admissible set raises `NoAdmissibleTrial` | Loop silently returns empty or the least-bad inadmissible point |
+| 10 | Empty admissible set raises `NoAdmissibleTrial` | Loop silently returns empty or the least-bad inadmissible point (now guards the genuine "can't hold BASELINE" case, §8.2) |
 
 Test 7 feeds a real track end-to-end through both `their_eval.score` and `EffectiveResolution`,
 asserting identical λx — **not** "identical given identical pre-prepared segments."
@@ -441,11 +468,19 @@ asserting identical λx — **not** "identical given identical pre-prepared segm
 
 ---
 
-## 14. Open items surfaced for owner review (not silently resolved)
+## 14. Owner-review resolutions (all closed)
 
-1. **µ_RMSE bar direction** (§8.1): the bar must be `>=` 0.88, but spec §3 invariant 8 writes "≤".
-   Confirm the direction before implementation bakes it in.
-2. **`blend.CoherenceMode.JOINT` reconciliation** (§5): naming resolved to `MetricScope.CROSS_SEAM`
-   so the two `JOINT`s never collide; no code change to `blend.py` is implied. Confirm acceptable.
+1. **µ-bar direction** — RESOLVED `>=` (confirmed from source: `compute_stats` returns a
+   normalized-RMSE skill score, higher-better; DUACS 0.880 > BASELINE 0.850). Spec §3 invariant-8
+   "≤" was wrong; corrected. Score var named `mu_score` (not `mu_rmse`) to keep the direction
+   legible (§8.1).
+2. **µ-bar value** — RESOLVED to the BASELINE floor (`BASELINE_BAR_MU = 0.85`, which sverdrup OI's
+   0.853 clears), with DUACS (0.88) as the aspirational acceptance target, never a hard gate. Stage-A
+   gate and test 1 reframed accordingly so the loud-empty net catches miscalibration rather than
+   being it (§8.1, §8.2, §11, §12).
+3. **`blend.CoherenceMode.JOINT` reconciliation** — RESOLVED: metric axis named
+   `MetricScope.CROSS_SEAM`; no collision, no `blend.py` change (§5). Confirmed acceptable.
+4. **Spec versioning** — `phase5_scope_spec.md` committed alongside this doc (phases 1–4 specs
+   already tracked).
 
-Everything else in the approved architecture stands. Next step on file approval: writing-plans.
+Everything else in the approved architecture stands. Next step: writing-plans.
