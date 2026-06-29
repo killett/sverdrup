@@ -1,9 +1,9 @@
 # Sverdrup — Progress notebook
 
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**.
-> Next action = **Task 13** (BayesianOptimization strategy, optuna) — first unchecked task.
+> Next action = **Task 14** (USER GATE — Stage-B GMRF-via-BO acceptance NUMBER) — first unchecked task.
 > Run `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`
-> (it reads the co-located `.tasks.json`, where Tasks 0–12 are `completed` and resumes at Task 13).
+> (it reads the co-located `.tasks.json`, where Tasks 0–13 are `completed` and resumes at Task 14).
 > Read the "RESUME HERE (Phase 5 — autotune loop)" block below FIRST for the full state,
 > decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
 > item, NOT the active task.
@@ -36,9 +36,11 @@
 - **Hard-gated sequencing:** Stage A (Tasks 1–11, OI single-tile, no constraint) →
   Stage B (Tasks 12–14, grid-GMRF + BO) → Stage C (Tasks 15–18, global coherent feasibility).
   Four user-gates: Task 11 (Stage-A DoD), Task 12 + Task 14 (Stage-B), Task 18 (Stage-C DoD).
-- **STATUS (2026-06-29):** Tasks 1–12 implemented + committed. **Task 11 (Stage-A gate) SIGNED
+- **STATUS (2026-06-29):** Tasks 1–13 implemented + committed. **Task 11 (Stage-A gate) SIGNED
   OFF by owner as-is (smoke).** **Task 12 (Stage-B method-agnosticism gate) CLOSED on
-  method-agnosticism + degenerate-robustness** (see AC split below). Next: Task 13 (BO).
+  method-agnosticism + degenerate-robustness** (see AC split below). **Task 13 (BayesianOptimization
+  optuna-TPE SearchStrategy) DONE** (`8a5c842`: seeded, in-bounds, deterministic, drop-in into `tune()`;
+  3 tests green). Next: **Task 14 (USER GATE — Stage-B GMRF-via-BO acceptance NUMBER).**
   - **Stage-A smoke (12-day, n_trials=8):** winner `mu_score=0.869 (≥0.85)`, `coverage_1σ=0.755`,
     val `λx=143.8`; c2 acceptance `(µ,σ,λx)=(0.847,0.029,58.9)`; `their_eval` 0 search / 1
     acceptance. 12-day acceptance numbers are smoke artifacts (unstable λx 58.9; µ not the
@@ -65,8 +67,10 @@
   (raw track carries its own datetime64); (4) Stage A tunes the **Matérn** OI via `OI.parameter_space`
   with an EXPLICIT kernel built from params in BOTH search and acceptance (never `kernel=None` — it
   means opposite things in `OI.solve` vs `run_challenge_map`).
-- **Next action:** Task 13 (BayesianOptimization strategy, optuna) — unblocked. Then Task 14
-  (Stage-B BO gate, owns the GMRF acceptance number). Resume via
+- **Next action:** Task 14 (USER GATE — Stage-B GMRF-via-BO gate, owns the GMRF `(µ,σ,λx)` acceptance
+  number) — unblocked (Tasks 12+13 done). This gate needs a REAL GMRF-via-BO run; the 12-day box was
+  all-degenerate, so per the Stage-A note above it likely needs full-2017/multi-hour to land an
+  admissible GMRF winner. Resume via
   `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`.
 
 ---
