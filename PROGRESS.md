@@ -20,6 +20,19 @@
 
 ---
 
+## RESUME HERE (Phase 5 — autotune loop) — read this first
+**Status:** Phase-5 build STARTED. Design approved + committed (`eabac5f`). Plan written + committed.
+- Scope (source of truth): `phase5_scope_spec.md`.
+- Design: `docs/superpowers/specs/2026-06-28-phase5-autotune-loop-design.md`.
+- Plan: `docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md` (tracker `.tasks.json` co-located).
+- **Hard-gated sequencing:** Stage A (Tasks 1–11, OI single-tile, no constraint) →
+  Stage B (Tasks 12–14, grid-GMRF + BO) → Stage C (Tasks 15–18, global coherent feasibility).
+  Four user-gates: Task 11 (Stage-A DoD), Task 12 + Task 14 (Stage-B), Task 18 (Stage-C DoD).
+- **Next action:** Task 1 (MetricScope tag in `eval/`). Resume via
+  `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`.
+
+---
+
 ## RESUME HERE (2026-06-27 — OI VALIDATION MILESTONE COMPLETE, gate 3 PASS) — read this first
 
 **Status:** The "OI vs 2021a SSH-mapping OSE BASELINE" validation milestone is
