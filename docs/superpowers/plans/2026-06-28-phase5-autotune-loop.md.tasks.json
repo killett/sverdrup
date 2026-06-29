@@ -76,7 +76,7 @@
     {
       "id": 11,
       "subject": "Task 11: [USER GATE] Stage A — tuned OI vs challenge end-to-end",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [9, 3, 4, 10],
       "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Real ExecutorTrialScorer + Stage-A driver on OI single-tile; accept winner once via their_eval on c2. Test 1 (loop proven, clears BASELINE, acceptance reports (µ,σ,λx)) + test 2 (their_eval 0 in search / 1 acceptance) + empirical mu_score↔acceptance-µ calibration check.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/scorer.py\", \"src/sverdrup/application/tuning/stage_a.py\", \"tests/test_stage_a_end_to_end.py\", \"tests/validation/fixtures/stage_a_scope.json\"], \"verifyCommand\": \"pixi run test tests/test_stage_a_end_to_end.py -v\", \"acceptanceCriteria\": [\"scorer scores on validation_idx via pointwise registry\", \"split c2 locked / validation non-c2\", \"test 1 tuned OI clears BASELINE + acceptance (µ,σ,λx)\", \"test 2 their_eval 0 search / 1 acceptance\", \"mu_score vs acceptance-µ calibration recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-A\", \"modelTier\": \"complex\"}\n```"
     },

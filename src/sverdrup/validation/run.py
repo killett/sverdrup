@@ -117,6 +117,63 @@ def run_challenge_map(
     return write_map(times, np.unique(lat), np.unique(lon), ssh, dest)
 
 
+def run_mean_var_maps(
+    method_name: str,
+    mapping_obs: ObsWindow,
+    params: ParameterProvider,
+    grid: GridSpec,
+    temporal_half_window_days: float,
+    output_days: list[float],
+    mean_dest: Path,
+    var_dest: Path,
+    kernel: Kernel | None = None,
+    halo_deg: float = 1.0,
+    mdt_grid: np.ndarray | None = None,
+) -> tuple[Path, Path]:
+    """Produce daily mean AND marginal-variance maps from one solve pass per day.
+
+    Same windowing / MDT handling as :func:`run_challenge_map`, but writes two
+    challenge-schema NetCDFs: the SSH mean (``mean_dest``) and the marginal variance
+    (``var_dest``, in SLA-variance space — MDT is a deterministic shift and does not
+    change the variance). Used by the Phase-5 validation scorer, which interpolates
+    BOTH onto the validation along-track (mean → residuals/λx, variance → coverage).
+
+    Returns:
+        ``(mean_dest, var_dest)``.
+    """
+    method = cast(Any, METHODS[method_name]())
+    is_oi = method_name == "oi"
+    if is_oi and kernel is None:
+        kernel = baseline_kernel()
+    lon_nodes, lat_nodes = grid._lonlat_nodes()
+    c = mapping_obs.coords()
+    in_region = (
+        (c[:, 0] >= lon_nodes.min() - halo_deg)
+        & (c[:, 0] <= lon_nodes.max() + halo_deg)
+        & (c[:, 1] >= lat_nodes.min() - halo_deg)
+        & (c[:, 1] <= lat_nodes.max() + halo_deg)
+    )
+    region_obs = _subset(mapping_obs, in_region)
+    means, variances = [], []
+    for day in output_days:
+        win = _window(region_obs, day, temporal_half_window_days)
+        if is_oi:
+            dist = method.solve(win, grid, params, time_days=day, kernel=kernel)
+        else:
+            dist = method.solve(win, grid, params, time_days=day)
+        sla = np.asarray(dist.mean)
+        means.append(sla if mdt_grid is None else sla + mdt_grid)
+        variances.append(np.asarray(dist.marginal_variance()))
+    mean_ssh = np.stack(means, axis=0)
+    var_ssh = np.stack(variances, axis=0)
+    lon, lat = grid._lonlat_nodes()
+    days_int = np.rint(np.asarray(output_days, dtype=float)).astype("int64")
+    times = EPOCH + days_int * np.timedelta64(1, "D")
+    write_map(times, np.unique(lat), np.unique(lon), mean_ssh, mean_dest)
+    write_map(times, np.unique(lat), np.unique(lon), var_ssh, var_dest)
+    return mean_dest, var_dest
+
+
 def run_year(
     mapping_obs: ObsWindow,
     params: ParameterProvider,
