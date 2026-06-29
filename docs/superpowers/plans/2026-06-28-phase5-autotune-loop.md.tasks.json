@@ -56,7 +56,7 @@
     {
       "id": 8,
       "subject": "Task 8: ConstrainedObjective + NoAdmissibleTrial",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "**Goal:** Rank feasible+admissible by λx primary under hard bars (mu_score>=0.85, coverage within tol); calibration hard, never traded; empty -> NoAdmissibleTrial (test 10).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/objective.py\", \"tests/test_tuning_objective.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_objective.py -v\", \"acceptanceCriteria\": [\"BASELINE floor 0.85 hard >=\", \"calibration hard never traded\", \"rank by λx\", \"empty -> NoAdmissibleTrial (test 10)\"], \"modelTier\": \"standard\"}\n```"
     },
