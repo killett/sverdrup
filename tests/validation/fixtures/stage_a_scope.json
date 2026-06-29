@@ -1,0 +1,28 @@
+{
+  "_comment": "Small opt-in Stage-A dev scope (Phase-5 Task 11). A 12-day window (one full j3 repeat cycle) over the Gulf Stream box: enough for >=1 full j3/c2 box crossing so the spectral lambda_x has a contiguous segment, while keeping the per-trial map production small. The FULL gate run uses the whole 2017 year (multi-hour) with these same paths and validation_mission.",
+  "mapping_obs_paths": [
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_alg_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_h2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j2n_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j3_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_s3a_phy_l3_20161201-20180131_285-315_23-53.nc"
+  ],
+  "mdt_paths": [
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_alg_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_h2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j2n_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j3_phy_l3_20161201-20180131_285-315_23-53.nc",
+    "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_s3a_phy_l3_20161201-20180131_285-315_23-53.nc"
+  ],
+  "val_track_path": "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_j3_phy_l3_20161201-20180131_285-315_23-53.nc",
+  "c2_track_path": "data/2021a_ssh_mapping_ose/dc_obs/dt_gulfstream_c2_phy_l3_20161201-20180131_285-315_23-53.nc",
+  "validation_mission": "j3",
+  "validation_days": [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71],
+  "acceptance_days": [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71],
+  "time_min": "2017-02-25",
+  "time_max": "2017-03-18",
+  "window_id": "gulfstream",
+  "acceptance_map_out": "data/2021a_ssh_mapping_ose/ours/stage_a_acceptance.nc"
+}

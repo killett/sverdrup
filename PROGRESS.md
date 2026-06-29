@@ -28,7 +28,23 @@
 - **Hard-gated sequencing:** Stage A (Tasks 1–11, OI single-tile, no constraint) →
   Stage B (Tasks 12–14, grid-GMRF + BO) → Stage C (Tasks 15–18, global coherent feasibility).
   Four user-gates: Task 11 (Stage-A DoD), Task 12 + Task 14 (Stage-B), Task 18 (Stage-C DoD).
-- **Next action:** Task 1 (MetricScope tag in `eval/`). Resume via
+- **STATUS (2026-06-29):** Tasks 1–11 implemented + committed, all green. **Task 11 (Stage-A
+  gate) AWAITS OWNER SIGN-OFF before Stage B.** Smoke evidence (12-day fixture, `n_trials=8`):
+  admissible winner `mu_score=0.869 (≥0.85)`, `coverage_1σ=0.755`, val `λx=143.8`; c2 acceptance
+  `(µ,σ,λx)=(0.847, 0.029, 58.9)`; `their_eval` 0 during search / 1 at acceptance. **The 12-day
+  acceptance numbers are smoke artifacts** (short c2 record → unstable λx 58.9; µ not the
+  year-long BASELINE comparison). Real sign-off needs the **full-2017 run** (multi-hour): set
+  `validation_days`/`acceptance_days` to all 2017 days in
+  `tests/validation/fixtures/stage_a_scope.json` and run
+  `SVERDRUP_STAGE_A_E2E=1 pixi run test tests/test_stage_a_end_to_end.py`.
+- **Phase-5 decisions folded into the design doc** (read §5.1, §6.2): (1) no `CoherenceMode` enum
+  ever existed — collision test dropped; (2) λx scorer is the faithful daily-maps→interp→raw-j3-track
+  path (NOT eval-point); (3) the Task-3 `eval_times` channel is SUPERSEDED on the tuner's λx path
+  (raw track carries its own datetime64); (4) Stage A tunes the **Matérn** OI via `OI.parameter_space`
+  with an EXPLICIT kernel built from params in BOTH search and acceptance (never `kernel=None` — it
+  means opposite things in `OI.solve` vs `run_challenge_map`).
+- **Next action:** OWNER reviews Stage-A gate evidence → on sign-off, Task 12 (Stage-B GMRF
+  method-agnosticism). Resume via
   `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`.
 
 ---

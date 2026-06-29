@@ -243,6 +243,20 @@ class EffectiveResolution:        # Evaluator
   **Deferred wiring (Task 11 + pipeline):** the validation-split scorer must populate `eval_times`
   from the blocked track's true timestamps (`coords[idx][:,2]` *before* the scalar `[:,2]` overwrite),
   and the gridded snapshot keeps its single time. `eval_locations` shape is unchanged (back-compat).
+- **SUPERSEDED for the tuner's λx path (decided 2026-06-28, Task 11):** the Stage-A scorer was found
+  unable to produce a meaningful per-trial λx via the single-snapshot eval-point solve (λx is a
+  spectral property of the map along a *continuous track over the period*, not an eval-point
+  property). The tuner's validation scoring is therefore the **faithful challenge pipeline pointed at
+  the validation mission (j3)**: per trial, `run_challenge_map` builds daily maps from the trial's
+  params on the *training* obs → vendored `interp_on_alongtrack` onto the **raw j3 (non-c2) track at
+  its own datetime64 times** → residuals → `{mu_score, coverage_1sigma, lambda_x}` via the shared
+  helpers (`effective_resolution_lambda_x`, `leaderboard_nrmse`, `calibration.coverage`). The only
+  difference from c2 acceptance is the track (j3 vs c2) — invariant 10 at the scorer level;
+  `their_eval.score` stays untouched (interp is a separate vendored fn). Because the raw track carries
+  its own datetime64 times, the **`eval_times` float-days channel above is SUPERSEDED on the tuner's
+  λx critical path** — it (and the eval-point predictive mechanism) remain only for the standard
+  pipeline's OSE diagnostics. The shared `eval/spectral.py` helper (Task 2) and `EffectiveResolution`
+  (Task 3) are KEPT and reused, just fed from interp-onto-raw-track residuals.
 - **Segment-length guard (fail loud):** assert the validation track supports ≥ one full
   `_LENGTH_SCALE` segment; raise a clear configuration error otherwise. A too-short or too-sparse
   validation track is a config signal to surface, never a noisy λx the search would chase. (Object
