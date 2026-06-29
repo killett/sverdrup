@@ -1,6 +1,6 @@
 {
   "planPath": "docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md",
-  "lastUpdated": "2026-06-28",
+  "lastUpdated": "2026-06-29",
   "tasks": [
     {
       "id": 0,
@@ -90,7 +90,7 @@
     {
       "id": 13,
       "subject": "Task 13: BayesianOptimization strategy (optuna)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [11],
       "description": "**Goal:** BayesianOptimization drop-in SearchStrategy (optuna TPE, seeded), added after Stage-A loop green; in-bounds, deterministic, loop unchanged.\n\n```json:metadata\n{\"files\": [\"pixi.toml\", \"src/sverdrup/application/tuning/bayesopt.py\", \"tests/test_tuning_bayesopt.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_bayesopt.py -v\", \"acceptanceCriteria\": [\"implements SearchStrategy\", \"in-bounds proposals\", \"seeded determinism\", \"drop-in into tune()\"], \"modelTier\": \"standard\"}\n```"
     },
