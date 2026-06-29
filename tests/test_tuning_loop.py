@@ -106,6 +106,92 @@ def test_pointwise_only_and_no_their_eval(monkeypatch: pytest.MonkeyPatch) -> No
         assert "coherence" not in r.scores  # only POINTWISE keys present
 
 
+class _DegenerateScorer:
+    """Scorer that always raises UnresolvedScaleError (every map is degenerate)."""
+
+    def score(
+        self,
+        method_name: str,
+        params: dict[str, float],
+        split: object,
+        seed: int,
+        window: object,
+    ) -> dict[str, float]:
+        from sverdrup.eval.spectral import UnresolvedScaleError
+
+        raise UnresolvedScaleError("no crossing")
+
+
+def test_unresolved_scale_recorded_not_crashed() -> None:
+    # Behavior: a degenerate trial is recorded feasible-but-unscorable; sweep continues;
+    # an all-degenerate sweep ends in the loud NoAdmissibleTrial (never a crash/empty win).
+    # Bug it catches: a single bad config aborting a multi-hour sweep with a cryptic error.
+    from sverdrup.application.tuning.objective import NoAdmissibleTrial
+
+    with pytest.raises(NoAdmissibleTrial):
+        tune(
+            method_name="gmrf",
+            space=_gmrf_space(),
+            strategy=SobolSearch(seed=1, n=4),
+            predicate=CoherenceFeasibility(),
+            objective=ConstrainedObjective(),
+            scorer=_DegenerateScorer(),
+            split=_FakeSplit(),
+            seed=1,
+            window=_FakeWindow(),
+            tile_geometry=TileGeometry(10.0, 100.0, "single"),
+            required_capabilities=frozenset({UC.POINT}),
+            rounds=1,
+        )
+
+
+def test_unresolved_scale_continues_sweep() -> None:
+    # Behavior: degenerate trials are recorded (feasible, scores=None, reason set) and
+    # do not stop the loop from finding an admissible trial among the good ones.
+    class _MixedScorer:
+        def __init__(self) -> None:
+            self.n = 0
+
+        def score(
+            self,
+            method_name: str,
+            params: dict[str, float],
+            split: object,
+            seed: int,
+            window: object,
+        ) -> dict[str, float]:
+            from sverdrup.eval.spectral import UnresolvedScaleError
+
+            self.n += 1
+            if self.n == 1:  # first trial degenerate, rest fine
+                raise UnresolvedScaleError("no crossing")
+            return {"lambda_x": 150.0, "mu_score": 0.86, "coverage_1sigma": 0.68}
+
+    res = tune(
+        method_name="gmrf",
+        space=_gmrf_space(),
+        strategy=SobolSearch(seed=1, n=4),
+        predicate=CoherenceFeasibility(),
+        objective=ConstrainedObjective(),
+        scorer=_MixedScorer(),
+        split=_FakeSplit(),
+        seed=1,
+        window=_FakeWindow(),
+        tile_geometry=TileGeometry(10.0, 100.0, "single"),
+        required_capabilities=frozenset({UC.POINT}),
+        rounds=1,
+    )
+    assert res.winner is not None
+    degenerate = [
+        r
+        for r in res.history.records
+        if r.scores is None
+        and r.feasible
+        and r.exclusion_reason == "UnresolvedScaleError"
+    ]
+    assert len(degenerate) == 1
+
+
 def test_determinism() -> None:
     # TEST 8: same (seed, strategy, predicate, objective) -> identical winner params.
     def _run() -> dict[str, float]:

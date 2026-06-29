@@ -18,11 +18,19 @@ class Trial:
 
 @dataclass(frozen=True)
 class TrialRecord:
-    """A trial plus its marginal scores; ``scores is None`` iff excluded by the gate."""
+    """A trial plus its marginal scores; ``scores is None`` for any excluded trial.
+
+    Two distinct exclusions, distinguished by ``feasible`` + ``exclusion_reason``:
+    INFEASIBLE (``feasible=False`` — gated out before any solve), and FEASIBLE-BUT-
+    UNSCORABLE (``feasible=True``, ``scores=None``, ``exclusion_reason`` = the named
+    scoring error, e.g. ``"UnresolvedScaleError"``). The reason keeps the pattern
+    legible (1/8 degenerate = normal exploration; 6/8 = bounds/method need attention).
+    """
 
     trial: Trial
     scores: dict[str, float] | None
     feasible: bool
+    exclusion_reason: str | None = None
 
 
 @dataclass

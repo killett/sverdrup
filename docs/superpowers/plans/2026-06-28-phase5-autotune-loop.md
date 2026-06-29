@@ -2010,7 +2010,8 @@ git commit -m "feat(tuning): Stage-A end-to-end — tuned OI vs challenge, locke
 **Acceptance Criteria:**
 - [ ] `run_stage_b` differs from `run_stage_a` only in `method_name="gmrf"` and `space=MaternGMRF().parameter_space()` (same strategy/objective/scorer/acceptance types).
 - [ ] **Test 3:** a source-level assertion that no OI-specific parameter name (`length_scale`, `time_scale`) appears in `application/tuning/` (grep), plus a parametrized test that `tune(...)` runs unchanged for both OI and GMRF spaces with a fake scorer.
-- [ ] GMRF acceptance over the small fixture produces a finite `(µ, σ, λx)` via `their_eval`.
+- [ ] Degenerate-trial robustness: a degenerate map raises the defined `UnresolvedScaleError`, the loop records it feasible-but-unscorable (no crash), and an all-degenerate sweep ends in the loud `NoAdmissibleTrial`. **PROVEN on real GMRF data (8/8 Sobol trials degenerate over the 12-day smoke).**
+- [ ] ~~GMRF acceptance over the small fixture produces a finite `(µ, σ, λx)`~~ **— AC SPLIT 2026-06-29 → moved to Task 14.** The GMRF acceptance NUMBER is owned by Task 14 (BO + targeting, ideally full-year). On the 12-day Sobol smoke GMRF is all-degenerate (correctly-measured negative result; no number fabricated). The `best mu_score=nan` is the empty-`feasible_scored` default, NOT a genuine GMRF nan (`leaderboard_nrmse` is bounded; maps are nan-free). The mu-before-λx reorder + the precise GMRF µ magnitude are carried into Task 14.
 
 **USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it "verified inline", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.
 
@@ -2277,6 +2278,15 @@ git commit -m "feat(tuning): BayesianOptimization SearchStrategy (optuna TPE, se
 ---
 
 ## Task 14: [USER GATE] Stage B gate — GMRF tuned with BO lands a sensible score
+
+> **Carried in from Task 12 (AC split, 2026-06-29):** this task OWNS the GMRF `(µ,σ,λx)`
+> acceptance NUMBER. On the 12-day Sobol smoke GMRF was all-degenerate (`UnresolvedScaleError`
+> ×8) → `NoAdmissibleTrial`; random Sobol is too weak for GMRF (measured). BO + targeting
+> (ideally full-year) is the path to a real GMRF acceptance. ALSO carried in: (1) the
+> **mu_score-before-λx reorder** (short-circuit λx for mu-failing trials; reveals "GMRF maps
+> but under-resolves" vs "fails outright" — `best mu_score=nan` at Task 12 was the empty-set
+> default, not a genuine GMRF nan); (2) verify the GMRF µ magnitude is finite once an
+> admissible trial exists.
 
 **Goal:** Close Stage B: run the GMRF loop end-to-end with `BayesianOptimization` over the small fixture, confirm a sensible challenge acceptance score, and confirm the method-agnosticism test passes (the same strategy/objective/acceptance drove OI and GMRF unchanged).
 

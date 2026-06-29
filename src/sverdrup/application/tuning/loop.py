@@ -14,6 +14,7 @@ from sverdrup.application.tuning.strategy import SearchStrategy
 from sverdrup.application.tuning.trial import Trial, TrialHistory, TrialRecord
 from sverdrup.core.parameters import ParameterSpace
 from sverdrup.core.types import UncertaintyCapability
+from sverdrup.eval.spectral import ShortTrackError, UnresolvedScaleError
 
 
 class TrialScorer(Protocol):
@@ -98,7 +99,21 @@ def tune(
                     TrialRecord(trial, scores=None, feasible=False)
                 )  # HARD BARRIER: no solve, no score
                 continue
-            scores = scorer.score(method_name, params, split, seed, window)
+            try:
+                scores = scorer.score(method_name, params, split, seed, window)
+            except (UnresolvedScaleError, ShortTrackError) as exc:
+                # Feasible-but-unscorable: a degenerate/too-short trial. Recorded with
+                # its reason and skipped — the sweep tolerates bad samples. NOTE the
+                # catch is NARROW (named domain errors only): real bugs must propagate.
+                history.records.append(
+                    TrialRecord(
+                        trial,
+                        scores=None,
+                        feasible=True,
+                        exclusion_reason=type(exc).__name__,
+                    )
+                )
+                continue
             history.records.append(TrialRecord(trial, scores=scores, feasible=True))
     try:
         ranked = objective.rank(history.feasible_scored())

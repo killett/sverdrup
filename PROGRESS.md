@@ -28,23 +28,37 @@
 - **Hard-gated sequencing:** Stage A (Tasks 1–11, OI single-tile, no constraint) →
   Stage B (Tasks 12–14, grid-GMRF + BO) → Stage C (Tasks 15–18, global coherent feasibility).
   Four user-gates: Task 11 (Stage-A DoD), Task 12 + Task 14 (Stage-B), Task 18 (Stage-C DoD).
-- **STATUS (2026-06-29):** Tasks 1–11 implemented + committed, all green. **Task 11 (Stage-A
-  gate) AWAITS OWNER SIGN-OFF before Stage B.** Smoke evidence (12-day fixture, `n_trials=8`):
-  admissible winner `mu_score=0.869 (≥0.85)`, `coverage_1σ=0.755`, val `λx=143.8`; c2 acceptance
-  `(µ,σ,λx)=(0.847, 0.029, 58.9)`; `their_eval` 0 during search / 1 at acceptance. **The 12-day
-  acceptance numbers are smoke artifacts** (short c2 record → unstable λx 58.9; µ not the
-  year-long BASELINE comparison). Real sign-off needs the **full-2017 run** (multi-hour): set
-  `validation_days`/`acceptance_days` to all 2017 days in
-  `tests/validation/fixtures/stage_a_scope.json` and run
-  `SVERDRUP_STAGE_A_E2E=1 pixi run test tests/test_stage_a_end_to_end.py`.
+- **STATUS (2026-06-29):** Tasks 1–12 implemented + committed. **Task 11 (Stage-A gate) SIGNED
+  OFF by owner as-is (smoke).** **Task 12 (Stage-B method-agnosticism gate) CLOSED on
+  method-agnosticism + degenerate-robustness** (see AC split below). Next: Task 13 (BO).
+  - **Stage-A smoke (12-day, n_trials=8):** winner `mu_score=0.869 (≥0.85)`, `coverage_1σ=0.755`,
+    val `λx=143.8`; c2 acceptance `(µ,σ,λx)=(0.847,0.029,58.9)`; `their_eval` 0 search / 1
+    acceptance. 12-day acceptance numbers are smoke artifacts (unstable λx 58.9; µ not the
+    year-long BASELINE). Real sign-off (full-2017, multi-hour): set `validation_days`/
+    `acceptance_days` to all 2017 in `tests/validation/fixtures/stage_a_scope.json`, run
+    `SVERDRUP_STAGE_A_E2E=1 pixi run test tests/test_stage_a_end_to_end.py`.
+  - **AC SPLIT (2026-06-29, owner-approved):** Task 12 carried "GMRF acceptance finite" which
+    overlapped Task 14's "GMRF via BO winner + acceptance". Split: **Task 12 owns
+    method-agnosticism (test 3 + same-loop, green) + degenerate-trial robustness**; **Task 14 owns
+    the GMRF `(µ,σ,λx)` acceptance NUMBER.** Plan + tracker amended.
+  - **Stage-B GMRF smoke = correctly-measured NEGATIVE result (NOT a failure):** all 8 GMRF Sobol
+    trials + midpoint were degenerate (`UnresolvedScaleError` — map resolves no scale over the
+    12-day box) → loud `NoAdmissibleTrial`. The robustness path (defined error → loop records
+    feasible-but-unscorable → no crash → loud-at-result) is PROVEN on real data. `best mu_score=nan`
+    is the empty-`feasible_scored` default, NOT a genuine GMRF nan (`leaderboard_nrmse` bounded;
+    maps nan-free). Random Sobol is too weak for GMRF; BO + full-year is the path → **Task 14**.
+  - **GMRF cost finding:** per-day GMRF marginal-variance selective inversion is the bottleneck
+    (~56 min for the 12-day n_trials=8 smoke vs ~16 min OI). Relevant to Stage-C scaling.
+  - **Carried into Task 14:** the mu_score-before-λx reorder (diagnostic) + verify GMRF µ magnitude
+    finite once an admissible trial exists.
 - **Phase-5 decisions folded into the design doc** (read §5.1, §6.2): (1) no `CoherenceMode` enum
   ever existed — collision test dropped; (2) λx scorer is the faithful daily-maps→interp→raw-j3-track
   path (NOT eval-point); (3) the Task-3 `eval_times` channel is SUPERSEDED on the tuner's λx path
   (raw track carries its own datetime64); (4) Stage A tunes the **Matérn** OI via `OI.parameter_space`
   with an EXPLICIT kernel built from params in BOTH search and acceptance (never `kernel=None` — it
   means opposite things in `OI.solve` vs `run_challenge_map`).
-- **Next action:** OWNER reviews Stage-A gate evidence → on sign-off, Task 12 (Stage-B GMRF
-  method-agnosticism). Resume via
+- **Next action:** Task 13 (BayesianOptimization strategy, optuna) — unblocked. Then Task 14
+  (Stage-B BO gate, owns the GMRF acceptance number). Resume via
   `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`.
 
 ---

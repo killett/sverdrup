@@ -10,12 +10,29 @@ import numpy as np
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ParameterProvider
-from sverdrup.methods.kernel import Kernel
+from sverdrup.methods.kernel import Kernel, Matern32SpaceTime
 from sverdrup.methods.registry import METHODS
 from sverdrup.validation.output_adapter import write_map
 from sverdrup.validation.params import baseline_kernel
 
 EPOCH = np.datetime64("2017-01-01")
+
+
+def _oi_kernel_from_params(
+    params: ParameterProvider, grid: GridSpec
+) -> Matern32SpaceTime:
+    """Build the explicit Matérn kernel ``OI.solve(kernel=None)`` would build from params.
+
+    Used by the Phase-5 tuner path so the SAME tuned params drive both the per-trial
+    map and acceptance — instead of ``run_challenge_map``'s default Gaussian
+    ``baseline_kernel`` (which ignores the params). The OI parameter names live HERE in
+    validation/, never in ``application/tuning/`` (method-agnosticism, Task-12 test 3).
+    """
+    return Matern32SpaceTime(
+        variance=float(params.resolve("variance", grid)),
+        length_scale=float(params.resolve("length_scale", grid)),
+        time_scale=float(params.resolve("time_scale", grid)),
+    )
 
 
 def _diag_variance(obs: ObsWindow) -> np.ndarray:
@@ -58,6 +75,7 @@ def run_challenge_map(
     kernel: Kernel | None = None,
     halo_deg: float = 1.0,
     mdt_grid: np.ndarray | None = None,
+    oi_kernel_from_params: bool = False,
 ) -> Path:
     """Run the per-day single-tile solve for any method and write the stacked maps.
 
@@ -84,6 +102,9 @@ def run_challenge_map(
         mdt_grid: Optional ``(ny, nx)`` gridded MDT added to each day's SLA to
             form ``ssh = sla + mdt`` (the challenge reference frame). When None,
             the raw SLA map is written (SLA space).
+        oi_kernel_from_params: When True and ``method_name == "oi"`` and no explicit
+            ``kernel`` is given, build the Matérn kernel from ``params`` (the Phase-5
+            tuner path) instead of the default Gaussian ``baseline_kernel``.
 
     Returns:
         ``dest``.
@@ -91,7 +112,11 @@ def run_challenge_map(
     method = cast(Any, METHODS[method_name]())
     is_oi = method_name == "oi"
     if is_oi and kernel is None:
-        kernel = baseline_kernel()
+        kernel = (
+            _oi_kernel_from_params(params, grid)
+            if oi_kernel_from_params
+            else baseline_kernel()
+        )
     lon_nodes, lat_nodes = grid._lonlat_nodes()
     c = mapping_obs.coords()
     in_region = (
@@ -129,6 +154,7 @@ def run_mean_var_maps(
     kernel: Kernel | None = None,
     halo_deg: float = 1.0,
     mdt_grid: np.ndarray | None = None,
+    oi_kernel_from_params: bool = False,
 ) -> tuple[Path, Path]:
     """Produce daily mean AND marginal-variance maps from one solve pass per day.
 
@@ -138,13 +164,32 @@ def run_mean_var_maps(
     change the variance). Used by the Phase-5 validation scorer, which interpolates
     BOTH onto the validation along-track (mean → residuals/λx, variance → coverage).
 
+    Args:
+        method_name: Key into ``methods.registry.METHODS``.
+        mapping_obs: All mapping-mission obs (spin-up included).
+        params: The method's parameter provider.
+        grid: The output grid over the box.
+        temporal_half_window_days: Half-width of the obs influence window.
+        output_days: Output day numbers (0.0 == 2017-01-01).
+        mean_dest: Output NetCDF path for the SSH mean map.
+        var_dest: Output NetCDF path for the marginal-variance map.
+        kernel: Explicit OI covariance kernel (see ``run_challenge_map``).
+        halo_deg: Spatial halo (degrees) beyond the grid bbox to keep obs for.
+        mdt_grid: Optional gridded MDT added to the mean (not the variance).
+        oi_kernel_from_params: When True and OI, build the Matérn kernel from
+            ``params`` rather than the default Gaussian ``baseline_kernel``.
+
     Returns:
         ``(mean_dest, var_dest)``.
     """
     method = cast(Any, METHODS[method_name]())
     is_oi = method_name == "oi"
     if is_oi and kernel is None:
-        kernel = baseline_kernel()
+        kernel = (
+            _oi_kernel_from_params(params, grid)
+            if oi_kernel_from_params
+            else baseline_kernel()
+        )
     lon_nodes, lat_nodes = grid._lonlat_nodes()
     c = mapping_obs.coords()
     in_region = (

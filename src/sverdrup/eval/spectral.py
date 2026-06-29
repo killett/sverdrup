@@ -36,6 +36,16 @@ class ShortTrackError(ValueError):
     """Raised when an along-track segment is too short for the spectral computation."""
 
 
+class UnresolvedScaleError(ValueError):
+    """Raised when the map resolves no scale — the spectral coherence never crosses 0.5.
+
+    A degenerate reconstruction (residual PSD >= reference PSD at all wavenumbers) has no
+    0.5-coherence crossing, so λx is undefined. This is a defined, named signal (not the
+    cryptic interpolation error the vendored crossing-finder would otherwise raise); the
+    tuner records such a trial as feasible-but-unscorable and continues the sweep.
+    """
+
+
 def _ensure_vendor_importable() -> None:
     """Make the vendored spectral modules importable in a headless env.
 
@@ -80,6 +90,7 @@ def effective_resolution_lambda_x(
 
     Raises:
         ShortTrackError: If the track cannot support one ``_LENGTH_SCALE`` segment.
+        UnresolvedScaleError: If the map resolves no scale (no 0.5-coherence crossing).
     """
     n = int(np.asarray(ssh_track).size)
     samples_per_segment = int(_LENGTH_SCALE / _DELTA_X)
@@ -90,6 +101,7 @@ def effective_resolution_lambda_x(
             "Widen/rotate the validation split."
         )
     _ensure_vendor_importable()
+    import xarray as xr
     from src.mod_plot import find_wavelength_05_crossing
     from src.mod_spectral import compute_spectral_scores
 
@@ -106,4 +118,13 @@ def effective_resolution_lambda_x(
             _DELTA_T,
             str(psd_file),
         )
+        # Guard the 0.5-coherence crossing: a degenerate map (residual PSD >= reference
+        # PSD at all wavenumbers) never reaches 0.5, so the vendored interp1d would throw
+        # a cryptic out-of-range error. Detect it and raise the defined signal instead.
+        with xr.open_dataset(str(psd_file)) as ds:
+            coherence = (1.0 - ds.psd_diff / ds.psd_ref).to_numpy()
+        if not (np.nanmin(coherence) <= 0.5 <= np.nanmax(coherence)):
+            raise UnresolvedScaleError(
+                "map resolves no scale; λx undefined (no 0.5 coherence crossing)"
+            )
         return float(find_wavelength_05_crossing(str(psd_file)))

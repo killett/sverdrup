@@ -22,27 +22,21 @@ from sverdrup.application.splits import make_splits
 from sverdrup.application.tuning.feasibility import CoherenceFeasibility, TileGeometry
 from sverdrup.application.tuning.loop import tune
 from sverdrup.application.tuning.objective import BASELINE_BAR_MU, ConstrainedObjective
-from sverdrup.application.tuning.scorer import (
-    ValidationTrackScorer,
-    matern_kernel_from_params,
-)
+from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.strategy import SobolSearch
 from sverdrup.application.tuning.trial import TrialRecord
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
-from sverdrup.core.parameters import ConstantProvider
+from sverdrup.core.parameters import ConstantProvider, ParameterSpace
 from sverdrup.core.types import UncertaintyCapability
+from sverdrup.eval.spectral import ShortTrackError, UnresolvedScaleError
 from sverdrup.methods.oi import OptimalInterpolation
 from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
 from sverdrup.validation.params import (
-    _KM_PER_DEG,
     LAT_MAX,
     LAT_MIN,
     LON_MAX,
     LON_MIN,
-    SIGNAL_VARIANCE,
-    SPATIAL_CORR_DEG,
-    TEMPORAL_CORR_DAYS,
     TIME_MAX,
     TIME_MIN,
     baseline_config,
@@ -113,8 +107,26 @@ def _build_scorer(
     )
 
 
-def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageAReport:
-    """Run the Stage-A loop on OI and accept the winner once on the c2 locked test."""
+def _midpoint(space: ParameterSpace) -> dict[str, float]:
+    """Return the bounds-midpoint params (a method-agnostic pre-check point)."""
+    return {k: (lo + hi) / 2.0 for k, (lo, hi) in space.bounds.items()}
+
+
+def _run_stage(
+    *,
+    method_name: str,
+    space: ParameterSpace,
+    scope: Path,
+    n_trials: int = 16,
+    seed: int = 1,
+) -> StageAReport:
+    """Shared single-tile stage: search ``method_name`` on the validation track, accept on c2.
+
+    Method-agnostic — only ``method_name`` and ``space`` differ between Stage A (OI) and
+    Stage B (GMRF). No method-specific parameter name appears here (Task-12 test 3); the
+    OI-vs-Gaussian kernel choice lives behind ``run.run_challenge_map``'s
+    ``oi_kernel_from_params`` flag.
+    """
     cfg = json.loads(Path(scope).read_text())
     provider, grid, half = baseline_config()
     obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
@@ -133,17 +145,20 @@ def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageARepo
     scorer = _build_scorer(cfg, train_obs, grid, half, mdt)
     win = _Win(cfg.get("window_id", "gulfstream"))
 
-    # SATISFIABILITY PRE-CHECK — the untuned Matérn analog of the BASELINE params.
-    precheck_params = {
-        "variance": SIGNAL_VARIANCE,
-        "length_scale": SPATIAL_CORR_DEG * _KM_PER_DEG,
-        "time_scale": TEMPORAL_CORR_DAYS,
-    }
-    precheck = scorer.score("oi", precheck_params, split, seed, win)
+    # SATISFIABILITY PRE-CHECK — a neutral (bounds-midpoint) point before the full sweep.
+    # A degenerate/too-short midpoint is informational only (the sweep's per-trial
+    # handling owns robustness), so don't let it abort the stage.
+    try:
+        precheck = scorer.score(method_name, _midpoint(space), split, seed, win)
+    except (UnresolvedScaleError, ShortTrackError) as exc:
+        precheck = {}  # midpoint unscorable (e.g. degenerate map); informational only
+        precheck_note = type(exc).__name__
+    else:
+        precheck_note = "ok"
 
     result = tune(
-        method_name="oi",
-        space=OptimalInterpolation().parameter_space(),
+        method_name=method_name,
+        space=space,
         strategy=SobolSearch(seed=seed, n=n_trials),
         predicate=CoherenceFeasibility(),
         objective=ConstrainedObjective(),
@@ -165,26 +180,33 @@ def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageARepo
             ),
             default=float("nan"),
         )
+        n_degenerate = sum(
+            1
+            for r in result.history.records
+            if r.scores is None and r.feasible and r.exclusion_reason is not None
+        )
         raise StageANoAdmissible(
             f"no trial cleared BASELINE_BAR_MU={BASELINE_BAR_MU}; best mu_score={best:.4f}, "
-            f"precheck(untuned Matérn) mu_score={precheck['mu_score']:.4f}. The Matérn-3/2 "
-            "kernel may be structurally unable to clear the Gaussian-BASELINE floor — see the "
-            "Task-11 fallbacks (same-family floor / tunable nu / tune the Gaussian kernel)."
+            f"precheck(midpoint)={precheck_note} mu_score={precheck.get('mu_score', float('nan')):.4f}, "
+            f"{n_degenerate} feasible-but-unscorable trial(s). Widen the search or "
+            "revisit the bars (see the Task-11 fallbacks)."
         )
 
-    # ACCEPTANCE — touched exactly once: winner's EXPLICIT Matérn kernel on the c2 map.
+    # ACCEPTANCE — touched exactly once: winner's params on the c2 map. For OI the
+    # Matérn kernel is rebuilt from the winner params (oi_kernel_from_params) so search
+    # and acceptance use the SAME kernel; non-OI methods solve from their own prior.
     winner_params = result.winner.trial.params
     dest = Path(cfg["acceptance_map_out"])
     run_challenge_map(
-        "oi",
+        method_name,
         train_obs,
         ConstantProvider(winner_params),
         grid,
         half,
         list(cfg["acceptance_days"]),
         dest,
-        kernel=matern_kernel_from_params(winner_params),
         mdt_grid=mdt,
+        oi_kernel_from_params=True,
     )
     acceptance = their_score(dest, Path(cfg["c2_track_path"]))
     return StageAReport(
@@ -192,4 +214,15 @@ def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageARepo
         acceptance=acceptance,
         their_eval_calls_during_search=0,  # tune() never imports their_eval.score
         precheck_scores=precheck,
+    )
+
+
+def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageAReport:
+    """Run the single-tile stage on OI (delegates to the shared ``_run_stage``)."""
+    return _run_stage(
+        method_name="oi",
+        space=OptimalInterpolation().parameter_space(),
+        scope=scope,
+        n_trials=n_trials,
+        seed=seed,
     )
