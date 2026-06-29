@@ -1,5 +1,13 @@
 # Sverdrup — Progress notebook
 
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**.
+> Next action = **Task 13** (BayesianOptimization strategy, optuna) — first unchecked task.
+> Run `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`
+> (it reads the co-located `.tasks.json`, where Tasks 0–12 are `completed` and resumes at Task 13).
+> Read the "RESUME HERE (Phase 5 — autotune loop)" block below FIRST for the full state,
+> decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
+> item, NOT the active task.
+
 ## ⏳ PENDING ACTION — conda feedstock bump for v0.2.0 (do this when the PR appears)
 
 **`sverdrup 0.2.0` was tagged + published to PyPI (2026-06-28).** The conda-forge
