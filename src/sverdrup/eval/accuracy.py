@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from sverdrup.core.evaluation import ContextKey, EvalContext
+from sverdrup.core.evaluation import ContextKey, EvalContext, MetricScope
 
 
 class Accuracy:
@@ -15,6 +15,7 @@ class Accuracy:
     name = "accuracy"
     # Fires if either TRUTH or WITHHELD_OBS is present (checked at runtime).
     required_context: frozenset[ContextKey] = frozenset()
+    metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return ``{"rmse": ...}`` using exact eval-point means (OSE) or truth (OSSE)."""

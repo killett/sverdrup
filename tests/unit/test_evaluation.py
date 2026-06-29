@@ -1,9 +1,16 @@
-from sverdrup.core.evaluation import ContextKey, EvalContext, Objective, Registry
+from sverdrup.core.evaluation import (
+    ContextKey,
+    EvalContext,
+    MetricScope,
+    Objective,
+    Registry,
+)
 
 
 class _TruthOnly:
     name = "accuracy_vs_truth"
     required_context = frozenset({ContextKey.TRUTH})
+    metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         return {"rmse": 0.0}
@@ -12,6 +19,7 @@ class _TruthOnly:
 class _Intrinsic:
     name = "groundtrack"
     required_context = frozenset({ContextKey.ORBIT_GEOMETRY})
+    metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         return {"track_power": 0.0}

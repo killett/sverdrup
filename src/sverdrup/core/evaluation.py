@@ -16,6 +16,22 @@ class ContextKey(Enum):
     PHYSICAL_CONSTANTS = auto()
 
 
+class MetricScope(Enum):
+    """Whether a metric may enter the tuner objective vector (Phase-5, spec 5.3).
+
+    CROSS_SEAM is deliberately distinct from the coherence-sampling representation
+    (carried by ``sampler_spec`` strings via ``select_driver``); there is no JOINT
+    enum, so no name collision is possible.
+    """
+
+    POINTWISE = (
+        auto()
+    )  # per-gridpoint / spectral marginal property — MAY enter the objective
+    CROSS_SEAM = (
+        auto()
+    )  # joint cross-tile coherence — NEVER enters the objective; feasibility only
+
+
 @dataclass
 class EvalContext:
     """The references/capabilities available to evaluators for one run."""
@@ -33,6 +49,7 @@ class Evaluator(Protocol):
 
     name: str
     required_context: frozenset[ContextKey]
+    metric_scope: MetricScope
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return named scores for ``result`` given ``context``."""
@@ -67,6 +84,12 @@ class Registry:
             The applicable evaluators.
         """
         return [e for e in self._evaluators if e.required_context <= set(context_keys)]
+
+    def pointwise(self) -> Registry:
+        """Return a registry restricted to POINTWISE evaluators (objective-eligible only)."""
+        return Registry(
+            [e for e in self._evaluators if e.metric_scope is MetricScope.POINTWISE]
+        )
 
     def run(self, result: object, context: EvalContext) -> dict[str, float]:
         """Run every applicable evaluator and merge their scores.

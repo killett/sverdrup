@@ -11,7 +11,7 @@
     {
       "id": 1,
       "subject": "Task 1: MetricScope tag in eval/ registry",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Add MetricScope.POINTWISE/CROSS_SEAM + Registry.pointwise() so only marginal metrics can enter the objective (spec 5.3, invariant 2).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/evaluation.py\", \"src/sverdrup/eval/accuracy.py\", \"src/sverdrup/eval/calibration.py\", \"src/sverdrup/eval/groundtrack.py\", \"tests/test_metric_scope.py\"], \"verifyCommand\": \"pixi run test tests/test_metric_scope.py -v\", \"acceptanceCriteria\": [\"MetricScope enum + metric_scope on Evaluator\", \"3 evaluators tagged POINTWISE\", \"Registry.pointwise() filters CROSS_SEAM\", \"no collision with blend.CoherenceMode.JOINT\"], \"modelTier\": \"standard\"}\n```"
     },
     {

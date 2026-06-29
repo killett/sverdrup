@@ -150,13 +150,16 @@ tuner (spec §6).
 
 ### 5.1 Naming — `MetricScope`, NOT a bare `JOINT` (revision 1)
 
-`distributions/blend.py` already exports `JOINT` as a **`CoherenceMode`** — the cross-tile
-*sampling* mode. The Phase-5 tag is a different axis entirely: a **metric category** that controls
-whether a metric may enter the objective vector. Shipping a second bare `JOINT` would overload one
-word across two unrelated axes and corrode the anti-false-green rule's legibility.
+**Correction (2026-06-28):** an earlier draft claimed `distributions/blend.py` already exports
+`JOINT` as a `CoherenceMode`. That premise was false — there is **no `CoherenceMode` enum** anywhere
+in `src/`; the cross-tile *sampling* mode is carried by `sampler_spec` strings
+(`"lowrank+diag"` / `"sparse-precision"`) dispatched via `select_driver`. The Phase-5 tag is a
+different axis entirely: a **metric category** that controls whether a metric may enter the objective
+vector. Metric-category and coherence-sampling-mode are simply different axes; there is nothing to
+collide with.
 
-Decision: name the metric axis with words that carry the meaning and have zero lexical overlap with
-`CoherenceMode.JOINT`:
+Decision: name the metric axis with self-describing words that have zero lexical overlap with the
+coherence-sampling representation, so no literal collision is possible:
 
 ```python
 class MetricScope(Enum):
@@ -182,8 +185,8 @@ worst-case-localized (§9), never a score.
 
 > Note: today no coherence Evaluator exists in `eval/`; coherence is measured in the
 > coherent-sampler gates. `CROSS_SEAM` is reserved now so the bar is in place before any such
-> evaluator could be written. `blend.CoherenceMode.JOINT` and `eval.MetricScope.CROSS_SEAM` are
-> referenced only as qualified names; no bare `JOINT` is introduced.
+> evaluator could be written. There is no `CoherenceMode`/`JOINT` enum to collide with — coherence
+> mode is a `sampler_spec` string — so `MetricScope.CROSS_SEAM` is unambiguous by construction.
 
 ---
 
@@ -478,8 +481,12 @@ asserting identical λx — **not** "identical given identical pre-prepared segm
    0.853 clears), with DUACS (0.88) as the aspirational acceptance target, never a hard gate. Stage-A
    gate and test 1 reframed accordingly so the loud-empty net catches miscalibration rather than
    being it (§8.1, §8.2, §11, §12).
-3. **`blend.CoherenceMode.JOINT` reconciliation** — RESOLVED: metric axis named
-   `MetricScope.CROSS_SEAM`; no collision, no `blend.py` change (§5). Confirmed acceptable.
+3. **`blend.CoherenceMode.JOINT` reconciliation** — RESOLVED, **on a corrected premise**: there is
+   no `CoherenceMode`/`JOINT` enum in `src/` (the original premise was wrong; coherence mode is a
+   `sampler_spec` string). The metric axis is named `MetricScope.CROSS_SEAM`; a literal collision is
+   therefore structurally impossible, and no `blend.py` change is made (§5). The Task-1 "distinct from
+   `CoherenceMode.JOINT`" test was dropped as broken-and-vacuous (it imported a non-existent symbol);
+   a one-line comment near `MetricScope` records why no collision exists.
 4. **Spec versioning** — `phase5_scope_spec.md` committed alongside this doc (phases 1–4 specs
    already tracked).
 
