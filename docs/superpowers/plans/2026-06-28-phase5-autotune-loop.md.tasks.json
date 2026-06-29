@@ -70,7 +70,7 @@
     {
       "id": 10,
       "subject": "Task 10: Generalize run_challenge_map",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Method-agnostic per-day challenge runner (OI keeps kernel seam; GMRF own prior); run_year delegates; OI regression allclose.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/run.py\", \"tests/validation/test_run_challenge_map.py\"], \"verifyCommand\": \"pixi run test tests/validation/test_run_challenge_map.py -v\", \"acceptanceCriteria\": [\"per-day method dispatch\", \"OI matches run_year\", \"GMRF writes valid map\", \"run_year delegates\"], \"modelTier\": \"standard\"}\n```"
     },
     {
