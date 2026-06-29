@@ -17,7 +17,7 @@
     {
       "id": 2,
       "subject": "Task 2: Shared λx helper + refactor their_eval",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Extract effective_resolution_lambda_x (raw-residual boundary, segment prep inside) and route their_eval through it; fail loud on short track (test 9).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/spectral.py\", \"src/sverdrup/validation/their_eval.py\", \"tests/test_eval_spectral.py\", \"tests/validation/test_their_eval_lambda_x_regression.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_spectral.py -v\", \"acceptanceCriteria\": [\"shared helper returns λx\", \"raw-residual boundary\", \"ShortTrackError on short track\", \"their_eval λx regression within ±0.5km\"], \"modelTier\": \"standard\"}\n```"
     },
     {

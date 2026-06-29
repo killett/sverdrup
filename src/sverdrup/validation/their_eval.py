@@ -26,6 +26,8 @@ from typing import Any
 
 import matplotlib
 
+from sverdrup.eval.spectral import effective_resolution_lambda_x
+
 _VENDOR = Path(__file__).resolve().parents[3] / "vendor" / "2021a_SSH_mapping_OSE"
 _PYINTERP_PATCHED = False
 
@@ -164,8 +166,6 @@ def score(map_path: Path, track_path: Path) -> tuple[float, float, float]:
     _prepare_imports()
     from src.mod_inout import read_l3_dataset
     from src.mod_interp import interp_on_alongtrack
-    from src.mod_plot import find_wavelength_05_crossing
-    from src.mod_spectral import compute_spectral_scores
     from src.mod_stats import compute_stats
 
     ds_alongtrack = read_l3_dataset(
@@ -203,18 +203,11 @@ def score(map_path: Path, track_path: Path) -> tuple[float, float, float]:
             str(tmp / "stat.nc"),
             str(tmp / "stat_timeseries.nc"),
         )
-        psd_file = tmp / "psd.nc"
-        compute_spectral_scores(
-            time_a,
-            lat_a,
-            lon_a,
-            ssh_a,
-            ssh_map_interp,
-            _LENGTH_SCALE,
-            _DELTA_X,
-            _DELTA_T,
-            str(psd_file),
-        )
-        lambda_x = float(find_wavelength_05_crossing(str(psd_file)))
+    # λx goes through the shared helper (Phase-5 invariant 10): the per-trial and
+    # acceptance paths are the SAME algorithm. The helper manages its own temp dir
+    # and segment preparation; we pass raw along-track arrays only.
+    lambda_x = effective_resolution_lambda_x(
+        time_a, lat_a, lon_a, ssh_a, ssh_map_interp
+    )
 
     return float(mu), float(sigma), lambda_x
