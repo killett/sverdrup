@@ -50,7 +50,7 @@
     {
       "id": 7,
       "subject": "Task 7: Feasibility seam + CoherenceFeasibility",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** FeasibilityPredicate + TileGeometry + CoherenceFeasibility (core/range>=25 when joint else True) + RelaxedCoherenceFeasibility (test 6).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/feasibility.py\", \"tests/test_tuning_feasibility.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_feasibility.py -v\", \"acceptanceCriteria\": [\"TileGeometry frozen\", \"unconstrained without joint caps\", \"binds core/range>=25\", \"relaxed widens (test 6)\"], \"modelTier\": \"standard\"}\n```"
     },
     {
