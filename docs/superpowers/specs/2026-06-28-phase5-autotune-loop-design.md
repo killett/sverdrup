@@ -231,6 +231,18 @@ class EffectiveResolution:        # Evaluator
 ```
 
 - **Never touches c2 or `their_eval`** — only the validation track from the blocked split.
+- **Time channel (decided 2026-06-28, implements Task 3):** the vendored λx requires *varying*
+  datetime64 along-track time, but `eval_locations` is a float `(k,3)` coords array that cannot hold
+  datetime64 (`column_stack` raises `DTypePromotionError`), and the OSE pipeline overwrites
+  `eval_locations[:,2]` with a single scalar output time (`pipeline.py` `_prepare`), destroying the
+  per-point times. Resolution: the evaluator reads lon/lat from `eval_locations[:,0:2]` and the
+  *varying* per-point times from a **dedicated `result["eval_times"]` channel** carrying the
+  pipeline-native float days-since-`EPOCH`; it reconstructs datetime64 via the named
+  `input_adapter.EPOCH` (lossless to µs), so both call sites feed the helper an *identical* datetime64
+  representation (invariant 10 preserved; segmentation is gap-based, so absolute epoch is irrelevant).
+  **Deferred wiring (Task 11 + pipeline):** the validation-split scorer must populate `eval_times`
+  from the blocked track's true timestamps (`coords[idx][:,2]` *before* the scalar `[:,2]` overwrite),
+  and the gridded snapshot keeps its single time. `eval_locations` shape is unchanged (back-compat).
 - **Segment-length guard (fail loud):** assert the validation track supports ≥ one full
   `_LENGTH_SCALE` segment; raise a clear configuration error otherwise. A too-short or too-sparse
   validation track is a config signal to surface, never a noisy λx the search would chase. (Object

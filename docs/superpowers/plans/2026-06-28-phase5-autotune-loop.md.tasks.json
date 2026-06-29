@@ -23,7 +23,7 @@
     {
       "id": 3,
       "subject": "Task 3: EffectiveResolution evaluator + test 7",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1, 2],
       "description": "**Goal:** POINTWISE λx evaluator on the blocked non-c2 validation track via the shared helper; test 7 (real track through both call sites identical λx); never imports their_eval.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/resolution.py\", \"tests/test_eval_resolution.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_resolution.py -v\", \"acceptanceCriteria\": [\"POINTWISE λx on validation track\", \"never imports their_eval\", \"test 7 identical λx\"], \"modelTier\": \"standard\"}\n```"
     },
