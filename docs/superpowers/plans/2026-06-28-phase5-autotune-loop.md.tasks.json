@@ -37,7 +37,7 @@
     {
       "id": 5,
       "subject": "Task 5: Tuner value objects (trial.py)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Trial/TrialRecord/TrialHistory; excluded trial carries scores=None (no-solve proof).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/__init__.py\", \"src/sverdrup/application/tuning/trial.py\", \"tests/test_tuning_trial.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_trial.py -v\", \"acceptanceCriteria\": [\"Trial frozen\", \"scores=None when excluded\", \"feasible_scored filters\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
