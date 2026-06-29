@@ -43,7 +43,7 @@
     {
       "id": 6,
       "subject": "Task 6: SearchStrategy seam + Random/Sobol",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5],
       "description": "**Goal:** SearchStrategy Protocol + seeded RandomSearch/SobolSearch proposing within ParameterSpace.bounds; method-agnostic; deterministic.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/strategy.py\", \"tests/test_tuning_strategy.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_strategy.py -v\", \"acceptanceCriteria\": [\"SearchStrategy Protocol\", \"in-bounds proposals both methods\", \"seeded determinism\"], \"modelTier\": \"standard\"}\n```"
     },
