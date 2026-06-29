@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import numpy as np
 
-from sverdrup.core.evaluation import ContextKey, EvalContext
+from sverdrup.core.evaluation import ContextKey, EvalContext, MetricScope
 
 
 class GroundTrack:
@@ -14,6 +14,7 @@ class GroundTrack:
 
     name = "groundtrack"
     required_context = frozenset({ContextKey.ORBIT_GEOMETRY})
+    metric_scope = MetricScope.POINTWISE
 
     def __init__(self, track_wavenumber: int = 8) -> None:
         """Store the track wavenumber to probe.

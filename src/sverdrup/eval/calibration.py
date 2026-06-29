@@ -7,7 +7,7 @@ from typing import Any, cast
 import numpy as np
 from scipy.stats import norm  # type: ignore[import-untyped]
 
-from sverdrup.core.evaluation import ContextKey, EvalContext
+from sverdrup.core.evaluation import ContextKey, EvalContext, MetricScope
 
 
 def reduced_chi2(mean: np.ndarray, var: np.ndarray, truth: np.ndarray) -> float:
@@ -57,6 +57,7 @@ class Calibration:
 
     name = "calibration"
     required_context = frozenset({ContextKey.WITHHELD_OBS})
+    metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
         """Return calibration scores against the withheld observations."""
