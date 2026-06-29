@@ -30,7 +30,7 @@
     {
       "id": 4,
       "subject": "Task 4: mu_score normalized skill score",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** leaderboard_nrmse helper + NormalizedSkillScore (POINTWISE) emitting mu_score (higher-better) on validation track; acceptance µ stays vendored area-binned, validated at Stage-A gate.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/skill_score.py\", \"src/sverdrup/eval/skill.py\", \"tests/test_eval_skill.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_skill.py -v\", \"acceptanceCriteria\": [\"leaderboard_nrmse higher-better pure\", \"NormalizedSkillScore emits mu_score POINTWISE\", \"perfect=1.0 zero=0.0\"], \"modelTier\": \"mechanical\"}\n```"
     },
