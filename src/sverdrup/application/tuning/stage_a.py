@@ -23,7 +23,7 @@ from sverdrup.application.tuning.feasibility import CoherenceFeasibility, TileGe
 from sverdrup.application.tuning.loop import tune
 from sverdrup.application.tuning.objective import BASELINE_BAR_MU, ConstrainedObjective
 from sverdrup.application.tuning.scorer import ValidationTrackScorer
-from sverdrup.application.tuning.strategy import SobolSearch
+from sverdrup.application.tuning.strategy import SearchStrategy, SobolSearch
 from sverdrup.application.tuning.trial import TrialRecord
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
@@ -119,6 +119,7 @@ def _run_stage(
     scope: Path,
     n_trials: int = 16,
     seed: int = 1,
+    strategy: SearchStrategy | None = None,
 ) -> StageAReport:
     """Shared single-tile stage: search ``method_name`` on the validation track, accept on c2.
 
@@ -126,6 +127,11 @@ def _run_stage(
     Stage B (GMRF). No method-specific parameter name appears here (Task-12 test 3); the
     OI-vs-Gaussian kernel choice lives behind ``run.run_challenge_map``'s
     ``oi_kernel_from_params`` flag.
+
+    ``strategy`` is a drop-in ``SearchStrategy``; when ``None`` the stage uses the
+    seeded ``SobolSearch(seed, n_trials)`` default (Stage A/B baseline). Passing
+    ``BayesianOptimization(seed, n_trials)`` switches the search to TPE with the loop,
+    objective, and acceptance unchanged (Task 14).
     """
     cfg = json.loads(Path(scope).read_text())
     provider, grid, half = baseline_config()
@@ -159,7 +165,9 @@ def _run_stage(
     result = tune(
         method_name=method_name,
         space=space,
-        strategy=SobolSearch(seed=seed, n=n_trials),
+        strategy=strategy
+        if strategy is not None
+        else SobolSearch(seed=seed, n=n_trials),
         predicate=CoherenceFeasibility(),
         objective=ConstrainedObjective(),
         scorer=scorer,
@@ -217,7 +225,13 @@ def _run_stage(
     )
 
 
-def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageAReport:
+def run_stage_a(
+    *,
+    scope: Path,
+    n_trials: int = 16,
+    seed: int = 1,
+    strategy: SearchStrategy | None = None,
+) -> StageAReport:
     """Run the single-tile stage on OI (delegates to the shared ``_run_stage``)."""
     return _run_stage(
         method_name="oi",
@@ -225,4 +239,5 @@ def run_stage_a(*, scope: Path, n_trials: int = 16, seed: int = 1) -> StageARepo
         scope=scope,
         n_trials=n_trials,
         seed=seed,
+        strategy=strategy,
     )
