@@ -63,7 +63,7 @@
     {
       "id": 9,
       "subject": "Task 9: Orchestration loop (tune)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [5, 6, 7, 8],
       "description": "**Goal:** Gate-before-solve loop; POINTWISE-only scoring via TrialScorer seam; their_eval untouched in search; determinism. Tests 4,5,2(search),8.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/loop.py\", \"tests/test_tuning_loop.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_loop.py -v\", \"acceptanceCriteria\": [\"hard barrier no scorer call for infeasible (test 4)\", \"POINTWISE-only (test 5)\", \"their_eval untouched in search (test 2)\", \"determinism (test 8)\"], \"modelTier\": \"complex\"}\n```"
     },
