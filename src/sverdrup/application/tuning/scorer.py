@@ -29,22 +29,7 @@ from sverdrup.core.parameters import ConstantProvider
 from sverdrup.eval.calibration import coverage
 from sverdrup.eval.skill_score import leaderboard_nrmse
 from sverdrup.eval.spectral import effective_resolution_lambda_x
-from sverdrup.methods.kernel import Kernel, Matern32SpaceTime
 from sverdrup.validation.run import run_mean_var_maps
-
-
-def matern_kernel_from_params(params: dict[str, float]) -> Matern32SpaceTime:
-    """Build the explicit Matérn kernel ``OI.solve(kernel=None)`` would build.
-
-    Used so the SAME params drive both the per-trial search solve and acceptance —
-    never relying on ``kernel=None`` (which builds Matérn in ``OI.solve`` but the
-    Gaussian BASELINE kernel in ``run_challenge_map``).
-    """
-    return Matern32SpaceTime(
-        variance=float(params["variance"]),
-        length_scale=float(params["length_scale"]),
-        time_scale=float(params["time_scale"]),
-    )
 
 
 @dataclass
@@ -64,10 +49,6 @@ class ValidationTrackScorer:
     time_max: str
     mdt_grid: np.ndarray | None = None
 
-    def _kernel_for(self, method_name: str, params: dict[str, float]) -> Kernel | None:
-        """Return the explicit kernel to use for both search and acceptance (OI only)."""
-        return matern_kernel_from_params(params) if method_name == "oi" else None
-
     def score(
         self,
         method_name: str,
@@ -79,7 +60,6 @@ class ValidationTrackScorer:
         """Solve daily maps, interp onto the validation track, return the metric vector."""
         import sverdrup.validation.their_eval as te  # import-prep only; .score untouched
 
-        kernel = self._kernel_for(method_name, params)
         with tempfile.TemporaryDirectory() as td:
             mean_p = Path(td) / "mean.nc"
             var_p = Path(td) / "var.nc"
@@ -92,8 +72,8 @@ class ValidationTrackScorer:
                 self.output_days,
                 mean_p,
                 var_p,
-                kernel=kernel,
                 mdt_grid=self.mdt_grid,
+                oi_kernel_from_params=True,  # OI tunes its Matérn from params (not Gaussian)
             )
             te._prepare_imports()
             from src.mod_inout import read_l3_dataset
