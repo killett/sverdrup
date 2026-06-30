@@ -1,11 +1,14 @@
 # Sverdrup — Progress notebook
 
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**.
-> Next action = **Task 14 gate RUN** (USER GATE — Stage-B GMRF-via-BO acceptance NUMBER). Task-14
-> *code enablers are DONE + committed* (`516b937`); only the **multi-hour full-2017 GMRF-via-BO run +
-> owner sign-off** remain (PAUSED by owner 2026-06-29, awaiting a scheduled session).
-> Run `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`
-> (it reads the co-located `.tasks.json`, where Tasks 0–13 are `completed` and Task 14 is paused-pending).
+> Next action = **RE-RUN the Task-14 Stage-B gate** with the GMRF prior-variance fix now in place
+> (`6cce45b`). The first full-2017 run (2026-06-29) showed GMRF `mu_score=0.0` on every trial; that
+> exposed a **real GMRF method bug** (missing SPDE marginal-variance normalization → prior σ²
+> range²-inflated ~10³× → posterior over-fit + ±300m gap oscillation → zero held-out skill). FIXED
+> via TDD (`6cce45b`); real-data check shows the GMRF mean field is now OI-like (std 0.2, ±1m). To
+> re-run: `nohup pixi run python scripts/stage_b_gate_run.py > data/2021a_ssh_mapping_ose/ours/stage_b_gate.log 2>&1 &`
+> (full-2017, Sobol+BO; GMRF should now clear/approach BASELINE). Then present `(µ,σ,λx)` rows for
+> sign-off → close Task 14 → Stage C (Task 15). Task-14 *code enablers* committed (`516b937`).
 > Read the "RESUME HERE (Phase 5 — autotune loop)" block below FIRST for the full state,
 > decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
 > item, NOT the active task.
@@ -81,14 +84,45 @@
   vanishing into `UnresolvedScaleError`. **nan-check RESOLVED:** `leaderboard_nrmse` is bounded
   `[0,1]`, so a *scored* µ is always finite — the only `nan` ever seen was the empty-`feasible_scored`
   `default=nan` (confirms the Task-12 reading; no guard needed).
-- **REMAINING for Task 14 (the actual gate — owner to schedule):** the 12-day dev box is all-degenerate
-  for GMRF (Sobol too weak), so landing a real admissible GMRF winner needs the **full-2017 window**
-  (multi-hour). To run: set full-year `validation_days`/`acceptance_days`/`time_min`/`time_max` in
-  `tests/validation/fixtures/stage_a_scope.json`, then
-  `SVERDRUP_STAGE_B_GATE=1 pixi run test tests/test_stage_b_gate.py` (optionally `SVERDRUP_STAGE_B_N`
-  to raise n_trials so BO can explore). Capture BOTH `(µ,σ,λx)` rows (Sobol vs BO) → owner sign-off
-  before Stage C (Task 15). Resume via
-  `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md`.
+- **★ GMRF PRIOR-VARIANCE BUG — found + fixed 2026-06-30 (`6cce45b`); load-bearing for all GMRF work.**
+  Phase 5 was the first time GMRF ran the real challenge scorer (Phase 3/4 only validated the
+  covariance *machinery* — Takahashi/selective-inverse exactness — never the physical marginal-variance
+  scale). The first full-2017 Stage-B gate run showed `mu_score=0.0` on EVERY GMRF trial. Root cause
+  (systematic-debugging, measured): `matern_precision` built `Q=(κ²I−Δ)²/τ` WITHOUT the SPDE
+  marginal-variance normalization, so prior `σ²=τ·A_cell/(4πκ²) ∝ τ·range²` — ~10³× too large at
+  operational range (O(100-1000) m² vs ~0.025 m² SLA signal). The over-loose prior couldn't regularize
+  sparse-nadir interpolation: posterior mean FIT obs at observed points (in-sample resid ~0.09) but
+  oscillated to **±300 m in the gaps**, where the held-out j3 track lives → zero skill, exactly 0.0.
+  Fix: per-node normalization `Q=D⁻¹Q_raw D⁻¹`, `D⁻¹=√(v/τ)`, `v=A_cell/(4πκ²)` → `σ²≈τ`
+  range-independent (what the docstring always claimed). **GOTCHAS for future GMRF work:** (1) the
+  `sv/contract` seam ratio is scale-INVARIANT under the per-node normalization, so any test filtering
+  on an ABSOLUTE variance threshold (e.g. the old `_tree_gate.py` `contract>10.0`, now scale-relative)
+  will silently break — use scale-relative floors; (2) `variance`-space `[1e-3,1]` is now physically
+  meaningful (σ²≈τ); pre-fix it could not reach a sane prior at any operational range; (3) GMRF mean
+  field should be OI-scale (std ~0.2, ±1m) — if it's O(10) again, the normalization regressed.
+  Diagnostic method that cracked it: single-day GMRF-vs-OI mean-field + IN-SAMPLE obs fit (fits obs but
+  explodes in gaps ⇒ over-loose prior, not a units/assimilation bug). κ↔km units were RED-HERRING-clean.
+- **Task 14 gate RUN — first attempt 2026-06-29 (owner "do it now") surfaced the bug above; KILLED + fixed.** Detached
+  via `scripts/stage_b_gate_run.py` (`nohup … &`, PID in `data/2021a_ssh_mapping_ose/ours/stage_b_gate.pid`).
+  Runner derives a **full-2017 scope** (days 0–364, `time 2017-01-01..2018-01-01`) IN-MEMORY from the
+  12-day dev fixture (committed dev fixture left untouched), runs GMRF through the loop with **Sobol
+  then BO** (n_trials=8, seed=1), and persists each `(µ,σ,λx)` row to
+  `…/ours/stage_b_gate_results.json` the instant it completes (mid-run death keeps the finished
+  strategy). Per-trial heartbeat → `…/ours/stage_b_gate.log`. Confirmed at launch: RSS ~41 MB
+  (flat-memory analysis holds — peak RAM = single-day GMRF solve on the 52×51=2652-node grid, not the
+  window; full-year adds only ~15 MB of day-stacked maps).
+  - **DURABILITY CAVEAT:** detached process survives this AGENT session but NOT a container/host
+    teardown. On resume, if `results.json` is absent/partial AND the PID is dead → **relaunch**:
+    `nohup pixi run python scripts/stage_b_gate_run.py > data/2021a_ssh_mapping_ose/ours/stage_b_gate.log 2>&1 &`.
+    The loop has NO per-trial checkpoint, so a death mid-strategy restarts THAT strategy from scratch
+    (the other strategy's persisted row survives).
+  - **Possible outcome = NEGATIVE:** GMRF may still be all-degenerate even at full-year (`StageANoAdmissible`
+    captured into `results.json` with best-µ diagnostic, not a crash). If so, that is the real Stage-B
+    finding (random/BO over this space can't clear the BASELINE µ floor on GMRF) → owner decision.
+  - **On completion:** present both rows + gate verdict (`bo_finite_positive`, `bo_within_1p25x_sobol`)
+    → owner sign-off → commit the runner + PROGRESS, close Task 14, proceed to Stage C (Task 15).
+  - `scripts/stage_b_gate_run.py` is UNCOMMITTED (commit at gate close; the running process already
+    loaded it). The pytest gate `tests/test_stage_b_gate.py` remains the formal artifact (env-gated).
 
 ---
 
