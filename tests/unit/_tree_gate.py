@@ -199,12 +199,23 @@ class GateFixture:
         return np.asarray((w * sig).sum(axis=0))
 
     def marginal_contract_ratios(self, samples: np.ndarray) -> np.ndarray:
-        """sample variance / (Σwσ)² at seam nodes with non-trivial reported variance."""
+        """sample variance / (Σwσ)² at seam nodes with non-trivial reported variance.
+
+        The "non-trivial" floor is RELATIVE to the seam's own variance scale (1e-3 of the
+        median reported contract), not an absolute constant. The GMRF prior marginal
+        variance is now correctly normalised to ≈τ (it was ~10³× inflated by a missing
+        SPDE ``1/(4πκ²·A_cell)`` normalisation in ``matern_precision``); an absolute floor
+        calibrated to that inflated scale would wrongly empty the seam set. The ratio
+        ``sv/contract`` is scale-invariant under the per-node normalisation, so this
+        selection — and the strict-min it feeds — is unchanged; only the filter scale moved.
+        """
         contract = self.sigma_contract() ** 2
         sv = samples.var(axis=0)
         adj = _tile_adjacency(self.parts)
         seam = sorted({int(x) for (i, j) in adj for x in self._shared_gidx(i, j)})
-        return np.array([sv[g] / contract[g] for g in seam if contract[g] > 10.0])
+        seam_contract = np.array([contract[g] for g in seam])
+        floor = 1e-3 * float(np.median(seam_contract)) if seam_contract.size else 0.0
+        return np.array([sv[g] / contract[g] for g in seam if contract[g] > floor])
 
     def edge_dir_ratio(
         self, blend_s: np.ndarray, ref_s: np.ndarray, i: int, j: int
