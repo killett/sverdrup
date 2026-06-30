@@ -78,12 +78,22 @@ def _laplacian(grid: GridSpec) -> sparse.csc_matrix:
 def matern_precision(
     grid: GridSpec, kappa: float | np.ndarray, tau: float
 ) -> sparse.csc_matrix:
-    """Assemble the Matérn SPDE precision ``Q = (1/tau)·(κ²I − Δ)²`` (α=2, ν=1).
+    """Assemble the Matérn SPDE precision with marginal variance ≈ ``tau`` (α=2, ν=1).
+
+    The raw operator ``A = (κ²I − Δ)`` gives ``Q_raw = AᵀA`` whose marginal variance is
+    range- AND grid-dependent: for the 2-D ν=1 SPDE the continuous value is
+    ``1/(4πκ²)`` and the regular-grid discretisation scales it by the cell area, so
+    ``diag(Q_raw⁻¹) ≈ A_cell/(4πκ²)``. Left unnormalised this is range²-inflated (~10³×
+    too large at operational range), which de-regularises the sparse-obs interpolation.
+    We apply the symmetric diagonal normalisation ``Q = D⁻¹ Q_raw D⁻¹`` with
+    ``D⁻¹ = √(v/τ)``, ``v = A_cell/(4πκ²)`` per node, so ``diag(Q⁻¹) ≈ τ`` regardless of
+    range — range and variance become independent knobs (what ``tau`` always promised).
+    The diagonal congruence keeps ``Q`` SPD and preserves the 5-point adjacency pattern.
 
     Args:
         grid: The regular grid the lattice lives on.
         kappa: Scalar κ, or a ``(ny, nx)`` κ field (nonstationary; spatially-varying coeffs).
-        tau: Marginal-variance scaling (larger τ -> smaller precision -> larger variance).
+        tau: Target marginal variance (σ² ≈ τ at every node, range-independent).
 
     Returns:
         A symmetric SPD ``(n, n)`` CSC precision over the ``n = ny*nx`` nodes.
@@ -95,7 +105,15 @@ def matern_precision(
     else:
         k2 = sparse.diags(np.asarray(kappa).ravel() ** 2, format="csc")
     a = k2 - lap  # (κ²I − Δ)
-    q = (a.T @ a) / float(tau)
+    q_raw = a.T @ a
+    # Per-node marginal-variance normalisation: diag(Q_raw⁻¹) ≈ A_cell/(4πκ²) (2-D SPDE,
+    # ν=1, continuous const × discretisation cell area). Scale so diag(Q⁻¹) ≈ τ.
+    dx, dy = _node_spacing_km(grid)
+    cell_area = (dx * dy).ravel()  # km², per node (cos-lat varying)
+    kappa2 = np.broadcast_to(np.asarray(kappa, dtype=float) ** 2, grid.shape).ravel()
+    v = cell_area / (4.0 * np.pi * kappa2)  # approx prior marginal variance at τ=1
+    d_inv = sparse.diags(np.sqrt(v / float(tau)))
+    q = d_inv @ q_raw @ d_inv
     return sparse.csc_matrix(0.5 * (q + q.T))  # symmetrize against round-off
 
 
