@@ -13,6 +13,32 @@
 > decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
 > item, NOT the active task.
 
+## ★★ HIGH-PRIORITY OPEN QUESTION — does the GMRF prior-variance fix (`6cce45b`) dissolve the Stage-B/C "phase boundary"?
+
+**Raised + partially measured 2026-06-30.** The entire Phase-4 Stage-B saga (and the Stage-C
+"no operational-range coherent sampler until redesign" phase-boundary verdict) was characterised on
+the **buggy 10³×-too-weak prior**. The fix makes `Q_prior` ~2.5e5× stronger at operational range.
+**MEASURED** (validation grid 52×51, 1-day nadir obs, fixed prior): `Q_post` eigmin **~1e-7 → ~10–50**,
+cond **~4e8 → ~200–800** across range∈{100,200,405} km. So **antagonist #1 (the near-improper-mode
+CONDITIONING collapse) is essentially an artifact of the bug** and is gone at correctly-scaled params.
+
+**Therefore SUSPECT (all measured on the buggy prior — DO NOT trust without re-measuring):**
+- the `core/range ≥ 25` tile-sizing constraint;
+- the "conditioning floor is monotone in eigmin" law;
+- "deflation is dead";
+- the headline **"no operational-range DUACS-class global coherent sampler until redesign"** phase boundary.
+
+**NOT YET MEASURED (the decisive next step):** does cross-seam COVARIANCE (antagonist #2) now recover
+on the tiled `make_natl60` fixture with the fixed prior? PROGRESS argued the two antagonists are "the
+same object" (correlation carried by the near-null mode) — if so, better conditioning relieves #2 too,
+but that is a hypothesis. The clean probe: re-measure the `_tree_gate` cross-seam covariance vs a dense
+reference (the third invariant) under the fixed prior, on the DEFAULT tree-kriging driver (NOT overwrite,
+which zeroes the seam by construction so its strict-xfail won't flip from the prior fix alone).
+**If cross-seam covariance recovers → the Phase-4/5 Stage-B/C phase boundary largely dissolves and
+Stage-C global-coherent feasibility (Task 15) reopens.** This is a method-level reopening, not a Task-14
+item — flag to owner before Stage C planning. Do NOT tear down the Stage-B conclusions on the eigmin
+probe alone; measure the cross-seam covariance first.
+
 ## ⏳ PENDING ACTION — conda feedstock bump for v0.2.0 (do this when the PR appears)
 
 **`sverdrup 0.2.0` was tagged + published to PyPI (2026-06-28).** The conda-forge
