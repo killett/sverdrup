@@ -1,13 +1,17 @@
-"""Durable Stage-B gate runner: GMRF tuned via Sobol AND BayesianOptimization, full-2017.
+"""Durable Stage-B gate runner: GMRF tuned via Sobol AND BayesianOptimization.
 
-Why a runner (not the pytest gate): the full-year GMRF sweep is a ~2-day wall-clock job
-with no per-trial checkpoint, so we persist each strategy's acceptance row to a results
-JSON the INSTANT it completes (a mid-run death keeps the finished strategy) and heartbeat
-once per trial. The committed 12-day dev fixture is left untouched — the full-year scope is
-derived in-memory here.
+Why a runner (not the pytest gate): the GMRF sweep is long with no per-trial checkpoint,
+so we persist each strategy's acceptance row to a results JSON the INSTANT it completes
+(a mid-run death keeps the finished strategy) and heartbeat once per trial.
+
+Scope is env-selected (the committed 12-day dev fixture is never mutated):
+    SVERDRUP_STAGE_B_SCOPE=dev   -> the 12-day dev fixture as-is (~1h Sobol; smoke confirm)
+    SVERDRUP_STAGE_B_SCOPE=full  -> full-2017 derived in-memory (~2 days; publishable number)
+                                    (default)
+    SVERDRUP_STAGE_B_N=<int>     -> n_trials (default 8)
 
 Run (detached):
-    nohup pixi run python scripts/stage_b_gate_run.py \
+    SVERDRUP_STAGE_B_SCOPE=dev nohup pixi run python scripts/stage_b_gate_run.py \
         > data/2021a_ssh_mapping_ose/ours/stage_b_gate.log 2>&1 &
 
 Results: data/2021a_ssh_mapping_ose/ours/stage_b_gate_results.json
@@ -16,6 +20,7 @@ Results: data/2021a_ssh_mapping_ose/ours/stage_b_gate_results.json
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import time
 import traceback
@@ -30,7 +35,8 @@ from sverdrup.application.tuning.strategy import SearchStrategy
 DEV_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 OUT_DIR = Path("data/2021a_ssh_mapping_ose/ours")
 RESULTS = OUT_DIR / "stage_b_gate_results.json"
-N_TRIALS = 8
+SCOPE_MODE = os.environ.get("SVERDRUP_STAGE_B_SCOPE", "full")  # "dev" | "full"
+N_TRIALS = int(os.environ.get("SVERDRUP_STAGE_B_N", "8"))
 SEED = 1
 
 _T0 = time.time()
@@ -76,8 +82,10 @@ def _counting_score(
 ValidationTrackScorer.score = _counting_score  # type: ignore[method-assign]
 
 
-def _full_year_scope() -> Path:
-    """Derive a full-2017 scope from the 12-day dev fixture; write to a temp file."""
+def _scope() -> Path:
+    """Return the scope path for the selected mode (dev = 12-day as-is; full = full-2017)."""
+    if SCOPE_MODE == "dev":
+        return DEV_FIX  # 12-day dev fixture as-is (smoke confirm)
     cfg = json.loads(DEV_FIX.read_text())
     days = list(range(365))  # 2017-01-01 (day 0) .. 2017-12-31 (day 364)
     cfg["validation_days"] = days
@@ -121,9 +129,9 @@ def _run(label: str, scope: Path, strategy: SearchStrategy | None) -> dict[str, 
 def main() -> None:
     """Run Sobol then BO over the full-year scope, persisting each row immediately."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    scope = _full_year_scope()
-    _log(f"full-year scope -> {scope}; results -> {RESULTS}")
-    results: dict[str, Any] = {"n_trials": N_TRIALS, "seed": SEED}
+    scope = _scope()
+    _log(f"scope={SCOPE_MODE} ({scope}); n_trials={N_TRIALS}; results -> {RESULTS}")
+    results: dict[str, Any] = {"scope": SCOPE_MODE, "n_trials": N_TRIALS, "seed": SEED}
 
     results["sobol"] = _run("Sobol", scope, None)
     RESULTS.write_text(json.dumps(results, indent=2))  # persist after Sobol
