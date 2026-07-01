@@ -3,9 +3,12 @@
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, PAUSED at a
 > phase boundary **2026-06-30 for a Stage-C REDESIGN**. Tasks 0–14 `completed`; Stage-C Tasks 15–18
 > `pending` but their PREMISE IS SUPERSEDED (see below) — **do NOT execute them as written.**
-> Next action = **redesign Stage C** (brainstorm → write-plan) against the new reality. Read, in order:
-> (1) the **"STAGE-C REDESIGN BRIEF"** block immediately below — the single consolidated handoff;
-> (2) the **★★ RESOLVED** block for the measured evidence; (3) the design/plan/spec the brief points at.
+> Next action = **redesign Stage C** (brainstorm → write-plan) against the new reality. The
+> feasibility-frontier measurement the brief asked for is now **DONE (2026-07-01)** — read the
+> **"★ MEASURED 2026-07-01"** block below for the clean constant-core curve + verdict BEFORE
+> brainstorming. Read, in order: (1) the **"STAGE-C REDESIGN BRIEF"** block immediately below — the
+> single consolidated handoff; (2) the **★ MEASURED 2026-07-01** frontier block; (3) the **★★
+> RESOLVED** block for the earlier evidence; (4) the design/plan/spec the brief points at.
 > **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE** — GMRF prior bug fixed (`6cce45b`), method-agnostic
 > loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
 > coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
@@ -56,6 +59,50 @@ ERRORS on smoke because Sobol raises `StageANoAdmissible` (no admissible Sobol) 
 **Source docs (unchanged pointers):** scope `phase5_scope_spec.md`; design
 `docs/superpowers/specs/2026-06-28-phase5-autotune-loop-design.md`; plan + tracker
 `docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md(.tasks.json)`.
+
+## ★ MEASURED 2026-07-01 — the feasibility frontier: cross-seam covariance does NOT plateau; worst-seam grows with TILE COUNT (not core/range)
+
+**The brief's ONE real question is now answered.** Extended `scripts/diag_crossseam.py` to two sweeps
+and removed the confound the first sweep had (the `natl60_tiny` fixture domain is hardcoded 8°×8°, so
+2×2→6×6 shrank tiles on a *fixed* grid — conflating tile-count with core/range collapsing toward
+degenerate near-empty cores). SWEEP 2 grows the DOMAIN at a **constant 4° core** by windowing a growing
+centered box out of a large synthetic obs fixture (`_write_big_obs`; obs-VALUE-independent because
+`Q_post=Q_prior+HᵀR⁻¹H`, so only obs geometry/density matters — OSSE `_prepare` never touches the ref
+grid, fixture is obs-only). `make_natl60` gained optional `source`/`lon_range`/`lat_range` overrides
+(non-breaking). tree-kriging DEFAULT driver, dense-global reference, M=2000.
+
+**SWEEP 2 — constant 4° core, domain grows (THE tiles→global frontier):**
+
+| tiling | tiles | seams | marg strict-min | rel-err med | rel-err **max** |
+|--------|-------|-------|-----------------|-------------|-----------------|
+| 2×2    | 4     | 6     | 0.510           | 0.248       | 0.467           |
+| 3×3    | 9     | 36    | 0.468           | 0.310       | 0.456           |
+| 4×4    | 16    | 90    | 0.441           | 0.453       | 0.808           |
+| 5×5    | 25    | 168   | 0.370           | 0.751       | **2.682**       |
+| 6×6    | 36    | 273   | 0.342           | 0.429       | **2.247**       |
+
+**VERDICT — cross-seam covariance does NOT plateau at a usable tolerance.** Median climbs 0.25→0.75 then
+sits ~0.4–0.75; worst-seam **max grows past 2.0** (>200% err = worst seam fully decorrelated / wrong-sign)
+for ≥25 tiles. Per the standing localized-metric rule (aggregates launder localized seam defects), MAX is
+decisive → bare `GmrfTreeKrigingSolve` is **NOT good-enough at global scale** on cross-seam covariance.
+
+**THE CONFOUND IS KILLED — and the answer holds without it.** Matched tile-count, SWEEP1 (shrunk core)
+vs SWEEP2 (constant 4° core): 6×6 → max 2.177 @1.33° vs 2.247 @4.00°; 5×5 → 1.678 @1.60° vs 2.682 @4.00°.
+**Tripling the core barely moved max rel-err** — worst-seam error is driven by TILE COUNT, not core/range.
+So the growth is a genuine tiling breakdown, NOT a small-core artifact, and bigger cores do not rescue it.
+(This also RETIRES the last hope that `core/range` sizing alone fixes Stage C — it does not.)
+
+**Unchanged confirmations (both sweeps, both core sizes):** conditioning DEAD (eigmin flat 3.1–3.8, cond
+55–66 — tiling-independent, it's the 1×1 global ref); marginal contract HOLDS (strict-min 0.34–0.74, never
+collapses). **Honest caveat:** median is non-monotone (6×6 dips to 0.43) — M=2000 sampling noise + more
+deep-interior seam pairs (true-cov≈0 → noisy rel-err) at high tile counts; MAX is the trustworthy metric.
+
+**CONSEQUENCE FOR THE REDESIGN (the central fork for the brainstorm):** Stage-C operational global-coherent
+needs EITHER (a) a coarse-correction / overlapping-Schwarz / global-low-rank-seam-basis path on top of the
+tree driver, OR (b) a DoD that scopes "coherent" to marginal + median-fidelity (which the tree driver DOES
+hold: strict-min never collapses, median bounded ~0.5) and explicitly EXCLUDES worst-seam joint covariance.
+`CoherenceFeasibility` should become a cross-seam-cov-rel-err-vs-tile-count predicate, NOT `core/range≥25`.
+Tooling committed: `scripts/diag_crossseam.py` (two sweeps, big-fixture generator), `make_natl60` overrides.
 
 ## ★★ RESOLVED 2026-06-30 — the GMRF prior fix (`6cce45b`) LARGELY DISSOLVES the Stage-B/C "phase boundary" (it was mostly a bug artifact)
 

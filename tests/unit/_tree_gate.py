@@ -356,12 +356,29 @@ class _LatVaryingRange:
         return "latrange(eq=800,pole=100)"
 
 
-def make_natl60(n_lon: int, n_lat: int, nonstationary: bool = False) -> GateFixture:
+def make_natl60(
+    n_lon: int,
+    n_lat: int,
+    nonstationary: bool = False,
+    *,
+    source: Any | None = None,
+    lon_range: tuple[float, float] = (-64.0, -56.0),
+    lat_range: tuple[float, float] = (34.0, 42.0),
+) -> GateFixture:
     """Real natl60_tiny tiles (the near-singular short-range regime) via the pipeline spine.
 
     The decisive Stage-B regime: sparse nadir obs leave the ``(κ²−Δ)²`` low-frequency mode
     under-determined (global ``Q_post`` eigmin ~1e-7), exactly where the synthesized-field sampler
     blew up 376x. ``nonstationary`` swaps in a latitude-varying κ field (C4').
+
+    Args:
+        source: Optional obs source override. Defaults to the committed ``natl60_tiny``
+            FixtureSource. Pass a larger-domain FixtureSource to grow the domain at fixed
+            tile core-size (constant-core tile-count sweep). OSSE ``_prepare`` never touches
+            the ref grid, so an obs-only source with ``ref_path=None`` is sufficient.
+        lon_range: Domain longitude extent. Grow it in lockstep with ``n_lon`` to hold the
+            per-tile core span (``span / n_lon``) constant across a sweep.
+        lat_range: Domain latitude extent. Grow it in lockstep with ``n_lat`` likewise.
     """
     from sverdrup.adapters.odc.fixtures import FixtureSource
     from sverdrup.application.pipeline import (
@@ -379,13 +396,14 @@ def make_natl60(n_lon: int, n_lat: int, nonstationary: bool = False) -> GateFixt
     inp = PipelineInputs(
         mode="OSSE",
         method_name="gmrf",
-        source=FixtureSource(
+        source=source
+        or FixtureSource(
             "tests/fixtures/natl60_tiny.nc",
             ref_path="tests/fixtures/natl60_ref_tiny.nc",
         ),
         out_url="file:///tmp/x",
-        lon_range=(-64.0, -56.0),
-        lat_range=(34.0, 42.0),
+        lon_range=lon_range,
+        lat_range=lat_range,
         grid_resolution_deg=1.0,
         time_range=(0.0, 5.0),
         output_times=[2.0],
