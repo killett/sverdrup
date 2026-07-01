@@ -60,6 +60,56 @@ ERRORS on smoke because Sobol raises `StageANoAdmissible` (no admissible Sobol) 
 `docs/superpowers/specs/2026-06-28-phase5-autotune-loop-design.md`; plan + tracker
 `docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md(.tasks.json)`.
 
+## STAGE-C REDESIGN — owner decisions locked (2026-07-01 brainstorm, in progress)
+
+Brainstorm running (`superpowers-extended-cc:brainstorming`). Two owner decisions locked; a metric
+validation is IN FLIGHT before the DoD wording is finalized. Design doc not yet written.
+
+**DECISION 1 — "coherent" = Option 1, CAPABILITY-SCOPED.** The Stage-C barrier is worst-seam JOINT
+cross-seam covariance (the definitional purpose of the SAMPLES/COVARIANCE capability: valid cross-seam
+gradients/transports). Gating on the marginal while joint is measured-broken = the false-green the
+project fought (invariant 6). Capability-scope it (invariant 4):
+- `SAMPLES/COVARIANCE` → feasible iff tile-count `N ≤ N*_joint(tol)` (worst-seam joint curve; small).
+- `MARGINAL_VARIANCE` → SEPARATE capability, looser bound `N*_marg` (marginals hold but strict-min
+  DRIFTS 0.51→0.34 with tile count — do NOT over-claim "holds everywhere"; verify N*_marg by the same
+  tile-count extrapolation before shipping). THIS is the honest shippable global product — labeled
+  `MARGINAL_VARIANCE`, not "coherent."
+- `POINT` → unconstrained.
+Reject Option 2's LABEL (marginal-only ≠ coherent). Reject Option 3 (build coarse-correction now:
+violates §6, premature, AND unnecessary — the curve IS the owner's decision input for the deferred fix).
+
+**DECISION 2 — predicate reframe + tolerance.** Replace `CoherenceFeasibility` (core/range≥25, refuted)
+with a CAPABILITY-CONDITIONAL, TILE-COUNT-keyed predicate. Key on tile count N, NOT core/range (measured:
+cores don't rescue it). Ship a DEFAULT `tol=0.5` → `N*_joint=9` (swappable, per the old "25 was
+swappable" pattern), full curve surfaced. Reject no-default: the headline (global SAMPLES/COVARIANCE
+infeasible) is TOLERANCE-INVARIANT — every candidate N*≤16 ≪ thousands of global tiles; tol is a REGIONAL
+knob, not a global determinant. tol=0.5 (not 1.0) because: (a) its N*=9 sits on the CLEAN low-count curve,
+robust to the metric artifact below; (b) rel-err≤1.0 admits 100%-off covariance = unusable, defeats the
+capability's purpose.
+
+**IN FLIGHT — metric validation (gates the Task-18 DoD WORDING, not the headline).** The worst-seam MAX
+at high tile counts is a suspected NEAR-ZERO-DENOMINATOR artifact: `edge_relerr = ‖emp−ref‖/‖ref block‖`;
+far/thin-overlap node sets have true-cov≈0 → M=2000 noise inflates it. Added a robust metric
+`GateFixture.edge_seam_corr_err` (normalizes the cross-seam cov error on grid-ADJACENT seam node pairs by
+the marginal-std scale `√(σ_aσ_b)`, never near-zero — a correlation-unit error) and re-running the sweep.
+- If adjacent-seam CORR-err ALSO grows past ~1 at scale → boundary is REAL/HARD ("breaks at N* tiles"),
+  N* meaningful.
+- If it stays bounded (~0.5) while only the fragile block-metric blew up → NOT a scale-break; UNIFORMLY
+  ~50%-mediocre cross-seam fidelity (scale-independent soft limit) → DoD wording becomes "uniformly
+  mediocre," different (better) input for the deferred fix. (Owner's prior: mediocre-everywhere likelier —
+  low-count block rel-err 0.46 already ~46%.)
+Fix stays owner-deferred (§6) either way; the cleaned curve is the owner's coarse-correction input.
+
+**Stage-C rewrite scope (both decisions):** amend `phase5_scope_spec.md` §5.2/§7 + design doc §4/§11 +
+rewrite plan Tasks 15–18 (+ `.tasks.json`). T15 hard-barrier MACHINERY (gate-before-solve) + T16 strict-min
+reduction are SOUND — keep; only the predicate key/constant and T17 frontier artifact + T18 DoD reword.
+`CoherenceFeasibility(core/range≥25)` + `RelaxedCoherenceFeasibility(min_ratio)` both DIE (core/range-keyed).
+`test_core_authoritative_gate.py` strict-xfail (`test_acceptance_operational_cross_seam_covariance_recovered`)
+is core/range-premised → rewrite around the tile-count frontier. Phase boundary STANDS for
+SAMPLES/COVARIANCE but for the REAL reason (worst-seam joint accumulates with tile count), NOT conditioning
+(that was the GMRF prior bug, fixed `6cce45b`). Drop the ★-block option-(b) "median-fidelity" framing
+below — invariant-6-dirty.
+
 ## ★ MEASURED 2026-07-01 — the feasibility frontier: cross-seam covariance does NOT plateau; worst-seam grows with TILE COUNT (not core/range)
 
 **The brief's ONE real question is now answered.** Extended `scripts/diag_crossseam.py` to two sweeps
