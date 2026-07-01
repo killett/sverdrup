@@ -39,6 +39,19 @@ Stage-C global-coherent feasibility (Task 15) reopens.** This is a method-level 
 item — flag to owner before Stage C planning. Do NOT tear down the Stage-B conclusions on the eigmin
 probe alone; measure the cross-seam covariance first.
 
+- **Task-14 dev-confirm (12-day, post-fix) 2026-06-30 — GMRF NO LONGER DEGENERATE; near-admissible.**
+  With `6cce45b`, GMRF scores real skill on the tuning scorer: Sobol mu up to **0.875** (was 0.0),
+  real λx (129 km). BUT `StageANoAdmissible` on both Sobol+BO: no trial cleared `mu≥0.85` AND
+  `coverage∈[0.583,0.783]` jointly. **Investigated the overdispersion (owner-asked): NOT a 2nd bug.**
+  Coverage runs both over (idx1 τ=0.59→cov0.965; idx5 τ=0.98→cov0.969) AND under (idx8 τ=0.225,
+  range101,taper27→cov0.384) with params — a variance-inflation bug can't underdisperse, so the UQ
+  responds correctly. τ is the target marginal variance (signal ~0.025); high-mu trials used τ~0.6–1.0
+  (20–40× signal→overdispersed). **Calibrated corner = idx2 (range618, τ0.058, taper3.3): mu 0.847,
+  cov 0.719 ✓ — misses the mu bar by 0.003.** So: (a) search-density miss (more trials / BO warm-start
+  near idx2 should clear), OR (b) GMRF's CALIBRATED mu tops ~0.847 = ≈BASELINE, marginally below OI's
+  full-space-time-kernel 0.85+ (GMRF uses the weaker tapered-diagonal temporal likelihood — documented
+  KnownBias). Legit method finding either way. Result JSON: `data/2021a_ssh_mapping_ose/ours/stage_b_gate_results.json`.
+
 ## ⏳ PENDING ACTION — conda feedstock bump for v0.2.0 (do this when the PR appears)
 
 **`sverdrup 0.2.0` was tagged + published to PyPI (2026-06-28).** The conda-forge
