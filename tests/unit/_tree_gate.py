@@ -224,6 +224,28 @@ class GateFixture:
         e = self.edge_seam_corr_errs(emp, i, j)
         return float(e.max()) if e.size else 0.0
 
+    def marginal_accuracy_errs(self) -> np.ndarray:
+        """Relative error of the blend's REPORTED marginal variance vs the dense-global marginal.
+
+        The ``MARGINAL_VARIANCE`` capability's deliverable is the reported marginal field
+        ``(Σ_i w_i σ_i)²`` — produced ANALYTICALLY, with no sampling. Its accuracy is therefore a
+        different quantity from :meth:`marginal_contract_ratios` (which is sample-var / reported-var,
+        a SAMPLES-faithfulness / seam under-dispersion symptom). Here: over seam nodes, the relative
+        error of the reported marginal variance against the dense global reference ``diag(Σ_g)`` —
+        the number that sets the ``MARGINAL_VARIANCE`` tile-count bound ``N*_marg``. Sampling-free,
+        so M-independent.
+        """
+        reported = self.sigma_contract() ** 2
+        true_var = np.diag(self.sig_g)
+        adj = _tile_adjacency(self.parts)
+        seam = sorted({int(x) for (i, j) in adj for x in self._shared_gidx(i, j)})
+        errs = [
+            abs(float(reported[g] - true_var[g])) / float(true_var[g])
+            for g in seam
+            if true_var[g] > 0.0
+        ]
+        return np.array(errs)
+
     def sigma_contract(self) -> np.ndarray:
         """Reported marginal std field (Σ_i w_i σ_i) over output points."""
         w = partition_weights([p.tile for p in self.parts], self.pts)  # (T, n)

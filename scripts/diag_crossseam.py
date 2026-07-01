@@ -157,14 +157,57 @@ def probe(
     }
 
 
+def _marg_sweep(src: object) -> None:
+    """Sampling-free MARGINAL_VARIANCE accuracy vs tile count (sets N*_marg).
+
+    The reported marginal field is analytic (no ensemble), so this is fast and M-independent.
+    Distinct from the joint corr-err sweep: it measures the MARGINAL_VARIANCE capability's own
+    deliverable — reported marginal variance vs the dense-global marginal at seams — NOT sample
+    dispersion (which is a SAMPLES/COVARIANCE symptom).
+    """
+    print(
+        "\nMARGINAL_VARIANCE accuracy (analytic; reported marg-var vs dense global at seams):"
+    )
+    print(
+        f"  {'tiling':>7} {'tiles':>6} {'marg_med':>9} {'marg_p95':>9} {'marg_max':>9}"
+    )
+    for kk in range(2, 7):
+        half = CORE_DEG * kk / 2.0
+        try:
+            fix = make_natl60(
+                kk,
+                kk,
+                source=src,
+                lon_range=(CENTER_LON - half, CENTER_LON + half),
+                lat_range=(CENTER_LAT - half, CENTER_LAT + half),
+            )
+            e = fix.marginal_accuracy_errs()
+        except Exception as exc:  # noqa: BLE001 — degenerate tiling diagnostic, keep sweeping
+            print(f"  {kk}x{kk}: FAILED — {type(exc).__name__}: {exc}")
+            continue
+        if e.size:
+            print(
+                f"  {kk}x{kk:<5} {kk * kk:>6} {np.median(e):>9.3f} "
+                f"{np.percentile(e, 95):>9.3f} {e.max():>9.3f}"
+            )
+    print(
+        "  (worst-case relative marg-var error; FLAT+small => MARGINAL_VARIANCE ships at large N*_marg)"
+    )
+
+
 if __name__ == "__main__":
     from sverdrup.adapters.odc.fixtures import FixtureSource
+
+    _write_big_obs(BIG_OBS_PATH, span=CORE_DEG * 6)
+    src = FixtureSource(BIG_OBS_PATH, ref_path=None)
+
+    if os.environ.get("MARG_ONLY"):
+        _marg_sweep(src)
+        sys.exit(0)
 
     print(
         f"CONSTANT-CORE tiles→global frontier (M={M}, selection-controlled worst-of-K):"
     )
-    _write_big_obs(BIG_OBS_PATH, span=CORE_DEG * 6)
-    src = FixtureSource(BIG_OBS_PATH, ref_path=None)
 
     rows: list[dict[str, object]] = []
     for kk in range(2, 7):
