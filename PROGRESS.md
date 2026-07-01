@@ -1,14 +1,13 @@
 # Sverdrup — Progress notebook
 
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**.
-> Next action = **RE-RUN the Task-14 Stage-B gate** with the GMRF prior-variance fix now in place
-> (`6cce45b`). The first full-2017 run (2026-06-29) showed GMRF `mu_score=0.0` on every trial; that
-> exposed a **real GMRF method bug** (missing SPDE marginal-variance normalization → prior σ²
-> range²-inflated ~10³× → posterior over-fit + ±300m gap oscillation → zero held-out skill). FIXED
-> via TDD (`6cce45b`); real-data check shows the GMRF mean field is now OI-like (std 0.2, ±1m). To
-> re-run: `nohup pixi run python scripts/stage_b_gate_run.py > data/2021a_ssh_mapping_ose/ours/stage_b_gate.log 2>&1 &`
-> (full-2017, Sobol+BO; GMRF should now clear/approach BASELINE). Then present `(µ,σ,λx)` rows for
-> sign-off → close Task 14 → Stage C (Task 15). Task-14 *code enablers* committed (`516b937`).
+> Next action = decide sequencing before **Stage C (Task 15)**: the **★★ open question** (does the
+> GMRF prior fix `6cce45b` dissolve the Stage-B/C "phase boundary"? — cross-seam covariance
+> re-measurement) is RECOMMENDED FIRST, because Stage C's whole premise (global-coherent feasibility)
+> depends on it. **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE 2026-06-30** — GMRF fixed (mu 0→admissible),
+> method-agnostic loop drives it end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO; GMRF is
+> BASELINE-µ-ish but ~2× coarser λx than OI (weaker tapered-diagonal temporal likelihood). Tasks 0–14
+> all `completed`. Stage-C tasks 15–18 remain (`pending`).
 > Read the "RESUME HERE (Phase 5 — autotune loop)" block below FIRST for the full state,
 > decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
 > item, NOT the active task.
@@ -51,6 +50,21 @@ probe alone; measure the cross-seam covariance first.
   near idx2 should clear), OR (b) GMRF's CALIBRATED mu tops ~0.847 = ≈BASELINE, marginally below OI's
   full-space-time-kernel 0.85+ (GMRF uses the weaker tapered-diagonal temporal likelihood — documented
   KnownBias). Legit method finding either way. Result JSON: `data/2021a_ssh_mapping_ose/ours/stage_b_gate_results.json`.
+- **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE by owner 2026-06-30.** The N=24 re-run: Sobol found NO
+  admissible (frontier — every mu≥0.85 Sobol draw miscalibrated), but **BO (n=24) hit an admissible
+  corner**: winner `range=702, variance=0.895, taper=3.47` → val mu 0.851 / cov 0.699 / λx 182.8 km →
+  **c2 acceptance `(µ,σ,λx)=(0.835, 0.054, 308)`** (`their_eval` 0 in search / 1 at acceptance ✓).
+  vs OI reproduced 0.853/0.090/140.9 and BASELINE 0.85/0.09/140: **GMRF µ 0.835 is BELOW BASELINE**,
+  **λx 308 km ≈ 2× coarser than OI** — GMRF works but is weaker (tapered-diagonal temporal likelihood
+  << OI's full space-time kernel). Note the **mu_score↔acceptance-µ gap**: winner val-mu 0.851 → c2-µ
+  0.835 (internal track nrmse over-reads the vendored area-binned µ by ~0.016 on 12-day smoke).
+  **KNOWN CAVEATS / FOLLOW-UPS (accepted at sign-off, not blockers):** (1) the committed pytest gate
+  `tests/test_stage_b_gate.py` ERRORS on smoke because Sobol raises `StageANoAdmissible` (no admissible
+  Sobol) — the gate evidence is the RUNNER, not that pytest; adjust the test (or only run it full-year)
+  later. (2) BO in the runner is `rounds=1` + empty history ⇒ effectively random density, NOT guided
+  TPE; it found the corner by luck. Making BO genuinely multi-round (thread `rounds` through
+  `_run_stage`) is a real follow-up, and the gate's "BO ≤1.25× Sobol λx" criterion was vacuous here
+  (Sobol had no admissible λx to compare).
 
 ## ⏳ PENDING ACTION — conda feedstock bump for v0.2.0 (do this when the PR appears)
 
