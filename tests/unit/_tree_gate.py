@@ -184,8 +184,8 @@ class GateFixture:
             np.linalg.norm(emp[blk] - self.sig_g[blk]) / np.linalg.norm(self.sig_g[blk])
         )
 
-    def edge_seam_corr_err(self, emp: np.ndarray, i: int, j: int) -> float:
-        """Worst grid-adjacent cross-seam CORRELATION error on edge (i,j) vs the reference.
+    def edge_seam_corr_errs(self, emp: np.ndarray, i: int, j: int) -> np.ndarray:
+        """Per-pair cross-seam CORRELATION errors on grid-adjacent shared nodes of edge (i,j).
 
         Denominator-robust alternative to :meth:`edge_relerr`. That block rel-err divides by
         ``‖ref cov block‖``, which shrinks toward zero for far / thin-overlap node sets whose
@@ -196,11 +196,15 @@ class GateFixture:
         ``√(σ_a·σ_b)`` — a correlation-unit error that is never near-zero, so it measures actual
         cross-seam decorrelation rather than a vanishing denominator. Same "gate the contracted
         quantity, not a fragile rel-err" discipline that caught the GMRF prior bug.
+
+        Returns the array of per-node-pair errors (empty if the edge has no grid-adjacent shared
+        pair) so callers can pool at the node-pair level and control the selection effect — a
+        worst-OF-a-fixed-count across tilings, not a worst-of-a-growing-population.
         """
         gi = self._shared_gidx(i, j)
         gp = self.pts
         ref = self.sig_g
-        worst = 0.0
+        errs: list[float] = []
         for a in gi:
             for b in gi:
                 if a < b:
@@ -212,8 +216,13 @@ class GateFixture:
                     if not adjacent:
                         continue
                     denom = float(np.sqrt(max(ref[a, a] * ref[b, b], 1e-30)))
-                    worst = max(worst, abs(float(emp[a, b] - ref[a, b])) / denom)
-        return worst
+                    errs.append(abs(float(emp[a, b] - ref[a, b])) / denom)
+        return np.array(errs)
+
+    def edge_seam_corr_err(self, emp: np.ndarray, i: int, j: int) -> float:
+        """Worst grid-adjacent cross-seam correlation error on edge (i,j) (see plural form)."""
+        e = self.edge_seam_corr_errs(emp, i, j)
+        return float(e.max()) if e.size else 0.0
 
     def sigma_contract(self) -> np.ndarray:
         """Reported marginal std field (Σ_i w_i σ_i) over output points."""
