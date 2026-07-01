@@ -1,16 +1,61 @@
 # Sverdrup — Progress notebook
 
-> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**.
-> Next action = decide sequencing before **Stage C (Task 15)**: the **★★ open question** (does the
-> GMRF prior fix `6cce45b` dissolve the Stage-B/C "phase boundary"? — cross-seam covariance
-> re-measurement) is RECOMMENDED FIRST, because Stage C's whole premise (global-coherent feasibility)
-> depends on it. **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE 2026-06-30** — GMRF fixed (mu 0→admissible),
-> method-agnostic loop drives it end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO; GMRF is
-> BASELINE-µ-ish but ~2× coarser λx than OI (weaker tapered-diagonal temporal likelihood). Tasks 0–14
-> all `completed`. Stage-C tasks 15–18 remain (`pending`).
-> Read the "RESUME HERE (Phase 5 — autotune loop)" block below FIRST for the full state,
-> decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
-> item, NOT the active task.
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, PAUSED at a
+> phase boundary **2026-06-30 for a Stage-C REDESIGN**. Tasks 0–14 `completed`; Stage-C Tasks 15–18
+> `pending` but their PREMISE IS SUPERSEDED (see below) — **do NOT execute them as written.**
+> Next action = **redesign Stage C** (brainstorm → write-plan) against the new reality. Read, in order:
+> (1) the **"STAGE-C REDESIGN BRIEF"** block immediately below — the single consolidated handoff;
+> (2) the **★★ RESOLVED** block for the measured evidence; (3) the design/plan/spec the brief points at.
+> **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE** — GMRF prior bug fixed (`6cce45b`), method-agnostic
+> loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
+> coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
+
+## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
+
+**Why Stage C is being redesigned.** Stage C (Tasks 15–18: global coherent sampler + `core/range≥25`
+feasibility predicate + feasibility-vs-resolution frontier + a DoD that documents *"no operational-range
+DUACS-class global coherent until redesign"*) was designed around a **phase boundary that turned out to be
+mostly a GMRF prior-variance BUG** (`matern_precision` omitted the SPDE marginal-variance normalisation →
+prior σ² ~10³× too large). Fixing it (`6cce45b`) and re-measuring on the operational `make_natl60` band
+(`scripts/diag_crossseam.py`, buggy `6cce45b~1` vs fixed) showed the two things that motivated the whole
+Phase-4 Stage-B saga are **bug artifacts, now gone**: conditioning collapse (eigmin 2.5e-7→2.19, cond
+4.36e8→73) and the decisive **seam marginal collapse (tree-driver strict-min 1.9e-7→0.45 @2×2, 0.74 @3×3)**.
+The default `GmrfTreeKrigingSolve` now HOLDS the marginal seam contract in the operational regime.
+
+**What is now FALSE / SUSPECT — do not carry into the redesign without re-deriving:**
+- the `core/range ≥ 25` tile-sizing constraint (`CoherenceFeasibility` in `application/tuning/feasibility.py`,
+  Task 7) — it was the bug's artifact; the real constraint is different (below);
+- the "conditioning floor monotone in eigmin" law, "deflation is dead", the "two antagonists are the same
+  object" claim, and the "no operational-range coherent sampler until redesign" verdict;
+- ALL Phase-4 Stage-B blocks further down titled "THE STRUCTURAL ANTAGONIST / THE SECOND ANTAGONIST /
+  DEFLATION IS DEAD / THE PHASE BOUNDARY" — treat as BUG-CONTAMINATED (kept for trail; do not act on their
+  conditioning/eigmin/deflation claims).
+
+**The ONE real, non-artifact question the redesign must answer:** the *aggregate* joint cross-seam covariance
+rel-err (tree driver vs dense reference) is **scale-INVARIANT under the fix** (0.20 @2×2 → 0.47 @3×3, same
+before/after) and **worsens with tile count**. That is recovery-not-collapse (~80%/53%), a genuine tiling
+effect. Stage-C-at-scale feasibility hinges on whether this aggregate error stays bounded as tiles → global,
+NOT on conditioning. Quantify it: run `scripts/diag_crossseam.py` at larger tilings (4×4, 5×5, …) and see if
+median/max rel-err plateaus or grows unbounded. THAT curve is the new feasibility frontier.
+
+**Concretely for the next session:**
+1. `/superpowers-extended-cc:brainstorm` a Stage-C redesign: reframe feasibility as "aggregate cross-seam cov
+   rel-err ≤ tol at global tile-count", drop/replace `core/range≥25`, decide if the default tree driver is
+   simply *good enough* (strict-min holds; aggregate ~0.2 at small counts) vs needs the overlapping-Schwarz /
+   coarse-correction idea for large counts.
+2. Amend `phase5_scope_spec.md` + the Phase-5 design doc + rewrite Tasks 15–18 in
+   `docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md` (+ its `.tasks.json`) against the new premise.
+3. Re-derive whether `CoherenceFeasibility` should exist at all, or become a cross-seam-cov-rel-err predicate.
+4. Tools on disk: `scripts/diag_crossseam.py` (cross-seam probe, buggy-vs-fixed via `git checkout 6cce45b~1
+   -- src/sverdrup/methods/gmrf_grid.py`), `scripts/stage_b_gate_run.py` (`SVERDRUP_STAGE_B_SCOPE=dev|full`).
+
+**Smaller carried-over follow-ups (non-blocking, from Task 14):** (a) make BO genuinely multi-round (thread
+`rounds` through `_run_stage`) — it is currently `rounds=1`/random density; (b) `tests/test_stage_b_gate.py`
+ERRORS on smoke because Sobol raises `StageANoAdmissible` (no admissible Sobol) — adjust or gate to full-year.
+
+**Source docs (unchanged pointers):** scope `phase5_scope_spec.md`; design
+`docs/superpowers/specs/2026-06-28-phase5-autotune-loop-design.md`; plan + tracker
+`docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md(.tasks.json)`.
 
 ## ★★ RESOLVED 2026-06-30 — the GMRF prior fix (`6cce45b`) LARGELY DISSOLVES the Stage-B/C "phase boundary" (it was mostly a bug artifact)
 
