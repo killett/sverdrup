@@ -12,7 +12,31 @@
 > decisions, and the Task-12/14 AC split. The conda item directly below is a passive watch
 > item, NOT the active task.
 
-## ★★ HIGH-PRIORITY OPEN QUESTION — does the GMRF prior-variance fix (`6cce45b`) dissolve the Stage-B/C "phase boundary"?
+## ★★ RESOLVED 2026-06-30 — the GMRF prior fix (`6cce45b`) LARGELY DISSOLVES the Stage-B/C "phase boundary" (it was mostly a bug artifact)
+
+**MEASURED both ways** (`scripts/diag_crossseam.py`, buggy=`6cce45b~1` vs fixed, `make_natl60` operational core/range<25 band):
+- **Conditioning collapse = bug artifact, FIXED:** global `Q_post` eigmin **2.5e-7 → 2.19**, cond **4.36e8 → 73** (2×2).
+- **Seam marginal collapse = bug artifact, FIXED (the decisive one):** tree-kriging-driver marginal-contract
+  **strict-min 1.9e-7 → 0.451** (2×2) and **6.7e-7 → 0.738** (3×3). This 1e-7 collapse — seam over-pinning /
+  under-dispersion — was THE core Stage-B defect that killed every prior sampler attempt and motivated the
+  overwrite redesign, "deflation is dead", the conditioning-floor law, `core/range≥25`. It is a prior-scale
+  BUG, not a structural boundary. (Median contract was ~1.0 in BOTH — the aggregate hid it; only strict-min
+  exposed it, per the standing localized-metric rule.)
+- **Aggregate cross-seam cov rel-err is scale-INVARIANT (unchanged): 0.20 (2×2) / 0.47 (3×3).** This is
+  ~80%/53% recovery (recovery, not collapse) and is the SAME before/after — a real tiling effect that
+  **worsens with tile count**. The DEFAULT tree driver was never as broken on the aggregate as OVERWRITE
+  (which zeroes the seam by construction); the strict-min collapse was the real killer, and it's fixed.
+
+**CONSEQUENCE — Stage-C (Task 15) premise is superseded:** "no operational-range DUACS-class global coherent
+sampler until redesign" + the whole conditioning/deflation/`core/range≥25` framing were measured on the
+10³×-too-weak prior. The default tree-kriging driver now HOLDS the marginal seam contract in the operational
+band. **Remaining REAL (non-artifact) question for Stage-C-at-scale:** aggregate joint cross-seam covariance
+accumulates error as tile count grows (0.20→0.47 for 4→9 tiles) — quantify whether that bounds global-coherent
+feasibility, NOT the (now-refuted) near-singular-conditioning story. Re-plan Stage C against THIS, and treat
+the Phase-4 Stage-B "THE PHASE BOUNDARY / DEFLATION IS DEAD / SECOND ANTAGONIST" blocks below as
+BUG-CONTAMINATED (kept for trail; do not act on their conditioning claims).
+
+### (original question, kept for trail) does the GMRF prior-variance fix (`6cce45b`) dissolve the Stage-B/C "phase boundary"?
 
 **Raised + partially measured 2026-06-30.** The entire Phase-4 Stage-B saga (and the Stage-C
 "no operational-range coherent sampler until redesign" phase-boundary verdict) was characterised on
