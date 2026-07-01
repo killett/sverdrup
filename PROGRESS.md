@@ -87,18 +87,37 @@ knob, not a global determinant. tol=0.5 (not 1.0) because: (a) its N*=9 sits on 
 robust to the metric artifact below; (b) rel-err≤1.0 admits 100%-off covariance = unusable, defeats the
 capability's purpose.
 
-**IN FLIGHT — metric validation (gates the Task-18 DoD WORDING, not the headline).** The worst-seam MAX
-at high tile counts is a suspected NEAR-ZERO-DENOMINATOR artifact: `edge_relerr = ‖emp−ref‖/‖ref block‖`;
-far/thin-overlap node sets have true-cov≈0 → M=2000 noise inflates it. Added a robust metric
-`GateFixture.edge_seam_corr_err` (normalizes the cross-seam cov error on grid-ADJACENT seam node pairs by
-the marginal-std scale `√(σ_aσ_b)`, never near-zero — a correlation-unit error) and re-running the sweep.
-- If adjacent-seam CORR-err ALSO grows past ~1 at scale → boundary is REAL/HARD ("breaks at N* tiles"),
-  N* meaningful.
-- If it stays bounded (~0.5) while only the fragile block-metric blew up → NOT a scale-break; UNIFORMLY
-  ~50%-mediocre cross-seam fidelity (scale-independent soft limit) → DoD wording becomes "uniformly
-  mediocre," different (better) input for the deferred fix. (Owner's prior: mediocre-everywhere likelier —
-  low-count block rel-err 0.46 already ~46%.)
-Fix stays owner-deferred (§6) either way; the cleaned curve is the owner's coarse-correction input.
+**DECISION 3 — metric validation RESOLVED 2026-07-01 → Option 1 (empty region), both-tiers artifact.**
+The fragile `edge_relerr = ‖emp−ref‖/‖ref block‖` block-max (0.46→2.58 with tile count) was inflated by a
+NEAR-ZERO-DENOMINATOR artifact (far/thin-overlap node sets, true-cov≈0) + median-of-edge-maxes. Added a
+robust metric `GateFixture.edge_seam_corr_err(s)` — per grid-ADJACENT seam node pair,
+`|emp_cov−ref_cov|/√(σ_aσ_b)` (correlation-unit, never near-zero denom) — and re-ran the constant-core
+sweep at **M=8000** with a **selection-controlled worst-of-K** (K=418 = smallest tiling's node-pair pool,
+mean over 400 seeded subsamples), so "worst grew" means seams degraded, not that more pairs were sampled.
+Result (node-pair pool, constant 4° core):
+
+  tiles  marg   corr_med  corr_p95  corr_woK(K=418)
+    4    0.498   0.015     0.232      1.105
+    9    0.512   0.023     0.270      0.506
+   16    0.434   0.031     0.344      0.823
+   25    0.380   0.052     0.798      2.033
+   36    0.342   0.070     0.427      2.108
+
+VERDICT (matches owner's decision rule — 2×2 worst-case ≥1 → Option 1 unassailable):
+- WORST-CASE (invariant-6 gate): `corr_woK` ≥ 1.0 at the SMALLEST tiling (2×2 = 1.105) AND grows ~2× to
+  ~2.1 at 36 tiles. Selection-controlled + denoised → real, not a small-n fluke, not pure selection. So
+  `SAMPLES/COVARIANCE` feasible region is **EMPTY** at operational range; `N*_joint` RETIRES as a number;
+  predicate returns False for `SAMPLES/COVARIANCE` at any operational tiling until the owner-deferred fix.
+- BULK (the redesign-input nuance, reported by the artifact, NOT gated): typical seam is EXCELLENT (median
+  1.5%→7%), p95 good then crosses tol≈0.5 around N~16–20 (0.34@16 → 0.80@25). So the deficit is a SPARSE
+  CATASTROPHIC TAIL (~0.24% of pairs at 2×2), not uniform mediocrity → the coarse-correction must rescue a
+  few bad seam pairs, not fix a uniform ~50% deficit. Materially better input than the pre-denoise reading.
+- MARGINAL_VARIANCE: strict-min drifts 0.498→0.342 over 4→36 tiles (slow/real, per owner warning) — `N*_marg`
+  real but not unbounded; verify by extrapolation before shipping the marginal global product.
+
+**Frontier artifact carries BOTH tiers** (Option 3's content, as ARTIFACT not predicate): predicate gates
+worst-case only (invariant 6); the owner-facing frontier reports worst-case (empty) AND median/p95 (sparse
+tail, ~2× growth). Fix owner-deferred (§6). tol=0.5 default stands but N* is moot (region empty regardless).
 
 **Stage-C rewrite scope (both decisions):** amend `phase5_scope_spec.md` §5.2/§7 + design doc §4/§11 +
 rewrite plan Tasks 15–18 (+ `.tasks.json`). T15 hard-barrier MACHINERY (gate-before-solve) + T16 strict-min
