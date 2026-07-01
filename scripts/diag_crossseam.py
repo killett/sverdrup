@@ -118,18 +118,29 @@ def probe(
         )
     emp = fix.cov(samples)
     relerrs = []
+    corr_errs = []
     for i in range(len(fix.parts)):
         for j in range(i + 1, len(fix.parts)):
             gi = fix._shared_gidx(i, j)
             if gi.size:
                 relerrs.append(fix.edge_relerr(emp, i, j))
+                ce = fix.edge_seam_corr_err(emp, i, j)
+                if ce > 0.0:  # edges with no grid-adjacent seam pair contribute nothing
+                    corr_errs.append(ce)
     r = np.array(relerrs)
+    c = np.array(corr_errs)
     if not r.size:
         print("  NO seam edges (degenerate tiling) — skipped")
         return None
     print(
-        f"  seam edges={r.size}  cross-seam cov rel-err: "
-        f"min={r.min():.3f} median={np.median(r):.3f} max={r.max():.3f}"
+        f"  seam edges={r.size}  BLOCK rel-err (fragile): "
+        f"median={np.median(r):.3f} max={r.max():.3f}"
+    )
+    c_med = float(np.median(c)) if c.size else float("nan")
+    c_max = float(c.max()) if c.size else float("nan")
+    print(
+        f"  adjacent-seam CORR-err (robust): "
+        f"median={c_med:.3f} max={c_max:.3f} (n={c.size}; ~0 good, ~1 decorrelated)"
     )
     return {
         "n_lon": n_lon,
@@ -139,6 +150,8 @@ def probe(
         "mc_min": mc_min,
         "relerr_median": float(np.median(r)),
         "relerr_max": float(r.max()),
+        "correrr_median": c_med,
+        "correrr_max": c_max,
     }
 
 
@@ -146,15 +159,16 @@ def _print_curve(title: str, rows: list[dict[str, float]]) -> None:
     """Print a feasibility-vs-tile-count table from probe rows."""
     print(f"\n\n==== {title} ====")
     print(
-        f"  {'tiling':>8} {'tiles':>6} {'core°':>6} {'seams':>6} "
-        f"{'mc_min':>10} {'relerr_med':>11} {'relerr_max':>11}"
+        f"  {'tiling':>8} {'tiles':>6} {'core°':>6} "
+        f"{'mc_min':>9} {'block_med':>10} {'block_max':>10} {'CORR_med':>9} {'CORR_max':>9}"
     )
     for row in rows:
         core = 0.0 if not row["core_deg"] else row["core_deg"]
         print(
             f"  {int(row['n_lon'])}x{int(row['n_lat']):<6} "
-            f"{int(row['tiles']):>6} {core:>6.2f} {int(row['seam_edges']):>6} "
-            f"{row['mc_min']:>10.3e} {row['relerr_median']:>11.3f} {row['relerr_max']:>11.3f}"
+            f"{int(row['tiles']):>6} {core:>6.2f} "
+            f"{row['mc_min']:>9.3e} {row['relerr_median']:>10.3f} {row['relerr_max']:>10.3f} "
+            f"{row.get('correrr_median', float('nan')):>9.3f} {row.get('correrr_max', float('nan')):>9.3f}"
         )
 
 

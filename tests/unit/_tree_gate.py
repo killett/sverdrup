@@ -184,6 +184,37 @@ class GateFixture:
             np.linalg.norm(emp[blk] - self.sig_g[blk]) / np.linalg.norm(self.sig_g[blk])
         )
 
+    def edge_seam_corr_err(self, emp: np.ndarray, i: int, j: int) -> float:
+        """Worst grid-adjacent cross-seam CORRELATION error on edge (i,j) vs the reference.
+
+        Denominator-robust alternative to :meth:`edge_relerr`. That block rel-err divides by
+        ``‖ref cov block‖``, which shrinks toward zero for far / thin-overlap node sets whose
+        true cross-covariance is ~0 — so M-sample noise inflates it into a spurious blow-up
+        (the "worst-seam max grows past 2" artifact suspected in the tile-count sweep). Here the
+        covariance error on each grid-ADJACENT shared node pair (the physical seam where
+        cross-tile gradients integrate) is normalised by the marginal-std scale
+        ``√(σ_a·σ_b)`` — a correlation-unit error that is never near-zero, so it measures actual
+        cross-seam decorrelation rather than a vanishing denominator. Same "gate the contracted
+        quantity, not a fragile rel-err" discipline that caught the GMRF prior bug.
+        """
+        gi = self._shared_gidx(i, j)
+        gp = self.pts
+        ref = self.sig_g
+        worst = 0.0
+        for a in gi:
+            for b in gi:
+                if a < b:
+                    dlon = abs(gp[a, 0] - gp[b, 0])
+                    dlat = abs(gp[a, 1] - gp[b, 1])
+                    adjacent = (dlon <= 1.0 + 1e-6 and dlat < 1e-6) or (
+                        dlat <= 1.0 + 1e-6 and dlon < 1e-6
+                    )
+                    if not adjacent:
+                        continue
+                    denom = float(np.sqrt(max(ref[a, a] * ref[b, b], 1e-30)))
+                    worst = max(worst, abs(float(emp[a, b] - ref[a, b])) / denom)
+        return worst
+
     def sigma_contract(self) -> np.ndarray:
         """Reported marginal std field (Σ_i w_i σ_i) over output points."""
         w = partition_weights([p.tile for p in self.parts], self.pts)  # (T, n)
