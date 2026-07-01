@@ -112,12 +112,37 @@ VERDICT (matches owner's decision rule — 2×2 worst-case ≥1 → Option 1 una
   1.5%→7%), p95 good then crosses tol≈0.5 around N~16–20 (0.34@16 → 0.80@25). So the deficit is a SPARSE
   CATASTROPHIC TAIL (~0.24% of pairs at 2×2), not uniform mediocrity → the coarse-correction must rescue a
   few bad seam pairs, not fix a uniform ~50% deficit. Materially better input than the pre-denoise reading.
-- MARGINAL_VARIANCE: strict-min drifts 0.498→0.342 over 4→36 tiles (slow/real, per owner warning) — `N*_marg`
-  real but not unbounded; verify by extrapolation before shipping the marginal global product.
+- SAMPLES/COVARIANCE has a THIRD symptom (owner-corrected mis-keying): `marginal_contract_ratios`
+  (sample_var/reported_var, `_tree_gate.py:201`) strict-min drift 0.498→0.342 is coherent-SAMPLE
+  UNDER-DISPERSION at seams — a SAMPLES/COVARIANCE symptom, NOT a MARGINAL_VARIANCE bound. Fold into the
+  joint tier (3 symptoms: joint corr worst-case ≥1, sample under-dispersion, both grow with tile count).
+
+**DECISION 4 — MARGINAL_VARIANCE bound MEASURED on the right quantity (2026-07-01).** Added
+`GateFixture.marginal_accuracy_errs` (analytic, sampling-free): relative error of the blend's REPORTED
+marginal variance `(Σwσ)²` vs dense-global `diag(Σ_g)` at seams — the MARGINAL_VARIANCE capability's actual
+deliverable (NOT sample dispersion). `MARG_ONLY=1 python scripts/diag_crossseam.py`, constant 4° core:
+
+  tiles  marg_med  marg_p95  marg_max
+    4     0.008     0.055     0.069
+    9     0.007     0.063     0.140
+   16     0.008     0.069     0.130
+   25     0.009     0.083     0.149
+   36     0.010     0.070     0.132
+
+Worst-case ~13–15%, **FLAT with tile count** (not growing) — opposite of the joint metric. So `N*_marg` is
+effectively UNBOUNDED within the tested range (worst-case ~15% up to 36 tiles); MARGINAL_VARIANCE global
+product genuinely ships. Confirms per-tile reported marginals with adequate halos are locally accurate.
 
 **Frontier artifact carries BOTH tiers** (Option 3's content, as ARTIFACT not predicate): predicate gates
-worst-case only (invariant 6); the owner-facing frontier reports worst-case (empty) AND median/p95 (sparse
-tail, ~2× growth). Fix owner-deferred (§6). tol=0.5 default stands but N* is moot (region empty regardless).
+worst-case only (invariant 6); the owner-facing frontier reports the SAMPLES/COVARIANCE tier (worst-case
+empty + 3 symptoms, ~2× growth) AND the MARGINAL_VARIANCE tier (worst-case ~15% flat → ships). Fix
+owner-deferred (§6). tol=0.5 default stands but N*_joint=1 (region empty regardless of tol).
+
+**PROVENANCE CAVEAT (carry into the DoD):** n_star_joint=1 / empty-region rests on ONE synthetic fixture
+(4° core, 300 km range, 1° grid, M=8000, K-controlled). The CONCLUSION is physically robust (independent-core
+tiling destroys cross-seam correlation, worsens with seams, cores don't help — confound killed), but exact
+universality across ranges/densities is one-fixture-based. The swappable predicate (`joint_tol`,
+`n_star_joint` named params) handles regime variation; state provenance honestly, don't imply universality.
 
 **Stage-C rewrite scope (both decisions):** amend `phase5_scope_spec.md` §5.2/§7 + design doc §4/§11 +
 rewrite plan Tasks 15–18 (+ `.tasks.json`). T15 hard-barrier MACHINERY (gate-before-solve) + T16 strict-min
