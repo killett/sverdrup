@@ -1,12 +1,12 @@
 {
   "planPath": "docs/superpowers/plans/2026-06-28-phase5-autotune-loop.md",
-  "lastUpdated": "2026-06-29",
+  "lastUpdated": "2026-06-30",
   "tasks": [
     {
       "id": 0,
       "subject": "Task 0: Refresh PROGRESS.md resume index",
       "status": "completed",
-      "description": "**Goal:** Point the session-resume index at the Phase-5 design, plan, and tracker.\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"rg -n 'Phase 5 — autotune loop' PROGRESS.md\", \"acceptanceCriteria\": [\"resume block present\", \"index bullet present\"], \"modelTier\": \"mechanical\"}\n```"
+      "description": "**Goal:** Point the session-resume index at the Phase-5 design, plan, and tracker.\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"rg -n 'Phase 5 \u2014 autotune loop' PROGRESS.md\", \"acceptanceCriteria\": [\"resume block present\", \"index bullet present\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
       "id": 1,
@@ -16,23 +16,28 @@
     },
     {
       "id": 2,
-      "subject": "Task 2: Shared λx helper + refactor their_eval",
+      "subject": "Task 2: Shared \u03bbx helper + refactor their_eval",
       "status": "completed",
-      "description": "**Goal:** Extract effective_resolution_lambda_x (raw-residual boundary, segment prep inside) and route their_eval through it; fail loud on short track (test 9).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/spectral.py\", \"src/sverdrup/validation/their_eval.py\", \"tests/test_eval_spectral.py\", \"tests/validation/test_their_eval_lambda_x_regression.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_spectral.py -v\", \"acceptanceCriteria\": [\"shared helper returns λx\", \"raw-residual boundary\", \"ShortTrackError on short track\", \"their_eval λx regression within ±0.5km\"], \"modelTier\": \"standard\"}\n```"
+      "description": "**Goal:** Extract effective_resolution_lambda_x (raw-residual boundary, segment prep inside) and route their_eval through it; fail loud on short track (test 9).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/spectral.py\", \"src/sverdrup/validation/their_eval.py\", \"tests/test_eval_spectral.py\", \"tests/validation/test_their_eval_lambda_x_regression.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_spectral.py -v\", \"acceptanceCriteria\": [\"shared helper returns \u03bbx\", \"raw-residual boundary\", \"ShortTrackError on short track\", \"their_eval \u03bbx regression within \u00b10.5km\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 3,
       "subject": "Task 3: EffectiveResolution evaluator + test 7",
       "status": "completed",
-      "blockedBy": [1, 2],
-      "description": "**Goal:** POINTWISE λx evaluator on the blocked non-c2 validation track via the shared helper; test 7 (real track through both call sites identical λx); never imports their_eval.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/resolution.py\", \"tests/test_eval_resolution.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_resolution.py -v\", \"acceptanceCriteria\": [\"POINTWISE λx on validation track\", \"never imports their_eval\", \"test 7 identical λx\"], \"modelTier\": \"standard\"}\n```"
+      "blockedBy": [
+        1,
+        2
+      ],
+      "description": "**Goal:** POINTWISE \u03bbx evaluator on the blocked non-c2 validation track via the shared helper; test 7 (real track through both call sites identical \u03bbx); never imports their_eval.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/resolution.py\", \"tests/test_eval_resolution.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_resolution.py -v\", \"acceptanceCriteria\": [\"POINTWISE \u03bbx on validation track\", \"never imports their_eval\", \"test 7 identical \u03bbx\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 4,
       "subject": "Task 4: mu_score normalized skill score",
       "status": "completed",
-      "blockedBy": [1],
-      "description": "**Goal:** leaderboard_nrmse helper + NormalizedSkillScore (POINTWISE) emitting mu_score (higher-better) on validation track; acceptance µ stays vendored area-binned, validated at Stage-A gate.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/skill_score.py\", \"src/sverdrup/eval/skill.py\", \"tests/test_eval_skill.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_skill.py -v\", \"acceptanceCriteria\": [\"leaderboard_nrmse higher-better pure\", \"NormalizedSkillScore emits mu_score POINTWISE\", \"perfect=1.0 zero=0.0\"], \"modelTier\": \"mechanical\"}\n```"
+      "blockedBy": [
+        1
+      ],
+      "description": "**Goal:** leaderboard_nrmse helper + NormalizedSkillScore (POINTWISE) emitting mu_score (higher-better) on validation track; acceptance \u00b5 stays vendored area-binned, validated at Stage-A gate.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/skill_score.py\", \"src/sverdrup/eval/skill.py\", \"tests/test_eval_skill.py\"], \"verifyCommand\": \"pixi run test tests/test_eval_skill.py -v\", \"acceptanceCriteria\": [\"leaderboard_nrmse higher-better pure\", \"NormalizedSkillScore emits mu_score POINTWISE\", \"perfect=1.0 zero=0.0\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
       "id": 5,
@@ -44,7 +49,9 @@
       "id": 6,
       "subject": "Task 6: SearchStrategy seam + Random/Sobol",
       "status": "completed",
-      "blockedBy": [5],
+      "blockedBy": [
+        5
+      ],
       "description": "**Goal:** SearchStrategy Protocol + seeded RandomSearch/SobolSearch proposing within ParameterSpace.bounds; method-agnostic; deterministic.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/strategy.py\", \"tests/test_tuning_strategy.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_strategy.py -v\", \"acceptanceCriteria\": [\"SearchStrategy Protocol\", \"in-bounds proposals both methods\", \"seeded determinism\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -57,14 +64,21 @@
       "id": 8,
       "subject": "Task 8: ConstrainedObjective + NoAdmissibleTrial",
       "status": "completed",
-      "blockedBy": [5],
-      "description": "**Goal:** Rank feasible+admissible by λx primary under hard bars (mu_score>=0.85, coverage within tol); calibration hard, never traded; empty -> NoAdmissibleTrial (test 10).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/objective.py\", \"tests/test_tuning_objective.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_objective.py -v\", \"acceptanceCriteria\": [\"BASELINE floor 0.85 hard >=\", \"calibration hard never traded\", \"rank by λx\", \"empty -> NoAdmissibleTrial (test 10)\"], \"modelTier\": \"standard\"}\n```"
+      "blockedBy": [
+        5
+      ],
+      "description": "**Goal:** Rank feasible+admissible by \u03bbx primary under hard bars (mu_score>=0.85, coverage within tol); calibration hard, never traded; empty -> NoAdmissibleTrial (test 10).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/objective.py\", \"tests/test_tuning_objective.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_objective.py -v\", \"acceptanceCriteria\": [\"BASELINE floor 0.85 hard >=\", \"calibration hard never traded\", \"rank by \u03bbx\", \"empty -> NoAdmissibleTrial (test 10)\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 9,
       "subject": "Task 9: Orchestration loop (tune)",
       "status": "completed",
-      "blockedBy": [5, 6, 7, 8],
+      "blockedBy": [
+        5,
+        6,
+        7,
+        8
+      ],
       "description": "**Goal:** Gate-before-solve loop; POINTWISE-only scoring via TrialScorer seam; their_eval untouched in search; determinism. Tests 4,5,2(search),8.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/loop.py\", \"tests/test_tuning_loop.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_loop.py -v\", \"acceptanceCriteria\": [\"hard barrier no scorer call for infeasible (test 4)\", \"POINTWISE-only (test 5)\", \"their_eval untouched in search (test 2)\", \"determinism (test 8)\"], \"modelTier\": \"complex\"}\n```"
     },
     {
@@ -75,59 +89,83 @@
     },
     {
       "id": 11,
-      "subject": "Task 11: [USER GATE] Stage A — tuned OI vs challenge end-to-end",
+      "subject": "Task 11: [USER GATE] Stage A \u2014 tuned OI vs challenge end-to-end",
       "status": "completed",
-      "blockedBy": [9, 3, 4, 10],
-      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Real ExecutorTrialScorer + Stage-A driver on OI single-tile; accept winner once via their_eval on c2. Test 1 (loop proven, clears BASELINE, acceptance reports (µ,σ,λx)) + test 2 (their_eval 0 in search / 1 acceptance) + empirical mu_score↔acceptance-µ calibration check.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/scorer.py\", \"src/sverdrup/application/tuning/stage_a.py\", \"tests/test_stage_a_end_to_end.py\", \"tests/validation/fixtures/stage_a_scope.json\"], \"verifyCommand\": \"pixi run test tests/test_stage_a_end_to_end.py -v\", \"acceptanceCriteria\": [\"scorer scores on validation_idx via pointwise registry\", \"split c2 locked / validation non-c2\", \"test 1 tuned OI clears BASELINE + acceptance (µ,σ,λx)\", \"test 2 their_eval 0 search / 1 acceptance\", \"mu_score vs acceptance-µ calibration recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-A\", \"modelTier\": \"complex\"}\n```"
+      "blockedBy": [
+        9,
+        3,
+        4,
+        10
+      ],
+      "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Real ExecutorTrialScorer + Stage-A driver on OI single-tile; accept winner once via their_eval on c2. Test 1 (loop proven, clears BASELINE, acceptance reports (\u00b5,\u03c3,\u03bbx)) + test 2 (their_eval 0 in search / 1 acceptance) + empirical mu_score\u2194acceptance-\u00b5 calibration check.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/scorer.py\", \"src/sverdrup/application/tuning/stage_a.py\", \"tests/test_stage_a_end_to_end.py\", \"tests/validation/fixtures/stage_a_scope.json\"], \"verifyCommand\": \"pixi run test tests/test_stage_a_end_to_end.py -v\", \"acceptanceCriteria\": [\"scorer scores on validation_idx via pointwise registry\", \"split c2 locked / validation non-c2\", \"test 1 tuned OI clears BASELINE + acceptance (\u00b5,\u03c3,\u03bbx)\", \"test 2 their_eval 0 search / 1 acceptance\", \"mu_score vs acceptance-\u00b5 calibration recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-A\", \"modelTier\": \"complex\"}\n```"
     },
     {
       "id": 12,
-      "subject": "Task 12: [USER GATE] Stage B — GMRF method-agnosticism",
+      "subject": "Task 12: [USER GATE] Stage B \u2014 GMRF method-agnosticism",
       "status": "completed",
-      "blockedBy": [11],
-      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Identical loop with GMRF space (method_name/space only); test 3 (no OI param names in tuning/; same loop drives both); GMRF acceptance finite (µ,σ,λx).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_a.py\", \"src/sverdrup/application/tuning/stage_b.py\", \"tests/test_stage_b_method_agnostic.py\", \"tests/test_tuning_method_agnostic.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_method_agnostic.py tests/test_tuning_method_agnostic.py -v\", \"acceptanceCriteria\": [\"run_stage_b differs only in method/space\", \"test 3 no OI param names\", \"same loop OI+GMRF\", \"degenerate-trial robustness: UnresolvedScaleError recorded feasible-but-unscorable, no crash, loud NoAdmissibleTrial (PROVEN on real GMRF data)\", \"GMRF acceptance NUMBER deferred to Task 14 (AC split 2026-06-29: Sobol-on-12d-smoke all-degenerate; method-agnosticism+robustness are Task-12 evidence)\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-B\", \"modelTier\": \"standard\"}\n```"
+      "blockedBy": [
+        11
+      ],
+      "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Identical loop with GMRF space (method_name/space only); test 3 (no OI param names in tuning/; same loop drives both); GMRF acceptance finite (\u00b5,\u03c3,\u03bbx).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_a.py\", \"src/sverdrup/application/tuning/stage_b.py\", \"tests/test_stage_b_method_agnostic.py\", \"tests/test_tuning_method_agnostic.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_method_agnostic.py tests/test_tuning_method_agnostic.py -v\", \"acceptanceCriteria\": [\"run_stage_b differs only in method/space\", \"test 3 no OI param names\", \"same loop OI+GMRF\", \"degenerate-trial robustness: UnresolvedScaleError recorded feasible-but-unscorable, no crash, loud NoAdmissibleTrial (PROVEN on real GMRF data)\", \"GMRF acceptance NUMBER deferred to Task 14 (AC split 2026-06-29: Sobol-on-12d-smoke all-degenerate; method-agnosticism+robustness are Task-12 evidence)\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-B\", \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 13,
       "subject": "Task 13: BayesianOptimization strategy (optuna)",
       "status": "completed",
-      "blockedBy": [11],
+      "blockedBy": [
+        11
+      ],
       "description": "**Goal:** BayesianOptimization drop-in SearchStrategy (optuna TPE, seeded), added after Stage-A loop green; in-bounds, deterministic, loop unchanged.\n\n```json:metadata\n{\"files\": [\"pixi.toml\", \"src/sverdrup/application/tuning/bayesopt.py\", \"tests/test_tuning_bayesopt.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_bayesopt.py -v\", \"acceptanceCriteria\": [\"implements SearchStrategy\", \"in-bounds proposals\", \"seeded determinism\", \"drop-in into tune()\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 14,
-      "subject": "Task 14: [USER GATE] Stage B gate — GMRF via BO",
-      "status": "pending",
-      "blockedBy": [12, 13],
-      "description": "**USER-ORDERED GATE — NON-SKIPPABLE. PAUSED 2026-06-29: enablers committed (516b937), the real multi-hour full-2017 GMRF-via-BO acceptance run is deferred by the owner to a scheduled session.** DONE: strategy seam (_run_stage/run_stage_a/run_stage_b), env-gated gate test (SVERDRUP_STAGE_B_GATE=1), mu_score-before-λx reorder (_assemble_scores, 3 unit tests). nan-check resolved (leaderboard_nrmse bounded [0,1]; only nan was the empty-set default). REMAINING: run full-2017 (set full-year days/time_* in tests/validation/fixtures/stage_a_scope.json) -> capture (µ,σ,λx) Sobol-vs-BO rows -> owner sign-off before Stage C.\n\nClose only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** GMRF end-to-end with BO; sensible non-regressing acceptance (λx <= 1.25x Sobol); method-agnosticism green.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_a.py\", \"src/sverdrup/application/tuning/stage_b.py\", \"tests/test_stage_b_gate.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_gate.py tests/test_tuning_method_agnostic.py -v\", \"acceptanceCriteria\": [\"GMRF via BO winner + acceptance\", \"GMRF (µ,σ,λx) acceptance NUMBER (split-in from Task 12 on 2026-06-29 — own the actual GMRF acceptance here)\", \"mu_score-before-λx reorder + nan-check (carried from Task 12: confirm GMRF maps but under-resolves vs fails outright)\", \"BO not regressing λx beyond 1.25x Sobol\", \"method-agnosticism green\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-B\", \"modelTier\": \"standard\"}\n```"
+      "subject": "Task 14: [USER GATE] Stage B gate \u2014 GMRF via BO",
+      "status": "completed",
+      "blockedBy": [
+        12,
+        13
+      ],
+      "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE. PAUSED 2026-06-29: enablers committed (516b937), the real multi-hour full-2017 GMRF-via-BO acceptance run is deferred by the owner to a scheduled session.** DONE: strategy seam (_run_stage/run_stage_a/run_stage_b), env-gated gate test (SVERDRUP_STAGE_B_GATE=1), mu_score-before-\u03bbx reorder (_assemble_scores, 3 unit tests). nan-check resolved (leaderboard_nrmse bounded [0,1]; only nan was the empty-set default). REMAINING: run full-2017 (set full-year days/time_* in tests/validation/fixtures/stage_a_scope.json) -> capture (\u00b5,\u03c3,\u03bbx) Sobol-vs-BO rows -> owner sign-off before Stage C.\n\nClose only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** GMRF end-to-end with BO; sensible non-regressing acceptance (\u03bbx <= 1.25x Sobol); method-agnosticism green.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_a.py\", \"src/sverdrup/application/tuning/stage_b.py\", \"tests/test_stage_b_gate.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_gate.py tests/test_tuning_method_agnostic.py -v\", \"acceptanceCriteria\": [\"GMRF via BO winner + acceptance\", \"GMRF (\u00b5,\u03c3,\u03bbx) acceptance NUMBER (split-in from Task 12 on 2026-06-29 \u2014 own the actual GMRF acceptance here)\", \"mu_score-before-\u03bbx reorder + nan-check (carried from Task 12: confirm GMRF maps but under-resolves vs fails outright)\", \"BO not regressing \u03bbx beyond 1.25x Sobol\", \"method-agnosticism green\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-B\", \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 15,
-      "subject": "Task 15: Stage C — global coherent + hard barrier at scale",
+      "subject": "Task 15: Stage C \u2014 global coherent + hard barrier at scale",
       "status": "pending",
-      "blockedBy": [14, 7],
+      "blockedBy": [
+        14,
+        7
+      ],
       "description": "**Goal:** GMRF global coherent mode (required_capabilities={SAMPLES}); tile_geometry_for(core, range); range-aware predicate; test 4 global (infeasible never solved, scores=None).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_c.py\", \"tests/test_stage_c_hard_barrier.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_hard_barrier.py -v\", \"acceptanceCriteria\": [\"tile_geometry_for uses trial range\", \"global loop required_capabilities={SAMPLES}\", \"test 4 global infeasible never solved\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 16,
       "subject": "Task 16: Coherence worst-case-localized (strict-min)",
       "status": "pending",
-      "blockedBy": [15],
+      "blockedBy": [
+        15
+      ],
       "description": "**Goal:** worst_case_coherence strict-min reduction (gate evidence only, never an objective term); strict-min != median; empty=1.0.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/coherence_gate.py\", \"tests/test_stage_c_worst_case_localized.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_worst_case_localized.py -v\", \"acceptanceCriteria\": [\"strict-min not median\", \"empty -> 1.0\", \"coherence never an objective score\"], \"modelTier\": \"mechanical\"}\n```"
     },
     {
       "id": 17,
       "subject": "Task 17: Feasibility-vs-resolution tradeoff artifact",
       "status": "pending",
-      "blockedBy": [15, 7],
+      "blockedBy": [
+        15,
+        7
+      ],
       "description": "**Goal:** feasibility_resolution_frontier(core_sizes, ranges, predicate) rows; relaxed predicate widens region with no change to tradeoff.py (test 6, Stage C form); serializable.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/tradeoff.py\", \"tests/test_stage_c_tradeoff.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_tradeoff.py -v\", \"acceptanceCriteria\": [\"frontier rows feasible+target_lambda_x\", \"relaxed widens region tradeoff.py unchanged (test 6)\", \"serializable\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 18,
-      "subject": "Task 18: [USER GATE] Stage C DoD — boundary respected + quantified",
+      "subject": "Task 18: [USER GATE] Stage C DoD \u2014 boundary respected + quantified",
       "status": "pending",
-      "blockedBy": [15, 16, 17],
-      "description": "**USER-ORDERED GATE — NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Stage-C DoD evidence (hard barrier + worst-case + relaxed-widens + tradeoff surfaced); full suite + typecheck + lint + pre-commit green; frontier doc names the feasible band and states no operational-range DUACS-class global coherent until redesign.\n\n```json:metadata\n{\"files\": [\"tests/test_stage_c_dod.py\", \"docs/validation/phase5_feasibility_resolution_frontier.md\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files\", \"acceptanceCriteria\": [\"hard barrier + worst-case + relaxed-widens evidence\", \"frontier doc with feasible band + no-operational-DUACS statement\", \"full suite + typecheck + lint + pre-commit clean\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-C\", \"modelTier\": \"complex\"}\n```"
+      "blockedBy": [
+        15,
+        16,
+        17
+      ],
+      "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** Close only after every acceptanceCriterion is re-validated independently with captured output.\n\n**Goal:** Stage-C DoD evidence (hard barrier + worst-case + relaxed-widens + tradeoff surfaced); full suite + typecheck + lint + pre-commit green; frontier doc names the feasible band and states no operational-range DUACS-class global coherent until redesign.\n\n```json:metadata\n{\"files\": [\"tests/test_stage_c_dod.py\", \"docs/validation/phase5_feasibility_resolution_frontier.md\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files\", \"acceptanceCriteria\": [\"hard barrier + worst-case + relaxed-widens evidence\", \"frontier doc with feasible band + no-operational-DUACS statement\", \"full suite + typecheck + lint + pre-commit clean\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"stage-C\", \"modelTier\": \"complex\"}\n```"
     }
   ]
 }
