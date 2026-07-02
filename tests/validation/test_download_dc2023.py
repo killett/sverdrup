@@ -5,6 +5,7 @@ import argparse
 import pytest
 
 from sverdrup.validation import download_ocean_data_challenges_2023 as dl
+from tests.validation._net import skip_if_unreachable
 
 
 def test_four_challenges_with_wellformed_manifests():
@@ -67,8 +68,10 @@ def test_mapmed_downloads_and_verifies(tmp_path):
 
     End-to-end proof of the download+verify path on a real (~5 MB) challenge,
     without the ~80 GB of the others. Extract flags are NOT exercised.
+    Skips (not fails) when offline.
     """
     ch = dl.CHALLENGES["mapmed"]
+    skip_if_unreachable(ch.base_url)
     results = dl.run([ch], tmp_path, extract=False, extract_existing=False)
     assert set(results.values()) <= {"downloaded", "skipped"}
     for entry in ch.files:

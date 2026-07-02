@@ -38,7 +38,7 @@
     {
       "id": 6,
       "subject": "Task 6: [USER GATE] Stage-C DoD — boundary respected, quantified, relaxable, surfaced",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2, 3, 4, 5],
       "description": "**Goal:** Close Stage C: aggregate evidence (hard barrier, worst-case-localized, relaxed-widens, concrete strict-xfail, both-tiers frontier surfaced) + full suite/typecheck/lint/pre-commit green.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** create tests/test_stage_c_dod.py; modify PROGRESS.md.\n\n**Acceptance Criteria:** aggregated Stage-C evidence passes; full suite green (pass/skip/xfail, no unexpected fail/xpass/error); typecheck+lint+pre-commit clean; PROGRESS records Stage C closed + owner-deferred fix.\n\n**Verify:** `pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files`\n\n```json:metadata\n{\"files\": [\"tests/test_stage_c_dod.py\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files\", \"acceptanceCriteria\": [\"aggregated Stage-C evidence passes\", \"full suite+typecheck+lint+pre-commit green (xfail not xpass)\", \"PROGRESS records Stage C closed + owner-deferred fix\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"all\", \"modelTier\": \"standard\"}\n```"
     }
