@@ -17,7 +17,7 @@
     {
       "id": 3,
       "subject": "Task 3: Worst-case-localized coherence reduction (strict-max adjacent-seam corr-err)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Strict MAX adjacent-seam corr-err reduction (never aggregate); prove an aggregate cannot stand in for it.\n\n**Files:** create coherence_gate.py, test_stage_c_worst_case_localized.py.\n\n**Acceptance Criteria:** worst_case_corr_err = strict max (0.0 empty); corr_err_feasible = worst<=tol; median-healthy one-catastrophic-pair judged infeasible at tol=0.5.\n\n**Verify:** `pixi run test tests/test_stage_c_worst_case_localized.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/coherence_gate.py\", \"tests/test_stage_c_worst_case_localized.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_worst_case_localized.py -v\", \"acceptanceCriteria\": [\"worst_case_corr_err strict max 0.0 empty\", \"corr_err_feasible=worst<=tol\", \"median-healthy catastrophic-pair infeasible\"], \"modelTier\": \"standard\"}\n```"
     },
