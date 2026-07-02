@@ -1,0 +1,19 @@
+{
+  "planPath": "docs/superpowers/plans/2026-07-01-tuner-debt-cleanup.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Thread rounds through the stage runners (+ multi-round behavior test)",
+      "status": "pending",
+      "description": "**Goal:** Give `_run_stage`/`run_stage_a`/`run_stage_b` a `rounds: int = 1` parameter forwarded to `tune`, and prove at the loop level that multi-round feeds accumulated history forward (the mechanism that makes BO guided).\n\n**Files:**\n- Modify: `src/sverdrup/application/tuning/stage_a.py` (`_run_stage` signature + the `rounds=1` call at ~line 179; `run_stage_a` signature + delegation)\n- Modify: `src/sverdrup/application/tuning/stage_b.py` (`run_stage_b` signature + delegation)\n- Create: `tests/test_tuning_rounds.py`\n\n**Acceptance Criteria:**\n- [ ] `_run_stage`, `run_stage_a`, `run_stage_b` each accept `rounds: int = 1`; `_run_stage` passes `rounds=rounds` to `tune` (no longer hardcoded `1`).\n- [ ] `run_stage_a`/`run_stage_b` expose `rounds` in their signature with default `1` (back-compat).\n- [ ] A loop-level test proves `tune(..., rounds=3)` calls `strategy.propose` 3x with a non-decreasing history length growing by the batch size each round (`[0, n, 2n]`).\n\n**Verify:** `pixi run test tests/test_tuning_rounds.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_a.py\", \"src/sverdrup/application/tuning/stage_b.py\", \"tests/test_tuning_rounds.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_rounds.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"_run_stage/run_stage_a/run_stage_b accept rounds=1 and _run_stage forwards it to tune\", \"run_stage_a/run_stage_b expose rounds default 1\", \"loop test proves rounds=3 -> propose called 3x with history [0,n,2n]\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Stage-B gate — multi-round BO call + no-admissible skip",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Drive the gate's BO run multi-round at equal total budget, and turn the expected smoke `StageANoAdmissible` into an honest `pytest.skip` with a diagnostic (a full-year scope still exercises the real lambda_x asserts).\n\n**Files:**\n- Modify: `tests/test_stage_b_gate.py`\n\n**Acceptance Criteria:**\n- [ ] BO run uses `BayesianOptimization(seed=1, n=max(1, n // R))` with `rounds=R`, `R = int(os.environ.get(\"SVERDRUP_STAGE_B_ROUNDS\", \"4\"))`; Sobol baseline unchanged (1 round of `n`). Both total ~ `n`.\n- [ ] Both `run_stage_b` calls wrapped so `StageANoAdmissible` becomes `pytest.skip(...)` with an actionable message (not an ERROR).\n- [ ] `StageANoAdmissible` imported from `sverdrup.application.tuning.stage_a`.\n- [ ] lambda_x finite/positive + `<= 1.25x Sobol` asserts retained for the admissible (full-year) path.\n\n**Verify:** `pixi run test tests/test_stage_b_gate.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_stage_b_gate.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_gate.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"BO run multi-round n//R + rounds=R at equal total budget; Sobol unchanged\", \"StageANoAdmissible -> pytest.skip with diagnostic (no ERROR)\", \"StageANoAdmissible imported from stage_a\", \"lambda_x finite/positive + <=1.25x Sobol asserts retained\"], \"modelTier\": \"standard\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-07-01T19:00:00Z"
+}
