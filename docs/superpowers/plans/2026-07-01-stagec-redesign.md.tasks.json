@@ -10,7 +10,7 @@
     {
       "id": 2,
       "subject": "Task 2: Stage-C loop wiring — hard barrier at multi-tile joint scale",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Drive the GMRF tuner in global multi-tile coherent mode ({SAMPLES}, TileGeometry.n_tiles=N); prove a multi-tile joint trial is excluded before any solve.\n\n**Files:** create stage_c.py, test_stage_c_hard_barrier.py.\n\n**Acceptance Criteria:** tile_geometry_for(n_tiles, params) carries n_tiles+range; run_stage_c_loop runs tune with {SAMPLES}+TileGeometry(n_tiles); test 4: n_tiles=9 scorer never called (spy==0), n_tiles=1 scorer called.\n\n**Verify:** `pixi run test tests/test_stage_c_hard_barrier.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_c.py\", \"tests/test_stage_c_hard_barrier.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_hard_barrier.py -v\", \"acceptanceCriteria\": [\"tile_geometry_for carries n_tiles+range\", \"run_stage_c_loop uses {SAMPLES}+TileGeometry(n_tiles)\", \"n_tiles=9 scorer never called, n_tiles=1 called\"], \"modelTier\": \"standard\"}\n```"
     },
