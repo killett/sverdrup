@@ -15,6 +15,7 @@ def run_stage_b(
     n_trials: int = 16,
     seed: int = 1,
     strategy: SearchStrategy | None = None,
+    rounds: int = 1,
 ) -> StageAReport:
     """Run Stage A's loop unchanged with GMRF's parameter_space and GMRF acceptance.
 
@@ -29,4 +30,5 @@ def run_stage_b(
         n_trials=n_trials,
         seed=seed,
         strategy=strategy,
+        rounds=rounds,
     )
