@@ -57,7 +57,7 @@ def _gmrf_space() -> ParameterSpace:
 def test_hard_barrier_no_submit_for_infeasible() -> None:
     # TEST 4: an infeasible (range, tile) trial is never solved/scored.
     scorer = _SpyScorer()
-    geom = TileGeometry(12.0, 400.0, "g")  # ratio ~3.3 < 25 -> infeasible
+    geom = TileGeometry(12.0, 400.0, "g", n_tiles=2)  # multi-tile joint -> infeasible
     result = tune(
         method_name="gmrf",
         space=_gmrf_space(),

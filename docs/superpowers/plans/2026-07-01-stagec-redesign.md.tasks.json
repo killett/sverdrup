@@ -4,7 +4,7 @@
     {
       "id": 1,
       "subject": "Task 1: Capability-conditional tile-count CoherenceFeasibility",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Replace core/range>=25 with a capability-conditional, tile-count-keyed predicate; add n_tiles to TileGeometry; rekey RelaxedCoherenceFeasibility.\n\n**Files:** feasibility.py, test_tuning_feasibility.py, test_tuning_loop.py (one ratio case).\n\n**Acceptance Criteria:** TileGeometry gains appended n_tiles:int=1 (positional ctor still works); SAMPLES/COVARIANCE False at n_tiles>=2 True at 1; MARGINAL_VARIANCE True iff marg_worst_case<=marg_tol N-independent; POINT True; RelaxedCoherenceFeasibility(n_star_joint=64) widens joint; KM_PER_DEG+ratio removed.\n\n**Verify:** `pixi run test tests/test_tuning_feasibility.py tests/test_tuning_loop.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/feasibility.py\", \"tests/test_tuning_feasibility.py\", \"tests/test_tuning_loop.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_feasibility.py tests/test_tuning_loop.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"TileGeometry appended n_tiles=1 positional-safe\", \"SAMPLES/COVARIANCE False at N>=2 True at 1\", \"MARGINAL True iff marg_worst_case<=marg_tol N-indep\", \"POINT True\", \"RelaxedCoherenceFeasibility widens joint\", \"KM_PER_DEG+ratio removed\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -43,5 +43,5 @@
       "description": "**Goal:** Close Stage C: aggregate evidence (hard barrier, worst-case-localized, relaxed-widens, concrete strict-xfail, both-tiers frontier surfaced) + full suite/typecheck/lint/pre-commit green.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** create tests/test_stage_c_dod.py; modify PROGRESS.md.\n\n**Acceptance Criteria:** aggregated Stage-C evidence passes; full suite green (pass/skip/xfail, no unexpected fail/xpass/error); typecheck+lint+pre-commit clean; PROGRESS records Stage C closed + owner-deferred fix.\n\n**Verify:** `pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files`\n\n```json:metadata\n{\"files\": [\"tests/test_stage_c_dod.py\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files\", \"acceptanceCriteria\": [\"aggregated Stage-C evidence passes\", \"full suite+typecheck+lint+pre-commit green (xfail not xpass)\", \"PROGRESS records Stage C closed + owner-deferred fix\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"all\", \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-01T00:00:00Z"
+  "lastUpdated": "2026-07-01T18:00:00Z"
 }
