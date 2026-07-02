@@ -31,7 +31,7 @@
     {
       "id": 5,
       "subject": "Task 5: C7 boundary-extension mechanism demo vs named grid baseline",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [4],
       "description": "**Goal:** Demonstrate boundary extension on a synthetic irregular-boundary fixture: `edge_var(FEM) < edge_var(grid)` at near-boundary nodes, vs the named baseline (grid GMRF 5-point Neumann-edge Laplacian, `_laplacian`, gmrf_grid.py:48). Mechanism demo, NOT a value claim; not rigged.\n\n**Files:**\n- Test: `tests/test_fem_boundary_payoff.py`\n\n**Acceptance Criteria:**\n- [ ] FEM near-boundary marginal var < grid var at domain-edge nodes (identical kappa/tau/obs).\n- [ ] Comparison at near-boundary nodes (not interior-averaged); Neumann-edge baseline documented.\n\n**Verify:** `pixi run test tests/test_fem_boundary_payoff.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_fem_boundary_payoff.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_boundary_payoff.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"FEM near-boundary marginal var < grid var at domain-edge nodes\", \"comparison at near-boundary nodes, Neumann-edge grid baseline documented\"], \"modelTier\": \"standard\"}\n```"
     },

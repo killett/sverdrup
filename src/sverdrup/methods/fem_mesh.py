@@ -66,6 +66,11 @@ def build_mesh(
     if refine_points is not None:
         stack.append(np.asarray(refine_points, float)[:, :2])
     all_pts = np.vstack(stack)
+    # Drop coincident nodes (order-preserving): a duplicated node is an ill-defined mesh vertex —
+    # Delaunay leaves it incident to no triangle, so its lumped mass is 0 and Q becomes singular
+    # (divide-by-zero in C^-1). Overlapping boundary rings routinely repeat corner nodes.
+    _, first_idx = np.unique(all_pts, axis=0, return_index=True)
+    all_pts = all_pts[np.sort(first_idx)]
     tri = Delaunay(all_pts)
     return Mesh(all_pts, tri.simplices.astype(int), time_days)
 
