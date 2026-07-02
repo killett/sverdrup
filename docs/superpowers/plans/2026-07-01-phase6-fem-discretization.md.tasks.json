@@ -17,7 +17,7 @@
     {
       "id": 3,
       "subject": "Task 3: FEMBasisProjection — P1 basis read-off conforming to Projection",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** The mesh analogue of `bilinear_weights`: a P1 basis projection via `Delaunay.find_simplex` + barycentric coords, conforming to `Projection`, with a mesh-edge-in-pattern `assert_adjacency` (NOT the grid 5-point guard).\n\n**Files:**\n- Modify: `src/sverdrup/methods/fem.py` (add FEMBasisProjection)\n- Test: `tests/test_fem_projection.py`\n\n**Acceptance Criteria:**\n- [ ] `isinstance(FEMBasisProjection(mesh), Projection)` true.\n- [ ] `weights(pts)` sparse `(k, n_nodes)`, rows sum to 1; node query is unit selector.\n- [ ] `field_shape() == (n_nodes,)`; `node_points(t)` `(n_nodes,3)`.\n- [ ] `assert_adjacency(Q)` passes on real Q, raises on missing edge.\n\n**Verify:** `pixi run test tests/test_fem_projection.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/test_fem_projection.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_projection.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"isinstance(proj, Projection) true\", \"weights rows sum to 1; node query is unit selector\", \"field_shape (n_nodes,); node_points (n_nodes,3)\", \"assert_adjacency passes on real Q, raises on missing edge\"], \"modelTier\": \"standard\"}\n```"
     },
