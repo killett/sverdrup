@@ -38,7 +38,7 @@
     {
       "id": 6,
       "subject": "Task 6: Multi-tile FEM inheritance + C6 shared-node (secondary)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [4],
       "description": "**Goal:** Confirm FEM tiles blend through the live `GmrfTreeKrigingSolve` unchanged, and the discretization-agnostic `CoherenceFeasibility` envelope applies verbatim (MARGINAL_VARIANCE ships; SAMPLES/COVARIANCE only at n_tiles <= n_star_joint). Completeness, not an agnosticism test.\n\n**Files:**\n- Test: `tests/test_fem_multitile.py`\n\n**Acceptance Criteria:**\n- [ ] Two overlapping FEM tiles share non-empty coincident-node set (`_tile_adjacency`) — C6.\n- [ ] `GmrfTreeKrigingSolve().crossfaded_member(...)` returns finite coherent field.\n- [ ] `CoherenceFeasibility` verdict same for mesh as grid: feasible N=1, infeasible N=2.\n\n**Verify:** `pixi run test tests/test_fem_multitile.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_fem_multitile.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_multitile.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"two overlapping FEM tiles share non-empty coincident-node set (C6)\", \"GmrfTreeKrigingSolve.crossfaded_member returns finite coherent field\", \"CoherenceFeasibility verdict same for mesh as grid (feasible N=1, infeasible N=2)\"], \"modelTier\": \"standard\"}\n```"
     }
