@@ -5,6 +5,9 @@
 > `docs/superpowers/plans/2026-07-01-stagec-redesign.md` Tasks 1–5 `completed` + committed
 > (`45bb41f`, `a4a940f`, `ae9020b`, `299d268`, `52ed96e`); Task 6 (DoD user gate) code + evidence
 > DONE; owner signed off with one condition — FIX the offline-skip gap first — which is now DONE.
+> **Tuner-debt-cleanup plan (the two carried Task-14 follow-ups) COMPLETE 2026-07-01** — BO now
+> genuinely multi-round (`rounds` threaded through the stage runners, `6e418fa`) + Stage-B gate skips
+> instead of ERRORing on no-admissible (`d7376b8`). See the follow-ups block below.
 > **Next action = Phase 5 complete; owner reviews the both-tiers frontier
 > (`docs/validation/phase5_feasibility_resolution_frontier.md`) for the deferred redesign decision.**
 > What shipped: capability-conditional tile-count `CoherenceFeasibility`
@@ -70,9 +73,13 @@ median/max rel-err plateaus or grows unbounded. THAT curve is the new feasibilit
 4. Tools on disk: `scripts/diag_crossseam.py` (cross-seam probe, buggy-vs-fixed via `git checkout 6cce45b~1
    -- src/sverdrup/methods/gmrf_grid.py`), `scripts/stage_b_gate_run.py` (`SVERDRUP_STAGE_B_SCOPE=dev|full`).
 
-**Smaller carried-over follow-ups (non-blocking, from Task 14):** (a) make BO genuinely multi-round (thread
-`rounds` through `_run_stage`) — it is currently `rounds=1`/random density; (b) `tests/test_stage_b_gate.py`
-ERRORS on smoke because Sobol raises `StageANoAdmissible` (no admissible Sobol) — adjust or gate to full-year.
+**Smaller carried-over follow-ups (from Task 14) — BOTH CLOSED 2026-07-01 (tuner-debt-cleanup plan,
+`6e418fa`+`d7376b8`):** (a) BO is now genuinely multi-round — `rounds: int = 1` threads through
+`_run_stage`/`run_stage_a`/`run_stage_b` → `tune`; the gate call site drives BO at R rounds of `n//R`
+(equal total budget vs Sobol's 1×n). Loop-level test `tests/test_tuning_rounds.py` proves history
+accumulates `[0,n,2n]`. (b) `tests/test_stage_b_gate.py` no longer ERRORS on smoke — `StageANoAdmissible`
+is caught → `pytest.skip` with a full-year-scope diagnostic; the λx finite/≤1.25×-Sobol asserts stay for
+the admissible path. Plan `docs/superpowers/plans/2026-07-01-tuner-debt-cleanup.md` (both tasks completed).
 
 **Source docs (unchanged pointers):** scope `phase5_scope_spec.md`; design
 `docs/superpowers/specs/2026-06-28-phase5-autotune-loop-design.md`; plan + tracker
