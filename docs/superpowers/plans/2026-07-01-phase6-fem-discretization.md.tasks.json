@@ -4,7 +4,7 @@
     {
       "id": 1,
       "subject": "Task 1: fem_mesh.py — Mesh + build_mesh + sliver guard",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** A `Mesh` value object (PointSet-like `.points()`), a `build_mesh` Delaunay constructor, and `assert_mesh_quality` (the sliver guard).\n\n**Files:**\n- Create: `src/sverdrup/methods/fem_mesh.py`\n- Test: `tests/test_fem_mesh.py`\n\n**Acceptance Criteria:**\n- [ ] `build_mesh(points)` triangulates a 2-D point set -> `Mesh` with `points_xy (n,2)`, `triangles (n_tri,3)`, `.points()` returning `(n,3)`.\n- [ ] `build_mesh(points, boundary_ring=ring)` includes ring nodes.\n- [ ] `assert_mesh_quality` raises on a sliver, passes on a good mesh.\n\n**Verify:** `pixi run test tests/test_fem_mesh.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem_mesh.py\", \"tests/test_fem_mesh.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_mesh.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"build_mesh triangulates and Mesh.points() returns (n,3) lon/lat/time\", \"boundary_ring adds ring nodes\", \"assert_mesh_quality raises on sliver, passes on good mesh\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -43,5 +43,5 @@
       "description": "**Goal:** Confirm FEM tiles blend through the live `GmrfTreeKrigingSolve` unchanged, and the discretization-agnostic `CoherenceFeasibility` envelope applies verbatim (MARGINAL_VARIANCE ships; SAMPLES/COVARIANCE only at n_tiles <= n_star_joint). Completeness, not an agnosticism test.\n\n**Files:**\n- Test: `tests/test_fem_multitile.py`\n\n**Acceptance Criteria:**\n- [ ] Two overlapping FEM tiles share non-empty coincident-node set (`_tile_adjacency`) — C6.\n- [ ] `GmrfTreeKrigingSolve().crossfaded_member(...)` returns finite coherent field.\n- [ ] `CoherenceFeasibility` verdict same for mesh as grid: feasible N=1, infeasible N=2.\n\n**Verify:** `pixi run test tests/test_fem_multitile.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_fem_multitile.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_multitile.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"two overlapping FEM tiles share non-empty coincident-node set (C6)\", \"GmrfTreeKrigingSolve.crossfaded_member returns finite coherent field\", \"CoherenceFeasibility verdict same for mesh as grid (feasible N=1, infeasible N=2)\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-01T21:30:00Z"
+  "lastUpdated": "2026-07-01T22:00:00Z"
 }
