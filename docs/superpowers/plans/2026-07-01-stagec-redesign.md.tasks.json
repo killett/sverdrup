@@ -24,7 +24,7 @@
     {
       "id": 4,
       "subject": "Task 4: Both-tiers feasibility frontier consumer (tuning/tradeoff.py)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Thin consumer baking the measured curve into a both-tiers frontier (joint worst-of-K empty region + marginal flat) with predicate-injected feasibility. No measurement here.\n\n**Files:** create tradeoff.py, test_stage_c_tradeoff.py.\n\n**Acceptance Criteria:** MEASURED_FRONTIER rows n_tiles in {4,9,16,25,36} from design §2 + provenance; feasibility_frontier(predicate) returns both-tiers rows; default joint empty + marg ships; RelaxedCoherenceFeasibility(64) widens joint with no module change.\n\n**Verify:** `pixi run test tests/test_stage_c_tradeoff.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/tradeoff.py\", \"tests/test_stage_c_tradeoff.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_tradeoff.py -v\", \"acceptanceCriteria\": [\"MEASURED_FRONTIER baked from §2 + provenance\", \"feasibility_frontier both tiers predicate-injected\", \"default joint empty marg ships; relaxed widens joint no module change\"], \"modelTier\": \"standard\"}\n```"
     },
