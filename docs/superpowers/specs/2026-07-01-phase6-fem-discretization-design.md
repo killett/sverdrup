@@ -23,7 +23,7 @@ with only the discretization (assembly + basis read-off) swapped.
 **The FEM method is the VEHICLE for that proof, not the point.** C7 (boundary-extension mechanism) and
 multi-tile inheritance are secondary completeness — kept, but not the headline.
 
-### 0.1 The headline experiment — already run, outcome known
+### 0.1 The headline experiment — the claim, and where it is produced-and-locked
 
 The blocker ("does the inherited machinery secretly assume a grid?") and the agnosticism proof are the
 **same experiment.** The load-bearing inherited component is `GMRFPrecisionReduction`, which persists exact
@@ -32,28 +32,38 @@ was built and tested on **grid** precision (5-point lattice). FEM P1 stiffness h
 variable valence, and no lattice — so the selective inverse is exact **only if** fill-in / elimination tree is
 computed from the *actual* precision graph, not a lattice assumption.
 
-**This was run before writing this spec** (`scripts/probe_fem_reduction_exactness.py`), on a deliberately
-adversarial Delaunay mesh (valence range [3, 9] vs grid's constant ~4; a 0.38° sliver triangle; 31%-dense
-irregular `Q_post` pattern; a sparse data term added):
+**The CLAIM rests on three inspection-verifiable code facts** (why the reduction is pattern-agnostic — no
+running required to check these):
+1. `gmrf_linalg.py:27` — `GMRFFactor` factors `Q[P][:,P]` in **AMD order**; the permutation `P` comes from the
+   *actual matrix graph*, with no lattice assumption.
+2. `gmrf_linalg.py:96-101` — `_takahashi` / `selective_inverse_diag` is the Erisman–Tinney selective inverse,
+   **exact on the factor's fill pattern for any SPD `Q`** (the Takahashi diagonal is always in-pattern).
+3. `gmrf_linalg.py:135` — `assert_adjacency_in_pattern(q, shape=(ny,nx))` is the **sole** grid-shaped symbol,
+   and it is a **precondition GUARD, not a numerical step**. The FEM path does not call it; it substitutes a
+   **mesh-edge-in-pattern** guard (§2.2). A swap of a known guard, not a latent dependency in the numerics.
 
-| quantity | result |
-|---|---|
-| `diag(Q⁻¹)` marginal variance vs dense | **max rel err 4.4e-10** (rtol 1e-9) → EXACT |
-| mesh-edge off-diagonal cov (40 edges) vs dense | **40/40 exact, 0 absent from the selective-inverse pattern** |
+So reduction-path agnosticism is defensible **mechanistically, by reading the code** — that is the basis for
+§1 treating "reduction inherited unchanged" as sound, and for multi-tile (§4.3) / C7 (§4.2) inheriting it.
 
-**Outcome = PASS → agnosticism substantiated for the reduction path.** Mechanistically expected: `_takahashi`
-and `GMRFFactor` compute the pattern from the CHOLMOD AMD factorization of the actual `Q`; nothing assumes a
-lattice. The Takahashi diagonal is exact on *any* SPD sparsity pattern.
+**Where the NUMBER is produced-and-locked: the shipped §3 #1 test** (`exact-marginal-var on the adversarial
+mesh vs dense Q⁻¹`), committed and CI-run. That test *is* this measurement; it is the authoritative,
+reproducible evidence — not a one-off script. **Both outcomes are a successful Phase 6:** PASS substantiates
+the reduction path; a FAIL *finds* a hidden grid dependency and the fix (pattern-agnostic reduction in
+`reduction.py` / `gmrf_linalg.py`) becomes a Phase-6 component. The mechanistic argument predicts PASS.
 
-**Both outcomes were a successful Phase 6.** A FAIL would have *found* a hidden grid dependency, and the fix
-(pattern-agnostic reduction in `reduction.py` / `gmrf_linalg.py`) would have become a Phase-6 component. It
-passed, so §1's "reduction inherited unchanged" is written as **measured fact, not assertion** — and multi-tile
-(§4.3) and C7 (§4.2) inherit a *known-exact* reduction, not an unverified one.
+**Preview figures (reproducible, not the authority).** A committed reproducer,
+`scripts/probe_fem_reduction_exactness.py` (the `diag_crossseam.py` precedent), prototypes §3 #1 on an
+adversarial Delaunay mesh (valence [3, 9] vs grid's ~4; a 0.38° sliver; 31%-dense irregular `Q_post`) and
+reports `diag(Q⁻¹)` max rel err **4.4e-10** (rtol 1e-9) and **40/40** mesh-edge cov entries exact. These are a
+*preview* of what §3 #1 locks in CI — cited for concreteness, not as standalone "measured fact."
 
-The one genuinely grid-shaped inherited symbol is **visible, not hidden**: `assert_adjacency_in_pattern(q,
-shape=(ny,nx))` (`gmrf_linalg.py:135`) hardcodes the 5-point lattice. The FEM path does not call it; it
-supplies a **mesh-edge-in-pattern** precondition instead (§2.2). This is a swap of a known guard, not a latent
-dependency in the numerics.
+**Reinforcement — one sub-claim genuinely needs the §3 #1 measurement, not just the mechanistic argument.**
+"Every mesh edge lands in the selective-inverse pattern (0 absent)" is **not** implied by Takahashi-exactness:
+Takahashi gives `Σ_ij` only for `(i,j)` already **in** the factor fill pattern. So this asserts an
+**assembly-pattern property** of `fem_precision` — the α=2 form `(κ²C+G)C⁻¹(κ²C+G)` carries the 2-hop
+neighbourhood, so every 1-hop mesh edge is in `Q`'s pattern → in `L`'s fill. That can fail under degenerate
+configs and is not fully nailed by inspection → §3 #1 asserts it explicitly on the adversarial fixture, where
+it is locked and reproducible.
 
 ### 0.2 Honest-scope caveat (state next to every agnosticism result)
 
@@ -66,11 +76,12 @@ claim unconditional grid-agnosticism anywhere in code, docstrings, or provenance
 
 ---
 
-## 1. Architecture — near-pure discretization swap (reduction path measured-exact)
+## 1. Architecture — near-pure discretization swap (reduction path: mechanistic claim, §3 #1 locks the number)
 
 FEM adds exactly two mesh-carrying units — the precision **assembly** (`fem_precision`) and the basis
-**read-off** (`FEMBasisProjection`). Everything downstream is inherited **unchanged and measured-exact on the
-irregular pattern** (§0.1): `GMRFCovarianceOperator`, `GMRFFactor` (CHOLMOD + Takahashi),
+**read-off** (`FEMBasisProjection`). Everything downstream is inherited **unchanged**; the reduction path's
+pattern-agnosticism is defensible by inspection (§0.1's three code facts) and its exactness is
+produced-and-locked by the shipped §3 #1 test: `GMRFCovarianceOperator`, `GMRFFactor` (CHOLMOD + Takahashi),
 `GMRFPrecisionReduction`, `GmrfTreeKrigingSolve`, `BlendOperator`. The `Projection` seam (shipped) is the
 polymorphism point: grid holds `GridIdentityProjection`, FEM holds `FEMBasisProjection`, both satisfy
 `core/projection.py::Projection`.
@@ -128,6 +139,11 @@ test hardens the §0.1 probe into a fixture with **explicitly required adversari
 The adversarial-ness **is** the value — a favorable/regular-ish mesh proves little. *Bug it catches:* any latent
 lattice assumption in assembly, factorization, or the selective inverse → plausible-but-wrong marginal variance.
 
+This test **also explicitly owns the edge-in-pattern sub-claim** (per §0.1 reinforcement): it asserts every
+mesh edge's `Σ_ij` is present in the selective-inverse pattern (0 absent) and exact vs dense — an
+**assembly-pattern property** of the α=2 `fem_precision` that Takahashi-exactness alone does not guarantee and
+that can fail under degenerate configs. Locked here on the adversarial fixture, reproducibly.
+
 **#2 — Grid-shortcut audit over the WHOLE `solve → reduce → blend → project` path.** During a full FEM solve +
 reduce + blend + eval-point projection, a guard makes **any** call to `bilinear_weights`, **any** `(ny, nx)`
 reshape, and **any** lattice-index assumption **raise loudly** if hit on the FEM path; FEM holds `field_shape
@@ -157,7 +173,8 @@ coasts" value claim (real-coastal payoff needs real data; deferred, §5). Under 
 must **not be rigged to make FEM win**.
 
 The honest baseline, stated: the shipped grid-GMRF uses a **5-point finite-difference Laplacian with Neumann
-(zero-flux) edges** (`gmrf_grid.py:49`), which inflates variance at domain-edge nodes because edge nodes lack
+(zero-flux) edges** (`_laplacian`, `gmrf_grid.py:48` — the `0 <= jj < ny` bounds check is the Neumann edge),
+which inflates variance at domain-edge nodes because edge nodes lack
 outward neighbour support. FEM's boundary ring supplies that support. The demo measures that specific mechanism
 against that specific, named baseline. Figure via the `plotting-colormaps` skill (cmocean, perceptually
 uniform). *Bug:* the boundary extension not actually reducing edge inflation vs the real shipped baseline.
@@ -217,5 +234,7 @@ reviewable commits, test-first, existing suite green throughout.
 Phase 6 produces **strong falsifying evidence** that sverdrup has no hidden regular-grid dependency, by running
 the full pipeline on a maximally-irregular mesh checked against dense linear-algebra ground truth. It does **not**
 produce an unconditional proof of grid-agnosticism: dependencies in paths the adversarial fixture does not
-exercise remain invisible. Every result is reported with this scope attached. The §0.1 reduction-path experiment
-has already passed; the shipped agnosticism tier hardens and path-extends that evidence.
+exercise remain invisible. Every result is reported with this scope attached. The reduction-path claim is
+mechanistically sound by inspection (§0.1's three code facts); the shipped §3 #1 test produces-and-locks the
+number in CI (the committed `scripts/probe_fem_reduction_exactness.py` previews a pass); the agnosticism tier
+hardens and path-extends that evidence across the whole solve→reduce→blend→project path.
