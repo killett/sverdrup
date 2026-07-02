@@ -9,13 +9,26 @@ kappa deferred — it scales entries, not the sparsity pattern).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 from scipy.spatial import Delaunay  # type: ignore[import-untyped]
 
-from sverdrup.core.types import Points
-from sverdrup.methods.fem_mesh import Mesh
+from sverdrup.core.grid import GridSpec, PointSet
+from sverdrup.core.observations import ObsWindow
+from sverdrup.core.parameters import ParameterProvider, ParameterSpace
+from sverdrup.core.provenance import (
+    KnownBias,
+    TransformKind,
+    UncertaintyProvenance,
+    UncertaintyTransform,
+)
+from sverdrup.core.types import Points, UncertaintyCapability
+from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
+from sverdrup.methods.fem_mesh import Mesh, build_mesh
+from sverdrup.methods.gmrf import GMRFCovarianceOperator
+from sverdrup.methods.gmrf_grid import kappa_from_range
 
 
 def fem_precision(mesh: Mesh, kappa: float, tau: float) -> sparse.csc_matrix:
@@ -141,3 +154,79 @@ class FEMBasisProjection:
                     raise AssertionError(
                         f"mesh edge ({i},{j}) absent from Q pattern — FEM read-off/cov would break"
                     )
+
+
+class FEMMatern:
+    """FEM P1 Matérn GMRF: mesh SPDE precision + temporally-tapered likelihood (Phase 6).
+
+    ``mesh=None`` (the registry path) triangulates the grid's own node points inside ``solve``;
+    a supplied ``mesh`` (the agnosticism tests) drives an arbitrary irregular triangulation through
+    the full registered path.
+    """
+
+    native_capability = UncertaintyCapability.SAMPLES  # also exposes COVARIANCE
+
+    def __init__(self, mesh: Mesh | None = None) -> None:
+        """Store an optional injected mesh; when ``None`` the mesh is built from the grid in ``solve``."""
+        self.mesh = mesh
+
+    def solve(
+        self,
+        obs: ObsWindow,
+        grid: GridSpec,
+        params: ParameterProvider,
+        time_days: float,
+    ) -> GaussianPredictiveDistribution:
+        """Solve the FEM-GMRF posterior over the mesh at ``time_days`` (temporal taper into R)."""
+        mesh = (
+            self.mesh
+            if self.mesh is not None
+            else build_mesh(grid.points(time_days), time_days=time_days)
+        )
+        tau = float(params.resolve("variance", grid))
+        taper = float(params.resolve("temporal_taper_scale", grid))
+        kappa = float(kappa_from_range(float(params.resolve("range", grid))))
+        q_prior = fem_precision(mesh, kappa, tau)
+
+        projection = FEMBasisProjection(mesh)
+        a_op = projection.weights(obs.coords())  # (n_obs, n_nodes)
+        r_diag = np.diag(obs.error_model.as_matrix(len(obs))).astype(float)
+        dt = np.abs(obs.coords()[:, 2] - time_days)
+        r_inflated = r_diag * np.exp(dt / max(taper, 1e-9))
+        r_inv = sparse.diags(1.0 / r_inflated)
+
+        q_post = (q_prior + a_op.T @ r_inv @ a_op).tocsc()
+        op = GMRFCovarianceOperator(projection, q_post, time_days, q_prior=q_prior)
+        rhs = a_op.T @ (r_inv @ obs.values())
+        mean = op._factor.solve(np.asarray(rhs)).reshape(projection.field_shape())
+
+        support = PointSet(mesh.points(), grid.crs)
+        prov = UncertaintyProvenance(
+            native_capability=self.native_capability,
+            transformations=[
+                UncertaintyTransform(
+                    kind=TransformKind.DIAGONAL_INFLATION,
+                    known_bias=KnownBias.UNDER_DISPERSED_IN_VOIDS,
+                    params={
+                        "temporal_taper": "diagonal-R; FEM P1 SPDE, mesh discretization",
+                        "temporal_taper_scale": taper,
+                        "discretization": "fem-p1-triangulation",
+                    },
+                )
+            ],
+        )
+        # support is a PointSet (the FEM node bag), stored in the distribution's ``grid`` slot —
+        # the coherent driver's _support_points handles PointSet; cast for the GridSpec-typed field.
+        return GaussianPredictiveDistribution(
+            cast("GridSpec", support), mean, op, prov, time_days
+        )
+
+    def parameter_space(self) -> ParameterSpace:
+        """Return the tunable space (same knobs as the grid GMRF; ν fixed to α=2)."""
+        return ParameterSpace(
+            {
+                "range": (10.0, 800.0),
+                "variance": (1e-3, 1.0),
+                "temporal_taper_scale": (1.0, 30.0),
+            }
+        )

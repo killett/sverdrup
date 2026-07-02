@@ -24,7 +24,7 @@
     {
       "id": 4,
       "subject": "Task 4: FEMMatern.solve + register fem + AGNOSTICISM #2 (whole-path grid-shortcut audit)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2, 3],
       "description": "**Goal:** `FEMMatern.solve` (mirror of `MaternGMRF.solve`, mesh-injected), register `\"fem\"`, + the second primary agnosticism test: full `solve -> reduce -> project` on an injected adversarial mesh with `bilinear_weights`/`(ny,nx)` reshape guarded to raise if hit, + end-to-end exact marginal var through `GMRFPrecisionReduction` vs dense.\n\n**Files:**\n- Modify: `src/sverdrup/methods/fem.py` (add FEMMatern)\n- Modify: `src/sverdrup/methods/registry.py` (register fem)\n- Test: `tests/test_fem_agnosticism_path.py`\n\n**Acceptance Criteria:**\n- [ ] `FEMMatern(mesh=None)` constructible no-args; `.solve(obs, grid, params, time_days)` mirrors MaternGMRF, flat `(n_nodes,)` mean.\n- [ ] `\"fem\"` in `registry.METHODS`.\n- [ ] Whole-path run never calls `bilinear_weights`; `field_shape()` `(n_nodes,)`.\n- [ ] End-to-end marginal_variance exact vs dense rtol 1e-9.\n\n**Verify:** `pixi run test tests/test_fem_agnosticism_path.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"src/sverdrup/methods/registry.py\", \"tests/test_fem_agnosticism_path.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_agnosticism_path.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"FEMMatern(mesh=None).solve mirrors MaternGMRF, flat (n_nodes,) mean\", \"fem registered in METHODS\", \"whole-path solve->reduce->project never calls bilinear_weights; field_shape (n_nodes,)\", \"end-to-end marginal_variance exact vs dense rtol 1e-9\"], \"modelTier\": \"standard\"}\n```"
     },
