@@ -10,10 +10,10 @@
     {
       "id": 2,
       "subject": "Task 2: Stage-B gate — multi-round BO call + no-admissible skip",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** Drive the gate's BO run multi-round at equal total budget, and turn the expected smoke `StageANoAdmissible` into an honest `pytest.skip` with a diagnostic (a full-year scope still exercises the real lambda_x asserts).\n\n**Files:**\n- Modify: `tests/test_stage_b_gate.py`\n\n**Acceptance Criteria:**\n- [ ] BO run uses `BayesianOptimization(seed=1, n=max(1, n // R))` with `rounds=R`, `R = int(os.environ.get(\"SVERDRUP_STAGE_B_ROUNDS\", \"4\"))`; Sobol baseline unchanged (1 round of `n`). Both total ~ `n`.\n- [ ] Both `run_stage_b` calls wrapped so `StageANoAdmissible` becomes `pytest.skip(...)` with an actionable message (not an ERROR).\n- [ ] `StageANoAdmissible` imported from `sverdrup.application.tuning.stage_a`.\n- [ ] lambda_x finite/positive + `<= 1.25x Sobol` asserts retained for the admissible (full-year) path.\n\n**Verify:** `pixi run test tests/test_stage_b_gate.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_stage_b_gate.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_b_gate.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"BO run multi-round n//R + rounds=R at equal total budget; Sobol unchanged\", \"StageANoAdmissible -> pytest.skip with diagnostic (no ERROR)\", \"StageANoAdmissible imported from stage_a\", \"lambda_x finite/positive + <=1.25x Sobol asserts retained\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-01T20:00:00Z"
+  "lastUpdated": "2026-07-01T20:30:00Z"
 }
