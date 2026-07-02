@@ -10,7 +10,7 @@
     {
       "id": 2,
       "subject": "Task 2: fem_precision + AGNOSTICISM #1 (exact selective-inverse on adversarial mesh)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [1],
       "description": "**Goal:** The P1 SPDE alpha=2 precision assembly + the PRIMARY agnosticism test: `diag(Q^-1)` via the inherited `GMRFFactor.selective_inverse_diag` equals dense `Q^-1` diagonal to rtol 1e-9 on a maximally-adversarial mesh, and every mesh edge is present-and-exact in the selective-inverse pattern.\n\n**Files:**\n- Create: `src/sverdrup/methods/fem.py` (fem_precision only)\n- Test: `tests/test_fem_precision.py`\n\n**Acceptance Criteria:**\n- [ ] `fem_precision(mesh, kappa, tau)` returns symmetric SPD CSC `Q = (1/tau)(k^2 C + G) C^-1 (k^2 C + G)`.\n- [ ] On the adversarial mesh, `GMRFFactor(Q).selective_inverse_diag()` matches dense diag to rtol 1e-9.\n- [ ] Every mesh edge in-pattern (0 absent) and exact vs dense.\n\n**Verify:** `pixi run test tests/test_fem_precision.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/test_fem_precision.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_precision.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"fem_precision returns symmetric SPD CSC Q\", \"selective_inverse_diag exact vs dense rtol 1e-9 on adversarial mesh\", \"every mesh edge in selective-inverse pattern (0 absent) and exact\"], \"modelTier\": \"standard\"}\n```"
     },
