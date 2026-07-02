@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from sverdrup.validation import download_ssh_mapping_data_challenge_2021a as dl
+from tests.validation._net import skip_if_unreachable
 
 _EXISTING = Path("data/2021a_ssh_mapping_ose")
 
@@ -56,8 +57,9 @@ def test_download_reproduces_structure_and_contents(tmp_path):
 
     The end-to-end reproduction guarantee: structure (dc_obs/+dc_maps/, 14 files)
     and byte-exact contents (SHA256) matching both the manifest and the existing
-    download. Re-downloads ~1 GB; marked external (on-demand).
+    download. Re-downloads ~1 GB; marked external (on-demand). Skips (not fails) when offline.
     """
+    skip_if_unreachable(dl.MEOM_BASE)
     results = dl.download_all(tmp_path)
     assert len(results) == 14
     assert len(list((tmp_path / "dc_obs").glob("*.nc"))) == 7

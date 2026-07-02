@@ -1,16 +1,32 @@
 # Sverdrup — Progress notebook
 
-> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, in **Stage-C
-> REDESIGN**. Tasks 0–14 `completed`. **Brainstorm DONE + design APPROVED (2026-07-01)** — measurement,
-> owner decisions, and the design doc are all committed; scope/design amendments applied. **Next action =
-> `writing-plans` to REWRITE Stage-C plan Tasks 15–18** (+ `.tasks.json`) against the approved design:
-> the capability-conditional, tile-count-keyed `CoherenceFeasibility` (`feasibility.py` code), the
-> both-tiers frontier artifact (`tuning/tradeoff.py` thin consumer of `scripts/diag_crossseam.py`), the
-> concrete strict-xfail, and the reworded Stage-C DoD. The OLD Tasks 15–18 in the plan are SUPERSEDED —
-> do NOT execute as written. Read, in order: (1) **`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`**
-> (the approved design — the source of truth for the rewrite); (2) the **DECISION 1–5** blocks below
-> (owner decisions + measurements); (3) `phase5_scope_spec.md` §5.2/§7 + the phase5 design doc §4/§11
-> (already amended to match).
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, **Stage-C
+> REDESIGN IMPLEMENTED — awaiting owner sign-off on the Task-6 USER GATE.** Plan
+> `docs/superpowers/plans/2026-07-01-stagec-redesign.md` Tasks 1–5 `completed` + committed
+> (`45bb41f`, `a4a940f`, `ae9020b`, `299d268`, `52ed96e`); Task 6 (DoD user gate) code + evidence
+> DONE; owner signed off with one condition — FIX the offline-skip gap first — which is now DONE.
+> **Next action = Phase 5 complete; owner reviews the both-tiers frontier
+> (`docs/validation/phase5_feasibility_resolution_frontier.md`) for the deferred redesign decision.**
+> What shipped: capability-conditional tile-count `CoherenceFeasibility`
+> (`feasibility.py`, retires core/range≥25); Stage-C loop wiring `stage_c.py` (multi-tile joint
+> barrier hard — scorer never called at n_tiles≥2); worst-case-localized reduction `coherence_gate.py`
+> (strict-max adjacent-seam corr-err); both-tiers frontier `tuning/tradeoff.py` (joint region EMPTY,
+> marginal SHIPS); concrete strict-xfail `test_acceptance_multi_tile_joint_feasible`; frontier doc.
+> **Gate evidence:** full suite (no deselect) 296 passed / 9 skipped / 1 xfailed / 0 failed;
+> typecheck+lint+pre-commit(--all-files) clean. **External-skip gap FIXED:** the 2 `@external`
+> download tests (`test_download_dc2021a/dc2023`) used to fail on `httpx.ConnectTimeout` OFFLINE;
+> new `tests/validation/_net.py::skip_if_unreachable` (short-timeout HEAD probe → `pytest.skip` on
+> `httpx.TransportError`) now makes them SKIP offline per the marker's "skipped offline" contract,
+> while still running + verifying when the mirror is reachable. **Coarse-correction / default-sampler stay
+> owner-deferred** (§6), decoupled via `RelaxedCoherenceFeasibility`. Source of truth:
+> `docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`.
+>
+> **[superseded — kept for trail]** Next action WAS `writing-plans` to REWRITE Stage-C plan Tasks 15–18
+> against the approved design; that plan was written (`docs/superpowers/plans/2026-07-01-stagec-redesign.md`,
+> Tasks 1–6) and is now executed. The OLD Tasks 15–18 in the phase5 plan remain SUPERSEDED. Read, in
+> order: (1) **`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`** (the approved design);
+> (2) the **DECISION 1–5** blocks below (owner decisions + measurements); (3) `phase5_scope_spec.md`
+> §5.2/§7 + the phase5 design doc §4/§11 (already amended to match).
 > **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE** — GMRF prior bug fixed (`6cce45b`), method-agnostic
 > loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
 > coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
