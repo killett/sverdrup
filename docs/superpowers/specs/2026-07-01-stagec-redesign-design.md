@@ -40,19 +40,28 @@ the near-zero-denominator artifact of the block rel-err). Denoised at **M=8000**
 **selection-controlled worst-of-K** (K=418 = smallest tiling's node-pair pool, mean over 400 seeded
 subsamples), so "worst grew" means seams degraded, not that more pairs were sampled:
 
-| tiles | marg strict-min | corr_med | corr_p95 | corr worst-of-K |
-|-------|-----------------|----------|----------|-----------------|
-| 4     | 0.498           | 0.015    | 0.232    | **1.105**       |
-| 9     | 0.512           | 0.023    | 0.270    | 0.506           |
-| 16    | 0.434           | 0.031    | 0.344    | 0.823           |
-| 25    | 0.380           | 0.052    | 0.798    | 2.033           |
-| 36    | 0.342           | 0.070    | 0.427    | 2.108           |
+| tiles | marg strict-min | corr_med | corr_p95 | corr worst-of-K (± estimator std) |
+|-------|-----------------|----------|----------|-----------------------------------|
+| 4     | 0.498           | 0.015    | 0.232    | **1.105 ± 0.000** (K = full pool) |
+| 9     | 0.512           | 0.023    | 0.270    | **0.506 ± 0.079** (thin: ≈ tol)   |
+| 16    | 0.434           | 0.031    | 0.344    | 0.823 ± 0.135                     |
+| 25    | 0.380           | 0.052    | 0.798    | 2.033                            |
+| 36    | 0.342           | 0.070    | 0.427    | 2.108                            |
 
-- **Worst-case (the invariant-6 gate): ≥ 1.0 from the smallest tiling** (2×2 worst-of-K = 1.105) and grows
-  ~2× to ~2.1 at 36 tiles. Selection-controlled + denoised → real, not small-n noise, not pure selection.
+- **Worst-case (the invariant-6 gate) exceeds `joint_tol = 0.5` at every tested tiling, NON-monotonically**:
+  1.105 @2×2, 0.506 @3×3, 0.823 @4×4, ~2.0 @5×5, ~2.1 @6×6 (2×2 is worse than 3×3–4×4 — the worst-of-K is
+  not monotone in N). The `± std` column is the worst-of-K estimator uncertainty (subsample-selection
+  dispersion; it does NOT include the per-pair M=8000 sampling floor, ~0.01). **Read it honestly: 2×2
+  (1.105), 4×4 (0.823), 5×5, 6×6 exceed tol by ≫ 1 std — robust; 3×3 (0.506 ± 0.079) clears tol by only
+  0.006, i.e. it is statistically indistinguishable from 0.5.** So "every tiling exceeds tol" holds at the
+  point estimate, but the 3×3 margin is within noise — no tested multi-tile geometry is *clearly* feasible,
+  and 3×3 is the sole ambiguous cell.
+- **Global infeasibility is the robust claim:** by 25 tiles the worst-of-K is ~2.0 and rising; extrapolated
+  to a global product (thousands of tiles) it exceeds any sane tol by a wide margin. This does not rest on
+  the thin 3×3 margin.
 - **Bulk is a sparse catastrophic tail:** typical seam is excellent (median 1.5%→7%); p95 good then crosses
-  tol≈0.5 around N ~16–20 tiles. So the worst-case ≥1 is a *handful* of catastrophic pairs (~0.24% at 2×2),
-  not uniform mediocrity.
+  tol≈0.5 around N ~16–20 tiles. So the worst-case ≥ tol is a *handful* of catastrophic pairs (~0.24% at
+  2×2), not uniform mediocrity.
 - **Third symptom (same tier):** coherent SAMPLES under-disperse at seams — `marginal_contract_ratios`
   (sample-var / reported-var) strict-min drifts 0.498 → 0.342 with tile count.
 
@@ -81,18 +90,28 @@ gradients/transports — the definitional purpose of a coherent sampler). Gating
 joint is measured-broken is the false-green the project fought (invariant 6). The barrier is therefore the
 worst-case joint cross-seam correlation error, and it is **capability-scoped** (invariant 4):
 
-- **SAMPLES / COVARIANCE** → feasible iff `N ≤ n_star_joint`. Measured: worst-case ≥ tol from the smallest
-  tiling → the feasible region is **empty** at any operational multi-tile geometry. Mechanically
-  `n_star_joint = 1` (only the untiled single-tile solve is joint-valid; that does not scale → the
-  owner-deferred fix is the only path to global joint coherence).
-- **MARGINAL_VARIANCE** → feasible iff `N ≤ n_star_marg`. Measured worst-case ~15%, flat → `n_star_marg`
-  is effectively unbounded within the tested range; the marginal global product genuinely ships. This is
-  the honest global offering, correctly labeled `MARGINAL_VARIANCE` — **not** "coherent."
+- **SAMPLES / COVARIANCE** → at the shipped `joint_tol = 0.5`, every tested multi-tile geometry's worst-case
+  point estimate exceeds tol, so the feasible region is **empty** and `n_star_joint = 1` (only the untiled
+  single-tile solve is joint-valid; it does not scale → the owner-deferred fix is the only path to global
+  joint coherence). **Caveat (see §2):** the worst-of-K is *non-monotone in N* (2×2 = 1.105 > 3×3 = 0.506),
+  so `feasible iff N ≤ n_star_joint` is valid ONLY as the **empty-region shorthand at tol = 0.5** — not a
+  general monotone-in-N law. At a *loosened* tol (> ~0.51) feasibility becomes **non-nested** (3×3 would pass
+  while 2×2 fails), which a tile-count threshold cannot express — it would require a lookup on the measured
+  `N → worst-case` curve. The robust, tolerance-insensitive claim is **global** infeasibility; the regional
+  `n_star_joint = 1` is the tol = 0.5 point-estimate shorthand, carrying the thin-3×3-margin caveat.
+- **MARGINAL_VARIANCE** → feasible iff the (measured, **flat**) worst-case reported-marginal error
+  ≤ `marg_tol`. Measured worst-case ~13–15%, flat in N → feasibility is **tile-count-independent**:
+  `n_star_marg` is effectively unbounded **iff `marg_tol ≥ ~0.15`**, else empty. So "MARGINAL_VARIANCE ships
+  globally" is conditional on *accepting ~15% worst-case marginal error* — visible in the predicate via the
+  named `marg_tol`, not buried in a constant. The basis is the **flatness** (a fixed, characterized error
+  that does not accumulate with tile count), not an unbounded-`N` law. Correctly labeled `MARGINAL_VARIANCE`,
+  **not** "coherent."
 - **POINT** → unconstrained (no seams).
 
-The predicate keys on **tile count N**, never `core/range` (measured: tripling the core barely moved the
-worst-case; tile count is the driver). Tolerances are named, swappable parameters (the old "25 was
-swappable" pattern); the empty-region headline is tolerance-invariant.
+The predicate keys on **tile count N** for the joint tier, never `core/range` (measured: tripling the core
+barely moved the worst-case; tile count is the driver). Both tolerances (`joint_tol`, `marg_tol`) are named,
+swappable parameters (the old "25 was swappable" pattern); the *global* empty-region headline is
+tolerance-invariant, the *regional* boundary is tolerance-dependent (and, for the joint tier, non-nested).
 
 ### 3.1 `feasibility.py` changes
 
@@ -106,21 +125,29 @@ class TileGeometry:
 
 class CoherenceFeasibility:
     """Capability-conditional, tile-count-keyed. Replaces core/range >= 25 (bug artifact)."""
-    joint_tol: float = 0.5       # worst adjacent-seam corr-err bound (swappable; region empty regardless)
-    n_star_joint: int = 1        # MEASURED empty region: only untiled N=1 is joint-valid at op. range
-    n_star_marg: int = 1_000_000 # MEASURED ~flat 15% worst-case -> effectively unbounded in tested range
+    joint_tol: float = 0.5        # worst adjacent-seam corr-err bound (swappable)
+    n_star_joint: int = 1         # tol=0.5 EMPTY-REGION SHORTHAND (worst-of-K > tol at all tested N>=2,
+                                  #   non-monotone; NOT a monotone law — see design §2/§3). Only N=1 valid.
+    marg_tol: float = 0.20        # accepted worst-case reported-marginal rel error (swappable)
+    marg_worst_case: float = 0.15 # MEASURED, FLAT in N (~13-15% up to 36 tiles) — a characterized constant
     def feasible(self, params, tile_geometry, required_capabilities) -> bool:
         caps = required_capabilities
         if caps & {SAMPLES, COVARIANCE}:  return tile_geometry.n_tiles <= self.n_star_joint
-        if MARGINAL_VARIANCE in caps:     return tile_geometry.n_tiles <= self.n_star_marg
+        if MARGINAL_VARIANCE in caps:     return self.marg_worst_case <= self.marg_tol  # flat -> N-indep.
         return True                        # POINT / no joint requirement
 
 @dataclass
 class RelaxedCoherenceFeasibility:
-    """The redesign's interface (invariant 5): widens the tile-count bounds without touching the tuner."""
-    n_star_joint: int = 64
-    n_star_marg: int = 1_000_000
-    # same feasible() body, reading its own bounds — the owner-deferred coarse-correction supplies this.
+    """The redesign's interface (invariant 5): widens the joint region without touching the tuner.
+
+    The owner-deferred coarse-correction supplies this. n_star_joint below is ILLUSTRATIVE of the
+    mechanism (a wider tile-count bound), NOT a measured value — the fix has not been built or measured.
+    """
+    n_star_joint: int = 64        # ILLUSTRATIVE only (unmeasured)
+    joint_tol: float = 0.5
+    marg_tol: float = 0.20
+    marg_worst_case: float = 0.15
+    # same feasible() body, reading its own bounds.
 ```
 
 **Dies:** `CoherenceFeasibility.CORE_OVER_RANGE_MIN`, the `KM_PER_DEG` ratio arithmetic, and
@@ -139,10 +166,12 @@ class RelaxedCoherenceFeasibility:
   `λx≈range`) to the measured both-tiers tile-count table.
 - **REWORD — the Stage-C DoD (plan T18):** §6 below.
 - **RETIRE / REWRITE — `tests/test_core_authoritative_gate.py`** strict-xfail
-  `test_acceptance_operational_cross_seam_covariance_recovered` (core/range-premised). Its replacement:
-  the deferred fix must move `n_star_joint` above 1 (a non-empty `SAMPLES/COVARIANCE` region) at an
-  operational tiling — i.e. `RelaxedCoherenceFeasibility` widening the region is the redesign's success
-  signal, not a core/range xpass.
+  `test_acceptance_operational_cross_seam_covariance_recovered` (core/range-premised). Replace it with a
+  CONCRETE strict-xfail that preserves the known-unmet-target-as-xfail pattern: assert that a
+  `SAMPLES/COVARIANCE` product at an operational multi-tile geometry (`N ≥ 2`) is **feasible** under the
+  default `CoherenceFeasibility()` — which strict-`xfail`s today (`n_star_joint = 1` excludes it) and
+  `xpass`es only once the owner-deferred coarse-correction widens `n_star_joint` above 1. The known-broken
+  target is pinned in code, not prose.
 
 ## 5. The frontier artifact + measurement split
 
@@ -171,10 +200,17 @@ Stage C is closed when:
    worst-case (never median), and the frontier artifact carries both tiers.
 3. **Boundary relaxable (the redesign interface):** `RelaxedCoherenceFeasibility` with a larger
    `n_star_joint` widens the feasible region with no change to the tuner (invariant 5).
-4. **Boundary surfaced:** the frontier doc states — for the **real** reason (worst-seam joint cross-seam
-   covariance accumulates unbounded with tile count), **not** the refuted conditioning collapse (the fixed
-   GMRF prior bug) — that global `SAMPLES/COVARIANCE` is infeasible at operational range; that
-   `MARGINAL_VARIANCE` ships within its (measured, flat) bound; and the single-fixture provenance (§8).
+4. **Boundary surfaced, robust claim first:** the frontier doc leads with the **robust** finding — GLOBAL
+   `SAMPLES/COVARIANCE` is infeasible (worst-of-K ~2.0 by 25 tiles and rising, extrapolating past any sane
+   tol at thousands of tiles) — for the **real** reason (worst-seam joint cross-seam covariance accumulates
+   with tile count), **not** the refuted conditioning collapse (the fixed GMRF prior bug). It then presents
+   the **regional** `n_star_joint = 1` as the *tol = 0.5 point-estimate shorthand*, explicitly carrying:
+   (a) the **worst-of-K is non-monotone in N** (2×2 > 3×3); (b) its **estimator uncertainty** (the `± std`
+   column) so the thin **3×3 = 0.506 ± 0.079 vs 0.5** cell is shown to be *within noise* — no tested
+   multi-tile geometry is *clearly* feasible, but the small-N exclusion rests on a thin margin. It states
+   that `MARGINAL_VARIANCE` ships **conditional on accepting ~15% worst-case marginal error** (`marg_tol ≥
+   ~0.15`), on the basis of the **flatness** (fixed, non-accumulating). And it states the single-fixture
+   provenance (§8).
 
 Stage C does **not** attempt DUACS-class global coherent products at operational range (the boundary forbids
 it until the owner-deferred fix). It proves the tuner respects the boundary and quantifies its cost.
