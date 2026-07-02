@@ -33,7 +33,7 @@ build* — that is the spec.
 | Blocked splits | `application/withholding.py` | `LeaveOneMissionOut`, `PerMissionTemporalFraction` → `SplitAssignment` |
 | Three-way split | `application/splits.py::make_splits` | `by='mission'` with `locked_missions` / `validation_missions`; `by='random_point'` raises |
 | c2 handling | `validation/input_adapter.py` | c2 guarded out of mapping obs; loaded eval-only as `EvalTrack` |
-| Coherence boundary | `distributions/coherent.py`, `tests/test_core_authoritative_gate.py` | `core/range ≳ 25` for the overwrite sampler |
+| Coherence boundary | `distributions/coherent.py`, `tests/test_core_authoritative_gate.py` | ~~`core/range ≳ 25`~~ SUPERSEDED 2026-07-01 → tile-count boundary (joint infeasible at operational scale); see `2026-07-01-stagec-redesign-design.md` |
 
 **Gaps these reveal (resolved in this design):** no `property_kind`/metric tag exists; **no
 internal (non-locked-test) λx scorer exists** — λx lives only inside `their_eval`; no
@@ -112,10 +112,10 @@ feasible, marginally-scored trials the loop hands back through `history`.
 ```python
 @dataclass(frozen=True)
 class TileGeometry:
-    core_size_deg: float
-    range_km: float
+    n_tiles: int                 # the predicate's key (tile count)
+    core_size_deg: float         # recorded context for the artifact; predicate ignores
+    range_km: float              # recorded context for the artifact; predicate ignores
     tiling_id: str
-    # derived from the partition + params; the predicate keys on this, nothing else.
 
 @runtime_checkable
 class FeasibilityPredicate(Protocol):
@@ -123,26 +123,32 @@ class FeasibilityPredicate(Protocol):
                  required_capabilities: frozenset[UncertaintyCapability]) -> bool: ...
 
 class CoherenceFeasibility:
-    """Default, keyed on the current tiling infrastructure (spec §5.2)."""
-    CORE_OVER_RANGE_MIN = 25.0   # measured Phase-4 value (test_core_authoritative_gate.py)
+    """Default: capability-conditional + TILE-COUNT-keyed (spec §5.2; redesign 2026-07-01)."""
+    joint_tol: float = 0.5        # worst adjacent-seam corr-err bound (swappable)
+    n_star_joint: int = 1         # tol=0.5 EMPTY-REGION SHORTHAND (worst-of-K > tol at all tested N>=2,
+                                  #   non-monotone; NOT a monotone law). Only untiled N=1 is joint-valid.
+    marg_tol: float = 0.20        # accepted worst-case reported-marginal rel error (swappable)
+    marg_worst_case: float = 0.15 # MEASURED, FLAT in N (~13-15% up to 36 tiles) — characterized constant
     def feasible(self, params, tile_geometry, required_capabilities) -> bool:
-        # binds ONLY for sparse-precision when {SAMPLES|COVARIANCE} is required:
-        needs_joint = required_capabilities & {SAMPLES, COVARIANCE}
-        if not needs_joint:                       # single-tile challenge, per-gridpoint modes
-            return True                           # no seams -> unconstrained (Stages A, B)
-        core_over_range = tile_geometry.core_size_deg * KM_PER_DEG / tile_geometry.range_km
-        return core_over_range >= self.CORE_OVER_RANGE_MIN
+        caps = required_capabilities
+        if caps & {SAMPLES, COVARIANCE}:  return tile_geometry.n_tiles <= self.n_star_joint
+        if MARGINAL_VARIANCE in caps:     return self.marg_worst_case <= self.marg_tol  # flat -> N-indep.
+        return True                        # POINT / no joint requirement -> no seams
 
 class RelaxedCoherenceFeasibility:
-    """Test/redesign double: widens the feasible region without touching the tuner (invariant 5)."""
+    """Redesign interface (invariant 5): widens n_star_joint without touching the tuner.
+    The owner-deferred coarse-correction supplies this; its n_star_joint is ILLUSTRATIVE, not measured."""
 ```
 
-**Capability-conditional, not method-conditional** (confirmed correct as-is): the gate is driven
-by `required_capabilities`, so the same GMRF method is unconstrained per-gridpoint and constrained
-only when the product demands joint samples/covariance. `TileGeometry` is derived from
-partition+params (confirmed correct as-is). The `~25` constant is the predicate's default, not a
-tuner assumption — swapping the predicate is the decomposition-redesign's whole interface to the
-tuner (spec §6).
+**Capability-conditional, not method-conditional** (confirmed correct): the gate is driven by
+`required_capabilities`, so the same GMRF method is unconstrained per-gridpoint and constrained only when
+the product demands joint samples/covariance. **Superseded 2026-07-01:** the predicate keys on **tile count**
+(not `core/range` — the `~25` bound was a GMRF-prior-bug artifact, `6cce45b`). Measured: `SAMPLES/COVARIANCE`
+worst-case joint cross-seam correlation exceeds `joint_tol` at every operational multi-tile geometry → empty
+region (`n_star_joint=1`); `MARGINAL_VARIANCE` reported-marginal error is ~15% flat → ships iff
+`marg_tol ≥ ~0.15`. The predicate stays cheap (baked constants; the measurement is offline in
+`scripts/diag_crossseam.py`), so invariant 3's gate-before-solve holds. Full rationale + provenance:
+`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`.
 
 ---
 
@@ -444,17 +450,24 @@ unchanged (no OI param name baked into `tuning/`). Add `BayesianOptimization` as
 instance once the Stage-A loop is green. **Gate:** GMRF tuned through the identical loop, sensible
 challenge score; method-agnosticism test passes.
 
-**Stage C — global GMRF coherent (the boundary binds).** `required_capabilities =
-{SAMPLES|COVARIANCE}` → `CoherenceFeasibility` binds; per trial `TileGeometry(core, range)` →
-feasible iff `core/range ≥ 25`. Infeasible trials excluded before `submit` (hard-barrier test).
-Coherence reduced **strict-min worst-case-localized** wherever measured (never aggregate/median) —
-it is the gate, never a score (`CROSS_SEAM` barred from the objective). `RelaxedCoherenceFeasibility`
-widens the feasible region with the tuner unchanged (pluggability test). **Surface the
-feasibility-vs-resolution tradeoff** as an artifact: achievable λx for a *valid global coherent*
-product as a function of the feasible `(range, tile)` region — the concrete input to the owner's
-decomposition-redesign decision. Stage C proves the tuner *respects and quantifies* the boundary;
-it does **not** attempt DUACS-class global coherent products at operational range (the boundary
-forbids that until the redesign). Do not loosen the predicate to manufacture a result.
+**Stage C — global GMRF coherent (the boundary binds).** *Redesigned 2026-07-01
+(`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`) — the `core/range ≥ 25` framing below is
+superseded.* `required_capabilities = {SAMPLES|COVARIANCE}` → `CoherenceFeasibility` binds; per trial
+`TileGeometry(n_tiles, …)` → feasible iff `n_tiles ≤ n_star_joint` (= 1: empty region at the shipped
+`joint_tol=0.5`, so any `N ≥ 2` joint trial is excluded before `submit` — hard-barrier test). Coherence is
+the JOINT cross-seam covariance, reduced **strict-min worst-case-localized** (adjacent-seam corr-err, never
+aggregate/median) — the gate, never a score (`CROSS_SEAM` barred from the objective).
+`RelaxedCoherenceFeasibility` widens `n_star_joint` with the tuner unchanged (pluggability test); a concrete
+strict-xfail (a `SAMPLES/COVARIANCE` `N ≥ 2` product asserted feasible) pins the known-broken target until
+the deferred fix widens it. **Surface the feasibility-vs-tile-count frontier (both tiers)**: lead with the
+ROBUST claim that GLOBAL `SAMPLES/COVARIANCE` is infeasible (worst-of-K ~2.0 by 25 tiles, extrapolating past
+any tol), then the regional `n_star_joint=1` as the tol=0.5 point-estimate shorthand (non-monotone in N;
+3×3=0.506±0.079 vs 0.5 is within noise), and that `MARGINAL_VARIANCE` ships globally conditional on ~15%-flat
+marginal error — the input to the owner's (deferred) decomposition-redesign decision. Stage C proves the
+tuner *respects and quantifies* the boundary, for the REAL reason (worst-seam joint accumulates with tile
+count, NOT the refuted conditioning collapse); it does **not** attempt DUACS-class global coherent products
+at operational range. Single-fixture provenance is stated. Do not loosen the predicate to manufacture a
+result.
 
 ---
 
