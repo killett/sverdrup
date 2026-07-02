@@ -18,6 +18,11 @@ import pytest
 
 pytest.importorskip("sksparse")
 
+from sverdrup.application.tuning.feasibility import (  # noqa: E402
+    CoherenceFeasibility,
+    TileGeometry,
+)
+from sverdrup.core.types import UncertaintyCapability  # noqa: E402
 from sverdrup.distributions.blend import partition_weights  # noqa: E402
 from sverdrup.distributions.coherent import (  # noqa: E402
     GmrfCoreAuthoritativeSolve,
@@ -165,18 +170,13 @@ def test_case_b_boundary_characterization():
 
 @pytest.mark.xfail(
     strict=True,
-    reason="case-(b) phase boundary: overwrite zeroes operational cross-seam covariance; its "
-    "carrier is the near-improper global mode (deflation killed by measurement). The Phase-5 "
-    "decomposition fix (cores>>range / Schwarz+coarse / global low-rank seam basis) must recover "
-    "it and flip this to xpass.",
+    reason="owner-deferred coarse-correction; n_star_joint=1 (joint region empty) until then",
 )
-def test_acceptance_operational_cross_seam_covariance_recovered():
-    # ACCEPTANCE for the eventual Phase-5 fix: at operational range the installed cross-seam
-    #   correlation must match the dense reference at the WORST pair (strict-min, not the average).
-    #   Overwrite cannot (blend ~0 vs true ~0.68) -> strict xfail today; a real decomposition fix
-    #   makes this xpass and the strict marker fails the suite, forcing it to become a live gate.
-    _marg, _dir, true_corr, blend_corr = _measure(400.0)
-    assert abs(blend_corr - true_corr) <= 0.15, (
-        f"operational cross-seam correlation not recovered: true {true_corr:+.3f} vs "
-        f"installed {blend_corr:+.3f}"
+def test_acceptance_multi_tile_joint_feasible() -> None:
+    # The known-unmet target, pinned in code: a multi-tile SAMPLES product should be feasible.
+    # It is NOT today (n_star_joint=1) -> strict xfail; the deferred decomposition-redesign that
+    # widens n_star_joint flips this to xpass. Replaces the retired core/range>=25 acceptance.
+    geom = TileGeometry(core_size_deg=4.0, range_km=300.0, tiling_id="g", n_tiles=9)
+    assert CoherenceFeasibility().feasible(
+        {}, geom, frozenset({UncertaintyCapability.SAMPLES})
     )

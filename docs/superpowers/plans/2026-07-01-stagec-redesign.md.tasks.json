@@ -31,7 +31,7 @@
     {
       "id": 5,
       "subject": "Task 5: Concrete strict-xfail + generate the frontier doc",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [4],
       "description": "**Goal:** Replace the retired core/range strict-xfail with a concrete one (multi-tile joint feasible, xfail until deferred fix widens n_star_joint); generate the owner-facing both-tiers frontier doc.\n\n**Files:** modify test_core_authoritative_gate.py; create docs/validation/phase5_feasibility_resolution_frontier.md.\n\n**Acceptance Criteria:** test_acceptance_multi_tile_joint_feasible ({SAMPLES} n_tiles=9 feasible, @xfail strict) XFAILs today; frontier doc both tiers + robust-first framing + non-monotone/thin-3x3 caveats + marginal ~15% conditional + provenance + no-operational-global-coherent-until-deferred-redesign statement.\n\n**Verify:** `pixi run test tests/test_core_authoritative_gate.py -v`\n\n```json:metadata\n{\"files\": [\"tests/test_core_authoritative_gate.py\", \"docs/validation/phase5_feasibility_resolution_frontier.md\"], \"verifyCommand\": \"pixi run test tests/test_core_authoritative_gate.py -v\", \"acceptanceCriteria\": [\"concrete multi-tile-joint strict-xfail XFAILs (not xpass/error)\", \"frontier doc both tiers + robust-first + provenance + owner-deferred statement\"], \"modelTier\": \"standard\"}\n```"
     },
