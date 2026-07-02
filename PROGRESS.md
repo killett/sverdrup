@@ -1,14 +1,16 @@
 # Sverdrup — Progress notebook
 
-> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, PAUSED at a
-> phase boundary **2026-06-30 for a Stage-C REDESIGN**. Tasks 0–14 `completed`; Stage-C Tasks 15–18
-> `pending` but their PREMISE IS SUPERSEDED (see below) — **do NOT execute them as written.**
-> Next action = **redesign Stage C** (brainstorm → write-plan) against the new reality. The
-> feasibility-frontier measurement the brief asked for is now **DONE (2026-07-01)** — read the
-> **"★ MEASURED 2026-07-01"** block below for the clean constant-core curve + verdict BEFORE
-> brainstorming. Read, in order: (1) the **"STAGE-C REDESIGN BRIEF"** block immediately below — the
-> single consolidated handoff; (2) the **★ MEASURED 2026-07-01** frontier block; (3) the **★★
-> RESOLVED** block for the earlier evidence; (4) the design/plan/spec the brief points at.
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, in **Stage-C
+> REDESIGN**. Tasks 0–14 `completed`. **Brainstorm DONE + design APPROVED (2026-07-01)** — measurement,
+> owner decisions, and the design doc are all committed; scope/design amendments applied. **Next action =
+> `writing-plans` to REWRITE Stage-C plan Tasks 15–18** (+ `.tasks.json`) against the approved design:
+> the capability-conditional, tile-count-keyed `CoherenceFeasibility` (`feasibility.py` code), the
+> both-tiers frontier artifact (`tuning/tradeoff.py` thin consumer of `scripts/diag_crossseam.py`), the
+> concrete strict-xfail, and the reworded Stage-C DoD. The OLD Tasks 15–18 in the plan are SUPERSEDED —
+> do NOT execute as written. Read, in order: (1) **`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`**
+> (the approved design — the source of truth for the rewrite); (2) the **DECISION 1–5** blocks below
+> (owner decisions + measurements); (3) `phase5_scope_spec.md` §5.2/§7 + the phase5 design doc §4/§11
+> (already amended to match).
 > **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE** — GMRF prior bug fixed (`6cce45b`), method-agnostic
 > loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
 > coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
