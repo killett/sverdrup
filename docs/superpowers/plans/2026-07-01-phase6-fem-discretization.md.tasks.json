@@ -1,0 +1,47 @@
+{
+  "planPath": "docs/superpowers/plans/2026-07-01-phase6-fem-discretization.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: fem_mesh.py — Mesh + build_mesh + sliver guard",
+      "status": "pending",
+      "description": "**Goal:** A `Mesh` value object (PointSet-like `.points()`), a `build_mesh` Delaunay constructor, and `assert_mesh_quality` (the sliver guard).\n\n**Files:**\n- Create: `src/sverdrup/methods/fem_mesh.py`\n- Test: `tests/test_fem_mesh.py`\n\n**Acceptance Criteria:**\n- [ ] `build_mesh(points)` triangulates a 2-D point set -> `Mesh` with `points_xy (n,2)`, `triangles (n_tri,3)`, `.points()` returning `(n,3)`.\n- [ ] `build_mesh(points, boundary_ring=ring)` includes ring nodes.\n- [ ] `assert_mesh_quality` raises on a sliver, passes on a good mesh.\n\n**Verify:** `pixi run test tests/test_fem_mesh.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem_mesh.py\", \"tests/test_fem_mesh.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_mesh.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"build_mesh triangulates and Mesh.points() returns (n,3) lon/lat/time\", \"boundary_ring adds ring nodes\", \"assert_mesh_quality raises on sliver, passes on good mesh\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: fem_precision + AGNOSTICISM #1 (exact selective-inverse on adversarial mesh)",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** The P1 SPDE alpha=2 precision assembly + the PRIMARY agnosticism test: `diag(Q^-1)` via the inherited `GMRFFactor.selective_inverse_diag` equals dense `Q^-1` diagonal to rtol 1e-9 on a maximally-adversarial mesh, and every mesh edge is present-and-exact in the selective-inverse pattern.\n\n**Files:**\n- Create: `src/sverdrup/methods/fem.py` (fem_precision only)\n- Test: `tests/test_fem_precision.py`\n\n**Acceptance Criteria:**\n- [ ] `fem_precision(mesh, kappa, tau)` returns symmetric SPD CSC `Q = (1/tau)(k^2 C + G) C^-1 (k^2 C + G)`.\n- [ ] On the adversarial mesh, `GMRFFactor(Q).selective_inverse_diag()` matches dense diag to rtol 1e-9.\n- [ ] Every mesh edge in-pattern (0 absent) and exact vs dense.\n\n**Verify:** `pixi run test tests/test_fem_precision.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/test_fem_precision.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_precision.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"fem_precision returns symmetric SPD CSC Q\", \"selective_inverse_diag exact vs dense rtol 1e-9 on adversarial mesh\", \"every mesh edge in selective-inverse pattern (0 absent) and exact\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: FEMBasisProjection — P1 basis read-off conforming to Projection",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** The mesh analogue of `bilinear_weights`: a P1 basis projection via `Delaunay.find_simplex` + barycentric coords, conforming to `Projection`, with a mesh-edge-in-pattern `assert_adjacency` (NOT the grid 5-point guard).\n\n**Files:**\n- Modify: `src/sverdrup/methods/fem.py` (add FEMBasisProjection)\n- Test: `tests/test_fem_projection.py`\n\n**Acceptance Criteria:**\n- [ ] `isinstance(FEMBasisProjection(mesh), Projection)` true.\n- [ ] `weights(pts)` sparse `(k, n_nodes)`, rows sum to 1; node query is unit selector.\n- [ ] `field_shape() == (n_nodes,)`; `node_points(t)` `(n_nodes,3)`.\n- [ ] `assert_adjacency(Q)` passes on real Q, raises on missing edge.\n\n**Verify:** `pixi run test tests/test_fem_projection.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"tests/test_fem_projection.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_projection.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"isinstance(proj, Projection) true\", \"weights rows sum to 1; node query is unit selector\", \"field_shape (n_nodes,); node_points (n_nodes,3)\", \"assert_adjacency passes on real Q, raises on missing edge\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: FEMMatern.solve + register fem + AGNOSTICISM #2 (whole-path grid-shortcut audit)",
+      "status": "pending",
+      "blockedBy": [2, 3],
+      "description": "**Goal:** `FEMMatern.solve` (mirror of `MaternGMRF.solve`, mesh-injected), register `\"fem\"`, + the second primary agnosticism test: full `solve -> reduce -> project` on an injected adversarial mesh with `bilinear_weights`/`(ny,nx)` reshape guarded to raise if hit, + end-to-end exact marginal var through `GMRFPrecisionReduction` vs dense.\n\n**Files:**\n- Modify: `src/sverdrup/methods/fem.py` (add FEMMatern)\n- Modify: `src/sverdrup/methods/registry.py` (register fem)\n- Test: `tests/test_fem_agnosticism_path.py`\n\n**Acceptance Criteria:**\n- [ ] `FEMMatern(mesh=None)` constructible no-args; `.solve(obs, grid, params, time_days)` mirrors MaternGMRF, flat `(n_nodes,)` mean.\n- [ ] `\"fem\"` in `registry.METHODS`.\n- [ ] Whole-path run never calls `bilinear_weights`; `field_shape()` `(n_nodes,)`.\n- [ ] End-to-end marginal_variance exact vs dense rtol 1e-9.\n\n**Verify:** `pixi run test tests/test_fem_agnosticism_path.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/fem.py\", \"src/sverdrup/methods/registry.py\", \"tests/test_fem_agnosticism_path.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_agnosticism_path.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"FEMMatern(mesh=None).solve mirrors MaternGMRF, flat (n_nodes,) mean\", \"fem registered in METHODS\", \"whole-path solve->reduce->project never calls bilinear_weights; field_shape (n_nodes,)\", \"end-to-end marginal_variance exact vs dense rtol 1e-9\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: C7 boundary-extension mechanism demo vs named grid baseline",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** Demonstrate boundary extension on a synthetic irregular-boundary fixture: `edge_var(FEM) < edge_var(grid)` at near-boundary nodes, vs the named baseline (grid GMRF 5-point Neumann-edge Laplacian, `_laplacian`, gmrf_grid.py:48). Mechanism demo, NOT a value claim; not rigged.\n\n**Files:**\n- Test: `tests/test_fem_boundary_payoff.py`\n\n**Acceptance Criteria:**\n- [ ] FEM near-boundary marginal var < grid var at domain-edge nodes (identical kappa/tau/obs).\n- [ ] Comparison at near-boundary nodes (not interior-averaged); Neumann-edge baseline documented.\n\n**Verify:** `pixi run test tests/test_fem_boundary_payoff.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_fem_boundary_payoff.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_boundary_payoff.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"FEM near-boundary marginal var < grid var at domain-edge nodes\", \"comparison at near-boundary nodes, Neumann-edge grid baseline documented\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: Multi-tile FEM inheritance + C6 shared-node (secondary)",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** Confirm FEM tiles blend through the live `GmrfTreeKrigingSolve` unchanged, and the discretization-agnostic `CoherenceFeasibility` envelope applies verbatim (MARGINAL_VARIANCE ships; SAMPLES/COVARIANCE only at n_tiles <= n_star_joint). Completeness, not an agnosticism test.\n\n**Files:**\n- Test: `tests/test_fem_multitile.py`\n\n**Acceptance Criteria:**\n- [ ] Two overlapping FEM tiles share non-empty coincident-node set (`_tile_adjacency`) — C6.\n- [ ] `GmrfTreeKrigingSolve().crossfaded_member(...)` returns finite coherent field.\n- [ ] `CoherenceFeasibility` verdict same for mesh as grid: feasible N=1, infeasible N=2.\n\n**Verify:** `pixi run test tests/test_fem_multitile.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"tests/test_fem_multitile.py\"], \"verifyCommand\": \"pixi run test tests/test_fem_multitile.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"two overlapping FEM tiles share non-empty coincident-node set (C6)\", \"GmrfTreeKrigingSolve.crossfaded_member returns finite coherent field\", \"CoherenceFeasibility verdict same for mesh as grid (feasible N=1, infeasible N=2)\"], \"modelTier\": \"standard\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-07-01T21:30:00Z"
+}

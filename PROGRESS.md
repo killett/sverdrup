@@ -8,7 +8,20 @@
 > **Tuner-debt-cleanup plan (the two carried Task-14 follow-ups) COMPLETE 2026-07-01** — BO now
 > genuinely multi-round (`rounds` threaded through the stage runners, `6e418fa`) + Stage-B gate skips
 > instead of ERRORing on no-admissible (`d7376b8`). See the follow-ups block below.
-> **Next action = Phase 5 complete; owner reviews the both-tiers frontier
+> **▶ ACTIVE PLAN (2026-07-01) — Phase 6: FEM/triangulation SPDE (grid-agnosticism falsification).**
+> Brainstormed + spec approved-with-fix + plan written. Design
+> `docs/superpowers/specs/2026-07-01-phase6-fem-discretization-design.md`; plan + tracker
+> `docs/superpowers/plans/2026-07-01-phase6-fem-discretization.md(.tasks.json)` (6 tasks, all `pending`).
+> **The point is agnosticism, not FEM** — prove no hidden grid dependency by running the full pipeline on
+> a maximally-irregular mesh vs dense linear-algebra ground truth. Headline probe already PASSED
+> (`scripts/probe_fem_reduction_exactness.py`, committed): inherited Takahashi selective-inverse exact on
+> FEM's irregular P1 pattern (diag rel-err 4.4e-10, 40/40 mesh-edge cov). The reduction-path claim rests on
+> a mechanistic argument (`gmrf_linalg.py:27/96/135`); §3 #1 shipped test locks the number. Stationary κ only
+> (per-node deferred); real OSSE/OSE deferred (ODC dead); C7 = mechanism demo vs the Neumann-edge grid
+> baseline. **Next action = execute Phase 6 Task 1.** NOTE: commits `aa5812e`/`8ca6e03` are LOCAL-only —
+> `git push origin main` blocked on SSH host-key verification (owner must `ssh-keyscan github.com >>
+> ~/.ssh/known_hosts` then push).
+> **Prior next action (Phase 5, still open) = owner reviews the both-tiers frontier
 > (`docs/validation/phase5_feasibility_resolution_frontier.md`) for the deferred redesign decision.**
 > What shipped: capability-conditional tile-count `CoherenceFeasibility`
 > (`feasibility.py`, retires core/range≥25); Stage-C loop wiring `stage_c.py` (multi-tile joint
