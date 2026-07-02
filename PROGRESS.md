@@ -8,19 +8,30 @@
 > **Tuner-debt-cleanup plan (the two carried Task-14 follow-ups) COMPLETE 2026-07-01** — BO now
 > genuinely multi-round (`rounds` threaded through the stage runners, `6e418fa`) + Stage-B gate skips
 > instead of ERRORing on no-admissible (`d7376b8`). See the follow-ups block below.
-> **▶ ACTIVE PLAN (2026-07-01) — Phase 6: FEM/triangulation SPDE (grid-agnosticism falsification).**
-> Brainstormed + spec approved-with-fix + plan written. Design
-> `docs/superpowers/specs/2026-07-01-phase6-fem-discretization-design.md`; plan + tracker
-> `docs/superpowers/plans/2026-07-01-phase6-fem-discretization.md(.tasks.json)` (6 tasks, all `pending`).
-> **The point is agnosticism, not FEM** — prove no hidden grid dependency by running the full pipeline on
-> a maximally-irregular mesh vs dense linear-algebra ground truth. Headline probe already PASSED
-> (`scripts/probe_fem_reduction_exactness.py`, committed): inherited Takahashi selective-inverse exact on
-> FEM's irregular P1 pattern (diag rel-err 4.4e-10, 40/40 mesh-edge cov). The reduction-path claim rests on
-> a mechanistic argument (`gmrf_linalg.py:27/96/135`); §3 #1 shipped test locks the number. Stationary κ only
-> (per-node deferred); real OSSE/OSE deferred (ODC dead); C7 = mechanism demo vs the Neumann-edge grid
-> baseline. **Next action = execute Phase 6 Task 1.** NOTE: commits `aa5812e`/`8ca6e03` are LOCAL-only —
-> `git push origin main` blocked on SSH host-key verification (owner must `ssh-keyscan github.com >>
-> ~/.ssh/known_hosts` then push).
+> **▶ ACTIVE PLAN (2026-07-01) — Phase 6: FEM/triangulation SPDE (grid-agnosticism falsification) —
+> ALL 6 TASKS COMPLETE + committed (`81992d0` T1, `851e5a2` T2, `03b60fe` T3, `5fec4a8` T4, `305b84d` T5,
+> `b838396` T6).** Design `docs/superpowers/specs/2026-07-01-phase6-fem-discretization-design.md`; plan +
+> tracker `docs/superpowers/plans/2026-07-01-phase6-fem-discretization.md(.tasks.json)` (all `completed`).
+> **The point is agnosticism, not FEM** — proved no hidden grid dependency by running the full pipeline on
+> a maximally-irregular mesh vs dense linear-algebra ground truth. Shipped: `methods/fem_mesh.py` (Mesh +
+> Delaunay `build_mesh` + sliver guard), `methods/fem.py` (`fem_precision` P1 SPDE α=2, `FEMBasisProjection`,
+> `FEMMatern.solve`), `"fem"` in `registry.METHODS`. Tests: `test_fem_{mesh,precision,projection,
+> agnosticism_path,boundary_payoff,multitile}.py`. AGNOSTICISM #1 (headline) selective-inverse exact on the
+> adversarial mesh (diag/edge rel-err 4.4e-10 at cond 1.6e8); #2 whole-path grid-shortcut audit
+> (bilinear_weights raise-guard passes, field_shape `(n_nodes,)`, end-to-end marginal-var exact rtol 1e-9);
+> C7 boundary-ring mechanism beats Neumann-edge grid; C6 multi-tile via live tree driver + agnostic envelope.
+> **PLAN DEVIATIONS (3, all necessary — the plan's *code* was faithful; two *fixtures* + one *guard* were
+> not):** (1) T1 sliver fixture rewritten — a near-collinear *hull* triple lets Delaunay flip to a clean
+> diagonal (min-angle 29.7°, no sliver); an *interior* point ~1e-3 off the base forces an unavoidable 0.06°
+> sliver so the guard is actually exercised. (2) T2 removed the plan's unconditional `assert_mesh_quality(5°)`
+> from `fem_precision` — it rejected the adversarial fixture (0.38° sliver), contradicting the committed probe
+> (`p1_assembly` never guards); exactness holds WITH the sliver present, so the sliver guard stays a standalone
+> `fem_mesh` diagnostic, not baked into assembly. (3) T5 `build_mesh` now drops coincident nodes
+> (order-preserving) — overlapping boundary rings repeat corner nodes → Delaunay orphans them → zero lumped
+> mass → singular Q (divide-by-zero); a mesh builder should not emit coincident vertices. **Next action =
+> Phase 6 DONE; finishing-a-development-branch (on main, per owner's workspace choice). Then owner's call on
+> the next milestone.** NOTE: all Phase-6 commits (+ `aa5812e`/`8ca6e03`) are LOCAL-only — `git push origin
+> main` blocked on SSH host-key verification (owner must `ssh-keyscan github.com >> ~/.ssh/known_hosts`, push).
 > **Prior next action (Phase 5, still open) = owner reviews the both-tiers frontier
 > (`docs/validation/phase5_feasibility_resolution_frontier.md`) for the deferred redesign decision.**
 > What shipped: capability-conditional tile-count `CoherenceFeasibility`
