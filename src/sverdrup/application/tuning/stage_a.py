@@ -120,6 +120,7 @@ def _run_stage(
     n_trials: int = 16,
     seed: int = 1,
     strategy: SearchStrategy | None = None,
+    rounds: int = 1,
 ) -> StageAReport:
     """Shared single-tile stage: search ``method_name`` on the validation track, accept on c2.
 
@@ -176,7 +177,7 @@ def _run_stage(
         window=win,
         tile_geometry=TileGeometry(1e9, 1.0, "single"),  # ratio huge -> always feasible
         required_capabilities=frozenset({UncertaintyCapability.POINT}),
-        rounds=1,
+        rounds=rounds,
         on_empty="return_history",
     )
     if result.winner is None:
@@ -231,6 +232,7 @@ def run_stage_a(
     n_trials: int = 16,
     seed: int = 1,
     strategy: SearchStrategy | None = None,
+    rounds: int = 1,
 ) -> StageAReport:
     """Run the single-tile stage on OI (delegates to the shared ``_run_stage``)."""
     return _run_stage(
@@ -240,4 +242,5 @@ def run_stage_a(
         n_trials=n_trials,
         seed=seed,
         strategy=strategy,
+        rounds=rounds,
     )
