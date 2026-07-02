@@ -1,0 +1,47 @@
+{
+  "planPath": "docs/superpowers/plans/2026-07-01-stagec-redesign.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Capability-conditional tile-count CoherenceFeasibility",
+      "status": "pending",
+      "description": "**Goal:** Replace core/range>=25 with a capability-conditional, tile-count-keyed predicate; add n_tiles to TileGeometry; rekey RelaxedCoherenceFeasibility.\n\n**Files:** feasibility.py, test_tuning_feasibility.py, test_tuning_loop.py (one ratio case).\n\n**Acceptance Criteria:** TileGeometry gains appended n_tiles:int=1 (positional ctor still works); SAMPLES/COVARIANCE False at n_tiles>=2 True at 1; MARGINAL_VARIANCE True iff marg_worst_case<=marg_tol N-independent; POINT True; RelaxedCoherenceFeasibility(n_star_joint=64) widens joint; KM_PER_DEG+ratio removed.\n\n**Verify:** `pixi run test tests/test_tuning_feasibility.py tests/test_tuning_loop.py -v && pixi run typecheck`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/feasibility.py\", \"tests/test_tuning_feasibility.py\", \"tests/test_tuning_loop.py\"], \"verifyCommand\": \"pixi run test tests/test_tuning_feasibility.py tests/test_tuning_loop.py -v && pixi run typecheck\", \"acceptanceCriteria\": [\"TileGeometry appended n_tiles=1 positional-safe\", \"SAMPLES/COVARIANCE False at N>=2 True at 1\", \"MARGINAL True iff marg_worst_case<=marg_tol N-indep\", \"POINT True\", \"RelaxedCoherenceFeasibility widens joint\", \"KM_PER_DEG+ratio removed\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Stage-C loop wiring — hard barrier at multi-tile joint scale",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Drive the GMRF tuner in global multi-tile coherent mode ({SAMPLES}, TileGeometry.n_tiles=N); prove a multi-tile joint trial is excluded before any solve.\n\n**Files:** create stage_c.py, test_stage_c_hard_barrier.py.\n\n**Acceptance Criteria:** tile_geometry_for(n_tiles, params) carries n_tiles+range; run_stage_c_loop runs tune with {SAMPLES}+TileGeometry(n_tiles); test 4: n_tiles=9 scorer never called (spy==0), n_tiles=1 scorer called.\n\n**Verify:** `pixi run test tests/test_stage_c_hard_barrier.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/stage_c.py\", \"tests/test_stage_c_hard_barrier.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_hard_barrier.py -v\", \"acceptanceCriteria\": [\"tile_geometry_for carries n_tiles+range\", \"run_stage_c_loop uses {SAMPLES}+TileGeometry(n_tiles)\", \"n_tiles=9 scorer never called, n_tiles=1 called\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Worst-case-localized coherence reduction (strict-max adjacent-seam corr-err)",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Strict MAX adjacent-seam corr-err reduction (never aggregate); prove an aggregate cannot stand in for it.\n\n**Files:** create coherence_gate.py, test_stage_c_worst_case_localized.py.\n\n**Acceptance Criteria:** worst_case_corr_err = strict max (0.0 empty); corr_err_feasible = worst<=tol; median-healthy one-catastrophic-pair judged infeasible at tol=0.5.\n\n**Verify:** `pixi run test tests/test_stage_c_worst_case_localized.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/coherence_gate.py\", \"tests/test_stage_c_worst_case_localized.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_worst_case_localized.py -v\", \"acceptanceCriteria\": [\"worst_case_corr_err strict max 0.0 empty\", \"corr_err_feasible=worst<=tol\", \"median-healthy catastrophic-pair infeasible\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Both-tiers feasibility frontier consumer (tuning/tradeoff.py)",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** Thin consumer baking the measured curve into a both-tiers frontier (joint worst-of-K empty region + marginal flat) with predicate-injected feasibility. No measurement here.\n\n**Files:** create tradeoff.py, test_stage_c_tradeoff.py.\n\n**Acceptance Criteria:** MEASURED_FRONTIER rows n_tiles in {4,9,16,25,36} from design §2 + provenance; feasibility_frontier(predicate) returns both-tiers rows; default joint empty + marg ships; RelaxedCoherenceFeasibility(64) widens joint with no module change.\n\n**Verify:** `pixi run test tests/test_stage_c_tradeoff.py -v`\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/tradeoff.py\", \"tests/test_stage_c_tradeoff.py\"], \"verifyCommand\": \"pixi run test tests/test_stage_c_tradeoff.py -v\", \"acceptanceCriteria\": [\"MEASURED_FRONTIER baked from §2 + provenance\", \"feasibility_frontier both tiers predicate-injected\", \"default joint empty marg ships; relaxed widens joint no module change\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Concrete strict-xfail + generate the frontier doc",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** Replace the retired core/range strict-xfail with a concrete one (multi-tile joint feasible, xfail until deferred fix widens n_star_joint); generate the owner-facing both-tiers frontier doc.\n\n**Files:** modify test_core_authoritative_gate.py; create docs/validation/phase5_feasibility_resolution_frontier.md.\n\n**Acceptance Criteria:** test_acceptance_multi_tile_joint_feasible ({SAMPLES} n_tiles=9 feasible, @xfail strict) XFAILs today; frontier doc both tiers + robust-first framing + non-monotone/thin-3x3 caveats + marginal ~15% conditional + provenance + no-operational-global-coherent-until-deferred-redesign statement.\n\n**Verify:** `pixi run test tests/test_core_authoritative_gate.py -v`\n\n```json:metadata\n{\"files\": [\"tests/test_core_authoritative_gate.py\", \"docs/validation/phase5_feasibility_resolution_frontier.md\"], \"verifyCommand\": \"pixi run test tests/test_core_authoritative_gate.py -v\", \"acceptanceCriteria\": [\"concrete multi-tile-joint strict-xfail XFAILs (not xpass/error)\", \"frontier doc both tiers + robust-first + provenance + owner-deferred statement\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: [USER GATE] Stage-C DoD — boundary respected, quantified, relaxable, surfaced",
+      "status": "pending",
+      "blockedBy": [2, 3, 4, 5],
+      "description": "**Goal:** Close Stage C: aggregate evidence (hard barrier, worst-case-localized, relaxed-widens, concrete strict-xfail, both-tiers frontier surfaced) + full suite/typecheck/lint/pre-commit green.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** create tests/test_stage_c_dod.py; modify PROGRESS.md.\n\n**Acceptance Criteria:** aggregated Stage-C evidence passes; full suite green (pass/skip/xfail, no unexpected fail/xpass/error); typecheck+lint+pre-commit clean; PROGRESS records Stage C closed + owner-deferred fix.\n\n**Verify:** `pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files`\n\n```json:metadata\n{\"files\": [\"tests/test_stage_c_dod.py\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run test -q && pixi run typecheck && pixi run lint && pixi run pre-commit run --all-files\", \"acceptanceCriteria\": [\"aggregated Stage-C evidence passes\", \"full suite+typecheck+lint+pre-commit green (xfail not xpass)\", \"PROGRESS records Stage C closed + owner-deferred fix\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"all\", \"modelTier\": \"standard\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-07-01T00:00:00Z"
+}

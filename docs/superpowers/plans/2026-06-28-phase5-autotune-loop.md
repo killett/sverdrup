@@ -2353,6 +2353,12 @@ git commit -m "feat(tuning): Stage-B gate — GMRF via BO lands sensible challen
 
 ---
 
+> **⚠ SUPERSEDED 2026-07-01 — Tasks 15–18 below are REPLACED by
+> `docs/superpowers/plans/2026-07-01-stagec-redesign.md`** (their `core/range ≥ 25` premise was a GMRF
+> prior-bug artifact, refuted by measurement). Do NOT execute Tasks 15–18 as written. The redesign plan
+> rewrites them against the capability-conditional, tile-count-keyed boundary
+> (`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`).
+
 ## Task 15: Stage C — global coherent mode + hard barrier at scale
 
 **Goal:** Drive the GMRF tuner in the global multi-tile coherent mode where `required_capabilities = {SAMPLES}` and the `CoherenceFeasibility` predicate binds; derive `TileGeometry` from the tile partition + the trial's `range`, and prove the tuner never solves an infeasible trial at scale (test 4, global).
