@@ -144,6 +144,28 @@ tiling destroys cross-seam correlation, worsens with seams, cores don't help —
 universality across ranges/densities is one-fixture-based. The swappable predicate (`joint_tol`,
 `n_star_joint` named params) handles regime variation; state provenance honestly, don't imply universality.
 
+**DECISION 5 — doc-review refinements (owner review 2026-07-01, APPROVED-after-fixes; folded into
+`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`).** Added worst-of-K estimator std (script now
+reports it): 2×2 **1.105±0.000** (K=full pool), 3×3 **0.506±0.079**, 4×4 **0.823±0.135** (5×5~2.03, 6×6~2.11
+from the full run). Refinements:
+- (1a/1c) The worst-of-K is NON-MONOTONE in N (2×2 > 3×3) and 3×3=0.506 clears tol=0.5 by only 0.006 ≪ its
+  std 0.079 — **within noise**. So no tested multi-tile geometry is CLEARLY feasible, but the small-N
+  exclusion is thin. LEAD the DoD with the ROBUST claim (GLOBAL infeasible: woK~2.0 by 25 tiles,
+  extrapolates past any tol); present regional `n_star_joint=1` as the tol=0.5 point-estimate SHORTHAND with
+  the non-monotone + thin-3×3-margin + estimator-std caveats.
+- (1b) `feasible iff N≤n_star_joint` assumes monotone-in-N (data violates it) → valid ONLY as the tol=0.5
+  empty-region shorthand; a loosened tol (>~0.51) makes feasibility NON-NESTED (3×3 passes, 2×2 fails) →
+  needs an `N→worst-case` curve lookup, not a threshold. `RelaxedCoherenceFeasibility(n_star_joint=64)` is
+  ILLUSTRATIVE of the fix mechanism, NOT measured.
+- (2) MARGINAL_VARIANCE tier gets a named swappable `marg_tol` (default 0.20); `marg_worst_case≈0.15`
+  MEASURED-FLAT constant. Ships iff `marg_tol ≥ ~0.15` (tile-count-independent by flatness). "Ships" is
+  CONDITIONAL on accepting ~15% worst-case marginal error — visible in the predicate, not buried.
+- (minor) Replace the retired core/range strict-xfail with a CONCRETE one: a SAMPLES/COVARIANCE product at
+  N≥2 asserted feasible under default `CoherenceFeasibility()` — strict-xfail today, xpass once the deferred
+  fix widens `n_star_joint`. Known-broken target pinned in code, not prose.
+Structure/capability-scoping/measurement-split APPROVED as-is. Next: apply §7 doc amendments (scope §5.2/§7,
+design §4/§11) + writing-plans for the T15–T18 rewrite.
+
 **Stage-C rewrite scope (both decisions):** amend `phase5_scope_spec.md` §5.2/§7 + design doc §4/§11 +
 rewrite plan Tasks 15–18 (+ `.tasks.json`). T15 hard-barrier MACHINERY (gate-before-solve) + T16 strict-min
 reduction are SOUND — keep; only the predicate key/constant and T17 frontier artifact + T18 DoD reword.

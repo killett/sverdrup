@@ -77,18 +77,22 @@ def _write_big_obs(path: str, span: float) -> None:
     ds.to_netcdf(path)
 
 
-def _worst_of_k(pool: np.ndarray, k: int, r: int) -> float:
-    """Mean over ``r`` seeded subsamples of the max of ``k`` draws from ``pool``.
+def _worst_of_k(pool: np.ndarray, k: int, r: int) -> tuple[float, float]:
+    """(mean, std) over ``r`` seeded subsamples of the max of ``k`` draws from ``pool``.
 
     Selection-controlled worst-case: holds the compared-pair count fixed at ``k`` across
-    tilings so a growing value means seams degraded, not that more pairs were sampled.
+    tilings so a growing value means seams degraded, not that more pairs were sampled. The
+    std is the estimator uncertainty of the worst-of-K statistic (subsample-selection
+    dispersion) — needed to judge thin margins like 0.506 vs a 0.5 tolerance. Note it does
+    NOT include the M-ensemble sampling noise on each corr-err (~1/√M per pair); the pool is
+    a single M=8000 realisation, so the true uncertainty is at least this std.
     """
     if pool.size == 0 or k <= 0:
-        return float("nan")
+        return (float("nan"), float("nan"))
     rng = np.random.default_rng(12345)
     k = min(k, pool.size)
     maxes = [float(rng.choice(pool, size=k, replace=False).max()) for _ in range(r)]
-    return float(np.mean(maxes))
+    return (float(np.mean(maxes)), float(np.std(maxes)))
 
 
 def probe(
@@ -209,8 +213,9 @@ if __name__ == "__main__":
         f"CONSTANT-CORE tiles→global frontier (M={M}, selection-controlled worst-of-K):"
     )
 
+    tilings = [int(x) for x in os.environ.get("TILINGS", "2,3,4,5,6").split(",")]
     rows: list[dict[str, object]] = []
-    for kk in range(2, 7):
+    for kk in tilings:
         half = CORE_DEG * kk / 2.0
         try:
             row = probe(
@@ -230,20 +235,20 @@ if __name__ == "__main__":
     pools = [np.asarray(row["corr_pool"]) for row in rows]
     k_fixed = min(int(p.size) for p in pools)
     for row, p in zip(rows, pools, strict=True):
-        row["corr_wok"] = _worst_of_k(p, k_fixed, R_SUBSAMPLE)
+        row["corr_wok"], row["corr_wok_std"] = _worst_of_k(p, k_fixed, R_SUBSAMPLE)
 
     print(
         f"\n\n==== CONSTANT-CORE FRONTIER — robust CORR-err (worst-of-K, K={k_fixed} fixed) ===="
     )
     print(
-        f"  {'tiling':>7} {'tiles':>6} {'marg':>7} {'block_max':>10} "
-        f"{'corr_med':>9} {'corr_p95':>9} {'corr_max':>9} {'corr_woK':>9}"
+        f"  {'tiling':>7} {'tiles':>6} {'marg':>7} {'corr_med':>9} {'corr_p95':>9} "
+        f"{'corr_max':>9} {'corr_woK':>9} {'woK_std':>9}"
     )
     for row in rows:
         print(
             f"  {row['n_lon']}x{row['n_lat']:<5} {row['tiles']:>6} {row['mc_min']:>7.3f} "
-            f"{row['block_max']:>10.3f} {row['corr_med']:>9.3f} {row['corr_p95']:>9.3f} "
-            f"{row['corr_max']:>9.3f} {row['corr_wok']:>9.3f}"
+            f"{row['corr_med']:>9.3f} {row['corr_p95']:>9.3f} {row['corr_max']:>9.3f} "
+            f"{row['corr_wok']:>9.3f} {row['corr_wok_std']:>9.3f}"
         )
     print("\n  corr_woK (selection-controlled) FLAT => raw-max growth was selection;")
     print(
