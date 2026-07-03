@@ -1,0 +1,183 @@
+{
+  "planPath": "docs/superpowers/plans/2026-07-03-phase7-miost.md",
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "Task 1: Relocate sizing functions into methods/miost_sizing",
+      "status": "pending",
+      "blockedBy": [],
+      "description": "**Goal:** miost_sizing.py is the single arithmetic for basis sizes, with the 905-cap and pavement-margin terms; probe re-imports it.\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_sizing.py`\n- Modify: `scripts/probe_miost_cost.py`\n- Test: `tests/test_miost_sizing.py` (renamed from tests/test_probe_miost_cost.py)\n\n**Acceptance Criteria:**\n- [ ] scale_set(80.0, lam_max=905.0) returns 8 rungs ending ~905.1\n- [ ] n_coefficients(margin=True) adds per-scale 1.5-lambda pavement extension; margin=False reproduces the 61,056 anchor\n- [ ] nnz_g value unchanged (per-obs upper bound margin-free)\n- [ ] probe runs; existing sizing tests pass against package import\n\n**Verify:** pixi run pytest tests/test_miost_sizing.py -q && pixi run python scripts/probe_miost_cost.py\n\n**Steps:** Move scale_set/n_coefficients/nnz_g + geometry constants into the package; add margin term; 905-cap + margin tests; re-point probe imports. Full code: plan doc Task 1.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_sizing.py\", \"scripts/probe_miost_cost.py\", \"tests/test_miost_sizing.py` (renamed from tests/test_probe_miost_cost.py)\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_sizing.py -q && pixi run python scripts/probe_miost_cost.py\", \"acceptanceCriteria\": [\"scale_set(80.0, lam_max=905.0) returns 8 rungs ending ~905.1\", \"n_coefficients(margin=True) adds per-scale 1.5-lambda pavement extension; margin=False reproduces the 61,056 anchor\", \"nnz_g value unchanged (per-obs upper bound margin-free)\", \"probe runs; existing sizing tests pass against package import\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: BasisSpec, element enumeration, analytic evaluation",
+      "status": "pending",
+      "blockedBy": [
+        1
+      ],
+      "description": "**Goal:** BasisSpec enumerates the wavelet dictionary with stable GLOBAL element identity and evaluates it analytically (U2021 Eqs. 18-19: cosine carrier NO omega-t, cos(pi*delta/2) taper, hard support, L=1.5*lambda, phase pairs).\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_basis.py`\n- Test: `tests/test_miost_basis.py`\n\n**Acceptance Criteria:**\n- [ ] hard compact support (exact 0 beyond 1.5*lambda / L_t) \u2014 Tier 2\n- [ ] ladder 80->905, 8 rungs; dirs j*22.5 deg; phases {0, pi/2} \u2014 Tier 2\n- [ ] temporal slots GLOBAL (j*dt from EPOCH, dt=L_t/2); spatial pavement box+1.5*lambda margin\n- [ ] element identity window-independent\n- [ ] no-omega-t-carrier test\n\n**Verify:** pixi run pytest tests/test_miost_basis.py -q\n\n**Steps:** Full test + implementation code in plan doc Task 2.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_basis.py\", \"tests/test_miost_basis.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_basis.py -q\", \"acceptanceCriteria\": [\"hard compact support (exact 0 beyond 1.5*lambda / L_t) \\u2014 Tier 2\", \"ladder 80->905, 8 rungs; dirs j*22.5 deg; phases {0, pi/2} \\u2014 Tier 2\", \"temporal slots GLOBAL (j*dt from EPOCH, dt=L_t/2); spatial pavement box+1.5*lambda margin\", \"element identity window-independent\", \"no-omega-t-carrier test\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: G/S/Q builders, applies, representer + gauge tests",
+      "status": "pending",
+      "blockedBy": [
+        2
+      ],
+      "description": "**Goal:** CSR builders for G (obs) and S (grid), diagonal Q/R with named parameterization, first-class applies; seams (b)+(c) and Tier-2 representer tests.\n\n**Files:**\n- Modify: `src/sverdrup/methods/miost_basis.py`\n- Test: `tests/test_miost_operators.py`\n\n**Acceptance Criteria:**\n- [ ] build_g dense form == spec.evaluate at obs points (exact small case)\n- [ ] adjoint identity <G eta, r> == <eta, G^T r> machine precision (seam b)\n- [ ] DiagonalQ q_p = rho*R_REF*(lam/lam_ref)^slope; lam_ref gauge-inertness numeric (seam c / D8)\n- [ ] representer row has negative lobe (Tier 2, U2022 Fig. 4)\n\n**Verify:** pixi run pytest tests/test_miost_operators.py -q\n\n**Steps:** Full code in plan doc Task 3. Bucket per scale if alpha=1.0 60-d assembly >60 s.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_basis.py\", \"tests/test_miost_operators.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_operators.py -q\", \"acceptanceCriteria\": [\"build_g dense form == spec.evaluate at obs points (exact small case)\", \"adjoint identity <G eta, r> == <eta, G^T r> machine precision (seam b)\", \"DiagonalQ q_p = rho*R_REF*(lam/lam_ref)^slope; lam_ref gauge-inertness numeric (seam c / D8)\", \"representer row has negative lobe (Tier 2, U2022 Fig. 4)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Multi-RHS Jacobi-PCG solver",
+      "status": "pending",
+      "blockedBy": [],
+      "description": "**Goal:** MiostSolver solving (G^T R^-1 G + Q^-1)X=B matrix-free over stored CSR G, Jacobi-preconditioned, convergence-reported; RHS-agnostic (seam a).\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_solver.py`\n- Test: `tests/test_miost_solver.py`\n\n**Acceptance Criteria:**\n- [ ] solve(B) accepts (n,) or (n,k) arbitrary RHS not from y (seam a)\n- [ ] dense-vs-PCG rtol 1e-8 on small A (Tier 1 iii)\n- [ ] Jacobi M = diag(G^T R^-1 G)+Q^-1 via squared-CSR column sums\n- [ ] ConvergenceReport returned; pcg_rtol=1e-6, pcg_maxiter=500 named; n_obs=0 total (A=Q^-1)\n\n**Verify:** pixi run pytest tests/test_miost_solver.py -q\n\n**Steps:** Full code in plan doc Task 4 (blocked PCG, rhs_from_obs seam-b helper).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_solver.py\", \"tests/test_miost_solver.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_solver.py -q\", \"acceptanceCriteria\": [\"solve(B) accepts (n,) or (n,k) arbitrary RHS not from y (seam a)\", \"dense-vs-PCG rtol 1e-8 on small A (Tier 1 iii)\", \"Jacobi M = diag(G^T R^-1 G)+Q^-1 via squared-CSR column sums\", \"ConvergenceReport returned; pcg_rtol=1e-6, pcg_maxiter=500 named; n_obs=0 total (A=Q^-1)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Tier-1 duality oracle",
+      "status": "pending",
+      "blockedBy": [
+        3,
+        4
+      ],
+      "description": "**Goal:** Prove reduced path == dense obs-space OI with B = Gamma Q Gamma^T (U2021 Eq. 2 vs Eq. 15) at rtol 1e-8 on a small synthetic.\n\n**Files:**\n- Test: `tests/test_miost_duality_oracle.py`\n\n**Acceptance Criteria:**\n- [ ] Gamma_query eta^a == B_qd(B_dd+R)^-1 y at rtol 1e-8 (~50 obs, 2-rung ladder)\n- [ ] oracle failure means Tasks 2-4 bug \u2014 fix there, never loosen the oracle\n\n**Verify:** pixi run pytest tests/test_miost_duality_oracle.py -q\n\n**Steps:** Full oracle code in plan doc Task 5.\n\n```json:metadata\n{\"files\": [\"tests/test_miost_duality_oracle.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_duality_oracle.py -q\", \"acceptanceCriteria\": [\"Gamma_query eta^a == B_qd(B_dd+R)^-1 y at rtol 1e-8 (~50 obs, 2-rung ladder)\", \"oracle failure means Tasks 2-4 bug \\u2014 fix there, never loosen the oracle\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: WindowPlan + temporal blend",
+      "status": "pending",
+      "blockedBy": [
+        2
+      ],
+      "description": "**Goal:** Window placement s_k=-18+45k (k=0..8), designed at L_t_max=12 (fold A), and linear blend with partition of unity.\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_windows.py`\n- Test: `tests/test_miost_windows.py`\n\n**Acceptance Criteria:**\n- [ ] windows [-18,42]...[342,402]; stable string ids\n- [ ] every output day 0..364 covered with two-sided slot support at L_t=12; first-slot support >= -31 (1-day slack recorded)\n- [ ] blend weights linear prop. to boundary distance; partition of unity; day-30 hand case (0.8/0.2)\n\n**Verify:** pixi run pytest tests/test_miost_windows.py -q\n\n**Steps:** Full code in plan doc Task 6.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_windows.py\", \"tests/test_miost_windows.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_windows.py -q\", \"acceptanceCriteria\": [\"windows [-18,42]...[342,402]; stable string ids\", \"every output day 0..364 covered with two-sided slot support at L_t=12; first-slot support >= -31 (1-day slack recorded)\", \"blend weights linear prop. to boundary distance; partition of unity; day-30 hand case (0.8/0.2)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 7: POINT distribution, capability error, persisted state",
+      "status": "pending",
+      "blockedBy": [
+        3,
+        4,
+        6
+      ],
+      "description": "**Goal:** MiostPointDistribution (mean + analytic-eval queries; variance family raises CapabilityNotAvailableError), coefficient persistence (seams d + e).\n\n**Files:**\n- Modify: `src/sverdrup/core/distribution.py`\n- Create: `src/sverdrup/methods/miost.py`\n- Test: `tests/test_miost_distribution.py` + `tests/_miost_fixtures.py`\n\n**Acceptance Criteria:**\n- [ ] marginal_variance/covariance/sample raise CapabilityNotAvailableError mentioning POINT \u2014 never None/NaN\n- [ ] save_state/load_state round-trip; reloaded mean bit-identical\n- [ ] mean_at(points) == direct analytic evaluation (seam d)\n\n**Verify:** pixi run pytest tests/test_miost_distribution.py -q\n\n**Steps:** Plan doc Task 7: exception in core/distribution.py; mean_at = blend-weighted analytic eval; npz persistence incl. alpha/l_t scalars; shared fixture module built here.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/core/distribution.py\", \"src/sverdrup/methods/miost.py\", \"tests/test_miost_distribution.py` + `tests/_miost_fixtures.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_distribution.py -q\", \"acceptanceCriteria\": [\"marginal_variance/covariance/sample raise CapabilityNotAvailableError mentioning POINT \\u2014 never None/NaN\", \"save_state/load_state round-trip; reloaded mean bit-identical\", \"mean_at(points) == direct analytic evaluation (seam d)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 8: Window-cache Miost Method + registry",
+      "status": "pending",
+      "blockedBy": [
+        7
+      ],
+      "description": "**Goal:** Miost Method: full-obs re-subsetting per window, cache keyed (window_id, params_key, obs fingerprint), S-matrix day projection, blend, parameter_space, registry entry (fork-1 hardenings 1-4).\n\n**Files:**\n- Modify: `src/sverdrup/methods/miost.py`\n- Modify: `src/sverdrup/methods/registry.py`\n- Test: `tests/test_miost_method.py`\n\n**Acceptance Criteria:**\n- [ ] protocol-compliant; solve returns MiostPointDistribution\n- [ ] cache: repeat-day + two-days-one-window == fresh instance exactly; cache-on/off identical; obs fingerprint busts cache; span assert raises ValueError\n- [ ] params_key contains alpha, rho, q_slope, l_t, pcg_rtol, ladder (seam f)\n- [ ] mission-absent + zero-obs windows finite (spec 4.3)\n- [ ] parameter_space boxes: spacing_alpha(0.5,1.5), log10_rho(-2,3), q_slope(0,4), l_t_days(5,12)\n- [ ] G freed after window solve; <=2 S matrices live\n\n**Verify:** pixi run pytest tests/test_miost_method.py -q\n\n**Steps:** Plan doc Task 8 (class shape + _solve_window + _obs_fingerprint + _window_obs span assert).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost.py\", \"src/sverdrup/methods/registry.py\", \"tests/test_miost_method.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_method.py -q\", \"acceptanceCriteria\": [\"protocol-compliant; solve returns MiostPointDistribution\", \"cache: repeat-day + two-days-one-window == fresh instance exactly; cache-on/off identical; obs fingerprint busts cache; span assert raises ValueError\", \"params_key contains alpha, rho, q_slope, l_t, pcg_rtol, ladder (seam f)\", \"mission-absent + zero-obs windows finite (spec 4.3)\", \"parameter_space boxes: spacing_alpha(0.5,1.5), log10_rho(-2,3), q_slope(0,4), l_t_days(5,12)\", \"G freed after window solve; <=2 S matrices live\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 9: Capability-derived bars + capability-routed scorer",
+      "status": "pending",
+      "blockedBy": [
+        8
+      ],
+      "description": "**Goal:** bars_for(capability) in objective.py; scorer routes mean-only vs mean+var by native_capability; _assemble_scores var-optional; fail-loud calibration test (folds 1 + B).\n\n**Files:**\n- Modify: `src/sverdrup/application/tuning/objective.py`\n- Modify: `src/sverdrup/application/tuning/scorer.py`\n- Test: `tests/test_capability_conditioning.py`\n\n**Acceptance Criteria:**\n- [ ] bars_for(POINT) = (mu,); bars_for(>=MARGINAL_VARIANCE) includes coverage \u2014 both directions\n- [ ] scorer POINT -> run_challenge_map mean-only, no coverage key; >=MARGINAL -> run_mean_var_maps \u2014 both directions (fold B)\n- [ ] coverage on a POINT distribution raises CapabilityNotAvailableError (fail-loud)\n- [ ] full suite green (OI/GMRF untouched; _default_bars kept)\n\n**Verify:** pixi run pytest tests/test_capability_conditioning.py -q && pixi run test\n\n**Steps:** Plan doc Task 9.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/objective.py\", \"src/sverdrup/application/tuning/scorer.py\", \"tests/test_capability_conditioning.py\"], \"verifyCommand\": \"pixi run pytest tests/test_capability_conditioning.py -q && pixi run test\", \"acceptanceCriteria\": [\"bars_for(POINT) = (mu,); bars_for(>=MARGINAL_VARIANCE) includes coverage \\u2014 both directions\", \"scorer POINT -> run_challenge_map mean-only, no coverage key; >=MARGINAL -> run_mean_var_maps \\u2014 both directions (fold B)\", \"coverage on a POINT distribution raises CapabilityNotAvailableError (fail-loud)\", \"full suite green (OI/GMRF untouched; _default_bars kept)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 10: StoredGFeasibility + CompositeFeasibility + reason recording",
+      "status": "pending",
+      "blockedBy": [
+        1
+      ],
+      "description": "**Goal:** Resource predicate priced by miost_sizing, composing with existing predicates (invariant 5); infeasible reason -> TrialRecord.exclusion_reason.\n\n**Files:**\n- Modify: `src/sverdrup/application/tuning/feasibility.py`\n- Modify: `src/sverdrup/application/tuning/loop.py`\n- Test: `tests/test_stored_g_feasibility.py`\n\n**Acceptance Criteria:**\n- [ ] predicted_bytes == nnz_g(n_obs_max, alpha, n_dir, lam_min, 905)*12 (single-arithmetic test vs miost_sizing)\n- [ ] no L_t term (bytes identical across l_t_days)\n- [ ] feasible False iff n_concurrent*bytes > budget; explain() names stored-G + budget\n- [ ] CompositeFeasibility = all-of, first failing explain propagated\n- [ ] tune() records exclusion_reason via getattr-explain; back-compat; full suite green\n\n**Verify:** pixi run pytest tests/test_stored_g_feasibility.py -q && pixi run test\n\n**Steps:** Full code in plan doc Task 10 (both dataclasses + loop.py 4-line change).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/feasibility.py\", \"src/sverdrup/application/tuning/loop.py\", \"tests/test_stored_g_feasibility.py\"], \"verifyCommand\": \"pixi run pytest tests/test_stored_g_feasibility.py -q && pixi run test\", \"acceptanceCriteria\": [\"predicted_bytes == nnz_g(n_obs_max, alpha, n_dir, lam_min, 905)*12 (single-arithmetic test vs miost_sizing)\", \"no L_t term (bytes identical across l_t_days)\", \"feasible False iff n_concurrent*bytes > budget; explain() names stored-G + budget\", \"CompositeFeasibility = all-of, first failing explain propagated\", \"tune() records exclusion_reason via getattr-explain; back-compat; full suite green\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 11: REQUIRED windowed-vs-single-window equivalence diagnostic",
+      "status": "pending",
+      "blockedBy": [
+        8,
+        10
+      ],
+      "description": "**Goal:** Run the D4 diagnostic at alpha=1.5 full-year; record worst-case-localized seam deltas; surface the pavement-extension fallback decision to the owner.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Files:**\n- Create: `scripts/diag_miost_equivalence.py`\n- Output: `docs/validation/miost_equivalence_diagnostic.md`\n\n**Acceptance Criteria:**\n- [ ] 2017 solved both ways at alpha=1.5 (W=60/V=15 windowed vs one 425-day window, same params) on real dc_obs\n- [ ] per-day max|delta| + RMS delta; blend-day vs interior-day separated; worst blend-day max|delta| is the headline\n- [ ] doc records numbers + explicit verdict 'FALLBACK NEEDED: yes/no \u2014 reason'; owner decides fallback before proceeding\n\n**Verify:** pixi run python scripts/diag_miost_equivalence.py\n\n**Steps:** Plan doc Task 11 (WindowPlan optional w_days for the 1-window instance; obs loading mirrors stage_b_gate_run.py; STOP for owner fallback decision).\n\n```json:metadata\n{\"files\": [\"scripts/diag_miost_equivalence.py\", \"docs/validation/miost_equivalence_diagnostic.md\"], \"verifyCommand\": \"pixi run python scripts/diag_miost_equivalence.py\", \"acceptanceCriteria\": [\"2017 solved both ways at alpha=1.5 (W=60/V=15 windowed vs one 425-day window, same params) on real dc_obs\", \"per-day max|delta| + RMS delta; blend-day vs interior-day separated; worst blend-day max|delta| is the headline\", \"doc records numbers + explicit verdict 'FALLBACK NEEDED: yes/no \\u2014 reason'; owner decides fallback before proceeding\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"windowed\", \"blend-day\"], [\"single-window\", \"425\"]]}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 12: Tier-3 + 12-dir diagnostic tools",
+      "status": "pending",
+      "blockedBy": [
+        8
+      ],
+      "description": "**Goal:** Report-only tools: RMS diff + spectral coherence vs the pinned OSE_ssh_mapping_MIOST.nc; n_dir=12 winner re-score on the validation track (D2 conditions).\n\n**Files:**\n- Create: `scripts/diag_miost_tier3.py`\n- Create: `scripts/diag_miost_ndir12.py`\n\n**Acceptance Criteria:**\n- [ ] Tier-3: per-day + mean RMS diff, along-lon spectral coherence vs the pinned maps; regrid only if grids differ; 'DIAGNOSTIC \u2014 never a gate' banner\n- [ ] 12-dir: ValidationTrackScorer at winner params with n_dir=12 override; skip-with-reason if StoredGFeasibility(n_dir=12) excludes winner alpha; mu/lambda_x side-by-side\n- [ ] both write md reports under docs/validation/\n\n**Verify:** pixi run python scripts/diag_miost_tier3.py && pixi run python scripts/diag_miost_ndir12.py\n\n**Steps:** Plan doc Task 12 (Miost gains n_dir constructor arg, recorded in params_key).\n\n```json:metadata\n{\"files\": [\"scripts/diag_miost_tier3.py\", \"scripts/diag_miost_ndir12.py\"], \"verifyCommand\": \"pixi run python scripts/diag_miost_tier3.py && pixi run python scripts/diag_miost_ndir12.py\", \"acceptanceCriteria\": [\"Tier-3: per-day + mean RMS diff, along-lon spectral coherence vs the pinned maps; regrid only if grids differ; 'DIAGNOSTIC \\u2014 never a gate' banner\", \"12-dir: ValidationTrackScorer at winner params with n_dir=12 override; skip-with-reason if StoredGFeasibility(n_dir=12) excludes winner alpha; mu/lambda_x side-by-side\", \"both write md reports under docs/validation/\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 13,
+      "subject": "Task 13: STAGE-A GATE \u2014 tuning run + c2-once acceptance",
+      "status": "pending",
+      "blockedBy": [
+        5,
+        9,
+        10,
+        11,
+        12
+      ],
+      "description": "**Goal:** Phase-5 loop for miost on the blocked validation track; winner accepted on c2 once; spec 7.4 Stage-A evidence assembled.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Files:**\n- Create: `scripts/stage_miost_gate_run.py`\n- Output: `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`\n\n**Acceptance Criteria:**\n- [ ] Tiers 1-2 green; spec 7.2 inventory green (full suite, no deselect)\n- [ ] tuner run with CompositeFeasibility((StoredG, Coherence)) + bars_for(POINT); infeasible reasons visible in results JSON\n- [ ] c2 touched ONCE; (mu, sigma, lambda_x) recorded; mu >= 0.85\n- [ ] Tier-3 + 12-dir diagnostics attached (Task-12 reports from the winner map)\n- [ ] calibration recorded N/A-for-POINT\n- [ ] owner sign-off\n\n**Verify:** pixi run python scripts/stage_miost_gate_run.py\n\n**Steps:** Plan doc Task 13 (mirror stage_b_gate_run.py; temporal_half_window_days=425; TileGeometry(10.0, 0.0, 'miost-single', n_tiles=1); Sobol 16 then BO 16x4; smoke SVERDRUP_MIOST_SCOPE=dev first; incremental persistence).\n\n```json:metadata\n{\"files\": [\"scripts/stage_miost_gate_run.py\", \"data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json\"], \"verifyCommand\": \"pixi run python scripts/stage_miost_gate_run.py\", \"acceptanceCriteria\": [\"Tiers 1-2 green; spec 7.2 inventory green (full suite, no deselect)\", \"tuner run with CompositeFeasibility((StoredG, Coherence)) + bars_for(POINT); infeasible reasons visible in results JSON\", \"c2 touched ONCE; (mu, sigma, lambda_x) recorded; mu >= 0.85\", \"Tier-3 + 12-dir diagnostics attached (Task-12 reports from the winner map)\", \"calibration recorded N/A-for-POINT\", \"owner sign-off\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"validation\", \"sobol\", \"bo\"], [\"c2\", \"acceptance\"]]}\n```"
+    },
+    {
+      "id": 14,
+      "subject": "Task 14: Identity-keyed CRN perturbations (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        13
+      ],
+      "description": "**Goal:** miost_crn.py: eps'/eta~ as pure functions of (seed root, member, identity) \u2014 window-independent (spec 6.2).\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_crn.py`\n- Test: `tests/test_miost_crn.py`\n\n**Acceptance Criteria:**\n- [ ] obs_noise/coef_noise: blake2b(key=member-key, identity-bytes) -> uint64 -> ndtri((u+0.5)/2^64) -> scaled by sqrt(R)/sqrt(Q)\n- [ ] cross-window identity: shared obs/element -> IDENTICAL perturbation; different member decorrelates (|corr|<0.05)\n- [ ] moments: 1e5 draws mean~0, var~R within 2%\n- [ ] seed root from derive_seed\n\n**Verify:** pixi run pytest tests/test_miost_crn.py -q\n\n**Steps:** Full code in plan doc Task 14.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_crn.py\", \"tests/test_miost_crn.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_crn.py -q\", \"acceptanceCriteria\": [\"obs_noise/coef_noise: blake2b(key=member-key, identity-bytes) -> uint64 -> ndtri((u+0.5)/2^64) -> scaled by sqrt(R)/sqrt(Q)\", \"cross-window identity: shared obs/element -> IDENTICAL perturbation; different member decorrelates (|corr|<0.05)\", \"moments: 1e5 draws mean~0, var~R within 2%\", \"seed root from derive_seed\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 15,
+      "subject": "Task 15: Member generation + MiostEnsembleDistribution + persistence (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        14
+      ],
+      "description": "**Goal:** m perturbed-observation members via batched solve(B); coefficient-space distribution with the D6 contract; representation-tagged persistence.\n\n**Files:**\n- Modify: `src/sverdrup/methods/miost.py`\n- Create: `src/sverdrup/distributions/miost_ensemble.py`\n- Test: `tests/test_miost_ensemble.py`\n\n**Acceptance Criteria:**\n- [ ] per window: B = G^T R^-1(y+eps'_i)+Q^-1 eta~_i for i=1..m, ONE batched solve; unperturbed path untouched\n- [ ] moments about MEMBER MEAN, (m-1); mean field = Gamma eta^a; sample(k<=m) seeded subselect; sample(k>m) RAISES\n- [ ] provenance carries m + MC error sqrt(2/(m-1))\n- [ ] persistence kind 'miost-coeff-ensemble' (eta^a f64 + anomalies f32 option) round-trips\n- [ ] to_grid_ensemble -> existing EnsemblePredictiveDistribution; node moments agree rtol 1e-6\n\n**Verify:** pixi run pytest tests/test_miost_ensemble.py -q\n\n**Steps:** Plan doc Task 15.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost.py\", \"src/sverdrup/distributions/miost_ensemble.py\", \"tests/test_miost_ensemble.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_ensemble.py -q\", \"acceptanceCriteria\": [\"per window: B = G^T R^-1(y+eps'_i)+Q^-1 eta~_i for i=1..m, ONE batched solve; unperturbed path untouched\", \"moments about MEMBER MEAN, (m-1); mean field = Gamma eta^a; sample(k<=m) seeded subselect; sample(k>m) RAISES\", \"provenance carries m + MC error sqrt(2/(m-1))\", \"persistence kind 'miost-coeff-ensemble' (eta^a f64 + anomalies f32 option) round-trips\", \"to_grid_ensemble -> existing EnsemblePredictiveDistribution; node moments agree rtol 1e-6\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 16,
+      "subject": "Task 16: Stage-B exactness oracle + under-convergence test (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        15
+      ],
+      "description": "**Goal:** Prove the ensemble samples the exact posterior A^-1 on a small case; demonstrate the PCG-tolerance statistical contract (spec 6.5).\n\n**Files:**\n- Test: `tests/test_miost_ensemble_oracle.py`\n\n**Acceptance Criteria:**\n- [ ] m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\n- [ ] under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\n\n**Verify:** pixi run pytest tests/test_miost_ensemble_oracle.py -q\n\n**Steps:** Plan doc Task 16 (duality-oracle geometry, single window).\n\n```json:metadata\n{\"files\": [\"tests/test_miost_ensemble_oracle.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_ensemble_oracle.py -q\", \"acceptanceCriteria\": [\"m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\", \"under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 17,
+      "subject": "Task 17: s-inflation + mean-unchanged non-regression (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        15
+      ],
+      "description": "**Goal:** Closed-form s* = chi2_red(1) on validation calibration; exact sqrt(s) anomaly rescale; prove Stage-A mean untouched (D6/spec 6.3).\n\n**Files:**\n- Modify: `src/sverdrup/distributions/miost_ensemble.py`\n- Create: `scripts/tune_miost_inflation.py`\n- Test: `tests/test_miost_inflation.py`\n\n**Acceptance Criteria:**\n- [ ] rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\n- [ ] closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\n- [ ] script raises if R non-uniform (scalar-R condition)\n- [ ] non-regression: Stage-A acceptance map regenerated under Stage-B code \u2014 identical\n\n**Verify:** pixi run pytest tests/test_miost_inflation.py -q\n\n**Steps:** Plan doc Task 17.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"scripts/tune_miost_inflation.py\", \"tests/test_miost_inflation.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_inflation.py -q\", \"acceptanceCriteria\": [\"rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\", \"closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\", \"script raises if R non-uniform (scalar-R condition)\", \"non-regression: Stage-A acceptance map regenerated under Stage-B code \\u2014 identical\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 18,
+      "subject": "Task 18: Stage-B seam-dispersion + variance-equivalence diagnostics (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        15
+      ],
+      "description": "**Goal:** Measure the CRN residual: worst-case-localized member dispersion at blend days; extend the D4 diagnostic to variance fields (spec 6.2).\n\n**Files:**\n- Create: `scripts/diag_miost_seam_dispersion.py`\n- Output: `docs/validation/miost_seam_dispersion.md`\n\n**Acceptance Criteria:**\n- [ ] per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\n- [ ] variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\n- [ ] doc records numbers + verdict line for the Task-19 gate\n\n**Verify:** pixi run python scripts/diag_miost_seam_dispersion.py\n\n**Steps:** Plan doc Task 18.\n\n```json:metadata\n{\"files\": [\"scripts/diag_miost_seam_dispersion.py\", \"docs/validation/miost_seam_dispersion.md\"], \"verifyCommand\": \"pixi run python scripts/diag_miost_seam_dispersion.py\", \"acceptanceCriteria\": [\"per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\", \"variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\", \"doc records numbers + verdict line for the Task-19 gate\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 19,
+      "subject": "Task 19: STAGE-B GATE \u2014 calibration acceptance (STAGE B)",
+      "status": "pending",
+      "blockedBy": [
+        16,
+        17,
+        18
+      ],
+      "description": "**Goal:** Stage-B acceptance per spec 6.6/7.4: calibration bars on validation, c2 once, evidence assembled; capability upgrade recorded.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Files:**\n- Modify: `scripts/stage_miost_gate_run.py` (Stage-B mode)\n- Output: results JSON + PROGRESS update\n\n**Acceptance Criteria:**\n- [ ] spec 7.3 inventory green (full suite)\n- [ ] native_capability upgraded (SAMPLES); bars_for now includes coverage automatically\n- [ ] calibration bars green on validation (reduced_chi2, coverage_1sigma within 0.6827+-0.10, crps reported)\n- [ ] c2 touched once; mean-unchanged non-regression green\n- [ ] seam-dispersion diagnostic attached; owner sign-off\n\n**Verify:** pixi run python scripts/stage_miost_gate_run.py --stage-b\n\n**Steps:** Plan doc Task 19 (members at winner, s*, validation calibration, single c2 touch, evidence, capability flip commit).\n\n```json:metadata\n{\"files\": [\"scripts/stage_miost_gate_run.py` (Stage-B mode)\", \"results JSON + PROGRESS update\"], \"verifyCommand\": \"pixi run python scripts/stage_miost_gate_run.py --stage-b\", \"acceptanceCriteria\": [\"spec 7.3 inventory green (full suite)\", \"native_capability upgraded (SAMPLES); bars_for now includes coverage automatically\", \"calibration bars green on validation (reduced_chi2, coverage_1sigma within 0.6827+-0.10, crps reported)\", \"c2 touched once; mean-unchanged non-regression green\", \"seam-dispersion diagnostic attached; owner sign-off\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"validation\", \"reduced_chi2\", \"coverage\"], [\"c2\", \"acceptance\"]]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-07-03T21:45:48.589170+00:00"
+}
