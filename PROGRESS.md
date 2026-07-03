@@ -158,9 +158,14 @@ coefficient-space Stage-B ensemble + CRN + s-rescale theorem, halo=1.0
 predicate-priced, λ_ref/R_ref gauge-inert anchors). GIT PUSH still blocked — host
 key fixed this session but the container has NO SSH key at all (`Permission denied
 (publickey)`); owner must install a deploy key/credentials before the external
-review can verify against the public repo. **Next action = owner reviews the spec
-file; then writing-plans (Stage A first; Stage B built only after the Stage-A
-gate).**
+review can verify against the public repo. Spec APPROVED on file review (owner,
+2026-07-03, no changes). **PLAN WRITTEN + committed (`02f7055`):**
+`docs/superpowers/plans/2026-07-03-phase7-miost.md` (+ `.tasks.json`, 19 tasks,
+native tasks #7–#25) — Stage A Tasks 1–13 (gate = c2 once, µ≥0.85, diagnostics
+attached, calibration N/A), Stage B Tasks 14–19 all blocked by the Stage-A gate;
+user-gates on Tasks 11/13/19. **Next action = owner reviews the plan +
+tasks.json; execution (subagent-driven this session vs executing-plans in a
+separate session) chosen after that review.**
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
