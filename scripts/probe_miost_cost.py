@@ -33,6 +33,14 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
+from sverdrup.methods.miost_sizing import (
+    D_X_KM,
+    D_Y_KM,
+    n_coefficients,
+    nnz_g,
+    scale_set,
+)
+
 DATA_DIR = Path("data/2021a_ssh_mapping_ose/dc_obs")
 TRAINING_MISSIONS = ("alg", "h2g", "j2g", "j2n", "j3", "s3a")  # c2 = eval only
 BOX_LON = (295.0, 305.0)
@@ -43,84 +51,10 @@ ALPHAS = (0.5, 0.75, 1.0, 1.5)
 N_DIRS = (8, 12)
 WINDOWS_D = (60, 365)
 LAM_MINS = (80.0, 113.0)
-LAM_MAX = 800.0
-SCALE_RATIO = math.sqrt(2.0)
-L_T_DAYS = 10.0
-DT_DAYS = 5.0
-SUPPORT_FACTOR = 1.5  # L = 1.5 * wavelength -> support diameter 3 * wavelength
 CG_ITERATIONS = 100  # "typically 100 iterations" (U2022 Sect. 3.2.3)
-
-KM_PER_DEG = 111.32
-MID_LAT = 0.5 * (BOX_LAT[0] + BOX_LAT[1])
-D_X_KM = (BOX_LON[1] - BOX_LON[0]) * KM_PER_DEG * math.cos(math.radians(MID_LAT))
-D_Y_KM = (BOX_LAT[1] - BOX_LAT[0]) * KM_PER_DEG
 
 RAM_BUDGET_BYTES = 16e9 * 0.5  # stored-G must fit in half of a 16 GB machine
 SOLVE_BUDGET_S = 3600.0  # one hour per solve
-
-
-def scale_set(
-    lam_min: float, lam_max: float = LAM_MAX, ratio: float = SCALE_RATIO
-) -> list[float]:
-    """Return the geometric wavelength ladder from lam_min up to lam_max.
-
-    Args:
-        lam_min: Smallest wavelength [km].
-        lam_max: Largest admissible wavelength [km].
-        ratio: Geometric ratio between consecutive scales.
-
-    Returns:
-        Wavelengths [km], ascending.
-    """
-    scales = []
-    lam = lam_min
-    while lam <= lam_max + 1e-9:
-        scales.append(lam)
-        lam *= ratio
-    return scales
-
-
-def n_coefficients(alpha: float, n_dir: int, window_days: float, lam_min: float) -> int:
-    """Count basis coefficients for one configuration.
-
-    Per scale: spatial positions x temporal positions x directions x 2 phases
-    (sine/cosine pairs).
-
-    Args:
-        alpha: Element spacing as a fraction of wavelength.
-        n_dir: Number of plane-wave directions.
-        window_days: Solve window length [days].
-        lam_min: Smallest wavelength [km].
-
-    Returns:
-        Total coefficient count N_coef.
-    """
-    n_t = math.ceil(window_days / DT_DAYS)
-    total = 0
-    for lam in scale_set(lam_min):
-        n_x = max(1, math.ceil(D_X_KM / (alpha * lam)))
-        n_y = max(1, math.ceil(D_Y_KM / (alpha * lam)))
-        total += n_x * n_y * n_t * n_dir * 2
-    return total
-
-
-def nnz_g(n_obs: int, alpha: float, n_dir: int, lam_min: float) -> int:
-    """Count non-zeros of G for one configuration.
-
-    Per observation and per scale: (3/alpha)^2 spatial overlaps x n_dir x 2
-    phases x (2*L_t/dt) temporal overlaps.
-
-    Args:
-        n_obs: Observation count in the window.
-        alpha: Element spacing as a fraction of wavelength.
-        n_dir: Number of plane-wave directions.
-        lam_min: Smallest wavelength [km].
-
-    Returns:
-        Total nnz(G).
-    """
-    per_obs_per_scale = (3.0 / alpha) ** 2 * n_dir * 2 * (2.0 * L_T_DAYS / DT_DAYS)
-    return int(round(n_obs * len(scale_set(lam_min)) * per_obs_per_scale))
 
 
 def count_obs() -> dict[str, dict[int, int]]:

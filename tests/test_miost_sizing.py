@@ -1,16 +1,12 @@
-"""Tests for the pure sizing functions of the Task-0 MIOST cost probe."""
+"""Tests for the MIOST basis sizing arithmetic (single source: methods/miost_sizing)."""
 
 from __future__ import annotations
 
 import math
-import sys
-from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-from probe_miost_cost import n_coefficients, nnz_g, scale_set  # noqa: E402
+from sverdrup.methods.miost_sizing import n_coefficients, nnz_g, scale_set
 
 
 def test_scale_ladder_80() -> None:
@@ -34,6 +30,13 @@ def test_scale_ladder_113() -> None:
     assert scales[-1] < 800.0
 
 
+def test_scale_ladder_905_cap() -> None:
+    """8-rung ladder 80->905 (D1). Hand: 80*sqrt(2)^7 = 905.097 <= 905 cap + eps."""
+    scales = scale_set(80.0, lam_max=905.0)
+    assert len(scales) == 8
+    assert scales[-1] == pytest.approx(905.097, abs=0.01)
+
+
 def test_n_coefficients_hand_derived() -> None:
     """N_coef(alpha=1, n_dir=8, 60 d, lam_min=80) = 61,056.
 
@@ -43,6 +46,18 @@ def test_n_coefficients_hand_derived() -> None:
     Times n_t = ceil(60/5) = 12, times 8 directions, times 2 phases -> 61,056.
     """
     assert n_coefficients(alpha=1.0, n_dir=8, window_days=60, lam_min=80.0) == 61_056
+
+
+def test_n_coefficients_margin_term() -> None:
+    """Pavement margin (D=box+2*1.5*lam per scale) raises N_coef; box-only unchanged.
+
+    Hand (lam=80, alpha=1): n_x = ceil((877.2+240)/80) = 14, n_y = ceil((1113.2+240)/80) = 17
+    vs box-only 11 x 14 — margin must produce MORE positions at every scale.
+    """
+    box = n_coefficients(alpha=1.0, n_dir=8, window_days=60, lam_min=80.0, margin=False)
+    marg = n_coefficients(alpha=1.0, n_dir=8, window_days=60, lam_min=80.0, margin=True)
+    assert box == 61_056  # the probe's hand-derived anchor still holds
+    assert marg > box
 
 
 def test_n_coefficients_monotone_in_alpha() -> None:
