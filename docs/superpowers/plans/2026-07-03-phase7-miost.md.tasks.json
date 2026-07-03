@@ -29,7 +29,7 @@
     {
       "id": 4,
       "subject": "Task 4: Multi-RHS Jacobi-PCG solver",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [],
       "description": "**Goal:** MiostSolver solving (G^T R^-1 G + Q^-1)X=B matrix-free over stored CSR G, Jacobi-preconditioned, convergence-reported; RHS-agnostic (seam a).\n\n**Files:**\n- Create: `src/sverdrup/methods/miost_solver.py`\n- Test: `tests/test_miost_solver.py`\n\n**Acceptance Criteria:**\n- [ ] solve(B) accepts (n,) or (n,k) arbitrary RHS not from y (seam a)\n- [ ] dense-vs-PCG rtol 1e-8 on small A (Tier 1 iii)\n- [ ] Jacobi M = diag(G^T R^-1 G)+Q^-1 via squared-CSR column sums\n- [ ] ConvergenceReport returned; pcg_rtol=1e-6, pcg_maxiter=500 named; n_obs=0 total (A=Q^-1)\n\n**Verify:** pixi run pytest tests/test_miost_solver.py -q\n\n**Steps:** Full code in plan doc Task 4 (blocked PCG, rhs_from_obs seam-b helper).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_solver.py\", \"tests/test_miost_solver.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_solver.py -q\", \"acceptanceCriteria\": [\"solve(B) accepts (n,) or (n,k) arbitrary RHS not from y (seam a)\", \"dense-vs-PCG rtol 1e-8 on small A (Tier 1 iii)\", \"Jacobi M = diag(G^T R^-1 G)+Q^-1 via squared-CSR column sums\", \"ConvergenceReport returned; pcg_rtol=1e-6, pcg_maxiter=500 named; n_obs=0 total (A=Q^-1)\"], \"modelTier\": \"standard\"}\n```"
     },
