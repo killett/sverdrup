@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from sverdrup.application.tuning.trial import TrialRecord
+from sverdrup.core.types import UncertaintyCapability
 
 BASELINE_BAR_MU = (
     0.85  # hard admissibility floor (published 2021a BASELINE µ; OI 0.853 clears it)
@@ -46,6 +47,21 @@ def _default_bars() -> tuple[HardBar, ...]:
         HardBar("mu_score", ">=", BASELINE_BAR_MU),
         HardBar("coverage_1sigma", "within", _COVERAGE_TARGET, _COVERAGE_TOL),
     )
+
+
+def bars_for(capability: UncertaintyCapability) -> tuple[HardBar, ...]:
+    """Capability-derived hard bars (spec §5.3): coverage iff capability can emit variance.
+
+    Args:
+        capability: The method's native uncertainty capability.
+
+    Returns:
+        The hard-bar tuple; POINT gets the µ bar only.
+    """
+    bars: tuple[HardBar, ...] = (HardBar("mu_score", ">=", BASELINE_BAR_MU),)
+    if capability.value >= UncertaintyCapability.MARGINAL_VARIANCE.value:
+        bars += (HardBar("coverage_1sigma", "within", _COVERAGE_TARGET, _COVERAGE_TOL),)
+    return bars
 
 
 @dataclass(frozen=True)

@@ -82,6 +82,96 @@ class CoherenceFeasibility:
 
 
 @dataclass(frozen=True)
+class StoredGFeasibility:
+    """Excludes trials whose predicted stored-G exceeds the RAM budget (spec §5.1).
+
+    Cost model = methods.miost_sizing (the probe's single arithmetic). HALO-INCLUSIVE
+    ``n_obs_max`` (max over windows). No L_t term: nnz is L_t-invariant (D3).
+    Accounting: n_concurrent * bytes <= budget (execution contract, spec §4.2).
+    """
+
+    n_obs_max: int
+    budget_bytes: float = 8e9
+    n_concurrent: int = 1
+    n_dir: int = 8
+    lam_min: float = 80.0
+    lam_max: float = 905.0
+
+    def predicted_bytes(self, params: dict[str, float]) -> int:
+        """Predict the stored-G footprint for one trial's spacing.
+
+        Args:
+            params: Trial params; only ``spacing_alpha`` enters the cost model.
+
+        Returns:
+            Predicted CSR bytes (float64 data + int32 index = 12 B/nnz).
+        """
+        from sverdrup.methods.miost_sizing import nnz_g
+
+        return (
+            nnz_g(
+                self.n_obs_max,
+                alpha=params["spacing_alpha"],
+                n_dir=self.n_dir,
+                lam_min=self.lam_min,
+                lam_max=self.lam_max,
+            )
+            * 12
+        )
+
+    def explain(self, params: dict[str, float]) -> str | None:
+        """Return the exclusion reason, or None when the trial fits the budget."""
+        b = self.n_concurrent * self.predicted_bytes(params)
+        if b <= self.budget_bytes:
+            return None
+        return (
+            f"stored-G {b:.1e} B > budget {self.budget_bytes:.1e} B "
+            f"(alpha={params['spacing_alpha']})"
+        )
+
+    def feasible(
+        self,
+        params: dict[str, float],
+        tile_geometry: TileGeometry,
+        required_capabilities: frozenset[UncertaintyCapability],
+    ) -> bool:
+        """Return True iff the predicted stored-G fits the budget."""
+        return self.explain(params) is None
+
+
+@dataclass(frozen=True)
+class CompositeFeasibility:
+    """All-of composition (invariant 5); first failing member's explain() is the reason."""
+
+    members: tuple[FeasibilityPredicate, ...]
+
+    def explain(self, params: dict[str, float]) -> str | None:
+        """Return the first failing member's reason (or None when all pass).
+
+        Members without their own ``explain`` contribute a class-name reason.
+        """
+        for m in self.members:
+            expl = getattr(m, "explain", None)
+            if expl is not None:
+                reason = expl(params)
+                if reason is not None:
+                    return f"{type(m).__name__}: {reason}"
+        return None
+
+    def feasible(
+        self,
+        params: dict[str, float],
+        tile_geometry: TileGeometry,
+        required_capabilities: frozenset[UncertaintyCapability],
+    ) -> bool:
+        """Logical AND over all members (each keeps its own semantics)."""
+        return all(
+            m.feasible(params, tile_geometry, required_capabilities)
+            for m in self.members
+        )
+
+
+@dataclass(frozen=True)
 class RelaxedCoherenceFeasibility:
     """The redesign's interface (invariant 5): widens the joint region, tuner untouched.
 

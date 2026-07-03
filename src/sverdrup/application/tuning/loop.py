@@ -95,8 +95,14 @@ def tune(
         for params in strategy.propose(space, history):
             trial = Trial(method_name, params, split_id, seed, window_id)
             if not predicate.feasible(params, tile_geometry, required_capabilities):
+                expl = getattr(predicate, "explain", None)
+                reason = (
+                    str(expl(params)) if expl is not None and expl(params) else None
+                )
                 history.records.append(
-                    TrialRecord(trial, scores=None, feasible=False)
+                    TrialRecord(
+                        trial, scores=None, feasible=False, exclusion_reason=reason
+                    )
                 )  # HARD BARRIER: no solve, no score
                 continue
             try:

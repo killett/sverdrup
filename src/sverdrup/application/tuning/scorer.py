@@ -21,6 +21,7 @@ import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 
@@ -28,17 +29,19 @@ from sverdrup.application.tuning.objective import BASELINE_BAR_MU
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import ObsWindow
 from sverdrup.core.parameters import ConstantProvider
+from sverdrup.core.types import UncertaintyCapability
 from sverdrup.eval.calibration import coverage
 from sverdrup.eval.skill_score import leaderboard_nrmse
 from sverdrup.eval.spectral import effective_resolution_lambda_x
-from sverdrup.validation.run import run_mean_var_maps
+from sverdrup.methods.registry import METHODS
+from sverdrup.validation.run import run_challenge_map, run_mean_var_maps
 
 
 def _assemble_scores(
     *,
     ssh_a: np.ndarray,
     mean_interp: np.ndarray,
-    var_interp: np.ndarray,
+    var_interp: np.ndarray | None,
     time_a: np.ndarray,
     lat_a: np.ndarray,
     lon_a: np.ndarray,
@@ -61,7 +64,9 @@ def _assemble_scores(
     Args:
         ssh_a: Raw along-track SSH (truth) at the validation track points.
         mean_interp: The trial's mean map interpolated onto the track.
-        var_interp: The trial's variance map interpolated onto the track.
+        var_interp: The trial's variance map interpolated onto the track, or
+            ``None`` for a POINT-capability method (coverage is then omitted —
+            fold B: never fabricate a calibration score).
         time_a: Along-track times (passed to ``lambda_x_fn``).
         lat_a: Along-track latitudes (passed to ``lambda_x_fn``).
         lon_a: Along-track longitudes (passed to ``lambda_x_fn``).
@@ -73,10 +78,9 @@ def _assemble_scores(
         trial clears ``mu_bar``.
     """
     mu_score = leaderboard_nrmse(ssh_a, mean_interp)
-    scores = {
-        "mu_score": mu_score,
-        "coverage_1sigma": float(coverage(mean_interp, var_interp, ssh_a, 1.0)),
-    }
+    scores = {"mu_score": mu_score}
+    if var_interp is not None:
+        scores["coverage_1sigma"] = float(coverage(mean_interp, var_interp, ssh_a, 1.0))
     if mu_score >= mu_bar:
         scores["lambda_x"] = lambda_x_fn(time_a, lat_a, lon_a, ssh_a, mean_interp)
     return scores
@@ -102,6 +106,52 @@ class ValidationTrackScorer:
         BASELINE_BAR_MU  # MUST match the objective's µ bar (reorder contract)
     )
 
+    def _produce_maps(
+        self, method_name: str, params: dict[str, float], td: Path
+    ) -> tuple[Path, Path | None]:
+        """Produce the trial's daily maps, routed by native capability (fold B).
+
+        POINT methods run the mean-only path (``run_challenge_map``) and return no
+        variance map; every richer capability runs ``run_mean_var_maps`` verbatim.
+
+        Args:
+            method_name: Key into ``methods.registry.METHODS``.
+            params: The trial's parameter values.
+            td: Working directory for the map files.
+
+        Returns:
+            (mean map path, variance map path or None for POINT).
+        """
+        mean_p = Path(td) / "mean.nc"
+        cap = cast(Any, METHODS[method_name]()).native_capability
+        if cap is UncertaintyCapability.POINT:
+            run_challenge_map(
+                method_name,
+                self.train_obs,
+                ConstantProvider(params),
+                self.grid,
+                self.temporal_half_window_days,
+                self.output_days,
+                mean_p,
+                mdt_grid=self.mdt_grid,
+                oi_kernel_from_params=True,
+            )
+            return mean_p, None
+        var_p = Path(td) / "var.nc"
+        run_mean_var_maps(
+            method_name,
+            self.train_obs,
+            ConstantProvider(params),
+            self.grid,
+            self.temporal_half_window_days,
+            self.output_days,
+            mean_p,
+            var_p,
+            mdt_grid=self.mdt_grid,
+            oi_kernel_from_params=True,  # OI tunes its Matérn from params (not Gaussian)
+        )
+        return mean_p, var_p
+
     def score(
         self,
         method_name: str,
@@ -114,20 +164,7 @@ class ValidationTrackScorer:
         import sverdrup.validation.their_eval as te  # import-prep only; .score untouched
 
         with tempfile.TemporaryDirectory() as td:
-            mean_p = Path(td) / "mean.nc"
-            var_p = Path(td) / "var.nc"
-            run_mean_var_maps(
-                method_name,
-                self.train_obs,
-                ConstantProvider(params),
-                self.grid,
-                self.temporal_half_window_days,
-                self.output_days,
-                mean_p,
-                var_p,
-                mdt_grid=self.mdt_grid,
-                oi_kernel_from_params=True,  # OI tunes its Matérn from params (not Gaussian)
-            )
+            mean_p, var_p = self._produce_maps(method_name, params, Path(td))
             te._prepare_imports()
             from src.mod_inout import read_l3_dataset
             from src.mod_interp import interp_on_alongtrack
@@ -146,13 +183,15 @@ class ValidationTrackScorer:
             )
             # The variance map shares the mean map's grid/time axes, so its valid
             # along-track footprint (hence the returned index subset) is identical.
-            _, _, _, _, var_interp = interp_on_alongtrack(
-                str(var_p), ds_at, is_circle=False, **box
-            )
+            var_interp = None
+            if var_p is not None:
+                _, _, _, _, var_interp = interp_on_alongtrack(
+                    str(var_p), ds_at, is_circle=False, **box
+                )
         return _assemble_scores(
             ssh_a=np.asarray(ssh_a, dtype=float),
             mean_interp=np.asarray(mean_interp, dtype=float),
-            var_interp=np.asarray(var_interp, dtype=float),
+            var_interp=None if var_interp is None else np.asarray(var_interp, float),
             time_a=np.asarray(time_a),
             lat_a=np.asarray(lat_a),
             lon_a=np.asarray(lon_a),

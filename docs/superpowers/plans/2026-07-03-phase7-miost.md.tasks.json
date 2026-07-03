@@ -75,7 +75,7 @@
     {
       "id": 9,
       "subject": "Task 9: Capability-derived bars + capability-routed scorer",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         8
       ],
@@ -84,7 +84,7 @@
     {
       "id": 10,
       "subject": "Task 10: StoredGFeasibility + CompositeFeasibility + reason recording",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
