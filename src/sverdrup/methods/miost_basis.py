@@ -155,18 +155,119 @@ def lonlat_to_km(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarr
     return x, y
 
 
-_CSR_CONVERT_MAX_BYTES = 3e9  # above this, keep the memory-lean CSC form
+_G_CHUNK_OBS = 5_000  # obs rows per assembly chunk (bounds triplet temporaries)
 
 
-def _element_obs_mask(
-    els: Elements, p: int, x: np.ndarray, y: np.ndarray, t: np.ndarray, l_t: float
-) -> np.ndarray:
-    """Boolean support mask of element ``p`` over the obs coordinate arrays."""
-    hw = els.half_width_km[p]
-    return np.asarray(
-        (np.abs(x - els.x_km[p]) < hw)
-        & (np.abs(y - els.y_km[p]) < hw)
-        & (np.abs(t - els.t_days[p]) < l_t)
+@dataclass(frozen=True)
+class _ScaleLayout:
+    """One scale's pavement geometry, mirroring ``elements_for_window`` exactly."""
+
+    lam: float
+    hw: float
+    step: float
+    nx: int
+    ny: int
+    j_lo: int
+    j_hi: int
+    base: int  # first column index of this scale's block
+
+    @property
+    def n_t(self) -> int:
+        return self.j_hi - self.j_lo + 1
+
+
+def _layouts(spec: BasisSpec, j_lo: int, j_hi: int) -> list[_ScaleLayout]:
+    """Per-scale pavement layouts mirroring the enumeration order.
+
+    Column index of (s, d, p, ix, iy, j) is
+    ``base_s + (((d*2 + p)*nx + ix)*ny + iy)*n_t + (j - j_lo)`` — the analytic
+    inverse of the enumeration order.
+    """
+    out: list[_ScaleLayout] = []
+    base = 0
+    for lam in spec.ladder:
+        hw = SUPPORT * lam
+        step = spec.alpha * lam
+        nx = int(np.ceil((D_X_KM + 2 * hw) / step))
+        ny = int(np.ceil((D_Y_KM + 2 * hw) / step))
+        out.append(_ScaleLayout(lam, hw, step, nx, ny, j_lo, j_hi, base))
+        base += nx * ny * (j_hi - j_lo + 1) * spec.n_dir * 2
+    return out
+
+
+def _axis_candidates(
+    pos: np.ndarray, origin: float, step: float, hw: float, n: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Per-point candidate pavement indices along one axis (vectorized bucketing).
+
+    Returns ``(idx, delta, ok)`` of shape ``(n_pts, k)``: pavement indices,
+    signed offsets ``pos - center``, and the in-support validity mask.
+    """
+    k = int(np.floor(2.0 * hw / step)) + 1
+    lo = np.floor((pos - origin - hw) / step).astype(np.int64) + 1
+    idx = lo[:, None] + np.arange(k)[None, :]
+    delta = pos[:, None] - (origin + idx * step)
+    ok = (idx >= 0) & (idx < n) & (np.abs(delta) < hw)
+    return idx, delta, ok
+
+
+def _chunk_triplets(
+    spec: BasisSpec,
+    layouts: list[_ScaleLayout],
+    x: np.ndarray,
+    y: np.ndarray,
+    t: np.ndarray,
+    values: bool,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    """(rows, cols, vals|None) for one obs chunk over all scales/dirs/phases.
+
+    ``values=False`` is the cheap counting pass: same candidate logic, no
+    trig evaluation, vals returned as None.
+    """
+    dt = spec.dt_days
+    rows_l: list[np.ndarray] = []
+    cols_l: list[np.ndarray] = []
+    vals_l: list[np.ndarray] = []
+    for lay in layouts:
+        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        kt = int(np.floor(2.0 * spec.l_t_days / dt)) + 1
+        jt_lo = np.floor((t - spec.l_t_days) / dt).astype(np.int64) + 1
+        jt = jt_lo[:, None] + np.arange(kt)[None, :]
+        dtt = t[:, None] - jt * dt
+        okt = (jt >= lay.j_lo) & (jt <= lay.j_hi) & (np.abs(dtt) < spec.l_t_days)
+        valid = okx[:, :, None, None] & oky[:, None, :, None] & okt[:, None, None, :]
+        if not valid.any():
+            continue
+        o_idx, a_ix, a_iy, a_jt = np.nonzero(valid)
+        col_spatial = (ix[o_idx, a_ix] * lay.ny + iy[o_idx, a_iy]) * lay.n_t + (
+            jt[o_idx, a_jt] - lay.j_lo
+        )
+        block = lay.nx * lay.ny * lay.n_t
+        if values:
+            dxv, dyv, dttv = dx[o_idx, a_ix], dy[o_idx, a_iy], dtt[o_idx, a_jt]
+            taper = (
+                np.cos(0.5 * np.pi * dxv / lay.hw)
+                * np.cos(0.5 * np.pi * dyv / lay.hw)
+                * np.cos(0.5 * np.pi * dttv / spec.l_t_days)
+            )
+            k_carrier = 2.0 * np.pi / lay.lam
+        for d_idx in range(spec.n_dir):
+            th = np.pi * d_idx / spec.n_dir
+            if values:
+                phase_arg = k_carrier * (np.cos(th) * dxv + np.sin(th) * dyv)
+            for p_idx, ph in enumerate((0.0, np.pi / 2)):
+                rows_l.append(o_idx)
+                cols_l.append(lay.base + (d_idx * 2 + p_idx) * block + col_spatial)
+                if values:
+                    vals_l.append(np.cos(phase_arg + ph) * taper)
+    if not rows_l:
+        z = np.empty(0, dtype=np.int64)
+        return z, z, (np.empty(0) if values else None)
+    return (
+        np.concatenate(rows_l),
+        np.concatenate(cols_l),
+        np.concatenate(vals_l) if values else None,
     )
 
 
@@ -176,63 +277,65 @@ def build_g(
     lon: np.ndarray,
     lat: np.ndarray,
     t_days: np.ndarray,
-) -> sparse.spmatrix:
-    """Assemble sparse G analytically: rows=obs, cols=elements. Never via a gridded H.
+) -> sparse.csr_matrix:
+    """Assemble CSR G analytically: rows=obs, cols=elements. Never via a gridded H.
 
-    Two-pass column-wise assembly directly into preallocated CSC arrays — peak
-    memory = the FINAL matrix, never the ~2.5x triplet-temporary spike (the
-    425-day single-window G is ~6.5 GB; triplets would exceed the box's RAM).
-    Returned as CSR below ``_CSR_CONVERT_MAX_BYTES`` (fastest matvec); the huge
-    single-window case stays CSC (both SpMV directions remain native scipy).
+    Vectorized per-scale bucketing — each obs sees only the O((3/alpha)^2 * 5)
+    pavement candidates whose support can contain it, found by integer
+    arithmetic (never an O(n_elements x n_obs) mask sweep). Row-chunked
+    two-pass fill into preallocated CSR arrays: pass 1 counts (no trig),
+    pass 2 evaluates and writes — peak memory stays at the final matrix plus
+    one small chunk, never a whole-matrix triplet spike. Values are identical
+    to the dense ``spec.evaluate`` at the obs points.
 
     Args:
-        spec: Basis specification.
-        els: Enumerated window elements.
+        spec: Basis specification (must be the one that enumerated ``els``).
+        els: Enumerated window elements (defines shape + slot placement).
         lon: Observation longitudes [deg east].
         lat: Observation latitudes [deg north].
         t_days: Observation times [days since epoch].
 
     Returns:
-        Sparse matrix (n_obs, n_elements), CSR or (huge case) CSC.
+        CSR matrix (n_obs, n_elements).
     """
     x, y = lonlat_to_km(np.asarray(lon, float), np.asarray(lat, float))
     t = np.asarray(t_days, float)
-    n_el = els.x_km.size
-    # NOTE: O(n_elements * n_obs) masking per pass — bucket per scale (cells of
-    # size alpha*lam) if the alpha=1.0 60-d window assembly exceeds ~60 s.
-    counts = np.zeros(n_el, dtype=np.int64)
-    for p in range(n_el):
-        counts[p] = int(_element_obs_mask(els, p, x, y, t, spec.l_t_days).sum())
-    indptr = np.zeros(n_el + 1, dtype=np.int64)
-    np.cumsum(counts, out=indptr[1:])
-    nnz = int(indptr[-1])
+    n_obs, n_el = x.size, els.x_km.size
+    if n_obs == 0 or n_el == 0:
+        return sparse.csr_matrix((n_obs, n_el))
+    j_lo = int(els.identity[:, 5].min())
+    j_hi = int(els.identity[:, 5].max())
+    layouts = _layouts(spec, j_lo, j_hi)
+    last = layouts[-1]
+    if last.base + last.nx * last.ny * last.n_t * spec.n_dir * 2 != n_el:
+        raise ValueError("els does not match this spec's enumeration layout")
+
+    chunks = [
+        slice(c, min(c + _G_CHUNK_OBS, n_obs)) for c in range(0, n_obs, _G_CHUNK_OBS)
+    ]
+    # pass 1: count nnz per chunk (candidate logic only, no trig)
+    counts = []
+    for sl in chunks:
+        r, _, _ = _chunk_triplets(spec, layouts, x[sl], y[sl], t[sl], values=False)
+        counts.append(r.size)
+    nnz = int(np.sum(counts))
     data = np.empty(nnz)
     indices = np.empty(nnz, dtype=np.int32)
-    for p in range(n_el):
-        if counts[p] == 0:
+    indptr = np.zeros(n_obs + 1, dtype=np.int64)
+    # pass 2: evaluate chunk triplets, sort into CSR rows, write into place
+    off = 0
+    for sl, cnt in zip(chunks, counts, strict=True):
+        if cnt == 0:
+            indptr[sl.start + 1 : sl.stop + 1] = off
             continue
-        idx = np.nonzero(_element_obs_mask(els, p, x, y, t, spec.l_t_days))[0]
-        hw = els.half_width_km[p]
-        dx = (x[idx] - els.x_km[p]) / hw
-        dy = (y[idx] - els.y_km[p]) / hw
-        dtt = (t[idx] - els.t_days[p]) / spec.l_t_days
-        v = (
-            np.cos(
-                els.kx[p] * (x[idx] - els.x_km[p])
-                + els.ky[p] * (y[idx] - els.y_km[p])
-                + els.phase[p]
-            )
-            * np.cos(0.5 * np.pi * dx)
-            * np.cos(0.5 * np.pi * dy)
-            * np.cos(0.5 * np.pi * dtt)
-        )
-        lo, hi = indptr[p], indptr[p + 1]
-        indices[lo:hi] = idx
-        data[lo:hi] = v
-    g = sparse.csc_matrix((data, indices, indptr), shape=(x.size, n_el))
-    if nnz * 12 <= _CSR_CONVERT_MAX_BYTES:
-        return g.tocsr()
-    return g
+        r, c, v = _chunk_triplets(spec, layouts, x[sl], y[sl], t[sl], values=True)
+        g_chunk = sparse.csr_matrix((v, (r, c)), shape=(sl.stop - sl.start, n_el))
+        g_chunk.sort_indices()
+        data[off : off + cnt] = g_chunk.data
+        indices[off : off + cnt] = g_chunk.indices
+        indptr[sl.start + 1 : sl.stop + 1] = off + g_chunk.indptr[1:]
+        off += cnt
+    return sparse.csr_matrix((data, indices, indptr), shape=(n_obs, n_el))
 
 
 def build_s(
@@ -252,32 +355,46 @@ def build_s(
     Returns:
         CSR matrix (n_nodes, n_elements) with NO temporal factor.
     """
-    x, y = lonlat_to_km(grid_lon, grid_lat)
-    rows, cols, vals = [], [], []
-    for p in range(els.x_km.size):
-        hw = els.half_width_km[p]
-        m = (np.abs(x - els.x_km[p]) < hw) & (np.abs(y - els.y_km[p]) < hw)
-        idx = np.nonzero(m)[0]
-        if idx.size == 0:
+    x, y = lonlat_to_km(np.asarray(grid_lon, float), np.asarray(grid_lat, float))
+    n_nodes, n_el = x.size, els.x_km.size
+    if n_nodes == 0 or n_el == 0:
+        return sparse.csr_matrix((n_nodes, n_el))
+    j_lo = int(els.identity[:, 5].min())
+    j_hi = int(els.identity[:, 5].max())
+    layouts = _layouts(spec, j_lo, j_hi)
+    rows_l, cols_l, vals_l = [], [], []
+    # Spatial values are j-independent: evaluate once per spatial candidate,
+    # then tile across that position's n_t temporal-slot columns.
+    for lay in layouts:
+        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        valid = okx[:, :, None] & oky[:, None, :]
+        if not valid.any():
             continue
-        v = (
-            np.cos(
-                els.kx[p] * (x[idx] - els.x_km[p])
-                + els.ky[p] * (y[idx] - els.y_km[p])
-                + els.phase[p]
-            )
-            * np.cos(0.5 * np.pi * (x[idx] - els.x_km[p]) / hw)
-            * np.cos(0.5 * np.pi * (y[idx] - els.y_km[p]) / hw)
-        )
-        rows.append(idx)
-        cols.append(np.full(idx.size, p))
-        vals.append(v)
-    if not rows:
-        return sparse.csr_matrix((x.size, els.x_km.size))
-    return sparse.csr_matrix(
-        (np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
-        shape=(x.size, els.x_km.size),
+        o_idx, a_ix, a_iy = np.nonzero(valid)
+        dxv, dyv = dx[o_idx, a_ix], dy[o_idx, a_iy]
+        taper = np.cos(0.5 * np.pi * dxv / lay.hw) * np.cos(0.5 * np.pi * dyv / lay.hw)
+        col_sp = (ix[o_idx, a_ix] * lay.ny + iy[o_idx, a_iy]) * lay.n_t
+        block = lay.nx * lay.ny * lay.n_t
+        k_carrier = 2.0 * np.pi / lay.lam
+        slots = np.arange(lay.n_t)
+        for d_idx in range(spec.n_dir):
+            th = np.pi * d_idx / spec.n_dir
+            phase_arg = k_carrier * (np.cos(th) * dxv + np.sin(th) * dyv)
+            for p_idx, ph in enumerate((0.0, np.pi / 2)):
+                v = np.cos(phase_arg + ph) * taper
+                base = lay.base + (d_idx * 2 + p_idx) * block
+                cols_l.append((base + col_sp[:, None] + slots[None, :]).ravel())
+                rows_l.append(np.repeat(o_idx, lay.n_t))
+                vals_l.append(np.repeat(v, lay.n_t))
+    if not rows_l:
+        return sparse.csr_matrix((n_nodes, n_el))
+    g = sparse.csr_matrix(
+        (np.concatenate(vals_l), (np.concatenate(rows_l), np.concatenate(cols_l))),
+        shape=(n_nodes, n_el),
     )
+    g.sort_indices()
+    return g
 
 
 def temporal_taper(spec: BasisSpec, els: Elements, day: float) -> np.ndarray:

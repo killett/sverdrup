@@ -33,6 +33,25 @@ def test_g_matches_dense_evaluate() -> None:
     np.testing.assert_allclose(g.toarray(), dense, atol=1e-14)
 
 
+def test_s_matches_dense_evaluate_via_taper() -> None:
+    """S (spatial-only) times the day taper == full dense evaluation at that day.
+
+    Bug caught: wrong column layout / temporal factor leaking into S.
+    """
+    from sverdrup.methods.miost_basis import build_s, temporal_taper
+
+    els = SPEC.elements_for_window(0.0)
+    lon = np.linspace(296.0, 304.0, 7)
+    lat = np.linspace(34.5, 41.5, 7)
+    s = build_s(SPEC, els, lon, lat)
+    x, y = lonlat_to_km(lon, lat)
+    for day in (12.0, 30.0):
+        dense = SPEC.evaluate(els, x, y, np.full(lon.size, day))
+        np.testing.assert_allclose(
+            s.toarray() * temporal_taper(SPEC, els, day)[None, :], dense, atol=1e-14
+        )
+
+
 def test_adjoint_identity() -> None:
     """Seam (b): <G eta, r> == <eta, G^T r> to machine precision."""
     els = SPEC.elements_for_window(0.0)
