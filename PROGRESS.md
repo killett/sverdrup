@@ -81,11 +81,15 @@ status (NO public MIOST implementation exists — products only on Zenodo/AVISO;
 negative on method/author/ODC org; closure = authors/AVISO handbook OR tune-as-
 parameter_space via Phase-5 loop, owner's call at design time) + §7 honesty
 consequence (sverdrup MIOST = family-faithful tuned-in-framework, NOT a CLS
-reproduction; leaderboard row = aspirational target, not hard gate). **Next action =
-owner's extraction↔PDF spot-check (in progress, separate); THEN the design-fit
-session (separate, owner-shaped prompt). Its central forks, made crisp by the brief:
-POINT-peer vs latent-posterior vs baseline-anchor (capability axis); reference-config-
-hunt vs tune-as-parameters (gaps axis).**
+reproduction; leaderboard row = aspirational target, not hard gate).
+**Owner PDF spot-check COMPLETE (2026-07-02): ALL PASS** (U2021 MIOST-absent /
+Eqs. 18–20 / spacing-negative / mean-only / Eq. 25 erratum REAL; U2022 future-work
+verbatim / tiling-compute paragraph / AltiKa-Q; B2023 six-variables / 80–900 /
+Table 3 allsat-1 / Eqs. A2+A17 errata REAL — full list in brief §10). **Brief
+VERIFIED END-TO-END (all four tiers) and CLEARED as the design-session input.
+Next action = the design-fit session (separate, owner-shaped prompt). Its central
+forks, made crisp by the brief: POINT-peer vs latent-posterior vs baseline-anchor
+(capability axis); reference-config-hunt vs tune-as-parameters (gaps axis).**
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 

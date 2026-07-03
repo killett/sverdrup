@@ -541,5 +541,18 @@ independently flagged inside the extractions; "MIOST absent from U2021" self-ver
 by the extractor; no drift found. Brief↔repo: `UncertaintyCapability` at
 `core/types.py:15`, `native_capability` at `core/method.py:20`,
 `PredictiveDistribution` methods verified exactly as stated. Brief↔leaderboard: MIOST
-row (μ=0.89, σ=0.08, λx=139, README line 31) verified. Remaining tier: the owner's
-own extraction↔PDF spot-check (in progress, separate).
+row (μ=0.89, σ=0.08, λx=139, README line 31) verified.
+
+**Owner PDF spot-check (2026-07-02): ALL PASS — brief verified end-to-end and CLEARED
+as the design-session input.** Probes: U2021 — MIOST-absent; Eqs. 18–20
+formula/signs/no-ωt-carrier; spacing-negative (incl. Fig. 2–3 captions); mean-only
+scan (Figs. 8–13 + Data Availability); Eqs. 15–16 + G-filled-analytically + unnamed
+preconditioner; Eq. 25 double-label erratum REAL. U2022 — uncertainties-future-work
+sentence verbatim; 15×15°+2° tiling / linear blend / 100 iterations / 2 TB–200
+threads / ~10⁹ elements paragraph; AltiKa-spectrum-Q with no normalization; errata
+(divided-by-0; Sherman-Eq.10; Fig. 3c 10 d) REAL. B2023 — six-variables list with no
+error variable; Eq. A2 minus-R erratum REAL; "between 80 and 900 km"; 1.5×wavelength
++ L_t-no-number; Eq. A17 δy-twice erratum REAL; Table 3 MIOST-allsat-1 row;
+Eqs. A19–A20 propagating carriers. Verification tiers now complete:
+brief↔extractions, brief↔repo, brief↔leaderboard (reviewer) + extractions↔PDF
+(owner).
