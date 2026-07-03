@@ -55,7 +55,7 @@
     {
       "id": 7,
       "subject": "Task 7: POINT distribution, capability error, persisted state",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3,
         4,

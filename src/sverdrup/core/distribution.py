@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from sverdrup.core.provenance import UncertaintyProvenance
 
 
+class CapabilityNotAvailableError(RuntimeError):
+    """A distribution was asked for an uncertainty product its capability cannot emit."""
+
+
 @runtime_checkable
 class CovarianceOperator(Protocol):
     """Zero-mean covariance machinery; queried on demand, never materialised densely."""
