@@ -123,6 +123,7 @@ optuna = ">=4.9.0,<5"
 # Group-derived PyPI-only packages.
 graphifyy = "*"
 skypilot = "*"
+pypdf = ">=6.14.2, <7"
 
 # Conda deps that only resolve on linux-64. Use this section when a
 # package or one of its conda-forge dependencies has no osx-arm64 build,
