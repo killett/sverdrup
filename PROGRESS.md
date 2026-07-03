@@ -58,6 +58,23 @@
 > loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
 > coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
 
+## MIOST method brief COMMITTED (2026-07-02) — awaiting owner review before any design session
+
+Understanding-only session (no code, no design): produced
+`docs/papers/2026-07-02-miost-method-brief.md` — a citation-pinned account of the
+MIOST family (Ubelmann 2021 / Ubelmann 2022 / Ballarotta 2023, PDFs local in
+`docs/papers/`, NOT committed). Owner-confirmed scope: minimal mesoscale
+altimetry-only SSH core (tides/eq-waves/Doppler/drifters out of scope, half-page
+inventories each). Load-bearing outcomes: MIOST-as-documented is POINT-only (no
+uncertainty product in any paper; U2022 names it future work) → baseline-vs-Method-peer
+decision is the owner's, later; core = reduced-rank OI (B=ΓQΓᵀ wavelets, matrix-free
+PCG on GᵀR⁻¹G+Q⁻¹); §8 gaps register lists what NO paper specifies (element spacing,
+direction count, Q calibration, R values, preconditioner, the 2021a-submission
+config). Acceptance anchor: vendored leaderboard MIOST row μ=0.89/σ=0.08/λx=139.
+Working artifacts (uncommitted, `docs/papers/`): `*.extraction.md` per paper +
+`*.pdftext.txt` raw dumps. **Next action = owner reviews brief against the PDFs;
+design-fit session only after that.**
+
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
 **Why Stage C is being redesigned.** Stage C (Tasks 15–18: global coherent sampler + `core/range≥25`
