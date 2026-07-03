@@ -73,6 +73,18 @@ def test_global_slot_identity_window_independent() -> None:
     assert shared  # the 15-day overlap shares temporal slots
 
 
+def test_elements_for_window_custom_w_days() -> None:
+    """Task-11 harness: a 425-d window enumerates slots across its FULL span.
+
+    Bug caught: j_hi hardwired to start + 60 — the single-window instance would
+    silently truncate to the first 60 days.
+    """
+    spec = BasisSpec(alpha=1.5, l_t_days=10.0, ladder=(452.548,))
+    els = spec.elements_for_window(start_day=-30.0, w_days=425.0)
+    assert els.t_days.max() == pytest.approx(395.0, abs=spec.dt_days)
+    assert els.t_days.min() >= -30.0
+
+
 def test_temporal_slots_global_epoch() -> None:
     """Slots are j*dt from the EPOCH (day 0), not window-relative offsets."""
     els = SPEC.elements_for_window(start_day=45.0)

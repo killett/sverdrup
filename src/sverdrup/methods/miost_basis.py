@@ -62,11 +62,13 @@ class BasisSpec:
             f"lam_ref={LAM_REF};r_ref={R_REF!r}"
         )
 
-    def elements_for_window(self, start_day: float) -> Elements:
-        """Enumerate elements whose GLOBAL temporal slot falls in [start, start+W].
+    def elements_for_window(self, start_day: float, w_days: float = W_DAYS) -> Elements:
+        """Enumerate elements whose GLOBAL temporal slot falls in [start, start + w_days].
 
         Args:
             start_day: Window start [days since epoch 2017-01-01].
+            w_days: Window length (non-default ONLY for the Task-11 single-window
+                equivalence harness).
 
         Returns:
             The window's elements with window-independent identity tuples.
@@ -74,7 +76,7 @@ class BasisSpec:
         ids, xs, ys, ts, kxs, kys, phs, hws = [], [], [], [], [], [], [], []
         dt = self.dt_days
         j_lo = math.ceil(start_day / dt)
-        j_hi = math.floor((start_day + W_DAYS) / dt)
+        j_hi = math.floor((start_day + w_days) / dt)
         for s_idx, lam in enumerate(self.ladder):
             hw = SUPPORT * lam
             step = self.alpha * lam
@@ -153,14 +155,35 @@ def lonlat_to_km(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarr
     return x, y
 
 
+_CSR_CONVERT_MAX_BYTES = 3e9  # above this, keep the memory-lean CSC form
+
+
+def _element_obs_mask(
+    els: Elements, p: int, x: np.ndarray, y: np.ndarray, t: np.ndarray, l_t: float
+) -> np.ndarray:
+    """Boolean support mask of element ``p`` over the obs coordinate arrays."""
+    hw = els.half_width_km[p]
+    return np.asarray(
+        (np.abs(x - els.x_km[p]) < hw)
+        & (np.abs(y - els.y_km[p]) < hw)
+        & (np.abs(t - els.t_days[p]) < l_t)
+    )
+
+
 def build_g(
     spec: BasisSpec,
     els: Elements,
     lon: np.ndarray,
     lat: np.ndarray,
     t_days: np.ndarray,
-) -> sparse.csr_matrix:
-    """Assemble CSR G analytically: rows=obs, cols=elements. Never via a gridded H.
+) -> sparse.spmatrix:
+    """Assemble sparse G analytically: rows=obs, cols=elements. Never via a gridded H.
+
+    Two-pass column-wise assembly directly into preallocated CSC arrays — peak
+    memory = the FINAL matrix, never the ~2.5x triplet-temporary spike (the
+    425-day single-window G is ~6.5 GB; triplets would exceed the box's RAM).
+    Returned as CSR below ``_CSR_CONVERT_MAX_BYTES`` (fastest matvec); the huge
+    single-window case stays CSC (both SpMV directions remain native scipy).
 
     Args:
         spec: Basis specification.
@@ -170,23 +193,26 @@ def build_g(
         t_days: Observation times [days since epoch].
 
     Returns:
-        CSR matrix (n_obs, n_elements).
+        Sparse matrix (n_obs, n_elements), CSR or (huge case) CSC.
     """
     x, y = lonlat_to_km(np.asarray(lon, float), np.asarray(lat, float))
     t = np.asarray(t_days, float)
-    rows, cols, vals = [], [], []
-    # NOTE: O(n_elements * n_obs) masking — bucket per scale (cells of size
-    # alpha*lam) if the alpha=1.0 60-d window assembly exceeds ~60 s.
-    for p in range(els.x_km.size):
-        hw = els.half_width_km[p]
-        m = (
-            (np.abs(x - els.x_km[p]) < hw)
-            & (np.abs(y - els.y_km[p]) < hw)
-            & (np.abs(t - els.t_days[p]) < spec.l_t_days)
-        )
-        idx = np.nonzero(m)[0]
-        if idx.size == 0:
+    n_el = els.x_km.size
+    # NOTE: O(n_elements * n_obs) masking per pass — bucket per scale (cells of
+    # size alpha*lam) if the alpha=1.0 60-d window assembly exceeds ~60 s.
+    counts = np.zeros(n_el, dtype=np.int64)
+    for p in range(n_el):
+        counts[p] = int(_element_obs_mask(els, p, x, y, t, spec.l_t_days).sum())
+    indptr = np.zeros(n_el + 1, dtype=np.int64)
+    np.cumsum(counts, out=indptr[1:])
+    nnz = int(indptr[-1])
+    data = np.empty(nnz)
+    indices = np.empty(nnz, dtype=np.int32)
+    for p in range(n_el):
+        if counts[p] == 0:
             continue
+        idx = np.nonzero(_element_obs_mask(els, p, x, y, t, spec.l_t_days))[0]
+        hw = els.half_width_km[p]
         dx = (x[idx] - els.x_km[p]) / hw
         dy = (y[idx] - els.y_km[p]) / hw
         dtt = (t[idx] - els.t_days[p]) / spec.l_t_days
@@ -200,15 +226,13 @@ def build_g(
             * np.cos(0.5 * np.pi * dy)
             * np.cos(0.5 * np.pi * dtt)
         )
-        rows.append(idx)
-        cols.append(np.full(idx.size, p))
-        vals.append(v)
-    if not rows:
-        return sparse.csr_matrix((x.size, els.x_km.size))
-    return sparse.csr_matrix(
-        (np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
-        shape=(x.size, els.x_km.size),
-    )
+        lo, hi = indptr[p], indptr[p + 1]
+        indices[lo:hi] = idx
+        data[lo:hi] = v
+    g = sparse.csc_matrix((data, indices, indptr), shape=(x.size, n_el))
+    if nnz * 12 <= _CSR_CONVERT_MAX_BYTES:
+        return g.tocsr()
+    return g
 
 
 def build_s(

@@ -19,6 +19,7 @@ from sverdrup.core.types import Field, Points, Seed, UncertaintyCapability
 from sverdrup.methods.miost_basis import (
     N_DIR,
     R_REF,
+    W_DAYS,
     BasisSpec,
     DiagonalQ,
     Elements,
@@ -52,6 +53,7 @@ class MiostPointDistribution:
     _spec: BasisSpec
     _etas: dict[str, np.ndarray]  # window_id -> eta
     _window_starts: dict[str, float]
+    _w_days: float = W_DAYS  # non-default ONLY in the Task-11 single-window harness
 
     @classmethod
     def from_etas(
@@ -61,6 +63,7 @@ class MiostPointDistribution:
         spec: BasisSpec,
         etas: dict[str, np.ndarray],
         window_starts: dict[str, float],
+        w_days: float = W_DAYS,
     ) -> MiostPointDistribution:
         """Build the distribution from solved window coefficients.
 
@@ -70,6 +73,7 @@ class MiostPointDistribution:
             spec: Basis specification the coefficients belong to.
             etas: window_id -> solved coefficient vector.
             window_starts: window_id -> window start day.
+            w_days: Window length the coefficients were solved at.
 
         Returns:
             The POINT distribution with the mean evaluated on ``grid``.
@@ -85,6 +89,7 @@ class MiostPointDistribution:
             _spec=spec,
             _etas={k: np.asarray(v) for k, v in etas.items()},
             _window_starts=dict(window_starts),
+            _w_days=w_days,
         )
         lon2d, lat2d = np.meshgrid(grid.x, grid.y)
         pts = np.column_stack(
@@ -122,6 +127,7 @@ class MiostPointDistribution:
             spec=self._spec,
             etas=self._etas,
             window_starts=self._window_starts,
+            w_days=self._w_days,
         )
 
     def mean_at(self, pts: Points) -> np.ndarray:
@@ -136,14 +142,16 @@ class MiostPointDistribution:
         pts = np.asarray(pts, float)
         x, y = lonlat_to_km(pts[:, 0], pts[:, 1])
         t = pts[:, 2]
-        plan = WindowPlan(starts=tuple(sorted(self._window_starts.values())))
+        plan = WindowPlan(
+            starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
+        )
         out = np.zeros(pts.shape[0])
         for wid, eta in self._etas.items():
-            w = Window(self._window_starts[wid])
+            w = Window(self._window_starts[wid], self._w_days)
             in_w = (t >= w.start_day) & (t <= w.end_day)
             if not in_w.any():
                 continue
-            els = self._spec.elements_for_window(w.start_day)
+            els = self._spec.elements_for_window(w.start_day, self._w_days)
             gamma = self._spec.evaluate(els, x[in_w], y[in_w], t[in_w])
             wgt = np.array([plan.weight(w, float(td)) for td in t[in_w]])
             out[in_w] += wgt * (gamma @ eta)
@@ -162,6 +170,7 @@ class MiostPointDistribution:
             "n_dir": self._spec.n_dir,
             "ladder": np.asarray(self._spec.ladder),
             "time_days": self.time_days,
+            "w_days": self._w_days,
             "mean": np.asarray(self.mean),
             "grid_lon": self.grid.x,
             "grid_lat": self.grid.y,
@@ -198,6 +207,7 @@ class MiostPointDistribution:
                 spec=spec,
                 etas=etas,
                 window_starts=starts,
+                w_days=float(z["w_days"]) if "w_days" in z else W_DAYS,
             )
             # bit-identity guaranteed by storing the mean too
             out.mean = np.asarray(z["mean"])
@@ -231,15 +241,19 @@ def _window_obs(
     """
     coords = obs.coords()
     t = coords[:, 2]
-    lo = max(w.start_day - l_t_days, OBS_START_DAY)
-    hi = min(w.end_day + l_t_days, OBS_END_DAY)
+    lo_full = w.start_day - l_t_days
+    hi_full = w.end_day + l_t_days
+    # Span demand clipped to the data span WITH the placement's 1-day edge slack
+    # (real coarsened obs start/end a fraction inside the nominal file days).
+    lo = max(lo_full, OBS_START_DAY + 1.0)
+    hi = min(hi_full, OBS_END_DAY - 1.0)
     if len(obs) and (t.min() > lo + 1e-9 or t.max() < hi - 1e-9):
         raise ValueError(
             f"obs do not span window {w.id} support [{lo}, {hi}] "
             f"(got [{t.min()}, {t.max()}]) — pass the full obs "
             "(wide temporal_half_window_days)"
         )
-    m = (t >= lo) & (t <= hi)
+    m = (t >= lo_full) & (t <= hi_full)
     return coords[m, 0], coords[m, 1], t[m], obs.values()[m]
 
 
@@ -248,16 +262,19 @@ class Miost:
 
     native_capability = UncertaintyCapability.POINT
 
-    def __init__(self, n_dir: int = N_DIR, cache: bool = True) -> None:
+    def __init__(
+        self, n_dir: int = N_DIR, cache: bool = True, plan: WindowPlan | None = None
+    ) -> None:
         """Create the method with empty caches.
 
         Args:
             n_dir: Plane-wave direction count (D2 diagnostic override; default D1).
             cache: Disable to force fresh solves (cache-correctness tests).
+            plan: Window placement override (Task-11 single-window harness ONLY).
         """
         self.n_dir = n_dir
         self.cache = cache
-        self._plan = WindowPlan()
+        self._plan = plan if plan is not None else WindowPlan()
         self._eta_cache: dict[tuple[str, str, str], np.ndarray] = {}
         self._s_cache: OrderedDict[
             tuple[str, str], tuple[Elements, sparse.csr_matrix]
@@ -337,6 +354,7 @@ class Miost:
             _spec=spec,
             _etas=etas,
             _window_starts=starts,
+            _w_days=self._plan.w_days,
         )
 
     def _solve_window(
@@ -354,7 +372,7 @@ class Miost:
         if self.cache and key in self._eta_cache:
             return self._eta_cache[key]
         lon, lat, t, y = _window_obs(obs, w, spec.l_t_days)
-        els = spec.elements_for_window(w.start_day)
+        els = spec.elements_for_window(w.start_day, w.w_days)
         g = build_g(spec, els, lon, lat, t)
         q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
         r = np.full(y.size, R_REF)
@@ -386,7 +404,7 @@ class Miost:
         if self.cache and key in self._s_cache:
             self._s_cache.move_to_end(key)
             return self._s_cache[key]
-        els = spec.elements_for_window(w.start_day)
+        els = spec.elements_for_window(w.start_day, w.w_days)
         lon2d, lat2d = np.meshgrid(grid.x, grid.y)
         s = build_s(spec, els, lon2d.ravel(), lat2d.ravel())
         if self.cache:

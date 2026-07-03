@@ -47,6 +47,18 @@ def test_named_defaults() -> None:
     assert s.pcg_rtol == 1e-6 and s.pcg_maxiter == 500
 
 
+def test_csc_input_matches_csr() -> None:
+    """The huge-G path hands the solver CSC; solution and preconditioner identical."""
+    g, r, q = _small_system()
+    b = RNG.standard_normal(g.shape[1])
+    s_csr = MiostSolver(g, r_diag=r, q_diag=q, pcg_rtol=1e-12)
+    s_csc = MiostSolver(g.tocsc(), r_diag=r, q_diag=q, pcg_rtol=1e-12)
+    np.testing.assert_allclose(s_csc._m_inv, s_csr._m_inv, rtol=1e-14)
+    x_csr, _ = s_csr.solve(b)
+    x_csc, _ = s_csc.solve(b)
+    np.testing.assert_allclose(x_csc, x_csr, rtol=1e-10)
+
+
 def test_zero_obs_total() -> None:
     """n_obs=0 -> A = Q^-1, solve returns q*b exactly (degenerate-obs totality §4.3)."""
     g = sparse.csr_matrix((0, 10))

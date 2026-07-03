@@ -104,3 +104,18 @@ def test_window_ids_stable_and_distinct() -> None:
     """Ids derive from start_day — 9 distinct cache keys."""
     ids = [w.id for w in PLAN.windows]
     assert len(set(ids)) == 9
+
+
+def test_single_window_plan_custom_w_days() -> None:
+    """Task-11 harness: WindowPlan(starts=(-30,), w_days=425) = one 425-d window.
+
+    Bug caught: end_day/id hardwired to the 60-d run-constant, making the
+    windowed-vs-single-window equivalence diagnostic silently solve 60 days.
+    """
+    plan = WindowPlan(starts=(-30.0,), w_days=425.0)
+    (w,) = plan.windows
+    assert w.end_day == 395.0
+    assert "425" in w.id  # distinct cache key vs any 60-d window
+    for d in (0.0, 180.0, 364.0):
+        assert plan.covering(d) == [w]
+        assert plan.weight(w, d) == 1.0

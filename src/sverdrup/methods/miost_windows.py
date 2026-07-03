@@ -18,19 +18,20 @@ L_T_MAX = 12.0  # D3 ceiling; placement designed here (fold A)
 
 @dataclass(frozen=True)
 class Window:
-    """One solve window [start, start+W]."""
+    """One solve window [start, start + w_days]."""
 
     start_day: float
+    w_days: float = W_DAYS
 
     @property
     def end_day(self) -> float:
         """Window end [days since epoch]."""
-        return self.start_day + W_DAYS
+        return self.start_day + self.w_days
 
     @property
     def id(self) -> str:
         """Stable id derived from placement (cache key component)."""
-        return f"w{self.start_day:+08.1f}+{W_DAYS:.0f}"
+        return f"w{self.start_day:+08.1f}+{self.w_days:.0f}"
 
 
 def _default_starts() -> tuple[float, ...]:
@@ -41,14 +42,21 @@ def _default_starts() -> tuple[float, ...]:
 
 @dataclass(frozen=True)
 class WindowPlan:
-    """9 windows covering outputs 0..364 with two-sided support inside the data."""
+    """9 windows covering outputs 0..364 with two-sided support inside the data.
+
+    ``w_days`` is overridable ONLY for the Task-11 single-window equivalence
+    harness; production always runs the W=60 default.
+    """
 
     starts: tuple[float, ...] = field(default_factory=_default_starts)
+    w_days: float = W_DAYS
     windows: tuple[Window, ...] = field(init=False)
 
     def __post_init__(self) -> None:
         """Materialize Window objects from the start days."""
-        object.__setattr__(self, "windows", tuple(Window(s) for s in self.starts))
+        object.__setattr__(
+            self, "windows", tuple(Window(s, self.w_days) for s in self.starts)
+        )
 
     def covering(self, day: float) -> list[Window]:
         """Windows whose span contains ``day`` (1 interior, 2 in overlaps).

@@ -45,11 +45,30 @@ class MiostSolver:
         self.pcg_rtol = pcg_rtol
         self.pcg_maxiter = pcg_maxiter
         # Jacobi preconditioner: diag(G^T R^-1 G) + Q^-1 = sum_i g_ip^2 / r_i + 1/q_p
-        g2 = g.copy()
-        g2.data = g2.data**2
-        self._m_inv = (
-            1.0 / (g2.T @ self.r_inv + self.q_inv) if g.shape[0] else 1.0 / self.q_inv
-        )
+        if g.shape[0] == 0:
+            self._m_inv = 1.0 / self.q_inv
+        elif sparse.issparse(g) and g.format == "csc":
+            # Column-blocked, no G copy: the huge single-window G (~6.5 GB)
+            # cannot afford the g.copy() temporary.
+            self._m_inv = 1.0 / (self._csc_col_sq_sums(g) + self.q_inv)
+        else:
+            g2 = g.copy()
+            g2.data = g2.data**2
+            self._m_inv = 1.0 / (g2.T @ self.r_inv + self.q_inv)
+
+    def _csc_col_sq_sums(self, g: sparse.csc_matrix) -> np.ndarray:
+        """Per-column sum of g_ip^2 / r_i over CSC segments, in bounded blocks."""
+        n_col = g.shape[1]
+        out = np.empty(n_col)
+        indptr = g.indptr
+        block = 65_536
+        for c0 in range(0, n_col, block):
+            c1 = min(c0 + block, n_col)
+            lo, hi = int(indptr[c0]), int(indptr[c1])
+            w = g.data[lo:hi] ** 2 * self.r_inv[g.indices[lo:hi]]
+            c = np.concatenate([[0.0], np.cumsum(w)])
+            out[c0:c1] = c[indptr[c0 + 1 : c1 + 1] - lo] - c[indptr[c0:c1] - lo]
+        return out
 
     def apply_a(self, x: np.ndarray) -> np.ndarray:
         """A-apply in two SpMVs (G then G^T) + diagonal.
