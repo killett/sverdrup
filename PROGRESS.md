@@ -163,9 +163,19 @@ review can verify against the public repo. Spec APPROVED on file review (owner,
 `docs/superpowers/plans/2026-07-03-phase7-miost.md` (+ `.tasks.json`, 19 tasks,
 native tasks #7–#25) — Stage A Tasks 1–13 (gate = c2 once, µ≥0.85, diagnostics
 attached, calibration N/A), Stage B Tasks 14–19 all blocked by the Stage-A gate;
-user-gates on Tasks 11/13/19. **Next action = owner reviews the plan +
-tasks.json; execution (subagent-driven this session vs executing-plans in a
-separate session) chosen after that review.**
+user-gates on Tasks 11/13/19. **Plan APPROVED (owner review 2026-07-03) after ONE
+required correction, now FOLDED + committed: Task 6 right-edge placement — original
+window 8 [342,402] demanded obs to day 414 vs data end 395 (span assert
+unsatisfiable → every full-year run crashes); fixed to k=0..7 stride + RIGHT-ALIGNED
+last window [322,382] (1-day slack both sides), blend denominator generalized to the
+ACTUAL pairwise overlap (35 d on the last pair; partition-of-unity test must fail
+pre-fix), escape hatches removed from the support test. Secondary confirms: BO
+`rounds` threading VERIFIED landed (`6e418fa`); Task-13 smoke must record-and-skip
+on StageANoAdmissible (d7376b8 pattern), never ERROR. **EXECUTION GREEN-LIT: fresh
+`/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
+session (owner-chosen mode). Gates at Tasks 11/13/19 stop for owner sign-off.
+PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origin at
+`13a1731`; spec/plan commits local-only.**
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 

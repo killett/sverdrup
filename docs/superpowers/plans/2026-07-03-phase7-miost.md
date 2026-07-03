@@ -10,7 +10,7 @@
 
 **Spec (governs on conflict):** `docs/superpowers/specs/2026-07-03-phase7-miost-design.md` (decision register D1–D8).
 
-**User decisions (already made):** D1 8-rung ladder 80→905/√2, n_dir=8/180°; D2 12-dir validation-track diagnostic; D3 W=60/V=15/stride45 at L_t_max=12, L_t tunable [5,12], Δt=L_t/2; D4 equivalence diagnostic REQUIRED + pavement fallback; D5 window-cache Method + 4 hardenings; D6 coefficient-space ensemble + CRN + s-rescale; D7 halo=1.0, α box intact, predicate-priced; D8 λ_ref=300 km, R_ref=(0.03)², gauge-inert. Plan-detail items fixed here: window placement s_k=−18+45k (k=0..8); parameter_space boxes α(0.5,1.5)/log10_rho(−2,3)/q_slope(0,4)/l_t_days(5,12); CRN = blake2b keyed-hash → ndtri; infeasible reason via `predicate.explain()` → `TrialRecord.exclusion_reason`; pcg_rtol=1e-6, pcg_maxiter=500.
+**User decisions (already made):** D1 8-rung ladder 80→905/√2, n_dir=8/180°; D2 12-dir validation-track diagnostic; D3 W=60/V=15/stride45 at L_t_max=12, L_t tunable [5,12], Δt=L_t/2; D4 equivalence diagnostic REQUIRED + pavement fallback; D5 window-cache Method + 4 hardenings; D6 coefficient-space ensemble + CRN + s-rescale; D7 halo=1.0, α box intact, predicate-priced; D8 λ_ref=300 km, R_ref=(0.03)², gauge-inert. Plan-detail items fixed here: window placement s_k=−18+45k (k=0..7) + right-aligned last window [322, 382] (owner correction, Task 6); parameter_space boxes α(0.5,1.5)/log10_rho(−2,3)/q_slope(0,4)/l_t_days(5,12); CRN = blake2b keyed-hash → ndtri; infeasible reason via `predicate.explain()` → `TrialRecord.exclusion_reason`; pcg_rtol=1e-6, pcg_maxiter=500.
 
 **Stage gating:** Tasks 14–19 are BLOCKED BY Task 13 (Stage-A gate). Do not start them before the gate is signed off.
 
@@ -715,16 +715,19 @@ def test_duality_oracle_u2021_eq2_vs_eq15() -> None:
 
 ### Task 6: WindowPlan + temporal blend
 
-**Goal:** Window placement (designed at L_t_max=12) and the linear temporal blend with partition of unity.
+**Goal:** Window placement (designed at L_t_max=12, RIGHT-ALIGNED last window) and the linear temporal blend with partition of unity over ACTUAL pairwise overlaps.
+
+**OWNER CORRECTION (plan review 2026-07-03):** the original `s_k = −18+45k, k=0..8` put window 8 at [342, 402], whose §4.2 span assert demands obs to day 414 — but obs END at day 395 (2018-01-31). Unsatisfiable: every full-year run would crash at window 8. Fix: k=0..7 stride windows + a right-aligned last window `s_8 = 395 − 12 − 60 − 1 = 322` → [322, 382] (ends 2018-01-18; right slack 1 day: 382+12 = 394 ≤ 395−1, symmetric with the left). Consequence: overlap(7,8) = 35 d, so the blend denominator is the ACTUAL pairwise overlap (left.end − right.start), reducing to /15 on interior pairs; constraint restated as "every pairwise overlap ≥ L_t_max" (15, 35 ≥ 12 ✓). Verified: days 358–364 two-sided (slots ≤ 376 ≤ 382; data support ≤ 394); no triple-cover (window 6 ends 312 < 322); ids derive from start_day so cache keys stay distinct.
 
 **Files:**
 - Create: `src/sverdrup/methods/miost_windows.py`
 - Test: `tests/test_miost_windows.py`
 
 **Acceptance Criteria:**
-- [ ] Windows `s_k = −18 + 45k, k=0..8` (i.e. [−18,42] … [342,402]); ids stable strings
-- [ ] Every output day 0..364: covering windows found; full-weight days have two-sided slot support at L_t=12; first-slot support ≥ −31 (obs start; ~1-day slack recorded)
-- [ ] Blend weights: day in overlap → (left, right) = ((s_k+60−d)/15, (d−s_{k+1})/15); sum to 1; outside overlap weight 1
+- [ ] Windows `s_k = −18 + 45k, k=0..7` plus right-aligned `[322, 382]` (9 windows; ids stable strings)
+- [ ] Every output day 0..364 has a covering window with two-sided slot support at L_t=12 — UNCONDITIONAL, no first/last-window escape hatch
+- [ ] Edge slack BOTH sides: first-slot support ≥ −31+1; last-slot support ≤ 395−1
+- [ ] Blend weights: denominator = actual pairwise overlap; partition of unity holds INCLUDING the 35-d overlap [322, 357]; outside overlap weight 1
 
 **Verify:** `pixi run pytest tests/test_miost_windows.py -q`
 
@@ -736,29 +739,35 @@ def test_duality_oracle_u2021_eq2_vs_eq15() -> None:
 import numpy as np
 import pytest
 
-from sverdrup.methods.miost_windows import WindowPlan
+from sverdrup.methods.miost_windows import L_T_MAX, OBS_END_DAY, OBS_START_DAY, WindowPlan
 
 PLAN = WindowPlan()  # run-constants from miost_basis
 
 
-def test_placement_s_k() -> None:
+def test_placement_right_aligned_last_window() -> None:
     starts = [w.start_day for w in PLAN.windows]
-    assert starts == [-18.0 + 45.0 * k for k in range(9)]
+    assert starts == [-18.0 + 45.0 * k for k in range(8)] + [322.0]
 
 
 def test_every_output_day_supported_at_lt_ceiling() -> None:
-    """Constraint (i) at L_t_max=12: slots within [d-12, d+12] inside the window,
-    and slot support inside obs span [-31, 395]. Bug: placement off by one stride."""
+    """Constraint (i) at L_t_max=12, UNCONDITIONAL for ALL output days 0..364:
+    some covering window holds slots [d-12, d+12] entirely. Bug: right-edge
+    window demanding obs beyond the data end (the reviewed 402-crash)."""
     for d in range(0, 365):
         wins = PLAN.covering(float(d))
         assert 1 <= len(wins) <= 2
-        w = wins[0] if len(wins) == 1 else max(wins, key=lambda w: PLAN.weight(w, float(d)))
-        assert w.start_day <= d - 12 or w is PLAN.windows[0]
-        assert w.start_day + 60 >= d + 12 or w is PLAN.windows[-1]
-    assert PLAN.windows[0].start_day - 12 >= -31 + 1 - 1e-9  # 1-day slack, recorded
+        assert any(w.start_day <= d - 12 and w.end_day >= d + 12 for w in wins)
+
+
+def test_edge_slack_both_sides() -> None:
+    """Support fits inside data with 1-day slack, symmetric left/right."""
+    assert PLAN.windows[0].start_day - L_T_MAX >= OBS_START_DAY + 1 - 1e-9
+    assert PLAN.windows[-1].end_day + L_T_MAX <= OBS_END_DAY - 1 + 1e-9
 
 
 def test_blend_partition_of_unity() -> None:
+    """MUST fail with a fixed /V_DAYS denominator (35-d overlap sums to 35/15):
+    the sample range sweeps straight through [322, 357]."""
     for d in np.linspace(-18, 364, 500):
         wins = PLAN.covering(float(d))
         total = sum(PLAN.weight(w, float(d)) for w in wins)
@@ -766,10 +775,14 @@ def test_blend_partition_of_unity() -> None:
 
 
 def test_blend_linear_in_overlap() -> None:
-    """Day 30 lies in w0/w1 overlap [27, 42]: w0 weight (42-30)/15 = 0.8."""
+    """Interior pair: day 30 in w0/w1 overlap [27, 42]: w0 weight (42-30)/15 = 0.8.
+    Right pair: day 350 in w7/w8 overlap [322, 357]: w7 weight (357-350)/35 = 0.2."""
     w0, w1 = PLAN.covering(30.0)
     assert PLAN.weight(w0, 30.0) == pytest.approx(0.8)
     assert PLAN.weight(w1, 30.0) == pytest.approx(0.2)
+    w7, w8 = PLAN.covering(350.0)
+    assert PLAN.weight(w7, 350.0) == pytest.approx(0.2)
+    assert PLAN.weight(w8, 350.0) == pytest.approx(1.0 - 0.2)
 ```
 
 - [ ] **Step 2: Run → fail.**
@@ -777,13 +790,22 @@ def test_blend_linear_in_overlap() -> None:
 - [ ] **Step 3: Implement**
 
 ```python
-"""Temporal WindowPlan + linear blend (spec §4.1; designed at L_t_max=12)."""
+"""Temporal WindowPlan + linear blend (spec §4.1; designed at L_t_max=12).
+
+Placement (owner-corrected 2026-07-03): 8 stride windows s_k = -18 + 45k plus a
+RIGHT-ALIGNED last window [322, 382] so the span assert is satisfiable inside the
+obs data [-31, 395]. Every pairwise overlap >= L_T_MAX (interior 15 d; last pair 35 d).
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from sverdrup.methods.miost_basis import STRIDE_DAYS, V_DAYS, W_DAYS
+from sverdrup.methods.miost_basis import STRIDE_DAYS, W_DAYS
+
+OBS_START_DAY = -31.0  # 2016-12-01
+OBS_END_DAY = 395.0    # 2018-01-31
+L_T_MAX = 12.0         # D3 ceiling; placement designed here (fold A)
 
 
 @dataclass(frozen=True)
@@ -799,33 +821,35 @@ class Window:
         return f"w{self.start_day:+08.1f}+{W_DAYS:.0f}"
 
 
+def _default_starts() -> tuple[float, ...]:
+    """k=0..7 stride windows + right-aligned last: 395 - 12 - 60 - 1 = 322."""
+    right = OBS_END_DAY - L_T_MAX - W_DAYS - 1.0
+    return tuple(-18.0 + STRIDE_DAYS * k for k in range(8)) + (right,)
+
+
 @dataclass(frozen=True)
 class WindowPlan:
-    """s_k = -18 + 45k, k = 0..8 (covers outputs 0..364 inside obs span [-31, 395])."""
+    """9 windows covering outputs 0..364 with two-sided support inside the data."""
 
-    first_start: float = -18.0
-    n_windows: int = 9
+    starts: tuple[float, ...] = field(default_factory=_default_starts)
     windows: tuple[Window, ...] = field(init=False)
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "windows",
-            tuple(Window(self.first_start + STRIDE_DAYS * k) for k in range(self.n_windows)),
-        )
+        object.__setattr__(self, "windows", tuple(Window(s) for s in self.starts))
 
     def covering(self, day: float) -> list[Window]:
         return [w for w in self.windows if w.start_day <= day <= w.end_day]
 
     def weight(self, w: Window, day: float) -> float:
-        """Linear, proportional to boundary distance; partition of unity over covering."""
+        """Linear ∝ boundary distance over the ACTUAL pairwise overlap; unity outside."""
         wins = self.covering(day)
         if len(wins) == 1:
             return 1.0
         left, right = wins  # ordered by start
-        if w is left or w.id == left.id:
-            return (left.end_day - day) / V_DAYS
-        return (day - right.start_day) / V_DAYS
+        overlap = left.end_day - right.start_day  # >= L_T_MAX by construction
+        if w.id == left.id:
+            return (left.end_day - day) / overlap
+        return (day - right.start_day) / overlap
 ```
 
 - [ ] **Step 4: Run → pass.** **Step 5: Commit** — `git commit -m "feat(miost): WindowPlan at L_t ceiling + linear temporal blend (D3/fold A)"`
@@ -1253,7 +1277,7 @@ loop.py lines 97–100 →
 
 **Steps:**
 
-- [ ] **Step 1: Write the script** — load dc_obs via the existing validation input adapter (mirror `scripts/stage_b_gate_run.py`'s obs loading), build `Miost` twice: default `WindowPlan()` vs `WindowPlan(first_start=-30.0, n_windows=1)` with `W_DAYS` overridden to 425 for the single-window instance (add an optional `w_days` field to `WindowPlan` defaulting to `W_DAYS` — single-window path only used here). Solve daily maps for days 0..364 both ways; compute Δ per day; classify days: blend (within V of any interior window boundary) vs interior.
+- [ ] **Step 1: Write the script** — load dc_obs via the existing validation input adapter (mirror `scripts/stage_b_gate_run.py`'s obs loading), build `Miost` twice: default `WindowPlan()` vs a single-window instance `WindowPlan(starts=(-30.0,))` with an optional `w_days` field (defaulting to `W_DAYS`) set to 425 — single-window path only used here. Solve daily maps for days 0..364 both ways; compute Δ per day; classify days: blend (within V of any interior window boundary) vs interior.
 - [ ] **Step 2: Run it** (~2× full-year α=1.5 cost ≈ 2×2–4 min windows × … ≈ under an hour total; G at α=1.5/425 d ≈ halo-priced ~5.5 GB — feasible).
 - [ ] **Step 3: Write `docs/validation/miost_equivalence_diagnostic.md`** with the tables + explicit verdict line: `FALLBACK NEEDED: yes/no — <reason>`.
 - [ ] **Step 4: STOP for owner decision on the fallback** (do not implement the pavement extension unless owner says invoke).
@@ -1301,7 +1325,7 @@ loop.py lines 97–100 →
 
 **Steps:**
 
-- [ ] **Step 1: Write the runner** — clone the stage_b_gate_run.py structure: derive full-2017 scope, build `ValidationTrackScorer` with wide `temporal_half_window_days=425.0`, `StoredGFeasibility(n_obs_max=<computed halo-inclusive max-window count from the loaded obs>)`, `ConstrainedObjective(bars=bars_for(UncertaintyCapability.POINT))`, `method_name="miost"`, Sobol(n=16) then BO(n=16, rounds=4); persist rows incrementally.
+- [ ] **Step 1: Write the runner** — clone the stage_b_gate_run.py structure: derive full-2017 scope, build `ValidationTrackScorer` with wide `temporal_half_window_days=425.0`, `StoredGFeasibility(n_obs_max=<computed halo-inclusive max-window count from the loaded obs>)`, `ConstrainedObjective(bars=bars_for(UncertaintyCapability.POINT))`, `method_name="miost"`, Sobol(n=16) then BO(n=16, rounds=4); persist rows incrementally. VERIFIED at plan review: `rounds` IS threaded through `_run_stage`/`run_stage_a`/`run_stage_b` → `tune` (tuner-debt-cleanup `6e418fa`; stage_a.py:123/180/235/245) — the rounds=4 claim is real, not the old rounds=1 vacuous BO. SMOKE PATH REQUIREMENT (do not inherit the old stage_b gate-test failure mode): if the dev-scope smoke yields `StageANoAdmissible`, the runner records it as a diagnostic row and exits cleanly, and any pytest wrapper SKIPS with the diagnostic (the `d7376b8` pattern) — never ERRORs on smoke.
 - [ ] **Step 2: Smoke on 60-day scope first** (`SVERDRUP_MIOST_SCOPE=dev`) — verifies plumbing end to end cheaply.
 - [ ] **Step 3: Launch full run detached; monitor heartbeat.**
 - [ ] **Step 4: Acceptance** — winner params → `run_challenge_map` full-2017 map → `their_eval.score` on c2 (the ONE touch) → record (µ, σ, λx); run Task-12 diagnostics on this map.
