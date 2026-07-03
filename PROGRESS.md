@@ -140,12 +140,27 @@ uncommitted-probe lesson):** measured on this box (4 cores, ~15 GB RAM, ~4 GB av
 - Recommended local operating envelope (probe output): 60-d windows at any probed
   (α, n_dir) except α=0.5+12-dir; full-year only at α=1.5. Largest clearing config:
   α=0.5, 8-dir, 60 d, λmin=80 (nnz=6.4e8, G=7.7 GB, ~4 min/solve).
+  **AMENDED 2026-07-03 (Phase-7 design, halo pricing):** probe counts were BOX-ONLY;
+  production uses halo_deg=1.0 (obs ~×1.44) → the halo-priced fine-spacing corner is
+  **α=0.75** (which also clears n_dir=12 at ~7 GB → the 12-dir sensitivity diagnostic
+  gains feasibility); α=0.5 exceeds the 8 GB budget at any halo ∈ {0.5, 1.0} (~9.3–11
+  GB) and is excluded VISIBLY by StoredGFeasibility (α box stays [0.5,1.5]). See
+  design D7.
 - Probe assumption flagged in-script: geometric scale ratio √2 (implied by λ_min ∈
   {80,113} being consecutive √2 steps); NOT from the papers (brief §8 gap #1 stands).
 
-**Next action = owner writes the design-session prompt** (staged Stage A/B milestone,
-six ensemble-ready seams, capability-conditional calibration bar, this validation
-stack baked in) — separate session, after these probe numbers.
+**Phase-7 MIOST DESIGN COMPLETE (2026-07-03):** brainstorm run (2 clarifying
+questions + 2 architecture forks + section approvals, all owner-decided); spec
+committed at `docs/superpowers/specs/2026-07-03-phase7-miost-design.md` (decision
+register D1–D8: 8-rung 80→905/√2 ladder, n_dir=8/180°, W=60/V=15/stride45 designed
+at L_t_max=12, L_t tunable [5,12] with Δt=L_t/2, window-cache Method + 4 hardenings,
+coefficient-space Stage-B ensemble + CRN + s-rescale theorem, halo=1.0
+predicate-priced, λ_ref/R_ref gauge-inert anchors). GIT PUSH still blocked — host
+key fixed this session but the container has NO SSH key at all (`Permission denied
+(publickey)`); owner must install a deploy key/credentials before the external
+review can verify against the public repo. **Next action = owner reviews the spec
+file; then writing-plans (Stage A first; Stage B built only after the Stage-A
+gate).**
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
