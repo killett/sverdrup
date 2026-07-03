@@ -20,7 +20,7 @@
     {
       "id": 3,
       "subject": "Task 3: G/S/Q builders, applies, representer + gauge tests",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ],

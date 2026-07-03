@@ -1,4 +1,4 @@
-"""MIOST wavelet dictionary: BasisSpec, enumeration, analytic evaluation (spec §2.1)."""
+"""MIOST wavelet dictionary: BasisSpec, enumeration, evaluation, operators (spec §2)."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.methods.miost_sizing import D_X_KM, D_Y_KM, KM_PER_DEG, scale_set
 
@@ -150,3 +151,161 @@ def lonlat_to_km(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarr
     x = (np.asarray(lon) - BOX_LON[0]) * KM_PER_DEG * math.cos(math.radians(MID_LAT))
     y = (np.asarray(lat) - BOX_LAT[0]) * KM_PER_DEG
     return x, y
+
+
+def build_g(
+    spec: BasisSpec,
+    els: Elements,
+    lon: np.ndarray,
+    lat: np.ndarray,
+    t_days: np.ndarray,
+) -> sparse.csr_matrix:
+    """Assemble CSR G analytically: rows=obs, cols=elements. Never via a gridded H.
+
+    Args:
+        spec: Basis specification.
+        els: Enumerated window elements.
+        lon: Observation longitudes [deg east].
+        lat: Observation latitudes [deg north].
+        t_days: Observation times [days since epoch].
+
+    Returns:
+        CSR matrix (n_obs, n_elements).
+    """
+    x, y = lonlat_to_km(np.asarray(lon, float), np.asarray(lat, float))
+    t = np.asarray(t_days, float)
+    rows, cols, vals = [], [], []
+    # NOTE: O(n_elements * n_obs) masking — bucket per scale (cells of size
+    # alpha*lam) if the alpha=1.0 60-d window assembly exceeds ~60 s.
+    for p in range(els.x_km.size):
+        hw = els.half_width_km[p]
+        m = (
+            (np.abs(x - els.x_km[p]) < hw)
+            & (np.abs(y - els.y_km[p]) < hw)
+            & (np.abs(t - els.t_days[p]) < spec.l_t_days)
+        )
+        idx = np.nonzero(m)[0]
+        if idx.size == 0:
+            continue
+        dx = (x[idx] - els.x_km[p]) / hw
+        dy = (y[idx] - els.y_km[p]) / hw
+        dtt = (t[idx] - els.t_days[p]) / spec.l_t_days
+        v = (
+            np.cos(
+                els.kx[p] * (x[idx] - els.x_km[p])
+                + els.ky[p] * (y[idx] - els.y_km[p])
+                + els.phase[p]
+            )
+            * np.cos(0.5 * np.pi * dx)
+            * np.cos(0.5 * np.pi * dy)
+            * np.cos(0.5 * np.pi * dtt)
+        )
+        rows.append(idx)
+        cols.append(np.full(idx.size, p))
+        vals.append(v)
+    if not rows:
+        return sparse.csr_matrix((x.size, els.x_km.size))
+    return sparse.csr_matrix(
+        (np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
+        shape=(x.size, els.x_km.size),
+    )
+
+
+def build_s(
+    spec: BasisSpec,
+    els: Elements,
+    grid_lon: np.ndarray,
+    grid_lat: np.ndarray,
+) -> sparse.csr_matrix:
+    """SPATIAL basis matrix at grid nodes (fork-1 hardening 2): carrier * spatial taper only.
+
+    Args:
+        spec: Basis specification.
+        els: Enumerated window elements.
+        grid_lon: Grid-node longitudes [deg east].
+        grid_lat: Grid-node latitudes [deg north].
+
+    Returns:
+        CSR matrix (n_nodes, n_elements) with NO temporal factor.
+    """
+    x, y = lonlat_to_km(grid_lon, grid_lat)
+    rows, cols, vals = [], [], []
+    for p in range(els.x_km.size):
+        hw = els.half_width_km[p]
+        m = (np.abs(x - els.x_km[p]) < hw) & (np.abs(y - els.y_km[p]) < hw)
+        idx = np.nonzero(m)[0]
+        if idx.size == 0:
+            continue
+        v = (
+            np.cos(
+                els.kx[p] * (x[idx] - els.x_km[p])
+                + els.ky[p] * (y[idx] - els.y_km[p])
+                + els.phase[p]
+            )
+            * np.cos(0.5 * np.pi * (x[idx] - els.x_km[p]) / hw)
+            * np.cos(0.5 * np.pi * (y[idx] - els.y_km[p]) / hw)
+        )
+        rows.append(idx)
+        cols.append(np.full(idx.size, p))
+        vals.append(v)
+    if not rows:
+        return sparse.csr_matrix((x.size, els.x_km.size))
+    return sparse.csr_matrix(
+        (np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))),
+        shape=(x.size, els.x_km.size),
+    )
+
+
+def temporal_taper(spec: BasisSpec, els: Elements, day: float) -> np.ndarray:
+    """Per-element temporal taper at ``day`` (day map = S @ (eta * taper)).
+
+    Args:
+        spec: Basis specification.
+        els: Enumerated window elements.
+        day: Output day [days since epoch].
+
+    Returns:
+        Taper values, one per element.
+    """
+    return np.asarray(_cos_tap((day - els.t_days) / spec.l_t_days))
+
+
+@dataclass(frozen=True)
+class DiagonalQ:
+    """Prior variances q_p = rho * R_REF * (lam_p/lam_ref)^q_slope (spec §2.2, gap-#3 flag)."""
+
+    rho: float
+    q_slope: float
+    lam_ref: float = LAM_REF
+    r_ref: float = R_REF
+
+    def variances_for(self, els: Elements) -> np.ndarray:
+        """Per-element prior variances.
+
+        Args:
+            els: Enumerated window elements.
+
+        Returns:
+            Variances aligned with the element order.
+        """
+        lam = np.asarray(LADDER)[els.identity[:, 0]]
+        return np.asarray(self.rho * self.r_ref * (lam / self.lam_ref) ** self.q_slope)
+
+    def variances(self, spec: BasisSpec) -> np.ndarray:
+        """Per-RUNG variances (gauge test helper).
+
+        Args:
+            spec: Basis specification providing the ladder.
+
+        Returns:
+            One variance per ladder rung.
+        """
+        lam = np.asarray(spec.ladder)
+        return np.asarray(self.rho * self.r_ref * (lam / self.lam_ref) ** self.q_slope)
+
+
+@dataclass(frozen=True)
+class DiagonalR:
+    """Scalar observation-error variance (Stage A: R = R_REF, s == 1)."""
+
+    variance: float = R_REF
