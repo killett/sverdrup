@@ -177,6 +177,25 @@ session (owner-chosen mode). Gates at Tasks 11/13/19 stop for owner sign-off.
 PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origin at
 `13a1731`; spec/plan commits local-only.**
 
+**Phase-7 EXECUTION deviations (running list):**
+- **Task 6 (2026-07-03): the plan's per-day support test was geometrically
+  impossible; spec governs.** Plan Task-6 AC demanded a SINGLE covering window
+  with span ⊇ [d±12] for EVERY output day — impossible at stride 45/W=60: a
+  window's full-support day range is [s+12, s+48], so every blend zone leaves a
+  9-day gap (days 31–38, 76–83, … 56 days total fail). Spec §4.1(iii) (which the
+  plan header says GOVERNS on conflict) requires the single-window form only for
+  FULL-WEIGHT days; blend-zone days get union-support + truncation
+  anti-correlated with weight. Tests implemented spec-faithfully:
+  union-support ∀ days (UNCONDITIONAL, catches the 402-crash), single-window
+  support ∀ full-weight days (UNCONDITIONAL), blend-zone anti-correlation
+  (weight hits 0 exactly where truncation peaks). Owner should confirm at the
+  Task-11 gate.
+- **Task 5 (2026-07-03): DiagonalQ.variances_for latent bug fixed** — it indexed
+  the module-default LADDER by scale_idx, mispricing q for ANY custom ladder
+  (the 2-rung oracle ladder got 80/113-km variances). Now derives the element's
+  actual wavelength from half_width/1.5. Caught by the duality-oracle work;
+  regression test in test_miost_operators.py.
+
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
 **Why Stage C is being redesigned.** Stage C (Tasks 15–18: global coherent sampler + `core/range≥25`

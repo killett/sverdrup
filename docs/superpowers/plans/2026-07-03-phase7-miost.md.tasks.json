@@ -46,7 +46,7 @@
     {
       "id": 6,
       "subject": "Task 6: WindowPlan + temporal blend",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ],
