@@ -11,7 +11,7 @@
     {
       "id": 2,
       "subject": "Task 2: BasisSpec, element enumeration, analytic evaluation",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
