@@ -71,9 +71,21 @@ decision is the owner's, later; core = reduced-rank OI (B=ΓQΓᵀ wavelets, mat
 PCG on GᵀR⁻¹G+Q⁻¹); §8 gaps register lists what NO paper specifies (element spacing,
 direction count, Q calibration, R values, preconditioner, the 2021a-submission
 config). Acceptance anchor: vendored leaderboard MIOST row μ=0.89/σ=0.08/λx=139.
-Working artifacts (uncommitted, `docs/papers/`): `*.extraction.md` per paper +
-`*.pdftext.txt` raw dumps. **Next action = owner reviews brief against the PDFs;
-design-fit session only after that.**
+Working artifacts (`docs/papers/`): `*.extraction.md` per paper + `*.pdftext.txt` raw
+dumps — **INTENTIONALLY uncommitted + gitignored** (public repo; full-text
+transcriptions = republishing; U2021 license unverified). Do NOT "fix" by committing.
+**REVIEWED AND ACCEPTED (owner, 2026-07-02) at every reachable tier** — quotes
+faithful, repo contract refs verified (`core/types.py:15`, `core/method.py:20`),
+leaderboard row verified; recorded in brief §10. Amended same day: §8 gap-closure
+status (NO public MIOST implementation exists — products only on Zenodo/AVISO; GitHub
+negative on method/author/ODC org; closure = authors/AVISO handbook OR tune-as-
+parameter_space via Phase-5 loop, owner's call at design time) + §7 honesty
+consequence (sverdrup MIOST = family-faithful tuned-in-framework, NOT a CLS
+reproduction; leaderboard row = aspirational target, not hard gate). **Next action =
+owner's extraction↔PDF spot-check (in progress, separate); THEN the design-fit
+session (separate, owner-shaped prompt). Its central forks, made crisp by the brief:
+POINT-peer vs latent-posterior vs baseline-anchor (capability axis); reference-config-
+hunt vs tune-as-parameters (gaps axis).**
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 

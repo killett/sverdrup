@@ -453,6 +453,13 @@ this brief is the right family, but its exact scales/Q/R are unknown). The
 challenge's distributed MIOST maps; it does not document the generating configuration
 either (it is an evaluation notebook).
 
+**Honesty consequence (owner-reviewed 2026-07-02):** given the gaps register (§8) and
+the absence of any public MIOST implementation, a sverdrup MIOST would be
+**family-faithful and tuned-in-framework, NOT a reproduction of the CLS
+configuration** — reproduction is impossible from the public record. The leaderboard
+row is therefore an *aspirational* acceptance anchor (target, not hard gate — the
+Stage-A lesson about the DUACS bar applies).
+
 ---
 
 ## 8. Gaps register — load-bearing unknowns, flagged not filled
@@ -474,9 +481,17 @@ Everything a faithful reimplementation needs that is **in none of the three pape
 10. Whether any **normalization makes the coefficient prior identity** (papers keep
     Q explicit; U2022's orthogonality claim is asserted, not constructed).
 
-Candidate sources to close these (NOT consulted — outside this session's sources):
-the MIOST implementations circulating in the ocean-data-challenge ecosystem and
-AVISO product handbooks. A later session must verify against those directly.
+**Gap-closure status (owner-verified 2026-07-02):** **no public MIOST implementation
+exists** as of this date. All three papers' availability statements distribute
+PRODUCTS only (U2021: Zenodo 4506248 = reference fields / synthetic obs / gridded
+analysis; U2022/B2023: AVISO DOIs for the IT solution and the gridded product).
+GitHub search: negative on the method name (27 unrelated hits), on the author name
+(0 hits), and across the ocean-data-challenges org (challenge/eval repos only).
+Closure routes are therefore: **(a)** the authors / the AVISO+ product handbook
+(offline, outside this sandbox); **(b)** treat gaps 1–5 as a tunable
+`parameter_space` closed in-framework by the Phase-5 autotune loop, with the vendored
+MIOST leaderboard row as the ASPIRATIONAL acceptance anchor (target, not hard gate —
+see §7). Route choice is the OWNER'S, at design time.
 
 ---
 
@@ -508,7 +523,23 @@ Load-bearing quotes were independently re-verified against the raw extracted tex
 gradient", "15 by 15° tiles" + 2° overlap + linear blending, "typically 100
 iterations", "2 TB / 200 threads", the U2022 uncertainty-future-work sentence, the
 AltiKa-spectrum→Q sentence, "between 80 and 900 km", "six variables: sla, adt, …").
-Working artifacts (uncommitted, alongside this brief): `ubelmann2021.extraction.md`,
+Working artifacts (alongside this brief): `ubelmann2021.extraction.md`,
 `ubelmann2022.extraction.md`, `ballarotta2023.extraction.md` (structured per-paper
 extractions with full citation detail, incl. full transcriptions of U2022 Table 1 and
 B2023 Tables 1–9) and `*.pdftext.txt` (raw pypdf dumps for grep-verification).
+
+**The working artifacts and the PDFs are INTENTIONALLY uncommitted** (gitignored,
+2026-07-02): this is a public repo, the extraction files and raw dumps are full-text
+transcriptions of the papers (republishing), and U2021's license is unverified. Do
+NOT "fix" this by committing them. The brief itself is the only versioned account.
+
+**Review outcome (owner review, 2026-07-02) — accepted at every reachable tier:**
+brief↔extractions: all probed load-bearing quotes present and faithful (80–800 vs
+80–900, 1.5× wavelength, tiling quote, 100 iterations, U2022 future-work sentence,
+B2023 six-variables); the two key negatives (no numeric spacing; no R values) are
+independently flagged inside the extractions; "MIOST absent from U2021" self-verified
+by the extractor; no drift found. Brief↔repo: `UncertaintyCapability` at
+`core/types.py:15`, `native_capability` at `core/method.py:20`,
+`PredictiveDistribution` methods verified exactly as stated. Brief↔leaderboard: MIOST
+row (μ=0.89, σ=0.08, λx=139, README line 31) verified. Remaining tier: the owner's
+own extraction↔PDF spot-check (in progress, separate).

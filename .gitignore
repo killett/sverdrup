@@ -49,3 +49,10 @@ data/2023_ssh_mapping_enatl60_natl60/
 # Challenge results / reconstructions (the challenge's own results dir is git-ignored too)
 /results/
 results/
+
+# Paper PDFs + full-text working transcriptions (copyright — republishing;
+# U2021 license unverified). Patterns scoped so they can never catch the
+# committed method briefs (plain *.md).
+docs/papers/*.pdf
+docs/papers/*.extraction.md
+docs/papers/*.pdftext.txt
