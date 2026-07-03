@@ -36,7 +36,7 @@
     {
       "id": 5,
       "subject": "Task 5: Tier-1 duality oracle",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3,
         4

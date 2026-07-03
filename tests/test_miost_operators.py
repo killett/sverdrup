@@ -55,6 +55,20 @@ def test_q_lam_ref_gauge_inert() -> None:
     np.testing.assert_allclose(q1, q2, rtol=1e-12)
 
 
+def test_q_variances_for_custom_ladder() -> None:
+    """variances_for prices q at the element's ACTUAL wavelength, not the default LADDER.
+
+    Bug caught: indexing the module LADDER by scale_idx — a custom 2-rung ladder
+    (320, 452.548) would get q priced at 80/113 km.
+    """
+    spec = BasisSpec(alpha=1.5, l_t_days=10.0, ladder=(320.0, 452.548))
+    els = spec.elements_for_window(0.0)
+    q = DiagonalQ(rho=10.0, q_slope=2.0).variances_for(els)
+    lam = np.where(els.identity[:, 0] == 0, 320.0, 452.548)
+    expected = 10.0 * (0.03**2) * (lam / 300.0) ** 2.0
+    np.testing.assert_allclose(q, expected, rtol=1e-12)
+
+
 def test_representer_negative_lobe() -> None:
     """Tier 2 (U2022 Fig. 4): the equivalent covariance row crosses zero."""
     els = SPEC.elements_for_window(0.0)

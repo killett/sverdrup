@@ -288,7 +288,8 @@ class DiagonalQ:
         Returns:
             Variances aligned with the element order.
         """
-        lam = np.asarray(LADDER)[els.identity[:, 0]]
+        # The element's ACTUAL wavelength (hw = 1.5*lam), valid for any ladder.
+        lam = np.asarray(els.half_width_km) / SUPPORT
         return np.asarray(self.rho * self.r_ref * (lam / self.lam_ref) ** self.q_slope)
 
     def variances(self, spec: BasisSpec) -> np.ndarray:
