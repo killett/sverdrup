@@ -86,10 +86,66 @@ reproduction; leaderboard row = aspirational target, not hard gate).
 Eqs. 18–20 / spacing-negative / mean-only / Eq. 25 erratum REAL; U2022 future-work
 verbatim / tiling-compute paragraph / AltiKa-Q; B2023 six-variables / 80–900 /
 Table 3 allsat-1 / Eqs. A2+A17 errata REAL — full list in brief §10). **Brief
-VERIFIED END-TO-END (all four tiers) and CLEARED as the design-session input.
-Next action = the design-fit session (separate, owner-shaped prompt). Its central
-forks, made crisp by the brief: POINT-peer vs latent-posterior vs baseline-anchor
-(capability axis); reference-config-hunt vs tune-as-parameters (gaps axis).**
+VERIFIED END-TO-END (all four tiers) and CLEARED as the design-session input.**
+
+## MIOST Stage-A validation strategy — OWNER-DECIDED 2026-07-03 (design-session input)
+
+**Validation tiers (decided, not draft):**
+- **Tier 1 (exact oracles — the correctness proof):** duality oracle — dense obs-space
+  OI with B = ΓQΓᵀ vs matrix-free reduced normal equations (U2021 Eq.2 ↔ Eq.15) agree
+  to tight rtol on a small synthetic; adjoint identity ⟨Gη,r⟩ = ⟨η,Gᵀr⟩; dense-vs-PCG
+  on small A.
+- **Tier 2 (documented properties):** representer with negative lobe (U2022 Fig.4);
+  hard compact support; 80–800 km span.
+- **Tier 3 (similarity, NEVER a gate):** compare our maps to distributed
+  `dc_maps/OSE_ssh_mapping_MIOST.nc` (RMS diff, spectral coherence), reported as
+  diagnostic only. Provenance: file is SHA256-pinned in the committed 2021a manifest
+  (e58caea7…, 29,804,673 bytes) — comparison target exact + reproducible.
+- **Tier 4 (THE GATE):** the existing 2021a harness, identical to OI/GMRF. Gaps #1–5
+  become the `parameter_space` (spacing α, n_dir, Q scale/slope, R, λ_min) closed by
+  the Phase-5 loop on the blocked validation track; c2 once at acceptance; HARD FLOOR
+  = BASELINE 0.85; MIOST row (0.89/0.08/139) = ASPIRATIONAL anchor, never hard gate.
+  Calibration bar recorded N/A-for-POINT (capability-conditional).
+- **Explicit:** pointwise reproduction of the MIOST maps is impossible IN PRINCIPLE
+  (undocumented config, no public code) and is NOT a criterion at any tier.
+
+**Execution (decided):** SkyPilot NOT a Stage-A prerequisite; validation runs locally.
+Escalation ladder if tuning throughput demands: numba/stored-G optimization → shorter
+temporal windows → existing dask address-only seam to a bigger box → SkyPilot as its
+own milestone. Reopen ONLY if Task-0 probe + early tuning show ONLY the expensive
+corner (α≤0.5, 12-dir, full-year single window) clears the BASELINE floor.
+
+**MIOST maps file (verified 2026-07-03):** downloader re-run — 14/14 `[skipped]` =
+present + SHA256-verified, 0 downloaded; `dc_maps/OSE_ssh_mapping_MIOST.nc` confirmed.
+Tier-3 output-config facts (metadata only): 365 daily maps 2017-01-01→2017-12-31;
+lat 33–43°N, lon 295–305°E, 0.1° (101×101); single variable `ssh` float64 — **no
+error/uncertainty variable** (consistent with brief §5 POINT-only).
+
+**Task-0 cost probe (committed `scripts/probe_miost_cost.py` + tests — the FEM
+uncommitted-probe lesson):** measured on this box (4 cores, ~15 GB RAM, ~4 GB avail):
+- In-box obs (10°×10°, c2 excluded): 60 d = 39,666; 365 d = 208,542. Per-mission
+  quirks: j2g = 0 in Jan–Feb (geodetic phase starts later in 2017; 9,780 full-year);
+  j2n only 10,841 full-year.
+- Micro-benchmarks: numpy cos-product basis eval **10 M elem/s**; CSR stored-G matvec
+  **527 M nnz/s** (~50× faster ⇒ matrix-free-in-numpy is the wrong plan; stored-G or
+  numba is rung 1).
+- Feasibility (budgets: stored-G ≤ 8 GB, ≤ 60 min/solve, 100 CG iters): **18/32
+  configs clear.** All 60-d windows clear stored-G except α=0.5+12-dir (11.5 GB);
+  full-year clears ONLY at α=1.5 today. **RAM is the binding constraint, NOT
+  compute** — even the worst config (α=0.5, 12-dir, 365 d, λmin=80: N_coef=2.18M,
+  nnz=5.0e9, G=60.5 GB) would solve in ~32 min if G fit. The expensive corner is
+  memory-bound ⇒ the SkyPilot-reopen criterion is a RAM/blocking question, and rung 1
+  (numba matrix-free at stored-G-like throughput, or G-block streaming) flips most of
+  the TOO-SLOW rows without leaving the box.
+- Recommended local operating envelope (probe output): 60-d windows at any probed
+  (α, n_dir) except α=0.5+12-dir; full-year only at α=1.5. Largest clearing config:
+  α=0.5, 8-dir, 60 d, λmin=80 (nnz=6.4e8, G=7.7 GB, ~4 min/solve).
+- Probe assumption flagged in-script: geometric scale ratio √2 (implied by λ_min ∈
+  {80,113} being consecutive √2 steps); NOT from the papers (brief §8 gap #1 stands).
+
+**Next action = owner writes the design-session prompt** (staged Stage A/B milestone,
+six ensemble-ready seams, capability-conditional calibration bar, this validation
+stack baked in) — separate session, after these probe numbers.
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
