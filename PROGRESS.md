@@ -1,5 +1,18 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE-7 EXECUTION IN FLIGHT (2026-07-03): Tasks 1–10 COMPLETE + committed
+> (through `e519b68`); Task 11 (USER GATE) STOPPED FOR OWNER — the D4
+> windowed-vs-single-window diagnostic is recorded
+> (`docs/validation/miost_equivalence_diagnostic.md`, converged solves,
+> noise floor 0.0000 m): deltas are REAL and NOT blend-localized (blend max
+> 1.52 m / interior max 2.02 m vs field std 0.245 m). Owner must decide
+> (a) the D4 fallback (pavement ±L_t extension — note it targets blend seams,
+> which are NOT the dominant term) and (b) the solver budget for Task 13
+> (Jacobi-PCG needs ~5000–6000 iters for rtol 1e-6; ~100-iter paper-faithful
+> budget produced map-space-identical deltas here; LSMR only ~1.3–2×).
+> Task-12 scripts + Task-13 runner/stage wiring are WRITTEN, awaiting the
+> gate. See "Phase-7 EXECUTION deviations" below for the full finding log.**
+>
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, **Stage-C
 > REDESIGN IMPLEMENTED — awaiting owner sign-off on the Task-6 USER GATE.** Plan
 > `docs/superpowers/plans/2026-07-01-stagec-redesign.md` Tasks 1–5 `completed` + committed
