@@ -24,9 +24,9 @@ from sverdrup.methods.miost_basis import (
     DiagonalQ,
     Elements,
     build_g,
-    build_s,
+    build_s_spatial,
     lonlat_to_km,
-    temporal_taper,
+    time_contract,
 )
 from sverdrup.methods.miost_solver import (
     PCG_MAXITER,
@@ -339,7 +339,7 @@ class Miost:
         for w in wins:
             eta = self._solve_window(w, spec, rho, q_slope, pk, fp, obs)
             els, s = self._s_matrix(w, spec, pk, grid)
-            day_map = s @ (eta * temporal_taper(spec, els, time_days))
+            day_map = s @ time_contract(spec, els, eta, time_days)
             mean += self._plan.weight(w, time_days) * day_map
             etas[w.id] = eta
             starts[w.id] = w.start_day
@@ -406,7 +406,7 @@ class Miost:
             return self._s_cache[key]
         els = spec.elements_for_window(w.start_day, w.w_days)
         lon2d, lat2d = np.meshgrid(grid.x, grid.y)
-        s = build_s(spec, els, lon2d.ravel(), lat2d.ravel())
+        s = build_s_spatial(spec, els, lon2d.ravel(), lat2d.ravel())
         if self.cache:
             self._s_cache[key] = (els, s)
             while len(self._s_cache) > 2:

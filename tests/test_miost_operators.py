@@ -52,6 +52,28 @@ def test_s_matches_dense_evaluate_via_taper() -> None:
         )
 
 
+def test_s_spatial_time_contract_matches_dense() -> None:
+    """Factored day map S_sp @ contract(eta, day) == dense Gamma_day @ eta.
+
+    Bug caught: wrong spatial-column layout or slot-contraction order. The
+    factored form exists because tiling S across t-slots OOMs on the 425-day
+    single window (85 slots x 3M spatial entries).
+    """
+    from sverdrup.methods.miost_basis import build_s_spatial, time_contract
+
+    els = SPEC.elements_for_window(0.0)
+    lon = np.linspace(296.0, 304.0, 7)
+    lat = np.linspace(34.5, 41.5, 7)
+    s_sp = build_s_spatial(SPEC, els, lon, lat)
+    rng = np.random.default_rng(3)
+    eta = rng.standard_normal(els.x_km.size)
+    x, y = lonlat_to_km(lon, lat)
+    for day in (12.0, 30.0):
+        dense = SPEC.evaluate(els, x, y, np.full(lon.size, day))
+        got = s_sp @ time_contract(SPEC, els, eta, day)
+        np.testing.assert_allclose(got, dense @ eta, atol=1e-12)
+
+
 def test_adjoint_identity() -> None:
     """Seam (b): <G eta, r> == <eta, G^T r> to machine precision."""
     els = SPEC.elements_for_window(0.0)

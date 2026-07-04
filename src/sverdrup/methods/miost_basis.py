@@ -397,6 +397,99 @@ def build_s(
     return g
 
 
+def build_s_spatial(
+    spec: BasisSpec,
+    els: Elements,
+    grid_lon: np.ndarray,
+    grid_lat: np.ndarray,
+) -> sparse.csr_matrix:
+    """Spatial-only S: one column per (scale, dir, phase, ix, iy) — NO t-slot axis.
+
+    The day map is ``build_s_spatial(...) @ time_contract(spec, els, eta, day)``:
+    tiling the identical spatial values across every t-slot (the naive S) is
+    n_t times larger and OOMs on the 425-day single window.
+
+    Args:
+        spec: Basis specification (must be the one that enumerated ``els``).
+        els: Enumerated window elements.
+        grid_lon: Grid-node longitudes [deg east].
+        grid_lat: Grid-node latitudes [deg north].
+
+    Returns:
+        CSR matrix (n_nodes, n_spatial_columns); spatial columns follow the
+        enumeration order with the t axis removed.
+    """
+    x, y = lonlat_to_km(np.asarray(grid_lon, float), np.asarray(grid_lat, float))
+    n_nodes = x.size
+    j_lo = int(els.identity[:, 5].min())
+    j_hi = int(els.identity[:, 5].max())
+    layouts = _layouts(spec, j_lo, j_hi)
+    n_sp_total = sum(lay.nx * lay.ny * spec.n_dir * 2 for lay in layouts)
+    if n_nodes == 0 or n_sp_total == 0:
+        return sparse.csr_matrix((n_nodes, n_sp_total))
+    rows_l, cols_l, vals_l = [], [], []
+    base_sp = 0
+    for lay in layouts:
+        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        valid = okx[:, :, None] & oky[:, None, :]
+        block = lay.nx * lay.ny
+        if valid.any():
+            o_idx, a_ix, a_iy = np.nonzero(valid)
+            dxv, dyv = dx[o_idx, a_ix], dy[o_idx, a_iy]
+            taper = np.cos(0.5 * np.pi * dxv / lay.hw) * np.cos(
+                0.5 * np.pi * dyv / lay.hw
+            )
+            col_sp = ix[o_idx, a_ix] * lay.ny + iy[o_idx, a_iy]
+            k_carrier = 2.0 * np.pi / lay.lam
+            for d_idx in range(spec.n_dir):
+                th = np.pi * d_idx / spec.n_dir
+                phase_arg = k_carrier * (np.cos(th) * dxv + np.sin(th) * dyv)
+                for p_idx, ph in enumerate((0.0, np.pi / 2)):
+                    rows_l.append(o_idx)
+                    cols_l.append(base_sp + (d_idx * 2 + p_idx) * block + col_sp)
+                    vals_l.append(np.cos(phase_arg + ph) * taper)
+        base_sp += block * spec.n_dir * 2
+    s = sparse.csr_matrix(
+        (np.concatenate(vals_l), (np.concatenate(rows_l), np.concatenate(cols_l))),
+        shape=(n_nodes, n_sp_total),
+    )
+    s.sort_indices()
+    return s
+
+
+def time_contract(
+    spec: BasisSpec, els: Elements, eta: np.ndarray, day: float
+) -> np.ndarray:
+    """Contract eta over t-slots with the day's temporal taper, per spatial column.
+
+    Within each (scale, dir, phase, ix, iy) block the full columns are contiguous
+    in j, so the contraction is a per-scale reshape-dot.
+
+    Args:
+        spec: Basis specification.
+        els: Enumerated window elements (defines slot placement).
+        eta: Full coefficient vector (n_elements,) or batch (n_elements, m).
+        day: Output day [days since epoch].
+
+    Returns:
+        Spatial-column vector matching ``build_s_spatial``'s columns (same batch
+        shape as ``eta`` beyond the first axis).
+    """
+    j_lo = int(els.identity[:, 5].min())
+    j_hi = int(els.identity[:, 5].max())
+    layouts = _layouts(spec, j_lo, j_hi)
+    dt = spec.dt_days
+    tau = np.asarray(_cos_tap((day - np.arange(j_lo, j_hi + 1) * dt) / spec.l_t_days))
+    parts = []
+    for lay in layouts:
+        n_full = lay.nx * lay.ny * lay.n_t * spec.n_dir * 2
+        block = eta[lay.base : lay.base + n_full]
+        # rows = (dir, phase, ix, iy) in order; last axis = t-slot
+        parts.append(block.reshape(-1, lay.n_t, *eta.shape[1:]).swapaxes(1, -1) @ tau)
+    return np.concatenate(parts)
+
+
 def temporal_taper(spec: BasisSpec, els: Elements, day: float) -> np.ndarray:
     """Per-element temporal taper at ``day`` (day map = S @ (eta * taper)).
 

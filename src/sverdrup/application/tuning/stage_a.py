@@ -14,17 +14,25 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from sverdrup.application.splits import make_splits
-from sverdrup.application.tuning.feasibility import CoherenceFeasibility, TileGeometry
+from sverdrup.application.tuning.feasibility import (
+    CoherenceFeasibility,
+    FeasibilityPredicate,
+    TileGeometry,
+)
 from sverdrup.application.tuning.loop import tune
-from sverdrup.application.tuning.objective import BASELINE_BAR_MU, ConstrainedObjective
+from sverdrup.application.tuning.objective import (
+    BASELINE_BAR_MU,
+    ConstrainedObjective,
+    bars_for,
+)
 from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.strategy import SearchStrategy, SobolSearch
-from sverdrup.application.tuning.trial import TrialRecord
+from sverdrup.application.tuning.trial import TrialHistory, TrialRecord
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider, ParameterSpace
@@ -53,6 +61,20 @@ class StageAReport:
     acceptance: tuple[float, float, float]
     their_eval_calls_during_search: int
     precheck_scores: dict[str, float]
+    history: TrialHistory | None = None  # full trial rows incl. exclusion reasons
+
+
+def _objective_for(method_name: str) -> ConstrainedObjective:
+    """Capability-derived objective (fold B): coverage bar iff the method emits variance.
+
+    For SAMPLES-capable methods (OI/GMRF) this reproduces the default bars exactly;
+    a POINT method (miost Stage A) is judged on µ only — never on a fabricated
+    calibration score.
+    """
+    from sverdrup.methods.registry import METHODS
+
+    cap = cast(Any, METHODS[method_name]()).native_capability
+    return ConstrainedObjective(bars=bars_for(cap))
 
 
 class StageANoAdmissible(RuntimeError):
@@ -121,6 +143,9 @@ def _run_stage(
     seed: int = 1,
     strategy: SearchStrategy | None = None,
     rounds: int = 1,
+    predicate: FeasibilityPredicate | None = None,
+    temporal_half_window_days: float | None = None,
+    tile_geometry: TileGeometry | None = None,
 ) -> StageAReport:
     """Shared single-tile stage: search ``method_name`` on the validation track, accept on c2.
 
@@ -136,6 +161,8 @@ def _run_stage(
     """
     cfg = json.loads(Path(scope).read_text())
     provider, grid, half = baseline_config()
+    if temporal_half_window_days is not None:
+        half = temporal_half_window_days  # wide for miost — an argument, not a branch
     obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
     mdt = (
         load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
@@ -169,13 +196,15 @@ def _run_stage(
         strategy=strategy
         if strategy is not None
         else SobolSearch(seed=seed, n=n_trials),
-        predicate=CoherenceFeasibility(),
-        objective=ConstrainedObjective(),
+        predicate=predicate if predicate is not None else CoherenceFeasibility(),
+        objective=_objective_for(method_name),
         scorer=scorer,
         split=split,
         seed=seed,
         window=win,
-        tile_geometry=TileGeometry(1e9, 1.0, "single"),  # ratio huge -> always feasible
+        tile_geometry=tile_geometry
+        if tile_geometry is not None
+        else TileGeometry(1e9, 1.0, "single"),  # ratio huge -> always feasible
         required_capabilities=frozenset({UncertaintyCapability.POINT}),
         rounds=rounds,
         on_empty="return_history",
@@ -223,6 +252,7 @@ def _run_stage(
         acceptance=acceptance,
         their_eval_calls_during_search=0,  # tune() never imports their_eval.score
         precheck_scores=precheck,
+        history=result.history,
     )
 
 
