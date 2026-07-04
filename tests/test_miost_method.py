@@ -96,6 +96,15 @@ def test_params_key_serializes_contract() -> None:
         assert token in key
 
 
+def test_pcg_overrides_enter_params_key() -> None:
+    """Solver settings are part of what eta depends on — overrides must bust the cache."""
+    m = Miost(pcg_rtol=1e-8, pcg_maxiter=2000)
+    key = m._params_key(PARAMS, GRID)
+    assert "pcg_rtol=1e-08" in key and "pcg_maxiter=2000" in key
+    default_key = Miost()._params_key(PARAMS, GRID)
+    assert key != default_key
+
+
 def test_parameter_space_boxes() -> None:
     space = Miost().parameter_space()
     assert space.bounds == {

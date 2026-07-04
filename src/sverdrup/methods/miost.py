@@ -263,7 +263,12 @@ class Miost:
     native_capability = UncertaintyCapability.POINT
 
     def __init__(
-        self, n_dir: int = N_DIR, cache: bool = True, plan: WindowPlan | None = None
+        self,
+        n_dir: int = N_DIR,
+        cache: bool = True,
+        plan: WindowPlan | None = None,
+        pcg_rtol: float = PCG_RTOL,
+        pcg_maxiter: int = PCG_MAXITER,
     ) -> None:
         """Create the method with empty caches.
 
@@ -271,9 +276,13 @@ class Miost:
             n_dir: Plane-wave direction count (D2 diagnostic override; default D1).
             cache: Disable to force fresh solves (cache-correctness tests).
             plan: Window placement override (Task-11 single-window harness ONLY).
+            pcg_rtol: Solver convergence tolerance (diagnostic override).
+            pcg_maxiter: Solver iteration cap (diagnostic override).
         """
         self.n_dir = n_dir
         self.cache = cache
+        self.pcg_rtol = pcg_rtol
+        self.pcg_maxiter = pcg_maxiter
         self._plan = plan if plan is not None else WindowPlan()
         self._eta_cache: dict[tuple[str, str, str], np.ndarray] = {}
         self._s_cache: OrderedDict[
@@ -306,7 +315,7 @@ class Miost:
         q_slope = float(params.resolve("q_slope", grid))
         return (
             f"{spec.key()};rho={rho!r};q_slope={q_slope!r};"
-            f"pcg_rtol={PCG_RTOL!r};pcg_maxiter={PCG_MAXITER}"
+            f"pcg_rtol={self.pcg_rtol!r};pcg_maxiter={self.pcg_maxiter}"
         )
 
     def solve(
@@ -376,20 +385,22 @@ class Miost:
         g = build_g(spec, els, lon, lat, t)
         q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
         r = np.full(y.size, R_REF)
-        solver = MiostSolver(g, r_diag=r, q_diag=q)
+        solver = MiostSolver(
+            g, r_diag=r, q_diag=q, pcg_rtol=self.pcg_rtol, pcg_maxiter=self.pcg_maxiter
+        )
         eta, report = solver.solve(
             rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
         )
         del g, solver  # G freed after the window solve (hardening 2)
         if (
             report.final_rel_residual.size
-            and report.final_rel_residual.max() > PCG_RTOL
+            and report.final_rel_residual.max() > self.pcg_rtol
         ):
             # surfaced, never swallowed (spec §2.4)
             print(
                 f"miost window {w.id}: PCG residual "
                 f"{report.final_rel_residual.max():.2e} after "
-                f"{report.iterations.max()} iters (rtol {PCG_RTOL})"
+                f"{report.iterations.max()} iters (rtol {self.pcg_rtol})"
             )
         eta = np.asarray(eta)
         if self.cache:

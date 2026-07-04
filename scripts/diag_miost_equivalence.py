@@ -15,6 +15,7 @@ Owner decides the pavement +-L_t extension fallback from the doc (plan Task 11).
 Usage:
     pixi run python scripts/diag_miost_equivalence.py           # full year
     DIAG_DAYS=0-30 pixi run python scripts/diag_miost_equivalence.py   # smoke
+    DIAG_MAXITER=4000 DIAG_RTOL=1e-8 ...   # convergence-sensitivity variant
 """
 
 from __future__ import annotations
@@ -87,8 +88,15 @@ def main() -> None:
     obs = _halo_obs()
     _log(f"obs loaded: {len(obs)} in box+halo; days {days[0]}..{days[-1]}")
 
-    windowed = Miost()
-    single = Miost(plan=WindowPlan(starts=(-30.0,), w_days=425.0))
+    maxiter = int(os.environ.get("DIAG_MAXITER", "500"))
+    rtol = float(os.environ.get("DIAG_RTOL", "1e-6"))
+    _log(f"solver: pcg_rtol={rtol} pcg_maxiter={maxiter}")
+    windowed = Miost(pcg_rtol=rtol, pcg_maxiter=maxiter)
+    single = Miost(
+        plan=WindowPlan(starts=(-30.0,), w_days=425.0),
+        pcg_rtol=rtol,
+        pcg_maxiter=maxiter,
+    )
     ref_plan = WindowPlan()
 
     rows: list[dict[str, float | int | bool]] = []
@@ -148,8 +156,8 @@ def main() -> None:
         "right-aligned last). Single: one 425-day window [-30, 395].",
         f"- Days solved: {days[0]}..{days[-1]} ({len(days)}); blend days: {len(blend)}, "
         f"interior days: {len(interior)}.",
-        "- PCG rtol 1e-6 / maxiter 500 on BOTH paths (identical solver settings; any "
-        "residual truncation is common-mode).",
+        f"- PCG rtol {rtol:g} / maxiter {maxiter} on BOTH paths (identical solver "
+        "settings; per-window residuals in the run log).",
         "",
         "## Per-day max|Delta| [m] (worst-case-localized; the headline metric)",
         "",
@@ -184,9 +192,12 @@ def main() -> None:
         "above before Task 13.",
         "",
     ]
-    DOC.parent.mkdir(parents=True, exist_ok=True)
-    DOC.write_text("\n".join(lines))
-    _log(f"doc written -> {DOC}")
+    doc = DOC
+    if maxiter != 500 or rtol != 1e-6:
+        doc = DOC.with_name(DOC.stem + "_sensitivity.md")
+    doc.parent.mkdir(parents=True, exist_ok=True)
+    doc.write_text("\n".join(lines))
+    _log(f"doc written -> {doc}")
     print("\n".join(lines))
 
 

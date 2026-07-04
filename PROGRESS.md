@@ -195,6 +195,24 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
   (the 2-rung oracle ladder got 80/113-km variances). Now derives the element's
   actual wavelength from half_width/1.5. Caught by the duality-oracle work;
   regression test in test_miost_operators.py.
+- **Task 11 (2026-07-03) MEASURED: Jacobi-PCG at (rtol 1e-6, maxiter 500) does
+  NOT converge on real windows** — every production-window solve stalls at
+  ~5e-4 relative residual at the iteration cap, and 500→1000 iters moves the
+  solution by 49% relmax (probe on window w5, α=1.5, ρ=10). Residual falls only
+  ~3.4×/500 iters ⇒ ~3000+ iters for 1e-6. CONSEQUENCES: (a) the first
+  equivalence run's deltas (max|Δ| up to 2.0 m, NOT blend-localized) were
+  solver noise, not windowing — rerun at converged settings before any owner
+  verdict; (b) U2022's "typically 100 iterations" does not transfer to plain
+  Jacobi (their preconditioner is unspecified — brief §8 gap #4 bites);
+  (c) Task-13 per-trial cost is dominated by iters — either raise maxiter
+  (correct, slower) or improve the preconditioner (later, measured). Miost now
+  takes pcg_rtol/pcg_maxiter constructor overrides, recorded in params_key.
+- **Task 11 (2026-07-03) perf/memory rewrites forced by measurement:** the
+  plan's per-element O(n_el × n_obs) assembly masking was ~13 min per 425-d
+  window (probe: 1137 el/s) → vectorized analytic-index bucketing (20 s, 40×);
+  the t-slot-tiled S matrix OOM-killed the single-window run (~255M triplets)
+  → day map factored as S_spatial @ time_contract(η, day) (85× smaller S).
+  Both exactness-pinned by dense-equality tests.
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
