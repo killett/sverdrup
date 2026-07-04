@@ -121,6 +121,15 @@ def main() -> None:
                 f"({time.time() - t0:.0f}s)"
             )
 
+    # SOLVER-NOISE FLOOR: same windowed path at maxiter+2000 on the worst day —
+    # the windowing verdict is only valid where |Delta| clearly exceeds this.
+    worst_day = float(max(rows, key=lambda r: float(r["max_abs"]))["day"])
+    deeper = Miost(pcg_rtol=rtol, pcg_maxiter=maxiter + 2000)
+    mw_ref = np.asarray(windowed.solve(obs, grid, PARAMS, time_days=worst_day).mean)
+    mw_deep = np.asarray(deeper.solve(obs, grid, PARAMS, time_days=worst_day).mean)
+    noise_floor = float(np.abs(mw_ref - mw_deep).max())
+    _log(f"solver-noise floor (day {worst_day:.0f}, +2000 iters): {noise_floor:.4f} m")
+
     blend = [r for r in rows if r["blend"]]
     interior = [r for r in rows if not r["blend"]]
 
@@ -137,13 +146,16 @@ def main() -> None:
 
     # Fallback heuristic surfaced for the owner (the DECISION is the owner's):
     # invoke the pavement +-L_t extension if the worst blend-day max|Delta| is
-    # large vs the field scale OR clearly dominated by blend days.
+    # large vs the field scale OR clearly dominated by blend days — and only
+    # where the deltas exceed the measured solver-noise floor.
     fallback = b_max > 0.05 or (i_max > 0 and b_max > 3.0 * i_max)
     verdict = (
         f"FALLBACK NEEDED: {'yes' if fallback else 'no'} — worst blend-day "
         f"max|Delta| = {b_max:.4f} m ({100 * b_max / max(field_std, 1e-12):.1f}% of the "
         f"median field std {field_std:.3f} m); interior worst = {i_max:.4f} m; "
-        f"ratio blend/interior = {b_max / max(i_max, 1e-12):.2f}"
+        f"ratio blend/interior = {b_max / max(i_max, 1e-12):.2f}; "
+        f"solver-noise floor {noise_floor:.4f} m "
+        f"({'DELTAS ABOVE floor — attributable' if max(b_max, i_max) > 3 * noise_floor else 'deltas NOT clearly above floor — solver-noise-dominated, verdict INVALID'})"
     )
 
     top = sorted(rows, key=lambda r: -float(r["max_abs"]))[:10]
@@ -167,6 +179,8 @@ def main() -> None:
         f"| interior days | {i_med:.4f} | {i_p95:.4f} | {i_max:.4f} |",
         "",
         f"Median single-window field std (scale context): {field_std:.3f} m.",
+        f"Solver-noise floor (windowed path, maxiter {maxiter} vs +2000, worst day): "
+        f"max|delta| = {noise_floor:.4f} m — Delta attribution requires clearing this.",
         f"Worst day overall: day {worst['day']} "
         f"({'blend' if worst['blend'] else 'interior'}), max|Delta| = "
         f"{worst['max_abs']:.4f} m, RMS = {worst['rms']:.4f} m.",

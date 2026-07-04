@@ -207,6 +207,15 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
   (c) Task-13 per-trial cost is dominated by iters — either raise maxiter
   (correct, slower) or improve the preconditioner (later, measured). Miost now
   takes pcg_rtol/pcg_maxiter constructor overrides, recorded in params_key.
+  **LSMR MEASURED (same window): no √κ rescue** — column-scaled LSMR on the
+  stacked LS system reaches normal-eq rres 2.4e-5 in 1073 iters (94 s; ~2× PCG)
+  and 6e-7 in 4448 iters (382 s; ~1.3×). Ill-conditioning is intrinsic
+  (overlapping multiscale elements), not a normal-equations artifact. PCG@8000
+  still only 1.4e-7. Solver-choice/iteration-budget decision goes to the owner
+  at the Task-11 gate (options: strict-convergence maxiter ~6000; paper-faithful
+  fixed ~100-iter budget documented as config — U2022 §3.2.3 ships that way;
+  or a preconditioner-upgrade task). Equivalence rerun at maxiter 6000 with an
+  in-doc solver-noise floor (windowed maxiter-vs-+2000 map delta) IN FLIGHT.
 - **Task 11 (2026-07-03) perf/memory rewrites forced by measurement:** the
   plan's per-element O(n_el × n_obs) assembly masking was ~13 min per 425-d
   window (probe: 1137 el/s) → vectorized analytic-index bucketing (20 s, 40×);
