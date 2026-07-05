@@ -13,11 +13,11 @@
 > Task-12 scripts + Task-13 runner/stage wiring are WRITTEN, awaiting the
 > gate. See "Phase-7 EXECUTION deviations" below for the full finding log.**
 >
-> **▶ RESUME (if the user says "resume"):** active work is **Phase 5 — autotune loop**, **Stage-C
-> REDESIGN IMPLEMENTED — awaiting owner sign-off on the Task-6 USER GATE.** Plan
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 7 — MIOST** (banner above).
+> **Phase 5 — autotune loop / Stage-C redesign: COMPLETE + SIGNED OFF.** Plan
 > `docs/superpowers/plans/2026-07-01-stagec-redesign.md` Tasks 1–5 `completed` + committed
-> (`45bb41f`, `a4a940f`, `ae9020b`, `299d268`, `52ed96e`); Task 6 (DoD user gate) code + evidence
-> DONE; owner signed off with one condition — FIX the offline-skip gap first — which is now DONE.
+> (`45bb41f`, `a4a940f`, `ae9020b`, `299d268`, `52ed96e`); Task 6 (DoD user gate) signed off —
+> the one condition (offline-skip gap) was fixed, closing the gate.
 > **Tuner-debt-cleanup plan (the two carried Task-14 follow-ups) COMPLETE 2026-07-01** — BO now
 > genuinely multi-round (`rounds` threaded through the stage runners, `6e418fa`) + Stage-B gate skips
 > instead of ERRORing on no-admissible (`d7376b8`). See the follow-ups block below.
@@ -224,11 +224,36 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
   stacked LS system reaches normal-eq rres 2.4e-5 in 1073 iters (94 s; ~2× PCG)
   and 6e-7 in 4448 iters (382 s; ~1.3×). Ill-conditioning is intrinsic
   (overlapping multiscale elements), not a normal-equations artifact. PCG@8000
-  still only 1.4e-7. Solver-choice/iteration-budget decision goes to the owner
-  at the Task-11 gate (options: strict-convergence maxiter ~6000; paper-faithful
-  fixed ~100-iter budget documented as config — U2022 §3.2.3 ships that way;
-  or a preconditioner-upgrade task). Equivalence rerun at maxiter 6000 with an
-  in-doc solver-noise floor (windowed maxiter-vs-+2000 map delta) IN FLIGHT.
+  still only 1.4e-7.
+  **OWNER DECISIONS (Task-11 gate, 2026-07-04):**
+  - **PCG budget = BUDGETED SOLVE, STAGE-A-SCOPED ONLY** (rtol target 1e-6,
+    maxiter cap 500): map-space depth-insensitivity MEASURED (worst-day
+    max|Δ| 2.0036 @500 vs 2.0220 m @6000-converged; blend medians 0.5740 vs
+    0.5542), µ/λx are map functionals, U2022 ~100-iteration family precedent.
+    Acceptance configs must state (target, cap, ACHIEVED per-window residual)
+    — implemented: `miost.CONVERGENCE_LOG` telemetry + the gate runner's
+    `solver_budget` / `winner_achieved_residuals` JSON blocks. NEVER claim
+    "identical", always the quantitative insensitivity numbers.
+  - **Stage B re-decides the budget at Tasks 15/16** via the spec-§6.5
+    under-convergence test: PCG's slow modes are prior-dominated,
+    HIGHEST-posterior-variance directions ⇒ member under-convergence
+    plausibly under-disperses exactly where σ matters most. Member generation
+    MUST NOT inherit the 500 cap silently (winner-only ⇒ converged members
+    affordable if the test demands them).
+  - **Preconditioner follow-up RECORDED, not built:** per-rung column
+    equilibration / block-Jacobi if Stage B requires tight solves (5000–6000
+    Jacobi iters on a multiscale dictionary = cross-rung scaling imbalance).
+  - **D4 = time-boxed localization first** (`scripts/diag_miost_localization.py`,
+    ~1–2 h) with PRE-REGISTERED close rules: (i) |Δµ|≤0.005 on the blocked
+    validation track AND flat boundary-distance profile AND top-rung
+    attribution → CLOSE fallback-NOT-invoked + update the doc headline;
+    (ii) profile decays with boundary distance → implement the pavement ±L_t
+    extension + re-run; (iii) Δµ ≤ −0.01 (single wins) → STOP, owner call;
+    (iv) J-identity violated or small-scale signature → defect hunt.
+    0.005<|Δµ|<0.01 → report and hold. Note for the record: the ten worst days
+    cluster near the w5/6 seam (245–252, 264–266) + w4/5 blend (200) —
+    "interior" days within ~L_t of a boundary are consistent with a
+    window-edge mechanism whose footprint exceeds the blend zone.
 - **Task 11 (2026-07-03) perf/memory rewrites forced by measurement:** the
   plan's per-element O(n_el × n_obs) assembly masking was ~13 min per 425-d
   window (probe: 1137 el/s) → vectorized analytic-index bucketing (20 s, 40×);

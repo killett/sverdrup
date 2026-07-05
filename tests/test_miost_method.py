@@ -96,6 +96,24 @@ def test_params_key_serializes_contract() -> None:
         assert token in key
 
 
+def test_convergence_telemetry_appended_per_fresh_solve() -> None:
+    """Budgeted-solve honesty: every fresh window solve appends achieved residuals
+    to miost.CONVERGENCE_LOG; cache hits do not re-append."""
+    from sverdrup.methods import miost as miost_mod
+
+    miost_mod.CONVERGENCE_LOG.clear()
+    m = Miost()
+    m.solve(OBS, GRID, PARAMS, time_days=30.0)  # windows w0 + w1: 2 fresh solves
+    assert len(miost_mod.CONVERGENCE_LOG) == 2
+    entry = miost_mod.CONVERGENCE_LOG[0]
+    assert {"window", "iterations", "final_rel_residual", "params_key_hash"} <= set(
+        entry
+    )
+    assert float(entry["final_rel_residual"]) > 0  # type: ignore[arg-type]
+    m.solve(OBS, GRID, PARAMS, time_days=30.0)  # cache hit: nothing appended
+    assert len(miost_mod.CONVERGENCE_LOG) == 2
+
+
 def test_pcg_overrides_enter_params_key() -> None:
     """Solver settings are part of what eta depends on — overrides must bust the cache."""
     m = Miost(pcg_rtol=1e-8, pcg_maxiter=2000)

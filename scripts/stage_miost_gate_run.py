@@ -38,7 +38,10 @@ from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.stage_a import StageANoAdmissible, StageAReport
 from sverdrup.application.tuning.stage_miost import run_stage_miost
 from sverdrup.application.tuning.strategy import SearchStrategy
+from sverdrup.core.parameters import ConstantProvider
+from sverdrup.methods.miost import CONVERGENCE_LOG, Miost, _params_key_hash
 from sverdrup.methods.miost_basis import BOX_LAT, BOX_LON, HALO_DEG
+from sverdrup.methods.miost_solver import PCG_MAXITER, PCG_RTOL
 from sverdrup.methods.miost_windows import L_T_MAX, WindowPlan
 from sverdrup.validation.input_adapter import load_mapping_obs
 from sverdrup.validation.params import baseline_config
@@ -156,6 +159,7 @@ def _run(
     """Run one strategy; return a serializable row (winner + acceptance, or the outcome)."""
     _log(f"=== {label}: start (n={N_TRIALS}, rounds={rounds}) ===")
     t = time.time()
+    log_start = len(CONVERGENCE_LOG)
     try:
         rep = run_stage_miost(
             scope=scope,
@@ -180,10 +184,22 @@ def _run(
             "traceback": traceback.format_exc(),
             "elapsed_s": int(time.time() - t),
         }
+    # Budgeted-solve honesty: the achieved residuals of every window solved at
+    # the WINNER's params (its search trial + the acceptance map production).
+    _, grid, _ = baseline_config()
+    winner_hash = _params_key_hash(
+        Miost()._params_key(ConstantProvider(rep.winner.trial.params), grid)
+    )
+    achieved = [
+        {k: v for k, v in e.items() if k != "params_key_hash"}
+        for e in CONVERGENCE_LOG[log_start:]
+        if e["params_key_hash"] == winner_hash
+    ]
     row = {
         "acceptance_mu_sigma_lambda_x": list(rep.acceptance),
         "winner_params": rep.winner.trial.params,
         "winner_scores": rep.winner.scores,
+        "winner_achieved_residuals": achieved,
         "their_eval_calls_during_search": rep.their_eval_calls_during_search,
         "precheck_scores": rep.precheck_scores,
         "history": _history_rows(rep),
@@ -214,6 +230,24 @@ def main() -> None:
         "seed": SEED,
         "n_obs_max_window": n_obs_max,
         "calibration": "N/A-for-POINT (capability-conditional; spec 7.4 Stage A)",
+        "solver_budget": {
+            "semantics": (
+                "BUDGETED SOLVE (owner decision, Task-11 gate 2026-07-04, "
+                "Stage-A-scoped): iterations capped; per-window ACHIEVED "
+                "residuals recorded under winner_achieved_residuals. Stage B "
+                "re-decides via the spec-6.5 under-convergence test — member "
+                "generation must NOT inherit this cap silently."
+            ),
+            "pcg_rtol_target": PCG_RTOL,
+            "pcg_maxiter_cap": PCG_MAXITER,
+            "depth_insensitivity_evidence": {
+                "worst_day_max_delta_m_at_cap_500": 2.0036,
+                "worst_day_max_delta_m_converged_6000": 2.0220,
+                "blend_median_max_delta_m_at_cap_500": 0.5740,
+                "blend_median_max_delta_m_converged_6000": 0.5542,
+                "source": "docs/validation/miost_equivalence_diagnostic.md",
+            },
+        },
     }
     RESULTS.write_text(json.dumps(results, indent=2))
 

@@ -214,6 +214,18 @@ class MiostPointDistribution:
         return out
 
 
+# Budgeted-solve telemetry (owner decision, Task-11 gate 2026-07-04): every fresh
+# window solve appends its ACHIEVED residual here so acceptance configs can state
+# (target, cap, achieved) — the honest record of a capped solve. Consumers
+# (gate runners) snapshot/filter by params_key_hash; tests may clear it.
+CONVERGENCE_LOG: list[dict[str, object]] = []
+
+
+def _params_key_hash(pk: str) -> str:
+    """Short stable hash of a params_key for telemetry correlation."""
+    return hashlib.blake2b(pk.encode(), digest_size=8).hexdigest()
+
+
 def _obs_fingerprint(obs: ObsWindow) -> str:
     """Content hash of the obs (spec §4.2.1: wrong-becomes-slow, never wrong-becomes-wrong)."""
     h = hashlib.blake2b(digest_size=16)
@@ -392,6 +404,18 @@ class Miost:
             rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
         )
         del g, solver  # G freed after the window solve (hardening 2)
+        CONVERGENCE_LOG.append(
+            {
+                "window": w.id,
+                "iterations": int(report.iterations.max())
+                if report.iterations.size
+                else 0,
+                "final_rel_residual": float(report.final_rel_residual.max())
+                if report.final_rel_residual.size
+                else 0.0,
+                "params_key_hash": _params_key_hash(pk),
+            }
+        )
         if (
             report.final_rel_residual.size
             and report.final_rel_residual.max() > self.pcg_rtol
