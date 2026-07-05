@@ -254,6 +254,23 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
     cluster near the w5/6 seam (245–252, 264–266) + w4/5 blend (200) —
     "interior" days within ~L_t of a boundary are consistent with a
     window-edge mechanism whose footprint exceeds the blend zone.
+  - **D4 LOCALIZATION MEASURED (2026-07-04,
+    `docs/validation/miost_equivalence_localization.md`) → REPORT-AND-HOLD:**
+    Δµ = **−0.0066** (windowed 0.9391 / single 0.9457 on the blocked j3 track;
+    λx 96.3 vs 88.3 km) — inside the explicit owner-judgment band
+    (0.005<|Δµ|<0.01). Profile: WEAK decay with boundary distance
+    (corr −0.223; near<6d mean 0.678 vs far≥15d 0.495 m) on top of a
+    distance-independent ~0.5 m floor. Attribution: NOT top-rung — mid-ladder
+    113–320 km dominates (top-2-rung share 0.32 worst / 0.23 far day);
+    worst-day argmax 18 cells from the nearest edge (interior). J-identity OK
+    (J_single 3.08e4 ≪ J_stitched 5.96e5 — reference is the joint minimizer;
+    no defect signature; Tier-1 oracles green). READING: a real
+    information-pooling difference in the mesoscale band (year-long temporal
+    chaining) + a modest boundary-linked component; the pavement ±L_t
+    extension would plausibly shave only the decaying component, not the
+    floor. Numbers big-picture: UNTUNED (α=1.5, ρ=10) windowed µ already
+    0.9391 ≫ the 0.85 floor. HELD for owner: accept-with-recorded-cost vs
+    pavement extension vs wider-V/longer-W (within predicate budget).
 - **Task 11 (2026-07-03) perf/memory rewrites forced by measurement:** the
   plan's per-element O(n_el × n_obs) assembly masking was ~13 min per 425-d
   window (probe: 1137 el/s) → vectorized analytic-index bucketing (20 s, 40×);
