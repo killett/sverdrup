@@ -269,8 +269,30 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
     chaining) + a modest boundary-linked component; the pavement ±L_t
     extension would plausibly shave only the decaying component, not the
     floor. Numbers big-picture: UNTUNED (α=1.5, ρ=10) windowed µ already
-    0.9391 ≫ the 0.85 floor. HELD for owner: accept-with-recorded-cost vs
-    pavement extension vs wider-V/longer-W (within predicate budget).
+    0.9391 ≫ the 0.85 floor.
+  - **CLOSED (OWNER DECISION 2026-07-05): accept-with-recorded-cost; fallback
+    NOT invoked.** Conditions of the close:
+    (1) cost is POINT-MEASURED at the untuned diagnostic point — never state a
+    universal "windowing cost";
+    (2) WINNER-POINT RE-MEASUREMENT at Task-13 acceptance: if a single-window
+    solve fits the RAM budget at the winner's α (~α≥1.2), one full-year
+    single-window solve at winner params, (Δµ, Δλx) on the VALIDATION track
+    only — never c2 (c2 = exactly once, windowed winner); if infeasible,
+    record "cost not measurable at winner's alpha". Implemented in
+    `scripts/stage_miost_gate_run.py` (`winner_point_windowing_cost`).
+    (3) mechanism wording stays modest (information-pooling, mid-ladder
+    113–320 km, ~0.18 m boundary-linked minority over ~0.5 m floor; the 19×
+    J-gap is expected for ANY stitch — defect check only);
+    (4) doc headline updated to FALLBACK NOT INVOKED.
+    REJECTED with reasons: pavement extension (targets the minority component,
+    cannot restore year-long chaining; shelved as post-gate polish IF the
+    tuned winner shows boundary artifacts); W=90/stride 60 (spends the binding
+    RAM resource — kills α=0.75 at halo counts ~10.5 GB — to shrink, not
+    remove, the floor; dominated trade like 12-dir);
+    single-window-as-product (KNOWN NOT-TAKEN CONTINGENCY: locks α≥~1.2
+    permanently, reprices Stage-B member generation, abandons owner-decided
+    D3/D5 — revisit only as an owner re-scope if the tuned windowed winner
+    disappoints at the gate).
 - **Task 11 (2026-07-03) perf/memory rewrites forced by measurement:** the
   plan's per-element O(n_el × n_obs) assembly masking was ~13 min per 425-d
   window (probe: 1137 el/s) → vectorized analytic-index bucketing (20 s, 40×);

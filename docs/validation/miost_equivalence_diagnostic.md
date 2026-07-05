@@ -41,6 +41,24 @@ Worst day overall: day 250 (interior), max|Delta| = 2.0220 m, RMS = 0.1823 m.
 
 ## Verdict
 
-FALLBACK NEEDED: yes — worst blend-day max|Delta| = 1.5242 m (622.3% of the median field std 0.245 m); interior worst = 2.0220 m; ratio blend/interior = 0.75; solver-noise floor 0.0000 m (DELTAS ABOVE floor — attributable)
+**FALLBACK NOT INVOKED — cost recorded (OWNER DECISION, Task-11 close 2026-07-05);
+see `miost_equivalence_localization.md` + the PROGRESS close entry.**
 
-**Owner checkpoint:** the pavement +-L_t temporal-slot extension (D4 fallback) is NOT implemented; decide invoke / not-needed from the numbers above before Task 13.
+Recorded windowing cost — POINT-MEASURED at the untuned diagnostic point
+(alpha=1.5, rho=10, q_slope=2, L_t=10), NOT a universal figure: Delta-mu =
+-0.0066 (windowed 0.9391 / single 0.9457, blocked j3 track), Delta-lambda_x =
++8 km (96.3 vs 88.3). Winner-point re-measurement happens at Task-13 acceptance
+(validation-only, feasibility-conditional; c2 stays touched exactly once, by
+the windowed winner).
+
+Mechanism (modest wording): consistent with information-pooling differences
+dominated by the mid-ladder (113-320 km) band — year-long temporal chaining
+that 60-day windows cut — plus a ~0.18 m boundary-linked minority component
+(weak decay, corr -0.223, over a ~0.5 m floor). The 19x J-gap in probe 4 is
+expected for ANY stitched solution — it was a defect check on the reference
+(passed), not a quality metric.
+
+Superseded heuristic verdict (for the trail): the script's automated line read
+"FALLBACK NEEDED: yes" from the pre-localization blend-day heuristic; the
+localization probes showed the deltas are NOT the blend-seam mechanism that
+heuristic assumes.

@@ -38,6 +38,7 @@ from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.stage_a import StageANoAdmissible, StageAReport
 from sverdrup.application.tuning.stage_miost import run_stage_miost
 from sverdrup.application.tuning.strategy import SearchStrategy
+from sverdrup.core.observations import ObsWindow
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.methods.miost import CONVERGENCE_LOG, Miost, _params_key_hash
 from sverdrup.methods.miost_basis import BOX_LAT, BOX_LON, HALO_DEG
@@ -114,8 +115,10 @@ def _scope() -> Path:
     return Path(fd.name)
 
 
-def _n_obs_max_window(scope: Path) -> int:
-    """Halo-inclusive max obs count over the 9 production windows (StoredG pricing)."""
+def _halo_obs(scope: Path) -> ObsWindow:
+    """Six mapping missions subset to box + halo (production framing)."""
+    from sverdrup.core.observations import DiagonalErrorModel
+
     cfg = json.loads(scope.read_text())
     provider, _, _ = baseline_config()
     obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
@@ -126,12 +129,129 @@ def _n_obs_max_window(scope: Path) -> int:
         & (c[:, 1] >= BOX_LAT[0] - HALO_DEG)
         & (c[:, 1] <= BOX_LAT[1] + HALO_DEG)
     )
-    t = c[in_halo, 2]
+    idx = np.nonzero(in_halo)[0]
+    err = DiagonalErrorModel(np.asarray(obs.error_model.variance)[idx])  # type: ignore[attr-defined]
+    return ObsWindow.from_arrays(
+        c[idx, 0],
+        c[idx, 1],
+        c[idx, 2],
+        obs.values()[idx],
+        err,
+        None if obs.mission is None else obs.mission[idx],
+    )
+
+
+def _n_obs_max_window(scope: Path) -> int:
+    """Halo-inclusive max obs count over the 9 production windows (StoredG pricing)."""
+    t = _halo_obs(scope).coords()[:, 2]
     counts = [
         int(((t >= w.start_day - L_T_MAX) & (t <= w.end_day + L_T_MAX)).sum())
         for w in WindowPlan().windows
     ]
     return max(counts)
+
+
+def _score_map_on_validation(map_path: Path, cfg: dict[str, Any]) -> dict[str, float]:
+    """Blocked-j3-track skill of one map file (mu + lambda_x when it resolves)."""
+    import sverdrup.validation.their_eval as te
+    from sverdrup.eval.skill_score import leaderboard_nrmse
+    from sverdrup.eval.spectral import (
+        ShortTrackError,
+        UnresolvedScaleError,
+        effective_resolution_lambda_x,
+    )
+
+    te._prepare_imports()
+    from src.mod_inout import read_l3_dataset
+    from src.mod_interp import interp_on_alongtrack
+
+    box = dict(
+        lon_min=295.0,
+        lon_max=305.0,
+        lat_min=33.0,
+        lat_max=43.0,
+        time_min=cfg["time_min"],
+        time_max=cfg["time_max"],
+    )
+    ds_at = read_l3_dataset(str(cfg["val_track_path"]), **box)
+    time_a, lat_a, lon_a, ssh_a, interp = interp_on_alongtrack(
+        str(map_path), ds_at, is_circle=False, **box
+    )
+    out = {
+        "mu_score": float(
+            leaderboard_nrmse(np.asarray(ssh_a, float), np.asarray(interp, float))
+        )
+    }
+    try:
+        out["lambda_x"] = float(
+            effective_resolution_lambda_x(
+                np.asarray(time_a),
+                np.asarray(lat_a),
+                np.asarray(lon_a),
+                np.asarray(ssh_a, float),
+                np.asarray(interp, float),
+            )
+        )
+    except (UnresolvedScaleError, ShortTrackError) as exc:
+        out["lambda_x"] = float("nan")
+        _log(f"winner-point lambda_x unresolved: {type(exc).__name__}")
+    return out
+
+
+def _winner_point_windowing_cost(
+    scope: Path, winner_params: dict[str, float], winner_scores: dict[str, float]
+) -> dict[str, Any]:
+    """Task-11 close condition 2: re-measure the windowing cost at the WINNER's params.
+
+    Validation-only, feasibility-conditional, no switching: one full-year
+    single-window solve at the winner's params IF stored-G fits the budget at
+    the winner's alpha; (Delta-mu, Delta-lambda_x) vs the winner's own
+    validation scores. c2 is never touched here.
+    """
+    from sverdrup.methods.miost_windows import WindowPlan as _WP
+    from sverdrup.validation.input_adapter import load_mdt_grid
+    from sverdrup.validation.output_adapter import write_map
+
+    cfg = json.loads(scope.read_text())
+    obs = _halo_obs(scope)
+    n_single = len(obs)
+    pred = StoredGFeasibility(n_obs_max=n_single, budget_bytes=8e9)
+    reason = pred.explain(dict(winner_params))
+    if reason is not None:
+        return {
+            "status": (
+                "cost not measurable at winner's alpha "
+                f"(single-window stored-G exceeds budget): {reason}"
+            )
+        }
+    provider, grid, _ = baseline_config()
+    mdt = load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
+    single = Miost(plan=_WP(starts=(-30.0,), w_days=425.0))
+    days = list(cfg["validation_days"])
+    maps = [
+        np.asarray(
+            single.solve(
+                obs, grid, ConstantProvider(dict(winner_params)), float(d)
+            ).mean
+        )
+        + mdt
+        for d in days
+    ]
+    epoch = np.datetime64("2017-01-01")
+    times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
+    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
+    dest = OUT_DIR / "winner_single_window.nc"
+    write_map(times, np.unique(lat2d), np.unique(lon2d), np.stack(maps), dest)
+    single_scores = _score_map_on_validation(dest, cfg)
+    return {
+        "caveat": "POINT-MEASURED at the winner's params; not a universal windowing cost",
+        "windowed_validation": winner_scores,
+        "single_window_validation": single_scores,
+        "delta_mu": float(winner_scores.get("mu_score", float("nan")))
+        - single_scores["mu_score"],
+        "delta_lambda_x": float(winner_scores.get("lambda_x", float("nan")))
+        - single_scores.get("lambda_x", float("nan")),
+    }
 
 
 def _history_rows(rep: StageAReport) -> list[dict[str, Any]]:
@@ -284,6 +404,14 @@ def main() -> None:
         }
         RESULTS.write_text(json.dumps(results, indent=2))
         _log(f"winner: {results['winner']}")
+        # Task-11 close condition 2: winner-point windowing-cost re-measurement
+        # (validation-only, feasibility-conditional; c2 untouched here).
+        _log("winner-point windowing-cost re-measurement ...")
+        results["winner_point_windowing_cost"] = _winner_point_windowing_cost(
+            scope, row["winner_params"], row["winner_scores"]
+        )
+        RESULTS.write_text(json.dumps(results, indent=2))
+        _log(f"windowing cost: {results['winner_point_windowing_cost']}")
     else:
         _log("no admissible winner in either strategy — see per-strategy rows")
     _log("=== ALL DONE ===")
