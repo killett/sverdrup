@@ -103,7 +103,7 @@
     {
       "id": 12,
       "subject": "Task 12: Tier-3 + 12-dir diagnostic tools",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         8
       ],
