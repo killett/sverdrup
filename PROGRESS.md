@@ -1,20 +1,43 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed (through
-> `105501b`); Task-11 gate CLOSED by owner 2026-07-05 (accept-with-recorded-
-> cost; see the close entry below). Task 13 (STAGE-A GATE, USER GATE) —
-> **FULL RUN LAUNCHED 2026-07-05** (`scripts/stage_miost_gate_run.py`, nohup
-> PID in `data/2021a_ssh_mapping_ose/ours/stage_miost_gate.pid`, log+results
-> alongside; Sobol 16 → BO 16×4, budgeted-solve 1e-6/500, n_obs_max_window
-> 16,066, winner-point windowing-cost re-measurement wired; §7.2 inventory
-> green pre-launch: 382 passed / 9 skipped / 1 xfailed; dev smoke EXIT=0
-> end-to-end incl. c2 smoke touch + re-measurement). DURABILITY: detached
-> process survives the agent session, NOT a container teardown; results JSON
-> persists per strategy — on resume, if results are partial AND the PID is
-> dead, relaunch: `nohup pixi run python scripts/stage_miost_gate_run.py >
-> data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log 2>&1 &`. On
-> completion: run Task-12 diagnostics on the winner map + present the §7.4
-> evidence pack for owner sign-off. PUSH STILL BLOCKED (no deploy key).**
+> **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
+> gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
+> below). Task 13 (STAGE-A GATE, USER GATE) — FULL RUN LAUNCHED 2026-07-05,
+> DETACHED via nohup (survives session clear; NOT container teardown).**
+>
+> **RESUME PROTOCOL (one command):**
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
+> (tracker: Tasks 1–12 completed, Task 13 in_progress). Then, IN ORDER:
+> 1. `tail data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log` — the run
+>    prints `=== ALL DONE ===` when finished.
+> 2. STILL RUNNING (PID in `…/ours/stage_miost_gate.pid` alive, log
+>    advancing; ~33 trials total, Sobol 16 then BO 16 in 4 rounds, roughly
+>    20–40 min/trial): do NOT relaunch; monitor until done.
+> 3. DEAD + results partial (`…/ours/stage_miost_gate_results.json` missing
+>    the `bo` or `winner` keys): relaunch —
+>    `nohup pixi run python scripts/stage_miost_gate_run.py > data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log 2>&1 &`
+>    (finished-strategy rows persist; a mid-strategy death restarts only that
+>    strategy). c2 note: a relaunch re-touches c2 at acceptance — fine; the
+>    gate's "once" = the SIGNED-OFF run's single touch.
+> 4. DONE: assemble the §7.4 Stage-A evidence pack for owner sign-off —
+>    (a) results JSON: winner row (µ≥0.85?), acceptance (µ,σ,λx), history
+>    incl. exclusion reasons, solver_budget + winner_achieved_residuals,
+>    winner_point_windowing_cost (Task-11 close condition 2);
+>    (b) regenerate Task-12 diagnostics from the winner:
+>    `pixi run python scripts/diag_miost_tier3.py` (default input = the
+>    acceptance map `…/ours/stage_miost_acceptance.nc`) and
+>    `pixi run python scripts/diag_miost_ndir12.py` (default = results JSON);
+>    (c) full suite green (`pixi run test`, no deselect; 382/9/1 at launch);
+>    (d) STOP — owner sign-off closes Task 13; Tasks 14–19 (Stage B) stay
+>    hard-blocked until then.
+>
+> Launch state for the record: budgeted-solve 1e-6/500 (owner-decided,
+> Stage-A-scoped), CompositeFeasibility(StoredG n_obs_max=16,066 +
+> Coherence), bars_for(POINT), seed 1, temporal_half_window_days=425;
+> §7.2 inventory green pre-launch (382 passed / 9 skipped / 1 xfailed);
+> dev smoke EXIT=0 end-to-end (incl. c2 smoke touch + winner-point
+> re-measurement path). PUSH STILL BLOCKED (no deploy key in container —
+> owner must install; local history is complete).
 >
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 7 — MIOST** (banner above).
 > **Phase 5 — autotune loop / Stage-C redesign: COMPLETE + SIGNED OFF.** Plan
