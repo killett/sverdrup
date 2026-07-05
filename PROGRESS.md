@@ -1,17 +1,20 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE-7 EXECUTION IN FLIGHT (2026-07-03): Tasks 1–10 COMPLETE + committed
-> (through `e519b68`); Task 11 (USER GATE) STOPPED FOR OWNER — the D4
-> windowed-vs-single-window diagnostic is recorded
-> (`docs/validation/miost_equivalence_diagnostic.md`, converged solves,
-> noise floor 0.0000 m): deltas are REAL and NOT blend-localized (blend max
-> 1.52 m / interior max 2.02 m vs field std 0.245 m). Owner must decide
-> (a) the D4 fallback (pavement ±L_t extension — note it targets blend seams,
-> which are NOT the dominant term) and (b) the solver budget for Task 13
-> (Jacobi-PCG needs ~5000–6000 iters for rtol 1e-6; ~100-iter paper-faithful
-> budget produced map-space-identical deltas here; LSMR only ~1.3–2×).
-> Task-12 scripts + Task-13 runner/stage wiring are WRITTEN, awaiting the
-> gate. See "Phase-7 EXECUTION deviations" below for the full finding log.**
+> **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed (through
+> `105501b`); Task-11 gate CLOSED by owner 2026-07-05 (accept-with-recorded-
+> cost; see the close entry below). Task 13 (STAGE-A GATE, USER GATE) —
+> **FULL RUN LAUNCHED 2026-07-05** (`scripts/stage_miost_gate_run.py`, nohup
+> PID in `data/2021a_ssh_mapping_ose/ours/stage_miost_gate.pid`, log+results
+> alongside; Sobol 16 → BO 16×4, budgeted-solve 1e-6/500, n_obs_max_window
+> 16,066, winner-point windowing-cost re-measurement wired; §7.2 inventory
+> green pre-launch: 382 passed / 9 skipped / 1 xfailed; dev smoke EXIT=0
+> end-to-end incl. c2 smoke touch + re-measurement). DURABILITY: detached
+> process survives the agent session, NOT a container teardown; results JSON
+> persists per strategy — on resume, if results are partial AND the PID is
+> dead, relaunch: `nohup pixi run python scripts/stage_miost_gate_run.py >
+> data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log 2>&1 &`. On
+> completion: run Task-12 diagnostics on the winner map + present the §7.4
+> evidence pack for owner sign-off. PUSH STILL BLOCKED (no deploy key).**
 >
 > **▶ RESUME (if the user says "resume"):** active work is **Phase 7 — MIOST** (banner above).
 > **Phase 5 — autotune loop / Stage-C redesign: COMPLETE + SIGNED OFF.** Plan
