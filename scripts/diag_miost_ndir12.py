@@ -22,6 +22,7 @@ from typing import Any
 from sverdrup.application.splits import make_splits
 from sverdrup.application.tuning.feasibility import StoredGFeasibility
 from sverdrup.application.tuning.stage_a import _build_scorer, _subset, _Win
+from sverdrup.application.tuning.stage_miost import MIOST_HALF_WINDOW_DAYS
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.registry import METHODS
 from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
@@ -66,7 +67,11 @@ def main() -> None:
         ]
     else:
         cfg = _full_year_cfg()
-        provider, grid, half = baseline_config()
+        provider, grid, _oi_half = baseline_config()
+        # Miost subsets obs per WINDOW itself: the scorer must hand it the wide
+        # obs span (the gate runner's MIOST_HALF_WINDOW_DAYS), not OI's +-14 d —
+        # a narrow span trips the window-support ValueError on real plans.
+        half = MIOST_HALF_WINDOW_DAYS
         obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
         mdt = (
             load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
