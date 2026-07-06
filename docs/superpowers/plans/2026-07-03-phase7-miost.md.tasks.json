@@ -143,11 +143,11 @@
     {
       "id": 16,
       "subject": "Task 16: Stage-B exactness oracle + under-convergence test (STAGE B)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         15
       ],
-      "description": "**Goal:** Prove the ensemble samples the exact posterior A^-1 on a small case; demonstrate the PCG-tolerance statistical contract (spec 6.5).\n\n**Files:**\n- Test: `tests/test_miost_ensemble_oracle.py`\n\n**Acceptance Criteria:**\n- [ ] m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\n- [ ] under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\n\n**Verify:** pixi run pytest tests/test_miost_ensemble_oracle.py -q\n\n**Steps:** Plan doc Task 16 (duality-oracle geometry, single window).\n\n```json:metadata\n{\"files\": [\"tests/test_miost_ensemble_oracle.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_ensemble_oracle.py -q\", \"acceptanceCriteria\": [\"m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\", \"under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\"], \"modelTier\": \"standard\"}\n```"
+      "description": "**Goal:** Prove the ensemble samples the exact posterior A^-1 on a small case; demonstrate the PCG-tolerance statistical contract (spec 6.5).\n\n**Files:**\n- Test: `tests/test_miost_ensemble_oracle.py`\n\n**Acceptance Criteria:**\n- [ ] m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\n- [ ] under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\n\n**Verify:** pixi run pytest tests/test_miost_ensemble_oracle.py -q\n\n**Steps:** Plan doc Task 16 (duality-oracle geometry, single window).\n\n```json:metadata\n{\"files\": [\"tests/test_miost_ensemble_oracle.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_ensemble_oracle.py -q\", \"acceptanceCriteria\": [\"m=4000 members: coefficient covariance vs dense A^-1, Frobenius rel err < 3*sqrt(2/(m-1)); member mean -> eta^a within MC error\", \"under-convergence: pcg_rtol=0.5 members' covariance error exceeds tight-rtol error by >3x (both printed)\"], \"modelTier\": \"standard\"}\n```\n\nDEVIATION (2026-07-06): plan's Frobenius bound statistically invalid (scales sqrt(n/m)); exactness proven via whitened-identity oracle instead \u2014 trace/n 0.99959 (tol 0.0018), under-convergence 64x. See PROGRESS deviations."
     },
     {
       "id": 17,
@@ -206,5 +206,5 @@
       "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B."
     }
   ],
-  "lastUpdated": "2026-07-06T19:30:00+00:00"
+  "lastUpdated": "2026-07-06T21:00:00+00:00"
 }

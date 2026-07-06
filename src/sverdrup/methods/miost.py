@@ -314,6 +314,49 @@ def _obs_identity(
     return np.ascontiguousarray(np.column_stack([lon, lat, t, mh]))
 
 
+def member_rhs_matrix(
+    g: sparse.csr_matrix,
+    r: np.ndarray,
+    y: np.ndarray,
+    q: np.ndarray,
+    obs_identity: np.ndarray,
+    els_identity: np.ndarray,
+    m: int,
+    root: Seed,
+) -> np.ndarray:
+    """Build the m member right-hand sides for one window (spec 6.2).
+
+    Column i is ``G^T R^-1 (y + eps'_i) + Q^-1 eta~_i`` with identity-keyed
+    CRN perturbations. Shared by :meth:`Miost.sample_members` and the
+    Stage-B exactness oracle — one construction, tested against dense
+    ``A^-1`` on the oracle geometry.
+
+    Args:
+        g: CSR observation operator for the window.
+        r: (n_obs,) diagonal R.
+        y: (n_obs,) observed values (empty allowed).
+        q: (n_el,) diagonal Q.
+        obs_identity: (n_obs, 4) CRN identity rows (see _obs_identity).
+        els_identity: (n_el, 6) element identity rows.
+        m: Member count.
+        root: CRN seed root.
+
+    Returns:
+        (n_el, m) RHS matrix.
+    """
+    from sverdrup.methods.miost_crn import coef_noise, obs_noise
+
+    base = rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
+    b = np.empty((q.size, m))
+    for i in range(m):
+        eta_t = coef_noise(i, els_identity, q, root)
+        b[:, i] = base + eta_t / q
+        if y.size:
+            eps = obs_noise(i, obs_identity, r, root)
+            b[:, i] += g.T @ (eps / r)
+    return b
+
+
 class Miost:
     """MIOST window-cache Method (spec §4.2). native_capability = POINT (Stage A)."""
 
@@ -455,7 +498,6 @@ class Miost:
             MiostEnsembleDistribution,
             ensemble_provenance,
         )
-        from sverdrup.methods.miost_crn import coef_noise, obs_noise
 
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
@@ -478,15 +520,8 @@ class Miost:
             g = build_g(spec, els, lon, lat, t)
             q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
             r = np.full(y.size, R_REF)
-            base = rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
             obs_ident = _obs_identity(lon, lat, t, mission)
-            b = np.empty((q.size, m))
-            for i in range(m):
-                eta_t = coef_noise(i, els.identity, q, root)
-                b[:, i] = base + eta_t / q
-                if y.size:
-                    eps = obs_noise(i, obs_ident, r, root)
-                    b[:, i] += g.T @ (eps / r)
+            b = member_rhs_matrix(g, r, y, q, obs_ident, els.identity, m, root)
             solver = MiostSolver(
                 g,
                 r_diag=r,

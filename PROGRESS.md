@@ -459,6 +459,24 @@ PUSH STILL BLOCKED (no GitHub credentials in container — chore task #6): origi
   the t-slot-tiled S matrix OOM-killed the single-window run (~255M triplets)
   → day map factored as S_spatial @ time_contract(η, day) (85× smaller S).
   Both exactness-pinned by dense-equality tests.
+- **Task 16 (2026-07-06): the plan's exactness bound was statistically
+  invalid — replaced by a whitened-identity oracle (spec governs).** The
+  plan demanded m=4000 member covariance match dense A⁻¹ at Frobenius
+  rel err < 3·√(2/(m−1)) ≈ 0.067 — but the rel Frobenius error of an
+  n×n sample covariance from m draws scales as √(n/m) (measured 0.90 at
+  n_el=3696), a SCALAR-variance bound misapplied matrix-wide;
+  unsatisfiable for any realistic basis (n=200 already gives 0.22).
+  Exactness is instead proven on whitened anomalies Z = L⁻¹(members−mean),
+  A⁻¹ = LLᵀ (exact sampling ⇒ Z ~ N(0,I)) — a TIGHTER test:
+  trace/n = 0.99959 (5σ tol ±0.0018), worst whitened variance dev
+  0.087 < 0.112, offdiag mean-square 2.50e-04 = 1/m exactly. Same
+  failure modes covered (missing Q⁻¹η̃ collapses whitened prior
+  directions; wrong ε scale blows the trace; m-vs-(m−1) exceeds 5σ).
+  Under-convergence AC met: rtol=0.5 members deviate 64× the tight solve
+  (0.0261 vs 0.0004, >3× demanded). The CONSTRUCTION was exact all
+  along; only the yardstick changed. Bonus hardening: member RHS
+  construction factored to `member_rhs_matrix` so the oracle tests the
+  PRODUCTION path sample_members uses.
 
 ## STAGE-C REDESIGN BRIEF (read first — the consolidated handoff, 2026-06-30)
 
