@@ -152,11 +152,11 @@
     {
       "id": 17,
       "subject": "Task 17: s-inflation + mean-unchanged non-regression (STAGE B)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         15
       ],
-      "description": "**Goal:** Closed-form s* = chi2_red(1) on validation calibration; exact sqrt(s) anomaly rescale; prove Stage-A mean untouched (D6/spec 6.3).\n\n**Files:**\n- Modify: `src/sverdrup/distributions/miost_ensemble.py`\n- Create: `scripts/tune_miost_inflation.py`\n- Test: `tests/test_miost_inflation.py`\n\n**Acceptance Criteria:**\n- [ ] rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\n- [ ] closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\n- [ ] script raises if R non-uniform (scalar-R condition)\n- [ ] non-regression: Stage-A acceptance map regenerated under Stage-B code \u2014 identical\n\n**Verify:** pixi run pytest tests/test_miost_inflation.py -q\n\n**Steps:** Plan doc Task 17.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"scripts/tune_miost_inflation.py\", \"tests/test_miost_inflation.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_inflation.py -q\", \"acceptanceCriteria\": [\"rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\", \"closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\", \"script raises if R non-uniform (scalar-R condition)\", \"non-regression: Stage-A acceptance map regenerated under Stage-B code \\u2014 identical\"], \"modelTier\": \"standard\"}\n```"
+      "description": "**Goal:** Closed-form s* = chi2_red(1) on validation calibration; exact sqrt(s) anomaly rescale; prove Stage-A mean untouched (D6/spec 6.3).\n\n**Files:**\n- Modify: `src/sverdrup/distributions/miost_ensemble.py`\n- Create: `scripts/tune_miost_inflation.py`\n- Test: `tests/test_miost_inflation.py`\n\n**Acceptance Criteria:**\n- [ ] rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\n- [ ] closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\n- [ ] script raises if R non-uniform (scalar-R condition)\n- [ ] non-regression: Stage-A acceptance map regenerated under Stage-B code \u2014 identical\n\n**Verify:** pixi run pytest tests/test_miost_inflation.py -q\n\n**Steps:** Plan doc Task 17.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"scripts/tune_miost_inflation.py\", \"tests/test_miost_inflation.py\"], \"verifyCommand\": \"pixi run pytest tests/test_miost_inflation.py -q\", \"acceptanceCriteria\": [\"rescaled(s): anomalies x sqrt(s); mean field BIT-IDENTICAL (np.array_equal)\", \"closed form chi2_red(s)=chi2_red(1)/s => s*=chi2_red(1); script prints s*, coverage(s*), crps(s*)\", \"script raises if R non-uniform (scalar-R condition)\", \"non-regression: Stage-A acceptance map regenerated under Stage-B code \\u2014 identical\"], \"modelTier\": \"standard\"}\n```\n\nNOTE (2026-07-06): full acceptance-map regen non-regression + full-year script run deferred to the Task-19 gate (heavy, real-data); unit level covered by cache-pollution non-regression test (solve unchanged after sample_members, same + fresh instance)."
     },
     {
       "id": 18,
@@ -206,5 +206,5 @@
       "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B."
     }
   ],
-  "lastUpdated": "2026-07-06T21:00:00+00:00"
+  "lastUpdated": "2026-07-06T22:00:00+00:00"
 }

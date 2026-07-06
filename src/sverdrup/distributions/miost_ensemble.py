@@ -145,6 +145,40 @@ class MiostEnsembleDistribution:
             time_days=time_days,
         )
 
+    def rescaled(self, s: float) -> MiostEnsembleDistribution:
+        """Exact s-inflation: anomalies x sqrt(s); the mean is UNTOUCHED (D6).
+
+        Args:
+            s: Variance inflation factor (s* = chi2_red(1) closed form).
+
+        Returns:
+            A new distribution with variance exactly s x the original and a
+            DIAGONAL_INFLATION transform recording s; the mean field is the
+            same array (bit-identical).
+        """
+        prov = UncertaintyProvenance(
+            native_capability=self.provenance.native_capability,
+            transformations=[
+                *self.provenance.transformations,
+                UncertaintyTransform(
+                    kind=TransformKind.DIAGONAL_INFLATION, params={"s": float(s)}
+                ),
+            ],
+        )
+        root_s = float(np.sqrt(s))
+        return MiostEnsembleDistribution(
+            grid=self.grid,
+            mean=self.mean,
+            provenance=prov,
+            time_days=self.time_days,
+            m=self.m,
+            _spec=self._spec,
+            _etas_a=self._etas_a,
+            _anoms={w: a * root_s for w, a in self._anoms.items()},
+            _window_starts=self._window_starts,
+            _w_days=self._w_days,
+        )
+
     def save_state(self, path: Path, anomalies_f32: bool = False) -> None:
         """Persist the representation-tagged coefficient ensemble.
 
