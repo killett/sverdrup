@@ -2,23 +2,45 @@
 
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
-> below). Task 13 (STAGE-A GATE, USER GATE) — FULL RUN LAUNCHED 2026-07-05,
-> DETACHED via nohup (survives session clear; NOT container teardown).**
+> below). Task 13 (STAGE-A GATE, USER GATE) — first full run OOM-DIED
+> 2026-07-05 at BO trial 27 (α=0.51); RELAUNCH BLOCKED ON OWNER FREEING
+> HOST RAM (owner-decided 2026-07-05). Replay cache ready (`851c05a`).**
+>
+> **OOM post-mortem (2026-07-05):** run died at BO trial 27 (α=0.510) after
+> 35 measured trials. StoredGFeasibility passed it CORRECTLY per its own
+> arithmetic (G = 3.41 GB < 8 GB paper budget; predicate prices stored-G
+> only) — but the box had only ~3.9 GB actually available (~11.8 GB held
+> OUTSIDE the container, swap 2/2 GB exhausted). Crash boundary measured:
+> Sobol α=0.560 (G≈2.8 GB) survived; α=0.510 (3.41 GB) died. Deterministic
+> seed ⇒ a blind relaunch re-proposes the same point and dies again.
+> CORRECTION: the old claim "finished-strategy rows persist ⇒ only the dead
+> strategy restarts" was WRONG — `main()` re-runs BOTH strategies; the
+> replay cache (below) is the real recovery mechanism.
+> **Owner decisions (2026-07-05):** (1) owner frees host RAM to ≥10 GB
+> available (≥6 GB = bare minimum for the α∈[0.5,1.5] box; ≥10 GB keeps the
+> winner-point single-window re-measurement feasible), THEN relaunch with
+> the 8e9 budget unmodified; (2) replay cache APPROVED as a launch-state
+> amendment — relaunch replays the 35 already-measured trials from the dead
+> run's log+JSON (deterministic seed ⇒ identical proposals; kill-switch
+> `SVERDRUP_MIOST_REPLAY=0`); only new proposals + acceptance maps +
+> winner-point re-measurement actually solve. Sobol acceptance already
+> measured µ=0.8573 ≥ 0.85 on c2; Sobol winner validation µ=0.8642.
 >
 > **RESUME PROTOCOL (one command):**
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
 > (tracker: Tasks 1–12 completed, Task 13 in_progress). Then, IN ORDER:
-> 1. `tail data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log` — the run
->    prints `=== ALL DONE ===` when finished.
-> 2. STILL RUNNING (PID in `…/ours/stage_miost_gate.pid` alive, log
->    advancing; ~33 trials total, Sobol 16 then BO 16 in 4 rounds, roughly
->    20–40 min/trial): do NOT relaunch; monitor until done.
-> 3. DEAD + results partial (`…/ours/stage_miost_gate_results.json` missing
->    the `bo` or `winner` keys): relaunch —
+> 1. `free -m` — if "available" < 10240, the owner has NOT yet freed host
+>    RAM: do NOT relaunch; remind the owner and wait. Artifacts safe on
+>    disk: dead-run log snapshot `…/ours/stage_miost_gate.log.oom-20260705`,
+>    replay cache `…/ours/stage_miost_gate_replay_cache.json` (35 entries),
+>    partial results JSON (sobol block complete).
+> 2. RAM freed (≥10 GB available): relaunch —
 >    `nohup pixi run python scripts/stage_miost_gate_run.py > data/2021a_ssh_mapping_ose/ours/stage_miost_gate.log 2>&1 &`
->    (finished-strategy rows persist; a mid-strategy death restarts only that
->    strategy). c2 note: a relaunch re-touches c2 at acceptance — fine; the
+>    (replay cache auto-loads; cached trials print `REPLAY` lines).
+>    c2 note: a relaunch re-touches c2 at acceptance — fine; the
 >    gate's "once" = the SIGNED-OFF run's single touch.
+> 3. Monitor until `=== ALL DONE ===`; liveness check must treat a ZOMBIE
+>    (`ps -o stat` = Z) as DEAD — `kill -0` returns success on zombies.
 > 4. DONE: assemble the §7.4 Stage-A evidence pack for owner sign-off —
 >    (a) results JSON: winner row (µ≥0.85?), acceptance (µ,σ,λx), history
 >    incl. exclusion reasons, solver_budget + winner_achieved_residuals,
