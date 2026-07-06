@@ -18,8 +18,11 @@ Results: data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json
 
 from __future__ import annotations
 
+import ast
 import json
 import os
+import re
+import sys
 import tempfile
 import time
 import traceback
@@ -50,6 +53,8 @@ from sverdrup.validation.params import baseline_config
 DEV_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 OUT_DIR = Path("data/2021a_ssh_mapping_ose/ours")
 RESULTS = OUT_DIR / "stage_miost_gate_results.json"
+LOG_FILE = OUT_DIR / "stage_miost_gate.log"
+REPLAY_FILE = OUT_DIR / "stage_miost_gate_replay_cache.json"
 SCOPE_MODE = os.environ.get("SVERDRUP_MIOST_SCOPE", "full")  # "dev" | "full"
 N_TRIALS = int(os.environ.get("SVERDRUP_MIOST_N", "16"))
 BO_ROUNDS = 4
@@ -69,6 +74,64 @@ def _log(msg: str) -> None:
     print(f"[+{_stamp()}] {msg}", flush=True)
 
 
+# --- replay cache: relaunch-after-crash recovery of already-measured trials ----------
+# Launch-state amendment (owner-approved 2026-07-05): after the OOM at BO
+# trial 27, a relaunch re-proposes the IDENTICAL points (deterministic seed +
+# persisted Sobol history), so trials measured by the dead run replay from
+# (params -> scores) parsed out of its log + results JSON instead of
+# re-solving ~20 min each. Kill-switch: SVERDRUP_MIOST_REPLAY=0.
+
+_TRIAL_START = re.compile(r"trial (\d+): (\{.*\}) -> solving ")
+_TRIAL_SCORE = re.compile(r"trial (\d+): (\{.*\}) \(\d+s\)\s*$")
+
+
+def _replay_key(params: dict[str, float]) -> str:
+    """Order-independent exact key; float repr round-trips the log losslessly."""
+    return json.dumps({k: repr(float(v)) for k, v in params.items()}, sort_keys=True)
+
+
+def _replay_from_log(log_path: Path) -> dict[str, dict[str, float]]:
+    """Pair 'trial N: {params} -> solving' with 'trial N: {scores} (Ns)' lines.
+
+    A trial whose start line has no matching score line (the process died
+    mid-solve) is excluded.
+    """
+    starts: dict[str, dict[str, float]] = {}
+    cache: dict[str, dict[str, float]] = {}
+    for line in log_path.read_text().splitlines():
+        m = _TRIAL_START.search(line)
+        if m:
+            starts[m.group(1)] = ast.literal_eval(m.group(2))
+            continue
+        m = _TRIAL_SCORE.search(line)
+        if m and m.group(1) in starts:
+            cache[_replay_key(starts.pop(m.group(1)))] = ast.literal_eval(m.group(2))
+    return cache
+
+
+def _build_replay_cache(
+    log_path: Path, results_path: Path
+) -> dict[str, dict[str, float]]:
+    """Merge scored history rows from the results JSON with log-parsed trials."""
+    cache: dict[str, dict[str, float]] = {}
+    if results_path.exists():
+        results = json.loads(results_path.read_text())
+        for row in results.values():
+            if not isinstance(row, dict):
+                continue
+            for rec in row.get("history") or []:
+                if rec.get("scores"):
+                    cache[_replay_key(rec["params"])] = rec["scores"]
+    if log_path.exists():
+        cache.update(_replay_from_log(log_path))
+    return cache
+
+
+REPLAY_CACHE: dict[str, dict[str, float]] = (
+    json.loads(REPLAY_FILE.read_text()) if REPLAY_FILE.exists() else {}
+)
+
+
 # --- per-trial heartbeat: wrap the scorer so each solve announces itself -------------
 _orig_score = ValidationTrackScorer.score
 
@@ -84,6 +147,11 @@ def _counting_score(
     """Wrapped scorer.score that logs a heartbeat + the trial's scores (or its error)."""
     n = getattr(self, "_trial_n", 0) + 1
     self._trial_n = n  # type: ignore[attr-defined]
+    if os.environ.get("SVERDRUP_MIOST_REPLAY", "1") != "0":
+        cached = REPLAY_CACHE.get(_replay_key(params))
+        if cached is not None:
+            _log(f"  trial {n}: REPLAY {params} -> {cached}")
+            return dict(cached)
     _log(f"  trial {n}: {params} -> solving {len(self.output_days)} day-maps ...")
     t = time.time()
     try:
@@ -350,6 +418,16 @@ def main() -> None:
         "seed": SEED,
         "n_obs_max_window": n_obs_max,
         "calibration": "N/A-for-POINT (capability-conditional; spec 7.4 Stage A)",
+        "replay_cache": {
+            "n_entries": len(REPLAY_CACHE),
+            "source": str(REPLAY_FILE),
+            "semantics": (
+                "launch-state amendment (owner-approved 2026-07-05): relaunch "
+                "after the trial-27 OOM replays already-measured trials from "
+                "the dead run's log/results (deterministic seed re-proposes "
+                "identical points). SVERDRUP_MIOST_REPLAY=0 disables."
+            ),
+        },
         "solver_budget": {
             "semantics": (
                 "BUDGETED SOLVE (owner decision, Task-11 gate 2026-07-04, "
@@ -418,4 +496,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if "--build-replay-cache" in sys.argv:
+        built = _build_replay_cache(LOG_FILE, RESULTS)
+        REPLAY_FILE.write_text(json.dumps(built, indent=2))
+        print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
+    else:
+        main()
