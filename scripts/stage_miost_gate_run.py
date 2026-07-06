@@ -276,12 +276,26 @@ def _winner_point_windowing_cost(
     the winner's alpha; (Delta-mu, Delta-lambda_x) vs the winner's own
     validation scores. c2 is never touched here.
     """
+    from sverdrup.application.splits import make_splits
+    from sverdrup.application.tuning.stage_a import _subset
     from sverdrup.methods.miost_windows import WindowPlan as _WP
     from sverdrup.validation.input_adapter import load_mdt_grid
     from sverdrup.validation.output_adapter import write_map
 
     cfg = json.loads(scope.read_text())
-    obs = _halo_obs(scope)
+    # TRAIN-ONLY obs (validation mission excluded) — the windowed side of the
+    # comparison scored maps built without j3; assimilating j3 here and then
+    # scoring ON j3 leaks absolutes and inflates the single-window mu
+    # (protocol violation caught at the 2026-07-06 sign-off; the first run's
+    # delta_mu=-0.0652 was cross-protocol).
+    full = _halo_obs(scope)
+    split = make_splits(
+        full,
+        by="mission",
+        locked_missions=["c2"],
+        validation_missions=[str(cfg["validation_mission"])],
+    )
+    obs = _subset(full, split.train_idx)
     n_single = len(obs)
     pred = StoredGFeasibility(n_obs_max=n_single, budget_bytes=8e9)
     reason = pred.explain(dict(winner_params))

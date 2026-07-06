@@ -2,11 +2,17 @@
 
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
-> below). Task 13 (STAGE-A GATE, USER GATE) — RUN COMPLETE 2026-07-06
-> (OOM'd run recovered via replay cache `851c05a`; relaunched after owner
-> freed RAM to ~11 GB; `=== ALL DONE ===` at +06:55). §7.4 EVIDENCE
-> ASSEMBLED (below) — **STOPPED, AWAITING OWNER SIGN-OFF on Task 13.**
-> Tasks 14–19 (Stage B) stay hard-blocked until sign-off.**
+> below). Task 13 (STAGE-A GATE, USER GATE) — **CLOSED: OWNER SIGN-OFF
+> GRANTED 2026-07-06** for the WINDOWED Stage-A gate (c2 µ=0.8573 ≥ 0.85;
+> evidence below). **STAGE B (Tasks 14–19) HELD by owner order** pending
+> the SHIPPED-REPRESENTATION decision (windowed vs single-window for this
+> box) — tracker Task 20 carries the bounded evidence set (1–3, DONE, see
+> "Representation decision" block below); OWNER DECIDES NEXT.
+> BO(rounds=4) ran and lost to Sobol at n=16 — noted for the record, no
+> action. HYGIENE (owner-ordered, going forward): only the SIGNED winner
+> is scored on c2 at acceptance — retire the per-strategy acceptance
+> touches before the next gate run (this run's extra touches disclosed;
+> selection was validation-side; no contamination).**
 >
 > **§7.4 STAGE-A EVIDENCE (2026-07-06):**
 > - **WINNER (sobol): acceptance c2 (µ,σ,λx) = (0.8573, 0.0800, 156.4) —
@@ -19,14 +25,20 @@
 >   max 280 iters (< 500 cap), final rres ≤ 9.9e-07 (cap never bound at the
 >   winner); budgeted-solve semantics + per-window residuals in results
 >   JSON (`solver_budget`, `winner_achieved_residuals`).
-> - **Winner-point windowing cost (Task-11 close condition 2):**
->   Δµ = **−0.0652** (windowed 0.8642 vs single-window 0.9294 on the
->   validation track), Δλx = +62.5 km (178.0 vs 115.5). POINT-MEASURED at
->   the winner, per the close's caveat — MUCH larger than the untuned
->   diagnostic point (−0.0066). Owner attention: Task-11 close named
->   single-window-as-product a not-taken contingency to revisit "if the
->   tuned windowed winner disappoints" — winner still clears the 0.85
->   floor, so this is judgment material, not an automatic trigger.
+> - **Winner-point windowing cost (Task-11 close condition 2) —
+>   CORRECTED 2026-07-06: Δµ = −0.0022, Δλx = +0.57 km** (windowed 0.8642
+>   vs single-window 0.8664 / 177.4, TRAIN-ONLY protocol, j3 excluded,
+>   same protocol as the winner scores; 425-d solve converged: 286 iters,
+>   rres 9.8e-07). The first measurement (Δµ = −0.0652 / +62.5 km,
+>   2026-07-05) was CROSS-PROTOCOL — the single-window side ASSIMILATED
+>   j3 and was scored on j3 (leak); preserved in the results JSON as
+>   `winner_point_windowing_cost_CROSS_PROTOCOL_20260705`, never a
+>   windowing cost. `_winner_point_windowing_cost` fixed to train-only.
+>   The untuned D4 localization point (−0.0066) was 6-mission/j3-
+>   assimilating on BOTH sides — also not same-protocol (caveat added to
+>   `miost_equivalence_localization.md`). The corrected number is the
+>   ONLY clean windowing cost on record: at the tuned winner, windowing
+>   costs ~0.002 µ and ~0.6 km λx.
 > - **Diagnostics (report-only), regenerated from the sobol winner:**
 >   Tier-3 vs pinned CLS maps — mean RMS diff 0.0471 m (field std 0.431),
 >   coherence 0.76@100 km / 0.93@200 km (`miost_tier3_similarity.md`);
@@ -67,19 +79,50 @@
 > winner-point re-measurement actually solve. Sobol acceptance already
 > measured µ=0.8573 ≥ 0.85 on c2; Sobol winner validation µ=0.8642.
 >
+> **Representation decision (Task 20) — evidence 1–3 ASSEMBLED 2026-07-06,
+> AWAITING OWNER DECISION (windowed vs single-window-as-product-for-this-box):**
+> 1. **Protocol:** confirmed VIOLATED in the first winner-point measurement
+>    (single side assimilated j3); fixed + re-measured train-only →
+>    Δµ = −0.0022 / Δλx = +0.57 km (see corrected bullet above).
+> 2. **Single-window cost at winner α=1.0657 (MEASURED, instrumented):**
+>    wall 485 s; peak RSS 7.08 GB (process baseline 0.21 GB); predicted
+>    stored-G 2.61 GB train / 3.45 GB full ⇒ real peak ≈ 2.7× predicted-G
+>    (assembly transients + S + workspace). Box: 15.8 GB total, ~10.8 GB
+>    available post-cleanup. The 8 GB predicate constant prices G ONLY —
+>    with the ×2.7 multiplier an 8 GB-G config needs ~21 GB real; the
+>    predicate constant needs re-grounding if it is meant to bound REAL
+>    peak on this box (owner flagged; no change made).
+> 3. **Stage-B m=100 member-gen pricing (measured solve times + sizing;
+>    batched-PCG scaling iters×m matvecs, batching efficiency 2–5×):**
+>    WINDOWED: 9×60-d windows, G 0.78 GB/window, N_coef 197k, X+workspace
+>    (m=100) ~1.0 GB ⇒ peak ~2 GB; wall ~1.5–4 h (naive ×100 bound 7.5 h).
+>    SINGLE: one 425-d window, G 2.61 GB, N_coef 1.40 M, X+workspace
+>    (m=100) ~5.6–6.7 GB ⇒ peak ~9–13 GB — TIGHT vs 10.8 GB avail;
+>    m-chunking (4×25) drops workspace to ~1.4 GB ⇒ ~8.5–9 GB feasible;
+>    wall ~3–7 h (naive bound 13.5 h). Neither infeasible; windowed is
+>    ~2× cheaper and memory-comfortable; single needs chunking on this box.
+> Owner notes recorded (verbatim intent): windowing machinery RETAINED
+> regardless (temporal-scaling capability; decision is box-scoped); if
+> single-window ships → small Stage-B plan amendment (identity-keyed
+> perturbations stay; cross-window CRN coherence + seam-dispersion tasks
+> trivialize/drop; MiostEnsembleDistribution holds a single η) and the
+> single-window product takes ITS OWN acceptance with ONE c2 touch — the
+> windowed winner's c2 record stands as the windowed product's number.
+>
 > **RESUME PROTOCOL (one command):**
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
-> (tracker: Tasks 1–12 completed, Task 13 in_progress). Then:
-> 1. Evidence is FULLY ASSEMBLED (block above; artifacts: results JSON,
->    `docs/validation/miost_tier3_similarity.md`,
->    `docs/validation/miost_ndir12_sensitivity.md`, dead-run log snapshot
->    `…/ours/stage_miost_gate.log.oom-20260705`, replay cache JSON).
->    Do NOT re-run anything.
-> 2. STOP — present the evidence block to the owner. Owner sign-off closes
->    Task 13; only then do Tasks 14–19 (Stage B) unblock.
-> 3. If the owner instead re-scopes on the windowing-cost number (see
->    Δµ=−0.0652 bullet), that is a design-level owner decision — route to
->    brainstorming, not more tuning.
+> (tracker: Tasks 1–13 completed, Task 20 in_progress holding Stage B).
+> 1. Task 13 is CLOSED — do NOT re-run the gate. Evidence artifacts:
+>    results JSON, `miost_tier3_similarity.md`,
+>    `miost_ndir12_sensitivity.md`, `miost_equivalence_localization.md`
+>    (protocol caveat), dead-run log snapshot `…/.log.oom-20260705`,
+>    replay cache JSON.
+> 2. STOP at Task 20 — present the Representation-decision block to the
+>    owner. If owner picks WINDOWED: close 20, Stage B proceeds per plan
+>    (fold in the c2-hygiene change first). If SINGLE-WINDOW: writing-plans
+>    amendment for Tasks 14–19 per the owner notes above, then proceed.
+> 3. PUSH still blocked — container has no GitHub credentials; owner must
+>    install a deploy key (sign-off asked for the trail to be public).
 >
 > Launch state for the record: budgeted-solve 1e-6/500 (owner-decided,
 > Stage-A-scoped), CompositeFeasibility(StoredG n_obs_max=16,066 +

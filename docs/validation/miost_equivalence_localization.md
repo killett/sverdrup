@@ -12,6 +12,20 @@ map-space depth-insensitivity measured in the equivalence doc.
 
 **Delta-mu (windowed - single) = -0.0066**
 
+> **PROTOCOL CAVEAT (owner-ordered addendum, 2026-07-06):** both maps in
+> this probe were built from the SIX mapping missions — they ASSIMILATED
+> j3 and were then scored on the j3 track. Leaked absolutes inflate both
+> µ values (0.94-ish vs the winner's train-only 0.86-ish regime) and
+> compress the delta. This probe's Δµ is therefore NOT same-protocol
+> with the Task-13 winner-point re-measurement, whose corrected
+> TRAIN-ONLY (j3-excluded) result is **Δµ = −0.0022 / Δλx = +0.57 km**
+> at the tuned winner (results JSON `winner_point_windowing_cost`).
+> The first winner-point measurement (2026-07-05, Δµ = −0.0652) was
+> itself cross-protocol — single-window side assimilated j3, windowed
+> side did not — and is preserved in the results JSON as
+> `winner_point_windowing_cost_CROSS_PROTOCOL_20260705`; it is NOT a
+> windowing cost.
+
 ## Probe 2 — Delta vs distance to nearest window boundary
 
 | dist bin [d] | n days | mean max|D| | max max|D| | mean RMS |
