@@ -158,9 +158,25 @@
 > USER GATE: needs the tune_miost_inflation.py full run at the winner,
 > capability flip to SAMPLES, ONE c2 touch winner-only per hygiene).
 >
-> **▶ TASK-18 HANDOFF (owner cleared session here 2026-07-06; next
-> session starts Task 18 with this brief — RAM analysis done, do not
-> redo it):**
+> **▶ TASK-18 IN FLIGHT (2026-07-06): step 1 COMMITTED (`06b03ea`) —
+> script + tests green (suite 420/9/1, pre-commit clean); FULL-YEAR RUN
+> LAUNCHED DETACHED** (pid file + log
+> `…/scratchpad/seam_full.{pid,log}`; config: m=50, root=1, rtol 1e-6,
+> **DIAG_MAXITER=2000 — deliberate, NOT the Stage-A 500 cap** (member
+> generation must not inherit it silently per the Task-11 gate decision;
+> the D4 point stalls ~5e-4 at 500); floor probe at +1000. Smoke (m=4,
+> 50 iters) EXIT=0 end-to-end; peak RSS 3.85 GB at m=4, budget est.
+> ~5–6 GB at m=50 vs 8 GB avail; ETA ~4–6 h. `sample_members` now logs
+> member-batch achieved residuals to CONVERGENCE_LOG (kind =
+> "member-batch"). If the session dies: check the pid (ZOMBIE = dead);
+> if dead pre-doc, relaunch the same command (solves not resumable);
+> if `docs/validation/miost_seam_dispersion.md` exists, review it,
+> commit doc + PROGRESS as Task-18 steps 2/3, close Task 18. NOTE: a
+> pre-commit hook blocks commits while a native task is in_progress —
+> keep the umbrella task pending/completed around commits.**
+>
+> **▶ TASK-18 HANDOFF (owner cleared session here 2026-07-06; brief
+> kept for the record — RAM analysis done, do not redo it):**
 > - **THE TRAP (would be OOM #3): `BasisSpec.evaluate` is DENSE — "small
 >   inputs only" (`miost_basis.py:113`).** All MiostEnsembleDistribution
 >   grid queries (`_anoms_at` / `to_grid_ensemble` / `marginal_variance`)
