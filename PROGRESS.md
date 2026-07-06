@@ -150,9 +150,20 @@
 > single-window product takes ITS OWN acceptance with ONE c2 touch — the
 > windowed winner's c2 record stands as the windowed product's number.
 >
+> **STAGE-B PROGRESS (2026-07-06): Tasks 14–17 COMPLETE + committed**
+> (`5ab7097` T14 CRN, `1b19ee7` T15 members+ensemble, `8522d21` T16
+> whitened oracle — see the Task-16 deviation entry, `b0de2c8` T17
+> s-inflation). Suite 411+/9/1 green at T17. **NEXT = Task 18**
+> (seam-dispersion + variance-equivalence diagnostics — full-year m=50
+> α=1.5 real-data run; launch DETACHED like the gate runs, reuse the
+> Task-11 harness in `scripts/diag_miost_equivalence.py`). Then Task 21
+> (provenance hardening) MUST land before Task 19 (Stage-B gate,
+> USER GATE: needs the tune_miost_inflation.py full run at the winner,
+> capability flip to SAMPLES, ONE c2 touch winner-only per hygiene).
+>
 > **RESUME PROTOCOL (one command):**
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
-> (tracker: Tasks 1–13 + 20 completed; ACTIVE = Stage B, Task 14 first).
+> (tracker: Tasks 1–17 + 20 completed; ACTIVE = Task 18).
 > 1. Tasks 13 + 20 are CLOSED — do NOT re-run the gate or the
 >    representation evidence. Artifacts: results JSON,
 >    `miost_tier3_similarity.md`, `miost_ndir12_sensitivity.md`,
