@@ -153,13 +153,62 @@
 > **STAGE-B PROGRESS (2026-07-06): Tasks 14–17 COMPLETE + committed**
 > (`5ab7097` T14 CRN, `1b19ee7` T15 members+ensemble, `8522d21` T16
 > whitened oracle — see the Task-16 deviation entry, `b0de2c8` T17
-> s-inflation). Suite 411+/9/1 green at T17. **NEXT = Task 18**
-> (seam-dispersion + variance-equivalence diagnostics — full-year m=50
-> α=1.5 real-data run; launch DETACHED like the gate runs, reuse the
-> Task-11 harness in `scripts/diag_miost_equivalence.py`). Then Task 21
+> s-inflation). Suite 411+/9/1 green at T17. Then Task 21
 > (provenance hardening) MUST land before Task 19 (Stage-B gate,
 > USER GATE: needs the tune_miost_inflation.py full run at the winner,
 > capability flip to SAMPLES, ONE c2 touch winner-only per hygiene).
+>
+> **▶ TASK-18 HANDOFF (owner cleared session here 2026-07-06; next
+> session starts Task 18 with this brief — RAM analysis done, do not
+> redo it):**
+> - **THE TRAP (would be OOM #3): `BasisSpec.evaluate` is DENSE — "small
+>   inputs only" (`miost_basis.py:113`).** All MiostEnsembleDistribution
+>   grid queries (`_anoms_at` / `to_grid_ensemble` / `marginal_variance`)
+>   route through it; on the production 101×101 grid that is a dense
+>   gamma of 10,201 × ~99k elements ≈ **8 GB PER WINDOW**. The Task-18
+>   script MUST evaluate member fields via the SPARSE path instead:
+>   `build_s_spatial` + `time_contract` per member — the same 85×-smaller
+>   factoring Task 11 forced for day maps. Small test grids are fine
+>   either way; only production-grid evaluation is affected.
+> - **RAM budget (α=1.5, m=50, TRAIN-ONLY obs; estimated from measured
+>   anchors, S-path assumed):** windowed leg (9×60-d, sequential):
+>   G 0.3–0.4 GB (~2× assembly transient), N_coef ~99k/window, 50-member
+>   PCG workspace ~0.2 GB → **peak ~1.5–2 GB**. Single-window 425-d leg
+>   (variance-equivalence reference): G ~1.3 GB (transient ~2.6 GB),
+>   N_coef ~450k, workspace ~1.1 GB → **peak ~4.5–5.5 GB**. Anchors:
+>   measured 7.08 GB single-RHS 425-d at α=1.066 (G 2.61 GB); α=1.5
+>   halves the G-driven parts ((1.066/1.5)²≈0.5). Box had ~10.8 GB
+>   available at handoff → fits IF the S-path rule is honored.
+>   INSTRUMENT the run (rusage pattern from the Task-13 windowing-cost
+>   rerun in the git history of `scripts/stage_miost_gate_run.py`
+>   sessions) — the measurement doubles as the validation datapoint
+>   Task 22's component-sum peak model needs.
+> - **Task-18 spec recap (plan governs):**
+>   `scripts/diag_miost_seam_dispersion.py` →
+>   `docs/validation/miost_seam_dispersion.md`. (a) per-output-day member
+>   std field; HEADLINE = ratio (blend-day worst / interior-day median),
+>   worst-case-localized, never averaged away; (b) variance-field
+>   windowed-vs-single-window at α=1.5 on member std — Task-11 harness
+>   pattern (`scripts/diag_miost_equivalence.py`); single window =
+>   `Miost(plan=WindowPlan(starts=(-30.0,), w_days=425.0))`; SAME m=50 +
+>   SAME CRN root on both sides (identity-keyed CRN makes the comparison
+>   sharp — that is its purpose); (c) verdict line for the Task-19 gate.
+>   Params = D4 diagnostic point (α=1.5, log10_rho=1, q_slope=2, L_t=10);
+>   obs TRAIN-ONLY (post-leak protocol: make_splits locked c2 /
+>   validation j3 → `_subset(obs, split.train_idx)`); c2 never touched.
+>   Launch DETACHED (nohup, pid file); watcher must treat ZOMBIE as dead
+>   (`ps -o stat` = Z; `kill -0` returns success on zombies).
+> - **Efficiency constraint:** `sample_members` re-solves the member
+>   batch on EVERY call (only eta_a is cached) — for 365 output days do
+>   NOT call it per day. Either evaluate all per-day fields from ONE
+>   member solve per window via the S-path (preferred for this
+>   diagnostic: 9 windowed + 1 single batched solves total), or first add
+>   a member-batch cache keyed (window_id, pk, fp, m, root).
+> - **Latent Task-19 constraint (fix BEFORE the gate run):**
+>   `tune_miost_inflation.py` main() currently calls sample_members per
+>   day AND `marginal_variance()` on the production grid — correct but
+>   infeasible on the full year (per-day member re-solves + the dense-
+>   gamma trap). Needs the same S-path + one-solve-per-window treatment.
 >
 > **RESUME PROTOCOL (one command):**
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
