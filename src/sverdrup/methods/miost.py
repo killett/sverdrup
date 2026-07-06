@@ -529,8 +529,24 @@ class Miost:
                 pcg_rtol=self.pcg_rtol,
                 pcg_maxiter=self.pcg_maxiter,
             )
-            members, _ = solver.solve(b)  # ONE batched solve per window
+            members, mreport = solver.solve(b)  # ONE batched solve per window
             del g, solver
+            CONVERGENCE_LOG.append(
+                {
+                    "window": w.id,
+                    "kind": "member-batch",
+                    "iterations": int(mreport.iterations.max()),
+                    "final_rel_residual": float(mreport.final_rel_residual.max()),
+                    "params_key_hash": _params_key_hash(pk),
+                }
+            )
+            if mreport.final_rel_residual.max() > self.pcg_rtol:
+                # surfaced, never swallowed (spec §2.4)
+                print(
+                    f"miost window {w.id}: member-batch PCG residual "
+                    f"{mreport.final_rel_residual.max():.2e} after "
+                    f"{mreport.iterations.max()} iters (rtol {self.pcg_rtol})"
+                )
             els_s, s = self._s_matrix(w, spec, pk, grid)
             mean += self._plan.weight(w, time_days) * (
                 s @ time_contract(spec, els_s, eta_a, time_days)

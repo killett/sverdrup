@@ -161,11 +161,12 @@
     {
       "id": 18,
       "subject": "Task 18: Stage-B seam-dispersion + variance-equivalence diagnostics (STAGE B)",
-      "status": "pending",
+      "status": "in_progress",
       "blockedBy": [
         15
       ],
-      "description": "**Goal:** Measure the CRN residual: worst-case-localized member dispersion at blend days; extend the D4 diagnostic to variance fields (spec 6.2).\n\n**Files:**\n- Create: `scripts/diag_miost_seam_dispersion.py`\n- Output: `docs/validation/miost_seam_dispersion.md`\n\n**Acceptance Criteria:**\n- [ ] per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\n- [ ] variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\n- [ ] doc records numbers + verdict line for the Task-19 gate\n\n**Verify:** pixi run python scripts/diag_miost_seam_dispersion.py\n\n**Steps:** Plan doc Task 18.\n\n```json:metadata\n{\"files\": [\"scripts/diag_miost_seam_dispersion.py\", \"docs/validation/miost_seam_dispersion.md\"], \"verifyCommand\": \"pixi run python scripts/diag_miost_seam_dispersion.py\", \"acceptanceCriteria\": [\"per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\", \"variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\", \"doc records numbers + verdict line for the Task-19 gate\"], \"modelTier\": \"standard\"}\n```"
+      "description": "**Goal:** Measure the CRN residual: worst-case-localized member dispersion at blend days; extend the D4 diagnostic to variance fields (spec 6.2).\n\n**Files:**\n- Create: `scripts/diag_miost_seam_dispersion.py`\n- Output: `docs/validation/miost_seam_dispersion.md`\n\n**Acceptance Criteria:**\n- [ ] per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\n- [ ] variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\n- [ ] doc records numbers + verdict line for the Task-19 gate\n\n**Verify:** pixi run python scripts/diag_miost_seam_dispersion.py\n\n**Steps:** Plan doc Task 18.\n\n```json:metadata\n{\"files\": [\"scripts/diag_miost_seam_dispersion.py\", \"docs/validation/miost_seam_dispersion.md\"], \"verifyCommand\": \"pixi run python scripts/diag_miost_seam_dispersion.py\", \"acceptanceCriteria\": [\"per output day member std field; ratio (blend-day worst / interior median) reported worst-case-localized\", \"variance-field windowed-vs-single-window at alpha=1.5, m=50 (Task-11 harness reused)\", \"doc records numbers + verdict line for the Task-19 gate\"], \"modelTier\": \"standard\"}\n```",
+      "lastUpdated": "2026-07-06T00:00:00Z"
     },
     {
       "id": 19,

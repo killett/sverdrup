@@ -222,3 +222,23 @@ def test_crn_root_threading() -> None:
     assert not np.array_equal(
         a.to_grid_ensemble(DAY).samples, c.to_grid_ensemble(DAY).samples
     )
+
+
+def test_member_batch_residuals_logged() -> None:
+    """sample_members surfaces the member-batch solve report in CONVERGENCE_LOG.
+
+    Catches: the batched member solve dropping its ConvergenceReport (a capped
+    under-converged member batch would silently under-disperse sigma — the
+    spec-6.5 failure class — with no telemetry for the acceptance record).
+    """
+    from sverdrup.methods.miost import CONVERGENCE_LOG
+
+    CONVERGENCE_LOG.clear()
+    _method().sample_members(_obs(), GRID, PARAMS, DAY, m=3, root=ROOT)
+    batches = [e for e in CONVERGENCE_LOG if e.get("kind") == "member-batch"]
+    plan = WindowPlan(starts=(0.0, 45.0))
+    assert {e["window"] for e in batches} == {w.id for w in plan.windows}
+    for e in batches:
+        assert int(e["iterations"]) >= 1  # type: ignore[call-overload]
+        res = float(e["final_rel_residual"])  # type: ignore[arg-type]
+        assert np.isfinite(res) and 0.0 <= res < 1.0
