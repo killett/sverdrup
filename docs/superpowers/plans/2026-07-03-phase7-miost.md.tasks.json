@@ -134,7 +134,7 @@
     {
       "id": 15,
       "subject": "Task 15: Member generation + MiostEnsembleDistribution + persistence (STAGE B)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         14
       ],
@@ -206,5 +206,5 @@
       "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B."
     }
   ],
-  "lastUpdated": "2026-07-06T17:00:00+00:00"
+  "lastUpdated": "2026-07-06T19:30:00+00:00"
 }

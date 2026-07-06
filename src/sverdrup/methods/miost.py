@@ -6,9 +6,13 @@ import hashlib
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
 
 from sverdrup.core.distribution import CapabilityNotAvailableError
 from sverdrup.core.grid import GridSpec
@@ -234,10 +238,8 @@ def _obs_fingerprint(obs: ObsWindow) -> str:
     return h.hexdigest()
 
 
-def _window_obs(
-    obs: ObsWindow, w: Window, l_t_days: float
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Subset obs to [start - L_t, end + L_t]; loud span assert (spec §4.2.1).
+def _window_mask(obs: ObsWindow, w: Window, l_t_days: float) -> np.ndarray:
+    """Boolean mask of obs in [start - L_t, end + L_t]; loud span assert.
 
     Args:
         obs: The FULL observation window (wide temporal_half_window_days).
@@ -245,14 +247,13 @@ def _window_obs(
         l_t_days: Temporal support half-width.
 
     Returns:
-        (lon, lat, t, values) of the in-window observations.
+        Boolean mask over the obs.
 
     Raises:
         ValueError: If nonempty obs do not span the window's support interval
             (clipped to the obs data span) — pass the full obs.
     """
-    coords = obs.coords()
-    t = coords[:, 2]
+    t = obs.coords()[:, 2]
     lo_full = w.start_day - l_t_days
     hi_full = w.end_day + l_t_days
     # Span demand clipped to the data span WITH the placement's 1-day edge slack
@@ -265,8 +266,52 @@ def _window_obs(
             f"(got [{t.min()}, {t.max()}]) — pass the full obs "
             "(wide temporal_half_window_days)"
         )
-    m = (t >= lo_full) & (t <= hi_full)
-    return coords[m, 0], coords[m, 1], t[m], obs.values()[m]
+    return np.asarray((t >= lo_full) & (t <= hi_full))
+
+
+def _window_obs(
+    obs: ObsWindow, w: Window, l_t_days: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Subset obs to the window support (see _window_mask for the contract).
+
+    Returns:
+        (lon, lat, t, values) of the in-window observations.
+    """
+    m = _window_mask(obs, w, l_t_days)
+    coords = obs.coords()
+    return coords[m, 0], coords[m, 1], coords[m, 2], obs.values()[m]
+
+
+def _obs_identity(
+    lon: np.ndarray, lat: np.ndarray, t: np.ndarray, mission: np.ndarray | None
+) -> np.ndarray:
+    """Window-independent per-obs identity rows for CRN keying (spec 6.2).
+
+    Args:
+        lon: Longitudes [deg].
+        lat: Latitudes [deg].
+        t: Times [days].
+        mission: Mission strings, or None.
+
+    Returns:
+        (n, 4) contiguous float64 rows (lon, lat, time, mission-hash) —
+        bit-identical across windows because the sources are the same
+        file-loaded values.
+    """
+    if mission is None:
+        mh = np.zeros(lon.size)
+    else:
+        mh = np.array(
+            [
+                float(
+                    int.from_bytes(
+                        hashlib.blake2b(str(s).encode(), digest_size=4).digest(), "big"
+                    )
+                )
+                for s in mission
+            ]
+        )
+    return np.ascontiguousarray(np.column_stack([lon, lat, t, mh]))
 
 
 class Miost:
@@ -374,6 +419,99 @@ class Miost:
             time_days=time_days,
             _spec=spec,
             _etas=etas,
+            _window_starts=starts,
+            _w_days=self._plan.w_days,
+        )
+
+    def sample_members(
+        self,
+        obs: ObsWindow,
+        grid: GridSpec,
+        params: ParameterProvider,
+        time_days: float,
+        m: int,
+        root: Seed,
+    ) -> MiostEnsembleDistribution:
+        """Generate m perturbed-observation members (spec 6.2; plan Task 15).
+
+        Per covering window: build the m member RHS
+        ``G^T R^-1 (y + eps'_i) + Q^-1 eta~_i`` with identity-keyed CRN
+        perturbations and run ONE batched solve. The unperturbed eta^a path
+        (:meth:`solve` / ``_solve_window``) is untouched; the ensemble mean
+        IS the Stage-A mean (D6).
+
+        Args:
+            obs: The FULL observation window (method re-subsets per window).
+            grid: Output grid.
+            params: Parameter provider (the tuned winner's params).
+            time_days: Output day [days since epoch].
+            m: Member count.
+            root: CRN seed root (derive_seed of the unit of work).
+
+        Returns:
+            The coefficient-space SAMPLES distribution.
+        """
+        from sverdrup.distributions.miost_ensemble import (
+            MiostEnsembleDistribution,
+            ensemble_provenance,
+        )
+        from sverdrup.methods.miost_crn import coef_noise, obs_noise
+
+        spec = self._spec_from(params, grid)
+        rho = 10.0 ** float(params.resolve("log10_rho", grid))
+        q_slope = float(params.resolve("q_slope", grid))
+        pk = self._params_key(params, grid)
+        fp = _obs_fingerprint(obs)
+        wins = self._plan.covering(time_days)
+        mean = np.zeros(grid.shape[0] * grid.shape[1])
+        etas_a: dict[str, np.ndarray] = {}
+        anoms: dict[str, np.ndarray] = {}
+        starts: dict[str, float] = {}
+        for w in wins:
+            eta_a = self._solve_window(w, spec, rho, q_slope, pk, fp, obs)
+            mask = _window_mask(obs, w, spec.l_t_days)
+            coords = obs.coords()
+            lon, lat, t = coords[mask, 0], coords[mask, 1], coords[mask, 2]
+            y = obs.values()[mask]
+            mission = None if obs.mission is None else obs.mission[mask]
+            els = spec.elements_for_window(w.start_day, w.w_days)
+            g = build_g(spec, els, lon, lat, t)
+            q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
+            r = np.full(y.size, R_REF)
+            base = rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
+            obs_ident = _obs_identity(lon, lat, t, mission)
+            b = np.empty((q.size, m))
+            for i in range(m):
+                eta_t = coef_noise(i, els.identity, q, root)
+                b[:, i] = base + eta_t / q
+                if y.size:
+                    eps = obs_noise(i, obs_ident, r, root)
+                    b[:, i] += g.T @ (eps / r)
+            solver = MiostSolver(
+                g,
+                r_diag=r,
+                q_diag=q,
+                pcg_rtol=self.pcg_rtol,
+                pcg_maxiter=self.pcg_maxiter,
+            )
+            members, _ = solver.solve(b)  # ONE batched solve per window
+            del g, solver
+            els_s, s = self._s_matrix(w, spec, pk, grid)
+            mean += self._plan.weight(w, time_days) * (
+                s @ time_contract(spec, els_s, eta_a, time_days)
+            )
+            etas_a[w.id] = np.asarray(eta_a)
+            anoms[w.id] = np.asarray(members) - np.asarray(eta_a)[:, None]
+            starts[w.id] = w.start_day
+        return MiostEnsembleDistribution(
+            grid=grid,
+            mean=mean.reshape(grid.shape),
+            provenance=ensemble_provenance(m),
+            time_days=time_days,
+            m=m,
+            _spec=spec,
+            _etas_a=etas_a,
+            _anoms=anoms,
             _window_starts=starts,
             _w_days=self._plan.w_days,
         )
