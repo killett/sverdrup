@@ -4,10 +4,11 @@
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
 > below). Task 13 (STAGE-A GATE, USER GATE) — **CLOSED: OWNER SIGN-OFF
 > GRANTED 2026-07-06** for the WINDOWED Stage-A gate (c2 µ=0.8573 ≥ 0.85;
-> evidence below). **STAGE B (Tasks 14–19) HELD by owner order** pending
-> the SHIPPED-REPRESENTATION decision (windowed vs single-window for this
-> box) — tracker Task 20 carries the bounded evidence set (1–3, DONE, see
-> "Representation decision" block below); OWNER DECIDES NEXT.
+> evidence below). **REPRESENTATION DECIDED 2026-07-06: WINDOWED SHIPS**
+> (Task 20 closed; see "Representation decision" block). **STAGE B
+> LAUNCHED — Task 14 first; Task 21 (provenance train/score hardening)
+> BLOCKS Task 19; Task 22 (predicate re-grounding) due before the NEXT
+> tuning gate.**
 > BO(rounds=4) ran and lost to Sobol at n=16 — noted for the record, no
 > action. HYGIENE (owner-ordered, going forward): only the SIGNED winner
 > is scored on c2 at acceptance — retire the per-strategy acceptance
@@ -79,8 +80,48 @@
 > winner-point re-measurement actually solve. Sobol acceptance already
 > measured µ=0.8573 ≥ 0.85 on c2; Sobol winner validation µ=0.8642.
 >
-> **Representation decision (Task 20) — evidence 1–3 ASSEMBLED 2026-07-06,
-> AWAITING OWNER DECISION (windowed vs single-window-as-product-for-this-box):**
+> **Representation decision (Task 20) — OWNER DECIDED 2026-07-06:
+> WINDOWED SHIPS for this box. Task 20 CLOSED; Tasks 14–19 UNBLOCKED (no
+> plan amendment — plan is windowed-native).** Close record:
+> - Clean windowing cost at the winner (same-protocol, train-only,
+>   validation track): **Δµ = −0.0022, Δλx = +0.57 km** — the ONLY clean
+>   windowing-cost number on record. Single-window contingency closes
+>   **NOT TAKEN**: triggered by a contaminated measurement
+>   (assimilate-j3-score-j3), immaterial once corrected, and ~2× Stage-B
+>   cost (9–13 GB chunked vs ~2 GB comfortable).
+> - RECORD CORRECTIONS: the sign-off presentation's claim "single-window
+>   would beat leaderboard MIOST µ (0.9294 > 0.89)" was LEAK-INFLATED —
+>   see `winner_point_windowing_cost_CROSS_PROTOCOL_20260705` in the
+>   results JSON; not repeated anywhere as a capability claim. The
+>   reviewer's ρ-dependence mechanism inference is STRUCK (built on the
+>   leaked number; NO clean param-dependence data exists). WHAT STANDS:
+>   all D4 MAP-SPACE findings (deltas, boundary profile, mid-ladder
+>   attribution) leaked identically on both sides → deltas + localization
+>   valid; only skill numbers were inflated (caveat + ruling recorded in
+>   `miost_equivalence_localization.md`).
+> - AUDIT (owner item 4, CONFIRMED 2026-07-06): tuning-path scorer — all
+>   35 trials — built maps TRAIN-ONLY (`stage_a.py:172–179`:
+>   make_splits(locked c2, validation j3) → `_subset(obs, split.train_idx)`
+>   → `_build_scorer`); 12-dir diagnostic likewise
+>   (`diag_miost_ndir12.py`: `_subset(obs, split.train_idx)`). Only the
+>   winner-point single-window probe had the leak (fixed `3f35dae`).
+> - HARDENING ordered: (i) Task 21 — provenance-enforced train/score
+>   separation (maps carry assimilated-mission list; every track-scoring
+>   path asserts scored ∉ assimilated; test that the assert fires on a
+>   deliberately-leaked map) — BLOCKS Task 19 (Stage-B gate scores
+>   validation/c2, same leak class); (ii) Task 22 — predicate re-grounding
+>   BEFORE THE NEXT TUNING GATE (not before Stage B): miost_sizing gains a
+>   component-sum peak model (G + S + RHS-batch vectors + obs arrays),
+>   validated against one instrumented WINDOWED trial, budget set from
+>   measured available RAM; no bare 2.7× fudge (that multiplier was
+>   measured on the 425-d path, overstates windowed).
+> - Stage-B standing scope unchanged: members re-decide the solver budget
+>   via the §6.5 under-convergence test (winner's solves converged ≤286
+>   iters — cap likely never binds; test confirms cheaply); s tuned on
+>   validation calibration only; ONE c2 touch at Stage-B acceptance per
+>   the hygiene order.
+>
+> **Evidence 1–3 as assembled (kept for the trail):**
 > 1. **Protocol:** confirmed VIOLATED in the first winner-point measurement
 >    (single side assimilated j3); fixed + re-measured train-only →
 >    Δµ = −0.0022 / Δλx = +0.57 km (see corrected bullet above).
@@ -111,16 +152,16 @@
 >
 > **RESUME PROTOCOL (one command):**
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
-> (tracker: Tasks 1–13 completed, Task 20 in_progress holding Stage B).
-> 1. Task 13 is CLOSED — do NOT re-run the gate. Evidence artifacts:
->    results JSON, `miost_tier3_similarity.md`,
->    `miost_ndir12_sensitivity.md`, `miost_equivalence_localization.md`
->    (protocol caveat), dead-run log snapshot `…/.log.oom-20260705`,
->    replay cache JSON.
-> 2. STOP at Task 20 — present the Representation-decision block to the
->    owner. If owner picks WINDOWED: close 20, Stage B proceeds per plan
->    (fold in the c2-hygiene change first). If SINGLE-WINDOW: writing-plans
->    amendment for Tasks 14–19 per the owner notes above, then proceed.
+> (tracker: Tasks 1–13 + 20 completed; ACTIVE = Stage B, Task 14 first).
+> 1. Tasks 13 + 20 are CLOSED — do NOT re-run the gate or the
+>    representation evidence. Artifacts: results JSON,
+>    `miost_tier3_similarity.md`, `miost_ndir12_sensitivity.md`,
+>    `miost_equivalence_localization.md` (protocol caveat + ruling),
+>    dead-run log snapshot `…/.log.oom-20260705`, replay cache JSON.
+> 2. Resume at the first unchecked Stage-B task (14–18 per plan). Task 21
+>    (provenance train/score assert + leak test) must land BEFORE Task 19.
+>    Task 22 (peak-model predicate re-grounding) before the NEXT tuning
+>    gate. c2 hygiene: ONE touch, Stage-B acceptance only, winner-only.
 > 3. PUSH still blocked — container has no GitHub credentials; owner must
 >    install a deploy key (sign-off asked for the trail to be public).
 >

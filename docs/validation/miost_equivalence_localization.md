@@ -25,6 +25,17 @@ map-space depth-insensitivity measured in the equivalence doc.
 > side did not — and is preserved in the results JSON as
 > `winner_point_windowing_cost_CROSS_PROTOCOL_20260705`; it is NOT a
 > windowing cost.
+>
+> **WHAT STANDS (owner ruling, 2026-07-06):** all MAP-SPACE findings in
+> this doc — the |Δ| deltas, the boundary-distance profile (corr −0.223),
+> the mid-ladder 113–320 km attribution, the J-identity check — leaked
+> IDENTICALLY on both sides (same 6-mission obs into both maps), so the
+> deltas and the localization remain valid. Only the SKILL numbers
+> (µ, λx) were inflated. Any parameter-dependence inference (e.g.
+> ρ-dependence of the windowing cost) built on the leaked winner-point
+> number is STRUCK — no clean param-dependence data exists; the only
+> clean windowing-cost number is the corrected winner-point
+> Δµ = −0.0022 / Δλx = +0.57 km.
 
 ## Probe 2 — Delta vs distance to nearest window boundary
 

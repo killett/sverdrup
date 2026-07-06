@@ -181,13 +181,30 @@
     {
       "id": 20,
       "subject": "Task 20 (owner-ordered 2026-07-06): shipped-representation decision \u2014 windowed vs single-window",
-      "status": "in_progress",
+      "status": "completed",
       "blockedBy": [],
       "blocks": [
         14
       ],
-      "description": "Bounded evidence set (protocol confirm; measured single-window cost at winner alpha; m=100 member-gen pricing both representations) then OWNER decides shipped representation for this box. Stage B (14-19) HELD until decided. Windowing machinery retained regardless. If single-window ships: small Stage-B plan amendment + its own acceptance with ONE c2 touch. Hygiene: only the signed winner scored on c2 at acceptance going forward."
+      "description": "Bounded evidence set (protocol confirm; measured single-window cost at winner alpha; m=100 member-gen pricing both representations) then OWNER decides shipped representation for this box. Stage B (14-19) HELD until decided. Windowing machinery retained regardless. If single-window ships: small Stage-B plan amendment + its own acceptance with ONE c2 touch. Hygiene: only the signed winner scored on c2 at acceptance going forward.\n\nCLOSED 2026-07-06: OWNER DECIDED WINDOWED ships. Contingency NOT TAKEN (trigger was j3-leak-contaminated; clean cost delta_mu=-0.0022 / +0.57 km; single ~2x Stage-B cost). Hardening spawned: Task 21 (provenance train/score assert, blocks 19), Task 22 (peak-model predicate re-grounding, before next tuning gate)."
+    },
+    {
+      "id": 21,
+      "subject": "Task 21 (hardening): provenance-enforced train/score separation",
+      "status": "pending",
+      "blockedBy": [],
+      "blocks": [
+        19
+      ],
+      "description": "Maps carry assimilated-mission list in typed provenance; every track-scoring path asserts scored_mission not in assimilated; test that assert fires on deliberately-leaked map. MUST land before Task 19."
+    },
+    {
+      "id": 22,
+      "subject": "Task 22 (hardening): predicate re-grounding \u2014 component-sum peak model in miost_sizing",
+      "status": "pending",
+      "blockedBy": [],
+      "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B."
     }
   ],
-  "lastUpdated": "2026-07-06T13:30:00+00:00"
+  "lastUpdated": "2026-07-06T16:00:00+00:00"
 }
