@@ -27,7 +27,7 @@ import tempfile
 import time
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -41,8 +41,9 @@ from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.stage_a import StageANoAdmissible, StageAReport
 from sverdrup.application.tuning.stage_miost import run_stage_miost
 from sverdrup.application.tuning.strategy import SearchStrategy
+from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import ObsWindow
-from sverdrup.core.parameters import ConstantProvider
+from sverdrup.core.parameters import ConstantProvider, ParameterProvider
 from sverdrup.methods.miost import CONVERGENCE_LOG, Miost, _params_key_hash
 from sverdrup.methods.miost_basis import BOX_LAT, BOX_LON, HALO_DEG
 from sverdrup.methods.miost_solver import PCG_MAXITER, PCG_RTOL
@@ -513,10 +514,304 @@ def main() -> None:
     _log("=== ALL DONE ===")
 
 
+# --------------------------------------------------------------------------
+# Stage B (--stage-b): calibration acceptance at the signed Stage-A winner
+# (plan Task 19; spec 6.5/6.6; blueprint in PROGRESS 2026-07-06).
+# --------------------------------------------------------------------------
+
+STAGE_B_M = int(os.environ.get("SVERDRUP_MIOST_STAGE_B_M", "100"))
+STAGE_B_CAPS = (500, 2000, 8000)
+COVERAGE_TARGET, COVERAGE_TOL = 0.6827, 0.10
+SEAM_DOC = Path("docs/validation/miost_seam_dispersion.md")
+
+
+def _escalated_members(
+    plan: WindowPlan,
+    obs: ObsWindow,
+    grid: GridSpec,
+    params: ParameterProvider,
+    m: int,
+    root: int,
+    rtol: float,
+    caps: tuple[int, ...],
+) -> dict[str, Any]:
+    """Member generation with §6.5 budget escalation — never biased draws.
+
+    Solves all windows' member batches at each cap in ``caps`` until every
+    batch's achieved residual meets ``rtol``. An under-converged member is a
+    BIASED draw; if the last cap still fails, ``converged`` is False and the
+    caller must STOP for the owner rather than accept the ensemble.
+
+    Args:
+        plan: Window plan (production plan at the gate).
+        obs: TRAIN-ONLY observations.
+        grid: Output grid.
+        params: Winner parameter provider.
+        m: Member count.
+        root: CRN seed root.
+        rtol: Solver convergence target.
+        caps: Ascending maxiter escalation ladder.
+
+    Returns:
+        Dict with converged, maxiter_used, member_batches telemetry, and the
+        merged (spec, etas_a, anoms, starts).
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    out: dict[str, Any] = {}
+    for cap in caps:
+        method = Miost(plan=plan, pcg_rtol=rtol, pcg_maxiter=cap)
+        CONVERGENCE_LOG.clear()
+        spec, etas_a, anoms, starts = merged_members(
+            method,
+            obs,
+            grid,
+            params,
+            m,
+            root,
+            on_window=lambda wid, day: _log(f"  members solved: {wid} (day {day:.0f})"),
+        )
+        batches = [dict(e) for e in CONVERGENCE_LOG if e.get("kind") == "member-batch"]
+        worst = max(float(cast("float", b["final_rel_residual"])) for b in batches)
+        out = {
+            "converged": worst <= rtol,
+            "maxiter_used": cap,
+            "member_batches": batches,
+            "spec": spec,
+            "etas_a": etas_a,
+            "anoms": anoms,
+            "starts": starts,
+        }
+        if out["converged"]:
+            return out
+        _log(
+            f"member batches under-converged at cap {cap} "
+            f"(worst residual {worst:.2e} > rtol {rtol:g}) — escalating"
+        )
+    return out
+
+
+def _calibration_at(
+    mu: np.ndarray, var: np.ndarray, ssh: np.ndarray, s: float
+) -> dict[str, float | int]:
+    """Calibration triplet with the variance inflated by exactly ``s``."""
+    from sverdrup.eval.calibration import coverage, crps_gaussian, reduced_chi2
+
+    v = s * var
+    return {
+        "s": float(s),
+        "reduced_chi2": float(reduced_chi2(mu, v, ssh)),
+        "coverage_1sigma": float(coverage(mu, v, ssh)),
+        "crps": float(crps_gaussian(mu, v, ssh).mean()),
+        "n_points": int(np.asarray(ssh).size),
+    }
+
+
+def _interp_mean_var_on_track(
+    mean_nc: Path, var_nc: Path, track_path: Path, cfg: dict[str, Any]
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Interp the mean and variance maps onto a track; finite-masked arrays."""
+    import sverdrup.validation.their_eval as te
+    from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
+
+    assert_scored_not_assimilated(mean_nc, track_path)  # Task-21 guard
+    te._prepare_imports()
+    from src.mod_inout import read_l3_dataset
+    from src.mod_interp import interp_on_alongtrack
+
+    box = dict(
+        lon_min=295.0,
+        lon_max=305.0,
+        lat_min=33.0,
+        lat_max=43.0,
+        time_min=cfg["time_min"],
+        time_max=cfg["time_max"],
+    )
+    ds_at = read_l3_dataset(str(track_path), **box)
+    _, _, _, ssh, mu = interp_on_alongtrack(str(mean_nc), ds_at, is_circle=False, **box)
+    _, _, _, _, var = interp_on_alongtrack(str(var_nc), ds_at, is_circle=False, **box)
+    ssh, mu, var = (np.asarray(a, float) for a in (ssh, mu, var))
+    ok = np.isfinite(ssh) & np.isfinite(mu) & np.isfinite(var) & (var > 0)
+    return mu[ok], var[ok], ssh[ok]
+
+
+def stage_b_main() -> None:
+    """Stage-B acceptance run at the signed Stage-A winner (Task 19 step 1).
+
+    Writes evidence incrementally into RESULTS under "stage_b". The single
+    c2 touch is env-gated (SVERDRUP_MIOST_C2=1) so smoke runs never spend
+    it. Owner sign-off + the capability-flip commit remain manual.
+    """
+    from sverdrup.application.splits import make_splits
+    from sverdrup.application.tuning.stage_a import _subset
+    from sverdrup.core.seeding import derive_seed
+    from sverdrup.distributions.miost_ensemble import mean_fields, std_fields
+    from sverdrup.eval.calibration import reduced_chi2
+    from sverdrup.validation.input_adapter import load_mdt_grid
+    from sverdrup.validation.output_adapter import write_map
+    from sverdrup.validation.their_eval import score as their_score
+
+    scope = _scope()
+    cfg = json.loads(scope.read_text())
+    results = json.loads(RESULTS.read_text())
+    winner = dict(results["winner"]["params"])
+    _, grid, _ = baseline_config()
+    m = STAGE_B_M
+    root = derive_seed("miost", "stage-b-winner", "members", 0)
+    sb: dict[str, Any] = {
+        "m": m,
+        "root": int(root),
+        "winner_params": winner,
+        "budget_caps": list(STAGE_B_CAPS),
+        "pcg_rtol": PCG_RTOL,
+    }
+
+    # A dev smoke must NEVER write into the production gate-evidence JSON.
+    dest = RESULTS if SCOPE_MODE == "full" else OUT_DIR / "stage_b_dev_smoke.json"
+    sb["scope"] = SCOPE_MODE
+
+    def _flush(status: str) -> None:
+        sb["status"] = status
+        if dest == RESULTS:
+            results["stage_b"] = sb
+            dest.write_text(json.dumps(results, indent=2))
+        else:
+            dest.write_text(json.dumps(sb, indent=2))
+
+    obs_halo = _halo_obs(scope)
+    split = make_splits(
+        obs_halo,
+        by="mission",
+        locked_missions=["c2"],
+        validation_missions=[str(cfg["validation_mission"])],
+    )
+    obs = _subset(obs_halo, split.train_idx)
+    days = [float(d) for d in cfg["validation_days"]]
+    _log(f"stage-b: train obs {len(obs)}; m={m}; days {len(days)}")
+    _flush("RUNNING: member generation")
+
+    plan = WindowPlan()
+    esc = _escalated_members(
+        plan, obs, grid, ConstantProvider(winner), m, root, PCG_RTOL, STAGE_B_CAPS
+    )
+    sb["member_batches"] = esc["member_batches"]
+    sb["maxiter_used"] = esc["maxiter_used"]
+    sb["members_converged"] = esc["converged"]
+    if not esc["converged"]:
+        _flush(
+            "STOPPED: member batches under-converged at every cap — biased "
+            "draws are not acceptable at the gate (spec 6.5); owner call"
+        )
+        _log("stage-b STOPPED: member under-convergence")
+        return
+    _flush("RUNNING: day fields")
+
+    spec, etas_a, anoms, starts = (
+        esc["spec"],
+        esc["etas_a"],
+        esc["anoms"],
+        esc["starts"],
+    )
+    means = mean_fields(spec, starts, etas_a, grid, plan, days)
+    stds = std_fields(spec, starts, anoms, grid, plan, days)
+    mdt = (
+        load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
+        if cfg.get("mdt_paths")
+        else None
+    )
+    mean_stack = means.reshape(len(days), *grid.shape)
+    if mdt is not None:
+        mean_stack = mean_stack + mdt[None]
+    var_stack = (stds**2).reshape(len(days), *grid.shape)
+    epoch = np.datetime64("2017-01-01")
+    times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
+    assimilated = tuple(sorted({str(x) for x in np.asarray(obs.mission)}))
+    mean_nc = OUT_DIR / "stage_b_mean_maps.nc"
+    var_nc = OUT_DIR / "stage_b_var_maps.nc"
+    write_map(
+        times, grid.y, grid.x, mean_stack, mean_nc, assimilated_missions=assimilated
+    )
+    write_map(
+        times, grid.y, grid.x, var_stack, var_nc, assimilated_missions=assimilated
+    )
+    _flush("RUNNING: s* on validation")
+
+    mu_v, var_v, ssh_v = _interp_mean_var_on_track(
+        mean_nc, var_nc, Path(cfg["val_track_path"]), cfg
+    )
+    s_star = float(reduced_chi2(mu_v, var_v, ssh_v))  # closed form (scalar R)
+    sb["s_star"] = s_star
+    val_cal = _calibration_at(mu_v, var_v, ssh_v, s=s_star)
+    sb["validation_calibration"] = val_cal
+    cov = float(val_cal["coverage_1sigma"])
+    sb["coverage_bar"] = {
+        "target": COVERAGE_TARGET,
+        "tol": COVERAGE_TOL,
+        "pass": abs(cov - COVERAGE_TARGET) <= COVERAGE_TOL,
+    }
+    if not sb["coverage_bar"]["pass"]:
+        _flush(
+            "STOPPED: coverage bar failed at s* on validation — s* is the "
+            "chi2 minimizer; a coverage failure is a shape mismatch, owner "
+            "call before touching c2"
+        )
+        _log("stage-b STOPPED: coverage bar failed")
+        return
+    _flush("RUNNING: mean-unchanged non-regression")
+
+    # Compare SLA-space day means (pre-MDT) against a fresh POINT solve at
+    # the SAME budget: same deterministic arithmetic -> must be bit-identical.
+    point = Miost(pcg_rtol=PCG_RTOL, pcg_maxiter=esc["maxiter_used"])
+    check_days = days[:: max(1, len(days) // 3)][:3]
+    identical = []
+    for d in check_days:
+        pd = point.solve(obs, grid, ConstantProvider(winner), d)
+        identical.append(
+            bool(np.array_equal(means[days.index(d)], np.asarray(pd.mean).ravel()))
+        )
+    sb["mean_unchanged"] = {"days": check_days, "bit_identical": identical}
+    if not all(identical):
+        _flush("STOPPED: mean-unchanged non-regression FAILED (D6 violated)")
+        _log("stage-b STOPPED: mean regression")
+        return
+
+    if SEAM_DOC.exists():
+        verdict = [
+            ln
+            for ln in SEAM_DOC.read_text().splitlines()
+            if ln.startswith("TASK-19 GATE VERDICT")
+        ]
+        sb["seam_dispersion"] = {
+            "doc": str(SEAM_DOC),
+            "verdict": verdict[0] if verdict else "(no verdict line found)",
+        }
+
+    if os.environ.get("SVERDRUP_MIOST_C2") != "1":
+        _flush(
+            "READY: evidence assembled; c2 NOT touched (set "
+            "SVERDRUP_MIOST_C2=1 for the single acceptance touch)"
+        )
+        _log("stage-b READY (c2 untouched)")
+        return
+
+    _flush("RUNNING: the single c2 touch")
+    c2_track = Path(cfg["c2_track_path"])
+    mu_c, var_c, ssh_c = _interp_mean_var_on_track(mean_nc, var_nc, c2_track, cfg)
+    sb["c2_acceptance"] = {
+        "mu_sigma_lambda_x": list(their_score(mean_nc, c2_track)),
+        "calibration_at_s_star": _calibration_at(mu_c, var_c, ssh_c, s=s_star),
+        "semantics": "the ONE Stage-B c2 touch (hygiene order: winner-only)",
+    }
+    _flush("DONE: awaiting owner sign-off + capability-flip commit")
+    _log("stage-b DONE")
+
+
 if __name__ == "__main__":
     if "--build-replay-cache" in sys.argv:
         built = _build_replay_cache(LOG_FILE, RESULTS)
         REPLAY_FILE.write_text(json.dumps(built, indent=2))
         print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
+    elif "--stage-b" in sys.argv:
+        stage_b_main()
     else:
         main()
