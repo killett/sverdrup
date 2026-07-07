@@ -175,6 +175,71 @@
 > pre-commit hook blocks commits while a native task is in_progress —
 > keep the umbrella task pending/completed around commits.**
 >
+> **▶ FRONT-LOADED DESIGN WORK (2026-07-06, done while the Task-18 run
+> was in flight — owner asked to pull Fable-level work forward):**
+> 1. **Task-18 verdict rubric PRE-REGISTERED + committed BEFORE the
+>    run's numbers existed** — `docs/validation/miost_seam_dispersion_rubric.md`.
+>    Post-run close of Task 18 = apply it mechanically (Rules 0–4), no
+>    new judgment needed.
+> 2. **Capability-flip machinery LANDED + tested:**
+>    `Miost(members=m, member_root=r, inflation_s=s)` → SAMPLES-native,
+>    `solve()` returns the s*-inflated ensemble, mean bit-identical to
+>    POINT; `member_root` mandatory. Ensemble GRID queries
+>    (`marginal_variance` / `to_grid_ensemble`) now use the sparse
+>    S-path — the dense-evaluate OOM-#3 trap is dead at the root
+>    (pinned by `test_grid_queries_never_dense_evaluate`). Registry
+>    default stays POINT until the gate's capability-flip commit.
+> 3. **TASK-19 RUNNER BLUEPRINT (implementation now mechanical):**
+>    extend `scripts/stage_miost_gate_run.py` with `--stage-b`:
+>    (a) load winner params from the Stage-A results JSON; obs =
+>    box+halo TRAIN-ONLY (same `make_splits`/`_subset` as
+>    `tune_miost_inflation.py`); root =
+>    `derive_seed("miost", "stage-b-winner", "members", 0)`; m=100
+>    (spec 6.1 default).
+>    (b) MEMBER BUDGET (§6.5 + rubric Rule 3): solve members via
+>    `merged_members` at (rtol 1e-6, maxiter 500); if ANY member-batch
+>    final residual > rtol (CONVERGENCE_LOG kind="member-batch"),
+>    RE-SOLVE that config at maxiter 2000, then 8000; if still
+>    unconverged STOP for owner (biased draws are not acceptable at the
+>    gate). Record (target, cap, achieved) per window in the results
+>    JSON. Winner-point Stage-A solves converged ≤286 iters, so
+>    escalation is unlikely to trigger.
+>    (c) full-year mean/var maps via `mean_fields`/`std_fields`**2
+>    (S-path, one solve per window — NEVER per-day sample_members,
+>    NEVER dense evaluate); mean map + MDT; maps written with
+>    `assimilated_missions` provenance.
+>    (d) s* on VALIDATION track only: interp mean+var maps on j3 track
+>    (guard asserts), `s* = reduced_chi2(mu, var, ssh)` (scalar-R
+>    precondition asserted, `assert_scalar_r` pattern); calibration
+>    bars at s*: reduced_chi2(s*·var)≈1 identity, coverage_1sigma in
+>    0.6827±0.10, crps reported. If coverage bar FAILS at s* → STOP,
+>    assemble evidence, owner call (s* is the chi2 minimizer; coverage
+>    failure means non-Gaussian/shape mismatch — do not hunt a second
+>    knob without the owner).
+>    (e) mean-unchanged non-regression: regenerate the Stage-A
+>    acceptance map under Stage-B code (ensemble-mode mean), assert
+>    bit-identical to the recorded Stage-A map.
+>    (f) THE ONE c2 TOUCH (hygiene: winner-only, once): score the
+>    s*-inflated product on c2 — µ/σ/λx via their_eval + calibration
+>    triplet on c2; write everything into the results JSON under
+>    "stage_b"; attach the Task-18 doc verdict + rubric outcome.
+>    (g) full suite green (§7.3 inventory now in-tree); present
+>    evidence; on owner sign-off: capability-flip commit = registry
+>    "miost" constructed with the tuned (members, root, s*) — one-line
+>    factory change + the flip test already exists
+>    (`test_ensemble_mode_capability_and_routing`).
+> 4. **TASK-22 PHASE 2 (mechanical):** peak model landed
+>    (`miost_sizing.peak_model`, phase-max, no fudge). Validate against
+>    the Task-18 run telemetry: model `total` for the windowed member
+>    leg (α=1.5, m=50, n_obs from the run log, retained = accumulated
+>    anoms bytes) must satisfy `measured_peak ≤ total ≤ 2×measured_peak`
+>    (VmHWM lines in the run log). Outside that band → recalibrate the
+>    NAMED byte constants with a stated reason, never a bare
+>    multiplier. Then wire `PeakFeasibility` (composes like
+>    StoredGFeasibility; budget = MemAvailable read at construction ×
+>    0.8, recorded in `explain()`) — required BEFORE the next TUNING
+>    gate, not before Task 19.
+>
 > **▶ TASK-18 HANDOFF (owner cleared session here 2026-07-06; brief
 > kept for the record — RAM analysis done, do not redo it):**
 > - **THE TRAP (would be OOM #3): `BasisSpec.evaluate` is DENSE — "small
