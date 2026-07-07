@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.provenance import (
@@ -20,8 +22,22 @@ from sverdrup.core.provenance import (
 )
 from sverdrup.core.types import Field, Points, Seed, UncertaintyCapability
 from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
-from sverdrup.methods.miost_basis import W_DAYS, BasisSpec, lonlat_to_km
+from sverdrup.methods.miost_basis import (
+    W_DAYS,
+    BasisSpec,
+    Elements,
+    build_s_spatial,
+    lonlat_to_km,
+    time_contract,
+)
 from sverdrup.methods.miost_windows import Window, WindowPlan
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sverdrup.core.observations import ObsWindow
+    from sverdrup.core.parameters import ParameterProvider
+    from sverdrup.methods.miost import Miost
 
 KIND = "miost-coeff-ensemble"
 
@@ -242,3 +258,168 @@ class MiostEnsembleDistribution:
                 _w_days=float(z["w_days"]),
             )
         return self
+
+
+def exclusive_days(plan: WindowPlan) -> dict[str, float]:
+    """For each window, a day covered by ONLY that window (exclusive-range mid).
+
+    ``Miost.sample_members`` solves the covering windows of the day it is
+    given; one exclusive day per window yields exactly one batched member
+    solve per window across :func:`merged_members` — the Task-18 efficiency
+    contract (never re-solve members per output day).
+
+    Args:
+        plan: The window plan.
+
+    Returns:
+        window_id -> exclusive day.
+
+    Raises:
+        ValueError: If some window is never the sole cover of any day (a
+            silent skip would merge an ensemble with a variance hole).
+    """
+    out: dict[str, float] = {}
+    for w in plan.windows:
+        alone = [
+            float(d)
+            for d in np.arange(w.start_day, w.end_day + 0.5, 1.0)
+            if [c.id for c in plan.covering(float(d))] == [w.id]
+        ]
+        if not alone:
+            raise ValueError(f"window {w.id} has no exclusive day in plan")
+        out[w.id] = alone[len(alone) // 2]
+    return out
+
+
+def merged_members(
+    method: Miost,
+    obs: ObsWindow,
+    grid: GridSpec,
+    params: ParameterProvider,
+    m: int,
+    root: Seed,
+    on_window: Callable[[str, float], None] | None = None,
+) -> tuple[BasisSpec, dict[str, np.ndarray], dict[str, np.ndarray], dict[str, float]]:
+    """All windows' member anomalies via one sample_members call per window.
+
+    Identity-keyed CRN (same root every call) makes the merged ensemble
+    identical per window to what any single blend-day call would produce.
+
+    Args:
+        method: The Miost method (its plan defines the windows).
+        obs: Full observation window (TRAIN-ONLY at the call site).
+        grid: Output grid.
+        params: Parameter provider.
+        m: Member count.
+        root: CRN seed root — the SAME root for every window.
+        on_window: Optional progress callback ``(window_id, day)`` fired
+            after each window's batched solve.
+
+    Returns:
+        (spec, etas_a, anoms, window_starts) merged over all windows.
+
+    Raises:
+        ValueError: If the plan has no windows.
+    """
+    spec: BasisSpec | None = None
+    etas_a: dict[str, np.ndarray] = {}
+    anoms: dict[str, np.ndarray] = {}
+    starts: dict[str, float] = {}
+    for wid, day in exclusive_days(method._plan).items():
+        dist = method.sample_members(obs, grid, params, day, m, root)
+        spec = dist._spec
+        etas_a.update(dist._etas_a)
+        anoms.update(dist._anoms)
+        starts.update(dist._window_starts)
+        if on_window is not None:
+            on_window(wid, day)
+    if spec is None:
+        raise ValueError("plan has no windows — nothing to merge")
+    return spec, etas_a, anoms, starts
+
+
+def _window_smats(
+    spec: BasisSpec,
+    starts: dict[str, float],
+    grid: GridSpec,
+    plan: WindowPlan,
+) -> tuple[int, dict[str, tuple[Elements, sparse.csr_matrix]]]:
+    """Per-window (Elements, spatial-S) on the grid nodes (SPARSE path)."""
+    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
+    smats = {}
+    for wid, s0 in starts.items():
+        els = spec.elements_for_window(s0, plan.w_days)
+        smats[wid] = (els, build_s_spatial(spec, els, lon2d.ravel(), lat2d.ravel()))
+    return lon2d.size, smats
+
+
+def mean_fields(
+    spec: BasisSpec,
+    starts: dict[str, float],
+    etas_a: dict[str, np.ndarray],
+    grid: GridSpec,
+    plan: WindowPlan,
+    days: list[float],
+) -> np.ndarray:
+    """Per-day blended mean fields via the SPARSE S-path (never dense evaluate).
+
+    Args:
+        spec: Basis specification of the merged ensemble.
+        starts: window_id -> start day.
+        etas_a: window_id -> (n_el,) unperturbed coefficients.
+        grid: Output grid.
+        plan: The window plan (blend weights).
+        days: Output days.
+
+    Returns:
+        (len(days), n_nodes) mean fields (SLA space; add MDT downstream).
+    """
+    n_nodes, smats = _window_smats(spec, starts, grid, plan)
+    out = np.zeros((len(days), n_nodes))
+    for i, day in enumerate(days):
+        for w in plan.covering(day):
+            els, s = smats[w.id]
+            out[i] += plan.weight(w, day) * (
+                s @ time_contract(spec, els, etas_a[w.id], day)
+            )
+    return out
+
+
+def std_fields(
+    spec: BasisSpec,
+    starts: dict[str, float],
+    anoms: dict[str, np.ndarray],
+    grid: GridSpec,
+    plan: WindowPlan,
+    days: list[float],
+) -> np.ndarray:
+    """Per-day member std fields via the SPARSE S-path (never dense evaluate).
+
+    The blended member-anomaly field at a day is
+    ``sum_w weight_w(day) * S_w @ time_contract(anoms_w, day)``; std is taken
+    about the member sample mean with the (m - 1) denominator, matching
+    :meth:`MiostEnsembleDistribution.marginal_variance`.
+
+    Args:
+        spec: Basis specification of the merged ensemble.
+        starts: window_id -> start day.
+        anoms: window_id -> (n_el, m) coefficient anomalies.
+        grid: Output grid.
+        plan: The window plan (blend weights).
+        days: Output days.
+
+    Returns:
+        (len(days), n_nodes) member std fields.
+    """
+    n_nodes, smats = _window_smats(spec, starts, grid, plan)
+    m = next(iter(anoms.values())).shape[1]
+    out = np.empty((len(days), n_nodes))
+    for i, day in enumerate(days):
+        acc = np.zeros((n_nodes, m))
+        for w in plan.covering(day):
+            els, s = smats[w.id]
+            acc += plan.weight(w, day) * (
+                s @ time_contract(spec, els, anoms[w.id], day)
+            )
+        out[i] = acc.std(axis=1, ddof=1)
+    return out

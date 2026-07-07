@@ -33,18 +33,18 @@ import numpy as np
 
 from sverdrup.application.splits import make_splits
 from sverdrup.application.tuning.stage_a import _subset
-from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
-from sverdrup.core.parameters import ConstantProvider, ParameterProvider
-from sverdrup.core.types import Seed
+from sverdrup.core.parameters import ConstantProvider
+from sverdrup.distributions.miost_ensemble import (  # noqa: F401  (re-exported for the pinned tests)
+    exclusive_days,
+    merged_members,
+    std_fields,
+)
 from sverdrup.methods.miost import CONVERGENCE_LOG, Miost
 from sverdrup.methods.miost_basis import (
     BOX_LAT,
     BOX_LON,
     HALO_DEG,
-    BasisSpec,
-    build_s_spatial,
-    time_contract,
 )
 from sverdrup.methods.miost_windows import WindowPlan
 from sverdrup.validation.input_adapter import load_mapping_obs
@@ -82,120 +82,6 @@ def _days() -> list[float]:
     """Output days from DIAG_DAYS='lo-hi' (default full year 0-364)."""
     lo, hi = (os.environ.get("DIAG_DAYS") or "0-364").split("-")
     return [float(d) for d in range(int(lo), int(hi) + 1)]
-
-
-def exclusive_days(plan: WindowPlan) -> dict[str, float]:
-    """For each window, a day covered by ONLY that window (its exclusive range mid).
-
-    sample_members solves the covering windows of the day it is given; an
-    exclusive day per window yields exactly one batched member solve per
-    window across the merge — the Task-18 efficiency contract.
-
-    Args:
-        plan: The window plan.
-
-    Returns:
-        window_id -> exclusive day.
-
-    Raises:
-        ValueError: If some window is never the sole cover of any day (the
-            merge would silently miss its members — a variance hole).
-    """
-    out: dict[str, float] = {}
-    for w in plan.windows:
-        alone = [
-            float(d)
-            for d in np.arange(w.start_day, w.end_day + 0.5, 1.0)
-            if [c.id for c in plan.covering(float(d))] == [w.id]
-        ]
-        if not alone:
-            raise ValueError(f"window {w.id} has no exclusive day in plan")
-        out[w.id] = alone[len(alone) // 2]
-    return out
-
-
-def merged_members(
-    method: Miost,
-    obs: ObsWindow,
-    grid: GridSpec,
-    params: ParameterProvider,
-    m: int,
-    root: Seed,
-) -> tuple[BasisSpec, dict[str, np.ndarray], dict[str, np.ndarray], dict[str, float]]:
-    """All windows' member anomalies via one sample_members call per window.
-
-    Identity-keyed CRN (same root every call) makes the merged ensemble
-    identical to what any single blend-day call would produce per window.
-
-    Args:
-        method: The Miost method (its plan defines the windows).
-        obs: Full observation window (TRAIN-ONLY at the call site).
-        grid: Output grid.
-        params: Parameter provider.
-        m: Member count.
-        root: CRN seed root — the SAME root for every window and both plans.
-
-    Returns:
-        (spec, etas_a, anoms, window_starts) merged over all windows.
-    """
-    spec: BasisSpec | None = None
-    etas_a: dict[str, np.ndarray] = {}
-    anoms: dict[str, np.ndarray] = {}
-    starts: dict[str, float] = {}
-    for wid, day in exclusive_days(method._plan).items():
-        dist = method.sample_members(obs, grid, params, day, m, root)
-        spec = dist._spec
-        etas_a.update(dist._etas_a)
-        anoms.update(dist._anoms)
-        starts.update(dist._window_starts)
-        _log(f"  members solved: {wid} (exclusive day {day:.0f}); {_rss()}")
-    if spec is None:
-        raise ValueError("plan has no windows — nothing to merge")
-    return spec, etas_a, anoms, starts
-
-
-def std_fields(
-    spec: BasisSpec,
-    starts: dict[str, float],
-    anoms: dict[str, np.ndarray],
-    grid: GridSpec,
-    plan: WindowPlan,
-    days: list[float],
-) -> np.ndarray:
-    """Per-day member std fields via the SPARSE S-path (never dense evaluate).
-
-    The blended member-anomaly field at a day is
-    ``sum_w weight_w(day) * S_w @ time_contract(anoms_w, day)``; std is taken
-    about the member sample mean with the (m - 1) denominator, matching
-    ``MiostEnsembleDistribution.marginal_variance``.
-
-    Args:
-        spec: Basis specification of the merged ensemble.
-        starts: window_id -> start day.
-        anoms: window_id -> (n_el, m) coefficient anomalies.
-        grid: Output grid.
-        plan: The window plan (blend weights).
-        days: Output days.
-
-    Returns:
-        (len(days), n_nodes) member std fields.
-    """
-    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
-    smats = {}
-    for wid, s0 in starts.items():
-        els = spec.elements_for_window(s0, plan.w_days)
-        smats[wid] = (els, build_s_spatial(spec, els, lon2d.ravel(), lat2d.ravel()))
-    m = next(iter(anoms.values())).shape[1]
-    out = np.empty((len(days), lon2d.size))
-    for i, day in enumerate(days):
-        acc = np.zeros((lon2d.size, m))
-        for w in plan.covering(day):
-            els, s = smats[w.id]
-            acc += plan.weight(w, day) * (
-                s @ time_contract(spec, els, anoms[w.id], day)
-            )
-        out[i] = acc.std(axis=1, ddof=1)
-    return out
 
 
 def dispersion_summary(day_max: np.ndarray, blend: np.ndarray) -> dict[str, float]:
@@ -270,11 +156,18 @@ def main() -> None:
     windowed = Miost(pcg_rtol=rtol, pcg_maxiter=maxiter)
     single = Miost(plan=plan_s, pcg_rtol=rtol, pcg_maxiter=maxiter)
 
+    def _on_window(wid: str, day: float) -> None:
+        _log(f"  members solved: {wid} (exclusive day {day:.0f}); {_rss()}")
+
     CONVERGENCE_LOG.clear()
     _log("windowed member solves (9 windows) ...")
-    spec_w, _, anoms_w, starts_w = merged_members(windowed, obs, grid, PARAMS, m, root)
+    spec_w, _, anoms_w, starts_w = merged_members(
+        windowed, obs, grid, PARAMS, m, root, on_window=_on_window
+    )
     _log("single-window member solve (1 window) ...")
-    spec_s, _, anoms_s, starts_s = merged_members(single, obs, grid, PARAMS, m, root)
+    spec_s, _, anoms_s, starts_s = merged_members(
+        single, obs, grid, PARAMS, m, root, on_window=_on_window
+    )
     solves = [dict(e) for e in CONVERGENCE_LOG]
     _log(f"all member batches solved; {_rss()}")
 

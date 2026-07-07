@@ -57,16 +57,29 @@ def s_star_closed_form(mean: np.ndarray, var: np.ndarray, truth: np.ndarray) -> 
 
 
 def main() -> None:
-    """Tune s* at the Stage-A winner on the blocked validation track."""
+    """Tune s* at the Stage-A winner on the blocked validation track.
+
+    Members come from ONE batched solve per window (merged_members) and all
+    per-day mean/variance fields from the SPARSE S-path — never per-day
+    sample_members re-solves, never dense BasisSpec.evaluate on the
+    production grid (the OOM-#3 trap; Task-18 helpers).
+    """
     import sverdrup.validation.their_eval as te
     from sverdrup.application.splits import make_splits
     from sverdrup.application.tuning.stage_a import _subset
     from sverdrup.core.parameters import ConstantProvider
     from sverdrup.core.seeding import derive_seed
+    from sverdrup.distributions.miost_ensemble import (
+        mean_fields,
+        merged_members,
+        std_fields,
+    )
     from sverdrup.methods.miost import Miost
+    from sverdrup.methods.miost_windows import WindowPlan
     from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
     from sverdrup.validation.output_adapter import write_map
     from sverdrup.validation.params import baseline_config
+    from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
 
     m = int(os.environ.get("SVERDRUP_MIOST_M", "20"))
     results = json.loads(RESULTS.read_text())
@@ -89,21 +102,43 @@ def main() -> None:
 
     method = Miost()
     root = derive_seed("miost", "stage-b-winner", "members", 0)
-    days = list(cfg["validation_days"])
-    means, varis = [], []
-    for d in days:
-        ens = method.sample_members(
-            obs, grid, ConstantProvider(winner), float(d), m=m, root=root
-        )
-        means.append(np.asarray(ens.mean) + mdt)
-        varis.append(np.asarray(ens.marginal_variance()))
+    days = [float(d) for d in cfg["validation_days"]]
+    plan = WindowPlan()
+    spec, etas_a, anoms, _starts = merged_members(
+        method, obs, grid, ConstantProvider(winner), m, root
+    )
+    means = mean_fields(spec, _starts, etas_a, grid, plan, days)
+    stds = std_fields(spec, _starts, anoms, grid, plan, days)
+    mean_stack = means.reshape(len(days), *grid.shape) + mdt[None]
+    var_stack = (stds**2).reshape(len(days), *grid.shape)
     epoch = np.datetime64("2017-01-01")
     times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
     lon2d, lat2d = np.meshgrid(grid.x, grid.y)
     mean_nc = OUT_DIR / "stage_b_mean_maps.nc"
     var_nc = OUT_DIR / "stage_b_var_maps.nc"
-    write_map(times, np.unique(lat2d), np.unique(lon2d), np.stack(means), mean_nc)
-    write_map(times, np.unique(lat2d), np.unique(lon2d), np.stack(varis), var_nc)
+    assimilated = (
+        None
+        if obs.mission is None
+        else tuple(sorted({str(x) for x in np.asarray(obs.mission)}))
+    )
+    write_map(
+        times,
+        np.unique(lat2d),
+        np.unique(lon2d),
+        mean_stack,
+        mean_nc,
+        assimilated_missions=assimilated,
+    )
+    write_map(
+        times,
+        np.unique(lat2d),
+        np.unique(lon2d),
+        var_stack,
+        var_nc,
+        assimilated_missions=assimilated,
+    )
+    # Task-21 guard: this path scores the validation track on our own maps.
+    assert_scored_not_assimilated(mean_nc, Path(cfg["val_track_path"]))
 
     te._prepare_imports()
     from src.mod_inout import read_l3_dataset

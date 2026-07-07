@@ -157,6 +157,43 @@ def test_std_fields_match_dense_reference(
         np.testing.assert_allclose(fields[i], ref, rtol=1e-10, atol=1e-14)
 
 
+def test_mean_fields_match_dense_reference(
+    diag_mod: Any,
+    merged: tuple[Any, dict[str, Any], dict[str, Any], dict[str, float]],
+) -> None:
+    """S-path per-day blended MEAN == dense-gamma mean_at on the grid.
+
+    Bug caught: a blend-weight or taper error in the mean path of the
+    S-path evaluator (tune_miost_inflation's full-year mean maps) that the
+    std tests cannot see — anomalies are mean-centered per window.
+    """
+    from sverdrup.distributions.miost_ensemble import mean_fields
+
+    spec, etas_a, anoms, starts = merged
+    plan = WindowPlan(starts=TWO_WIN)
+    days = [20.0, 50.0]  # interior, blend
+    fields = mean_fields(spec, starts, etas_a, GRID, plan, days)
+    assert fields.shape == (2, GRID.shape[0] * GRID.shape[1])
+    lon2d, lat2d = np.meshgrid(GRID.x, GRID.y)
+    for i, day in enumerate(days):
+        dense = MiostEnsembleDistribution(
+            grid=GRID,
+            mean=np.zeros(GRID.shape),
+            provenance=ensemble_provenance(M),
+            time_days=day,
+            m=M,
+            _spec=spec,
+            _etas_a=etas_a,
+            _anoms=anoms,
+            _window_starts=starts,
+            _w_days=plan.w_days,
+        )
+        pts = np.column_stack([lon2d.ravel(), lat2d.ravel(), np.full(lon2d.size, day)])
+        np.testing.assert_allclose(
+            fields[i], dense.mean_at(pts), rtol=1e-10, atol=1e-14
+        )
+
+
 def test_dispersion_summary_worst_case_localized(diag_mod: Any) -> None:
     """Headline ratio = worst blend day / interior MEDIAN — exactly 3.0 here.
 
