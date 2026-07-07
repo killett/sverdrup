@@ -103,6 +103,9 @@ def _boundary_distance(day: float, plan: WindowPlan) -> float:
 def _score_on_validation(map_path: Path) -> dict[str, float]:
     """Blocked-j3-track skill of one map file: mu (+ lambda_x when it resolves)."""
     import sverdrup.validation.their_eval as te
+    from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
+
+    assert_scored_not_assimilated(map_path, VAL_TRACK)  # Task-21 guard
 
     te._prepare_imports()
     from src.mod_inout import read_l3_dataset

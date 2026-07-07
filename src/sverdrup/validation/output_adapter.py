@@ -16,6 +16,8 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
+from sverdrup.validation.provenance_guard import ASSIMILATED_ATTR
+
 SSH_VAR = "ssh"
 TIME_UNITS = "days since 2017-01-01 00:00:00"
 TIME_CALENDAR = "proleptic_gregorian"
@@ -27,6 +29,7 @@ def write_map(
     lons: np.ndarray,
     ssh: np.ndarray,
     dest: Path,
+    assimilated_missions: tuple[str, ...] | None = None,
 ) -> Path:
     """Write a (time, lat, lon) SSH map to ``dest`` in the challenge schema.
 
@@ -36,6 +39,10 @@ def write_map(
         lons: 1-D longitude coordinate (degrees east).
         ssh: ``(time, lat, lon)`` SSH field.
         dest: Output NetCDF path.
+        assimilated_missions: Missions whose obs were assimilated into the
+            map; written as typed file provenance (Task-21 train/score
+            guard). None (unlabeled obs) writes NO attribute — absent means
+            "no provenance", never "nothing assimilated".
 
     Returns:
         ``dest``.
@@ -50,6 +57,8 @@ def write_map(
     )
     ds["lat"].attrs.update(long_name="Latitudes", units="degrees_north")
     ds["lon"].attrs.update(long_name="Longitudes", units="degrees_east")
+    if assimilated_missions is not None:
+        ds.attrs[ASSIMILATED_ATTR] = " ".join(sorted(set(assimilated_missions)))
     encoding = {
         "time": {
             "units": TIME_UNITS,

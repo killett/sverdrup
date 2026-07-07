@@ -222,6 +222,10 @@ def _n_obs_max_window(scope: Path) -> int:
 def _score_map_on_validation(map_path: Path, cfg: dict[str, Any]) -> dict[str, float]:
     """Blocked-j3-track skill of one map file (mu + lambda_x when it resolves)."""
     import sverdrup.validation.their_eval as te
+    from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
+
+    # Task-21 guard: THIS path carried the winner-point cross-protocol leak.
+    assert_scored_not_assimilated(map_path, Path(cfg["val_track_path"]))
     from sverdrup.eval.skill_score import leaderboard_nrmse
     from sverdrup.eval.spectral import (
         ShortTrackError,

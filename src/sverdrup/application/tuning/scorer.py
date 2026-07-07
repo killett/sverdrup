@@ -34,6 +34,7 @@ from sverdrup.eval.calibration import coverage
 from sverdrup.eval.skill_score import leaderboard_nrmse
 from sverdrup.eval.spectral import effective_resolution_lambda_x
 from sverdrup.methods.registry import METHODS
+from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
 from sverdrup.validation.run import run_challenge_map, run_mean_var_maps
 
 
@@ -165,6 +166,9 @@ class ValidationTrackScorer:
 
         with tempfile.TemporaryDirectory() as td:
             mean_p, var_p = self._produce_maps(method_name, params, Path(td))
+            # Task-21 guard: the trial map must not have assimilated the
+            # validation mission (loop-scale version of the Task-13 leak).
+            assert_scored_not_assimilated(mean_p, self.val_track_path)
             te._prepare_imports()
             from src.mod_inout import read_l3_dataset
             from src.mod_interp import interp_on_alongtrack

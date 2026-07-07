@@ -27,6 +27,7 @@ from typing import Any
 import matplotlib
 
 from sverdrup.eval.spectral import effective_resolution_lambda_x
+from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
 
 _VENDOR = Path(__file__).resolve().parents[3] / "vendor" / "2021a_SSH_mapping_OSE"
 _PYINTERP_PATCHED = False
@@ -162,7 +163,12 @@ def score(map_path: Path, track_path: Path) -> tuple[float, float, float]:
     Returns:
         ``(mu_rmse, sigma_rmse, lambda_x_km)`` as computed by the challenge's
         own RMSE-based and spectral scoring functions.
+
+    Raises:
+        TrainScoreLeakError: If the map's typed provenance shows the track's
+            mission was assimilated (Task-21 train/score guard).
     """
+    assert_scored_not_assimilated(map_path, track_path)
     _prepare_imports()
     from src.mod_inout import read_l3_dataset
     from src.mod_interp import interp_on_alongtrack

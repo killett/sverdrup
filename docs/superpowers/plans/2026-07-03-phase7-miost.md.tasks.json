@@ -192,12 +192,13 @@
     {
       "id": 21,
       "subject": "Task 21 (hardening): provenance-enforced train/score separation",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [],
       "blocks": [
         19
       ],
-      "description": "Maps carry assimilated-mission list in typed provenance; every track-scoring path asserts scored_mission not in assimilated; test that assert fires on deliberately-leaked map. MUST land before Task 19."
+      "description": "Maps carry assimilated-mission list in typed provenance; every track-scoring path asserts scored_mission not in assimilated; test that assert fires on deliberately-leaked map. MUST land before Task 19.",
+      "lastUpdated": "2026-07-06T00:00:00Z"
     },
     {
       "id": 22,

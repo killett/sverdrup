@@ -64,6 +64,13 @@ def _window(obs: ObsWindow, day: float, half: float) -> ObsWindow:
     return _subset(obs, np.abs(obs.coords()[:, 2] - day) <= half)
 
 
+def _assimilated(obs: ObsWindow) -> tuple[str, ...] | None:
+    """Mission set of the obs feeding a map, for typed file provenance."""
+    if obs.mission is None:
+        return None
+    return tuple(sorted({str(m) for m in np.asarray(obs.mission)}))
+
+
 def run_challenge_map(
     method_name: str,
     mapping_obs: ObsWindow,
@@ -139,7 +146,14 @@ def run_challenge_map(
     lon, lat = grid._lonlat_nodes()
     days_int = np.rint(np.asarray(output_days, dtype=float)).astype("int64")
     times = EPOCH + days_int * np.timedelta64(1, "D")
-    return write_map(times, np.unique(lat), np.unique(lon), ssh, dest)
+    return write_map(
+        times,
+        np.unique(lat),
+        np.unique(lon),
+        ssh,
+        dest,
+        assimilated_missions=_assimilated(mapping_obs),
+    )
 
 
 def run_mean_var_maps(
@@ -214,8 +228,23 @@ def run_mean_var_maps(
     lon, lat = grid._lonlat_nodes()
     days_int = np.rint(np.asarray(output_days, dtype=float)).astype("int64")
     times = EPOCH + days_int * np.timedelta64(1, "D")
-    write_map(times, np.unique(lat), np.unique(lon), mean_ssh, mean_dest)
-    write_map(times, np.unique(lat), np.unique(lon), var_ssh, var_dest)
+    assimilated = _assimilated(mapping_obs)
+    write_map(
+        times,
+        np.unique(lat),
+        np.unique(lon),
+        mean_ssh,
+        mean_dest,
+        assimilated_missions=assimilated,
+    )
+    write_map(
+        times,
+        np.unique(lat),
+        np.unique(lon),
+        var_ssh,
+        var_dest,
+        assimilated_missions=assimilated,
+    )
     return mean_dest, var_dest
 
 
