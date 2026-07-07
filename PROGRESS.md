@@ -180,12 +180,30 @@
 > coverage bar PASS (0.750 in 0.6827±0.10), mean-unchanged bit-identical
 > ×3 days, seam verdict attached, c2 UNTOUCHED, status READY. NOTE:
 > smoke s*=17.2 is meaningless (m=4 variance floor + 12 days) — the
-> full m=100 run gives the real s*. **FULL EVIDENCE RUN LAUNCHED
-> 2026-07-07 (detached; log+pid `…/scratchpad/stage_b_full.{log,pid}`;
-> m=100, 365 days, c2 untouched by construction; expect READY in
-> ~4-8 h; if session dies and the run is dead pre-READY, relaunch the
-> same command — evidence writes incrementally into the gate results
-> JSON under "stage_b").** Launch command was:**
+> full m=100 run gives the real s*. **FULL EVIDENCE RUN: READY
+> 2026-07-07 (4h12; c2 UNTOUCHED). ⛔ TASK-19 GATE STOPPED FOR OWNER —
+> evidence in the gate results JSON under `stage_b`:**
+> - members m=100 root=4836134738817689931: ALL 9 windows CONVERGED at
+>   the FIRST cap (max 302 iters, worst residual 9.95e-7 ≤ 1e-6) —
+>   §6.5 satisfied, budget NOT inherited blindly, no escalation needed.
+> - **s* = 10.049** on validation (46,780 j3 track points; m=100 MC
+>   error ~14% on variance). Reading: the exact-posterior ensemble
+>   under-disperses vs real residuals ~10× in variance (~3.2× in σ) —
+>   representation error + unmodeled signal beyond R_REF; the D6
+>   s-rescale is the designed mechanism for exactly this. chi2_red(s*)
+>   = 1.0 (identity exact).
+> - **Calibration bars at s*: coverage_1sigma = 0.7483 ∈ 0.6827±0.10
+>   PASS; crps = 0.0474 m reported.**
+> - **mean-unchanged: bit-identical** on days {0, 121, 242} (D6 holds
+>   through the full runner path).
+> - Seam-dispersion verdict + rubric outcome attached (both FLAGs carry
+>   the recorded context; see the Task-18 close block above).
+> **OWNER DECIDES: (1) authorize the single c2 touch (rerun with
+> SVERDRUP_MIOST_C2=1 — re-solves members ~4 h, then scores c2 once:
+> µ/σ/λx + calibration at s*); (2) sign off Task 19; (3) then the
+> capability-flip commit (registry "miost" with members=100, the
+> recorded root, s*=10.049; flip test in-tree). Original launch
+> command:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
 > (expect READY in hours; member solves ~9×; then owner reviews
