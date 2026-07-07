@@ -158,7 +158,26 @@
 > USER GATE: needs the tune_miost_inflation.py full run at the winner,
 > capability flip to SAMPLES, ONE c2 touch winner-only per hygiene).
 >
-> **▶ TASK-18 IN FLIGHT (2026-07-06): step 1 COMMITTED (`06b03ea`) —
+> **▶ TASK-18 CLOSED (2026-07-07): full-year run COMPLETE (11h34,
+> EXIT clean); doc + PRE-REGISTERED RUBRIC APPLIED →
+> `docs/validation/miost_seam_dispersion.md` (+ `_rubric.md`).
+> OUTCOMES (both metrics MEASURED — solver floor 0.003 m cleared >10×):
+> (a) seam ratio R=1.305 → rubric FLAG over-dispersion, BUT post-hoc
+> context shows blend/interior distributions coincide (blend worst 0.4257
+> < interior worst 0.4353; medians 0.331/0.326) — flag is max-vs-median
+> asymmetry under ±30% day-to-day spatial-max variability, not a seam
+> excess; (b) variance equivalence EXCEEDED — worst-day max|Δstd| 0.2066 m
+> vs scale 0.3499 m at the D4 point, mixed mechanism (uniform year-pooling
+> component + 1.7× blend-localized extra), does NOT reopen Task 20; both
+> transfer to the Task-19 gate. Member residuals 2–3.2e-4 at cap 2000
+> (D4 point; winner re-decides). TASK-22 MODEL VALIDATED: windowed 1.24
+> vs 1.12 GB measured (1.11×), single 4.48 vs 4.15 GB (1.08×) — in band,
+> constants stand; ONLY predicate wiring remains (before next TUNING
+> gate). **NEXT = Task 19 sequence (runner already implemented; see
+> front-loaded block below): dev smoke → full evidence run → owner
+> sign-off → c2 touch → capability-flip commit.**
+>
+> **[record] ▶ TASK-18 launch state (2026-07-06): step 1 COMMITTED (`06b03ea`) —
 > script + tests green (suite 420/9/1, pre-commit clean); FULL-YEAR RUN
 > LAUNCHED DETACHED** (pid file + log
 > `…/scratchpad/seam_full.{pid,log}`; config: m=50, root=1, rtol 1e-6,
