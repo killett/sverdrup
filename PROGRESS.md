@@ -180,7 +180,12 @@
 > coverage bar PASS (0.750 in 0.6827±0.10), mean-unchanged bit-identical
 > ×3 days, seam verdict attached, c2 UNTOUCHED, status READY. NOTE:
 > smoke s*=17.2 is meaningless (m=4 variance floor + 12 days) — the
-> full m=100 run gives the real s*. NEXT = full evidence run:**
+> full m=100 run gives the real s*. **FULL EVIDENCE RUN LAUNCHED
+> 2026-07-07 (detached; log+pid `…/scratchpad/stage_b_full.{log,pid}`;
+> m=100, 365 days, c2 untouched by construction; expect READY in
+> ~4-8 h; if session dies and the run is dead pre-READY, relaunch the
+> same command — evidence writes incrementally into the gate results
+> JSON under "stage_b").** Launch command was:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
 > (expect READY in hours; member solves ~9×; then owner reviews
