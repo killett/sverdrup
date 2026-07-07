@@ -173,9 +173,20 @@
 > (D4 point; winner re-decides). TASK-22 MODEL VALIDATED: windowed 1.24
 > vs 1.12 GB measured (1.11×), single 4.48 vs 4.15 GB (1.08×) — in band,
 > constants stand; ONLY predicate wiring remains (before next TUNING
-> gate). **NEXT = Task 19 sequence (runner already implemented; see
-> front-loaded block below): dev smoke → full evidence run → owner
-> sign-off → c2 touch → capability-flip commit.**
+> gate). **TASK-19 DEV SMOKE: PASSED 2026-07-07 (18 min, m=4, 12-day
+> scope, `stage_b_dev_smoke.json`): members CONVERGED at the FIRST cap
+> (500; max 299 iters, worst residual 9.9e-7 — winner point behaves as
+> predicted, no escalation), s* identity check exact (chi2_red(s*)=1.0),
+> coverage bar PASS (0.750 in 0.6827±0.10), mean-unchanged bit-identical
+> ×3 days, seam verdict attached, c2 UNTOUCHED, status READY. NOTE:
+> smoke s*=17.2 is meaningless (m=4 variance floor + 12 days) — the
+> full m=100 run gives the real s*. NEXT = full evidence run:**
+> `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
+> scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
+> (expect READY in hours; member solves ~9×; then owner reviews
+> `stage_b` block in the gate results JSON → rerun with
+> SVERDRUP_MIOST_C2=1 for the single touch → sign-off →
+> capability-flip commit).
 >
 > **[record] ▶ TASK-18 launch state (2026-07-06): step 1 COMMITTED (`06b03ea`) —
 > script + tests green (suite 420/9/1, pre-commit clean); FULL-YEAR RUN
