@@ -189,8 +189,25 @@
 >    S-path — the dense-evaluate OOM-#3 trap is dead at the root
 >    (pinned by `test_grid_queries_never_dense_evaluate`). Registry
 >    default stays POINT until the gate's capability-flip commit.
-> 3. **TASK-19 RUNNER BLUEPRINT (implementation now mechanical):**
->    extend `scripts/stage_miost_gate_run.py` with `--stage-b`:
+> 3. **TASK-19 RUNNER — IMPLEMENTED + TESTED (steps (a)–(f) below are
+>    CODE now; committed as Task-19 step 1).** `stage_b_main()` in
+>    `scripts/stage_miost_gate_run.py`, dispatched by `--stage-b`.
+>    Helpers pinned by `tests/test_stage_b_runner.py` (budget escalation
+>    never accepts biased draws; s-inflated calibration triplet by hand
+>    arithmetic). Env: `SVERDRUP_MIOST_STAGE_B_M` (default 100),
+>    `SVERDRUP_MIOST_C2=1` REQUIRED for the single c2 touch (default =
+>    evidence-only, c2 untouched), dev scope writes
+>    `stage_b_dev_smoke.json` — NEVER the gate-evidence JSON. NEXT
+>    SESSION: (i) dev smoke
+>    `SVERDRUP_MIOST_SCOPE=dev SVERDRUP_MIOST_STAGE_B_M=4 pixi run
+>    python scripts/stage_miost_gate_run.py --stage-b` (expect READY,
+>    c2 untouched); (ii) full run detached WITHOUT the c2 env; (iii)
+>    owner reviews evidence; (iv) ONLY THEN rerun the c2 step with
+>    SVERDRUP_MIOST_C2=1 (members replay from eta cache? NO — fresh
+>    process re-solves; acceptable, or run (ii) with the env set once
+>    owner pre-authorizes); (v) sign-off → capability-flip commit
+>    (registry "miost" factory with tuned members/root/s* — flip test
+>    already in-tree). Original blueprint kept below for the record:
 >    (a) load winner params from the Stage-A results JSON; obs =
 >    box+halo TRAIN-ONLY (same `make_splits`/`_subset` as
 >    `tune_miost_inflation.py`); root =
