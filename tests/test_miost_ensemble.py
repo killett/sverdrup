@@ -242,3 +242,97 @@ def test_member_batch_residuals_logged() -> None:
         assert int(e["iterations"]) >= 1  # type: ignore[call-overload]
         res = float(e["final_rel_residual"])  # type: ignore[arg-type]
         assert np.isfinite(res) and 0.0 <= res < 1.0
+
+
+def test_grid_queries_never_dense_evaluate(
+    dist: MiostEnsembleDistribution, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """marginal_variance / to_grid_ensemble use the SPARSE S-path on grids.
+
+    Catches: the OOM-#3 trap resurrected — dense BasisSpec.evaluate on a
+    production grid is a ~8 GB/window gamma; grid-shaped queries must route
+    through build_s_spatial + time_contract (arbitrary-POINT queries like
+    mean_at/covariance may stay dense — track point sets are small).
+    """
+    from sverdrup.methods.miost_basis import BasisSpec
+
+    def _boom(*a: object, **k: object) -> None:
+        raise AssertionError("dense BasisSpec.evaluate called on a grid query")
+
+    monkeypatch.setattr(BasisSpec, "evaluate", _boom)
+    v = dist.marginal_variance()
+    ens = dist.to_grid_ensemble(DAY)
+    assert np.asarray(v).shape == GRID.shape
+    assert ens.samples.shape == (M, *GRID.shape)
+
+
+def test_ensemble_mode_capability_and_routing() -> None:
+    """Miost(members=m, member_root=r) is SAMPLES-native and solve() routes.
+
+    Catches: the capability flip leaving native_capability POINT (bars_for
+    would silently omit the coverage bar at the Stage-B gate — false-green),
+    or solve() still returning the POINT distribution in ensemble mode.
+    """
+    from sverdrup.core.types import UncertaintyCapability
+
+    assert _method().native_capability is UncertaintyCapability.POINT
+    ens_method = Miost(plan=WindowPlan(starts=(0.0, 45.0)), members=3, member_root=ROOT)
+    assert ens_method.native_capability is UncertaintyCapability.SAMPLES
+    d = ens_method.solve(_obs(), GRID, PARAMS, DAY)
+    assert isinstance(d, MiostEnsembleDistribution)
+    assert d.m == 3
+
+
+def test_ensemble_mode_mean_bit_identical_to_point() -> None:
+    """Ensemble-mode solve ships the UNTOUCHED Stage-A mean (D6).
+
+    Catches: the routing (or a non-unit inflation default) perturbing the
+    mean — the mean-unchanged non-regression at method level.
+    """
+    point = _method().solve(_obs(), GRID, PARAMS, DAY)
+    ens = Miost(plan=WindowPlan(starts=(0.0, 45.0)), members=3, member_root=ROOT).solve(
+        _obs(), GRID, PARAMS, DAY
+    )
+    np.testing.assert_array_equal(np.asarray(ens.mean), np.asarray(point.mean))
+
+
+def test_ensemble_mode_inflation_exact_and_recorded() -> None:
+    """inflation_s scales variance EXACTLY s-fold and is in provenance.
+
+    Catches: s applied to the mean, applied twice, or dropped from the
+    transform chain (the gate's s* would then be unauditable).
+    Hand: var(sqrt(2) * anoms) = 2 * var(anoms), exactly, per node.
+    """
+
+    def _mk(s: float) -> Miost:
+        return Miost(
+            plan=WindowPlan(starts=(0.0, 45.0)),
+            members=3,
+            member_root=ROOT,
+            inflation_s=s,
+        )
+
+    d1 = _mk(1.0).solve(_obs(), GRID, PARAMS, DAY)
+    d2 = _mk(2.0).solve(_obs(), GRID, PARAMS, DAY)
+    np.testing.assert_allclose(
+        np.asarray(d2.marginal_variance()),
+        2.0 * np.asarray(d1.marginal_variance()),
+        rtol=1e-12,
+    )
+    infl = [
+        t
+        for t in d2.provenance.transformations
+        if t.kind is TransformKind.DIAGONAL_INFLATION
+    ]
+    assert len(infl) == 1 and infl[0].params["s"] == 2.0
+    np.testing.assert_array_equal(np.asarray(d2.mean), np.asarray(d1.mean))
+
+
+def test_ensemble_mode_requires_root() -> None:
+    """members > 0 without member_root raises — never a silent default seed.
+
+    Catches: irreproducible members (a hidden default root would make the
+    gate's ensemble unrecoverable across sessions and break CRN identity).
+    """
+    with pytest.raises(ValueError, match="member_root"):
+        Miost(members=3)

@@ -119,15 +119,41 @@ class MiostEnsembleDistribution:
         """Member i's field (mean + anomaly) at arbitrary points."""
         return np.asarray(self.mean_at(pts) + self._anoms_at(pts)[:, i])
 
-    def _grid_pts(self, time_days: float) -> np.ndarray:
-        lon2d, lat2d = np.meshgrid(self.grid.x, self.grid.y)
-        return np.column_stack(
-            [lon2d.ravel(), lat2d.ravel(), np.full(lon2d.size, time_days)]
+    def _grid_eval(self, cols: dict[str, np.ndarray], time_days: float) -> np.ndarray:
+        """(n_nodes, k) blended evaluation on the grid via the SPARSE S-path.
+
+        Grid-shaped queries must never build the dense gamma
+        (``BasisSpec.evaluate`` is ~8 GB/window on the production grid — the
+        OOM-#3 trap); arbitrary-POINT queries (:meth:`mean_at`,
+        :meth:`covariance`) stay dense because track point sets are small.
+
+        Args:
+            cols: window_id -> (n_el, k) coefficient columns.
+            time_days: Output day.
+
+        Returns:
+            (n_nodes, k) blended values on the grid.
+        """
+        plan = WindowPlan(
+            starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
         )
+        lon2d, lat2d = np.meshgrid(self.grid.x, self.grid.y)
+        k = next(iter(cols.values())).shape[1]
+        out = np.zeros((lon2d.size, k))
+        for wid, c in cols.items():
+            w = Window(self._window_starts[wid], self._w_days)
+            if not (w.start_day <= time_days <= w.end_day):
+                continue
+            els = self._spec.elements_for_window(w.start_day, self._w_days)
+            s = build_s_spatial(self._spec, els, lon2d.ravel(), lat2d.ravel())
+            out += plan.weight(w, time_days) * (
+                s @ time_contract(self._spec, els, c, time_days)
+            )
+        return out
 
     def marginal_variance(self) -> Field:
         """Per-node member variance about the MEMBER MEAN, (m - 1) denominator."""
-        a = self._anoms_at(self._grid_pts(self.time_days))
+        a = self._grid_eval(self._anoms, self.time_days)
         return np.asarray(np.var(a, axis=1, ddof=1).reshape(self.grid.shape))
 
     def covariance(self, a: Points, b: Points) -> np.ndarray:
@@ -151,8 +177,10 @@ class MiostEnsembleDistribution:
 
     def to_grid_ensemble(self, time_days: float) -> EnsemblePredictiveDistribution:
         """Down-convert to the existing grid-sample representation at one day."""
-        pts = self._grid_pts(time_days)
-        fields = self.mean_at(pts)[:, None] + self._anoms_at(pts)
+        mean_g = self._grid_eval(
+            {w: e[:, None] for w, e in self._etas_a.items()}, time_days
+        )[:, 0]
+        fields = mean_g[:, None] + self._grid_eval(self._anoms, time_days)
         samples = fields.T.reshape(self.m, *self.grid.shape)
         return EnsemblePredictiveDistribution(
             grid=self.grid,

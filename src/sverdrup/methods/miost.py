@@ -369,6 +369,9 @@ class Miost:
         plan: WindowPlan | None = None,
         pcg_rtol: float = PCG_RTOL,
         pcg_maxiter: int = PCG_MAXITER,
+        members: int = 0,
+        member_root: Seed | None = None,
+        inflation_s: float = 1.0,
     ) -> None:
         """Create the method with empty caches.
 
@@ -378,11 +381,32 @@ class Miost:
             plan: Window placement override (Task-11 single-window harness ONLY).
             pcg_rtol: Solver convergence tolerance (diagnostic override).
             pcg_maxiter: Solver iteration cap (diagnostic override).
+            members: Ensemble mode — member count per solve (0 = POINT,
+                Stage A). When > 0 the method is SAMPLES-native and
+                ``solve`` returns the perturbed-observation ensemble.
+            member_root: CRN seed root for ensemble mode (REQUIRED when
+                ``members > 0`` — a silent default would make members
+                irreproducible across sessions).
+            inflation_s: Stage-B s* variance inflation applied by exact
+                anomaly rescale (mean untouched; 1.0 = none).
+
+        Raises:
+            ValueError: If ``members > 0`` without ``member_root``.
         """
+        if members > 0 and member_root is None:
+            raise ValueError("ensemble mode (members > 0) requires member_root")
         self.n_dir = n_dir
         self.cache = cache
         self.pcg_rtol = pcg_rtol
         self.pcg_maxiter = pcg_maxiter
+        self.members = members
+        self.member_root = member_root
+        self.inflation_s = inflation_s
+        self.native_capability = (
+            UncertaintyCapability.SAMPLES
+            if members > 0
+            else UncertaintyCapability.POINT
+        )
         self._plan = plan if plan is not None else WindowPlan()
         self._eta_cache: dict[tuple[str, str, str], np.ndarray] = {}
         self._s_cache: OrderedDict[
@@ -424,8 +448,12 @@ class Miost:
         grid: GridSpec,
         params: ParameterProvider,
         time_days: float,
-    ) -> MiostPointDistribution:
+    ) -> MiostPointDistribution | MiostEnsembleDistribution:
         """Solve the <=2 covering windows (cached), blend, return the day map.
+
+        In ensemble mode (``members > 0``) the day's perturbed-observation
+        ensemble is returned instead, s*-inflated by exact anomaly rescale;
+        its mean IS the Stage-A mean (D6 — bit-identical arrays).
 
         Args:
             obs: The FULL observation window (method re-subsets per window).
@@ -434,8 +462,15 @@ class Miost:
             time_days: Output day [days since epoch].
 
         Returns:
-            The POINT predictive distribution at ``time_days``.
+            The POINT predictive distribution at ``time_days``, or the
+            SAMPLES ensemble in ensemble mode.
         """
+        if self.members > 0:
+            assert self.member_root is not None  # noqa: S101 (checked in __init__)
+            ens = self.sample_members(
+                obs, grid, params, time_days, m=self.members, root=self.member_root
+            )
+            return ens if self.inflation_s == 1.0 else ens.rescaled(self.inflation_s)
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
