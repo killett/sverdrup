@@ -225,6 +225,37 @@
 >    spread; correlation structure is the raw posterior's (√s preserves
 >    it); chi2_red(s*)=1 is a mechanism identity, coverage/CRPS are the
 >    evidence. Record m=100, seed root, s*.
+> **⛔ C2 TOUCH EXECUTED 2026-07-07 → DEFECT (pre-registered rule
+> fired; STOPPED). Root cause FOUND: obs-framing mismatch.**
+> - c2 scores (0.8573192, 0.0799697, 156.42748) vs signed Stage-A
+>   (0.8572612, 0.0799886, 156.42997): Δµ +5.8e-5 — small but NOT
+>   bit-identical → DEFECT per owner protocol item 1. Calibration at
+>   frozen s* (recorded with the defect): coverage 0.7479 (IN band),
+>   chi2_red 1.047 (the honest generalization number), crps 0.0478,
+>   n=44,844.
+> - **ROOT CAUSE (empirically confirmed):** the baseline grid's lat
+>   axis runs to **43.2°N** (52 nodes), not 43.0. The production
+>   scorer/acceptance path (`run_challenge_map`) cuts obs at GRID
+>   NODES ±1.0° → 54,345 train obs; the Stage-B runner (and the
+>   Task-11/18 diagnostics) cut at the BOX ±1.0° → 53,583 (missing 762
+>   obs in the 44.0–44.2°N sliver). Field effect ~2.3e-3 m (day-0
+>   regen via run_challenge_map vs stage_b map), score effect 6e-5.
+>   Stage-B code is internally consistent (its own mean-unchanged
+>   check passed) but framed differently from the signed acceptance.
+> - Task-11/18 diagnostics UNAFFECTED in their conclusions (both sides
+>   of each comparison shared the same framing).
+> - ALSO FOUND: the on-disk `stage_miost_acceptance.nc` differs from
+>   BOTH paths (0.16 m at day 0; no provenance attr) — it is the
+>   post-hoc Tier-3 regeneration, NOT the scored acceptance map (which
+>   BO overwrote). The signed triplet was scored live and is not in
+>   question; the disk artifact must not be treated as the scored map.
+> - **REMEDY (owner to confirm): fix stage_b_main obs framing to the
+>   grid-node cut (match run_challenge_map exactly), re-run the
+>   evidence (~4 h, new s* expected ≈10.05), then a SECOND c2 touch —
+>   which requires fresh owner authorization (no standing
+>   pre-authorization per protocol item 2).** The spent touch is
+>   recorded in the results JSON under stage_b.c2_acceptance with
+>   status DEFECT.
 > Original launch command:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
