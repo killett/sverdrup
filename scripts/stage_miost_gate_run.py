@@ -39,17 +39,21 @@ from sverdrup.application.tuning.feasibility import (
 )
 from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.stage_a import StageANoAdmissible, StageAReport
-from sverdrup.application.tuning.stage_miost import run_stage_miost
+from sverdrup.application.tuning.stage_miost import (
+    MIOST_HALF_WINDOW_DAYS,
+    run_stage_miost,
+)
 from sverdrup.application.tuning.strategy import SearchStrategy
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import ObsWindow
 from sverdrup.core.parameters import ConstantProvider, ParameterProvider
 from sverdrup.methods.miost import CONVERGENCE_LOG, Miost, _params_key_hash
-from sverdrup.methods.miost_basis import BOX_LAT, BOX_LON, HALO_DEG
+from sverdrup.methods.miost_basis import HALO_DEG
 from sverdrup.methods.miost_solver import PCG_MAXITER, PCG_RTOL
 from sverdrup.methods.miost_windows import L_T_MAX, WindowPlan
 from sverdrup.validation.input_adapter import load_mapping_obs
 from sverdrup.validation.params import baseline_config
+from sverdrup.validation.run import halo_obs, run_challenge_map
 
 DEV_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 OUT_DIR = Path("data/2021a_ssh_mapping_ose/ours")
@@ -185,29 +189,19 @@ def _scope() -> Path:
 
 
 def _halo_obs(scope: Path) -> ObsWindow:
-    """Six mapping missions subset to box + halo (production framing)."""
-    from sverdrup.core.observations import DiagonalErrorModel
+    """Six mapping missions in the PRODUCTION framing (grid nodes + halo).
 
+    Framing fix (owner order, 2026-07-07): the shared ``halo_obs`` helper —
+    the same cut ``run_challenge_map`` applies — replaces the old box-based
+    cut whose 43.2°N-sliver mismatch spent a c2 touch. Consequence: future
+    ``n_obs_max_window`` predicate sizings are slightly larger than the
+    Stage-A-recorded 16,066 (box framing); disclosed, re-grounded by
+    Task 22.
+    """
     cfg = json.loads(scope.read_text())
-    provider, _, _ = baseline_config()
+    provider, grid, _ = baseline_config()
     obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
-    c = obs.coords()
-    in_halo = (
-        (c[:, 0] >= BOX_LON[0] - HALO_DEG)
-        & (c[:, 0] <= BOX_LON[1] + HALO_DEG)
-        & (c[:, 1] >= BOX_LAT[0] - HALO_DEG)
-        & (c[:, 1] <= BOX_LAT[1] + HALO_DEG)
-    )
-    idx = np.nonzero(in_halo)[0]
-    err = DiagonalErrorModel(np.asarray(obs.error_model.variance)[idx])  # type: ignore[attr-defined]
-    return ObsWindow.from_arrays(
-        c[idx, 0],
-        c[idx, 1],
-        c[idx, 2],
-        obs.values()[idx],
-        err,
-        None if obs.mission is None else obs.mission[idx],
-    )
+    return halo_obs(obs, grid, HALO_DEG)
 
 
 def _n_obs_max_window(scope: Path) -> int:
@@ -734,6 +728,24 @@ def stage_b_main() -> None:
     write_map(
         times, grid.y, grid.x, var_stack, var_nc, assimilated_missions=assimilated
     )
+    # Owner item 4 (2026-07-07): with the framing fix, the Stage-B mean maps
+    # must be BIT-IDENTICAL to the regenerated (provenance-tagged) Stage-A
+    # acceptance map; any material movement is a finding — stop and report.
+    acc_path = OUT_DIR / "stage_miost_acceptance.nc"
+    if len(days) == 365 and acc_path.exists():
+        import xarray as xr
+
+        with xr.open_dataset(acc_path) as a_ds, xr.open_dataset(mean_nc) as b_ds:
+            tagged = "assimilated_missions" in a_ds.attrs
+            same = tagged and bool(np.array_equal(a_ds.ssh.values, b_ds.ssh.values))
+        sb["acceptance_map_bit_identical"] = same if tagged else "N/A (untagged)"
+        if tagged and not same:
+            _flush(
+                "STOPPED: Stage-B mean maps deviate from the regenerated "
+                "Stage-A acceptance map — material movement, owner call"
+            )
+            _log("stage-b STOPPED: acceptance-map bit-identity failed")
+            return
     _flush("RUNNING: s* on validation")
 
     mu_v, var_v, ssh_v = _interp_mean_var_on_track(
@@ -898,11 +910,116 @@ def c2_touch_main() -> None:
     print(json.dumps(sb["c2_acceptance"], indent=2))
 
 
+def regen_acceptance_main() -> None:
+    """Regenerate the TRUE Stage-A acceptance map (owner item 3, 2026-07-07).
+
+    Deterministic production path at the signed winner params (replay
+    determinism proven; c2 never touched here). The stale on-disk artifact
+    (the post-hoc Tier-3 regeneration that overwrote the scored map) is
+    renamed + annotated; the true map is written with provenance attrs; the
+    0.16 m offset is ATTRIBUTED by also building the j3-assimilating
+    variant and bit-comparing.
+    """
+    import netCDF4
+
+    from sverdrup.application.splits import make_splits
+    from sverdrup.application.tuning.stage_a import _subset
+    from sverdrup.validation.input_adapter import load_mdt_grid
+
+    scope = _scope()
+    cfg = json.loads(scope.read_text())
+    results = json.loads(RESULTS.read_text())
+    winner = dict(results["winner"]["params"])
+    provider, grid, _ = baseline_config()
+    obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
+    split = make_splits(
+        obs,
+        by="mission",
+        locked_missions=["c2"],
+        validation_missions=[str(cfg["validation_mission"])],
+    )
+    train = _subset(obs, split.train_idx)
+    mdt = load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
+    days = [float(d) for d in range(365)]
+    acc = OUT_DIR / "stage_miost_acceptance.nc"
+    tier3 = OUT_DIR / "stage_miost_acceptance_tier3_regen.nc"
+
+    if acc.exists():
+        acc.rename(tier3)
+        with netCDF4.Dataset(tier3, "a") as ds:
+            ds.setncattr(
+                "note",
+                "post-hoc Tier-3 regeneration (2026-07-06) that OVERWROTE the "
+                "scored acceptance map; NOT the scored map — see "
+                "acceptance_artifact_correction in the results JSON",
+            )
+        _log(f"stale artifact renamed -> {tier3}")
+
+    _log("regenerating the TRUE acceptance map (train-only, winner params) ...")
+    run_challenge_map(
+        "miost",
+        train,
+        ConstantProvider(winner),
+        grid,
+        MIOST_HALF_WINDOW_DAYS,
+        days,
+        acc,
+        mdt_grid=mdt,
+    )
+    with netCDF4.Dataset(acc, "a") as ds:
+        ds.setncattr("winner_params", json.dumps(winner))
+        ds.setncattr("framing", "grid-nodes+1.0deg halo (halo_obs helper)")
+        ds.setncattr(
+            "semantics",
+            "TRUE Stage-A acceptance map, regenerated deterministically at the "
+            "signed winner (2026-07-07); c2 untouched in this regeneration",
+        )
+    _log(f"true acceptance map -> {acc}")
+
+    _log("attribution: building the j3-assimilating variant ...")
+    train_plus_val = _subset(
+        obs, np.sort(np.concatenate([split.train_idx, split.validation_idx]))
+    )
+    variant = Path(tempfile.gettempdir()) / "miost_acceptance_with_j3.nc"
+    run_challenge_map(
+        "miost",
+        train_plus_val,
+        ConstantProvider(winner),
+        grid,
+        MIOST_HALF_WINDOW_DAYS,
+        days,
+        variant,
+        mdt_grid=mdt,
+    )
+    import xarray as xr
+
+    with (
+        xr.open_dataset(acc) as a_ds,
+        xr.open_dataset(tier3) as t_ds,
+        xr.open_dataset(variant) as v_ds,
+    ):
+        true_ssh, t3_ssh, v_ssh = a_ds.ssh.values, t_ds.ssh.values, v_ds.ssh.values
+        d_t3 = np.abs(true_ssh - t3_ssh)
+        correction = {
+            "artifact_vs_true_rms_m": float(np.sqrt((d_t3**2).mean())),
+            "artifact_vs_true_max_m": float(d_t3.max()),
+            "artifact_matches_j3_variant_bitwise": bool(np.array_equal(t3_ssh, v_ssh)),
+            "artifact_vs_j3_variant_max_m": float(np.abs(t3_ssh - v_ssh).max()),
+            "true_map": str(acc),
+            "artifact": str(tier3),
+        }
+    results["acceptance_artifact_correction"] = correction
+    RESULTS.write_text(json.dumps(results, indent=2))
+    _log(f"attribution: {correction}")
+
+
 if __name__ == "__main__":
     if "--build-replay-cache" in sys.argv:
         built = _build_replay_cache(LOG_FILE, RESULTS)
         REPLAY_FILE.write_text(json.dumps(built, indent=2))
         print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
+    elif "--regen-acceptance" in sys.argv:
+        regen_acceptance_main()
     elif "--c2-touch" in sys.argv:
         c2_touch_main()
     elif "--stage-b" in sys.argv:

@@ -249,13 +249,31 @@
 >   post-hoc Tier-3 regeneration, NOT the scored acceptance map (which
 >   BO overwrote). The signed triplet was scored live and is not in
 >   question; the disk artifact must not be treated as the scored map.
-> - **REMEDY (owner to confirm): fix stage_b_main obs framing to the
->   grid-node cut (match run_challenge_map exactly), re-run the
->   evidence (~4 h, new s* expected ≈10.05), then a SECOND c2 touch —
->   which requires fresh owner authorization (no standing
->   pre-authorization per protocol item 2).** The spent touch is
->   recorded in the results JSON under stage_b.c2_acceptance with
->   status DEFECT.
+> - **OWNER GO (2026-07-07) — remedy EXECUTED per the 5-point order:**
+>   (1) STRUCTURAL framing fix: shared `halo_obs(obs, grid, halo_deg)`
+>   in `validation/run.py` (region = GRID NODES ± halo; the 43.2°N
+>   endpoint recorded as the known quirk the framing derives from),
+>   called by run_challenge_map + run_mean_var_maps + the Stage-B
+>   runner; framing-parity test pins both paths to identical obs sets
+>   (`tests/validation/test_obs_framing.py`). Future n_obs_max
+>   predicate sizings slightly exceed the Stage-A-recorded 16,066
+>   (box-framed) — disclosed, Task 22 re-grounds.
+>   (2) DEFECT-RUN labeled in the results JSON. **HONEST c2 TALLY:
+>   touch 1 = Stage-A winner acceptance (signed); touch 2 = Stage-B
+>   DEFECT-RUN (framing sliver — spent, disclosed, no selection: s*
+>   frozen, params fixed); touch 3 = Stage-B accepted touch, PENDING
+>   fresh owner authorization.**
+>   (3) `--regen-acceptance` mode: stale artifact renamed
+>   `stage_miost_acceptance_tier3_regen.nc` + annotated; TRUE
+>   acceptance map regenerated deterministically at the winner with
+>   provenance attrs; 0.16 m offset attributed via the
+>   j3-assimilating variant (bit-compare); Tier-3 diagnostic re-run
+>   from the true map.
+>   (4) Evidence re-run at corrected framing with a HARD STOP unless
+>   the Stage-B mean maps are BIT-IDENTICAL to the regenerated
+>   acceptance map. (5) Localized calibration recomputed from the
+>   re-run's maps and attached. **STOPS at READY — the second c2
+>   touch needs fresh authorization.**
 > Original launch command:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`

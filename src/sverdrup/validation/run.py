@@ -71,6 +71,35 @@ def _assimilated(obs: ObsWindow) -> tuple[str, ...] | None:
     return tuple(sorted({str(m) for m in np.asarray(obs.mission)}))
 
 
+def halo_obs(obs: ObsWindow, grid: GridSpec, halo_deg: float = 1.0) -> ObsWindow:
+    """THE production obs framing: region derived from GRID NODES ± halo.
+
+    The single source for spatial obs framing (owner order, 2026-07-07,
+    after the third convention divergence this phase): the region is the
+    grid's actual node extent plus ``halo_deg`` — NOT the nominal box. The
+    production 0.2° grid overshoots the 33–43°N box to 43.2°N (a recorded
+    quirk); a box-derived cut silently drops the 43.2–44.2°N obs sliver and
+    breaks bit-reproducibility against acceptance maps.
+
+    Args:
+        obs: Observations to frame.
+        grid: The output grid whose node extent defines the region.
+        halo_deg: Halo beyond the node extent [degrees] (D7 default 1.0).
+
+    Returns:
+        The obs restricted to the node extent ± halo (order preserved).
+    """
+    lon_nodes, lat_nodes = grid._lonlat_nodes()
+    c = obs.coords()
+    keep = (
+        (c[:, 0] >= lon_nodes.min() - halo_deg)
+        & (c[:, 0] <= lon_nodes.max() + halo_deg)
+        & (c[:, 1] >= lat_nodes.min() - halo_deg)
+        & (c[:, 1] <= lat_nodes.max() + halo_deg)
+    )
+    return _subset(obs, keep)
+
+
 def run_challenge_map(
     method_name: str,
     mapping_obs: ObsWindow,
@@ -124,15 +153,7 @@ def run_challenge_map(
             if oi_kernel_from_params
             else baseline_kernel()
         )
-    lon_nodes, lat_nodes = grid._lonlat_nodes()
-    c = mapping_obs.coords()
-    in_region = (
-        (c[:, 0] >= lon_nodes.min() - halo_deg)
-        & (c[:, 0] <= lon_nodes.max() + halo_deg)
-        & (c[:, 1] >= lat_nodes.min() - halo_deg)
-        & (c[:, 1] <= lat_nodes.max() + halo_deg)
-    )
-    region_obs = _subset(mapping_obs, in_region)
+    region_obs = halo_obs(mapping_obs, grid, halo_deg)
     maps = []
     for day in output_days:
         win = _window(region_obs, day, temporal_half_window_days)
@@ -204,15 +225,7 @@ def run_mean_var_maps(
             if oi_kernel_from_params
             else baseline_kernel()
         )
-    lon_nodes, lat_nodes = grid._lonlat_nodes()
-    c = mapping_obs.coords()
-    in_region = (
-        (c[:, 0] >= lon_nodes.min() - halo_deg)
-        & (c[:, 0] <= lon_nodes.max() + halo_deg)
-        & (c[:, 1] >= lat_nodes.min() - halo_deg)
-        & (c[:, 1] <= lat_nodes.max() + halo_deg)
-    )
-    region_obs = _subset(mapping_obs, in_region)
+    region_obs = halo_obs(mapping_obs, grid, halo_deg)
     means, variances = [], []
     for day in output_days:
         win = _window(region_obs, day, temporal_half_window_days)
