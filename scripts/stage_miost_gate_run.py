@@ -806,11 +806,105 @@ def stage_b_main() -> None:
     _log("stage-b DONE")
 
 
+def _assert_c2_untouched(stage_b: dict[str, Any]) -> None:
+    """Refuse a second c2 touch (hygiene order: ONE touch, winner-only).
+
+    Raises:
+        RuntimeError: If a c2 acceptance record already exists.
+    """
+    if "c2_acceptance" in stage_b:
+        raise RuntimeError(
+            "c2 already touched for Stage B — the acceptance record exists; "
+            "every further touch is owner-gated (no standing authorization)"
+        )
+
+
+def _c2_reading(
+    scores: list[float], stage_a_ref: list[float], calibration: dict[str, Any]
+) -> str:
+    """Apply the owner's pre-registered c2 reading (protocol 2026-07-07).
+
+    Args:
+        scores: c2 (mu, sigma, lambda_x) from the Stage-B mean map.
+        stage_a_ref: The signed Stage-A acceptance triplet.
+        calibration: c2 calibration dict at the FROZEN s*.
+
+    Returns:
+        Status line: DEFECT on ANY mean-score deviation (mean-unchanged is
+        proven, so deviation = defect — STOP); else SIGNED OFF if coverage
+        is within 0.6827±0.10; else HOLD for the owner (no refit).
+    """
+    if list(scores) != list(stage_a_ref):
+        return (
+            f"DEFECT: c2 mean scores {scores} deviate from Stage A "
+            f"{stage_a_ref} — mean-unchanged is proven, deviation is a "
+            "defect; STOP (owner protocol item 1)"
+        )
+    cov = float(calibration["coverage_1sigma"])
+    if abs(cov - COVERAGE_TARGET) <= COVERAGE_TOL:
+        return (
+            f"SIGNED OFF per owner pre-registered reading (2026-07-07): c2 "
+            f"coverage {cov:.4f} within {COVERAGE_TARGET}±{COVERAGE_TOL}"
+        )
+    return (
+        f"HOLD: c2 coverage {cov:.4f} outside {COVERAGE_TARGET}±{COVERAGE_TOL} "
+        "— recorded, NO refit, bring to owner (protocol item 2)"
+    )
+
+
+def c2_touch_main() -> None:
+    """The single owner-authorized c2 touch at the FROZEN s* (--c2-touch).
+
+    Requires SVERDRUP_MIOST_C2=1, a READY stage_b evidence block, the maps
+    on disk, and no prior touch. Recomputes NOTHING: s* is read from the
+    evidence JSON; the maps are the evidence run's files.
+    """
+    from sverdrup.validation.their_eval import score as their_score
+
+    if os.environ.get("SVERDRUP_MIOST_C2") != "1":
+        raise SystemExit("refusing: set SVERDRUP_MIOST_C2=1 (owner-gated touch)")
+    scope = _scope()
+    cfg = json.loads(scope.read_text())
+    results = json.loads(RESULTS.read_text())
+    sb = results["stage_b"]
+    _assert_c2_untouched(sb)
+    if not str(sb.get("status", "")).startswith("READY"):
+        raise SystemExit(f"refusing: stage_b status is not READY ({sb.get('status')})")
+    s = float(sb["s_star"])  # FROZEN (owner protocol item 1) — never refit
+    mean_nc = OUT_DIR / "stage_b_mean_maps.nc"
+    var_nc = OUT_DIR / "stage_b_var_maps.nc"
+    c2_track = Path(cfg["c2_track_path"])
+    stage_a_ref = list(results["winner"]["acceptance_mu_sigma_lambda_x"])
+
+    _log(f"c2 touch: frozen s*={s:.4f}; scoring {mean_nc} on {c2_track.name}")
+    scores = [float(x) for x in their_score(mean_nc, c2_track)]
+    mu_c, var_c, ssh_c = _interp_mean_var_on_track(mean_nc, var_nc, c2_track, cfg)
+    cal = _calibration_at(mu_c, var_c, ssh_c, s=s)
+    status = _c2_reading(scores, stage_a_ref, cal)
+    sb["c2_acceptance"] = {
+        "mu_sigma_lambda_x": scores,
+        "stage_a_reference": stage_a_ref,
+        "reproduces_stage_a": scores == stage_a_ref,
+        "calibration_at_frozen_s_star": cal,
+        "semantics": (
+            "the ONE Stage-B c2 touch (owner-authorized 2026-07-07; s* "
+            "frozen from validation; nothing refit on c2)"
+        ),
+    }
+    sb["status"] = status
+    results["stage_b"] = sb
+    RESULTS.write_text(json.dumps(results, indent=2))
+    _log(f"c2 touch complete: {status}")
+    print(json.dumps(sb["c2_acceptance"], indent=2))
+
+
 if __name__ == "__main__":
     if "--build-replay-cache" in sys.argv:
         built = _build_replay_cache(LOG_FILE, RESULTS)
         REPLAY_FILE.write_text(json.dumps(built, indent=2))
         print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
+    elif "--c2-touch" in sys.argv:
+        c2_touch_main()
     elif "--stage-b" in sys.argv:
         stage_b_main()
     else:

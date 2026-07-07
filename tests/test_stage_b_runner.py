@@ -117,3 +117,32 @@ def test_calibration_at_s_hand_values(runner: Any) -> None:
     cal2 = runner._calibration_at(mu, var, ssh, s=0.04)
     assert cal2["coverage_1sigma"] == pytest.approx(0.0)
     assert cal2["reduced_chi2"] == pytest.approx(0.25 / 0.04)
+
+
+def test_c2_touch_once_guard(runner: Any) -> None:
+    """A second c2 touch is refused loudly.
+
+    Bug caught: rerunning --c2-touch silently overwriting the single
+    acceptance record — the hygiene order is ONE touch, winner-only.
+    """
+    with pytest.raises(RuntimeError, match="already"):
+        runner._assert_c2_untouched({"c2_acceptance": {"x": 1}})
+    runner._assert_c2_untouched({"status": "READY"})  # first touch allowed
+
+
+def test_c2_reading_pre_registered(runner: Any) -> None:
+    """Owner's pre-registered reading is applied exactly.
+
+    Hand: Stage-A ref (0.8573, 0.08, 156.4). (a) identical scores +
+    coverage 0.70 (in 0.6827+-0.10) -> SIGNED OFF; (b) identical +
+    coverage 0.55 -> HOLD; (c) any score deviation -> DEFECT even with
+    good coverage. Bug caught: deviation tolerated (owner: bit-identical
+    or defect), or the band check inverted.
+    """
+    ref = [0.8573, 0.08, 156.4]
+    ok = runner._c2_reading(list(ref), ref, {"coverage_1sigma": 0.70})
+    assert ok.startswith("SIGNED OFF")
+    hold = runner._c2_reading(list(ref), ref, {"coverage_1sigma": 0.55})
+    assert hold.startswith("HOLD")
+    bad = runner._c2_reading([0.8574, 0.08, 156.4], ref, {"coverage_1sigma": 0.70})
+    assert bad.startswith("DEFECT")
