@@ -198,12 +198,34 @@
 >   through the full runner path).
 > - Seam-dispersion verdict + rubric outcome attached (both FLAGs carry
 >   the recorded context; see the Task-18 close block above).
-> **OWNER DECIDES: (1) authorize the single c2 touch (rerun with
-> SVERDRUP_MIOST_C2=1 — re-solves members ~4 h, then scores c2 once:
-> µ/σ/λx + calibration at s*); (2) sign off Task 19; (3) then the
-> capability-flip commit (registry "miost" with members=100, the
-> recorded root, s*=10.049; flip test in-tree). Original launch
-> command:**
+> **OWNER PROTOCOL (2026-07-07) — c2 TOUCH AUTHORIZED under these
+> terms (verbatim intent):**
+> 1. **s* = 10.049 FROZEN from validation** — nothing refit on c2; c2
+>    evaluates at the frozen s* (read from the evidence JSON, not
+>    recomputed). µ/σ/λx expected to reproduce Stage A
+>    (0.8573/0.0800/156.4) bit-identically; ANY deviation = defect →
+>    STOP. The NEW c2 information is calibration at s*: coverage,
+>    chi2_red (expect ≠1 — the honest generalization number), CRPS.
+> 2. **PRE-REGISTERED READING:** c2 coverage ∈ 0.6827±0.10 → SIGN OFF
+>    Task 19; outside → HOLD, record, no refit, bring to owner. NO
+>    standing pre-authorization — every future c2 touch stays
+>    owner-gated.
+> 3. **REPORT-ONLY localized calibration** (validation-side, existing
+>    maps; not a bar, attach to evidence): coverage at s* split by
+>    blend/interior days, spatial quadrants, month. Severe local
+>    mis-calibration = recorded scalar-s limitation + future work
+>    (spatially-varying s OUT of scope), not a gate-blocker.
+> 4. Task-18 flags: seam 1.305 = RESOLVED-WITH-CONTEXT (metric
+>    artifact, no blend-specific excess); variance exceedance recorded,
+>    does not reopen Task 20.
+> 5. **Capability-flip commit (after sign-off) carries the σ-semantics
+>    paragraph:** shipped σ = calibrated predictive uncertainty vs
+>    along-track residuals via ONE global scalar s (includes
+>    representation error + unresolved scales) — NOT raw posterior
+>    spread; correlation structure is the raw posterior's (√s preserves
+>    it); chi2_red(s*)=1 is a mechanism identity, coverage/CRPS are the
+>    evidence. Record m=100, seed root, s*.
+> Original launch command:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
 > (expect READY in hours; member solves ~9×; then owner reviews
