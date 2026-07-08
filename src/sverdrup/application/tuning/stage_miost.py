@@ -46,7 +46,10 @@ def run_stage_miost(
         The stage report (winner, single-touch c2 acceptance, history).
     """
     return _run_stage(
-        method_name="miost",
+        # SEARCH entry (post-flip, Task 22): sweeps price/score the POINT
+        # method — the registered "miost" is the shipped SAMPLES product
+        # and must never generate members per trial (spec 6.1).
+        method_name="miost-point",
         space=Miost().parameter_space(),
         scope=scope,
         n_trials=n_trials,

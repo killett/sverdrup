@@ -42,3 +42,22 @@ def test_objective_for_samples_methods_keep_coverage() -> None:
 def test_stage_report_carries_history_field() -> None:
     """Runner surfaces infeasible reasons from the report's history (default None)."""
     assert StageAReport.__dataclass_fields__["history"].default is None
+
+
+def test_search_entry_is_point_configured() -> None:
+    """The sweep searches "miost-point" (POINT), never the shipped product.
+
+    Catches: a sweep instantiating the shipped SAMPLES miost per trial —
+    100-member batches per trial, the exact cost class spec 6.1 forbids.
+    """
+    import inspect
+
+    from sverdrup.application.tuning import stage_miost
+    from sverdrup.core.types import UncertaintyCapability
+    from sverdrup.methods.miost import Miost
+    from sverdrup.methods.registry import METHODS
+
+    search = METHODS["miost-point"]()
+    assert isinstance(search, Miost)
+    assert search.native_capability is UncertaintyCapability.POINT
+    assert 'method_name="miost-point"' in inspect.getsource(stage_miost.run_stage_miost)

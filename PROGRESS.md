@@ -18,10 +18,18 @@
 > winner; Stage-B DEFECT-RUN framing sliver — disclosed; Stage-B
 > accepted). Tuning note recorded: future sweeps must search a
 > POINT-configured `Miost()` — the registered miost is the shipped
-> product; Task 22 (peak-model predicate wiring + this search rewire)
-> is REQUIRED before any next tuning sweep. Task 20 stays closed
+> product. **TASK 22 CLOSED 2026-07-07 (all 22 plan tasks now closed):**
+> `PeakFeasibility` predicate lands the validated component-sum peak
+> model (budget = measured MemAvailable × 0.8 at construction, recorded
+> in `explain()`; m-scaled — a member-gen sweep reprices vs mean-only);
+> the SEARCH rewire is in: registry `"miost-point"` (POINT) +
+> `run_stage_miost` searches it — the shipped SAMPLES miost is never
+> instantiated per trial. Suite 455/9/1 green. Task 20 stays closed
 > (windowed ships). Tier-3 two-row correction + anchor caveat
-> committed. PUSH: attempted this session (owner ordered).**
+> committed. **PUSH BLOCKED: `Host key verification failed` — owner
+> must run in their terminal: `ssh-keyscan github.com >>
+> ~/.ssh/known_hosts` then `git push origin main` (deploy key may also
+> still be needed). All Phase-7 history is local-only until then.**
 
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry

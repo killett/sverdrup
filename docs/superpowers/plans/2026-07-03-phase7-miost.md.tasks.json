@@ -204,9 +204,10 @@
     {
       "id": 22,
       "subject": "Task 22 (hardening): predicate re-grounding \u2014 component-sum peak model in miost_sizing",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [],
-      "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B."
+      "description": "Component-sum peak model (G + S + RHS-batch + obs arrays), validated vs one instrumented WINDOWED trial, budget from measured available RAM; no bare 2.7x fudge. Before the NEXT tuning gate, not before Stage B.",
+      "lastUpdated": "2026-07-07T00:00:00Z"
     }
   ],
   "lastUpdated": "2026-07-06T22:00:00+00:00"

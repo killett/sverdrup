@@ -8,6 +8,7 @@ docs/superpowers/specs/2026-07-01-stagec-redesign-design.md.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from sverdrup.core.types import UncertaintyCapability
@@ -195,3 +196,83 @@ class RelaxedCoherenceFeasibility:
         if UncertaintyCapability.MARGINAL_VARIANCE in required_capabilities:
             return self.marg_worst_case <= self.marg_tol
         return True
+
+
+def _mem_available_bytes() -> float:
+    """MEASURED available RAM from /proc/meminfo (kB field -> bytes)."""
+    for line in Path("/proc/meminfo").read_text().splitlines():
+        if line.startswith("MemAvailable"):
+            return float(line.split()[1]) * 1024.0
+    raise RuntimeError("MemAvailable not found in /proc/meminfo")
+
+
+@dataclass(frozen=True)
+class PeakFeasibility:
+    """Excludes trials whose MODELED PEAK RSS exceeds the measured-RAM budget.
+
+    Task-22 re-grounding (owner-ordered): the component-sum peak model
+    (``miost_sizing.peak_model`` — CSR G, assembly triplets, preconditioner
+    copy, RHS batch, m-scaled PCG workspace; phase-MAX, no bare multiplier)
+    replaces stored-G-only pricing, whose fixed 8e9 constant ignored
+    transients and workspace (the OOM class). Model validated 2026-07-07
+    against the instrumented windowed member-gen run: model/measured =
+    1.11x (windowed leg) and 1.08x (single-window leg) — conservative,
+    in the pre-registered [1x, 2x] band.
+
+    ``budget_bytes=None`` derives the budget from MEASURED ``MemAvailable``
+    at CONSTRUCTION time x ``safety`` — recorded on the instance so the
+    exclusion reasons state the actual number used.
+    """
+
+    n_obs_max: int
+    m: int = 1
+    budget_bytes: float | None = None
+    safety: float = 0.8
+    n_dir: int = 8
+    lam_min: float = 80.0
+    lam_max: float = 905.0
+    window_days: float = 60.0
+    n_grid_nodes: int = 0
+
+    def __post_init__(self) -> None:
+        """Freeze the measured budget at construction when none is given."""
+        if self.budget_bytes is None:
+            object.__setattr__(
+                self, "budget_bytes", self.safety * _mem_available_bytes()
+            )
+
+    def predicted_peak_bytes(self, params: dict[str, float]) -> float:
+        """Modeled peak RSS for one trial's spacing at this predicate's m."""
+        from sverdrup.methods.miost_sizing import peak_model
+
+        return peak_model(
+            alpha=params["spacing_alpha"],
+            n_dir=self.n_dir,
+            window_days=self.window_days,
+            lam_min=self.lam_min,
+            n_obs=self.n_obs_max,
+            m=self.m,
+            lam_max=self.lam_max,
+            n_grid_nodes=self.n_grid_nodes,
+        ).total
+
+    def explain(self, params: dict[str, float]) -> str | None:
+        """Return the exclusion reason, or None when the trial fits."""
+        peak = self.predicted_peak_bytes(params)
+        budget = float(self.budget_bytes)  # type: ignore[arg-type]
+        if peak <= budget:
+            return None
+        return (
+            f"modeled peak RSS {peak:.2e} B > budget {budget:.2e} B "
+            f"(alpha={params['spacing_alpha']}, m={self.m}; component-sum "
+            "peak model, Task 22)"
+        )
+
+    def feasible(
+        self,
+        params: dict[str, float],
+        tile_geometry: TileGeometry,
+        required_capabilities: frozenset[UncertaintyCapability],
+    ) -> bool:
+        """Return True iff the modeled peak fits the measured-RAM budget."""
+        return self.explain(params) is None
