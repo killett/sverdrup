@@ -272,8 +272,26 @@
 >   (4) Evidence re-run at corrected framing with a HARD STOP unless
 >   the Stage-B mean maps are BIT-IDENTICAL to the regenerated
 >   acceptance map. (5) Localized calibration recomputed from the
->   re-run's maps and attached. **STOPS at READY — the second c2
->   touch needs fresh authorization.**
+>   re-run's maps and attached.
+>
+> **⛔ CORRECTED-FRAMING EVIDENCE: READY 2026-07-07 — GATE STOPPED FOR
+> OWNER (touch 3 needs fresh authorization). The arbiter PASSED:
+> `acceptance_map_bit_identical: true` — Stage-B mean maps are
+> bit-identical to the regenerated Stage-A acceptance map (the point of
+> the fix, proven).** Evidence (train obs 54,345 corrected framing;
+> m=100, root recorded): members ALL converged at the first cap (302
+> iters max, 9.98e-7); **s* = 10.0628** (was 10.0494 box-framed —
+> +0.13%, the 762 sliver obs, immaterial as predicted);
+> coverage_1sigma 0.7481 PASS (0.6827±0.10); crps 0.0475;
+> mean-unchanged bit-identical ×3; seam verdict + rubric attached;
+> localized calibration (frozen s*): blend 0.742 / interior 0.752 (no
+> seam hole), south quadrants 0.79–0.83 vs jet-core north 0.685–0.695
+> at chi2 ~1.3 (recorded scalar-s limitation, future work:
+> spatially-varying s OUT of scope), months 0.663–0.816 (worst Aug,
+> chi2 1.49) — no severe local mis-calibration. Tier-3 two-row
+> correction + anchor caveat committed. Expect touch 3 to land
+> ~identically to the DEFECT-RUN c2 numbers (coverage 0.7479,
+> chi2 1.047) with µ/σ/λx now BIT-IDENTICAL to Stage A.
 > Original launch command:**
 > `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
 > scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
