@@ -36,9 +36,42 @@ OBS = _obs()
 
 
 def test_protocol_compliant_and_registered() -> None:
+    """Registered miost is the SHIPPED SAMPLES product (capability flip).
+
+    Catches: the flip regressing to the POINT class default (bars_for would
+    silently drop the coverage bar), or the accepted (m, root, s*) drifting
+    from the signed Stage-B gate record.
+    """
+    from sverdrup.core.types import UncertaintyCapability
+    from sverdrup.methods.miost import (
+        STAGE_B_INFLATION_S,
+        STAGE_B_MEMBERS,
+        STAGE_B_ROOT,
+    )
+
     m = Miost()
     assert isinstance(m, Method)
-    assert METHODS["miost"] is Miost
+    assert m.native_capability is UncertaintyCapability.POINT  # class default
+    shipped = METHODS["miost"]()
+    assert isinstance(shipped, Miost)
+    assert shipped.native_capability is UncertaintyCapability.SAMPLES
+    assert shipped.members == STAGE_B_MEMBERS == 100
+    assert shipped.member_root == STAGE_B_ROOT
+    assert shipped.inflation_s == STAGE_B_INFLATION_S
+
+
+def test_flip_observed_bars_include_coverage() -> None:
+    """bars_for(registered miost capability) now includes coverage (spec 7.4 AC).
+
+    Catches: the capability-derived bars machinery not seeing the flip —
+    the Stage-B calibration bar would silently vanish from acceptance.
+    """
+    from sverdrup.application.tuning.objective import bars_for
+
+    shipped = METHODS["miost"]()
+    assert isinstance(shipped, Miost)
+    metrics = [b.metric for b in bars_for(shipped.native_capability)]
+    assert "coverage_1sigma" in metrics and "mu_score" in metrics
 
 
 def test_solve_returns_point_distribution() -> None:

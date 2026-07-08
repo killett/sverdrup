@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from sverdrup.methods.fem import FEMMatern
 from sverdrup.methods.gmrf import MaternGMRF
-from sverdrup.methods.miost import Miost
+from sverdrup.methods.miost import shipped_miost
 from sverdrup.methods.oi import OptimalInterpolation
 from sverdrup.methods.trivial import TrivialInterpolation
 
@@ -12,6 +12,9 @@ METHODS = {
     "oi": OptimalInterpolation,
     "gmrf": MaternGMRF,
     "fem": FEMMatern,
-    "miost": Miost,
+    # CAPABILITY FLIP (Task-19 gate, signed off 2026-07-07): the registered
+    # miost is the SHIPPED SAMPLES-native ensemble product; tuning sweeps
+    # must search with a POINT-configured Miost() (see shipped_miost docs).
+    "miost": shipped_miost,
     "trivial": TrivialInterpolation,
 }

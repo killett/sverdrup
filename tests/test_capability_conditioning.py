@@ -115,15 +115,24 @@ def test_run_mean_var_maps_on_point_method_fails_loud() -> None:
     )
     import tempfile
 
-    with tempfile.TemporaryDirectory() as td:
-        with pytest.raises(CapabilityNotAvailableError, match="POINT"):
-            run_mean_var_maps(
-                "miost",
-                obs,
-                params,
-                grid,
-                425.0,
-                [30.0],
-                Path(td) / "m.nc",
-                Path(td) / "v.nc",
-            )
+    from sverdrup.methods import registry
+    from sverdrup.methods.miost import Miost
+
+    # A POINT-configured miost (the registered "miost" is the SHIPPED
+    # SAMPLES product since the Task-19 capability flip).
+    registry.METHODS["miost-point"] = Miost
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            with pytest.raises(CapabilityNotAvailableError, match="POINT"):
+                run_mean_var_maps(
+                    "miost-point",
+                    obs,
+                    params,
+                    grid,
+                    425.0,
+                    [30.0],
+                    Path(td) / "m.nc",
+                    Path(td) / "v.nc",
+                )
+    finally:
+        registry.METHODS.pop("miost-point", None)

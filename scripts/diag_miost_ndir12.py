@@ -85,7 +85,7 @@ def main() -> None:
             validation_missions=[str(cfg["validation_mission"])],
         )
         scorer = _build_scorer(cfg, _subset(obs, split.train_idx), grid, half, mdt)
-        METHODS["miost"] = lambda: Miost(n_dir=12)  # type: ignore[assignment]
+        METHODS["miost"] = lambda: Miost(n_dir=12)
         try:
             t0 = time.time()
             scores12 = scorer.score(
@@ -93,7 +93,9 @@ def main() -> None:
             )
             elapsed = int(time.time() - t0)
         finally:
-            METHODS["miost"] = Miost
+            from sverdrup.methods.miost import shipped_miost
+
+            METHODS["miost"] = shipped_miost  # post-flip registry default
         lines += [
             "## Side-by-side (validation track)",
             "",

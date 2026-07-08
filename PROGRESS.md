@@ -1,5 +1,28 @@
 # Sverdrup — Progress notebook
 
+> **✅ PHASE 7 — MIOST: CLOSED 2026-07-07 on the capability-flip commit.
+> TASK 19 SIGNED OFF (owner pre-registered reading, touch 3):** c2
+> triplet (0.8572612, 0.0799886, 156.42997) reproduces Stage A
+> **BIT-IDENTICALLY** (`reproduces_stage_a: true`); c2 calibration at
+> frozen s* = 10.0628: coverage_1sigma **0.7481** (in 0.6827±0.10 →
+> sign-off), chi2_red 1.0463 (the honest generalization number,
+> recorded), crps 0.0479, n=44,844. **CAPABILITY FLIP LANDED:** registry
+> `"miost"` → `shipped_miost()` (SAMPLES-native, m=100,
+> root=4836134738817689931, s*=10.062847634082484) with the σ-semantics
+> paragraph in its docstring (calibrated predictive σ via one global
+> scalar s — includes representation error + unresolved scales, NOT raw
+> posterior spread; √s preserves correlation structure; coverage/CRPS
+> are the evidence, chi2_red(s*)=1 an identity) + pointer to the
+> jet-core scalar-s limitation and the localized-calibration table.
+> Suite 450/9/1 green post-flip. Honest c2 tally: 3 touches (Stage-A
+> winner; Stage-B DEFECT-RUN framing sliver — disclosed; Stage-B
+> accepted). Tuning note recorded: future sweeps must search a
+> POINT-configured `Miost()` — the registered miost is the shipped
+> product; Task 22 (peak-model predicate wiring + this search rewire)
+> is REQUIRED before any next tuning sweep. Task 20 stays closed
+> (windowed ships). Tier-3 two-row correction + anchor caveat
+> committed. PUSH: attempted this session (owner ordered).**
+
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
 > below). Task 13 (STAGE-A GATE, USER GATE) — **CLOSED: OWNER SIGN-OFF

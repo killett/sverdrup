@@ -671,3 +671,44 @@ class Miost:
             while len(self._s_cache) > 2:
                 self._s_cache.popitem(last=False)
         return els, s
+
+
+# --- Stage-B accepted configuration (Task-19 gate, owner sign-off 2026-07-07) ---
+STAGE_B_MEMBERS = 100
+STAGE_B_ROOT = (
+    4836134738817689931  # derive_seed("miost", "stage-b-winner", "members", 0)
+)
+STAGE_B_INFLATION_S = 10.062847634082484  # s* frozen from corrected-framing validation
+
+
+def shipped_miost() -> Miost:
+    """The SHIPPED miost product: SAMPLES-native at the accepted Stage-B config.
+
+    Sigma semantics (owner-ordered at the gate close, 2026-07-07): the
+    shipped sigma is CALIBRATED PREDICTIVE uncertainty against along-track
+    residuals via ONE global scalar s (``STAGE_B_INFLATION_S``) — it
+    includes representation error and unresolved scales, and is NOT the raw
+    posterior spread; the correlation STRUCTURE is the raw posterior's (the
+    sqrt(s) anomaly rescale preserves it). ``chi2_red(s*) = 1`` on
+    validation is a mechanism identity, not evidence — the evidence is
+    coverage_1sigma 0.7481 on validation and 0.7481 on the single c2
+    acceptance touch (both within 0.6827±0.10) and CRPS ~0.047-0.048 m.
+
+    Known limitation (recorded): one global s mildly under-disperses in the
+    jet-core northern quadrants (coverage ~0.69, chi2 ~1.3) and
+    over-disperses south (~0.79-0.83) — see the localized-calibration table
+    (gate results JSON, ``stage_b.localized_calibration``); a
+    spatially-varying s is future work, out of scope.
+
+    Tuning note: parameter SEARCHES must use a POINT-configured ``Miost()``
+    (members=0) — members are generated at tuned winners only (spec 6.1),
+    never per-trial.
+
+    Returns:
+        The ensemble-mode method with m, seed root, and s* as accepted.
+    """
+    return Miost(
+        members=STAGE_B_MEMBERS,
+        member_root=STAGE_B_ROOT,
+        inflation_s=STAGE_B_INFLATION_S,
+    )
