@@ -26,10 +26,11 @@
 > `run_stage_miost` searches it — the shipped SAMPLES miost is never
 > instantiated per trial. Suite 455/9/1 green. Task 20 stays closed
 > (windowed ships). Tier-3 two-row correction + anchor caveat
-> committed. **PUSH BLOCKED: `Host key verification failed` — owner
-> must run in their terminal: `ssh-keyscan github.com >>
-> ~/.ssh/known_hosts` then `git push origin main` (deploy key may also
-> still be needed). All Phase-7 history is local-only until then.**
+> committed. **PUSHED 2026-07-08 (owner, manually): origin/main =
+> `7d5b837` — the complete Phase-7 trail (gate evidence, defect
+> disclosure, Tier-3 correction, capability flip, Task-22 wiring) is
+> public. NOTE for future sessions: pushes from inside the container
+> may still fail on host-key/credentials; owner pushes manually.**
 
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
