@@ -4,13 +4,18 @@
 satellite altimetry, with *first-class, rigorous per-gridpoint uncertainty* — every output is a
 predictive distribution (mean + marginal variance + coherent whole-field samples + a typed
 provenance chain), not just a point estimate. It ships five interchangeable methods behind one
-method-agnostic spine — a dense space-time Gaussian-process / **optimal interpolation** (`oi`), a
-sparse-precision **Matérn GMRF** (`gmrf`, incl. latitude-varying correlation length), a
-mesh-based **FEM Matérn SPDE** (`fem`, grid-agnostic by construction), a multiscale
-reduced-basis **MIOST-family ensemble** (`miost`, calibrated per-gridpoint σ; validation-track),
-and a **trivial** inverse-distance baseline (`trivial`) — and blends overlapping tiles into one
-seam-free regional product with coherent cross-tile uncertainty. Reconstructions are scored two
-ways: **OSSE** (against gridded truth) and **OSE** (against withheld along-track data).
+method-agnostic spine:
+
+- `oi` — dense space-time Gaussian-process / **optimal interpolation**
+- `gmrf` — sparse-precision **Matérn GMRF** (incl. latitude-varying correlation length)
+- `fem` — mesh-based **FEM Matérn SPDE** (grid-agnostic by construction)
+- `miost` — multiscale reduced-basis **MIOST-family ensemble** (calibrated per-gridpoint σ;
+  validation-track)
+- `trivial` — inverse-distance baseline
+
+Overlapping tiles blend into one seam-free regional product with coherent cross-tile
+uncertainty. Reconstructions are scored two ways: **OSSE** (against gridded truth) and
+**OSE** (against withheld along-track data).
 
 ## Table of contents
 
@@ -89,15 +94,19 @@ Extras (install only what you need):
 - **Mode — OSSE vs OSE.** `OSSE` scores the reconstructed grid against gridded "truth" (accuracy
   + calibration). `OSE` withholds a real mission (CryoSat-2) from training and scores the
   reconstruction against that withheld along-track data — no truth leak.
-- **Method.** `oi` (exact dense GP, full space-time kernel), `gmrf` (sparse-precision Matérn
-  SPDE, fast + nonstationary-capable), `fem` (the same Matérn prior assembled on a Delaunay
-  mesh — grid-agnostic by construction), `miost` (multiscale wavelet reduced-basis ensemble;
-  see the Validation section), `trivial` (inverse-distance baseline / degradation path).
-- **The `Product`.** Each output time carries a *Persisted* predictive distribution: mean,
-  marginal variance (**exact** for `oi`/`gmrf`/`fem`; ensemble-calibrated for `miost`), coherent
-  whole-field samples, off-grid eval-point predictions, and a typed **provenance** chain that
-  records every uncertainty transform and any known bias (e.g. a conservative halo residual, or
-  `DEGRADED_COHERENCE` on the trivial path).
+- **Method.**
+  - `oi` — exact dense GP, full space-time kernel
+  - `gmrf` — sparse-precision Matérn SPDE, fast + nonstationary-capable
+  - `fem` — the same Matérn prior assembled on a Delaunay mesh; grid-agnostic by construction
+  - `miost` — multiscale wavelet reduced-basis ensemble (see the Validation section)
+  - `trivial` — inverse-distance baseline / degradation path
+- **The `Product`.** Each output time carries a *Persisted* predictive distribution:
+  - mean
+  - marginal variance (**exact** for `oi`/`gmrf`/`fem`; ensemble-calibrated for `miost`)
+  - coherent whole-field samples
+  - off-grid eval-point predictions
+  - a typed **provenance** chain recording every uncertainty transform and any known bias
+    (e.g. a conservative halo residual, or `DEGRADED_COHERENCE` on the trivial path)
 - **Tiling and blend.** A region is split into overlapping tiles, each solved independently, then
   crossfaded into one seam-free product. `oi`/`gmrf` keep cross-tile uncertainty **coherent**; the
   `trivial` path is **degraded** and flags the coherence loss in provenance.
@@ -213,11 +222,13 @@ python -m sverdrup path/to/config.json
 
 `run_pipeline` returns `(product, scores)`; `run_tiled_pipeline` returns
 `(blends, scores)`. The product is written to `out_url` as zarr (via fsspec, so local
-`file://`, `s3://`, `gcs://`, … all work). Each per-time entry carries the mean, exact marginal
+`file://`, `s3://`, `gcs://`, … all work). Each per-time entry carries the mean, marginal
 variance, coherent samples, off-grid eval-point predictions, and the typed uncertainty
 **provenance** (every transform + any `KnownBias`). `scores` is the merged evaluator dictionary:
-RMSE vs truth, calibration (reduced χ², 1σ coverage) for OSSE; withheld-track RMSE for OSE; plus
-ground-track power.
+
+- RMSE vs truth + calibration (reduced χ², 1σ coverage) for OSSE
+- withheld-track RMSE for OSE
+- ground-track power (both modes)
 
 ## Validation — scored by the 2021a SSH-mapping OSE challenge
 
