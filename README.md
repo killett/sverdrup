@@ -108,8 +108,9 @@ Extras (install only what you need):
   - a typed **provenance** chain recording every uncertainty transform and any known bias
     (e.g. a conservative halo residual, or `DEGRADED_COHERENCE` on the trivial path)
 - **Tiling and blend.** A region is split into overlapping tiles, each solved independently, then
-  crossfaded into one seam-free product. `oi`/`gmrf` keep cross-tile uncertainty **coherent**; the
-  `trivial` path is **degraded** and flags the coherence loss in provenance.
+  crossfaded into one seam-free product. `oi`/`gmrf`/`fem` keep cross-tile uncertainty
+  **coherent**; the `trivial` path is **degraded** and flags the coherence loss in provenance;
+  `miost` is single-tile by design (its temporal windows blend within the one tile).
 
 ## Running a reconstruction
 
