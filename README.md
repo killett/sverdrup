@@ -2,13 +2,15 @@
 
 **sverdrup** reconstructs regional sea-surface-height anomaly (SSHA) fields from sparse
 satellite altimetry, with *first-class, rigorous per-gridpoint uncertainty* — every output is a
-predictive distribution (mean + exact marginal variance + coherent whole-field samples + a typed
-provenance chain), not just a point estimate. It ships three interchangeable methods behind one
+predictive distribution (mean + marginal variance + coherent whole-field samples + a typed
+provenance chain), not just a point estimate. It ships five interchangeable methods behind one
 method-agnostic spine — a dense space-time Gaussian-process / **optimal interpolation** (`oi`), a
-sparse-precision **Matérn GMRF** (`gmrf`, incl. latitude-varying correlation length), and a
-**trivial** inverse-distance baseline (`trivial`) — and blends overlapping tiles into one
+sparse-precision **Matérn GMRF** (`gmrf`, incl. latitude-varying correlation length), a
+mesh-based **FEM Matérn SPDE** (`fem`, grid-agnostic by construction), a multiscale
+reduced-basis **MIOST-family ensemble** (`miost`, calibrated per-gridpoint σ; validation-track),
+and a **trivial** inverse-distance baseline (`trivial`) — and blends overlapping tiles into one
 seam-free regional product with coherent cross-tile uncertainty. Reconstructions are scored two
-honest ways: **OSSE** (against gridded truth) and **OSE** (against withheld along-track data).
+ways: **OSSE** (against gridded truth) and **OSE** (against withheld along-track data).
 
 ## Table of contents
 
@@ -88,14 +90,17 @@ Extras (install only what you need):
   + calibration). `OSE` withholds a real mission (CryoSat-2) from training and scores the
   reconstruction against that withheld along-track data — no truth leak.
 - **Method.** `oi` (exact dense GP, full space-time kernel), `gmrf` (sparse-precision Matérn
-  SPDE, fast + nonstationary-capable), `trivial` (inverse-distance baseline / degradation path).
-- **The `Product`.** Each output time carries a *Persisted* predictive distribution: mean, **exact**
-  marginal variance, coherent whole-field samples, off-grid eval-point predictions, and a typed
-  **provenance** chain that records every uncertainty transform and any known bias (e.g. a
-  conservative halo residual, or `DEGRADED_COHERENCE` on the trivial path).
+  SPDE, fast + nonstationary-capable), `fem` (the same Matérn prior assembled on a Delaunay
+  mesh — grid-agnostic by construction), `miost` (multiscale wavelet reduced-basis ensemble;
+  see the Validation section), `trivial` (inverse-distance baseline / degradation path).
+- **The `Product`.** Each output time carries a *Persisted* predictive distribution: mean,
+  marginal variance (**exact** for `oi`/`gmrf`/`fem`; ensemble-calibrated for `miost`), coherent
+  whole-field samples, off-grid eval-point predictions, and a typed **provenance** chain that
+  records every uncertainty transform and any known bias (e.g. a conservative halo residual, or
+  `DEGRADED_COHERENCE` on the trivial path).
 - **Tiling and blend.** A region is split into overlapping tiles, each solved independently, then
   crossfaded into one seam-free product. `oi`/`gmrf` keep cross-tile uncertainty **coherent**; the
-  `trivial` path is honestly **degraded** and flags the coherence loss in provenance.
+  `trivial` path is **degraded** and flags the coherence loss in provenance.
 
 ## Running a reconstruction
 
@@ -179,6 +184,8 @@ blends, scores = run_tiled_pipeline(inp, partition)   # one BlendedDistribution 
 |------------|-----------------------------------------------------------|-------|
 | `oi`       | `length_scale` (km), `time_scale` (days), `variance`      | exact dense space-time GP / OI |
 | `gmrf`     | `range` (km), `variance`, `temporal_taper_scale` (days)   | sparse Matérn SPDE; `range` may be a latitude-varying field (nonstationary κ) |
+| `fem`      | `range` (km), `variance`, `temporal_taper_scale` (days)   | the same Matérn SPDE on a Delaunay mesh built from the grid; grid-agnostic |
+| `miost`    | `spacing_alpha`, `log10_rho`, `q_slope`, `l_t_days` (tuned values ship in the registry) | validation-track only: geometry is fixed to the 2021a Gulf-Stream box — run from a clone via the challenge harness (see Validation) |
 | `trivial`  | `{}` (none)                                               | inverse-distance baseline; degradation path |
 
 ## Cheatsheet
@@ -196,6 +203,7 @@ python -m sverdrup path/to/config.json
 # methods + params
 #   oi      -> {"length_scale": 300.0, "time_scale": 10.0, "variance": 0.05}
 #   gmrf    -> {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 10.0}
+#   fem     -> {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 10.0}
 #   trivial -> {}
 
 # OSE (withheld along-track) instead of OSSE: set "mode": "OSE" and drop ref_path
@@ -211,19 +219,22 @@ variance, coherent samples, off-grid eval-point predictions, and the typed uncer
 RMSE vs truth, calibration (reduced χ², 1σ coverage) for OSSE; withheld-track RMSE for OSE; plus
 ground-track power.
 
-## Validation — reproduces the 2021a SSH-mapping OSE BASELINE
+## Validation — scored by the 2021a SSH-mapping OSE challenge
 
 Sverdrup's OI engine reproduces the published **2021a SSH Mapping Data Challenge**
-BASELINE leaderboard row, scored by the challenge's *own* evaluation code (vendored
-as a submodule and driven through `sverdrup.validation`):
+BASELINE leaderboard row, and its MIOST-family method is tuned and accepted
+through the same harness — everything scored by the challenge's *own* evaluation
+code (vendored as a submodule and driven through `sverdrup.validation`):
 
 | Method | µ(RMSE) | σ(RMSE) | λx (km) |
 |--------|---------|---------|---------|
 | **sverdrup OI** | **0.853** | **0.090** | **140.9** |
 | BASELINE (published) | 0.85 | 0.09 | 140 |
 | DUACS (published) | 0.88 | 0.07 | 152 |
+| **sverdrup MIOST** (5 missions) | **0.857** | **0.080** | **156.4** |
+| MIOST (published, 6 missions) | 0.89 | 0.08 | 139 |
 
-**Verdict: PASS** (µ tolerance ±0.03, never loosened). The challenge's eval is
+**OI verdict: PASS** (µ tolerance ±0.03, never loosened). The challenge's eval is
 independently trusted — it reproduces the published DUACS, MIOST, and BFN rows to
 within tolerance — and our own parallel skill score agrees with it on our map
 (Δ 0.005). The reproduction required a faithful Gaussian, anisotropic,
@@ -231,11 +242,22 @@ degree-space kernel (`GaussianSpaceTimeDegrees`) and the SLA→SSH MDT reference
 frame; details, the decomposed read, and the data-source notes are in the
 [`docs/validation/`](docs/validation/) records below.
 
-> **`sverdrup.validation` is a from-source tool, not part of the PyPI/conda
-> package.** It needs the vendored challenge submodule (`git submodule update
-> --init`), the downloaded challenge data, and extra deps (`httpx`, `stamina`,
-> `paramiko`, `pyinterp`) that ship only in the pixi dev environment — so it is
-> not exercised by a bare `pip install sverdrup`. Run it from a clone.
+**MIOST verdict: PASS** against its hard floor (BASELINE µ ≥ 0.85, met at 0.857
+on a single withheld-CryoSat-2 acceptance touch). The published MIOST row is an
+aspirational anchor, not a gate, and the comparison is conservative by
+construction: sverdrup assimilates five missions (Jason-3 is held out for
+validation) where the published row assimilates six. Its uncertainty is a
+100-member perturbed-observation ensemble rescaled by one global factor s* so
+that 1σ coverage lands at 0.748 (target 0.6827 ± 0.10) on both the validation
+and withheld test tracks — a *predictive* σ that includes representation error
+and unresolved scales, with correlation structure from the exact posterior.
+
+> **`sverdrup.validation` — and the MIOST tuning/gate harness and its
+> diagnostics — are from-source tools, not part of the PyPI/conda package.**
+> They need the vendored challenge submodule (`git submodule update --init`),
+> the downloaded challenge data, and extra deps (`httpx`, `stamina`,
+> `paramiko`, `pyinterp`) that ship only in the pixi dev environment — so they
+> are not exercised by a bare `pip install sverdrup`. Run them from a clone.
 
 ## Troubleshooting
 
@@ -250,6 +272,7 @@ frame; details, the decomposed read, and the data-source notes are in the
 ## Links and license
 
 - [`docs/validation/RESULT.md`](docs/validation/RESULT.md) — the 2021a BASELINE reproduction result (table + decomposed read); [`docs/validation/parameter_audit_trail.md`](docs/validation/parameter_audit_trail.md) — full parameter/eval/MDT audit trail
+- [`docs/validation/`](docs/validation/) MIOST records — method brief, windowed-equivalence + seam-dispersion diagnostics, Tier-3 similarity (two-row), calibration evidence
 - [`docs/oracle-runbook.md`](docs/oracle-runbook.md) — opt-in correctness oracle (reproduce the ODC OI leaderboard number)
 - [`docs/`](docs/) — architecture design + implementation plans; [`conda-recipe/`](conda-recipe/) — conda-forge packaging
 - `PROGRESS.md` — running project notebook (decisions, gotchas, deviations)
