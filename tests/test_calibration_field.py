@@ -699,3 +699,189 @@ def test_json_roundtrip_bitexact() -> None:
             rt.sqrt_s_at(_LONS, _LATS),
             err_msg=f"sqrt_s_at mismatch after roundtrip for {type(cal).__name__}",
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 3: eval-time √s(x) seam in MiostEnsembleDistribution
+# ---------------------------------------------------------------------------
+#
+# One general query-time √s(x) application at the two row-scaling sites
+# (_anoms_at for arbitrary points; the anomaly term of the grid paths). The
+# mean paths must stay BIT-UNTOUCHED (the D6 property the whole phase leans
+# on); correlations are preserved exactly; variance scales pointwise by s(x).
+
+from sverdrup.core.grid import GridSpec  # noqa: E402
+from sverdrup.core.observations import (  # noqa: E402
+    DiagonalErrorModel,
+    ObsWindow,
+)
+from sverdrup.core.parameters import ConstantProvider  # noqa: E402
+from sverdrup.distributions.miost_ensemble import (  # noqa: E402
+    MiostEnsembleDistribution,
+)
+from sverdrup.methods.miost import Miost  # noqa: E402
+from sverdrup.methods.miost_windows import WindowPlan  # noqa: E402
+
+# WIDE clip: bounds far enough apart that no positive field ever engages the
+# clamp — isolates the seam wiring from the clip machinery.
+WIDE = ClipSpec(lo_log_s=-100.0, hi_log_s=100.0)
+
+_SEAM_M = 6
+_SEAM_DAY = 50.0  # inside the [45, 60] blend zone of the two-window plan
+_SEAM_ROOT = 12345
+_SEAM_PARAMS = ConstantProvider(
+    {"spacing_alpha": 1.5, "log10_rho": 1.3, "q_slope": 2.0, "l_t_days": 10.0}
+)
+_SEAM_GRID = GridSpec.lonlat(np.linspace(296.0, 304.0, 7), np.linspace(34.0, 42.0, 7))
+
+
+def _seam_obs(n: int = 80) -> ObsWindow:
+    rng = np.random.default_rng(7)
+    t = rng.uniform(-12.0, 117.0, n)  # spans both windows' +-L_t support
+    err = DiagonalErrorModel(np.full(n, 0.01))
+    mission = np.asarray(["alg", "s3a", "h2g", "j2n"])[rng.integers(0, 4, n)]
+    return ObsWindow.from_arrays(
+        rng.uniform(296, 304, n),
+        rng.uniform(34, 42, n),
+        t,
+        rng.standard_normal(n) * 0.1,
+        err,
+        mission,
+    )
+
+
+def _seam_method() -> Miost:
+    return Miost(plan=WindowPlan(starts=(0.0, 45.0)))
+
+
+@pytest.fixture(scope="module")
+def dist() -> MiostEnsembleDistribution:
+    return _seam_method().sample_members(
+        _seam_obs(), _SEAM_GRID, _SEAM_PARAMS, _SEAM_DAY, m=_SEAM_M, root=_SEAM_ROOT
+    )
+
+
+def test_correlation_preserved_under_nonconstant_field(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """Corr' == Corr exactly under a non-constant positive field.
+
+    Bug caught: scaling applied after centering, or one covariance side only.
+    """
+    field = PolyCalibration(coeffs=(0.5, 0.8, 0.0, 0.3, 0.0), clip=WIDE, fit_id="t")
+    a = np.array([[296.0, 34.0, 5.0], [303.0, 42.0, 5.0], [300.0, 38.0, 5.0]])
+    c0 = dist.covariance(a, a)
+    c1 = dist.with_calibration(field).covariance(a, a)
+    d0, d1 = np.sqrt(np.diag(c0)), np.sqrt(np.diag(c1))
+    np.testing.assert_allclose(c1 / np.outer(d1, d1), c0 / np.outer(d0, d0), rtol=1e-12)
+
+
+def test_magnitude_marginal_variance_scales_pointwise(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """var'(x) == s(x) · var(x) node-by-node on the grid, analytic.
+
+    Bug caught: any positive-but-wrong power of s (s, s², √s) — the
+    correlation test is blind to this by design (spec §2 note).
+    """
+    field = PolyCalibration(coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t")
+    v0 = dist.marginal_variance()
+    v1 = dist.with_calibration(field).marginal_variance()
+    lon2d, lat2d = np.meshgrid(dist.grid.x, dist.grid.y)
+    s = np.exp(field.log_s_at(lon2d.ravel(), lat2d.ravel())).reshape(v0.shape)
+    np.testing.assert_allclose(v1, s * v0, rtol=1e-12)
+
+
+def test_rescaled_composition_multiplicative(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """rescaled(4).rescaled(9) variance == 36 × base variance (rtol 1e-12)."""
+    composed = dist.rescaled(4.0).rescaled(9.0)
+    np.testing.assert_allclose(
+        composed.marginal_variance(),
+        36.0 * dist.marginal_variance(),
+        rtol=1e-12,
+    )
+    # A single rescaled(36) is the same variance — the multiplicative law.
+    np.testing.assert_allclose(
+        composed.marginal_variance(),
+        dist.rescaled(36.0).marginal_variance(),
+        rtol=1e-12,
+    )
+
+
+def test_rescaled_raises_on_field_calibrated(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """rescaled(s) on a field-calibrated product raises ValueError.
+
+    Bug caught: silent scalar-on-field corruption (owner narrowing).
+    """
+    field = PolyCalibration(coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t")
+    calibrated = dist.with_calibration(field)
+    with pytest.raises(ValueError, match="field-calibrated"):
+        calibrated.rescaled(2.0)
+
+
+def test_no_stale_sqrt_s_cache(dist: MiostEnsembleDistribution) -> None:
+    """with_calibration returns a fresh instance; the original's grid
+    queries are unchanged after the derived instance is queried.
+
+    Bug caught: per-grid √s cache shared across calibrations.
+    """
+    field = PolyCalibration(coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t")
+    v_before = dist.marginal_variance().copy()
+    derived = dist.with_calibration(field)
+    _ = derived.marginal_variance()  # populates the derived instance's cache
+    v_after = dist.marginal_variance()
+    np.testing.assert_array_equal(v_after, v_before)
+    # And the derived instance is a genuinely fresh object.
+    assert derived is not dist
+
+
+def test_field_inert_beyond_box_halo(dist: MiostEnsembleDistribution) -> None:
+    """Beyond box+halo, calibrated marginal stats equal uncalibrated to
+    machine precision (anomalies ~0 there; spec §9 inertness pin).
+
+    Constructed with one in-box node (so the sparse S-path has support and
+    builds) plus far nodes well outside the observation footprint, where the
+    blended member anomalies are EXACTLY zero — so √s·0 == 0 for any field.
+    """
+    mixed_grid = GridSpec.lonlat(
+        np.array([300.0, 340.0, 350.0]), np.array([38.0, 80.0, 85.0])
+    )
+    mixed = _seam_method().sample_members(
+        _seam_obs(), mixed_grid, _SEAM_PARAMS, _SEAM_DAY, m=_SEAM_M, root=_SEAM_ROOT
+    )
+    field = PolyCalibration(coeffs=(0.5, 0.8, 0.0, 0.3, 0.0), clip=WIDE, fit_id="t")
+    v0 = mixed.marginal_variance()
+    v1 = mixed.with_calibration(field).marginal_variance()
+    far = v0.ravel() < 1e-20  # the out-of-footprint nodes (anomalies ~0)
+    assert far.sum() >= 4, "fixture must contain several out-of-footprint nodes"
+    np.testing.assert_array_equal(v1.ravel()[far], v0.ravel()[far])
+
+
+def test_mean_untouched_by_field(dist: MiostEnsembleDistribution) -> None:
+    """mean_at under any field is the SAME ARRAY VALUES as uncalibrated
+    (bitwise equal) — the D6 property the whole phase leans on.
+    """
+    field = PolyCalibration(coeffs=(0.5, 0.8, 0.0, 0.3, 0.0), clip=WIDE, fit_id="t")
+    pts = np.array([[298.0, 36.0, _SEAM_DAY], [301.0, 40.0, _SEAM_DAY]])
+    m0 = dist.mean_at(pts)
+    m1 = dist.with_calibration(field).mean_at(pts)
+    np.testing.assert_array_equal(m0, m1)
+    # Grid mean part of to_grid_ensemble is likewise bit-untouched.
+    e0 = dist.to_grid_ensemble(_SEAM_DAY).samples.mean(axis=0)
+    field_grid = PolyCalibration(
+        coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t"
+    )
+    # NOTE: sample mean of members shifts under a field (variance scales), so
+    # compare the analytic mean field, not the member mean. Use mean_at on grid
+    # nodes to assert bit-identity of the mean path.
+    lon2d, lat2d = np.meshgrid(dist.grid.x, dist.grid.y)
+    day = np.full(lon2d.size, _SEAM_DAY)
+    gpts = np.column_stack([lon2d.ravel(), lat2d.ravel(), day])
+    gm0 = dist.mean_at(gpts)
+    gm1 = dist.with_calibration(field_grid).mean_at(gpts)
+    np.testing.assert_array_equal(gm0, gm1)
+    del e0

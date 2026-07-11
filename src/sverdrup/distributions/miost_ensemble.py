@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -79,6 +79,39 @@ class MiostEnsembleDistribution:
     _anoms: dict[str, np.ndarray]  # window_id -> (n_el, m) member anomalies
     _window_starts: dict[str, float]
     _w_days: float = W_DAYS
+    calibration: CalibrationField = field(
+        default_factory=lambda: ScalarCalibration(1.0)
+    )
+    # Per-grid √s(x) on the grid nodes, computed ONCE and memoized (the
+    # calibration is immutable, so this cache is safe for the instance's life).
+    _grid_sqrt_s: np.ndarray | None = field(default=None, repr=False, compare=False)
+
+    def _sqrt_s(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+        """√s(x) at arbitrary points via the calibration field.
+
+        Args:
+            lon: Longitude array [deg east].
+            lat: Latitude array [deg north].
+
+        Returns:
+            √s(x), shape broadcast(lon, lat).shape.
+        """
+        return np.asarray(self.calibration.sqrt_s_at(lon, lat))
+
+    def _grid_sqrt_s_nodes(self) -> np.ndarray:
+        """(n_nodes,) √s(x) on the grid nodes, memoized on the instance.
+
+        The calibration is immutable, so once computed the array never needs
+        recomputing for this instance; :meth:`with_calibration` returns a fresh
+        instance with the cache cleared, so no cross-calibration staleness.
+
+        Returns:
+            (n_nodes,) √s(x) evaluated on the raveled grid mesh.
+        """
+        if self._grid_sqrt_s is None:
+            lon2d, lat2d = np.meshgrid(self.grid.x, self.grid.y)
+            self._grid_sqrt_s = self._sqrt_s(lon2d.ravel(), lat2d.ravel())
+        return self._grid_sqrt_s
 
     def _eval(self, pts: Points, cols: dict[str, np.ndarray]) -> np.ndarray:
         """Blend-weighted basis evaluation of per-window column stacks.
@@ -114,8 +147,17 @@ class MiostEnsembleDistribution:
         return self._eval(pts, {w: e[:, None] for w, e in self._etas_a.items()})[:, 0]
 
     def _anoms_at(self, pts: Points) -> np.ndarray:
-        """(n_pts, m) member-anomaly fields at arbitrary points."""
-        return self._eval(pts, self._anoms)
+        """(n_pts, m) member-anomaly fields at arbitrary points, √s-scaled.
+
+        Anomalies are stored RAW; the calibration field's √s(x) is applied
+        here at QUERY time (rows are points ⇒ scale the point axis). The mean
+        path (:meth:`mean_at`) never routes through here, so it is untouched.
+        """
+        eval_out = self._eval(pts, self._anoms)
+        pts_arr = np.asarray(pts, float)
+        return np.asarray(
+            self._sqrt_s(pts_arr[:, 0], pts_arr[:, 1])[:, None] * eval_out
+        )
 
     def member_at(self, i: int, pts: Points) -> np.ndarray:
         """Member i's field (mean + anomaly) at arbitrary points."""
@@ -154,8 +196,15 @@ class MiostEnsembleDistribution:
         return out
 
     def marginal_variance(self) -> Field:
-        """Per-node member variance about the MEMBER MEAN, (m - 1) denominator."""
-        a = self._grid_eval(self._anoms, self.time_days)
+        """Per-node member variance about the MEMBER MEAN, (m - 1) denominator.
+
+        The raw node anomalies are √s-scaled per node before the variance is
+        taken (variance then scales pointwise by s(x)); the mean path is not
+        involved.
+        """
+        a = self._grid_sqrt_s_nodes()[:, None] * self._grid_eval(
+            self._anoms, self.time_days
+        )
         return np.asarray(np.var(a, axis=1, ddof=1).reshape(self.grid.shape))
 
     def covariance(self, a: Points, b: Points) -> np.ndarray:
@@ -182,7 +231,10 @@ class MiostEnsembleDistribution:
         mean_g = self._grid_eval(
             {w: e[:, None] for w, e in self._etas_a.items()}, time_days
         )[:, 0]
-        fields = mean_g[:, None] + self._grid_eval(self._anoms, time_days)
+        anoms_g = self._grid_sqrt_s_nodes()[:, None] * self._grid_eval(
+            self._anoms, time_days
+        )
+        fields = mean_g[:, None] + anoms_g
         samples = fields.T.reshape(self.m, *self.grid.shape)
         return EnsemblePredictiveDistribution(
             grid=self.grid,
@@ -191,38 +243,80 @@ class MiostEnsembleDistribution:
             time_days=time_days,
         )
 
+    def _prov_with(self, cal: CalibrationField) -> UncertaintyProvenance:
+        """Provenance for a distribution recalibrated to ``cal``.
+
+        For a ScalarCalibration this appends a DIAGONAL_INFLATION transform
+        recording s (the pre-Phase-8 behavior every existing provenance test
+        pins). Non-scalar fields record their calibration key on the same
+        transform kind until Task 4 introduces TransformKind.FIELD_INFLATION.
+
+        Args:
+            cal: The replacement calibration field.
+
+        Returns:
+            A fresh provenance with the recalibration transform appended.
+        """
+        if isinstance(cal, ScalarCalibration):
+            params: dict[str, Any] = {"s": float(cal.s)}
+        else:
+            # Task 4 replaces with TransformKind.FIELD_INFLATION; until then
+            # reuse DIAGONAL_INFLATION and carry the calibration key.
+            params = {"calibration": cal.key()}
+        return UncertaintyProvenance(
+            native_capability=self.provenance.native_capability,
+            transformations=[
+                *self.provenance.transformations,
+                UncertaintyTransform(
+                    kind=TransformKind.DIAGONAL_INFLATION, params=params
+                ),
+            ],
+        )
+
+    def with_calibration(self, cal: CalibrationField) -> MiostEnsembleDistribution:
+        """Fresh instance with ``cal`` REPLACING the current calibration.
+
+        Anomalies stay RAW; only the query-time √s(x) layer changes. The
+        per-grid √s cache is cleared so no cross-calibration staleness, and the
+        mean field is the same array (bit-identical — D6).
+
+        Args:
+            cal: The replacement calibration field.
+
+        Returns:
+            A new distribution querying anomalies through ``cal``.
+        """
+        return replace(
+            self,
+            calibration=cal,
+            _grid_sqrt_s=None,
+            provenance=self._prov_with(cal),
+        )
+
     def rescaled(self, s: float) -> MiostEnsembleDistribution:
-        """Exact s-inflation: anomalies x sqrt(s); the mean is UNTOUCHED (D6).
+        """Exact s-inflation THROUGH the calibration layer; composes ×√(st).
+
+        On a scalar-calibrated instance this composes multiplicatively with the
+        current scalar (``rescaled(s).rescaled(t)`` ≡ ×√(st) on anomalies) and
+        records s in provenance; the mean is UNTOUCHED (D6). On a NON-scalar
+        (field-calibrated) instance it RAISES — a stray scalar rescale must not
+        silently corrupt a field product (owner narrowing 2026-07-10); compose
+        explicitly via :meth:`with_calibration`.
 
         Args:
             s: Variance inflation factor (s* = chi2_red(1) closed form).
 
         Returns:
-            A new distribution with variance exactly s x the original and a
-            DIAGONAL_INFLATION transform recording s; the mean field is the
-            same array (bit-identical).
+            A fresh distribution with variance exactly s × the original.
+
+        Raises:
+            ValueError: If this instance is field-calibrated (non-scalar).
         """
-        prov = UncertaintyProvenance(
-            native_capability=self.provenance.native_capability,
-            transformations=[
-                *self.provenance.transformations,
-                UncertaintyTransform(
-                    kind=TransformKind.DIAGONAL_INFLATION, params={"s": float(s)}
-                ),
-            ],
-        )
-        root_s = float(np.sqrt(s))
-        return MiostEnsembleDistribution(
-            grid=self.grid,
-            mean=self.mean,
-            provenance=prov,
-            time_days=self.time_days,
-            m=self.m,
-            _spec=self._spec,
-            _etas_a=self._etas_a,
-            _anoms={w: a * root_s for w, a in self._anoms.items()},
-            _window_starts=self._window_starts,
-            _w_days=self._w_days,
+        if isinstance(self.calibration, ScalarCalibration):
+            return self.with_calibration(ScalarCalibration(self.calibration.s * s))
+        raise ValueError(
+            "rescaled(scalar) on a field-calibrated product is ambiguous — "
+            "compose explicitly via with_calibration"
         )
 
     def save_state(self, path: Path, anomalies_f32: bool = False) -> None:

@@ -470,7 +470,12 @@ class Miost:
             ens = self.sample_members(
                 obs, grid, params, time_days, m=self.members, root=self.member_root
             )
-            return ens if self.inflation_s == 1.0 else ens.rescaled(self.inflation_s)
+            from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+            # One general eval path: the scalar inflation rides the query-time
+            # calibration layer (no anomaly mutation). Task 4 will introduce
+            # self._calibration; until then keep the inline ScalarCalibration.
+            return ens.with_calibration(ScalarCalibration(self.inflation_s))
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
