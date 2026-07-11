@@ -34,6 +34,12 @@ pytest; existing sverdrup modules (`miost_ensemble`, `miost`, `calibration`,
   ρ̂ procedure + min-n_eff + merge rule; 2°-cell grid; jet-core mask build script;
   promotion statistic = Pearson r on per-cell log chi2 (primary; deficit version
   reported alongside); lane-A Newton + lane-B optimizer/tolerance constants named.
+- RECORDED NARROWING (owner plan review, 2026-07-10): `rescaled(s)` RAISES on
+  field-calibrated products — scalar-on-scalar composes ×√(st) as tested; field
+  composition must go explicitly through `with_calibration`. Accepted narrowing
+  of spec §8's "composes multiplicatively", chosen so a stray scalar rescale
+  cannot silently corrupt a field product. Decision, not drift (spec carries the
+  matching postscript).
 
 ---
 
@@ -251,8 +257,12 @@ def test_poly_scalar_reduction_exact() -> None:
     lon = np.array([295.0, 300.0, 305.0, 299.3])
     lat = np.array([33.0, 38.0, 43.0, 41.7])
     np.testing.assert_allclose(
-        poly.sqrt_s_at(lon, lat), np.sqrt(S_STAR), rtol=0, atol=0
+        poly.sqrt_s_at(lon, lat), np.sqrt(S_STAR), rtol=1e-15
     )
+    # rtol=1e-15, not 0: exp(0.5*log(s)) vs sqrt(s) is a transcendental
+    # roundtrip — ulp-fragile at exact equality (owner review fix, 2026-07-10).
+    # The load-bearing pin stays the distribution-level s*-identity at
+    # rtol 1e-12 (Task 5).
 
 def test_clamp_constant_continuation_outside_hull() -> None:
     """s at (294, 32) must equal s at the clamped corner (295, 33).

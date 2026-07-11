@@ -423,6 +423,12 @@ monthly residual limitations recorded with numbers.
   (LatitudeVaryingProvider et al.) stays intact — this phase is a
   DISTRIBUTION-layer calibration field, not a solver parameter.
 
+**Postscript (owner plan review, 2026-07-10):** §8's "`rescaled()` composes
+multiplicatively" is narrowed by owner decision: scalar-on-scalar composes
+×√(st) (tested); on a FIELD-calibrated product `rescaled(s)` RAISES — field
+composition must go explicitly through `with_calibration`, so a stray scalar
+rescale cannot silently corrupt a field product.
+
 ## 12. Provenance of this design
 
 Owner decisions recorded from the 2026-07-10 brainstorm: forks (a)–(e) each
