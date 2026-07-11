@@ -29,8 +29,12 @@
 > committed. **PUSHED 2026-07-08 (owner, manually): origin/main =
 > `7d5b837` — the complete Phase-7 trail (gate evidence, defect
 > disclosure, Tier-3 correction, capability flip, Task-22 wiring) is
-> public. NOTE for future sessions: pushes from inside the container
-> may still fail on host-key/credentials; owner pushes manually.**
+> public. NOTE for future sessions (updated 2026-07-10): pushes from
+> inside the container WORK now — write-access deploy key + pinned
+> known_hosts + repo-local `core.sshCommand` all live under
+> `/workspace/.git/` (on the mount, survives container rebuild).
+> First verified push: `5ee25f0..2a898ec`. If auth ever fails again,
+> check the deploy key still exists in the GitHub repo settings.**
 
 > **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
 > gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
