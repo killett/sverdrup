@@ -163,10 +163,10 @@ def main() -> None:
     n_valid = int(valid.sum())
     log_chi2 = np.log(chi2_cells[valid])
     log_proxy = np.log(proxy[valid])
-    log_deficit = np.log(np.abs(cov_cells[valid] - COVERAGE_TARGET) + 1e-9)
+    deficit = np.abs(cov_cells[valid] - COVERAGE_TARGET)
 
     r_primary, _ = pearsonr(log_chi2, log_proxy)
-    r_deficit, _ = pearsonr(log_deficit, log_proxy)
+    r_deficit, _ = pearsonr(deficit, log_proxy)
 
     promoted = bool(abs(r_primary) >= PROMOTION_R)
 
@@ -181,7 +181,7 @@ def main() -> None:
             f"s*={S_STAR}, per-cell log proxy); |r| >= {PROMOTION_R} promotes "
             "the signal-variance covariate to a third fit lane. "
             "chi2_red is UN-floored (no SIGMA_OBS2). "
-            "Deficit variant = r(log|coverage - 0.6827|, log proxy), reported "
+            "Deficit variant = r(|coverage - 0.6827|, log proxy), reported "
             "alongside but not used for promotion."
         ),
     }
