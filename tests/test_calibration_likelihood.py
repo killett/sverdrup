@@ -13,6 +13,7 @@ import math
 
 import numpy as np
 import pytest
+import scipy.stats  # type: ignore[import-untyped]
 
 import sverdrup.application.calibration.constants as _const
 import sverdrup.application.calibration.likelihood as _lik
@@ -385,3 +386,66 @@ def test_tail_diagnostic_hand_case_not_flagged() -> None:
 
     assert abs(ratio - 1.0) < 1e-12, f"ratio={ratio}"
     assert not flagged, f"Expected flagged=False for ratio={ratio:.3f}"
+
+
+# ---------------------------------------------------------------------------
+# Guard: CHI2_1_MEDIAN pin matches live scipy
+# ---------------------------------------------------------------------------
+
+
+def test_chi2_median_pin_matches_scipy() -> None:
+    """CHI2_1_MEDIAN exactly equals scipy.stats.chi2.ppf(0.5, 1).
+
+    Enforces the provenance claim in the constant definition.  Scipy-version
+    drift is acceptable because this test makes it loud.
+    Bug caught: literal pinned to a stale value that differs from live scipy.
+    """
+    assert _lik.CHI2_1_MEDIAN == scipy.stats.chi2.ppf(0.5, 1), (
+        f"CHI2_1_MEDIAN={_lik.CHI2_1_MEDIAN!r} != "
+        f"scipy.stats.chi2.ppf(0.5, 1)={scipy.stats.chi2.ppf(0.5, 1)!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Guard: module-level re-exports match constants package
+# ---------------------------------------------------------------------------
+
+
+def test_module_constants_match_source() -> None:
+    """Module-level re-exports in likelihood equal the constants package values.
+
+    Bug caught: re-binding diverges silently (e.g. copy-paste accident sets a
+    different literal, or a name collision shadows the import).
+    """
+    assert _lik.SIGMA_OBS2 == _const.SIGMA_OBS2, (
+        f"_lik.SIGMA_OBS2={_lik.SIGMA_OBS2!r} != _const.SIGMA_OBS2={_const.SIGMA_OBS2!r}"
+    )
+    assert _lik.S_STAR == _const.S_STAR, (
+        f"_lik.S_STAR={_lik.S_STAR!r} != _const.S_STAR={_const.S_STAR!r}"
+    )
+    assert _lik.NEWTON_MAX_ITER == _const.NEWTON_MAX_ITER, (
+        f"_lik.NEWTON_MAX_ITER={_lik.NEWTON_MAX_ITER!r} != "
+        f"_const.NEWTON_MAX_ITER={_const.NEWTON_MAX_ITER!r}"
+    )
+    assert _lik.NEWTON_TOL == _const.NEWTON_TOL, (
+        f"_lik.NEWTON_TOL={_lik.NEWTON_TOL!r} != _const.NEWTON_TOL={_const.NEWTON_TOL!r}"
+    )
+    assert _lik.LBFGSB_GTOL == _const.LBFGSB_GTOL, (
+        f"_lik.LBFGSB_GTOL={_lik.LBFGSB_GTOL!r} != "
+        f"_const.LBFGSB_GTOL={_const.LBFGSB_GTOL!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Guard: fit_region_newton rejects empty arrays
+# ---------------------------------------------------------------------------
+
+
+def test_fit_region_newton_raises_on_empty_input() -> None:
+    """fit_region_newton raises ValueError for empty r2/v arrays.
+
+    Bug caught: np.mean of an empty array returns nan, math.log(nan) raises
+    ValueError with an unhelpful message, or worse silently returns nan.
+    """
+    with pytest.raises(ValueError, match="empty residual array"):
+        _lik.fit_region_newton(np.array([]), np.array([]))

@@ -17,7 +17,7 @@ effect immediately.
 Chi-squared median constant::
 
     CHI2_1_MEDIAN = scipy.stats.chi2.ppf(0.5, df=1)
-                  ≈ 0.454936423119350
+                  = 0.454936423119572
 
 Pinned from scipy 1.x; source recorded in the constant definition below.
 
@@ -49,25 +49,26 @@ import numpy as np
 import scipy.optimize  # type: ignore[import-untyped]
 
 from sverdrup.application.calibration.constants import (
-    LBFGSB_GTOL,
-    NEWTON_MAX_ITER,
-    NEWTON_TOL,
-    S_STAR,
-    SIGMA_OBS2,
+    LBFGSB_GTOL as LBFGSB_GTOL,
+)
+from sverdrup.application.calibration.constants import (
+    NEWTON_MAX_ITER as NEWTON_MAX_ITER,
+)
+from sverdrup.application.calibration.constants import (
+    NEWTON_TOL as NEWTON_TOL,
+)
+from sverdrup.application.calibration.constants import (
+    S_STAR as S_STAR,
+)
+from sverdrup.application.calibration.constants import (
+    SIGMA_OBS2 as SIGMA_OBS2,
 )
 
-# Re-export at module scope so monkeypatching works in tests.
-# Fitters read these names at call time.
-SIGMA_OBS2 = SIGMA_OBS2  # noqa: PLW0127  (re-bind intentional)
-NEWTON_MAX_ITER = NEWTON_MAX_ITER  # noqa: PLW0127
-NEWTON_TOL = NEWTON_TOL  # noqa: PLW0127
-LBFGSB_GTOL = LBFGSB_GTOL  # noqa: PLW0127
-S_STAR = S_STAR  # noqa: PLW0127
-
-# Pinned χ²₁ median = scipy.stats.chi2.ppf(0.5, df=1) ≈ 0.454936423119350.
-# Source: scipy.stats.chi2.ppf(0.5, 1) evaluated 2026-07-11; value is stable
-# across scipy 1.x.
-CHI2_1_MEDIAN: float = 0.45493642311934980
+# Pinned χ²₁ median = scipy.stats.chi2.ppf(0.5, df=1).
+# Source: repr(scipy.stats.chi2.ppf(0.5, 1)) evaluated 2026-07-11 on scipy
+# installed in this environment.  The guard test test_chi2_median_pin_matches_scipy
+# asserts exact equality so any scipy-version drift becomes a loud test failure.
+CHI2_1_MEDIAN: float = 0.454936423119572
 
 # Tail-diagnostic flag threshold
 _TAIL_FLAG_RATIO: float = 1.5
@@ -198,6 +199,9 @@ def fit_region_newton(r2: np.ndarray, v: np.ndarray) -> NewtonResult:
     """
     r2 = np.asarray(r2, dtype=float)
     v = np.asarray(v, dtype=float)
+
+    if r2.size == 0:
+        raise ValueError("empty residual array")
 
     # Closed-form initialisation (exact MLE when sigma2=0, documented in docstring)
     log_s = math.log(float(np.mean(r2 / v)))
