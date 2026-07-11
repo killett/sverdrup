@@ -8,6 +8,7 @@ node snapping. The mean field is the Stage-A mean, untouched by construction.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -689,8 +690,12 @@ class PiecewiseCalibration:
         lon_mid: Longitude midpoint separating E (≥) from W (<) quadrants.
         lat_mid: Latitude midpoint separating N (≥) from S (<) quadrants.
         mask: (5, 5) boolean tuple-of-tuples; True marks a JET cell.
-        log_s_by_region: Mapping from region name to log(s) value.
-            Keys must include SW, SE, NW, NE, JET.
+        log_s_by_region: Region name -> log(s).  A plain dict may be passed
+            at construction for convenience; it is normalized in
+            ``__post_init__`` to a sorted tuple of (region, value) pairs so
+            the instance is deeply immutable and hashable (Task-3's per-grid
+            √s cache keys on the calibration).  Keys must include
+            SW, SE, NW, NE, JET.
         clip: Pre-registered log-s clip bounds.
         fit_id: Identifier of the fitting run.
     """
@@ -698,18 +703,25 @@ class PiecewiseCalibration:
     lon_mid: float
     lat_mid: float
     mask: tuple[tuple[bool, ...], ...]
-    log_s_by_region: dict[str, float]
+    log_s_by_region: tuple[tuple[str, float], ...] | Mapping[str, float]
     clip: ClipSpec
     fit_id: str
 
     def __post_init__(self) -> None:
-        """Validate that all region values lie within clip bounds.
+        """Normalize region values to a sorted tuple and validate clip bounds.
 
         Raises:
             ValueError: If any region log-s value falls outside [lo, hi].
         """
+        items = (
+            self.log_s_by_region.items()
+            if isinstance(self.log_s_by_region, Mapping)
+            else self.log_s_by_region
+        )
+        normalized = tuple(sorted((str(k), float(v)) for k, v in items))
+        object.__setattr__(self, "log_s_by_region", normalized)
         lo, hi = self.clip.lo_log_s, self.clip.hi_log_s
-        bad = {k: v for k, v in self.log_s_by_region.items() if not (lo <= v <= hi)}
+        bad = {k: v for k, v in normalized if not (lo <= v <= hi)}
         if bad:
             raise ValueError(
                 f"Region log_s values outside clip [{lo!r}, {hi!r}]: {bad!r}"
@@ -729,11 +741,12 @@ class PiecewiseCalibration:
         Returns:
             log(s) array, one value per input point.
         """
+        by_region = dict(self.log_s_by_region)
         result = np.empty(row.shape, dtype=float)
         for i in range(row.size):
             r, c = int(row.flat[i]), int(col.flat[i])
             if self.mask[r][c]:
-                result.flat[i] = self.log_s_by_region["JET"]
+                result.flat[i] = by_region["JET"]
             else:
                 east = lon_c.flat[i] >= self.lon_mid
                 north = lat_c.flat[i] >= self.lat_mid
@@ -745,7 +758,7 @@ class PiecewiseCalibration:
                     region = "SE"
                 else:
                     region = "SW"
-                result.flat[i] = self.log_s_by_region[region]
+                result.flat[i] = by_region[region]
         return result
 
     def log_s_at(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
@@ -787,8 +800,8 @@ class PiecewiseCalibration:
         Returns:
             String encoding kind, region values, clip, mask, and fit_id.
         """
-        # Sort region keys for determinism
-        regions = sorted(self.log_s_by_region.items())
+        # log_s_by_region is already a sorted tuple (normalized at init)
+        regions = list(self.log_s_by_region)
         mask_str = repr(self.mask)
         return (
             f"cal:piecewise;mid=({self.lon_mid!r},{self.lat_mid!r});"
@@ -867,6 +880,27 @@ class CovariateCalibration:
     b: float
     clip: ClipSpec
     fit_id: str
+
+    def __post_init__(self) -> None:
+        """Validate that every proxy cell is strictly positive.
+
+        The proxy is a per-cell std of the mean maps — it must be > 0 or
+        log(proxy) at query time silently produces NaN/-inf.
+
+        Raises:
+            ValueError: If any proxy cell is <= 0.
+        """
+        bad = [
+            (r, c, v)
+            for r, row in enumerate(self.proxy_cells)
+            for c, v in enumerate(row)
+            if not v > 0.0
+        ]
+        if bad:
+            raise ValueError(
+                f"Proxy cells must be strictly positive (std source); "
+                f"offending (row, col, value): {bad!r}"
+            )
 
     def log_s_at(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
         """Return clipped log(s) at the given locations.

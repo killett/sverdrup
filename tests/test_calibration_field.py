@@ -574,6 +574,100 @@ def test_key_changes_with_every_param() -> None:
     assert cv1.key() != cv2.key()
 
 
+def test_all_kinds_hashable() -> None:
+    """hash(f) must work for every kind (Task-3 per-grid cache keys on it).
+
+    Bug caught: a mutable dict field makes the generated __hash__ raise
+    TypeError, breaking any dict/set keyed on the calibration instance.
+    """
+    cals: list[CalibrationField] = [
+        ScalarCalibration(s=S_STAR),
+        PolyCalibration(
+            coeffs=(LOG_S_STAR, 0.1, -0.1, 0.05, -0.05),
+            clip=_CLIP,
+            fit_id="hash-poly",
+        ),
+        _make_piecewise(fit_id="hash-pw"),
+        CovariateCalibration(
+            proxy_cells=_make_proxy_cells(fill=3.0),
+            a=LOG_S_STAR,
+            b=0.2,
+            clip=_CLIP,
+            fit_id="hash-cov",
+        ),
+    ]
+    for cal in cals:
+        assert isinstance(hash(cal), int), f"unhashable: {type(cal).__name__}"
+
+
+def test_piecewise_region_values_immutable() -> None:
+    """Region values must not be mutable in place after construction.
+
+    Bug caught: dict-backed storage lets `pw.log_s_by_region["SW"] = 9.9`
+    silently invalidate the __post_init__ clip-bounds guarantee.
+    """
+    pw = _make_piecewise()
+    with pytest.raises(TypeError):
+        pw.log_s_by_region["SW"] = 9.9  # type: ignore[index]
+
+
+def test_piecewise_key_changes_with_mask_cell() -> None:
+    """Flipping one mask cell must change PiecewiseCalibration.key().
+
+    Bug caught: mask omitted from key -> cache collision between two
+    calibrations differing only in jet-core extent.
+    """
+    k0 = _make_piecewise().key()
+    mask_list = [[False] * 5 for _ in range(5)]
+    mask_list[2][3] = True
+    flipped: tuple[tuple[bool, ...], ...] = tuple(tuple(r) for r in mask_list)
+    assert _make_piecewise(mask=flipped).key() != k0
+
+
+def test_covariate_key_changes_with_proxy_cell() -> None:
+    """Perturbing one proxy_cells entry must change CovariateCalibration.key().
+
+    Bug caught: proxy grid omitted from key -> cache collision between two
+    covariate calibrations fit to different proxy fields.
+    """
+    proxy_list = [[2.0] * 5 for _ in range(5)]
+    base = CovariateCalibration(
+        proxy_cells=tuple(tuple(r) for r in proxy_list),
+        a=LOG_S_STAR,
+        b=0.5,
+        clip=_CLIP,
+        fit_id="pk",
+    )
+    proxy_list[3][1] = 2.001
+    perturbed = CovariateCalibration(
+        proxy_cells=tuple(tuple(r) for r in proxy_list),
+        a=LOG_S_STAR,
+        b=0.5,
+        clip=_CLIP,
+        fit_id="pk",
+    )
+    assert base.key() != perturbed.key()
+
+
+def test_covariate_nonpositive_proxy_raises() -> None:
+    """A non-positive proxy cell must raise ValueError at construction.
+
+    Bug caught: silent NaN/-inf from log(proxy) at query time — the proxy
+    is a std and must be strictly positive; fail loudly at build instead.
+    """
+    for bad in (0.0, -1.0):
+        proxy_list = [[2.0] * 5 for _ in range(5)]
+        proxy_list[4][4] = bad
+        with pytest.raises(ValueError, match="[Pp]roxy|positive"):
+            CovariateCalibration(
+                proxy_cells=tuple(tuple(r) for r in proxy_list),
+                a=LOG_S_STAR,
+                b=0.5,
+                clip=_CLIP,
+                fit_id="bad-proxy",
+            )
+
+
 def test_json_roundtrip_bitexact() -> None:
     """from_json(to_json(f)) reproduces sqrt_s_at bit-identically on a grid.
 
