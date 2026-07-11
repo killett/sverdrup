@@ -1,5 +1,16 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 8 — spatially varying uncertainty calibration: DESIGN COMMITTED
+> 2026-07-10, ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.**
+> Spec: `docs/superpowers/specs/2026-07-10-phase8-spatial-calibration-design.md`
+> (owner-approved in-session: forks a–e + three review batches; s(x) field on
+> member anomalies at query time, two fit lanes + lane-0 control, MLE-in-log-s
+> with obs-noise floor, T+S fold protocol, pre-registered regions/bars incl.
+> jet-core mask, one c2 touch pre-registered, raw-anoms one-convention
+> persistence). Next action: owner reviews the spec file → then
+> `/superpowers-extended-cc:writing-plans` on it. No code, no fits yet;
+> c2 untouched.
+
 > **✅ PHASE 7 — MIOST: CLOSED 2026-07-07 on the capability-flip commit.
 > TASK 19 SIGNED OFF (owner pre-registered reading, touch 3):** c2
 > triplet (0.8572612, 0.0799886, 156.42997) reproduces Stage A
