@@ -336,3 +336,96 @@ def test_ensemble_mode_requires_root() -> None:
     """
     with pytest.raises(ValueError, match="member_root"):
         Miost(members=3)
+
+
+# ---------------------------------------------------------------------------
+# Task 4: Miost calibration boundary + params_key + factory
+# ---------------------------------------------------------------------------
+
+
+def test_miost_calibration_arg_routes_to_product() -> None:
+    """Miost(calibration=ScalarCalibration(2.0)) inflates variance exactly 2×.
+
+    Catches: the new ``calibration`` constructor arg being ignored (solve
+    would return an uncalibrated product — the gate's s* silently dropped).
+    """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+    base = Miost(
+        plan=WindowPlan(starts=(0.0, 45.0)), members=3, member_root=ROOT
+    ).solve(_obs(), GRID, PARAMS, DAY)
+    cal = Miost(
+        plan=WindowPlan(starts=(0.0, 45.0)),
+        members=3,
+        member_root=ROOT,
+        calibration=ScalarCalibration(2.0),
+    ).solve(_obs(), GRID, PARAMS, DAY)
+    np.testing.assert_allclose(
+        np.asarray(cal.marginal_variance()),
+        2.0 * np.asarray(base.marginal_variance()),
+        rtol=1e-12,
+    )
+    infl = [
+        t
+        for t in cal.provenance.transformations
+        if t.kind is TransformKind.DIAGONAL_INFLATION
+    ]
+    assert len(infl) == 1 and infl[0].params["s"] == 2.0
+
+
+def test_miost_both_calibration_and_inflation_raises() -> None:
+    """Passing calibration AND inflation_s != 1.0 raises ValueError.
+
+    Catches: a silent precedence rule where one arg wins and the other is
+    dropped — the caller would not learn their s* was ignored.
+    """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+    with pytest.raises(ValueError, match="calibration"):
+        Miost(
+            members=3,
+            member_root=ROOT,
+            inflation_s=2.0,
+            calibration=ScalarCalibration(3.0),
+        )
+
+
+def test_miost_inflation_s_still_maps_to_scalar_calibration() -> None:
+    """inflation_s=2.0 (no calibration) lands in self._calibration as a scalar.
+
+    Catches: the compat mapping being lost — a caller relying on inflation_s
+    would get an uncalibrated product.
+    """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+    m = Miost(members=3, member_root=ROOT, inflation_s=2.0)
+    assert m._calibration == ScalarCalibration(2.0)
+
+
+def test_params_key_includes_calibration() -> None:
+    """_params_key carries ;cal=<key> and differs across distinct calibrations.
+
+    Catches: two products with different calibrations deriving the SAME CRN
+    seed (silent member-stream collision across calibrations).
+    """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+    m1 = Miost(members=3, member_root=ROOT, calibration=ScalarCalibration(1.0))
+    m2 = Miost(members=3, member_root=ROOT, calibration=ScalarCalibration(2.0))
+    k1 = m1._params_key(PARAMS, GRID)
+    k2 = m2._params_key(PARAMS, GRID)
+    assert ";cal=" in k1
+    assert k1.endswith(ScalarCalibration(1.0).key())
+    assert k1 != k2
+
+
+def test_shipped_miost_uses_scalar_star_calibration() -> None:
+    """shipped_miost() calibration is ScalarCalibration(STAGE_B_INFLATION_S).
+
+    Catches: the registry flipping to a FIELD before Task 12, or losing s*
+    from the shipped product.
+    """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.methods.miost import STAGE_B_INFLATION_S, shipped_miost
+
+    assert shipped_miost()._calibration == ScalarCalibration(STAGE_B_INFLATION_S)

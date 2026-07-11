@@ -13,6 +13,7 @@ class TransformKind(Enum):
 
     INPUT_PERTURBATION = auto()
     DIAGONAL_INFLATION = auto()
+    FIELD_INFLATION = auto()
     POSTERIOR_RECALIBRATED = auto()
     DERIVED = auto()
     BLEND = auto()

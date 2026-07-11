@@ -12,7 +12,10 @@ import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
-    from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
+    from sverdrup.distributions.miost_ensemble import (
+        CalibrationField,
+        MiostEnsembleDistribution,
+    )
 
 from sverdrup.core.distribution import CapabilityNotAvailableError
 from sverdrup.core.grid import GridSpec
@@ -372,6 +375,7 @@ class Miost:
         members: int = 0,
         member_root: Seed | None = None,
         inflation_s: float = 1.0,
+        calibration: CalibrationField | None = None,
     ) -> None:
         """Create the method with empty caches.
 
@@ -387,14 +391,28 @@ class Miost:
             member_root: CRN seed root for ensemble mode (REQUIRED when
                 ``members > 0`` — a silent default would make members
                 irreproducible across sessions).
-            inflation_s: Stage-B s* variance inflation applied by exact
-                anomaly rescale (mean untouched; 1.0 = none).
+            inflation_s: Stage-B s* variance inflation (compat shim) — maps to
+                ``ScalarCalibration(inflation_s)`` applied by the query-time
+                √s(x) calibration layer (mean untouched; 1.0 = none). Mutually
+                exclusive with ``calibration``.
+            calibration: The Phase-8 CalibrationField carried through to the
+                ensemble product (the general s(x) layer). Defaults to
+                ``ScalarCalibration(inflation_s)``. Passing BOTH a calibration
+                and a non-unit ``inflation_s`` is ambiguous and raises.
 
         Raises:
-            ValueError: If ``members > 0`` without ``member_root``.
+            ValueError: If ``members > 0`` without ``member_root``, or if both
+                ``calibration`` and a non-unit ``inflation_s`` are supplied.
         """
         if members > 0 and member_root is None:
             raise ValueError("ensemble mode (members > 0) requires member_root")
+        if calibration is not None and inflation_s != 1.0:
+            raise ValueError(
+                "pass either calibration or inflation_s, not both "
+                "(inflation_s is the ScalarCalibration compat shim)"
+            )
+        from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
         self.n_dir = n_dir
         self.cache = cache
         self.pcg_rtol = pcg_rtol
@@ -402,6 +420,9 @@ class Miost:
         self.members = members
         self.member_root = member_root
         self.inflation_s = inflation_s
+        self._calibration: CalibrationField = (
+            calibration if calibration is not None else ScalarCalibration(inflation_s)
+        )
         self.native_capability = (
             UncertaintyCapability.SAMPLES
             if members > 0
@@ -439,7 +460,8 @@ class Miost:
         q_slope = float(params.resolve("q_slope", grid))
         return (
             f"{spec.key()};rho={rho!r};q_slope={q_slope!r};"
-            f"pcg_rtol={self.pcg_rtol!r};pcg_maxiter={self.pcg_maxiter}"
+            f"pcg_rtol={self.pcg_rtol!r};pcg_maxiter={self.pcg_maxiter};"
+            f"cal={self._calibration.key()}"
         )
 
     def solve(
@@ -470,12 +492,10 @@ class Miost:
             ens = self.sample_members(
                 obs, grid, params, time_days, m=self.members, root=self.member_root
             )
-            from sverdrup.distributions.miost_ensemble import ScalarCalibration
-
-            # One general eval path: the scalar inflation rides the query-time
-            # calibration layer (no anomaly mutation). Task 4 will introduce
-            # self._calibration; until then keep the inline ScalarCalibration.
-            return ens.with_calibration(ScalarCalibration(self.inflation_s))
+            # One general eval path: the calibration rides the query-time √s(x)
+            # layer (no anomaly mutation). ``self._calibration`` is either the
+            # scalar inflation_s shim or a Phase-8 CalibrationField.
+            return ens.with_calibration(self._calibration)
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
@@ -712,8 +732,10 @@ def shipped_miost() -> Miost:
     Returns:
         The ensemble-mode method with m, seed root, and s* as accepted.
     """
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
     return Miost(
         members=STAGE_B_MEMBERS,
         member_root=STAGE_B_ROOT,
-        inflation_s=STAGE_B_INFLATION_S,
+        calibration=ScalarCalibration(STAGE_B_INFLATION_S),
     )

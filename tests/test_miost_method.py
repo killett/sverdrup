@@ -57,7 +57,11 @@ def test_protocol_compliant_and_registered() -> None:
     assert shipped.native_capability is UncertaintyCapability.SAMPLES
     assert shipped.members == STAGE_B_MEMBERS == 100
     assert shipped.member_root == STAGE_B_ROOT
-    assert shipped.inflation_s == STAGE_B_INFLATION_S
+    # s* now rides the calibration boundary (Task 4): the shipped product
+    # carries ScalarCalibration(s*), not the inflation_s compat shim.
+    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+
+    assert shipped._calibration == ScalarCalibration(STAGE_B_INFLATION_S)
 
 
 def test_flip_observed_bars_include_coverage() -> None:

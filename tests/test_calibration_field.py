@@ -885,3 +885,242 @@ def test_mean_untouched_by_field(dist: MiostEnsembleDistribution) -> None:
     gm1 = dist.with_calibration(field_grid).mean_at(gpts)
     np.testing.assert_array_equal(gm0, gm1)
     del e0
+
+
+# ---------------------------------------------------------------------------
+# Task 4: field persistence + FIELD_INFLATION provenance + factory boundary
+# ---------------------------------------------------------------------------
+
+from pathlib import Path  # noqa: E402
+
+from sverdrup.core.provenance import TransformKind  # noqa: E402
+from sverdrup.distributions.miost_ensemble import KIND  # noqa: E402
+
+_GRID_LONS = np.array([296.0, 300.0, 304.0])
+_GRID_LATS = np.array([34.0, 38.0, 42.0])
+
+
+def _all_field_kinds() -> list[CalibrationField]:
+    """One instance of every kind, with distinctive non-default params."""
+    return [
+        ScalarCalibration(s=S_STAR),
+        PolyCalibration(
+            coeffs=(LOG_S_STAR, 0.3, -0.2, 0.1, 0.05), clip=_CLIP, fit_id="p4"
+        ),
+        _make_piecewise(fit_id="pw4"),
+        CovariateCalibration(
+            proxy_cells=tuple(
+                tuple(1.0 + 0.1 * (r + c) for c in range(5)) for r in range(5)
+            ),
+            a=LOG_S_STAR,
+            b=0.5,
+            clip=_CLIP,
+            fit_id="cv4",
+        ),
+    ]
+
+
+@pytest.mark.parametrize("cal", _all_field_kinds(), ids=lambda c: type(c).__name__)
+def test_persistence_roundtrip_all_field_kinds(
+    cal: CalibrationField, dist: MiostEnsembleDistribution, tmp_path: Path
+) -> None:
+    """save→load reconstructs the calibration bit-exactly (sqrt_s + key).
+
+    Bug caught: save_state dropping the calibration (round-trip resets to
+    ScalarCalibration(1.0)) — the Task-3 persistence gap — or reconstructing a
+    different field kind/params.
+    """
+    calibrated = dist.with_calibration(cal)
+    p = tmp_path / "cal.npz"
+    calibrated.save_state(p)
+    back = MiostEnsembleDistribution.load_state(p)
+    lon2d, lat2d = np.meshgrid(_GRID_LONS, _GRID_LATS)
+    np.testing.assert_array_equal(
+        back.calibration.sqrt_s_at(lon2d.ravel(), lat2d.ravel()),
+        cal.sqrt_s_at(lon2d.ravel(), lat2d.ravel()),
+    )
+    assert back.calibration.key() == cal.key()
+
+
+def test_legacy_load_without_cal_keys_is_scalar_one(
+    dist: MiostEnsembleDistribution, tmp_path: Path
+) -> None:
+    """A state file with NO cal_* keys loads as ScalarCalibration(1.0).
+
+    The factory supplies s* (spec §8): the persisted anomalies are RAW, so a
+    legacy (pre-Phase-8) file must reload uncalibrated, not crash or invent s.
+
+    Bug caught: load_state KeyError-ing on absent cal keys, or defaulting to a
+    non-unit scale that would double-apply s* downstream.
+    """
+    p = tmp_path / "ens_legacy.npz"
+    dist.save_state(p)
+    # Strip the cal_* keys to emulate a pre-Phase-8 file.
+    with np.load(p) as z:
+        arrays = {k: z[k] for k in z.files if not k.startswith("cal_")}
+    np.savez(p, **arrays)
+    with np.load(p) as z:
+        assert not any(k.startswith("cal_") for k in z.files)
+    back = MiostEnsembleDistribution.load_state(p)
+    assert back.calibration == ScalarCalibration(1.0)
+
+
+@pytest.mark.parametrize(
+    ("cal", "expected_dof", "expected_kind"),
+    [
+        (
+            PolyCalibration(
+                coeffs=(LOG_S_STAR, 0.3, -0.2, 0.1, 0.05), clip=_CLIP, fit_id="p4"
+            ),
+            5,
+            "poly",
+        ),
+        (_make_piecewise(fit_id="pw4"), 5, "piecewise"),
+        (
+            CovariateCalibration(
+                proxy_cells=tuple(
+                    tuple(1.0 + 0.1 * (r + c) for c in range(5)) for r in range(5)
+                ),
+                a=LOG_S_STAR,
+                b=0.5,
+                clip=_CLIP,
+                fit_id="cv4",
+            ),
+            2,
+            "covariate",
+        ),
+    ],
+    ids=["poly", "piecewise", "covariate"],
+)
+def test_field_inflation_provenance_carries_key_kind_dof(
+    cal: CalibrationField,
+    expected_dof: int,
+    expected_kind: str,
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """Non-scalar calibration records a FIELD_INFLATION transform with metadata.
+
+    Bug caught: a field calibration recorded as DIAGONAL_INFLATION (an auditor
+    could not tell a spatial field from a scalar), or a wrong/absent dof (poly
+    5, piecewise = #regions, covariate 2).
+    """
+    prov = dist.with_calibration(cal).provenance
+    last = prov.transformations[-1]
+    assert last.kind is TransformKind.FIELD_INFLATION
+    assert last.params["calibration_key"] == cal.key()
+    assert last.params["cal_kind"] == expected_kind
+    assert last.params["dof"] == expected_dof
+
+
+def test_scalar_calibration_keeps_diagonal_inflation(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """Scalar calibration keeps DIAGONAL_INFLATION with params['s'] EXACTLY.
+
+    Bug caught: the FIELD_INFLATION change leaking onto the scalar path,
+    breaking every existing gate-s* provenance assertion.
+    """
+    prov = dist.with_calibration(ScalarCalibration(3.0)).provenance
+    last = prov.transformations[-1]
+    assert last.kind is TransformKind.DIAGONAL_INFLATION
+    assert last.params["s"] == 3.0
+
+
+def test_rescaled_records_incremental_factor(
+    dist: MiostEnsembleDistribution,
+) -> None:
+    """Composed rescales record the INCREMENTAL factor, not the cumulative s.
+
+    Starting from a scalar-4 base, rescaled(9) must record s=9 (the increment),
+    matching pre-Phase-8 semantics — NOT s=36 (the cumulative product).
+
+    Bug caught: provenance recording ``self.calibration.s * s`` (cumulative),
+    which would misreport each inflation step to a downstream auditor.
+    """
+    base4 = dist.with_calibration(ScalarCalibration(4.0))
+    composed = base4.rescaled(9.0)
+    # Variance is cumulative (36×) — the composition law is unchanged.
+    np.testing.assert_allclose(
+        composed.marginal_variance(),
+        36.0 * dist.marginal_variance(),
+        rtol=1e-12,
+    )
+    # But the LAST recorded transform is the incremental factor, s=9.
+    last = composed.provenance.transformations[-1]
+    assert last.kind is TransformKind.DIAGONAL_INFLATION
+    assert last.params["s"] == 9.0
+
+
+def test_load_state_kind_tag_still_refused(tmp_path: Path) -> None:
+    """load_state still refuses a non-ensemble npz even with cal keys present.
+
+    Bug caught: the cal-key additions loosening the kind-tag guard so a
+    foreign npz (with a cal_kind but wrong kind) is silently accepted.
+    """
+    p = tmp_path / "wrong.npz"
+    np.savez(p, kind="something-else", cal_kind="scalar")
+    with pytest.raises(ValueError, match=KIND):
+        MiostEnsembleDistribution.load_state(p)
+
+
+def test_factory_bytecompat_sigma(tmp_path: Path) -> None:
+    """Current factory-path σ/mean/cov match the pre-seam snapshot at rtol 1e-12.
+
+    The fixture was captured through the shipped factory config at commit
+    3f88ccb (pre-Task-3), where inflation_s was applied by the old
+    ens.rescaled path. The current seam must reproduce those numbers bitwise
+    to rtol 1e-12.
+
+    Bug caught: the Task-3 eval-time √s seam shifting the σ the shipped factory
+    produces (a silent recalibration of the shipped product).
+    """
+    from sverdrup.core.observations import DiagonalErrorModel
+    from sverdrup.methods.miost import STAGE_B_INFLATION_S
+
+    fixture = (
+        Path(__file__).resolve().parent / "fixtures" / "phase8_factory_bytecompat.npz"
+    )
+    with np.load(fixture) as z:
+        probe_pts = z["probe_pts"]
+        exp_mean = z["mean"]
+        exp_std = z["std"]
+        exp_cov = z["cov_block"]
+        grid_lon = z["grid_lon"]
+        grid_lat = z["grid_lat"]
+        m = int(z["m"])
+        day = float(z["day"])
+        root = int(z["root"])
+        s_star = float(z["inflation_s"])
+
+    assert s_star == STAGE_B_INFLATION_S
+    grid = GridSpec.lonlat(grid_lon, grid_lat)
+    params = ConstantProvider(
+        {"spacing_alpha": 1.5, "log10_rho": 1.3, "q_slope": 2.0, "l_t_days": 10.0}
+    )
+    rng = np.random.default_rng(7)
+    n = 80
+    t = rng.uniform(-12.0, 117.0, n)
+    err = DiagonalErrorModel(np.full(n, 0.01))
+    mission = np.asarray(["alg", "s3a", "h2g", "j2n"])[rng.integers(0, 4, n)]
+    obs = ObsWindow.from_arrays(
+        rng.uniform(296, 304, n),
+        rng.uniform(34, 42, n),
+        t,
+        rng.standard_normal(n) * 0.1,
+        err,
+        mission,
+    )
+    method = Miost(
+        plan=WindowPlan(starts=(0.0, 45.0)),
+        members=m,
+        member_root=root,
+        inflation_s=s_star,
+    )
+    dist = method.solve(obs, grid, params, day)
+    cov = np.asarray(dist.covariance(probe_pts, probe_pts))
+    std = np.sqrt(np.diag(cov))
+    np.testing.assert_allclose(
+        np.asarray(dist.mean_at(probe_pts)), exp_mean, rtol=1e-12
+    )
+    np.testing.assert_allclose(std, exp_std, rtol=1e-12)
+    np.testing.assert_allclose(cov, exp_cov, rtol=1e-12)

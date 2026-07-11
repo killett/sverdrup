@@ -7,6 +7,7 @@ node snapping. The mean field is the Stage-A mean, untouched by construction.
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
@@ -243,34 +244,45 @@ class MiostEnsembleDistribution:
             time_days=time_days,
         )
 
-    def _prov_with(self, cal: CalibrationField) -> UncertaintyProvenance:
+    def _prov_with(
+        self, cal: CalibrationField, scalar_s: float | None = None
+    ) -> UncertaintyProvenance:
         """Provenance for a distribution recalibrated to ``cal``.
 
         For a ScalarCalibration this appends a DIAGONAL_INFLATION transform
         recording s (the pre-Phase-8 behavior every existing provenance test
-        pins). Non-scalar fields record their calibration key on the same
-        transform kind until Task 4 introduces TransformKind.FIELD_INFLATION.
+        pins). A non-scalar field appends a FIELD_INFLATION transform carrying
+        the field's ``calibration_key``, ``cal_kind``, and ``dof`` (number of
+        free parameters of the field).
 
         Args:
             cal: The replacement calibration field.
+            scalar_s: Override for the recorded ``s`` on the scalar path. When
+                None (``with_calibration``) the absolute scale ``cal.s`` is
+                recorded; :meth:`rescaled` passes the INCREMENTAL factor so the
+                transform reflects that single step, not the cumulative scale
+                (pre-Phase-8 semantics; carried note (a)).
 
         Returns:
             A fresh provenance with the recalibration transform appended.
         """
         if isinstance(cal, ScalarCalibration):
-            params: dict[str, Any] = {"s": float(cal.s)}
+            s = float(cal.s) if scalar_s is None else float(scalar_s)
+            transform = UncertaintyTransform(
+                kind=TransformKind.DIAGONAL_INFLATION, params={"s": s}
+            )
         else:
-            # Task 4 replaces with TransformKind.FIELD_INFLATION; until then
-            # reuse DIAGONAL_INFLATION and carry the calibration key.
-            params = {"calibration": cal.key()}
+            transform = UncertaintyTransform(
+                kind=TransformKind.FIELD_INFLATION,
+                params={
+                    "calibration_key": cal.key(),
+                    "cal_kind": _cal_kind(cal),
+                    "dof": _cal_dof(cal),
+                },
+            )
         return UncertaintyProvenance(
             native_capability=self.provenance.native_capability,
-            transformations=[
-                *self.provenance.transformations,
-                UncertaintyTransform(
-                    kind=TransformKind.DIAGONAL_INFLATION, params=params
-                ),
-            ],
+            transformations=[*self.provenance.transformations, transform],
         )
 
     def with_calibration(self, cal: CalibrationField) -> MiostEnsembleDistribution:
@@ -313,7 +325,17 @@ class MiostEnsembleDistribution:
             ValueError: If this instance is field-calibrated (non-scalar).
         """
         if isinstance(self.calibration, ScalarCalibration):
-            return self.with_calibration(ScalarCalibration(self.calibration.s * s))
+            composed = ScalarCalibration(self.calibration.s * s)
+            # Variance composes ×s (cumulative scale on the calibration), but
+            # the recorded transform is the INCREMENTAL factor of THIS step
+            # (pre-Phase-8 semantics; carried note (a)) — a downstream auditor
+            # reads each rescale as its own inflation, not the running product.
+            return replace(
+                self,
+                calibration=composed,
+                _grid_sqrt_s=None,
+                provenance=self._prov_with(composed, scalar_s=s),
+            )
         raise ValueError(
             "rescaled(scalar) on a field-calibrated product is ambiguous — "
             "compose explicitly via with_calibration"
@@ -321,6 +343,13 @@ class MiostEnsembleDistribution:
 
     def save_state(self, path: Path, anomalies_f32: bool = False) -> None:
         """Persist the representation-tagged coefficient ensemble.
+
+        Anomalies are always stored RAW (one convention — spec §8); the
+        calibration field is serialised alongside as ``cal_kind`` /
+        ``cal_params`` (a JSON string) / ``cal_key`` so the query-time √s(x)
+        layer round-trips exactly. Files WITHOUT these keys reload as
+        ScalarCalibration(1.0) (the FACTORY supplies s* for legacy raw-anoms
+        files).
 
         Args:
             path: Destination .npz path.
@@ -340,6 +369,9 @@ class MiostEnsembleDistribution:
             "grid_lon": self.grid.x,
             "grid_lat": self.grid.y,
             "window_ids": np.asarray(list(self._etas_a.keys())),
+            "cal_kind": _cal_kind(self.calibration),
+            "cal_params": json.dumps(self.calibration.to_json()),
+            "cal_key": self.calibration.key(),
         }
         for wid in self._etas_a:
             arrays[f"eta_{wid}"] = self._etas_a[wid]
@@ -369,6 +401,13 @@ class MiostEnsembleDistribution:
             )
             wids = [str(w) for w in z["window_ids"]]
             m = int(z["m"])
+            # Files WITHOUT cal keys reload as ScalarCalibration(1.0) — the
+            # persisted anomalies are RAW and the factory supplies s* (spec §8).
+            calibration: CalibrationField = (
+                calibration_from_json(json.loads(str(z["cal_params"])))
+                if "cal_params" in z
+                else ScalarCalibration(1.0)
+            )
             self = cls(
                 grid=GridSpec.lonlat(z["grid_lon"], z["grid_lat"]),
                 mean=np.asarray(z["mean"]),
@@ -380,6 +419,7 @@ class MiostEnsembleDistribution:
                 _anoms={w: np.asarray(z[f"anom_{w}"], dtype=float) for w in wids},
                 _window_starts={w: float(z[f"start_{w}"]) for w in wids},
                 _w_days=float(z["w_days"]),
+                calibration=calibration,
             )
         return self
 
@@ -1122,3 +1162,42 @@ def calibration_from_json(d: dict[str, Any]) -> CalibrationField:
     if kind == "covariate":
         return CovariateCalibration.from_json(d)
     raise ValueError(f"Unknown CalibrationField kind: {kind!r}")
+
+
+def _cal_kind(cal: CalibrationField) -> str:
+    """Return the ``kind`` discriminator string for a calibration field.
+
+    Args:
+        cal: Any CalibrationField instance.
+
+    Returns:
+        The same discriminator ``to_json`` emits (``scalar``/``poly``/
+        ``piecewise``/``covariate``).
+    """
+    return str(cal.to_json()["kind"])
+
+
+def _cal_dof(cal: CalibrationField) -> int:
+    """Return the number of free parameters of a calibration field.
+
+    Used as the ``dof`` recorded on the FIELD_INFLATION provenance transform.
+
+    Args:
+        cal: Any CalibrationField instance.
+
+    Returns:
+        Free-parameter count: scalar 1, poly 5, piecewise = number of regions,
+        covariate 2.
+
+    Raises:
+        TypeError: If ``cal`` is not a recognised CalibrationField kind.
+    """
+    if isinstance(cal, ScalarCalibration):
+        return 1
+    if isinstance(cal, PolyCalibration):
+        return len(cal.coeffs)
+    if isinstance(cal, PiecewiseCalibration):
+        return len(cal.log_s_by_region)
+    if isinstance(cal, CovariateCalibration):
+        return 2
+    raise TypeError(f"Unknown CalibrationField kind for dof: {type(cal)!r}")
