@@ -15,34 +15,17 @@ import xarray as xr
 from scipy.stats import pearsonr  # type: ignore[import-untyped]
 
 from sverdrup.application.calibration.constants import (
-    CELL_DEG,
     COVERAGE_TARGET,
     PROMOTION_R,
     S_STAR,
 )
+from sverdrup.application.calibration.regions import cell_index
 
 RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 MEAN_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_mean_maps.nc")
 VAR_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_var_maps.nc")
 SCOPE = Path("tests/validation/fixtures/stage_a_scope.json")
-LON_EDGES = np.arange(295.0, 305.0 + CELL_DEG, CELL_DEG)
-LAT_EDGES = np.arange(33.0, 43.0 + CELL_DEG, CELL_DEG)
 MIN_CELL_POINTS = 200
-
-
-def cell_index(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Return (row, col) 2°-cell indices, clipped to the 5x5 grid.
-
-    Args:
-        lon: Longitudes [deg east].
-        lat: Latitudes [deg north].
-
-    Returns:
-        Tuple of (row, col) integer arrays, each clipped to [0, 4].
-    """
-    col = np.clip(np.searchsorted(LON_EDGES, lon, side="right") - 1, 0, 4)
-    row = np.clip(np.searchsorted(LAT_EDGES, lat, side="right") - 1, 0, 4)
-    return row, col
 
 
 def proxy_cells(mean_ds: xr.Dataset) -> np.ndarray:
