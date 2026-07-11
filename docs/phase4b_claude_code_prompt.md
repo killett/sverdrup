@@ -15,7 +15,7 @@ project's original inspiration and is fully unblocked: it has NO dependency on t
   only as a cross-check.** Do not reimplement their metric as the source of truth.
 - **Nothing committed without passing tests + your review checkpoints.** Hold at each checkpoint
   below for the owner.
-- Read the scope spec (`validation_scope_spec.md`) first; it has the full claim, the resolved
+- Read the scope spec (`phase4b_scope_spec.md`) first; it has the full claim, the resolved
   decisions, and the grounded repo facts.
 
 ## The claim you are testing (must stay falsifiable)

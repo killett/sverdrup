@@ -1,6 +1,6 @@
 # Design — OI validation against the 2021a SSH-mapping OSE challenge (BASELINE row)
 
-**Status:** approved design, pre-plan. Scope source of truth: `validation_scope_spec.md`
+**Status:** approved design, pre-plan. Scope source of truth: `phase4b_scope_spec.md`
 (the falsifiable claim, the pinned decisions, the grounded repo facts). This document is the
 *how*; the scope spec is the *what* and *why*. Read both before planning.
 

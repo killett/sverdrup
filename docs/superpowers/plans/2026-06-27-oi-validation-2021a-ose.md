@@ -13,7 +13,7 @@
 - Drive THEIR eval by importing their `src` scoring functions into our pixi env (no full 2021 conda env). — "Import their src/ functions into our env"
 - Challenge repo vendored as a git submodule pinned to the leaderboard-matching commit (not master HEAD). — design §1/§3
 - Task 0's day-one deliverable: their scorer imports, runs on their own BASELINE map, reproduces all three published numbers (µ, σ, λx). — design §0/§4
-- Single tile, single OI, SSH scores only; their eval is ground truth, ours is a parallel cross-check. — `validation_scope_spec.md`
+- Single tile, single OI, SSH scores only; their eval is ground truth, ours is a parallel cross-check. — `phase4b_scope_spec.md`
 - PASS tolerance set after seeing the spread; never loosened to manufacture a pass. — design §6
 
 ---
