@@ -6,6 +6,7 @@ Provides:
   - evaluation_masks: 6 evaluation classes (4 quadrants + jet_core + aggregate)
   - fit_partition: true partition into 5 labels (quadrants-minus-jet + JET)
   - largest_4connected_component: deterministic largest-component filter
+  - proxy_cells: per-cell mean of per-node temporal std of the Stage-B mean maps
 
 Grid: lon edges 295,297,...,305; lat edges 33,35,...,43 → 5×5 = 25 cells.
 Quadrant split: lon_mid=300, lat_mid=38; lon>=300 → East; lat>=38 → North.
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import numpy as np
 import scipy.ndimage  # type: ignore[import-untyped]
+import xarray as xr
 
 from sverdrup.application.calibration.constants import CELL_DEG
 
@@ -92,7 +94,8 @@ def evaluation_masks(
     Evaluation classes are NOT disjoint: jet_core overlaps the four quadrant
     masks. Each quadrant contains ALL points in that geographic region,
     regardless of jet_core membership. The aggregate is the union of the
-    four quadrant masks.
+    four quadrant masks. Points are assumed in-domain (no clip, unlike
+    cell_index).
 
     Args:
         lon: Point longitudes [deg east], shape (N,).
@@ -134,7 +137,8 @@ def fit_partition(
 
     Fit lanes: SW, SE, NW, NE (each minus jet-core cells) and JET. Every
     point gets exactly one label. Jet-core points are labeled JET regardless
-    of their geographic quadrant.
+    of their geographic quadrant. Points are assumed in-domain (no clip,
+    unlike cell_index).
 
     Args:
         lon: Point longitudes [deg east], shape (N,).
@@ -145,7 +149,7 @@ def fit_partition(
         String array of shape (N,) with values in {'SW','SE','NW','NE','JET'}.
 
     Raises:
-        AssertionError: If the partition invariant is violated (should never
+        RuntimeError: If the partition invariant is violated (should never
             happen with well-formed inputs).
     """
     lon_arr = np.asarray(lon, dtype=float)
@@ -193,3 +197,29 @@ def largest_4connected_component(mask: np.ndarray) -> np.ndarray:
     best_label = int(np.argmax(sizes)) + 1  # +1 because labels are 1-based
     result: np.ndarray = labeled == best_label
     return result
+
+
+def proxy_cells(mean_ds: xr.Dataset) -> np.ndarray:
+    """Return (5,5) per-cell mean of the per-node temporal std of the mean maps.
+
+    Shared proxy rule for the Phase-8 covariate alignment diagnostic and the
+    jet-core mask build — both must use this single definition so they stay
+    bit-identical.
+
+    Args:
+        mean_ds: Dataset loaded from stage_b_mean_maps.nc, with ``ssh``
+            variable of shape (time, lat, lon).
+
+    Returns:
+        Array of shape (5, 5) with per-cell mean temporal std [m].
+    """
+    std_map = mean_ds["ssh"].std(dim="time")  # (lat, lon) — spatial artifact
+    out = np.full((5, 5), np.nan)
+    lon2d, lat2d = np.meshgrid(std_map["lon"].values, std_map["lat"].values)
+    row, col = cell_index(lon2d.ravel(), lat2d.ravel())
+    vals = std_map.values.ravel()
+    for r in range(5):
+        for c in range(5):
+            m = (row == r) & (col == c)
+            out[r, c] = float(np.nanmean(vals[m]))
+    return out

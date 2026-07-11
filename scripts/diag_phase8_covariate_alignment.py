@@ -19,35 +19,13 @@ from sverdrup.application.calibration.constants import (
     PROMOTION_R,
     S_STAR,
 )
-from sverdrup.application.calibration.regions import cell_index
+from sverdrup.application.calibration.regions import cell_index, proxy_cells
 
 RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 MEAN_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_mean_maps.nc")
 VAR_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_var_maps.nc")
 SCOPE = Path("tests/validation/fixtures/stage_a_scope.json")
 MIN_CELL_POINTS = 200
-
-
-def proxy_cells(mean_ds: xr.Dataset) -> np.ndarray:
-    """Return (5,5) per-cell mean of the per-node temporal std of the mean maps.
-
-    Args:
-        mean_ds: Dataset loaded from stage_b_mean_maps.nc, with ``ssh``
-            variable of shape (time, lat, lon).
-
-    Returns:
-        Array of shape (5, 5) with per-cell mean temporal std [m].
-    """
-    std_map = mean_ds["ssh"].std(dim="time")  # (lat, lon) — spatial artifact
-    out = np.full((5, 5), np.nan)
-    lon2d, lat2d = np.meshgrid(std_map["lon"].values, std_map["lat"].values)
-    row, col = cell_index(lon2d.ravel(), lat2d.ravel())
-    vals = std_map.values.ravel()
-    for r in range(5):
-        for c in range(5):
-            m = (row == r) & (col == c)
-            out[r, c] = float(np.nanmean(vals[m]))
-    return out
 
 
 def per_cell_stats(

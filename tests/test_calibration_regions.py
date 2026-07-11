@@ -194,11 +194,30 @@ class TestLargestComponent:
 
         mask = _make_synthetic_mask([(2, 1), (3, 2)])
         result = largest_4connected_component(mask)
-        # Two components of equal size: tie-break = lowest label (first found).
-        # Either way, only one cell should be True.
+        # Two components of equal size: tie-break = lowest label index.
+        # scipy.ndimage.label scans row-major, so (2,1) gets label 1 and must
+        # be the surviving cell — pins the deterministic tie-break.
         assert int(result.sum()) == 1, (
             f"Diagonal cells must NOT be 4-connected; expected 1 True cell, got {result.sum()}"
         )
+        assert result[2, 1], "Tie-break must keep the lowest label index (cell 2,1)"
+        assert not result[3, 2], "Cell (3,2) has the higher label and must be dropped"
+
+    def test_all_false_mask_returns_all_false(self) -> None:
+        """An all-False input mask returns an all-False mask (n_labels==0 branch).
+
+        Bug caught: indexing sizes[0] on an empty bincount, or argmax on an
+        empty array, would raise instead of returning the empty mask.
+        """
+        from sverdrup.application.calibration.regions import (
+            largest_4connected_component,
+        )
+
+        mask = np.zeros((5, 5), dtype=bool)
+        result = largest_4connected_component(mask)
+        assert result.shape == (5, 5)
+        assert result.dtype == bool
+        assert not result.any(), "All-False input must produce all-False output"
 
     def test_single_component_returns_itself(self) -> None:
         """A single 4-connected component is returned unchanged.
@@ -397,3 +416,41 @@ class TestFitPartition:
         labels = fit_partition(lons, lats, jet)
         assert labels[0] == "JET", f"Expected JET, got {labels[0]!r}"
         assert labels[1] == "SW", f"Expected SW, got {labels[1]!r}"
+
+
+# ---------------------------------------------------------------------------
+# Degenerate inputs: empty point arrays
+# Bug family: len()/indexing assumptions that raise on N=0.
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyPointArrays:
+    """Empty inputs are well-defined: empty masks/labels, no raise."""
+
+    def test_evaluation_masks_empty_input(self) -> None:
+        """evaluation_masks with N=0 returns 6 empty boolean masks, no raise.
+
+        Bug caught: code that indexes element 0 or assumes N>=1 would raise
+        on an empty track segment.
+        """
+        from sverdrup.application.calibration.regions import evaluation_masks
+
+        empty = np.array([], dtype=float)
+        jet = np.array([], dtype=bool)
+        result = evaluation_masks(empty, empty, jet)
+        assert set(result.keys()) == {"SW", "SE", "NW", "NE", "jet_core", "aggregate"}
+        for key, mask in result.items():
+            assert mask.shape == (0,), f"{key}: expected shape (0,), got {mask.shape}"
+
+    def test_fit_partition_empty_input(self) -> None:
+        """fit_partition with N=0 returns an empty label array, no raise.
+
+        Bug caught: the partition-invariant check or astype(str) raising on
+        an empty object array would break empty track segments.
+        """
+        from sverdrup.application.calibration.regions import fit_partition
+
+        empty = np.array([], dtype=float)
+        jet = np.array([], dtype=bool)
+        labels = fit_partition(empty, empty, jet)
+        assert labels.shape == (0,), f"Expected shape (0,), got {labels.shape}"

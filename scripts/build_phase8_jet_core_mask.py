@@ -24,8 +24,8 @@ import xarray as xr
 
 from sverdrup.application.calibration.constants import JET_CORE_QUANTILE
 from sverdrup.application.calibration.regions import (
-    cell_index,
     largest_4connected_component,
+    proxy_cells,
 )
 
 MEAN_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_mean_maps.nc")
@@ -46,31 +46,6 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
-def proxy_cells(mean_ds: xr.Dataset) -> np.ndarray:
-    """Return (5,5) per-cell mean of per-node temporal std of the mean maps.
-
-    Identical to the function in diag_phase8_covariate_alignment.py — the
-    same proxy computation used for the covariate alignment diagnostic.
-
-    Args:
-        mean_ds: Dataset from stage_b_mean_maps.nc with ``ssh`` variable of
-            shape (time, lat, lon).
-
-    Returns:
-        Array of shape (5, 5) with per-cell mean temporal std [m].
-    """
-    std_map = mean_ds["ssh"].std(dim="time")  # (lat, lon) — spatial artifact
-    out = np.full((5, 5), np.nan)
-    lon2d, lat2d = np.meshgrid(std_map["lon"].values, std_map["lat"].values)
-    row, col = cell_index(lon2d.ravel(), lat2d.ravel())
-    vals = std_map.values.ravel()
-    for r in range(5):
-        for c in range(5):
-            m = (row == r) & (col == c)
-            out[r, c] = float(np.nanmean(vals[m]))
-    return out
 
 
 def build_mask(mean_nc: Path) -> tuple[np.ndarray, dict[str, object]]:
@@ -130,7 +105,7 @@ def main() -> None:
     }
 
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    OUT_JSON.write_text(json.dumps(artifact, sort_keys=True, indent=2))
+    OUT_JSON.write_text(json.dumps(artifact, sort_keys=True, indent=2) + "\n")
 
     n_jet = int(mask.sum())
     jet_cells = [(int(r), int(c)) for r, c in zip(*np.where(mask), strict=True)]
