@@ -345,8 +345,19 @@ def n_eff(n: float, rhos: np.ndarray) -> float:
     Returns:
         Effective sample size. With an empty ``rhos`` the correction is 1 and
         ``n_eff == n``.
+
+    Raises:
+        ValueError: If ``1 + 2*sum(rhos) <= 0``. :func:`rho_hat`'s truncation
+            (only lags with ``rho_k >= RHO_CUTOFF > 0`` are retained)
+            guarantees ``factor >= 1``; arbitrary negative rhos are a caller
+            error, not a valid input.
     """
     factor = 1.0 + 2.0 * float(np.sum(rhos))
+    if factor <= 0.0:
+        raise ValueError(
+            f"n_eff factor must be positive, got {factor}; rho_hat truncation "
+            "guarantees factor >= 1 — arbitrary negative rhos are caller error"
+        )
     return float(n) / factor
 
 
@@ -457,14 +468,6 @@ def _relatively_beyond(candidate: float, baseline: float) -> bool:
     than the relative ``TIE_BAND``: ``candidate < baseline * (1 - TIE_BAND)``.
     """
     return candidate < baseline * (1.0 - TIE_BAND)
-
-
-def _within_band(a: float, b: float) -> bool:
-    """Return whether ``a`` and ``b`` tie within the relative ``TIE_BAND``.
-
-    Symmetric: neither value beats the other beyond the band.
-    """
-    return not _relatively_beyond(a, b) and not _relatively_beyond(b, a)
 
 
 def _no_worse_than(candidate: float, baseline: float) -> bool:

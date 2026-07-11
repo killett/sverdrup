@@ -240,6 +240,19 @@ def test_n_eff_ar1_matches_theory() -> None:
     assert abs(n_eff_val - n / factor) < 1e-9
 
 
+def test_n_eff_raises_on_nonpositive_factor() -> None:
+    """n_eff raises ValueError when 1 + 2*sum(rhos) <= 0 (arbitrary negative
+    rhos violate the rho_hat-truncation precondition of factor >= 1).
+
+    Bug caught: silently returning a negative or infinite effective sample
+    size instead of rejecting the invalid input.
+    """
+    with pytest.raises(ValueError, match="factor"):
+        folds.n_eff(500, np.array([-0.75]))  # factor == -0.5 (negative)
+    with pytest.raises(ValueError, match="factor"):
+        folds.n_eff(500, np.array([-0.25, -0.25]))  # factor == 0
+
+
 def test_n_eff_formula_white_noise_is_n() -> None:
     """White noise (rho ~ 0) yields n_eff ~ n because no lag survives the
     RHO_CUTOFF and the correction sum is empty.
