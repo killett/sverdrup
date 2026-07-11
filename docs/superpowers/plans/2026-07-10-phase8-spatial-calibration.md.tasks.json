@@ -1,17 +1,17 @@
 {
   "planPath": "docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md",
-  "nativeTaskIds": {"1": 5, "2": 6, "3": 7, "4": 8, "5": 9, "6": 10, "7": 11, "8": 12, "9": 13, "10": 14, "11": 15, "12": 16, "13": 17},
+  "nativeTaskIds": {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "11": 11, "12": 12, "13": 13},
   "tasks": [
     {
       "id": 1,
       "subject": "Task 1: Covariate alignment diagnostic (step-0, existing artifacts only)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Measure proxy/miscalibration alignment and record the pre-registered promotion decision BEFORE any fit-lane work.\n\n**Files:**\n- Create: scripts/diag_phase8_covariate_alignment.py\n- Modify: data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json (script writes phase8.covariate_alignment)\n\n**Acceptance Criteria:**\n- Proxy = per-cell temporal std of stage_b_mean_maps.nc on the 25-cell (2 deg) grid\n- Per-cell chi2_red at frozen s* (UN-floored, Task-19 convention) on same cells\n- PRIMARY = Pearson r(log chi2_red_cell, log proxy_cell); deficit variant reported alongside\n- Decision recorded: promoted true iff |r_primary| >= 0.6\n- c2 untouched; no fit performed; existing artifacts only\n\n**Verify:** pixi run python scripts/diag_phase8_covariate_alignment.py -> prints r values + decision; JSON block written.\n\n```json:metadata\n{\"files\": [\"scripts/diag_phase8_covariate_alignment.py\"], \"verifyCommand\": \"pixi run python scripts/diag_phase8_covariate_alignment.py\", \"acceptanceCriteria\": [\"promotion decision recorded with r_primary, r_deficit, promoted\", \"c2 untouched, no fit performed\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 2,
       "subject": "Task 2: CalibrationField hierarchy + constants package",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Field abstraction (scalar/piecewise/poly [+covariate if Task 1 promoted]) with clamp+clip edge behavior and deterministic keys.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/__init__.py, src/sverdrup/application/calibration/constants.py\n- Modify: src/sverdrup/distributions/miost_ensemble.py\n- Test: tests/test_calibration_field.py\n\n**Acceptance Criteria:**\n- Scalar/Piecewise/Poly frozen dataclasses with sqrt_s_at, log_s_at, key(), to_json/from_json\n- Coordinate clamp to box hull + log-s clip inside log_s_at; Scalar clip-free\n- Poly reduces exactly to scalar at (log s*, 0,0,0,0); piecewise at all-regions-log-s*\n- key() deterministic incl. kind+params+clip+fit_id\n- Piecewise values outside [lo,hi] raise at construction\n\n**Verify:** pixi run pytest tests/test_calibration_field.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/constants.py\", \"src/sverdrup/distributions/miost_ensemble.py\", \"tests/test_calibration_field.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py -v\", \"acceptanceCriteria\": [\"all field classes with clamp+clip and deterministic keys\", \"exact scalar reduction identities\", \"piecewise out-of-range raises\"], \"modelTier\": \"standard\"}\n```"
     },
     {

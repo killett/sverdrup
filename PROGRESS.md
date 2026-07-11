@@ -1,6 +1,30 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE 8 — spatially varying uncertainty calibration: DESIGN COMMITTED
+> **▶ PHASE 8 — EXECUTION IN FLIGHT (2026-07-11, subagent-driven, on main).**
+> Plan: `docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md`
+> (+ `.tasks.json` tracker, native IDs 1:1). Task 1 COMPLETE + committed
+> (`4530712` + fix `7ef81b9`): covariate alignment r_primary=0.8533 →
+> **PROMOTED** (covariate lane joins Tasks 2/7/9); r_deficit=−0.6538
+> (raw pre-registered form). Task 2 code + review-fix DONE
+> (`8933e52` + uncommitted fix in working tree: Piecewise deep-frozen
+> tuple storage + hashability, covariate positive-proxy validation;
+> 29/29 on tests/test_calibration_field.py) — **awaiting full-suite
+> green before the fix commit**. Detached run:
+> pid+log `…/scratchpad/task2_suite.{pid,log}` (relaunch
+> `nohup pixi run test > log 2>&1 &` if dead pre-summary). On green:
+> commit `fix(phase8): PiecewiseCalibration deep-frozen + hashable;
+> covariate positive-proxy validation + key-sensitivity tests`,
+> re-review, close Task 2, dispatch Tasks 3 (seam) + 6 (regions/mask)
+> in parallel. GOTCHAS this phase: (a) pre-commit-check-tasks hook
+> blocks MY commits while a native task is in_progress in MY transcript
+> — subagent commits unaffected; mark task completed before
+> controller-side commits. (b) Long verifications run DETACHED,
+> controller-owned — subagent-held background runs die with session
+> restarts (9 h stall on 2026-07-11, root-caused). c2 UNTOUCHED.
+> Owner gates ahead: Task 10 (j3 evidence), Task 11 (single c2 touch).
+
+> **[superseded 2026-07-11 — plan written + owner-reviewed (`eb2496d`,
+> `6b8a20b`); execution above] ▶ PHASE 8 DESIGN COMMITTED
 > 2026-07-10, ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.**
 > Spec: `docs/superpowers/specs/2026-07-10-phase8-spatial-calibration-design.md`
 > (owner-approved in-session: forks a–e + three review batches; s(x) field on
