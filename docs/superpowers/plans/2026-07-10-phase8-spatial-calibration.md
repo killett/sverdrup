@@ -589,6 +589,18 @@ pass (external tests skip cleanly offline/without artifacts).
   defect, fix there).
 - [ ] **Step 3: Commit** `test(phase8): s*-identity four-route regression + mean-unchanged extension to field product`
 
+> **POSTSCRIPT (execution finding, 2026-07-11):** this task's criterion-2
+> wording — "the signed var maps … (they were written at s\*)" — is
+> factually wrong about the artifact bytes. `stage_b_main` writes
+> `stage_b_var_maps.nc` from RAW member anomalies FIRST and derives s\*
+> from those maps afterwards; s\* is never baked into the artifact
+> (verified against the producing code and the gate JSON). The landed
+> test pins the strictly stronger double identity: raw == signed
+> (rtol 1e-9, reconstruction fidelity) AND factory-calibrated ==
+> S_STAR × signed (rtol 1e-9, spec identity (ii) anchored to the signed
+> value). Do NOT "correct" the test back to the plan's literal reading —
+> `factory == signed` would fail spuriously by exactly s\* ≈ 10.06.
+
 ---
 
 ### Task 6: Jet-core mask + regions module

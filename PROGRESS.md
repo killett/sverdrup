@@ -2,25 +2,35 @@
 
 > **▶ PHASE 8 — EXECUTION IN FLIGHT (2026-07-11, subagent-driven, on main).**
 > Plan: `docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md`
-> (+ `.tasks.json` tracker, native IDs 1:1). Task 1 COMPLETE + committed
-> (`4530712` + fix `7ef81b9`): covariate alignment r_primary=0.8533 →
-> **PROMOTED** (covariate lane joins Tasks 2/7/9); r_deficit=−0.6538
-> (raw pre-registered form). Task 2 code + review-fix DONE
-> (`8933e52` + uncommitted fix in working tree: Piecewise deep-frozen
-> tuple storage + hashability, covariate positive-proxy validation;
-> 29/29 on tests/test_calibration_field.py) — **awaiting full-suite
-> green before the fix commit**. Detached run:
-> pid+log `…/scratchpad/task2_suite.{pid,log}` (relaunch
-> `nohup pixi run test > log 2>&1 &` if dead pre-summary). On green:
-> commit `fix(phase8): PiecewiseCalibration deep-frozen + hashable;
-> covariate positive-proxy validation + key-sensitivity tests`,
-> re-review, close Task 2, dispatch Tasks 3 (seam) + 6 (regions/mask)
-> in parallel. GOTCHAS this phase: (a) pre-commit-check-tasks hook
-> blocks MY commits while a native task is in_progress in MY transcript
-> — subagent commits unaffected; mark task completed before
-> controller-side commits. (b) Long verifications run DETACHED,
-> controller-owned — subagent-held background runs die with session
-> restarts (9 h stall on 2026-07-11, root-caused). c2 UNTOUCHED.
+> (+ `.tasks.json` tracker, native IDs 1:1). **Tasks 1–8 COMPLETE**, each
+> with spec + quality review and committed: T1 covariate diag `4530712`+
+> `7ef81b9` (r_primary=0.8533 → **PROMOTED**, covariate lane in play;
+> r_deficit=−0.6538); T2 field hierarchy `8933e52`+`370c3f3`; T3 seam
+> `8583184` (suite 511/9/1); T6 regions/mask `1c62486`+`3f88ccb` (jet
+> mask = rows 2(1,2)+3(0–4), 7/25 cells); T7 fitters `709fa17`+`21e1ec6`
+> (review caught+fixed a wrong Newton Hessian: h=0.5·Σ[p(1−p)(1−q)+p²q];
+> CHI2_1_MEDIAN re-pinned to live scipy); T8 folds `c79feed`+`e22ce9b`;
+> T4 persistence/factory `edb060a` (FIELD_INFLATION, incremental
+> provenance, byte-compat fixture, suite 564/9/1); T5 identity net
+> `7c4da24`+`3193847` — four routes ×s* at rtol 1e-12 AND the external
+> pins RUN AND PASSED against the SIGNED artifacts (mean BIT-IDENTICAL
+> to the acceptance map through the shipped path under a non-constant
+> field; var maps raw==signed + factory==s*×signed at rtol 1e-9; 39 min,
+> 1.9 GB, opt-in `SVERDRUP_PHASE8_EXTERNAL=1`). **NEXT: Task 9
+> (phase8_fit_run.py — fold fits, selection, winner refit, evidence
+> JSON; c2 untouched) → Task 10 OWNER GATE (j3-evidence ruling).**
+> GOTCHAS this phase: (a) pre-commit-check-tasks hook blocks MY commits
+> while a native task is in_progress in MY transcript — subagent commits
+> unaffected; mark task completed before controller-side commits.
+> (b) Long verifications run DETACHED, controller-owned — subagent-held
+> background runs die with session restarts (9 h stall on 2026-07-11,
+> root-caused). (c) The signed `stage_b_var_maps.nc` is RAW member
+> variance — s\* was DERIVED from it, never baked in; the plan's Task-5
+> "written at s\*" wording was wrong (postscript in the plan; the Task-5
+> external test pins raw==signed AND factory==s\*×signed — leave it).
+> (d) Owner attention at Task 10: T8's relative reading of the ±1% tie
+> band ("beyond" = < baseline×0.99) is a documented choice worth an
+> owner nod alongside the evidence review. c2 UNTOUCHED.
 > Owner gates ahead: Task 10 (j3 evidence), Task 11 (single c2 touch).
 
 > **[superseded 2026-07-11 — plan written + owner-reviewed (`eb2496d`,

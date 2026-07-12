@@ -17,14 +17,14 @@
     {
       "id": 3,
       "subject": "Task 3: Eval-time seam in MiostEnsembleDistribution (fast path deleted)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2],
       "description": "**Goal:** One general query-time sqrt(s(x)) application at the two row-scaling sites; rescaled() becomes composition through the layer.\n\n**Files:**\n- Modify: src/sverdrup/distributions/miost_ensemble.py, src/sverdrup/methods/miost.py:473\n- Test: tests/test_calibration_field.py (seam), tests/test_miost_ensemble.py, tests/test_miost_inflation.py\n\n**Acceptance Criteria:**\n- calibration field (default ScalarCalibration(1.0)); anomalies stored RAW always\n- _anoms_at scales rows by sqrt s(pts); grid anomaly path via per-grid sqrt s cached once; mean paths untouched (applied outside _grid_eval)\n- rescaled(s) composes multiplicatively, fresh instance; raises on field-calibrated instance\n- correlation-preservation, magnitude, composition, no-stale-cache, inertness, mean-bitwise tests green\n- Full suite green (inflation tests updated to layer semantics, variance tolerance rtol 1e-12)\n\n**Verify:** pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py tests/test_miost_inflation.py -v && pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"src/sverdrup/methods/miost.py\", \"tests/test_calibration_field.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py tests/test_miost_inflation.py -v\", \"acceptanceCriteria\": [\"seam tests green\", \"no construction-time pre-scaling remains\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 4,
       "subject": "Task 4: Persistence, provenance, factory + params_key (one-convention)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [3],
       "description": "**Goal:** Field serialization into the persisted kind + calibration key; FIELD_INFLATION provenance; factory supplies the calibration at the boundary.\n\n**Files:**\n- Modify: src/sverdrup/distributions/miost_ensemble.py, src/sverdrup/core/provenance.py, src/sverdrup/methods/miost.py\n- Test: tests/test_calibration_field.py, tests/test_miost_ensemble.py, fixture tests/fixtures/phase8_factory_bytecompat.npz\n\n**Acceptance Criteria:**\n- save_state writes RAW anoms + cal_kind/cal_params/cal_key; legacy files (no cal keys) load as ScalarCalibration(1.0); FACTORY supplies s*\n- TransformKind.FIELD_INFLATION {calibration_key, cal_kind, dof}; scalar keeps DIAGONAL_INFLATION\n- Miost(calibration=...) accepted; calibration+inflation_s -> ValueError; _params_key += cal key\n- Factory byte-compat vs pre-Task-3 snapshot fixture (rtol 1e-12), snapshot captured FIRST from side worktree\n- kind-tag refusal unchanged; roundtrip bit-exact all field kinds\n\n**Verify:** pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py -v && pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"src/sverdrup/core/provenance.py\", \"src/sverdrup/methods/miost.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py -v\", \"acceptanceCriteria\": [\"legacy load with factory-supplied s*\", \"factory-boundary byte-compat rtol 1e-12\", \"params_key distinguishes calibrations\"], \"modelTier\": \"standard\"}\n```"
     },
@@ -38,20 +38,20 @@
     {
       "id": 6,
       "subject": "Task 6: Jet-core mask + regions module",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Deterministic pre-registered region machinery: mask build script, quadrants, lane-A fit partition, cell/block helpers.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/regions.py, scripts/build_phase8_jet_core_mask.py\n- Test: tests/test_calibration_regions.py\n- Artifact: data/2021a_ssh_mapping_ose/ours/phase8_jet_core_mask.json\n\n**Acceptance Criteria:**\n- Mask rule exactly spec sec 6: per-cell temporal std >= 75th percentile -> largest 4-connected component (scipy.ndimage.label cross structure); no manual edits; re-run identical\n- regions.py: cell_index (Task-1 script imports it), quadrant_of, evaluation_masks (6 classes), fit_partition -> 5 labels, TRUE partition asserted\n- Quadrant boundary convention matches shipped >= at diag_stage_b_localized_calibration.py:62-65\n\n**Verify:** pixi run pytest tests/test_calibration_regions.py -v; build script twice -> identical JSON\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/regions.py\", \"scripts/build_phase8_jet_core_mask.py\", \"tests/test_calibration_regions.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_regions.py -v\", \"acceptanceCriteria\": [\"deterministic mask artifact\", \"true 5-region fit partition\", \"shipped boundary convention preserved\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 7,
       "subject": "Task 7: Floored MLE fitters + tail diagnostic + safeguard",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [2, 6],
       "description": "**Goal:** One criterion, all lanes: NLL/grad under r ~ N(0, s(x)v + sigma_obs^2); lane-A Newton; lane-B L-BFGS-B; tail diagnostic; safeguard.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/likelihood.py\n- Test: tests/test_calibration_likelihood.py\n\n**Acceptance Criteria:**\n- nll/grad exact plan formulas (tot = s v + SIGMA_OBS2; w = 0.5 (s v/tot)(1 - r2/tot))\n- fit_region_newton: init log(mean(r2/v)); NEWTON_MAX_ITER 50 / NEWTON_TOL 1e-10; sigma=0 limit returns mean(r2/v) to 1e-12\n- fit_poly_lbfgsb: scipy L-BFGS-B jac=grad gtol 1e-8, init (log S_STAR, 0...); optimizer+gtol in fit_id\n- tail_diagnostic: median(r2/(s v + floor))/0.4549 ratio; >= 1.5 flags report-only\n- assert_beats_scalar raises when fitted NLL > s*-constant NLL\n\n**Verify:** pixi run pytest tests/test_calibration_likelihood.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/likelihood.py\", \"tests/test_calibration_likelihood.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_likelihood.py -v\", \"acceptanceCriteria\": [\"hand-arithmetic + finite-difference tests green\", \"Newton sigma=0 identity\", \"planted-field recovery within tolerances\", \"safeguard raises\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 8,
       "subject": "Task 8: Fold machinery + selection",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [6, 7],
       "description": "**Goal:** T/S folds, guard rings, rho-hat/n_eff, merge rule, pool-then-max statistics, lane-0 eligibility, lexicographic selection.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/folds.py\n- Test: tests/test_calibration_folds.py\n\n**Acceptance Criteria:**\n- t_folds: 6 pinned rotations (T_FOLDS)\n- s_fold_layout(salt): derive_seed(miost, phase8, s-folds, salt) permutation of 25 blocks, split (7,6,6,6); guard ring 0.5 deg excluded from BOTH masks; >=50%-per-fit-region constraint else salt+1 recorded\n- rho_hat along-pass, k<=20 truncated at rho<0.05; n_eff = n/(1+2 sum rho)\n- merge_small_blocks: n_eff < 200 -> nearest-centroid same-fold, lowest-index tie-break\n- pooled_worst_region: pool per region across folds -> |coverage-0.6827| -> max\n- select: lane-0 eligibility then lexicographic S -> T -> smooth preference (poly > covariate > piecewise); (winner|None, table); None = negative result\n\n**Verify:** pixi run pytest tests/test_calibration_folds.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/folds.py\", \"tests/test_calibration_folds.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_folds.py -v\", \"acceptanceCriteria\": [\"deterministic fold layouts\", \"guard-ring exclusion both masks\", \"n_eff validated on AR(1)\", \"eligibility + lexicographic selection with None\"], \"modelTier\": \"standard\"}\n```"
     },
