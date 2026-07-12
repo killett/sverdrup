@@ -31,7 +31,7 @@
     {
       "id": 5,
       "subject": "Task 5: s*-identity four-route regression + mean-unchanged extension",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [4],
       "description": "**Goal:** Pin spec identities (i)/(ii) against SIGNED artifacts; extend mean-unchanged non-regression to the field-calibrated product.\n\n**Files:**\n- Create: tests/test_phase8_identity_regression.py\n\n**Acceptance Criteria:**\n- ScalarCalibration(S_STAR): four routes match x s* of raw product at rtol 1e-12 (grid marginal_variance, point Gamma, cross-point covariance, sample() moments)\n- @external: field-calibrated variance vs signed stage_b_var_maps.nc rtol 1e-9 (skip when absent)\n- Mean-unchanged: field-calibrated mean map BIT-IDENTICAL under NON-constant field (fixture + external acceptance map)\n- Full suite green\n\n**Verify:** pixi run pytest tests/test_phase8_identity_regression.py -v\n\n```json:metadata\n{\"files\": [\"tests/test_phase8_identity_regression.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase8_identity_regression.py -v\", \"acceptanceCriteria\": [\"four-route s*-identity rtol 1e-12\", \"mean bit-identical under non-constant field\"], \"modelTier\": \"standard\"}\n```"
     },
