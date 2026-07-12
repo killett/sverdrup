@@ -622,8 +622,10 @@ def _clamp_hull(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarra
 def _cell_index(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Return (row, col) 2°-cell indices, clipped to [0, 4]×[0, 4].
 
-    Implements the searchsorted-right, clip-to-0..4 convention from
-    scripts/diag_phase8_covariate_alignment.py.
+    Local twin of the canonical ``application.calibration.regions.cell_index``
+    (kept here so the distribution layer does not import the application
+    layer). Any change to the 2°-grid convention must touch BOTH — they are
+    output-identical by construction (searchsorted-right, clip 0..4).
 
     Args:
         lon: Longitudes [deg east] — already clamped to hull.
