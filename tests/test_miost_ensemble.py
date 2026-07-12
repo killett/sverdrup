@@ -283,6 +283,46 @@ def test_ensemble_mode_capability_and_routing() -> None:
     assert d.m == 3
 
 
+def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
+    """The shipped product routes to SAMPLES and stamps FIELD_INFLATION provenance.
+
+    A solve from ``shipped_miost()`` must (a) be SAMPLES-native and (b) carry a
+    FIELD_INFLATION transform recording the Phase-8 poly field's ``cal_kind``
+    ('poly'), ``dof`` (5), and the byte-exact artifact ``calibration_key`` —
+    the auditable proof the production σ is the clipped-poly field, not the
+    retired scalar.
+
+    Catches: the flip leaving the shipped product on the scalar (which would
+    stamp DIAGONAL_INFLATION instead), or dropping the field provenance so the
+    shipped σ becomes unauditable.
+    """
+    from sverdrup.methods.miost import shipped_miost
+
+    ship = Miost(
+        plan=WindowPlan(starts=(0.0, 45.0)),
+        members=3,
+        member_root=ROOT,
+        calibration=shipped_miost()._calibration,
+    )
+    assert ship.native_capability is UncertaintyCapability.SAMPLES
+    d = ship.solve(_obs(), GRID, PARAMS, DAY)
+    assert isinstance(d, MiostEnsembleDistribution)
+    field_transforms = [
+        t
+        for t in d.provenance.transformations
+        if t.kind is TransformKind.FIELD_INFLATION
+    ]
+    assert len(field_transforms) == 1
+    params = field_transforms[0].params
+    assert params["cal_kind"] == "poly"
+    assert params["dof"] == 5
+    assert params["calibration_key"] == (
+        "cal:poly;coeffs=(2.628363705995422, 0.6473150127828258, "
+        "-2.2371390187292186, -0.1485348137468948, 0.5330366783275191);"
+        "clip=(1.1731020392124571,2.9290288130316813);fit=L-BFGS-B;gtol=1e-08"
+    )
+
+
 def test_ensemble_mode_mean_bit_identical_to_point() -> None:
     """Ensemble-mode solve ships the UNTOUCHED Stage-A mean (D6).
 
@@ -419,13 +459,38 @@ def test_params_key_includes_calibration() -> None:
     assert k1 != k2
 
 
-def test_shipped_miost_uses_scalar_star_calibration() -> None:
-    """shipped_miost() calibration is ScalarCalibration(STAGE_B_INFLATION_S).
+def test_shipped_miost_uses_phase8_poly_field() -> None:
+    """shipped_miost() carries the Phase-8 clipped-poly PolyCalibration.
 
-    Catches: the registry flipping to a FIELD before Task 12, or losing s*
-    from the shipped product.
+    The winning field from the signed evidence (phase8_field.json /
+    stage_miost_gate_results.json ``phase8`` block): the exact 5-dof poly
+    coeffs, evidence-anchored log-s clip, and fit_id — assembled from the
+    inlined module constants and byte-identical to the artifact ``cal_key``.
+
+    Catches: the registry still shipping the scalar s* after the capability
+    flip (Task 12), or any drift in the inlined poly constants / clip / fit_id
+    away from the signed field (a wrong shipped calibration would silently
+    mis-scale every production σ).
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
-    from sverdrup.methods.miost import STAGE_B_INFLATION_S, shipped_miost
+    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
+    from sverdrup.methods.miost import (
+        PHASE8_CLIP_HI,
+        PHASE8_CLIP_LO,
+        PHASE8_FIT_ID,
+        PHASE8_POLY_COEFFS,
+        shipped_miost,
+    )
 
-    assert shipped_miost()._calibration == ScalarCalibration(STAGE_B_INFLATION_S)
+    expected = PolyCalibration(
+        coeffs=PHASE8_POLY_COEFFS,
+        clip=ClipSpec(lo_log_s=PHASE8_CLIP_LO, hi_log_s=PHASE8_CLIP_HI),
+        fit_id=PHASE8_FIT_ID,
+    )
+    cal = shipped_miost()._calibration
+    assert cal == expected
+    # byte-exact against the signed artifact cal_key
+    assert cal.key() == (
+        "cal:poly;coeffs=(2.628363705995422, 0.6473150127828258, "
+        "-2.2371390187292186, -0.1485348137468948, 0.5330366783275191);"
+        "clip=(1.1731020392124571,2.9290288130316813);fit=L-BFGS-B;gtol=1e-08"
+    )

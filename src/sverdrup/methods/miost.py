@@ -703,39 +703,96 @@ STAGE_B_MEMBERS = 100
 STAGE_B_ROOT = (
     4836134738817689931  # derive_seed("miost", "stage-b-winner", "members", 0)
 )
+# Scalar s* — superseded by the Phase-8 field 2026-07-12, kept for the signed
+# Stage-B record (the coverage-0.7481 / chi2_red(s*)=1 sign-off is anchored to it).
 STAGE_B_INFLATION_S = 10.062847634082484  # s* frozen from corrected-framing validation
+
+# --- Phase-8 accepted field (gate, owner sign-off 2026-07-12) ---
+# The winning CLIPPED low-order polynomial (5 dof) from the held-out selection.
+# Constants inlined from the signed evidence (data/2021a_ssh_mapping_ose/ours/
+# phase8_field.json + the phase8 block of stage_miost_gate_results.json); the
+# assembled PolyCalibration.key() is byte-identical to that artifact's cal_key.
+# log s = a0 + a1·v + a2·v² + a3·u + a4·u·v,  u=(lon−300)/5, v=(lat−38)/5.
+PHASE8_POLY_COEFFS: tuple[float, float, float, float, float] = (
+    2.628363705995422,
+    0.6473150127828258,
+    -2.2371390187292186,
+    -0.1485348137468948,
+    0.5330366783275191,
+)
+# Evidence-anchored log-s clip (lane-A range ± log 1.25).
+PHASE8_CLIP_LO = 1.1731020392124571
+PHASE8_CLIP_HI = 2.9290288130316813
+PHASE8_FIT_ID = "L-BFGS-B;gtol=1e-08"
 
 
 def shipped_miost() -> Miost:
-    """The SHIPPED miost product: SAMPLES-native at the accepted Stage-B config.
+    """The SHIPPED miost product: SAMPLES-native at the accepted Phase-8 config.
 
-    Sigma semantics (owner-ordered at the gate close, 2026-07-07): the
+    Sigma semantics (owner-ordered at the Phase-8 gate close, 2026-07-12): the
     shipped sigma is CALIBRATED PREDICTIVE uncertainty against along-track
-    residuals via ONE global scalar s (``STAGE_B_INFLATION_S``) — it
-    includes representation error and unresolved scales, and is NOT the raw
-    posterior spread; the correlation STRUCTURE is the raw posterior's (the
-    sqrt(s) anomaly rescale preserves it). ``chi2_red(s*) = 1`` on
-    validation is a mechanism identity, not evidence — the evidence is
-    coverage_1sigma 0.7481 on validation and 0.7481 on the single c2
-    acceptance touch (both within 0.6827±0.10) and CRPS ~0.047-0.048 m.
+    residuals via a SPATIALLY-VARYING field s(x) — a **clipped low-order
+    polynomial** (dof 5) in normalised box coordinates, superseding the retired
+    global scalar. The field is
+    ``cal:poly;coeffs=(2.628363705995422, 0.6473150127828258,
+    -2.2371390187292186, -0.1485348137468948, 0.5330366783275191);
+    clip=(1.1731020392124571,2.9290288130316813);fit=L-BFGS-B;gtol=1e-08``
+    (``cal_key``, byte-identical to phase8_field.json). It includes
+    representation error and unresolved scales and is NOT the raw posterior
+    spread; the correlation STRUCTURE is the raw posterior's — cross-point
+    uncertainties scale by ``√(s(x)·s(y))`` and the underlying correlations are
+    preserved EXACTLY (the √s(x) anomaly rescale is diagonal in the field).
 
-    Known limitation (recorded): one global s mildly under-disperses in the
-    jet-core northern quadrants (coverage ~0.69, chi2 ~1.3) and
-    over-disperses south (~0.79-0.83) — see the localized-calibration table
-    (gate results JSON, ``stage_b.localized_calibration``); a
-    spatially-varying s is future work, out of scope.
+    Floor-exclusion delta: the map product carries ``σ²(x) = s(x)·v`` (posterior
+    variance × field); the along-track VALIDATION variance additionally adds the
+    observation floor, ``s(x)·v + SIGMA_OBS2`` (0.03² m²). The gridded σ² does
+    NOT include that floor — the map reports predictive-field variance, the
+    coverage/chi2 numbers below are the floored track-side statistic.
+
+    Per-region c2 coverage evidence (touch 2, full-year n=44,844; ∈ 0.6827±0.10
+    → aggregate **0.7350**): SW 0.775 / SE 0.753 / NW 0.707 / NE 0.705 /
+    jet_core 0.674 — no severe local mis-calibration.
+
+    Edge behavior: coordinates outside the box are clamped to the box hull
+    (constant continuation), then log-s is clipped to the evidence-anchored
+    bounds ``[1.1731020392124571, 2.9290288130316813]``. The clip floor is
+    active on 37.2% of box+halo nodes (max excursion 2.11 log-s) — working as
+    designed; the held-out selection judged the CLIPPED field. [†] The off-track
+    √s gradient reported for diagnostics is the RAW-poly gradient, because the
+    clipped plateaus have zero gradient.
+
+    Jet-core residual (recorded, not resolved): c2 jet_core 0.674 at chi2 1.29,
+    improved from the scalar era's 0.643 / 1.43 but still below the coverage
+    target — the field narrows the motivating defect without closing it.
+
+    August limitation (recorded): monthly j3 coverage 0.691 (scalar) → 0.655
+    (field), still in band; the seasonal axis is out of scope per fork (c) — no
+    seasonal calibration term ships.
+
+    Mean maps are bit-UNCHANGED by the calibration flip: proven on the touch-2
+    c2 evaluation, where the (µ, σ, λx) triplet reproduces the signed Stage-A
+    values bit-identically (the field rides the query-time √s(x) layer only, D6).
+
+    Honest tally note: this product's acceptance spent TWO c2 touches — touch 1
+    was a partial-window DEFECT-RUN (disclosed, preserved under
+    ``phase8.c2_defect_run_20260712``, never used as evidence); touch 2 is the
+    accepted full-year evaluation.
 
     Tuning note: parameter SEARCHES must use a POINT-configured ``Miost()``
     (members=0) — members are generated at tuned winners only (spec 6.1),
     never per-trial.
 
     Returns:
-        The ensemble-mode method with m, seed root, and s* as accepted.
+        The ensemble-mode method with m, seed root, and the Phase-8 field.
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
 
     return Miost(
         members=STAGE_B_MEMBERS,
         member_root=STAGE_B_ROOT,
-        calibration=ScalarCalibration(STAGE_B_INFLATION_S),
+        calibration=PolyCalibration(
+            coeffs=PHASE8_POLY_COEFFS,
+            clip=ClipSpec(lo_log_s=PHASE8_CLIP_LO, hi_log_s=PHASE8_CLIP_HI),
+            fit_id=PHASE8_FIT_ID,
+        ),
     )

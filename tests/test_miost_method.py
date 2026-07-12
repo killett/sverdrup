@@ -44,7 +44,10 @@ def test_protocol_compliant_and_registered() -> None:
     """
     from sverdrup.core.types import UncertaintyCapability
     from sverdrup.methods.miost import (
-        STAGE_B_INFLATION_S,
+        PHASE8_CLIP_HI,
+        PHASE8_CLIP_LO,
+        PHASE8_FIT_ID,
+        PHASE8_POLY_COEFFS,
         STAGE_B_MEMBERS,
         STAGE_B_ROOT,
     )
@@ -57,11 +60,15 @@ def test_protocol_compliant_and_registered() -> None:
     assert shipped.native_capability is UncertaintyCapability.SAMPLES
     assert shipped.members == STAGE_B_MEMBERS == 100
     assert shipped.member_root == STAGE_B_ROOT
-    # s* now rides the calibration boundary (Task 4): the shipped product
-    # carries ScalarCalibration(s*), not the inflation_s compat shim.
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    # Phase-8 capability flip (Task 12): the shipped product now carries the
+    # winning clipped-poly field, superseding the Stage-B scalar s*.
+    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
 
-    assert shipped._calibration == ScalarCalibration(STAGE_B_INFLATION_S)
+    assert shipped._calibration == PolyCalibration(
+        coeffs=PHASE8_POLY_COEFFS,
+        clip=ClipSpec(lo_log_s=PHASE8_CLIP_LO, hi_log_s=PHASE8_CLIP_HI),
+        fit_id=PHASE8_FIT_ID,
+    )
 
 
 def test_flip_observed_bars_include_coverage() -> None:

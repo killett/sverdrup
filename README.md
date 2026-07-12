@@ -259,10 +259,13 @@ on a single withheld-CryoSat-2 acceptance touch). The published MIOST row is an
 aspirational anchor, not a gate, and the comparison is conservative by
 construction: sverdrup assimilates five missions (Jason-3 is held out for
 validation) where the published row assimilates six. Its uncertainty is a
-100-member perturbed-observation ensemble rescaled by one global factor s* so
-that 1σ coverage lands at 0.748 (target 0.6827 ± 0.10) on both the validation
-and withheld test tracks — a *predictive* σ that includes representation error
-and unresolved scales, with correlation structure from the exact posterior.
+100-member perturbed-observation ensemble rescaled by a spatially-varying,
+regionally-calibrated field s(x) — a clipped low-order polynomial — so that 1σ
+coverage lands at 0.735 aggregate (target 0.6827 ± 0.10, per-region SW 0.775 →
+jet-core 0.674) on the withheld full-year test track. It is a *predictive* σ
+that includes representation error and unresolved scales, with correlation
+structure from the exact posterior; the calibration touches σ only, leaving the
+mean maps bit-identical (proven on the c2 acceptance touch).
 
 > **`sverdrup.validation` — and the MIOST tuning/gate harness and its
 > diagnostics — are from-source tools, not part of the PyPI/conda package.**
