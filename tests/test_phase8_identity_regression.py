@@ -6,13 +6,19 @@ and extends the mean-unchanged non-regression to field-calibrated products.
 All tests should pass IMMEDIATELY if Tasks 3–4 are correct.  A failure here
 means a Task-3/4 defect — do not fix distribution code here.
 
-External tests (``@pytest.mark.external``) use on-disk artifacts from
-``data/2021a_ssh_mapping_ose/ours/``; they are skipped when those paths are
-absent.  Run with artifacts present to get full regression coverage.
+External tests (``@pytest.mark.external``) reconstruct the SHIPPED product at
+one map day (time index 0 = 2017-01-01, covered by exactly one solve window)
+through the same code path the Stage-B gate runner used
+(``scripts/stage_miost_gate_run.py::stage_b_main``), and compare against the
+SIGNED on-disk artifacts in ``data/2021a_ssh_mapping_ose/ours/``.  Two-level
+gating: skipped when the artifacts are absent, AND opt-in via
+``SVERDRUP_PHASE8_EXTERNAL=1`` (the reconstruction is a full-obs m=100 member
+solve — minutes to tens of minutes).
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -198,88 +204,142 @@ def test_identity_sample_variance_ratio(
 
 
 # ---------------------------------------------------------------------------
-# Criterion 2 — external: signed var maps match factory marginal_variance
+# External: day-0 shipped-product reconstruction vs the SIGNED artifacts
 # ---------------------------------------------------------------------------
+
+_SCOPE = Path("tests/validation/fixtures/stage_a_scope.json")
+_EXTERNAL_ENV = "SVERDRUP_PHASE8_EXTERNAL"
+
+_external_optin = pytest.mark.skipif(
+    os.environ.get(_EXTERNAL_ENV) != "1",
+    reason=(
+        "opt-in: requires a full-obs member solve (m=100) at the accepted "
+        f"Stage-B config, ~minutes-tens-of-minutes; set {_EXTERNAL_ENV}=1"
+    ),
+)
+
+
+@pytest.fixture(scope="module")
+def day0_shipped() -> tuple[MiostEnsembleDistribution, np.ndarray, GridSpec]:
+    """Day-0 shipped-config reconstruction via the Stage-B runner's exact recipe.
+
+    Mirrors ``scripts/stage_miost_gate_run.py::stage_b_main``: load the six
+    mapping missions (``load_mapping_obs``), apply the production halo cut
+    (``halo_obs`` at ``HALO_DEG``), split by mission (c2 locked, j3
+    validation), train subset (``_subset``), then solve at the SIGNED winner
+    params through ``shipped_miost()`` (m=100, STAGE_B_ROOT, factory
+    ScalarCalibration(s*), default PCG budget rtol 1e-6 / maxiter 500 — the
+    exact budget the gate converged at, per the gate evidence JSON).
+
+    Day 0 (2017-01-01) is covered by exactly ONE window (w-18: [-18, 42]) and
+    ``sample_members`` solves only covering windows with identity-keyed CRN,
+    so this reproduces the gate's w-18 member batch without solving the year.
+
+    Returns:
+        (shipped ensemble distribution at day 0, gridded MDT, output grid).
+    """
+    import json
+
+    import xarray as xr
+
+    from sverdrup.application.splits import make_splits
+    from sverdrup.application.tuning.stage_a import _subset
+    from sverdrup.methods.miost import shipped_miost
+    from sverdrup.methods.miost_basis import HALO_DEG
+    from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
+    from sverdrup.validation.params import baseline_config
+    from sverdrup.validation.run import halo_obs
+
+    cfg = json.loads(_SCOPE.read_text())
+    with xr.open_dataset(_ACCEPTANCE) as ds:
+        if "winner_params" not in ds.attrs:
+            pytest.skip(
+                "acceptance map lacks the winner_params provenance attr; "
+                "cannot reconstruct at the signed winner."
+            )
+        winner = json.loads(str(ds.attrs["winner_params"]))
+        t0 = np.asarray(ds.time.values)[0]
+    assert t0 == np.datetime64("2017-01-01"), f"unexpected first map day {t0!r}"
+
+    provider, grid, _ = baseline_config()
+    obs = load_mapping_obs([Path(p) for p in cfg["mapping_obs_paths"]], provider)
+    obs = halo_obs(obs, grid, HALO_DEG)
+    split = make_splits(
+        obs,
+        by="mission",
+        locked_missions=["c2"],
+        validation_missions=[str(cfg["validation_mission"])],
+    )
+    train = _subset(obs, split.train_idx)
+
+    dist = shipped_miost().solve(train, grid, ConstantProvider(winner), 0.0)
+    assert isinstance(dist, MiostEnsembleDistribution)
+    mdt = load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
+    return dist, np.asarray(mdt), grid
 
 
 @pytest.mark.external
+@_external_optin
 @pytest.mark.skipif(
-    not _VAR_MAPS.exists(),
+    not (_VAR_MAPS.exists() and _ACCEPTANCE.exists() and _SCOPE.exists()),
     reason=(
-        "Signed Stage-B var maps absent "
-        f"({_VAR_MAPS}); run with artifacts present for the regression."
+        f"Signed Stage-B artifacts absent ({_VAR_MAPS} / {_ACCEPTANCE} / "
+        f"{_SCOPE}); run with the challenge data present for the regression."
     ),
 )
-def test_external_var_maps_match_factory_variance() -> None:
-    """Factory (shipped_miost) marginal_variance matches signed var maps at rtol 1e-9.
+def test_external_var_maps_pin_s_star_identity(
+    day0_shipped: tuple[MiostEnsembleDistribution, np.ndarray, GridSpec],
+) -> None:
+    """Shipped-config variance vs the SIGNED var maps at day 0 (rtol 1e-9).
 
-    The signed var maps were written AT s* (already inflated).  The shipped
-    factory now stores RAW anomalies with ScalarCalibration(s*) baked in.  The
-    shipped factory's marginal_variance() (which applies s* at query time) must
-    reproduce the signed maps at rtol 1e-9 on ONE representative day (day index 0
-    = 2017-01-01; full-year reconstruction is too expensive offline).
+    ARTIFACT SEMANTICS (verified against the producing code,
+    ``stage_b_main``: ``var_stack = std_fields(raw anoms)**2``, and the gate
+    evidence JSON: ``validation_calibration.reduced_chi2 == 1.0`` at
+    ``s = s*`` applied ON TOP of these maps): the on-disk var maps are the
+    RAW member variance — s* was DERIVED from them, not baked into them.
+    The plan text's "written AT s*" describes the shipped SIGMA semantics,
+    not the artifact bytes.  Therefore the pins are:
+
+    - raw (calibration-1.0) variance == signed maps      (identity of the
+      reconstruction: same solver, seeds, budget — rtol 1e-9)
+    - factory (s*) marginal_variance == S_STAR × signed  (identity (ii)
+      against the SIGNED artifact — rtol 1e-9)
 
     Bug caught: legacy-load inversion shipping ~3.2x under-dispersed sigma
-    (sqrt(s*) ≈ 3.17, so a wrong raw-vs-calibrated sign would yield σ/s* instead
-    of σ*sqrt(s*)); or the factory ScalarCalibration(s*) being dropped at
-    solve()-time so the product carries only the raw spread.
+    (a raw-vs-calibrated sign flip would yield signed/s* instead of
+    S_STAR × signed — a factor-101 error, unmissable); the factory
+    ScalarCalibration(s*) silently dropped at solve() time (ratio 1.0, not
+    S_STAR); or any wrong power of s on the grid S-path.
     """
     import xarray as xr
 
-    ds_var = xr.open_dataset(_VAR_MAPS)
-    # Pick time index 0 (2017-01-01) — a single day avoids a ~100-member × 365-day
-    # full reconstruction that would take many minutes.
-    t0 = ds_var.time.values[0]
-    day_of_year = float(
-        (t0 - np.datetime64("2017-01-01", "ns")).astype("float64")
-        / 1e9  # ns → s
-        / 86400.0  # s → days
+    dist, _, _ = day0_shipped
+    with xr.open_dataset(_VAR_MAPS) as ds:
+        signed = np.asarray(ds["ssh"].isel(time=0).values)  # (lat, lon), RAW
+
+    v_raw = np.asarray(
+        dist.with_calibration(ScalarCalibration(1.0)).marginal_variance()
     )
-
-    signed_var = np.asarray(ds_var["ssh"].isel(time=0).values)  # (lat, lon)
-    grid_lat = np.asarray(ds_var.lat.values)
-    grid_lon = np.asarray(ds_var.lon.values)
-    grid = GridSpec.lonlat(grid_lon, grid_lat)
-
-    # Reconstruct at the factory config (compact params reusing the shipped winner).
-    params = ConstantProvider(
-        {
-            "spacing_alpha": 1.0656719505786896,
-            "log10_rho": -1.5990709075704217,
-            "q_slope": 1.4518111273646355,
-            "l_t_days": 6.00630128569901,
-        }
-    )
-    # Load the acceptance obs (full 2017 OSE, all 5 missions present in attrs).
-    from sverdrup.methods.miost import shipped_miost
-
-    method = shipped_miost()
-
-    # Build the distribution for this day using the shipped obs subset.
-    # load_obs_for_day is a future pipeline helper that does not exist yet.
-    # Without it the full reconstruction is infeasible; skip with explanation.
-    import sverdrup.application.pipeline as _pl
-
-    _load_obs = getattr(_pl, "load_obs_for_day", None)
-    if _load_obs is None:
-        pytest.skip(
-            "load_obs_for_day not available on sverdrup.application.pipeline; "
-            "cannot reconstruct the shipped distribution without the full OSE "
-            "observation pipeline.  Artifact comparison skipped."
-        )
-    obs = _load_obs(day_of_year)
-
-    dist = method.solve(obs, grid, params, day_of_year)
-    factory_var = np.asarray(dist.marginal_variance())  # (lat, lon)
+    v_factory = np.asarray(dist.marginal_variance())
 
     np.testing.assert_allclose(
-        factory_var,
-        signed_var,
+        v_raw,
+        signed,
         rtol=1e-9,
         err_msg=(
-            "Factory marginal_variance does not match signed var maps at rtol 1e-9.  "
-            "Possible causes: factory ScalarCalibration(s*) dropped at solve-time, "
-            "or wrong power of s in the reconstruction."
+            "Raw reconstruction variance does not match the signed var maps — "
+            "the reconstruction (obs cut / seeds / budget) deviates from the "
+            "gate run."
+        ),
+    )
+    np.testing.assert_allclose(
+        v_factory,
+        S_STAR * signed,
+        rtol=1e-9,
+        err_msg=(
+            "Factory marginal_variance != S_STAR × signed var maps — the "
+            "factory ScalarCalibration(s*) was dropped or a wrong power of s "
+            "is applied on the S-path."
         ),
     )
 
@@ -371,76 +431,49 @@ def test_mean_unchanged_nonconstant_field_small_fixture(
 
 
 @pytest.mark.external
+@_external_optin
 @pytest.mark.skipif(
-    not _ACCEPTANCE.exists(),
+    not (_ACCEPTANCE.exists() and _SCOPE.exists()),
     reason=(
-        "Signed Stage-A acceptance map absent "
-        f"({_ACCEPTANCE}); run with artifacts present for the regression."
+        f"Signed acceptance map absent ({_ACCEPTANCE} / {_SCOPE}); run with "
+        "the challenge data present for the regression."
     ),
 )
-def test_external_mean_unchanged_vs_acceptance_map() -> None:
-    """Factory mean_map on the acceptance day == the signed acceptance map.
+def test_external_mean_unchanged_vs_acceptance_map(
+    day0_shipped: tuple[MiostEnsembleDistribution, np.ndarray, GridSpec],
+) -> None:
+    """Shipped-config mean map at day 0 == the signed acceptance map, BITWISE.
 
-    The signed acceptance map (stage_miost_acceptance.nc) holds the Stage-A
-    SSH mean regenerated deterministically at the signed winner.  The shipped
-    factory mean_at must reproduce it bit-identically (the mean path must be
-    untouched by the calibration seam).
+    The regenerated acceptance map (``stage_miost_acceptance.nc``, provenance
+    attrs) holds the TRUE Stage-A SSH mean (SLA mean + MDT) at the signed
+    winner; the gate proved the Stage-B mean maps bit-identical to it
+    (``acceptance_map_bit_identical: true`` in the gate evidence JSON).  The
+    shipped ensemble's mean (+ the same gridded MDT) must reproduce it
+    bit-identically, both as shipped (factory ScalarCalibration(s*)) and
+    under a NON-CONSTANT field calibration.
 
-    Semantics: the test loads the acceptance map's provenance attrs to recover
-    the winner params, runs shipped_miost().solve() for day 0 (2017-01-01),
-    and checks mean_at on every grid node.
-
-    Bug caught: mean contamination introduced by the Task-3 eval-time √s seam
-    — any spurious routing of eta^a through the √s multiplication would
-    produce a non-zero spatially-varying mean shift compared to the signed map.
+    Bug caught: mean contamination by the Task-3 eval-time √s seam — any
+    spurious routing of eta^a through the √s multiplication (scalar OR
+    spatially-varying) would shift the mean vs the signed map.
     """
-    import json
-
     import xarray as xr
 
-    from sverdrup.methods.miost import shipped_miost
+    dist, mdt, _ = day0_shipped
+    with xr.open_dataset(_ACCEPTANCE) as ds:
+        expected = np.asarray(ds["ssh"].isel(time=0).values)  # (lat, lon)
 
-    ds = xr.open_dataset(_ACCEPTANCE)
-    winner_params_raw = ds.attrs.get("winner_params", None)
-    if winner_params_raw is None:
-        pytest.skip("acceptance map missing winner_params attr; cannot reconstruct.")
-
-    winner_params = json.loads(winner_params_raw)
-    params = ConstantProvider(winner_params)
-
-    t0 = ds.time.values[0]
-    day_of_year = float(
-        (t0 - np.datetime64("2017-01-01", "ns")).astype("float64") / 1e9 / 86400.0
+    # As shipped (factory scalar-s* calibration riding the anomaly layer).
+    got = np.asarray(dist.mean) + mdt
+    assert np.array_equal(got, expected), (
+        "Shipped mean map does NOT bit-match the signed acceptance map; "
+        f"max abs diff = {np.max(np.abs(got - expected)):.3e}.  Possible "
+        "cause: mean path contaminated by the Task-3 sqrt_s seam."
     )
 
-    grid_lat = np.asarray(ds.lat.values)
-    grid_lon = np.asarray(ds.lon.values)
-    grid = GridSpec.lonlat(grid_lon, grid_lat)
-    expected_mean = np.asarray(ds["ssh"].isel(time=0).values)  # (lat, lon)
-
-    method = shipped_miost()
-
-    # load_obs_for_day is a future pipeline helper that does not exist yet.
-    import sverdrup.application.pipeline as _pl2
-
-    _load_obs2 = getattr(_pl2, "load_obs_for_day", None)
-    if _load_obs2 is None:
-        pytest.skip(
-            "load_obs_for_day not available on sverdrup.application.pipeline; "
-            "cannot reconstruct mean map without the full OSE observation pipeline.  "
-            "Mean-unchanged external check skipped."
-        )
-    obs = _load_obs2(day_of_year)
-
-    dist = method.solve(obs, grid, params, day_of_year)
-
-    lon2d, lat2d = np.meshgrid(grid_lon, grid_lat)
-    day_arr = np.full(lon2d.size, day_of_year)
-    gpts = np.column_stack([lon2d.ravel(), lat2d.ravel(), day_arr])
-    mean_map = np.asarray(dist.mean_at(gpts)).reshape(expected_mean.shape)
-
-    assert np.array_equal(mean_map, expected_mean), (
-        "Factory mean_map does NOT bit-match the signed acceptance map; "
-        f"max abs diff = {np.max(np.abs(mean_map - expected_mean)):.3e}.  "
-        "Possible cause: mean path contaminated by Task-3 sqrt_s seam."
+    # Under a NON-constant field: the mean array must be the SAME bytes.
+    field = PolyCalibration(coeffs=(0.5, 0.8, 0.0, 0.3, 0.0), clip=_WIDE, fit_id="t5")
+    got_field = np.asarray(dist.with_calibration(field).mean) + mdt
+    assert np.array_equal(got_field, expected), (
+        "Field-calibrated mean map deviates from the signed acceptance map; "
+        f"max abs diff = {np.max(np.abs(got_field - expected)):.3e}."
     )
