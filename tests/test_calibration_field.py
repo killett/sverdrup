@@ -668,6 +668,136 @@ def test_covariate_nonpositive_proxy_raises() -> None:
             )
 
 
+# ---------------------------------------------------------------------------
+# Numpy-repr pollution: coercion of np.float64 inputs to builtin float
+# ---------------------------------------------------------------------------
+# Bug: constructing any calibration class from numpy scalar inputs causes
+# key() to emit "np.float64(...)" repr strings.  After to_json()/from_json(),
+# all numerics are plain Python float, so calibration_from_json(f.to_json()).key()
+# != f.key() — the identity round-trip breaks.  __post_init__ must coerce
+# every numeric field to builtin float so key() is self-consistent regardless
+# of whether the caller passed np.float64 or float.
+
+
+def test_scalar_numpy_input_key_no_np_float64() -> None:
+    """ScalarCalibration built from np.float64 must not emit 'np.float64' in key().
+
+    Bug caught: key() uses {self.s!r} → repr(np.float64(x)) = 'np.float64(x)'
+    so persisted cal_key does not round-trip via calibration_from_json.
+    """
+    s_np = np.float64(S_STAR)
+    cal = ScalarCalibration(s=s_np)
+    assert "np.float64" not in cal.key(), f"numpy repr leaked into key(): {cal.key()}"
+    rt = calibration_from_json(cal.to_json())
+    assert rt.key() == cal.key(), (
+        f"key self-consistency broken:\n  original: {cal.key()}\n  roundtrip: {rt.key()}"
+    )
+    assert isinstance(hash(cal), int)
+
+
+def test_poly_numpy_input_key_no_np_float64() -> None:
+    """PolyCalibration built from a numpy array must not emit 'np.float64' in key().
+
+    Bug caught: tuple(theta) where theta is np.ndarray produces a tuple of
+    np.float64; {self.coeffs!r} → "(np.float64(x), ...)" in key().
+    """
+    theta = np.array([LOG_S_STAR, 0.3, -0.1, 0.05, -0.02])
+    clip = ClipSpec(
+        lo_log_s=np.float64(CLIP_LO),
+        hi_log_s=np.float64(CLIP_HI),
+    )
+    cal = PolyCalibration(coeffs=tuple(theta), clip=clip, fit_id="np-test")
+    key = cal.key()
+    assert "np.float64" not in key, f"numpy repr leaked into key(): {key}"
+    rt = calibration_from_json(cal.to_json())
+    assert rt.key() == key, (
+        f"key self-consistency broken:\n  original: {key}\n  roundtrip: {rt.key()}"
+    )
+    assert isinstance(hash(cal), int)
+
+
+def test_piecewise_numpy_input_key_no_np_float64() -> None:
+    """PiecewiseCalibration built from numpy scalars must not emit 'np.float64'.
+
+    Bug caught: region values or lon_mid/lat_mid stored as np.float64 leak
+    into the key via !r formatting.
+    """
+    regions = {k: np.float64(v) for k, v in _ALL_STAR_PIECEWISE.items()}
+    clip = ClipSpec(
+        lo_log_s=np.float64(CLIP_LO),
+        hi_log_s=np.float64(CLIP_HI),
+    )
+    cal = PiecewiseCalibration(
+        lon_mid=np.float64(300.0),
+        lat_mid=np.float64(38.0),
+        mask=_NO_JET_MASK,
+        log_s_by_region=regions,
+        clip=clip,
+        fit_id="np-pw",
+    )
+    key = cal.key()
+    assert "np.float64" not in key, f"numpy repr leaked into key(): {key}"
+    rt = calibration_from_json(cal.to_json())
+    assert rt.key() == key, (
+        f"key self-consistency broken:\n  original: {key}\n  roundtrip: {rt.key()}"
+    )
+    assert isinstance(hash(cal), int)
+
+
+def test_covariate_numpy_input_key_no_np_float64() -> None:
+    """CovariateCalibration built from numpy scalars must not emit 'np.float64'.
+
+    Bug caught: a, b stored as np.float64 leak into key via {self.a!r};
+    proxy_cells entries stored as np.float64 also appear in key via !r.
+    """
+    proxy_np = tuple(
+        tuple(np.float64(r * 5 + c + 1.0) for c in range(5)) for r in range(5)
+    )
+    clip = ClipSpec(
+        lo_log_s=np.float64(CLIP_LO),
+        hi_log_s=np.float64(CLIP_HI),
+    )
+    cal = CovariateCalibration(
+        proxy_cells=proxy_np,
+        a=np.float64(LOG_S_STAR),
+        b=np.float64(0.25),
+        clip=clip,
+        fit_id="np-cov",
+    )
+    key = cal.key()
+    assert "np.float64" not in key, f"numpy repr leaked into key(): {key}"
+    rt = calibration_from_json(cal.to_json())
+    assert rt.key() == key, (
+        f"key self-consistency broken:\n  original: {key}\n  roundtrip: {rt.key()}"
+    )
+    assert isinstance(hash(cal), int)
+
+
+def test_clipspec_numpy_input_no_np_float64() -> None:
+    """ClipSpec built from np.float64 must coerce to builtin float.
+
+    Bug caught: ClipSpec(lo_log_s=np.float64(...)) stores numpy scalar so
+    PolyCalibration.key() emits 'np.float64(...)' for the clip bounds.
+    """
+    clip = ClipSpec(
+        lo_log_s=np.float64(CLIP_LO),
+        hi_log_s=np.float64(CLIP_HI),
+    )
+    assert isinstance(clip.lo_log_s, float), (
+        f"lo_log_s is {type(clip.lo_log_s).__name__}, expected float"
+    )
+    assert isinstance(clip.hi_log_s, float), (
+        f"hi_log_s is {type(clip.hi_log_s).__name__}, expected float"
+    )
+    # Confirm no numpy repr in downstream key
+    cal = PolyCalibration(
+        coeffs=(LOG_S_STAR, 0.0, 0.0, 0.0, 0.0),
+        clip=clip,
+        fit_id="cs-np",
+    )
+    assert "np.float64" not in cal.key()
+
+
 def test_json_roundtrip_bitexact() -> None:
     """from_json(to_json(f)) reproduces sqrt_s_at bit-identically on a grid.
 

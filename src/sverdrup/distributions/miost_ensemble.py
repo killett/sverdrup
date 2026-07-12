@@ -649,6 +649,17 @@ class ClipSpec:
     lo_log_s: float
     hi_log_s: float
 
+    def __post_init__(self) -> None:
+        """Coerce bounds to builtin float.
+
+        Bug guarded: ClipSpec built from np.float64 inputs (e.g. numpy
+        min/max computations in refit_winner) stores numpy scalars so
+        downstream key() calls emit 'np.float64(...)' repr strings,
+        breaking cal_key self-consistency after JSON round-trip.
+        """
+        object.__setattr__(self, "lo_log_s", float(self.lo_log_s))
+        object.__setattr__(self, "hi_log_s", float(self.hi_log_s))
+
 
 @dataclass(frozen=True)
 class ScalarCalibration:
@@ -661,6 +672,15 @@ class ScalarCalibration:
     """
 
     s: float
+
+    def __post_init__(self) -> None:
+        """Coerce s to builtin float.
+
+        Bug guarded: ScalarCalibration(s=np.float64(...)) stores a numpy
+        scalar so key() emits 'np.float64(...)' via {self.s!r}, breaking
+        cal_key self-consistency after JSON round-trip.
+        """
+        object.__setattr__(self, "s", float(self.s))
 
     def log_s_at(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
         """Return log(s) as a broadcast-shaped constant array.
@@ -732,6 +752,16 @@ class PolyCalibration:
     coeffs: tuple[float, float, float, float, float]
     clip: ClipSpec
     fit_id: str
+
+    def __post_init__(self) -> None:
+        """Coerce coeffs to a tuple of builtin floats.
+
+        Bug guarded: PolyCalibration(coeffs=tuple(numpy_array), ...) stores
+        a tuple of np.float64 so key() emits 'np.float64(...)' via
+        {self.coeffs!r}, breaking cal_key self-consistency after JSON
+        round-trip.
+        """
+        object.__setattr__(self, "coeffs", tuple(float(c) for c in self.coeffs))
 
     def log_s_at(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
         """Return clipped log(s) at the given locations.
@@ -844,9 +874,18 @@ class PiecewiseCalibration:
     def __post_init__(self) -> None:
         """Normalize region values to a sorted tuple and validate clip bounds.
 
+        Also coerces lon_mid and lat_mid to builtin float.
+
+        Bug guarded: PiecewiseCalibration built with numpy scalar lon_mid/
+        lat_mid stores np.float64 so key() emits 'np.float64(...)' via
+        {self.lon_mid!r}/{self.lat_mid!r}, breaking cal_key self-consistency
+        after JSON round-trip.
+
         Raises:
             ValueError: If any region log-s value falls outside [lo, hi].
         """
+        object.__setattr__(self, "lon_mid", float(self.lon_mid))
+        object.__setattr__(self, "lat_mid", float(self.lat_mid))
         items = (
             self.log_s_by_region.items()
             if isinstance(self.log_s_by_region, Mapping)
@@ -1016,7 +1055,12 @@ class CovariateCalibration:
     fit_id: str
 
     def __post_init__(self) -> None:
-        """Validate that every proxy cell is strictly positive.
+        """Coerce a, b, and proxy_cells to builtin floats; validate positivity.
+
+        Bug guarded: CovariateCalibration built with np.float64 inputs stores
+        numpy scalars so key() emits 'np.float64(...)' via {self.a!r},
+        {self.b!r}, and {self.proxy_cells!r}, breaking cal_key self-consistency
+        after JSON round-trip.
 
         The proxy is a per-cell std of the mean maps — it must be > 0 or
         log(proxy) at query time silently produces NaN/-inf.
@@ -1024,6 +1068,13 @@ class CovariateCalibration:
         Raises:
             ValueError: If any proxy cell is <= 0.
         """
+        object.__setattr__(self, "a", float(self.a))
+        object.__setattr__(self, "b", float(self.b))
+        object.__setattr__(
+            self,
+            "proxy_cells",
+            tuple(tuple(float(v) for v in row) for row in self.proxy_cells),
+        )
         bad = [
             (r, c, v)
             for r, row in enumerate(self.proxy_cells)
