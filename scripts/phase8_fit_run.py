@@ -39,6 +39,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -81,6 +82,10 @@ SCOPE_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 
 EPOCH = np.datetime64("2017-01-01")
 SCOPE_MODE = os.environ.get("SVERDRUP_PHASE8_SCOPE", "full")  # "dev" | "full"
+if SCOPE_MODE not in {"dev", "full"}:
+    raise SystemExit(
+        f"SVERDRUP_PHASE8_SCOPE must be 'dev' or 'full', got {SCOPE_MODE!r}"
+    )
 
 # Full-year j3 box; dev overrides the time window from the fixture.
 _FULL_TMIN, _FULL_TMAX = "2017-01-01", "2018-01-01"
@@ -834,6 +839,38 @@ def build_evidence(trk: Track, proxy: np.ndarray) -> dict[str, Any]:
     return evidence
 
 
+def _default(o: object) -> object:
+    """JSON serialiser for numpy scalars/arrays."""
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.floating):
+        return float(o)
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    raise TypeError(f"not serialisable: {type(o)!r}")
+
+
+def _atomic_write_json(path: Path, data: object) -> None:
+    """Write *data* as JSON to *path* atomically (POSIX os.replace).
+
+    Writes to a sibling temp file in the same directory, then renames over
+    the target.  A crash mid-write therefore never truncates the existing file.
+    """
+    text = json.dumps(data, indent=2, default=_default)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        os.write(fd, text.encode())
+        os.close(fd)
+        os.replace(tmp, path)
+    except Exception:
+        os.close(fd)
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
 def main() -> None:
     """Run the fit pipeline, write scope-appropriate artifacts, print the banner."""
     trk = load_track()
@@ -844,7 +881,7 @@ def main() -> None:
 
     if SCOPE_MODE == "dev":
         # Dev smoke: structure-completeness only; NEVER the gate JSON, NEVER field.
-        SMOKE_OUT.write_text(json.dumps(evidence, indent=2, default=_default))
+        _atomic_write_json(SMOKE_OUT, evidence)
         print(
             f"[dev smoke] scope=dev n={trk.n} points; "
             f"negative_result={negative}; wrote {SMOKE_OUT}"
@@ -856,36 +893,22 @@ def main() -> None:
     results = json.loads(RESULTS.read_text())
     results.setdefault("phase8", {})  # preserves covariate_alignment
     results["phase8"]["fit_run"] = evidence
-    RESULTS.write_text(json.dumps(results, indent=2, default=_default))
+    _atomic_write_json(RESULTS, results)
 
     if not negative:
         cal_json = evidence["winner_field"]["to_json"]
-        FIELD_OUT.write_text(
-            json.dumps(
-                {
-                    "calibration": cal_json,
-                    "cal_key": evidence["winner_field"]["cal_key"],
-                },
-                indent=2,
-                default=_default,
-            )
+        _atomic_write_json(
+            FIELD_OUT,
+            {
+                "calibration": cal_json,
+                "cal_key": evidence["winner_field"]["cal_key"],
+            },
         )
         print(f"[full] wrote field artifact {FIELD_OUT}")
     else:
         print("[full] NEGATIVE RESULT — no field artifact written.")
     print(f"[full] wrote phase8.fit_run into {RESULTS}")
     _print_banner(evidence, negative)
-
-
-def _default(o: object) -> object:
-    """JSON serialiser for numpy scalars/arrays."""
-    if isinstance(o, np.integer):
-        return int(o)
-    if isinstance(o, np.floating):
-        return float(o)
-    if isinstance(o, np.ndarray):
-        return o.tolist()
-    raise TypeError(f"not serialisable: {type(o)!r}")
 
 
 def _print_banner(evidence: dict[str, Any], negative: bool) -> None:
