@@ -1,6 +1,20 @@
 {
   "planPath": "docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md",
-  "nativeTaskIds": {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "11": 11, "12": 12, "13": 13},
+  "nativeTaskIds": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 4,
+    "5": 5,
+    "6": 6,
+    "7": 7,
+    "8": 8,
+    "9": 9,
+    "10": 10,
+    "11": 11,
+    "12": 12,
+    "13": 13
+  },
   "tasks": [
     {
       "id": 1,
@@ -18,21 +32,27 @@
       "id": 3,
       "subject": "Task 3: Eval-time seam in MiostEnsembleDistribution (fast path deleted)",
       "status": "completed",
-      "blockedBy": [2],
+      "blockedBy": [
+        2
+      ],
       "description": "**Goal:** One general query-time sqrt(s(x)) application at the two row-scaling sites; rescaled() becomes composition through the layer.\n\n**Files:**\n- Modify: src/sverdrup/distributions/miost_ensemble.py, src/sverdrup/methods/miost.py:473\n- Test: tests/test_calibration_field.py (seam), tests/test_miost_ensemble.py, tests/test_miost_inflation.py\n\n**Acceptance Criteria:**\n- calibration field (default ScalarCalibration(1.0)); anomalies stored RAW always\n- _anoms_at scales rows by sqrt s(pts); grid anomaly path via per-grid sqrt s cached once; mean paths untouched (applied outside _grid_eval)\n- rescaled(s) composes multiplicatively, fresh instance; raises on field-calibrated instance\n- correlation-preservation, magnitude, composition, no-stale-cache, inertness, mean-bitwise tests green\n- Full suite green (inflation tests updated to layer semantics, variance tolerance rtol 1e-12)\n\n**Verify:** pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py tests/test_miost_inflation.py -v && pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"src/sverdrup/methods/miost.py\", \"tests/test_calibration_field.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py tests/test_miost_inflation.py -v\", \"acceptanceCriteria\": [\"seam tests green\", \"no construction-time pre-scaling remains\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 4,
       "subject": "Task 4: Persistence, provenance, factory + params_key (one-convention)",
       "status": "completed",
-      "blockedBy": [3],
+      "blockedBy": [
+        3
+      ],
       "description": "**Goal:** Field serialization into the persisted kind + calibration key; FIELD_INFLATION provenance; factory supplies the calibration at the boundary.\n\n**Files:**\n- Modify: src/sverdrup/distributions/miost_ensemble.py, src/sverdrup/core/provenance.py, src/sverdrup/methods/miost.py\n- Test: tests/test_calibration_field.py, tests/test_miost_ensemble.py, fixture tests/fixtures/phase8_factory_bytecompat.npz\n\n**Acceptance Criteria:**\n- save_state writes RAW anoms + cal_kind/cal_params/cal_key; legacy files (no cal keys) load as ScalarCalibration(1.0); FACTORY supplies s*\n- TransformKind.FIELD_INFLATION {calibration_key, cal_kind, dof}; scalar keeps DIAGONAL_INFLATION\n- Miost(calibration=...) accepted; calibration+inflation_s -> ValueError; _params_key += cal key\n- Factory byte-compat vs pre-Task-3 snapshot fixture (rtol 1e-12), snapshot captured FIRST from side worktree\n- kind-tag refusal unchanged; roundtrip bit-exact all field kinds\n\n**Verify:** pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py -v && pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"src/sverdrup/core/provenance.py\", \"src/sverdrup/methods/miost.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py tests/test_miost_ensemble.py -v\", \"acceptanceCriteria\": [\"legacy load with factory-supplied s*\", \"factory-boundary byte-compat rtol 1e-12\", \"params_key distinguishes calibrations\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 5,
       "subject": "Task 5: s*-identity four-route regression + mean-unchanged extension",
       "status": "completed",
-      "blockedBy": [4],
+      "blockedBy": [
+        4
+      ],
       "description": "**Goal:** Pin spec identities (i)/(ii) against SIGNED artifacts; extend mean-unchanged non-regression to the field-calibrated product.\n\n**Files:**\n- Create: tests/test_phase8_identity_regression.py\n\n**Acceptance Criteria:**\n- ScalarCalibration(S_STAR): four routes match x s* of raw product at rtol 1e-12 (grid marginal_variance, point Gamma, cross-point covariance, sample() moments)\n- @external: field-calibrated variance vs signed stage_b_var_maps.nc rtol 1e-9 (skip when absent)\n- Mean-unchanged: field-calibrated mean map BIT-IDENTICAL under NON-constant field (fixture + external acceptance map)\n- Full suite green\n\n**Verify:** pixi run pytest tests/test_phase8_identity_regression.py -v\n\n```json:metadata\n{\"files\": [\"tests/test_phase8_identity_regression.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase8_identity_regression.py -v\", \"acceptanceCriteria\": [\"four-route s*-identity rtol 1e-12\", \"mean bit-identical under non-constant field\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -45,51 +65,70 @@
       "id": 7,
       "subject": "Task 7: Floored MLE fitters + tail diagnostic + safeguard",
       "status": "completed",
-      "blockedBy": [2, 6],
+      "blockedBy": [
+        2,
+        6
+      ],
       "description": "**Goal:** One criterion, all lanes: NLL/grad under r ~ N(0, s(x)v + sigma_obs^2); lane-A Newton; lane-B L-BFGS-B; tail diagnostic; safeguard.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/likelihood.py\n- Test: tests/test_calibration_likelihood.py\n\n**Acceptance Criteria:**\n- nll/grad exact plan formulas (tot = s v + SIGMA_OBS2; w = 0.5 (s v/tot)(1 - r2/tot))\n- fit_region_newton: init log(mean(r2/v)); NEWTON_MAX_ITER 50 / NEWTON_TOL 1e-10; sigma=0 limit returns mean(r2/v) to 1e-12\n- fit_poly_lbfgsb: scipy L-BFGS-B jac=grad gtol 1e-8, init (log S_STAR, 0...); optimizer+gtol in fit_id\n- tail_diagnostic: median(r2/(s v + floor))/0.4549 ratio; >= 1.5 flags report-only\n- assert_beats_scalar raises when fitted NLL > s*-constant NLL\n\n**Verify:** pixi run pytest tests/test_calibration_likelihood.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/likelihood.py\", \"tests/test_calibration_likelihood.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_likelihood.py -v\", \"acceptanceCriteria\": [\"hand-arithmetic + finite-difference tests green\", \"Newton sigma=0 identity\", \"planted-field recovery within tolerances\", \"safeguard raises\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 8,
       "subject": "Task 8: Fold machinery + selection",
       "status": "completed",
-      "blockedBy": [6, 7],
+      "blockedBy": [
+        6,
+        7
+      ],
       "description": "**Goal:** T/S folds, guard rings, rho-hat/n_eff, merge rule, pool-then-max statistics, lane-0 eligibility, lexicographic selection.\n\n**Files:**\n- Create: src/sverdrup/application/calibration/folds.py\n- Test: tests/test_calibration_folds.py\n\n**Acceptance Criteria:**\n- t_folds: 6 pinned rotations (T_FOLDS)\n- s_fold_layout(salt): derive_seed(miost, phase8, s-folds, salt) permutation of 25 blocks, split (7,6,6,6); guard ring 0.5 deg excluded from BOTH masks; >=50%-per-fit-region constraint else salt+1 recorded\n- rho_hat along-pass, k<=20 truncated at rho<0.05; n_eff = n/(1+2 sum rho)\n- merge_small_blocks: n_eff < 200 -> nearest-centroid same-fold, lowest-index tie-break\n- pooled_worst_region: pool per region across folds -> |coverage-0.6827| -> max\n- select: lane-0 eligibility then lexicographic S -> T -> smooth preference (poly > covariate > piecewise); (winner|None, table); None = negative result\n\n**Verify:** pixi run pytest tests/test_calibration_folds.py -v\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/folds.py\", \"tests/test_calibration_folds.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_folds.py -v\", \"acceptanceCriteria\": [\"deterministic fold layouts\", \"guard-ring exclusion both masks\", \"n_eff validated on AR(1)\", \"eligibility + lexicographic selection with None\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 9,
       "subject": "Task 9: Fit run + evidence assembly (phase8_fit_run.py)",
       "status": "completed",
-      "blockedBy": [1, 5, 7, 8],
+      "blockedBy": [
+        1,
+        5,
+        7,
+        8
+      ],
       "description": "**Goal:** Spec sec 7 steps 1-3: fold fits, selection, winner refit on full j3, clip bounds, field artifact + complete evidence JSON. c2 UNTOUCHED.\n\n**Files:**\n- Create: scripts/phase8_fit_run.py\n- Artifacts: phase8_field.json; stage_miost_gate_results.json phase8 block\n\n**Acceptance Criteria:**\n- Track inputs via diag_stage_b_localized_calibration loaders; v UN-inflated; coverage at s(x)v + SIGMA_OBS2\n- Lanes per fold: lane-0 evaluated never fit; lane-A Newton per region; lane-B L-BFGS-B; covariate iff promoted\n- rho-hat once on full j3 at frozen s*, recorded; n_eff + merge applied; fold salt recorded\n- NEGATIVE RESULT: negative_result true + table, NO field artifact, exit 0 + STOP banner\n- Winner refit on ALL j3; clip [L,U] = lane-A range +/- log(1.25); safeguard on refit\n- Evidence JSON: bars 1-4 (deficit statistic, SE 0.8267/0.1440 record), regional/monthly/chi2 tables, tail diagnostic, clip observability, off-track bound, s-hat vs s* reconciliation, 2-deg-cell table, CRPS per lane, n_eff table\n- No c2 import; provenance guard on every scoring call; dev scope writes phase8_dev_smoke.json only\n\n**Verify:** SVERDRUP_PHASE8_SCOPE=dev pixi run python scripts/phase8_fit_run.py -> JSON + STOP banner; then full run\n\n```json:metadata\n{\"files\": [\"scripts/phase8_fit_run.py\"], \"verifyCommand\": \"SVERDRUP_PHASE8_SCOPE=dev pixi run python scripts/phase8_fit_run.py\", \"acceptanceCriteria\": [\"all pre-registered evidence blocks present\", \"negative-result path exits 0, no artifact\", \"c2 untouched\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 10,
-      "subject": "Task 10: OWNER GATE — j3-evidence review (spec sec 7 step 4)",
-      "status": "pending",
-      "blockedBy": [9],
-      "description": "**Goal:** Owner reviews the j3-side evidence and rules: PROCEED-TO-TOUCH / NEGATIVE-CLOSE / REWORK.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** PROGRESS.md (ruling record).\n\n**Acceptance Criteria:**\n- Evidence presented verbatim from JSON: selection table (all lanes + lane-0, both family statistics), bars 1-4, report-only instruments, fold salt + n_eff, safeguard result\n- Explicit owner ruling captured in PROGRESS.md, dated, committed\n- NO c2 access before the ruling\n\n**Verify:** rg -n 'phase-8 j3-evidence ruling' PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"rg -n 'phase-8 j3-evidence ruling' PROGRESS.md\", \"acceptanceCriteria\": [\"owner ruling recorded verbatim and committed\", \"no c2 access before ruling\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"modelTier\": \"standard\"}\n```"
+      "subject": "Task 10: OWNER GATE \u2014 j3-evidence review (spec sec 7 step 4)",
+      "status": "completed",
+      "blockedBy": [
+        9
+      ],
+      "description": "**Goal:** Owner reviews the j3-side evidence and rules: PROCEED-TO-TOUCH / NEGATIVE-CLOSE / REWORK.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** PROGRESS.md (ruling record).\n\n**Acceptance Criteria:**\n- Evidence presented verbatim from JSON: selection table (all lanes + lane-0, both family statistics), bars 1-4, report-only instruments, fold salt + n_eff, safeguard result\n- Explicit owner ruling captured in PROGRESS.md, dated, committed\n- NO c2 access before the ruling\n\n**Verify:** rg -n 'phase-8 j3-evidence ruling' PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"rg -n 'phase-8 j3-evidence ruling' PROGRESS.md\", \"acceptanceCriteria\": [\"owner ruling recorded verbatim and committed\", \"no c2 access before ruling\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 11,
-      "subject": "Task 11: OWNER GATE — the single c2 touch (spec sec 7 step 5)",
-      "status": "pending",
-      "blockedBy": [10],
-      "description": "**Goal:** One owner-authorized c2 evaluation of the FROZEN field; pre-registered reading applied verbatim.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:**\n- Create: scripts/phase8_gate_run.py (SVERDRUP_MIOST_C2=1 REQUIRED; refuses if field absent or negative_result recorded)\n- Modify: stage_miost_gate_results.json (phase8.c2_acceptance)\n\n**Acceptance Criteria:**\n- Fresh owner authorization obtained IN THIS TASK (Task-10 PROCEED does not pre-authorize)\n- Field loaded byte-exact (cal_key asserted); NOTHING refit on c2\n- Pre-registered reading verbatim: triplet BIT-IDENTICAL to signed Stage-A (0.8572612, 0.0799886, 156.42997) else defect STOP; aggregate c2 coverage at s(x)v + SIGMA_OBS2 in 0.6827+/-0.10 -> SIGN OFF; outside -> HOLD, record, no refit\n- Regional c2 breakdown reported; chi2_red + CRPS recorded\n- Provenance guard active; exactly ONE touch\n\n**Verify:** phase8.c2_acceptance with reproduces_stage_a true + coverage verdict; single c2 evaluation in logs\n\n```json:metadata\n{\"files\": [\"scripts/phase8_gate_run.py\", \"PROGRESS.md\"], \"verifyCommand\": \"python3 -c \\\"import json; d=json.load(open('data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json')); print(d['phase8']['c2_acceptance']['reproduces_stage_a'])\\\"\", \"acceptanceCriteria\": [\"fresh authorization captured before the touch\", \"triplet bit-identity verdict recorded\", \"coverage verdict per pre-registered reading\", \"exactly one c2 evaluation\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"requireEvidenceTokens\": [[\"authorization\", \"authorized\"], [\"reproduces_stage_a\", \"bit-identical\"]], \"modelTier\": \"standard\"}\n```"
+      "subject": "Task 11: OWNER GATE \u2014 the single c2 touch (spec sec 7 step 5)",
+      "status": "completed",
+      "blockedBy": [
+        10
+      ],
+      "description": "**Goal:** One owner-authorized c2 evaluation of the FROZEN field; pre-registered reading applied verbatim.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:**\n- Create: scripts/phase8_gate_run.py (SVERDRUP_MIOST_C2=1 REQUIRED; refuses if field absent or negative_result recorded)\n- Modify: stage_miost_gate_results.json (phase8.c2_acceptance)\n\n**Acceptance Criteria:**\n- Fresh owner authorization obtained IN THIS TASK (Task-10 PROCEED does not pre-authorize)\n- Field loaded byte-exact (cal_key asserted); NOTHING refit on c2\n- Pre-registered reading verbatim: triplet BIT-IDENTICAL to signed Stage-A (0.8572612, 0.0799886, 156.42997) else defect STOP; aggregate c2 coverage at s(x)v + SIGMA_OBS2 in 0.6827+/-0.10 -> SIGN OFF; outside -> HOLD, record, no refit\n- Regional c2 breakdown reported; chi2_red + CRPS recorded\n- Provenance guard active; exactly ONE touch\n\n**Verify:** phase8.c2_acceptance with reproduces_stage_a true + coverage verdict; single c2 evaluation in logs\n\n```json:metadata\n{\"files\": [\"scripts/phase8_gate_run.py\", \"PROGRESS.md\"], \"verifyCommand\": \"python3 -c \\\"import json; d=json.load(open('data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json')); print(d['phase8']['c2_acceptance']['reproduces_stage_a'])\\\"\", \"acceptanceCriteria\": [\"fresh authorization captured before the touch\", \"triplet bit-identity verdict recorded\", \"coverage verdict per pre-registered reading\", \"exactly one c2 evaluation\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"requireEvidenceTokens\": [[\"authorization\", \"authorized\"], [\"reproduces_stage_a\", \"bit-identical\"]], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 12,
       "subject": "Task 12: Capability-flip commit + sigma-semantics + phase close",
-      "status": "pending",
-      "blockedBy": [11],
+      "status": "completed",
+      "blockedBy": [
+        11
+      ],
       "description": "**Goal:** On sign-off: registry miost ships the field-calibrated product; sigma-semantics paragraph replaced; PROGRESS close.\n\n**Files:**\n- Modify: src/sverdrup/methods/miost.py (shipped_miost + docstring), tests/test_miost_ensemble.py (flip test), PROGRESS.md, README.md\n\n**Acceptance Criteria:**\n- shipped_miost() field-calibrated; winning params inlined as named constants; scalar constant retained for the record\n- Docstring: field kind/dof/cal_key, floor-exclusion delta, sqrt(s(x)s(y)) covariance statement, per-region coverage numbers, edge clamp/clip, jet-core/monthly limitations with numbers\n- Flip test green; full suite green; pre-commit clean\n- PROGRESS close banner (touch tally = 1)\n\n**Verify:** pixi run test; registry miost native_capability == SAMPLES\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost.py\", \"tests/test_miost_ensemble.py\", \"PROGRESS.md\", \"README.md\"], \"verifyCommand\": \"pixi run test\", \"acceptanceCriteria\": [\"registry ships field product\", \"sigma-semantics with measured numbers\", \"suite green\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 13,
-      "subject": "Task 13: Negative-result close (ALTERNATIVE branch — only on Task-10 NEGATIVE-CLOSE ruling)",
-      "status": "pending",
-      "blockedBy": [10],
-      "description": "**Goal:** Pre-registered negative-result path (spec sec 3): no lane beat lane-0 -> ship the scalar, record the finding, spend NO c2 touch.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:**\n- Modify: PROGRESS.md (close entry with measured table), src/sverdrup/methods/miost.py (dated docstring sentence), spec postscript line\n\n**Acceptance Criteria:**\n- NO c2 access anywhere in the phase (no phase8.c2_acceptance key)\n- Registry unchanged (scalar shipped); suite green\n- Owner confirms the close in PROGRESS.md\n\n**Branch semantics:** exactly one of {Task 11 -> 12} or {Task 13} executes, per the Task-10 ruling; the unexecuted branch closed as superseded with a pointer to the ruling.\n\n**Verify:** phase8 shows negative_result true and no c2_acceptance key; owner close line in PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\", \"src/sverdrup/methods/miost.py\"], \"verifyCommand\": \"python3 -c \\\"import json; d=json.load(open('data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json')); p=d['phase8']; print(p['selection']['negative_result'], 'c2_acceptance' in p)\\\"\", \"acceptanceCriteria\": [\"negative_result true, no c2_acceptance\", \"registry unchanged, suite green\", \"owner close confirmation recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"modelTier\": \"standard\"}\n```"
+      "subject": "Task 13: Negative-result close (ALTERNATIVE branch \u2014 only on Task-10 NEGATIVE-CLOSE ruling) \u2014 CLOSED AS SUPERSEDED (Task-10 PROCEED ruling)",
+      "status": "completed",
+      "blockedBy": [
+        10
+      ],
+      "description": "**Goal:** Pre-registered negative-result path (spec sec 3): no lane beat lane-0 -> ship the scalar, record the finding, spend NO c2 touch.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:**\n- Modify: PROGRESS.md (close entry with measured table), src/sverdrup/methods/miost.py (dated docstring sentence), spec postscript line\n\n**Acceptance Criteria:**\n- NO c2 access anywhere in the phase (no phase8.c2_acceptance key)\n- Registry unchanged (scalar shipped); suite green\n- Owner confirms the close in PROGRESS.md\n\n**Branch semantics:** exactly one of {Task 11 -> 12} or {Task 13} executes, per the Task-10 ruling; the unexecuted branch closed as superseded with a pointer to the ruling.\n\n**Verify:** phase8 shows negative_result true and no c2_acceptance key; owner close line in PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\", \"src/sverdrup/methods/miost.py\"], \"verifyCommand\": \"python3 -c \\\"import json; d=json.load(open('data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json')); p=d['phase8']; print(p['selection']['negative_result'], 'c2_acceptance' in p)\\\"\", \"acceptanceCriteria\": [\"negative_result true, no c2_acceptance\", \"registry unchanged, suite green\", \"owner close confirmation recorded\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-10"
+  "lastUpdated": "2026-07-12"
 }

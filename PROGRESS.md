@@ -1,5 +1,30 @@
 # Sverdrup — Progress notebook
 
+> **✅ PHASE 8 — spatially varying uncertainty calibration: CLOSED
+> 2026-07-12 on the capability-flip commit (`baa7d9b`). ALL 13 plan
+> tasks resolved** (1–12 executed; 13 = negative-result branch CLOSED
+> AS SUPERSEDED by the Task-10 PROCEED-TO-TOUCH ruling + Task-11
+> sign-off — never executed, per the plan's branch semantics).
+> **CAPABILITY FLIP LANDED:** registry `"miost"` ships the
+> field-calibrated product — clipped low-order polynomial s(x) (5 dof,
+> coeffs (2.6284, 0.6473, −2.2371, −0.1485, 0.5330), clip [1.1731,
+> 2.9291] log-s, cal_key byte-identical to `phase8_field.json`) at the
+> query-time √s(x) anomaly layer; mean maps bit-unchanged (proven on
+> c2: triplet bit-identity); σ-semantics paragraph carries the owner
+> riders verbatim (clipped-poly framing, raw-poly-gradient footnote,
+> August 0.691→0.655 limitation, jet-core residual 0.674/1.29
+> recorded). **Evidence:** j3 selection S/T 0.0439/0.0509 vs lane-0
+> 0.1790/0.1679 (all lanes eligible; ABSOLUTE ±0.01 tie band per owner
+> ruling); bars 1–4 PASS; c2 touch 2 SIGN-OFF (aggregate 0.7350,
+> chi2_red 0.9746, crps 0.04697, n=44,844; jet_core 0.674 vs
+> scalar-era 0.643). **HONEST c2 TALLY: 2 touches** (touch 1 =
+> partial-window DEFECT-RUN, disclosed, preserved under
+> `phase8.c2_defect_run_20260712`; touch 2 = accepted). Suite
+> 619/11/1 green post-flip. Review process caught four real defects
+> pre-gate (Newton Hessian, dead external tests, numpy cal_key,
+> partial-window touch runner) — all fixed + regression-pinned.
+> Scalar STAGE_B_INFLATION_S retained for the signed Stage-B record.
+
 > **✅ PHASE-8 c2 TOUCH 2 (CORRECTED) — SIGN-OFF 2026-07-12 (Task 11
 > CLOSED; pre-registered reading applied mechanically).** Window
 > tripwire PASSED (n=44,844 == Task-19 full-year count; loaded span
