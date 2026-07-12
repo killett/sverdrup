@@ -1,7 +1,32 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE-8 CORRECTED c2 TOUCH — OWNER-AUTHORIZED 2026-07-12 (touch 2
+> for this product; fresh authorization, six riders verbatim):**
+> (1) STRUCTURAL fix — one window/track source for the whole runner
+> (full-scope convention the triplet path uses; fixture only behind the
+> dev flag; fourth convention-divergence of the project, same remedy).
+> (2) WINDOW TRIPWIRE asserted BEFORE any verdict computation:
+> n_points == 44,844 (Task-19 full-year count) AND date range spans
+> the challenge year; mismatch = loud defect-STOP exit nonzero — the
+> silent partial-window class becomes a refusal, as bit-identity did
+> for the framing class. (3) LABELING per Phase-7 precedent: defect run
+> preserved under `phase8.c2_defect_run_20260712` (context, never
+> evidence); corrected run writes `phase8.c2_acceptance`; one-touch
+> refusal UPGRADED: corrected invocation needs
+> SVERDRUP_PHASE8_CORRECTED_TOUCH=1, valid only while the defect key
+> exists and c2_acceptance is absent; third invocation refuses.
+> (4) **HONEST TALLY = 2 c2 touches for this product** (defects spend
+> touches; disclose, never launder) — Task-12 flip text corrected from
+> tally=1. (5) Reading otherwise verbatim incl. the triplet clause
+> (proven once; defect rule stays armed). NO-CONTAMINATION rationale
+> recorded: field frozen, verdict mechanical, no decision forks on the
+> partial numbers — seeing them opens no selection channel; touch 2
+> clean. (6) Zombie-watcher Z-check promoted from PROGRESS lore into a
+> shared watcher helper (bitten twice). FIRE when 1–3 committed.
+
 > **⛔ PHASE-8 c2 TOUCH EXECUTED 2026-07-12 → DEFECT-RUN (disclosed;
-> STOPPED FOR OWNER).** Owner authorized the touch (preconditions met:
+> STOPPED FOR OWNER; superseded by the corrected-touch authorization
+> above).** Owner authorized the touch (preconditions met:
 > push `6b8a20b..6ffeea6`, tie-band fix, cal_key asserted). Runner ran
 > to VERDICT: SIGN-OFF and wrote `phase8.c2_acceptance` — **but the
 > calibration block is PARTIAL-TRACK**: `load_c2_track()` took
