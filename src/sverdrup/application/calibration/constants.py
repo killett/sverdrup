@@ -4,7 +4,7 @@ SIGMA_OBS2 = 0.03**2  # m^2 — obs-noise floor; anchor: Phase-7 spec §2.2 R_re
 S_STAR = 10.062847634082484  # shipped scalar (methods/miost.py STAGE_B_INFLATION_S)
 COVERAGE_TARGET = 0.6827
 COVERAGE_TOL = 0.10
-TIE_BAND = 0.01  # ±1% tie band on the selection statistic
+TIE_BAND = 0.01  # ±0.01 ABSOLUTE tie band on the selection statistic (~2× pooled coverage SE; owner ruling 2026-07-11)
 CLIP_PAD = 1.25  # log-s clip pad factor (spec §9), applied as ±log(1.25)
 
 # 2°-cell grid == S-fold block grid (one definition, spec plan-obligation 3):

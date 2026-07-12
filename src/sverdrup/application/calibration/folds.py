@@ -461,22 +461,25 @@ def pooled_worst_region(
 # ---------------------------------------------------------------------------
 
 
-def _relatively_beyond(candidate: float, baseline: float) -> bool:
+def _beats_beyond_band(candidate: float, baseline: float) -> bool:
     """Return whether ``candidate`` beats ``baseline`` beyond the tie band.
 
     Lower is better. "Beyond" means strictly better than ``baseline`` by more
-    than the relative ``TIE_BAND``: ``candidate < baseline * (1 - TIE_BAND)``.
+    than the ABSOLUTE ``TIE_BAND``: ``candidate < baseline - TIE_BAND``. The
+    band is absolute per the owner ruling 2026-07-11 (band ≈ 2×pooled-coverage-
+    SE ≈ 0.01; the earlier relative reading was rejected as inside noise).
     """
-    return candidate < baseline * (1.0 - TIE_BAND)
+    return candidate < baseline - TIE_BAND
 
 
 def _no_worse_than(candidate: float, baseline: float) -> bool:
     """Return whether ``candidate`` is no worse than ``baseline`` within band.
 
-    True when ``candidate`` is better or ties within ``TIE_BAND``; False only
-    when ``candidate`` is worse than ``baseline`` beyond the band.
+    True when ``candidate`` is better or ties within the ABSOLUTE ``TIE_BAND``
+    (``candidate <= baseline + TIE_BAND``); False only when ``candidate`` is
+    worse than ``baseline`` beyond the band.
     """
-    return not _relatively_beyond(baseline, candidate)
+    return candidate <= baseline + TIE_BAND
 
 
 def select(
@@ -484,15 +487,19 @@ def select(
 ) -> tuple[dict[str, object] | None, list[dict[str, object]]]:
     """Select the winning lane by lane-0 eligibility + lexicographic order.
 
-    ``lanes[0]`` is the lane-0 baseline (the shipped scalar). A candidate lane
-    is **eligible** iff it beats lane-0 on the PRIMARY statistic (``s_stat``,
-    the S-fold pooled-worst-region) beyond ``TIE_BAND`` AND is no worse than
-    lane-0 on the SECONDARY statistic (``t_stat``, the T-fold pooled-worst-
-    region) within ``TIE_BAND``. Lower statistics are better.
+    ``lanes[0]`` is the lane-0 baseline (the shipped scalar). The tie band is
+    ABSOLUTE ±``TIE_BAND`` on the selection statistic (owner ruling 2026-07-11:
+    band ≈ 2×pooled-coverage-SE ≈ 0.01; the earlier relative reading was
+    rejected). A candidate lane is **eligible** iff it beats lane-0 on the
+    PRIMARY statistic (``s_stat``, the S-fold pooled-worst-region) beyond the
+    band — ``s_stat < lane0_s − TIE_BAND`` — AND is no worse than lane-0 on the
+    SECONDARY statistic (``t_stat``, the T-fold pooled-worst-region) within the
+    band — ``t_stat <= lane0_t + TIE_BAND``. Lower statistics are better.
 
     Among eligible lanes the winner is chosen lexicographically:
 
-    1. lowest ``s_stat`` (beyond ``TIE_BAND`` wins outright);
+    1. lowest ``s_stat`` (beating the running winner by more than ``TIE_BAND``
+       wins outright);
     2. on an S tie within band, lowest ``t_stat``;
     3. on a further T tie within band, the smooth-lane preference order
        ``poly > covariate > piecewise``.
@@ -517,7 +524,7 @@ def select(
     for lane in lanes[1:]:
         s = float(lane["s_stat"])  # type: ignore[arg-type]
         t = float(lane["t_stat"])  # type: ignore[arg-type]
-        if _relatively_beyond(s, l0_s) and _no_worse_than(t, l0_t):
+        if _beats_beyond_band(s, l0_s) and _no_worse_than(t, l0_t):
             eligible.append(lane)
 
     if not eligible:
@@ -539,16 +546,16 @@ def select(
         c_t = float(lane["t_stat"])  # type: ignore[arg-type]
 
         # 1. Primary: S-fold statistic.
-        if _relatively_beyond(c_s, w_s):
+        if _beats_beyond_band(c_s, w_s):
             winner = lane
             continue
-        if _relatively_beyond(w_s, c_s):
+        if _beats_beyond_band(w_s, c_s):
             continue
         # S tie within band -> 2. Secondary: T-fold statistic.
-        if _relatively_beyond(c_t, w_t):
+        if _beats_beyond_band(c_t, w_t):
             winner = lane
             continue
-        if _relatively_beyond(w_t, c_t):
+        if _beats_beyond_band(w_t, c_t):
             continue
         # T tie within band -> 3. Smooth-lane preference.
         if _pref_rank(lane) < _pref_rank(winner):

@@ -372,6 +372,27 @@ def test_select_worse_than_lane0_on_primary_returns_none() -> None:
     assert winner is None
 
 
+def test_select_tie_band_is_absolute_not_relative() -> None:
+    """The tie band is ABSOLUTE ±0.01, not relative (owner ruling 2026-07-11:
+    band ≈ 2×pooled-coverage-SE ≈ 0.01; the relative reading was rejected).
+
+    Disagreement case: lane-0 S = 0.5, candidate S = 0.494. A RELATIVE 1% band
+    calls this a beat (0.494 < 0.5·0.99 = 0.495), so the candidate would be
+    eligible and win. An ABSOLUTE 0.01 band calls it a tie (0.494 > 0.5 − 0.01
+    = 0.49), so the candidate does NOT beat lane-0 on the primary and is
+    ineligible -> None. We pin the absolute outcome.
+
+    Bug caught: a regression to the relative reading
+    (``candidate < baseline*(1 - TIE_BAND)``), which would flip this from None
+    to a poly winner.
+    """
+    lane0 = _lane("scalar", s_stat=0.5, t_stat=0.5)
+    # 0.494 clears the relative band (< 0.495) but NOT the absolute band (> 0.49).
+    cand = _lane("poly", s_stat=0.494, t_stat=0.4)
+    winner, _table = folds.select([lane0, cand])
+    assert winner is None
+
+
 def test_select_better_primary_but_worse_secondary_beyond_band_returns_none() -> None:
     """A candidate better on PRIMARY but worse than lane-0 on SECONDARY by
     more than TIE_BAND is ineligible -> None.
@@ -379,7 +400,7 @@ def test_select_better_primary_but_worse_secondary_beyond_band_returns_none() ->
     Bug caught: secondary no-worse-than-lane0 guard not enforced.
     """
     lane0 = _lane("scalar", s_stat=0.10, t_stat=0.10)
-    # better on S (0.08 < 0.10*(1-0.01)) but T 0.20 >> 0.10*(1+0.01)
+    # better on S (0.08 < 0.10 - 0.01 = 0.09) but T 0.20 > 0.10 + 0.01 = 0.11
     cand = _lane("poly", s_stat=0.08, t_stat=0.20)
     winner, _table = folds.select([lane0, cand])
     assert winner is None

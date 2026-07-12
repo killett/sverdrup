@@ -727,12 +727,12 @@ def build_evidence(trk: Track, proxy: np.ndarray) -> dict[str, Any]:
     eligibility: dict[str, dict[str, Any]] = {}
     for rec in lane_records[1:]:
         nm = str(rec["name"])
-        beats_primary = rec["s_stat"] < l0_s * (1.0 - TIE_BAND)
-        no_worse_secondary = not (l0_t < rec["t_stat"] * (1.0 - TIE_BAND))
+        beats_primary = rec["s_stat"] < l0_s - TIE_BAND
+        no_worse_secondary = rec["t_stat"] <= l0_t + TIE_BAND
         elig = bool(beats_primary and no_worse_secondary)
         reasons = []
         if not beats_primary:
-            reasons.append("does not beat lane-0 S-stat beyond ±1% band")
+            reasons.append("does not beat lane-0 S-stat beyond ±0.01 absolute band")
         if not no_worse_secondary:
             reasons.append("worse than lane-0 T-stat beyond band")
         eligibility[nm] = {
@@ -753,8 +753,10 @@ def build_evidence(trk: Track, proxy: np.ndarray) -> dict[str, Any]:
             "lane0_t_stat": l0_t,
             "eligibility": eligibility,
             "tie_band_rule": (
-                f"RELATIVE ±{TIE_BAND:.0%} band (folds.py): candidate beats "
-                "baseline iff candidate < baseline*(1-TIE_BAND); lower is better."
+                "ABSOLUTE ±0.01 band on the selection statistic (owner ruling "
+                "2026-07-11: band ≈ 2×pooled-coverage-SE ≈ 0.01; relative "
+                "reading rejected); candidate beats baseline iff candidate < "
+                "baseline − TIE_BAND; lower is better."
             ),
             "combination_rule": (
                 "PRIMARY S-fold pooled-worst-region deficit; ties -> T-fold; "
