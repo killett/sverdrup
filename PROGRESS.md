@@ -1,5 +1,23 @@
 # Sverdrup — Progress notebook
 
+> **✅ PHASE-8 c2 TOUCH 2 (CORRECTED) — SIGN-OFF 2026-07-12 (Task 11
+> CLOSED; pre-registered reading applied mechanically).** Window
+> tripwire PASSED (n=44,844 == Task-19 full-year count; loaded span
+> 2017-01-01..2017-12-30). **Triplet BIT-IDENTICAL to signed Stage-A**
+> (0.8572611954190728 / 0.07998859332412292 / 156.42996684578844;
+> `reproduces_stage_a: true`). **Aggregate c2 coverage 0.7350 ∈
+> 0.6827±0.10 → SIGN-OFF.** Report-only: chi2_red 0.9746 (honest
+> generalization number; scalar-era 1.0463), crps 0.04697 (scalar-era
+> 0.0479); regional coverage SW 0.775 / SE 0.753 / NW 0.707 / NE 0.705
+> / **jet_core 0.674** (scalar-era 0.643) — no severe local
+> mis-calibration; the phase's motivating defect is fixed ON C2.
+> Defect run preserved under `phase8.c2_defect_run_20260712` (context,
+> never evidence). **HONEST TALLY: 2 c2 touches for this product**
+> (touch 1 = partial-window DEFECT-RUN, disclosed; touch 2 = this
+> accepted touch). Zombie-aware watcher (scripts/watch_pid.sh) used on
+> first run — exited correctly. NEXT: Task 12 capability-flip commit
+> (clipped-poly σ-semantics + riders 2/3 language + tally=2).
+
 > **▶ PHASE-8 CORRECTED c2 TOUCH — OWNER-AUTHORIZED 2026-07-12 (touch 2
 > for this product; fresh authorization, six riders verbatim):**
 > (1) STRUCTURAL fix — one window/track source for the whole runner
