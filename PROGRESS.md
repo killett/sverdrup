@@ -1,5 +1,33 @@
 # Sverdrup — Progress notebook
 
+> **⛔ PHASE-8 c2 TOUCH EXECUTED 2026-07-12 → DEFECT-RUN (disclosed;
+> STOPPED FOR OWNER).** Owner authorized the touch (preconditions met:
+> push `6b8a20b..6ffeea6`, tie-band fix, cal_key asserted). Runner ran
+> to VERDICT: SIGN-OFF and wrote `phase8.c2_acceptance` — **but the
+> calibration block is PARTIAL-TRACK**: `load_c2_track()` took
+> `time_min/time_max` from `tests/validation/fixtures/stage_a_scope.json`
+> (2017-02-25..2017-03-18, the ~21-day dev window) → **n = 2,353 c2
+> points, not the full-year ~44,844** the Task-19 record and the
+> pre-registered reading imply. What IS valid: the (µ, σ, λx) triplet
+> path (`their_score` on the whole track) — **BIT-IDENTICAL to the
+> signed Stage-A values, `reproduces_stage_a: true`** (full-precision
+> 0.8572611954190728 / 0.07998859332412292 / 156.42996684578844); the
+> refusal discipline; provenance guards; atomic write. What is NOT
+> valid as gate evidence: aggregate coverage 0.7718 (in band), chi2
+> 0.7515, crps 0.0407, and the regional table — all computed on the
+> 21-day window. The SIGN-OFF verdict is therefore NOT honored;
+> defect-STOP per the standing discipline (Phase-7 DEFECT-RUN
+> precedent). NO re-run performed — a corrected evaluation is a SECOND
+> c2 touch and needs fresh owner adjudication (this run's touch is
+> spent + disclosed; no selection occurred: field frozen, nothing
+> refit, verdict mechanical). Runner defect to fix before any
+> authorized re-run: full-scope c2 time bounds (mirror
+> stage_miost_gate_run.py's SVERDRUP_MIOST_SCOPE=full config, NOT the
+> test fixture). OPERATIONAL note: the touch process ended as a ZOMBIE
+> and the pid-watcher missed it — the Task-18 gotcha (`kill -0`
+> succeeds on zombies; watch `ps -o stat` for Z) struck again; fix any
+> future watcher accordingly.
+
 > **⛔ phase-8 j3-evidence ruling — PROCEED-TO-TOUCH (owner, 2026-07-11,
 > Task 10 CLOSED).** Evidence: `phase8.fit_run` block in the gate results
 > JSON (bit-reproducible; poly winner S=0.0439/T=0.0509 vs lane-0
