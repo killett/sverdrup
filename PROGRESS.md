@@ -1,5 +1,38 @@
 # Sverdrup — Progress notebook
 
+> **⛔ phase-8 j3-evidence ruling — PROCEED-TO-TOUCH (owner, 2026-07-11,
+> Task 10 CLOSED).** Evidence: `phase8.fit_run` block in the gate results
+> JSON (bit-reproducible; poly winner S=0.0439/T=0.0509 vs lane-0
+> 0.1790/0.1679; bars 1–4 PASS; jet-core 0.643→0.690). Ruling riders
+> (owner verbatim intent, all three recorded as binding):
+> 1. **TIE-BAND CORRECTED: canonical reading is ABSOLUTE ±0.01** on the
+>    selection statistic (rationale is statistical — pooled coverage
+>    SE ≈ 0.005, band ≈ 2·SE; a relative band is inside noise). T8's
+>    relative reading REJECTED for the record. Verified
+>    OUTCOME-INVARIANT in this run: all consulted gaps clear both
+>    readings; the only within-band pair (poly-vs-piecewise secondary,
+>    0.0088) was never consulted (primary decisive) — hence safe to
+>    correct now. Fix TIE_BAND semantics + selection code + docstring
+>    BEFORE Task 11. **PRINCIPLE RECORDED: an outcome-relevant
+>    ambiguity would have required owner adjudication with both
+>    outcomes disclosed.**
+> 2. **CLIP ROLE: the shipped field is a CLIPPED polynomial** — floor
+>    active on 37.2% of box+halo nodes (max excursion 2.11 log-s),
+>    mostly far-south/corners where the raw poly wants s < 1; working
+>    as designed (evidence-anchored bounds; held-out selection judged
+>    the CLIPPED field). Task 12's σ-semantics paragraph + README must
+>    say "clipped low-order polynomial"; footnote the off-track bound
+>    as the RAW-poly gradient (clipped plateaus have zero gradient).
+> 3. **AUGUST: monthly instrument records the trade** — Aug 0.691 →
+>    0.655 (floored convention), in band, decision aid NOT triggered;
+>    enters §10 as the named residual limitation with both numbers.
+>    Seasonal axis stays out per fork (c).
+> Task 11 next: fresh authorization REQUIRED (PROCEED does not
+> pre-authorize); pre-registered reading quoted verbatim at request
+> time (triplet bit-identical to 0.8572612/0.0799886/156.42997 — any
+> deviation = defect-STOP; aggregate c2 coverage at s(x)·v + SIGMA_OBS2
+> ∈ 0.6827±0.10 → sign-off; regional breakdown + chi2/CRPS report-only).
+
 > **▶ PHASE 8 — EXECUTION IN FLIGHT (2026-07-11, subagent-driven, on main).**
 > Plan: `docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md`
 > (+ `.tasks.json` tracker, native IDs 1:1). **Tasks 1–8 COMPLETE**, each
