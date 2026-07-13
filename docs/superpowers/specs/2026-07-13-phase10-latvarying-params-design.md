@@ -116,7 +116,8 @@ close banner + Task-8 owner ruling in PROGRESS; HEAD = `1438c6d`;
   `phase9_field_oi.json`, lane-A range ± log 1.25** — batch-1 fold 4);
   l1 box includes 0 AND BOTH SIGNS (the Rossby sign is a falsifiable
   prediction, not a constraint; asymmetric room with rationale is fine);
-  v0/L0/Lt boxes bracket the signed values (1.0, 1.0°, 7 d).
+  c0/log-L0/Lt boxes bracket the signed values (c0 ≈ 0 ↔ variance 1.0;
+  L0 ≈ 1.0°; Lt ≈ 7 d).
 - **RESOLVE/DISPATCH CONTRACT — SPEC-LEVEL, the invariant-12 seam
   (batch-1 fold 3):** `ParameterProvider.resolve` returns
   `float | LatitudeField` (a small typed value carrying the named form +
