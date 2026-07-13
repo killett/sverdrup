@@ -121,14 +121,16 @@ def _inject_oi_interpretation(evidence: dict[str, Any]) -> None:
     evidence["demonstration_only"] = True
     evidence["shipping"] = "not elected; Phase 10 supersedes"
     evidence["shat_interpretation"] = (
-        f"ŝ_OI={s_hat:.4f} (constant-lane MLE with floor) — "
-        "well below s*=10.06; OI variance maps are already roughly unit-calibrated "
-        "(ŝ < 1 ⟹ harness would shrink variance further). "
-        "Poly wins selection over piecewise and lane-0 on S-fold primary, "
-        "so the spatial lane IS informative, but the overall scale is near-1. "
-        "This is an INFORMATIVE FINDING: OI maps are less under-dispersed than "
-        "MIOST; the calibration harness is method-agnostic and correctly handles "
-        "both the near-1 and near-10 regimes."
+        f"ŝ_OI={s_hat:.4f} (constant-lane MLE with floor) — ŝ < 1 means the "
+        "raw OI variance maps are mildly OVER-dispersed on the constant lane "
+        f"(the MLE shrinks variance by ~{(1.0 - s_hat) * 100.0:.0f}% at the "
+        "constant-lane optimum), in contrast to MIOST's strong under-dispersion "
+        "(s* = 10.06). "
+        "Poly wins selection over piecewise and lane-0 on S-fold primary, so "
+        "the spatial lane IS informative even at near-1 overall scale. "
+        "This is an INFORMATIVE FINDING: the calibration harness is "
+        "method-agnostic and correctly handles both the near-1 (shrink) and "
+        "near-10 (inflate) regimes."
     )
 
 

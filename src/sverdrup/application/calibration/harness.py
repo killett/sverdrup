@@ -20,6 +20,7 @@ c2 is NEVER imported or loaded in this module.  Provenance guard
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -868,7 +869,7 @@ def _bars(
     }
 
 
-def _jaccard_vs_p8(mask: np.ndarray) -> dict[str, object]:
+def _jaccard_vs_p8(mask: np.ndarray, product_id: str) -> dict[str, object]:
     """Return Jaccard similarity of the product mask vs the Phase-8 reference mask.
 
     If the Phase-8 reference mask artifact is absent (untracked by design) the
@@ -877,6 +878,7 @@ def _jaccard_vs_p8(mask: np.ndarray) -> dict[str, object]:
 
     Args:
         mask: (5,5) boolean mask for the current product.
+        product_id: The current product's identifier (for a product-correct note).
 
     Returns:
         Dict with ``jaccard``, ``n_intersection``, ``n_union``, ``note``.
@@ -890,11 +892,18 @@ def _jaccard_vs_p8(mask: np.ndarray) -> dict[str, object]:
     ref = np.asarray(d["mask"], dtype=bool)
     inter = int(np.count_nonzero(mask & ref))
     union = int(np.count_nonzero(mask | ref))
+    if product_id == "miost":
+        note = f"Jaccard({product_id}_mask, phase8_mask); 1.0 (self-referential)."
+    else:
+        note = (
+            f"Jaccard({product_id}_mask, phase8_mask); computed vs the recorded "
+            "Phase-8 reference mask."
+        )
     return {
         "jaccard": float(inter) / float(union) if union else 1.0,
         "n_intersection": inter,
         "n_union": union,
-        "note": "Jaccard(product_mask, phase8_mask); 1.0 for MIOST (self-referential).",
+        "note": note,
     }
 
 
@@ -964,12 +973,17 @@ def build_evidence(
 
     Returns:
         Evidence dict matching the Phase-8 ``fit_run`` structure, plus new
-        per-product rows ``jet_core_ref_p8``, ``jaccard_vs_p8``, and
-        ``promotion_record``.
+        per-product rows ``jet_core_ref_p8``, ``jaccard_vs_p8``,
+        ``promotion_record``, and ``mask_artifact`` (path + sha256 bound at
+        fit entry).
     """
     # Mask-predates-fit ordering guard (spec §5 + Task-7 AC 1a):
     # The mask artifact MUST exist before any lane fit runs.  Build it with
-    # scripts/build_jet_core_mask.py before running the harness.
+    # scripts/build_jet_core_mask.py before running the harness.  The sha256
+    # of the artifact bytes is computed HERE — at fit entry — and recorded in
+    # the evidence block below, binding the exact mask identity to this run.
+    # (The no-selection-channel guarantee remains structural: the mask derives
+    # from the product MEANS only; nothing temporal is recorded.)
     if not desc.mask_artifact.exists():
         raise FileNotFoundError(
             f"Jet-core mask artifact missing (mask must be built before fit): "
@@ -977,6 +991,7 @@ def build_evidence(
             "Run: pixi run python scripts/build_jet_core_mask.py "
             f"--mean-maps <product_mean_maps> --out {desc.mask_artifact}"
         )
+    mask_sha256 = hashlib.sha256(desc.mask_artifact.read_bytes()).hexdigest()
     jet_mask = _jet_cell_mask(desc.mask_artifact)
 
     # ρ̂ once at frozen s*; n_eff per block + merge rule on the S-fold layout.
@@ -1061,6 +1076,12 @@ def build_evidence(
         },
         "rho_hat": rho,
         "shat_reconciliation": _shat_reconciliation(trk),
+        # Mask identity bound at fit entry (Task-7 follow-up; frame record).
+        # sha256 of the artifact JSON bytes, computed BEFORE any lane fit.
+        "mask_artifact": {
+            "path": str(desc.mask_artifact),
+            "sha256": mask_sha256,
+        },
         # Per-product promotion record (new in Phase 9).
         "promotion_record": {
             "product_id": desc.product_id,
@@ -1135,7 +1156,7 @@ def build_evidence(
     # jaccard_vs_p8: Jaccard=1.0 for MIOST).  Do NOT simplify away the EXCLUDED
     # set in the test — it documents which new rows are expected.
     evidence["jet_core_ref_p8"] = _jet_core_ref_p8()
-    evidence["jaccard_vs_p8"] = _jaccard_vs_p8(jet_mask)
+    evidence["jaccard_vs_p8"] = _jaccard_vs_p8(jet_mask, desc.product_id)
     return evidence
 
 

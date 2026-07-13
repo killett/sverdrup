@@ -385,6 +385,9 @@ EXCLUDED: set[tuple[str, ...]] = {
     ("jaccard_vs_p8",),
     # promotion_record is a new Phase-9 leaf, not present in Phase-8 evidence.
     ("promotion_record",),
+    # mask_artifact (path + sha256 bound at fit entry) is a new Phase-9 leaf
+    # (Task-7 follow-up), not present in Phase-8 evidence.
+    ("mask_artifact",),
 }
 
 
