@@ -271,16 +271,19 @@ def test_ensemble_mode_capability_and_routing() -> None:
 
     Catches: the capability flip leaving native_capability POINT (bars_for
     would silently omit the coverage bar at the Stage-B gate — false-green),
-    or solve() still returning the POINT distribution in ensemble mode.
+    or solve() returning the wrong distribution type in ensemble mode.
     """
     from sverdrup.core.types import UncertaintyCapability
+    from sverdrup.distributions.calibration import CalibratedDistribution
 
     assert _method().native_capability is UncertaintyCapability.POINT
     ens_method = Miost(plan=WindowPlan(starts=(0.0, 45.0)), members=3, member_root=ROOT)
     assert ens_method.native_capability is UncertaintyCapability.SAMPLES
     d = ens_method.solve(_obs(), GRID, PARAMS, DAY)
-    assert isinstance(d, MiostEnsembleDistribution)
-    assert d.m == 3
+    # Phase-9 §3: solve() now returns CalibratedDistribution wrapping the raw ensemble.
+    assert isinstance(d, CalibratedDistribution)
+    assert isinstance(d.underlying, MiostEnsembleDistribution)
+    assert d.underlying.m == 3
 
 
 def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
@@ -296,6 +299,7 @@ def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
     stamp DIAGONAL_INFLATION instead), or dropping the field provenance so the
     shipped σ becomes unauditable.
     """
+    from sverdrup.distributions.calibration import CalibratedDistribution
     from sverdrup.methods.miost import shipped_miost
 
     ship = Miost(
@@ -306,7 +310,8 @@ def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
     )
     assert ship.native_capability is UncertaintyCapability.SAMPLES
     d = ship.solve(_obs(), GRID, PARAMS, DAY)
-    assert isinstance(d, MiostEnsembleDistribution)
+    # Phase-9 §3: solve() returns CalibratedDistribution wrapping the raw ensemble.
+    assert isinstance(d, CalibratedDistribution)
     field_transforms = [
         t
         for t in d.provenance.transformations

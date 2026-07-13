@@ -12,7 +12,10 @@ import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
-    from sverdrup.distributions.calibration import CalibrationField
+    from sverdrup.distributions.calibration import (
+        CalibratedDistribution,
+        CalibrationField,
+    )
     from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
 
 from sverdrup.core.distribution import CapabilityNotAvailableError
@@ -468,12 +471,13 @@ class Miost:
         grid: GridSpec,
         params: ParameterProvider,
         time_days: float,
-    ) -> MiostPointDistribution | MiostEnsembleDistribution:
+    ) -> MiostPointDistribution | CalibratedDistribution:
         """Solve the <=2 covering windows (cached), blend, return the day map.
 
         In ensemble mode (``members > 0``) the day's perturbed-observation
-        ensemble is returned instead, s*-inflated by exact anomaly rescale;
-        its mean IS the Stage-A mean (D6 — bit-identical arrays).
+        ensemble is returned as a CalibratedDistribution wrapping the raw
+        MiostEnsembleDistribution; its mean IS the Stage-A mean (D6 — bit-
+        identical arrays).
 
         Args:
             obs: The FULL observation window (method re-subsets per window).
@@ -482,18 +486,25 @@ class Miost:
             time_days: Output day [days since epoch].
 
         Returns:
-            The POINT predictive distribution at ``time_days``, or the
-            SAMPLES ensemble in ensemble mode.
+            The POINT predictive distribution at ``time_days``, or a
+            CalibratedDistribution wrapping the raw SAMPLES ensemble in
+            ensemble mode.
         """
         if self.members > 0:
             assert self.member_root is not None  # noqa: S101 (checked in __init__)
+            from sverdrup.distributions.calibration import CalibratedDistribution
+
             ens = self.sample_members(
                 obs, grid, params, time_days, m=self.members, root=self.member_root
             )
-            # One general eval path: the calibration rides the query-time √s(x)
-            # layer (no anomaly mutation). ``self._calibration`` is either the
+            # Phase-9 §3: calibration rides the shared CalibratedDistribution
+            # wrapper (distributions/calibration.py) — relocated from the
+            # class-internal seam with NO semantic change; identity-proven at
+            # rtol 1e-12 / mean-bit. ``self._calibration`` is either the
             # scalar inflation_s shim or a Phase-8 CalibrationField.
-            return ens.with_calibration(self._calibration)
+            return CalibratedDistribution(
+                ens, self._calibration, UncertaintyCapability.SAMPLES
+            )
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
@@ -770,6 +781,10 @@ def shipped_miost() -> Miost:
     Mean maps are bit-UNCHANGED by the calibration flip: proven on the touch-2
     c2 evaluation, where the (µ, σ, λx) triplet reproduces the signed Stage-A
     values bit-identically (the field rides the query-time √s(x) layer only, D6).
+
+    Mechanism (Phase 9): the field rides the shared CalibratedDistribution
+    wrapper (distributions/calibration.py) — relocated from the class-internal
+    seam with NO semantic change; identity-proven at rtol 1e-12 / mean-bit.
 
     Honest tally note: this product's acceptance spent TWO c2 touches — touch 1
     was a partial-window DEFECT-RUN (disclosed, preserved under

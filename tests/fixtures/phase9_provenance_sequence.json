@@ -1,0 +1,17 @@
+[
+  {
+    "kind": "INPUT_PERTURBATION",
+    "params_keys": [
+      "m",
+      "mc_error"
+    ]
+  },
+  {
+    "kind": "FIELD_INFLATION",
+    "params_keys": [
+      "cal_kind",
+      "calibration_key",
+      "dof"
+    ]
+  }
+]

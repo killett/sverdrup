@@ -653,3 +653,94 @@ def test_requires_grid_attribute() -> None:
     underlying = _NoGrid(mean=np.zeros((4, 3)))
     with pytest.raises(TypeError, match="grid"):
         CalibratedDistribution(underlying, ScalarCalibration(1.0), UC.SAMPLES)
+
+
+# ===========================================================================
+# PIN D — MIOST wrapper provenance-sequence equality
+# ===========================================================================
+
+
+def test_pin_d_miost_wrapper_provenance_sequence_matches_fixture() -> None:
+    """PIN D: wrapper-built shipped product provenance transforms == pre-migration fixture.
+
+    The fixture was captured at the PRE-Task-3 commit by
+    scripts/capture_phase9_provenance_fixture.py. After migration the
+    CalibratedDistribution wrapper must produce the exact same transform
+    chain (kind names + sorted param key sets, same order) — proving no
+    double-append or dropped append.
+
+    Bug caught: raw class still appends a transform (double-append, extra
+    transform), or wrapper forgets to append (missing transform), or the
+    transform kinds are swapped — any of which would change the sequence
+    from the pre-migration baseline.
+    """
+    import json
+    from pathlib import Path
+
+    from sverdrup.core.grid import GridSpec
+    from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+    from sverdrup.core.parameters import ConstantProvider
+    from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
+    from sverdrup.methods.miost import (
+        PHASE8_CLIP_HI,
+        PHASE8_CLIP_LO,
+        PHASE8_FIT_ID,
+        PHASE8_POLY_COEFFS,
+        STAGE_B_ROOT,
+        Miost,
+    )
+    from sverdrup.methods.miost_windows import WindowPlan
+
+    fixture_path = (
+        Path(__file__).resolve().parents[1]
+        / "tests"
+        / "fixtures"
+        / "phase9_provenance_sequence.json"
+    )
+    expected = json.loads(fixture_path.read_text())
+
+    # Same fixture config as test_phase8_identity_regression.py
+    _M = 6
+    _DAY = 50.0
+    _PARAMS = ConstantProvider(
+        {"spacing_alpha": 1.5, "log10_rho": 1.3, "q_slope": 2.0, "l_t_days": 10.0}
+    )
+    _GRID = GridSpec.lonlat(np.linspace(296.0, 304.0, 7), np.linspace(34.0, 42.0, 7))
+
+    rng = np.random.default_rng(7)
+    n = 80
+    t = rng.uniform(-12.0, 117.0, n)
+    err = DiagonalErrorModel(np.full(n, 0.01))
+    mission = np.asarray(["alg", "s3a", "h2g", "j2n"])[rng.integers(0, 4, n)]
+    obs = ObsWindow.from_arrays(
+        rng.uniform(296, 304, n),
+        rng.uniform(34, 42, n),
+        t,
+        rng.standard_normal(n) * 0.1,
+        err,
+        mission,
+    )
+
+    ship = Miost(
+        plan=WindowPlan(starts=(0.0, 45.0)),
+        members=_M,
+        member_root=STAGE_B_ROOT,
+        calibration=PolyCalibration(
+            coeffs=PHASE8_POLY_COEFFS,
+            clip=ClipSpec(lo_log_s=PHASE8_CLIP_LO, hi_log_s=PHASE8_CLIP_HI),
+            fit_id=PHASE8_FIT_ID,
+        ),
+    )
+    product = ship.solve(obs, _GRID, _PARAMS, _DAY)
+
+    actual = [
+        {"kind": tr.kind.name, "params_keys": sorted(tr.params.keys())}
+        for tr in product.provenance.transformations
+    ]
+    assert actual == expected, (
+        f"PIN D FAIL: provenance sequence mismatch.\n"
+        f"  expected: {expected}\n"
+        f"  actual:   {actual}\n"
+        "This means the migration changed the number or order of "
+        "transforms (double-append or missing append)."
+    )
