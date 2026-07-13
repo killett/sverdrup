@@ -72,9 +72,10 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN", "D", "S"]  # Otherwise Claude would either over-annotate every test or fight ruff constantly.
-# their_eval bridges the untyped, version-skewed vendored pyinterp surface;
-# Any is the honest type at that boundary.
+# their_eval and vendor both bridge the untyped, version-skewed vendored
+# pyinterp surface; Any is the honest type at that boundary.
 "src/sverdrup/validation/their_eval.py" = ["ANN401"]
+"src/sverdrup/validation/vendor.py" = ["ANN401"]
 # CalibratedDistribution wraps any PredictiveDistribution — Any is honest here;
 # the generic wrapper cannot be statically typed without a Protocol import that
 # would create a circular dependency at runtime.

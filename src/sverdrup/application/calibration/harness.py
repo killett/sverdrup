@@ -318,8 +318,8 @@ def load_track(desc: ProductDescriptor, scope: str) -> Track:
         A :class:`Track` with per-point day/lon/lat/resid/v/month/pass_id plus
         the fit-partition labels and per-point jet-core membership.
     """
-    import sverdrup.validation.their_eval as te
     from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
+    from sverdrup.validation.vendor import prepare_vendored_imports
 
     cfg = json.loads(desc.scope_config.read_text())
     track = Path(cfg["val_track_path"])  # j3 validation track (c2 never loaded)
@@ -330,7 +330,7 @@ def load_track(desc: ProductDescriptor, scope: str) -> Track:
     if scope == "dev":
         tmin, tmax = cfg["time_min"], cfg["time_max"]
 
-    te._prepare_imports()
+    prepare_vendored_imports()  # path/plumbing only — their_eval is never imported
     from src.mod_inout import read_l3_dataset
     from src.mod_interp import interp_on_alongtrack
 
