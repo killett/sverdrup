@@ -46,17 +46,23 @@ Config-audit PROOF mode (``SVERDRUP_OI_MAPS_AUDIT=j3_inclusive``):
 
     Output goes ONLY to ``oi_mean_maps_audit_j3incl.nc`` — never the descriptor
     artifact paths; the harness never consumes it.  On PASS the result is
-    stamped as ``config_audit`` onto the DEV map files only and persisted to
-    the ``oi_config_audit.json`` sidecar, which upgrades the train-only maps'
+    stamped as ``config_audit`` onto that audit file and persisted to the
+    ``oi_config_audit.json`` sidecar, which upgrades the train-only maps'
     obs-set-divergence verdict to attributed-BY-CONSTRUCTION.
+    ``SVERDRUP_OI_MAPS_SCOPE`` is IGNORED in audit mode (a note is printed):
+    the audit always runs the 12 smoke days and never writes scope outputs.
 
 One writer per nc file (race discipline):
-    A SCOPE=full run may be executing while the audit runs.  Audit mode
-    therefore NEVER touches the full-year descriptor paths
-    (``oi_{mean,var}_maps.nc``) — it stamps only its own audit/dev files and
-    writes the verdict to the ``oi_config_audit.json`` sidecar.  Each
-    generation run (dev or full) stamps its OWN outputs from the sidecar
-    after it finishes writing them, so every nc file has exactly one writer.
+    A SCOPE=dev or SCOPE=full run may be executing while the audit runs.
+    Audit mode therefore NEVER touches ANY generation output — it stamps
+    only its own ``oi_mean_maps_audit_j3incl.nc`` and writes the verdict to
+    the ``oi_config_audit.json`` sidecar.  Each generation run (dev or full)
+    stamps its OWN outputs from the sidecar after it finishes writing them,
+    so every nc file has exactly one writer:
+
+    - audit mode  → ``oi_mean_maps_audit_j3incl.nc`` + the JSON sidecar
+    - SCOPE=dev   → ``oi_{mean,var}_maps_dev.nc``
+    - SCOPE=full  → ``oi_{mean,var}_maps.nc``
 
 Reference-frame note:
     The signed artifact is in SSH space (SLA + MDT from the mapping tracks).
@@ -139,9 +145,9 @@ if _AUDIT_MODE is not None and _AUDIT_MODE != "j3_inclusive":
 _AUDIT_MEAN_DEST = _OUT_ROOT / "oi_mean_maps_audit_j3incl.nc"
 
 # Sidecar carrying the audit verdict.  ONE WRITER PER NC FILE: audit mode
-# writes ONLY this sidecar + its own audit/dev files; each generation run
-# stamps its OWN outputs from the sidecar after finishing them, so the audit
-# never races a live SCOPE=full run on the descriptor paths.
+# writes ONLY this sidecar + its own audit output nc; each generation run
+# (dev or full) stamps its OWN outputs from the sidecar after finishing
+# them, so the audit never races a live generation run on any nc file.
 _AUDIT_SIDECAR = _OUT_ROOT / "oi_config_audit.json"
 
 # Max abs threshold for the j3-inclusive proof: anything worse than 1e-6 m
@@ -169,6 +175,25 @@ def _peak_rss_mb() -> float:
     return kb / 1024.0  # Linux reports KB; macOS reports bytes but we run on Linux
 
 
+def _update_nc_attrs(path: Path, attrs: dict[str, object]) -> None:
+    """Atomically merge global attrs into an existing NetCDF file.
+
+    Loads the dataset into memory, updates the attrs, writes to a ``.tmp.nc``
+    sibling, and renames over the original (the single tmp+replace dance).
+
+    Args:
+        path: Path to the NetCDF file to update in place.
+        attrs: Global attrs to merge (existing keys are overwritten).
+    """
+    ds = xr.open_dataset(path)
+    ds = ds.load()
+    ds.close()
+    ds.attrs.update(attrs)
+    tmp = path.with_suffix(".tmp.nc")
+    ds.to_netcdf(tmp)
+    tmp.replace(path)
+
+
 def _add_provenance_attrs(
     path: Path,
     *,
@@ -194,10 +219,8 @@ def _add_provenance_attrs(
         temporal_half_window_days: Temporal half-window used for obs selection.
         audit_note: Free-form audit-trail note.
     """
-    ds = xr.open_dataset(path)
-    ds = ds.load()
-    ds.close()
-    ds.attrs.update(
+    _update_nc_attrs(
+        path,
         {
             "framing": framing,
             "params_key": params_key,
@@ -207,11 +230,52 @@ def _add_provenance_attrs(
             "temporal_corr_days": temporal_corr_days,
             "temporal_half_window_days": temporal_half_window_days,
             "audit_note": audit_note,
-        }
+        },
     )
-    tmp = path.with_suffix(".tmp.nc")
-    ds.to_netcdf(tmp)
-    tmp.replace(path)
+
+
+def _compare_on_matched_days(
+    regen_path: Path, signed_path: Path
+) -> tuple[int, bool, float, float, float]:
+    """Compare two ssh map files on their overlapping time steps.
+
+    The single implementation of the matched-day comparison shared by the
+    train-only audit and the j3-inclusive proof: time intersection,
+    ``datetime64`` selection, absolute/relative diffs with a denominator
+    clamp against near-zero SSH values.
+
+    Args:
+        regen_path: Path to the regenerated map NetCDF (variable ``ssh``).
+        signed_path: Path to the signed reference NetCDF (variable ``ssh``).
+
+    Returns:
+        ``(n_matched, bit_identical, max_abs, mean_abs, max_rel)``. When
+        ``n_matched == 0`` the float stats are NaN and ``bit_identical`` is
+        False; callers own the zero-match policy (skip vs abort).
+    """
+    regen = xr.open_dataset(regen_path)
+    signed = xr.open_dataset(signed_path)
+    matched = sorted(set(regen.time.values.tolist()) & set(signed.time.values.tolist()))
+    n_matched = len(matched)
+    if n_matched == 0:
+        regen.close()
+        signed.close()
+        return 0, False, float("nan"), float("nan"), float("nan")
+
+    matched_arr = np.array(matched, dtype="datetime64[ns]")
+    regen_sel = regen.sel(time=matched_arr)["ssh"].values
+    signed_sel = signed.sel(time=matched_arr)["ssh"].values
+    regen.close()
+    signed.close()
+
+    bit_identical = bool(np.array_equal(regen_sel, signed_sel))
+    abs_diff = np.abs(regen_sel - signed_sel)
+    max_abs = float(np.nanmax(abs_diff))
+    mean_abs = float(np.nanmean(abs_diff))
+    denom = np.abs(signed_sel)
+    denom[denom < 1e-10] = 1e-10  # avoid div by 0 on near-zero values
+    max_rel = float(np.nanmax(abs_diff / denom))
+    return n_matched, bit_identical, max_abs, mean_abs, max_rel
 
 
 def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
@@ -236,37 +300,14 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
             "signed_path": str(signed_path),
         }
 
-    regen = xr.open_dataset(mean_path)
-    signed = xr.open_dataset(signed_path)
-
-    # Align on time coordinate (inner join on matched days).
-    regen_times = set(regen.time.values.tolist())
-    signed_times = set(signed.time.values.tolist())
-    matched = sorted(regen_times & signed_times)
-    n_matched = len(matched)
-
+    n_matched, _bit, max_abs, mean_abs, max_rel = _compare_on_matched_days(
+        mean_path, signed_path
+    )
     if n_matched == 0:
-        regen.close()
-        signed.close()
         return {
             "matched_days": 0,
             "verdict": "SKIPPED — no overlapping time steps between regen and signed",
         }
-
-    matched_arr = np.array(matched, dtype="datetime64[ns]")
-    regen_sel = regen.sel(time=matched_arr)["ssh"].values
-    signed_sel = signed.sel(time=matched_arr)["ssh"].values
-
-    diff = regen_sel - signed_sel
-    abs_diff = np.abs(diff)
-    max_abs = float(np.nanmax(abs_diff))
-    mean_abs = float(np.nanmean(abs_diff))
-    denom = np.abs(signed_sel)
-    denom[denom < 1e-10] = 1e-10  # avoid div by 0 on near-zero values
-    max_rel = float(np.nanmax(abs_diff / denom))
-
-    regen.close()
-    signed.close()
 
     # Obs-set divergence note (pre-registered determination):
     # The signed artifact used all 5 mapping missions (alg, h2g, j2g, j2n, j3, s3a)
@@ -331,13 +372,7 @@ def _stamp_config_audit_attr(paths: list[Path], config_audit: str) -> None:
     for p in paths:
         if not p.exists():
             continue
-        ds = xr.open_dataset(p)
-        ds = ds.load()
-        ds.close()
-        ds.attrs["config_audit"] = config_audit
-        tmp = p.with_suffix(".tmp.nc")
-        ds.to_netcdf(tmp)
-        tmp.replace(p)
+        _update_nc_attrs(p, {"config_audit": config_audit})
         print(f"  [OK] config_audit attr stamped on {p}", flush=True)
 
 
@@ -356,6 +391,13 @@ def run_config_audit() -> None:
     """
     t0 = time.monotonic()
     print("[generate_oi_maps] CONFIG AUDIT MODE (j3_inclusive)", flush=True)
+    if "SVERDRUP_OI_MAPS_SCOPE" in os.environ:
+        print(
+            f"  [note] SVERDRUP_OI_MAPS_SCOPE={_SCOPE!r} is IGNORED in audit "
+            "mode — the audit always runs the 12 smoke days and never writes "
+            "scope outputs.",
+            flush=True,
+        )
     print(
         "  reproducing the signed artifact's producer run: run_challenge_map, "
         "ALL mapping missions (j3 INCLUDED), signed config, 12 smoke days",
@@ -392,26 +434,11 @@ def run_config_audit() -> None:
     )
 
     print(f"  comparing vs {_SIGNED_OI_NC} on matched days ...", flush=True)
-    regen = xr.open_dataset(_AUDIT_MEAN_DEST)
-    signed = xr.open_dataset(_SIGNED_OI_NC)
-    matched = sorted(set(regen.time.values.tolist()) & set(signed.time.values.tolist()))
-    n_matched = len(matched)
+    n_matched, bit_identical, max_abs, _mean_abs, max_rel = _compare_on_matched_days(
+        _AUDIT_MEAN_DEST, _SIGNED_OI_NC
+    )
     if n_matched == 0:
-        regen.close()
-        signed.close()
         raise SystemExit("CONFIG AUDIT: no matched days — cannot prove config.")
-    matched_arr = np.array(matched, dtype="datetime64[ns]")
-    regen_sel = regen.sel(time=matched_arr)["ssh"].values
-    signed_sel = signed.sel(time=matched_arr)["ssh"].values
-    regen.close()
-    signed.close()
-
-    bit_identical = bool(np.array_equal(regen_sel, signed_sel))
-    abs_diff = np.abs(regen_sel - signed_sel)
-    max_abs = float(np.nanmax(abs_diff))
-    denom = np.abs(signed_sel)
-    denom[denom < 1e-10] = 1e-10
-    max_rel = float(np.nanmax(abs_diff / denom))
 
     if bit_identical:
         config_audit = f"j3-inclusive matched-day: bit-identical ({n_matched} days)"
@@ -439,10 +466,11 @@ def run_config_audit() -> None:
 
     print(f"  [PASS] {config_audit}", flush=True)
 
-    # Persist the verdict to the sidecar (atomic write).  The full-year
-    # descriptor files are NOT stamped here — a live SCOPE=full run may be
-    # writing them right now (one writer per nc file).  Each generation run
-    # stamps its OWN outputs from this sidecar after finishing them.
+    # Persist the verdict to the sidecar (atomic write).  NO generation
+    # outputs are stamped here — a live SCOPE=dev or SCOPE=full run may be
+    # writing its files right now (one writer per nc file).  Every
+    # generation run stamps its OWN outputs from this sidecar after
+    # finishing them.
     payload = {
         "config_audit": config_audit,
         "matched_days": n_matched,
@@ -457,14 +485,8 @@ def run_config_audit() -> None:
     tmp_json.replace(_AUDIT_SIDECAR)
     print(f"  [OK] audit verdict persisted to {_AUDIT_SIDECAR}", flush=True)
 
-    # Stamp ONLY the audit-owned dev files (never the descriptor paths).
-    _stamp_config_audit_attr(
-        [
-            _OUT_ROOT / "oi_mean_maps_dev.nc",
-            _OUT_ROOT / "oi_var_maps_dev.nc",
-        ],
-        config_audit,
-    )
+    # Stamp ONLY the audit's own output file (the single file this mode owns).
+    _stamp_config_audit_attr([_AUDIT_MEAN_DEST], config_audit)
 
     wall = time.monotonic() - t0
     print(
@@ -646,35 +668,46 @@ def main() -> None:
         print(f"  obs_set_note: {audit['obs_set_note']}", flush=True)
 
     # Write audit result to nc attrs.
-    for p in (mean_path, var_path):
-        ds = xr.open_dataset(p)
-        ds = ds.load()
-        ds.close()
-        ds.attrs["audit_matched_days"] = str(audit.get("matched_days", 0))
-        ds.attrs["audit_verdict"] = str(audit.get("verdict", "N/A"))
-        ds.attrs["audit_max_abs_diff_m"] = str(audit.get("max_abs_diff_m", "N/A"))
-        ds.attrs["audit_mean_abs_diff_m"] = str(audit.get("mean_abs_diff_m", "N/A"))
-        ds.attrs["audit_obs_set_note"] = str(
+    audit_attrs: dict[str, object] = {
+        "audit_matched_days": str(audit.get("matched_days", 0)),
+        "audit_verdict": str(audit.get("verdict", "N/A")),
+        "audit_max_abs_diff_m": str(audit.get("max_abs_diff_m", "N/A")),
+        "audit_mean_abs_diff_m": str(audit.get("mean_abs_diff_m", "N/A")),
+        "audit_obs_set_note": str(
             audit.get(
                 "obs_set_note",
                 "no obs-set note (signed artifact not found or no matched days)",
             )
-        )
-        tmp = p.with_suffix(".tmp.nc")
-        ds.to_netcdf(tmp)
-        tmp.replace(p)
+        ),
+    }
+    for p in (mean_path, var_path):
+        _update_nc_attrs(p, audit_attrs)
     print("  [OK] audit attrs written to both nc files", flush=True)
 
     # ------------------------------------------------------------------
     # 6b. Stamp the j3-inclusive config-audit proof from the sidecar, if a
     #     config audit has run.  ONE WRITER PER NC FILE: this run stamps
     #     ONLY the files IT just wrote (mean_path / var_path); audit mode
-    #     never touches the descriptor outputs.
+    #     never touches generation outputs.  A corrupt/incomplete sidecar
+    #     (possibly mid-write by another process) must NOT abort a
+    #     completed generation run — degrade to the absent-sidecar note.
     # ------------------------------------------------------------------
+    config_audit_line: str | None = None
     if _AUDIT_SIDECAR.exists():
-        sidecar = json.loads(_AUDIT_SIDECAR.read_text())
-        _stamp_config_audit_attr([mean_path, var_path], str(sidecar["config_audit"]))
-    else:
+        try:
+            sidecar = json.loads(_AUDIT_SIDECAR.read_text())
+            config_audit_line = str(sidecar["config_audit"])
+        except (json.JSONDecodeError, KeyError, OSError) as exc:
+            print(
+                f"  [note] config-audit sidecar at {_AUDIT_SIDECAR} is "
+                f"unreadable ({type(exc).__name__}: {exc}); skipping the "
+                "config_audit stamp — rerun SVERDRUP_OI_MAPS_AUDIT="
+                "j3_inclusive to regenerate it.",
+                flush=True,
+            )
+    if config_audit_line is not None:
+        _stamp_config_audit_attr([mean_path, var_path], config_audit_line)
+    elif not _AUDIT_SIDECAR.exists():
         print(
             f"  [note] no config-audit sidecar at {_AUDIT_SIDECAR}; "
             "run SVERDRUP_OI_MAPS_AUDIT=j3_inclusive first to stamp the proof.",
