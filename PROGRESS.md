@@ -1,5 +1,40 @@
 # Sverdrup — Progress notebook
 
+> **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
+> ruling below; all 8 tasks resolved, dual review per task, every
+> commit pushed).** DELIVERABLES: (1) `distributions/calibration.py` —
+> CalibrationField classes (verbatim move, cal_key byte-stable, PIN C)
+> + `CalibratedDistribution` capability-aware wrapper (pins A/B;
+> enumerated surface, no `__getattr__`; chain-preserving composition
+> provenance; scalar-1.0 identity-skip); (2) MIOST migrated onto the
+> wrapper — identity-proven (in-process 6+2 zero-behavioral-edit;
+> external pins green; PIN-D sequence fixture; no dual mechanisms);
+> (3) `application/calibration/harness.py` — ProductDescriptor +
+> generalized fit harness, harness-on-MIOST LEAF-IDENTICAL to the
+> Phase-8 evidence (449 leaves, 0 mismatches; field artifact
+> byte-exact); generalized mask build (deterministic, phase8 cells
+> reproduced); (4) **G_pre = 0.13510401012055406** anchored at
+> `phase9.g_pre_anchor` (definition verbatim, frame pinned, companions:
+> std_log_s 0.6018, range 1.6039, clip 0.37181, NLL 3572.78 demoted);
+> (5) OI maps at the signed config (train-only; j3-inclusive
+> matched-day audit BIT-IDENTICAL 12/12 — config proven by
+> construction); (6) **OI DEMONSTRATION FINDING (the Phase-10 targeting
+> evidence is a CONTRAST, not a point): MIOST under-disperses ~10×
+> jet-concentrated (s*=10.06); OI OVER-disperses ~34% (ŝ_OI=0.6621)
+> with spatial structure still winning selection (poly S=0.0448 vs
+> lane-0 0.3156; bars 1–4 in band; Jaccard vs p8 = 1.0) — two opposite
+> prior pathologies, one instrument.** Demonstration-only, no ship, no
+> registry change. **FULL EXTERNAL SWEEP at HEAD post-fix: 678 passed /
+> 9 skipped / 1 xfailed (1:05:12) — externals part of green per the new
+> spec-§6 standing rule.** ZERO c2 touches phase-wide (no new c2 keys;
+> tally unchanged at 2). PHASE 10 (lat-varying method parameters,
+> invariant-12): owner-initiated brainstorm in a fresh session,
+> consuming **spec §7's contract by reference** — g_pre anchor, both
+> field artifacts, frozen-frame rider, invariant-12 resolution shape,
+> modest-gains-here expectation-setter. Post-close hygiene follow-up
+> (owner-ordered, small reviewed commit): delete the inert vendor-path
+> shim from harness `load_track`.
+
 > **⚖ PHASE-9 TASK-8 OWNER RULING (2026-07-13): PHASE 9 CLOSED —
 > APPROVED.** Adjudications (verbatim intent): (1) zero-edit relaxation
 > `e9f0575` ACCEPTED — confined to type evidence, which the replacement
@@ -21,7 +56,8 @@
 > gate condition): delete the inert vendor-path shim from load_track so
 > the zero-c2 invariant reads literally true.
 
-> **▶ PHASE 9 — method-generic calibration: IN PROGRESS. Tasks 1–3
+> **[superseded 2026-07-13 by the close banner above] ▶ PHASE 9 —
+> method-generic calibration: IN PROGRESS. Tasks 1–3
 > COMPLETE (Task 3 truly closed at `b5b44a1`; an earlier `cb55add`
 > banner claimed close prematurely — before reviews and the external
 > gate — and is superseded by this entry). Next: Task 4

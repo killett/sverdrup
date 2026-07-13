@@ -267,6 +267,11 @@ that includes representation error and unresolved scales, with correlation
 structure from the exact posterior; the calibration touches σ only, leaving the
 mean maps bit-identical (proven on the c2 acceptance touch).
 
+The s(x) calibration layer is method-generic (Phase 9): any method's predictive
+distribution can be wrapped in `CalibratedDistribution` and fitted per-product
+by the shared harness (`sverdrup.application.calibration.harness`) — proven
+identity-preserving on MIOST and demonstrated end-to-end on OI.
+
 > **`sverdrup.validation` — and the MIOST tuning/gate harness and its
 > diagnostics — are from-source tools, not part of the PyPI/conda package.**
 > They need the vendored challenge submodule (`git submodule update --init`),
