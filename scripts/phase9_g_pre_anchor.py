@@ -30,9 +30,12 @@ import json
 import math
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from sverdrup.distributions.calibration import CalibrationField
 
 # ---------------------------------------------------------------------------
 # Path constants
@@ -196,15 +199,11 @@ def build_anchor_block(
 # ---------------------------------------------------------------------------
 
 
-def _compute_nll_gap(gate_json: dict[str, Any]) -> float:
+def _compute_nll_gap() -> float:
     """Compute the raw NLL gap (nll_scalar - nll_poly) on the full j3 track.
 
     This requires loading the track from disk.  The result has no threshold
     semantics (per spec §7c4: AIC under-penalizes ~10x at n_eff ≈ n/10.27).
-
-    Args:
-        gate_json: Full gate results dict (unused; reserved for future scope
-            config extraction if needed).
 
     Returns:
         NLL gap = nll_lane0 - nll_winner (scalar − poly, positive = poly wins).
@@ -232,6 +231,66 @@ def _compute_nll_gap(gate_json: dict[str, Any]) -> float:
     nll_winner = float(0.5 * np.sum(np.log(tot) + trk.r2 / tot))
 
     return float(nll_scalar - nll_winner)
+
+
+# ---------------------------------------------------------------------------
+# Grid-drift guard (Phase-10 contract safety)
+# ---------------------------------------------------------------------------
+
+
+def _assert_grid_matches_harness(
+    cal: CalibrationField, computed_clip_fraction: float
+) -> None:
+    """Assert this script's grid + hull literals have not drifted from the harness.
+
+    The harness's ``_clip_observability`` builds its challenge grid inline (no
+    exported constant), so drift is guarded two ways:
+
+    1. HULL: probe points pushed through ``harness._clamp`` must equal the
+       same points clamped with this script's hull literals (295/305, 33/43).
+    2. GRID (functional): the locally computed clip engagement fraction must
+       exactly equal ``harness._clip_observability`` evaluated on the same
+       shipped field — any grid-extent/step drift between the two
+       implementations changes the node set and hence the fraction.
+
+    Args:
+        cal: The shipped CalibrationField (poly winner; carries its ClipSpec).
+        computed_clip_fraction: Fraction computed by _compute_clip_engagement.
+
+    Raises:
+        RuntimeError: If either check fails — grid drift must fail loudly,
+            never silently desync the anchor from the harness.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from sverdrup.application.calibration import harness as H
+    from sverdrup.distributions.calibration import PolyCalibration
+
+    if not isinstance(cal, PolyCalibration):
+        raise RuntimeError(
+            f"Drift guard expects the poly winner field, got {type(cal).__name__} — "
+            f"the anchor's companion path is pinned to the shipped poly field."
+        )
+
+    probe_lon = np.array([0.0, 293.0, 295.0, 300.0, 305.0, 307.0, 999.0])
+    probe_lat = np.array([0.0, 31.0, 33.0, 38.0, 43.0, 45.0, 99.0])
+    h_lon, h_lat = H._clamp(probe_lon, probe_lat)
+    local_lon = np.clip(probe_lon, 295.0, 305.0)
+    local_lat = np.clip(probe_lat, 33.0, 43.0)
+    if not (np.array_equal(h_lon, local_lon) and np.array_equal(h_lat, local_lat)):
+        raise RuntimeError(
+            "Hull literals drifted from harness._clamp — update this script's "
+            "hull constants (295/305, 33/43) to match the harness before "
+            "writing the anchor."
+        )
+
+    ref = H._clip_observability(cal, cal.clip)["fraction_engaged"]
+    if ref != computed_clip_fraction:
+        raise RuntimeError(
+            f"Challenge-grid drift: local clip_engagement_fraction "
+            f"{computed_clip_fraction!r} != harness._clip_observability "
+            f"{ref!r} — the fixed grid or engagement path has desynced "
+            f"from the harness."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -311,10 +370,10 @@ def main() -> None:
 
     # Step 5: compute NLL gap on full j3
     print("Computing NLL gap on full j3 track...")
-    nll_gap = _compute_nll_gap(results)
+    nll_gap = _compute_nll_gap()
     print(f"  NLL gap (nll_scalar - nll_poly): {nll_gap:.6f}")
 
-    # Step 6: assemble and write anchor block
+    # Step 6: assemble anchor block
     selection = fit_run["selection"]
     anchor = build_anchor_block(
         selection=selection,
@@ -323,6 +382,10 @@ def main() -> None:
         mask_sha256=mask_sha256,
         nll_gap_value=nll_gap,
     )
+
+    # Drift guard: grid/hull literals must match the harness (fail loudly —
+    # the anchor is the Phase-10 interface contract).
+    _assert_grid_matches_harness(cal, anchor["companions"]["clip_engagement_fraction"])
 
     g_pre = anchor["g_pre"]
     print(f"\nG_pre = lane0_s_stat - winner_s_stat = {g_pre:.10f}")

@@ -680,6 +680,47 @@ def test_companions_clip_engagement_zero_for_no_clip_field() -> None:
     )
 
 
+def test_companions_clip_engagement_partial_for_tight_clip() -> None:
+    """Companions clip_engagement_fraction is exactly 36/57 for a tight-clip field.
+
+    Bug caught: if engagement compared clipped-vs-clipped (raw values lost)
+    the fraction would be 0.0; if the halo were dropped from the grid or the
+    hull clamp bounds drifted, the row count and hence the fraction would
+    shift away from 36/57.
+
+    Hand computation (independent of the implementation): coeffs [0,1,0,0,0]
+    give raw log_s = v = (lat_clamped - 38)/5.  With clip (-0.5, 0.5),
+    a node engages iff |v| > 0.5, i.e. lat_clamped < 35.5 or > 40.5.
+    On the lat grid 31.0..45.0 step 0.25 (57 rows, hull-clamped to [33,43]):
+    rows 31.0..35.25 engage (18 rows; v <= -0.55) and rows 40.75..45.0
+    engage (18 rows; v >= 0.55); lat=35.5/40.5 give v=±0.5 exactly
+    (binary-exact at step 0.25) so raw == clipped there — NOT engaged.
+    36 of 57 rows engage, independent of lon; fraction = 36/57.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    tight_cal = {
+        "kind": "poly",
+        "coeffs": [0.0, 1.0, 0.0, 0.0, 0.0],
+        "clip": {"lo_log_s": -0.5, "hi_log_s": 0.5},
+        "fit_id": "test-tight",
+    }
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=tight_cal,
+        cal_key="cal:test-tight",
+        mask_sha256="deadbeef",
+    )
+    frac = block["companions"]["clip_engagement_fraction"]
+    assert 0.0 < frac < 1.0, (
+        f"Tight clip should engage on part (not all/none) of grid, got {frac}"
+    )
+    expected = 36.0 / 57.0
+    assert abs(frac - expected) < 1e-12, (
+        f"clip_engagement_fraction should be exactly 36/57 = {expected}, got {frac}"
+    )
+
+
 def test_companions_nll_gap_demoted_dof_is_5() -> None:
     """companions.nll_gap_demoted has dof=5 (5 poly coefficients, per spec §7c4).
 
