@@ -1,5 +1,24 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 10 DESIGN COMMITTED 2026-07-13, ⛔ STOPPED FOR OWNER FILE
+> REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-13-phase10-latvarying-params-design.md`
+> (owner-approved in-session: forks a–e + three review batches, eleven
+> batch folds). Lat-varying OI parameters (invariant-12 option B):
+> variance(lat) = exp(c0+c1v+c2v²) + shared-lx/ly L0·exp(l1·v) via
+> `LatitudeVaryingProvider` superseded in place; Paciorek–Schervish
+> nonstationary kernel (PD + constant-reduction tests before stage-2);
+> one-core lanes-as-restrictions {lane-0, V, VL-joint}; lexicographic
+> µ→λx lane comparison with measured bands, PRIMARY = VL vs lane-0;
+> mean-changing acceptance template (determinism content-hash tripwire);
+> flattening readings under the FROZEN phase-9 OI frame (G_pre_oi
+> expected 0.27086964, anchor at `phase10.g_pre_oi_anchor` — NOT
+> `phase9.g_pre_anchor`, that is MIOST's); registry role-split
+> (METHODS/SHIPPED, miost factory migrates). ZERO c2 touches until owner
+> gate 2. Next action: owner reviews the spec file → then
+> `/superpowers-extended-cc:writing-plans` on it. No code, no re-solves
+> yet.
+
 > **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
 > ruling below; all 8 tasks resolved, dual review per task, every
 > commit pushed).** DELIVERABLES: (1) `distributions/calibration.py` —
