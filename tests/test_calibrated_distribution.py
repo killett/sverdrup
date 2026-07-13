@@ -160,14 +160,6 @@ def stub(grid: GridSpec) -> _StubGaussian:
     return _StubGaussian(grid=grid, mean=mean)
 
 
-@pytest.fixture()
-def wrapped(
-    stub: _StubGaussian, scalar_field: ScalarCalibration
-) -> CalibratedDistribution:
-    """CalibratedDistribution wrapping the SAMPLES stub with scalar s=4.0."""
-    return CalibratedDistribution(stub, scalar_field, UC.SAMPLES)
-
-
 # ===========================================================================
 # 1 — Capability-table: POINT raises at construction
 # ===========================================================================
