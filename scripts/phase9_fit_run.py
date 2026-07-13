@@ -59,19 +59,25 @@ _PRODUCT_MAP: dict[str, ProductDescriptor] = {
     "oi": OI_DESCRIPTOR,
 }
 
-_parser = argparse.ArgumentParser(
-    description="Phase-9 fit run: thin CLI over the generalized calibration harness."
-)
-_parser.add_argument(
-    "--product",
-    choices=list(_PRODUCT_MAP),
-    default="miost",
-    help="Calibration product to run (miost | oi). Default: miost.",
-)
-_args = _parser.parse_args()
 
-_DESCRIPTOR: ProductDescriptor = _PRODUCT_MAP[_args.product]
-_SMOKE_OUT = _ROOT / f"phase9_dev_smoke_{_DESCRIPTOR.product_id}.json"
+def _parse_descriptor() -> ProductDescriptor:
+    """Parse --product from argv and return the selected descriptor.
+
+    Kept out of module scope so importing this script never touches
+    ``sys.argv`` (phase8_fit_run.py idiom: argparse lives in main()).
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "Phase-9 fit run: thin CLI over the generalized calibration harness."
+        )
+    )
+    parser.add_argument(
+        "--product",
+        choices=list(_PRODUCT_MAP),
+        default="miost",
+        help="Calibration product to run (miost | oi). Default: miost.",
+    )
+    return _PRODUCT_MAP[parser.parse_args().product]
 
 
 def _print_banner(evidence: dict[str, Any], negative: bool) -> None:
@@ -136,7 +142,8 @@ def _inject_oi_interpretation(evidence: dict[str, Any]) -> None:
 
 def main() -> None:
     """Run the Phase-9 fit pipeline, write scope-appropriate artifacts."""
-    desc = _DESCRIPTOR
+    desc = _parse_descriptor()
+    smoke_out = _ROOT / f"phase9_dev_smoke_{desc.product_id}.json"
     evidence = run_harness(desc, _SCOPE_MODE)
     negative = evidence["selection"].get("negative_result", False)
 
@@ -146,11 +153,11 @@ def main() -> None:
 
     if _SCOPE_MODE == "dev":
         # Dev smoke: structure-completeness only; NEVER the gate JSON, NEVER field.
-        atomic_write_json(_SMOKE_OUT, evidence)
+        atomic_write_json(smoke_out, evidence)
         print(
             f"[dev smoke] scope=dev product={desc.product_id} "
             f"n={evidence['n_track_points']} points; "
-            f"negative_result={negative}; wrote {_SMOKE_OUT}"
+            f"negative_result={negative}; wrote {smoke_out}"
         )
         _print_banner(evidence, negative)
         return
