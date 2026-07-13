@@ -360,6 +360,77 @@ def test_member_at_raises_when_underlying_lacks_it(
         wrapped.member_at(0, pts)
 
 
+def test_member_at_scales_about_mean(
+    grid: GridSpec, poly_field: PolyCalibration
+) -> None:
+    """member_at returns mean + √s(x)·(member − mean) at the query points.
+
+    Bug caught: wrapper delegates member_at raw (uncalibrated member leaks
+    through the forwarded route), or scales the member INCLUDING its mean.
+    """
+
+    @dataclass
+    class _StubWithMembers(_StubGaussian):
+        def mean_at(self, pts: np.ndarray) -> np.ndarray:
+            return np.full(len(pts), 3.0)
+
+        def member_at(self, member_idx: int, pts: np.ndarray) -> np.ndarray:
+            return np.full(len(pts), 3.0) + (member_idx + 1.0)
+
+    stub = _StubWithMembers(grid=grid, mean=np.zeros((4, 3)))
+    wrapped = CalibratedDistribution(stub, poly_field, UC.SAMPLES)
+    pts = np.array([[297.0, 34.0, 0.0], [303.0, 40.0, 0.0]])
+
+    got = wrapped.member_at(1, pts)
+
+    sqrt_s = poly_field.sqrt_s_at(pts[:, 0], pts[:, 1])
+    # member anomaly is exactly 2.0 (member_idx 1) about the mean 3.0
+    expected = 3.0 + sqrt_s * 2.0
+    np.testing.assert_allclose(got, expected, rtol=1e-12)
+
+
+def test_to_grid_ensemble_rebuilds_stack_about_its_mean(
+    grid: GridSpec, poly_field: PolyCalibration
+) -> None:
+    """to_grid_ensemble rebuilds the returned stack: mean + √s(x)·(members − mean).
+
+    PIN A: "rebuild the returned stack about its mean with grid-node √s".
+
+    Bug caught: wrapper delegates to_grid_ensemble raw — after the Task-3
+    migration (raw class stops scaling internally) the ensemble route would
+    silently return UNCALIBRATED samples.
+    """
+
+    @dataclass
+    class _Ens:
+        grid: GridSpec
+        samples: np.ndarray
+        provenance: UncertaintyProvenance
+        time_days: float
+
+    @dataclass
+    class _StubWithEnsemble(_StubGaussian):
+        def to_grid_ensemble(self, time_days: float) -> _Ens:
+            rng = np.random.default_rng(7)
+            samples = self.mean[None] + rng.standard_normal((6, *self.mean.shape))
+            return _Ens(self.grid, samples, self.provenance, time_days)
+
+    stub = _StubWithEnsemble(grid=grid, mean=np.arange(12, dtype=float).reshape(4, 3))
+    wrapped = CalibratedDistribution(stub, poly_field, UC.SAMPLES)
+
+    ens = wrapped.to_grid_ensemble(0.0)
+    raw = stub.to_grid_ensemble(0.0)
+
+    stack_mean = raw.samples.mean(axis=0)
+    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
+    sqrt_s = poly_field.sqrt_s_at(lon2d, lat2d)
+    expected = stack_mean[None] + sqrt_s[None] * (raw.samples - stack_mean[None])
+
+    np.testing.assert_allclose(ens.samples, expected, rtol=1e-12)
+    # The rebuilt ensemble carries the WRAPPER's (calibrated) provenance.
+    assert ens.provenance is wrapped.provenance
+
+
 def test_to_grid_ensemble_raises_when_underlying_lacks_it(
     stub: _StubGaussian, scalar_field: ScalarCalibration
 ) -> None:

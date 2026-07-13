@@ -9,6 +9,7 @@ applies s(x) calibration over ANY PredictiveDistribution; added in Task 2.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 from collections.abc import Mapping
@@ -937,14 +938,18 @@ class CalibratedDistribution:
     def to_grid_ensemble(self, time_days: float) -> Any:
         """Return the calibrated grid ensemble — stack rebuilt about its mean.
 
-        The underlying's to_grid_ensemble is called, then the ensemble stack
-        is scaled: mean + √s(x)·(members − mean).
+        The underlying's to_grid_ensemble is called, then the returned stack
+        is rebuilt about its member mean with grid-node √s (PIN A):
+        ``stack_mean + √s(x)·(samples − stack_mean)``. The rebuilt ensemble
+        carries the WRAPPER's provenance (the calibration transform is on the
+        wrapper — PIN D single append).
 
         Args:
             time_days: Output time in days.
 
         Returns:
-            The underlying's ensemble product type with calibrated samples.
+            The underlying's ensemble product type (rebuilt via
+            :func:`dataclasses.replace`) with calibrated samples.
 
         Raises:
             CapabilityNotAvailableError: If the underlying has no
@@ -954,7 +959,12 @@ class CalibratedDistribution:
             raise CapabilityNotAvailableError(
                 "underlying does not provide to_grid_ensemble"
             )
-        return self.underlying.to_grid_ensemble(time_days)
+        ens = self.underlying.to_grid_ensemble(time_days)
+        samples = np.asarray(ens.samples)  # (m, ny, nx)
+        stack_mean = samples.mean(axis=0)  # (ny, nx)
+        sqrt_s = self._get_grid_sqrt_s()  # (ny, nx)
+        scaled = stack_mean[None] + sqrt_s[None] * (samples - stack_mean[None])
+        return dataclasses.replace(ens, samples=scaled, provenance=self.provenance)
 
     def regrid(self, target: GridSpec) -> CalibratedDistribution:
         """Return a new CalibratedDistribution on ``target`` carrying the same field.
