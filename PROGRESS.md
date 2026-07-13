@@ -15,9 +15,13 @@
 > expected 0.27086964, anchor at `phase10.g_pre_oi_anchor` — NOT
 > `phase9.g_pre_anchor`, that is MIOST's); registry role-split
 > (METHODS/SHIPPED, miost factory migrates). ZERO c2 touches until owner
-> gate 2. Next action: owner reviews the spec file → then
-> `/superpowers-extended-cc:writing-plans` on it. No code, no re-solves
-> yet.
+> gate 2. **SPEC FILE-REVIEW APPROVED 2026-07-13 (one-line fix `7cd7164`).
+> PLAN COMMITTED, ⛔ HELD FOR OWNER REVIEW before execution:**
+> `docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
+> (+ `.tasks.json`, 16 tasks 0–15, native IDs = plan+5; gates 11/13 =
+> user-gates with evidence axes; negative branch = Task 9). Next action:
+> owner reviews the plan → then execution (subagent-driven or
+> executing-plans). No code, no re-solves yet.
 
 > **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
 > ruling below; all 8 tasks resolved, dual review per task, every
