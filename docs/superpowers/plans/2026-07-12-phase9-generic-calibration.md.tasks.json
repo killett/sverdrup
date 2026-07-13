@@ -1,0 +1,87 @@
+{
+  "planPath": "docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md",
+  "nativeTaskIds": {
+    "1": 20,
+    "2": 21,
+    "3": 22,
+    "4": 23,
+    "5": 24,
+    "6": 25,
+    "7": 26,
+    "8": 27
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "subject": "P9 Task 1: Move CalibrationField classes to shared module (PIN C)",
+      "status": "pending",
+      "description": "**Goal:** distributions/calibration.py owns the four field classes + ClipSpec + calibration_from_json + helpers; clean break, callers updated; cal_key byte-stable.\n\n**Files:**\n- Create: src/sverdrup/distributions/calibration.py\n- Modify: src/sverdrup/distributions/miost_ensemble.py + every import site\n- Test: tests/test_calibration_field.py (+ PIN-C test)\n\n**Acceptance Criteria:**\n- Moved code TEXTUALLY IDENTICAL (verbatim cut-paste)\n- PIN-C: shipped phase8_field.json cal_key reproduced byte-identically\n- Single definition per class; no compat shim\n- Full suite green, counts unchanged\n\n**Verify:** pixi run pytest tests/test_calibration_field.py -q && pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/calibration.py\", \"src/sverdrup/distributions/miost_ensemble.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_field.py -q\", \"acceptanceCriteria\": [\"verbatim move\", \"cal_key byte-stable\", \"callers updated\", \"suite green\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "P9 Task 2: CalibratedDistribution wrapper (pins A/B)",
+      "status": "pending",
+      "blockedBy": [
+        1
+      ],
+      "description": "**Goal:** Capability-aware wrapper implementing the protocol; enumerated surface only; explicit capability; stub-tested.\n\n**Files:**\n- Create (in): src/sverdrup/distributions/calibration.py\n- Test: tests/test_calibrated_distribution.py\n\n**Acceptance Criteria:**\n- (underlying, field, capability); POINT raises; requires underlying.grid (PIN B)\n- Protocol trio scaled per spec table; mean routes bitwise\n- Forwarded routes defined + guarded; marker-stub leak test (PIN A)\n- with_calibration/rescaled Phase-8 semantics; provenance append; wrapper save/load w/ legacy rule; memoized sqrt-s + no-stale-cache\n\n**Verify:** pixi run pytest tests/test_calibrated_distribution.py -q\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/calibration.py\", \"tests/test_calibrated_distribution.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibrated_distribution.py -q\", \"acceptanceCriteria\": [\"capability table\", \"no-getattr leak test\", \"forwarded routes\", \"persistence legacy rule\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "P9 Task 3: MIOST migration onto wrapper (identity gate; PIN D)",
+      "status": "pending",
+      "blockedBy": [
+        2
+      ],
+      "description": "**Goal:** Raw MIOST loses all calibration; Miost.solve wraps; Phase-8 identity suite green UNCHANGED; provenance sequence pinned (PIN D); mechanism pointer updated.\n\n**Files:**\n- Modify: miost_ensemble.py (delete calibration surface + cal persistence), methods/miost.py (wrap + docstring)\n- Test: identity file UNCHANGED (the gate); PIN-D fixture + test; inflation/ensemble tests routed via wrapper\n\n**Acceptance Criteria:**\n- No calibration hits in miost_ensemble.py\n- Identity 6+2 green zero edits; external 2 passed (detached)\n- PIN-D sequence equality vs pre-migration fixture; byte-compat green; suite green\n- Mechanism pointer text in shipped docstring\n\n**Verify:** pixi run pytest tests/test_phase8_identity_regression.py -q + SVERDRUP_PHASE8_EXTERNAL=1 -m external + pixi run test\n\n```json:metadata\n{\"files\": [\"src/sverdrup/distributions/miost_ensemble.py\", \"src/sverdrup/methods/miost.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase8_identity_regression.py -q\", \"acceptanceCriteria\": [\"identity suite unchanged green incl. external\", \"provenance sequence equality\", \"no dual mechanisms\", \"pointer text\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "P9 Task 4: ProductDescriptor + generalized harness (leaf-identical gate)",
+      "status": "pending",
+      "blockedBy": [
+        3
+      ],
+      "description": "**Goal:** harness.py over validated ProductDescriptor; mask build generalized; harness-on-MIOST leaf-identical under pinned key map.\n\n**Files:**\n- Create: application/calibration/harness.py, scripts/phase9_fit_run.py, scripts/build_jet_core_mask.py\n- Modify: scripts/phase8_fit_run.py (shim or retired; document)\n- Test: tests/test_calibration_harness.py\n\n**Acceptance Criteria:**\n- Descriptor validation; MIOST tuple (miost,phase8,s-folds) FROZEN; OI tuple (oi,phase9,s-folds)\n- Functions MOVED not forked; jet_core_ref_p8 + jaccard_vs_p8 rows added\n- Mask build: same constants, provenance, deterministic, reproduces phase8 cells on MIOST maps\n- LEAF-IDENTICAL: pinned map {phase8.fit_run -> phase9.miost.fit_run}, walker test, exact equality, ref rows excluded by name; run once recorded\n- Field artifact byte-exact; CLI dev/full validation, atomic; no c2\n\n**Verify:** pixi run pytest tests/test_calibration_harness.py -q; leaf-identical run once\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/calibration/harness.py\", \"scripts/phase9_fit_run.py\", \"scripts/build_jet_core_mask.py\"], \"verifyCommand\": \"pixi run pytest tests/test_calibration_harness.py -q\", \"acceptanceCriteria\": [\"descriptor + seed tuples\", \"leaf-identical vs phase8\", \"mask build deterministic\", \"no c2\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "P9 Task 5: G_pre anchor recomputation + PROGRESS deferral record",
+      "status": "pending",
+      "blockedBy": [
+        4
+      ],
+      "description": "**Goal:** Pinned flattening statistic recomputed once; recorded at phase9.g_pre_anchor; PROGRESS deferral record.\n\n**Files:**\n- Create: scripts/phase9_g_pre_anchor.py; Modify: gate results JSON (atomic), PROGRESS.md\n- Test: anchor assembly on synthetic tables\n\n**Acceptance Criteria:**\n- G_pre = lane0_s - winner_s (~0.1351 expected); block w/ definition verbatim, frame (mask sha, tuple, salt), companions (std log s, range, clip 0.3718, demoted NLL gap + n_eff note)\n- Deterministic; c2 untouched; PROGRESS deferred-to-P10 record\n\n**Verify:** run twice -> identical block\n\n```json:metadata\n{\"files\": [\"scripts/phase9_g_pre_anchor.py\", \"PROGRESS.md\"], \"verifyCommand\": \"pixi run python scripts/phase9_g_pre_anchor.py\", \"acceptanceCriteria\": [\"pinned definition + companions\", \"deterministic\", \"PROGRESS record\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "P9 Task 6: OI map generation at signed config",
+      "status": "pending",
+      "blockedBy": [
+        4
+      ],
+      "description": "**Goal:** Full-year OI mean/var maps at signed baseline config (never re-tuned); dev smoke first, telemetry recorded.\n\n**Files:** Create scripts/generate_oi_maps.py; artifacts oi_{mean,var}_maps.nc (untracked)\n\n**Acceptance Criteria:**\n- baseline_config():47 + baseline_kernel():70, asserted vs audit constants, in nc attrs\n- Train-only obs (halo 1.0 grid-node framing, c2-locked/j3-validation split)\n- Via run_mean_var_maps:180; provenance attrs; dev smoke first (wall+RSS), full year detached w/ watch_pid.sh; shape 365x52x51\n\n**Verify:** dev smoke exit 0; full-year exit 0; attrs/shape check\n\n```json:metadata\n{\"files\": [\"scripts/generate_oi_maps.py\"], \"verifyCommand\": \"pixi run python scripts/generate_oi_maps.py --scope dev\", \"acceptanceCriteria\": [\"signed config asserted\", \"train-only split\", \"provenance attrs\", \"dev smoke first + telemetry\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "P9 Task 7: OI demonstration + wrapper integration (j3-only)",
+      "status": "pending",
+      "blockedBy": [
+        4,
+        6
+      ],
+      "description": "**Goal:** Harness on OI descriptor end-to-end; wrapper-integration tests close the Gaussian gap; demonstration-only. No ship, no c2.\n\n**Files:** artifacts phase9_jet_core_mask_oi.json, phase9_field_oi.json (or negative), evidence phase9.oi.fit_run; tests/test_calibrated_distribution.py OI section\n\n**Acceptance Criteria:**\n- Mask-before-fit ordering (sha recorded pre-fit); step-0 + promotion; OI seed tuple; bars + instruments + ref/jaccard rows\n- Wrapper integration: coverage-through-wrapper == harness (rtol 1e-9); marginal_variance == s*v (rtol 1e-12)\n- s-hat_OI recorded; near-1/lane-0 = informative finding; demonstration_only marker\n- No registry change; no c2; suite green\n\n**Verify:** dev smoke then full run; integration tests green\n\n```json:metadata\n{\"files\": [\"tests/test_calibrated_distribution.py\"], \"verifyCommand\": \"SVERDRUP_PHASE9_SCOPE=dev pixi run python scripts/phase9_fit_run.py --product oi\", \"acceptanceCriteria\": [\"mask-before-fit\", \"wrapper==harness identities\", \"interpretation + demonstration_only\", \"no c2\"], \"modelTier\": \"standard\"}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "P9 Task 8: PHASE-CLOSE OWNER GATE + close records",
+      "status": "pending",
+      "blockedBy": [
+        5,
+        7
+      ],
+      "description": "**Goal:** Single owner review of the phase (OI evidence + G_pre + migration identity report + spec-7 contract); then close records.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** PROGRESS.md, README.md, tracker.\n\n**Acceptance Criteria:**\n- Evidence verbatim from artifacts (OI pack, G_pre block, identity report, contract)\n- Owner ruling in PROGRESS.md, dated, committed BEFORE close\n- No c2 anywhere (tally unchanged at 2); close banner + README + push\n\n**Verify:** rg -n 'phase-9' PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\", \"README.md\"], \"verifyCommand\": \"rg -n 'phase-9' PROGRESS.md\", \"acceptanceCriteria\": [\"owner ruling recorded + committed\", \"no c2, tally unchanged\", \"close + push\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"requireEvidenceTokens\": [[\"g_pre\"], [\"identity\"], [\"oi\"]], \"modelTier\": \"standard\"}\n```"
+    }
+  ],
+  "lastUpdated": "2026-07-12"
+}
