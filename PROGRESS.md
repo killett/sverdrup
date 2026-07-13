@@ -1,22 +1,46 @@
 # Sverdrup — Progress notebook
 
 > **▶ PHASE 9 — method-generic calibration: IN PROGRESS. Tasks 1–3
-> COMPLETE (`eb308c6`). Next: Task 4 (ProductDescriptor + generalized
-> harness; leaf-identical gate).**
+> COMPLETE (Task 3 truly closed at `b5b44a1`; an earlier `cb55add`
+> banner claimed close prematurely — before reviews and the external
+> gate — and is superseded by this entry). Next: Task 4
+> (ProductDescriptor + generalized harness; leaf-identical gate).**
 > Spec: `docs/superpowers/specs/2026-07-12-phase9-generic-calibration-design.md`
 > Plan + tracker: `docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md(.tasks.json)`
 > (8 tasks; owner review addition folded: Task-6 map-level config audit —
 > regenerated OI means vs the signed artifact on matched days, STOP on
 > mismatch, dev smoke first). **Standing discipline for execution:** dual
 > review per task; push as you go; identity gate green BEFORE Task 4
-> starts (PASSED — 6+2, zero edits); Task 8 = owner gate with evidence
-> verbatim from artifacts; ZERO c2 touches phase-wide (no task is
-> capable of touching it). **Task 3 close evidence:** identity gate 6
-> passed 2 skipped; migration suites 105 passed; full suite 642/11/1
-> (baseline unchanged); pre-commit clean; PIN D fixture pinned;
-> mechanism pointer in shipped_miost() docstring; mypy suppressed on
-> two zero-touch test files (return-value/comparison-overlap from
-> with_calibration return type change).
+> starts (PASSED); Task 8 = owner gate with evidence verbatim from
+> artifacts; ZERO c2 touches phase-wide (no task is capable of
+> touching it).
+> **Task 3 close evidence (commits `eb308c6`→`d6004f0`→`59857c7`→
+> `e9f0575`→`b5b44a1`):** raw class stripped of ALL calibration (spec
+> review round 1 caught retained dual mechanisms — deleted in
+> `d6004f0`); Miost.sample_members/solve return the wrapper (required
+> by the zero-edit gate's with_calibration call sites); wrapper gained
+> scalar-1.0 identity-skip (matches pre-migration construction
+> provenance) + chain-preserving composition provenance (`59857c7`,
+> re-review follow-ups, both red-first). Identity gate: in-process
+> **6 passed 2 skipped** (behavioral pins byte-untouched); external
+> pins **2 passed** (v_raw reconstruction identity, mean bit-identity,
+> poly-factory identity, rtol 1e-9). Full suite **645/11/1** at
+> `59857c7` (+3 new tests; the two later commits touched only the
+> identity test file, re-proven green in the gate + external runs).
+> PIN-D sequence fixture pinned; mechanism pointer in shipped_miost()
+> docstring; mypy override narrowed to disable_error_code
+> [return-value, attr-defined] on the one zero-edit gate module.
+> **TWO OWNER FLAGS FOR TASK 8:** (1) zero-edit criterion relaxed for
+> the external fixture's TYPE assert only (+7/−2, `e9f0575`) — the
+> plan's zero-edit + external-pass criteria were unsatisfiable
+> together post-migration; every rtol/bit assertion untouched.
+> (2) STALE-PIN INCIDENT: Phase-8's capability flip (`baa7d9b`) never
+> updated the T5 external factory pin (still scalar-era `S_STAR ×`)
+> and externals were never re-run post-flip — surfaced here as a
+> failure with exact ratio 0.32121 = e^1.1731/s*; pin updated to the
+> signed clipped-poly field, cal_key-asserted + factory-drift assert
+> (`b5b44a1`). Pre-migration HEAD would fail identically — a Phase-8
+> close oversight, not a migration defect.
 > PHASE 10 = lat-varying METHOD parameters (invariant-12) — deferred TO
 > Phase 10, owner-committed (spec §0); the Phase-10 brainstorm consumes
 > `phase9.g_pre_anchor` by reference after Phase-9 close.
