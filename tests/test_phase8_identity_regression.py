@@ -57,6 +57,7 @@ _ARTIFACTS = Path("data/2021a_ssh_mapping_ose/ours")
 _VAR_MAPS = _ARTIFACTS / "stage_b_var_maps.nc"
 _MEAN_MAPS = _ARTIFACTS / "stage_b_mean_maps.nc"
 _ACCEPTANCE = _ARTIFACTS / "stage_miost_acceptance.nc"
+_FIELD_ART = _ARTIFACTS / "phase8_field.json"
 
 
 def _obs(n: int = 80) -> ObsWindow:
@@ -286,10 +287,16 @@ def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
 @pytest.mark.external
 @_external_optin
 @pytest.mark.skipif(
-    not (_VAR_MAPS.exists() and _ACCEPTANCE.exists() and _SCOPE.exists()),
+    not (
+        _VAR_MAPS.exists()
+        and _ACCEPTANCE.exists()
+        and _SCOPE.exists()
+        and _FIELD_ART.exists()
+    ),
     reason=(
         f"Signed Stage-B artifacts absent ({_VAR_MAPS} / {_ACCEPTANCE} / "
-        f"{_SCOPE}); run with the challenge data present for the regression."
+        f"{_SCOPE} / {_FIELD_ART}); run with the challenge data present for "
+        "the regression."
     ),
 )
 def test_external_var_maps_pin_s_star_identity(
@@ -305,22 +312,40 @@ def test_external_var_maps_pin_s_star_identity(
     The plan text's "written AT s*" describes the shipped SIGMA semantics,
     not the artifact bytes.  Therefore the pins are:
 
-    - raw (calibration-1.0) variance == signed maps      (identity of the
+    - raw (calibration-1.0) variance == signed maps        (identity of the
       reconstruction: same solver, seeds, budget — rtol 1e-9)
-    - factory (s*) marginal_variance == S_STAR × signed  (identity (ii)
-      against the SIGNED artifact — rtol 1e-9)
+    - factory marginal_variance == s_poly(x) × signed      (identity (ii):
+      the shipped product is the FIELD-calibrated product — the clipped
+      low-order polynomial s(x) of the Phase-8 capability flip (baa7d9b),
+      loaded from the SIGNED ``phase8_field.json`` artifact — rtol 1e-9)
 
-    Bug caught: legacy-load inversion shipping ~3.2x under-dispersed sigma
-    (a raw-vs-calibrated sign flip would yield signed/s* instead of
-    S_STAR × signed — a factor-101 error, unmissable); the factory
-    ScalarCalibration(s*) silently dropped at solve() time (ratio 1.0, not
-    S_STAR); or any wrong power of s on the grid S-path.
+    Bug caught: the field silently dropped at solve() time (ratio 1.0
+    everywhere, not s(x)); any wrong power of s on the grid S-path; factory
+    field drifting from the SIGNED artifact (cal_key mismatch asserted
+    first); and a STALE SCALAR-ERA EXPECTATION — this pin originally
+    expected ``S_STAR × signed`` (pre-flip semantics, written at Phase-8
+    Task 5) and was never updated at the capability flip nor re-run
+    (opt-in) until the Phase-9 migration gate, where it failed with ratio
+    0.3212 = e^1.1731 (clip floor) / s* at the far-south floor nodes.
     """
+    import json as _json
+
     import xarray as xr
+
+    from sverdrup.distributions.calibration import calibration_from_json
 
     dist, _, _ = day0_shipped
     with xr.open_dataset(_VAR_MAPS) as ds:
         signed = np.asarray(ds["ssh"].isel(time=0).values)  # (lat, lon), RAW
+
+    # The SIGNED shipped field (same discipline as the gate runner): the
+    # artifact must be self-consistent AND be the field the factory ships.
+    art = _json.loads(_FIELD_ART.read_text())
+    field = calibration_from_json(art["calibration"])
+    assert field.key() == art["cal_key"], "field artifact cal_key inconsistent"
+    assert dist.calibration.key() == art["cal_key"], (
+        "shipped factory field != SIGNED phase8_field.json artifact"
+    )
 
     v_raw = np.asarray(
         dist.with_calibration(ScalarCalibration(1.0)).marginal_variance()
@@ -337,14 +362,17 @@ def test_external_var_maps_pin_s_star_identity(
             "gate run."
         ),
     )
+    # s_poly at the same grid nodes the wrapper uses (meshgrid, sqrt_s²).
+    lon2d, lat2d = np.meshgrid(dist.grid.x, dist.grid.y)  # (ny, nx)
+    sqrt_s = field.sqrt_s_at(lon2d, lat2d)
     np.testing.assert_allclose(
         v_factory,
-        S_STAR * signed,
+        sqrt_s * sqrt_s * signed,
         rtol=1e-9,
         err_msg=(
-            "Factory marginal_variance != S_STAR × signed var maps — the "
-            "factory ScalarCalibration(s*) was dropped or a wrong power of s "
-            "is applied on the S-path."
+            "Factory marginal_variance != s_poly(x) × signed var maps — the "
+            "shipped clipped-poly field was dropped at solve() time or a "
+            "wrong power of s is applied on the grid S-path."
         ),
     )
 
