@@ -51,19 +51,6 @@ if _SCOPE_MODE not in {"dev", "full"}:
 _DESCRIPTOR: ProductDescriptor = MIOST_DESCRIPTOR
 
 
-def _default(o: object) -> object:
-    """JSON serialiser for numpy scalars/arrays."""
-    import numpy as np
-
-    if isinstance(o, np.integer):
-        return int(o)
-    if isinstance(o, np.floating):
-        return float(o)
-    if isinstance(o, np.ndarray):
-        return o.tolist()
-    raise TypeError(f"not serialisable: {type(o)!r}")
-
-
 def _print_banner(evidence: dict[str, Any], negative: bool) -> None:
     """Print the STOP banner + selection/bars summary."""
     sel = evidence["selection"]
