@@ -1,5 +1,26 @@
 # Sverdrup — Progress notebook
 
+> **⚖ PHASE-9 TASK-8 OWNER RULING (2026-07-13): PHASE 9 CLOSED —
+> APPROVED.** Adjudications (verbatim intent): (1) zero-edit relaxation
+> `e9f0575` ACCEPTED — confined to type evidence, which the replacement
+> STRENGTHENS (wrapper + underlying both pinned); every numeric/bit
+> assertion untouched. **PRINCIPLE RECORDED for future identity gates:
+> behavioral pins (rtol/bit values) are inviolable; structural asserts
+> that encode implementation shape may track a reviewed shape change,
+> disclosed exactly as done here.** (2) Phase-8 stale-pin incident
+> `b5b44a1` ACCEPTED as a Phase-8 close oversight surfaced by this
+> phase; three orders: (a) dated ERRATUM appended to the Phase-8 close
+> entry below; (b) STANDING RULE added to spec §6 beside the touch
+> mechanics: any commit changing shipped-product semantics — capability
+> flips above all — re-runs the FULL external/artifact-gated suite
+> before close; externals are part of "green"; (c) full external sweep
+> at HEAD post-fix confirmed, count in the close banner. (3) Plan
+> wording "their_eval never imported" = plan erratum ("no c2 access
+> capability" was the intent; the moved shim is reviewer-verified
+> inert); POST-CLOSE HYGIENE FOLLOW-UP (small reviewed commit, not a
+> gate condition): delete the inert vendor-path shim from load_track so
+> the zero-c2 invariant reads literally true.
+
 > **▶ PHASE 9 — method-generic calibration: IN PROGRESS. Tasks 1–3
 > COMPLETE (Task 3 truly closed at `b5b44a1`; an earlier `cb55add`
 > banner claimed close prematurely — before reviews and the external
@@ -70,6 +91,15 @@
 > pre-gate (Newton Hessian, dead external tests, numpy cal_key,
 > partial-window touch runner) — all fixed + regression-pinned.
 > Scalar STAGE_B_INFLATION_S retained for the signed Stage-B record.
+> **ERRATUM (owner-ordered, 2026-07-13, Phase-9 Task-8 ruling):** this
+> close's "suite green" EXCLUDED the post-flip external pins — the
+> opt-in external factory pin was left scalar-era by the capability
+> flip and never re-run against the flipped product. Surfaced at the
+> Phase-9 migration gate as an exact-ratio failure (0.32121 =
+> e^1.1731/s*); pin updated to the signed clipped-poly field,
+> cal_key-asserted, factory-drift assert added — see `b5b44a1`.
+> Standing rule now in Phase-9 spec §6: semantics-changing commits
+> re-run the full external suite before close.
 
 > **✅ PHASE-8 c2 TOUCH 2 (CORRECTED) — SIGN-OFF 2026-07-12 (Task 11
 > CLOSED; pre-registered reading applied mechanically).** Window

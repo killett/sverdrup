@@ -246,6 +246,12 @@ products, including Phase 10's)
    launder; honest per-product tally.
 5. Capability-flip commit with σ-semantics carrying the product's measured
    numbers.
+6. **EXTERNAL-SWEEP RULE (owner, Task-8 ruling 2026-07-13, standing):** any
+   commit that changes shipped-product semantics — capability flips above
+   all — re-runs the FULL external/artifact-gated suite before close;
+   externals are part of "green". (Origin: the Phase-8 flip left its T5
+   external factory pin scalar-era and unexercised; surfaced at the Phase-9
+   migration gate, fixed in `b5b44a1`.)
 
 Phase 9 itself spends ZERO touches (MIOST migration identity-proven; OI
 demonstration j3-side).
