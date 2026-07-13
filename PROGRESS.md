@@ -2378,6 +2378,11 @@ above confirm them**, so the spec stops lagging the decision.
 
 ## Deferred items / open questions
 
+- **Phase-10 = lat-varying METHOD parameters (invariant-12) — deferred TO Phase 10,
+  owner-committed; A/B boundary per spec §0; G_pre anchor at `phase9.g_pre_anchor`.**
+  (Owner obligation 7, first half.) Phase 10 will consume `phase9.g_pre_anchor` by
+  reference and set its bar on G gap REDUCTION.
+
 - **Next release — relax the conda recipe Python cap.** `pyproject.toml` now declares
   `requires-python = ">=3.12"` (cap dropped, commit `e236591`; source uses only stable stdlib
   and numpy/scipy/pyproj all ship cp314 wheels). The **0.1.0** recipe deliberately keeps

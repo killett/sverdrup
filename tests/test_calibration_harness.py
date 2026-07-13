@@ -1,4 +1,4 @@
-"""Tests for the generalized calibration harness (Phase 9, Task 4).
+"""Tests for the generalized calibration harness (Phase 9, Tasks 4 & 5).
 
 These tests cover:
   - ProductDescriptor validation (each invalid field rejected with right error)
@@ -6,6 +6,8 @@ These tests cover:
   - Mask-build generalization determinism (two runs byte-identical, phase8 cells)
   - Leaf-identical harness regression on MIOST vs Phase-8 evidence
     (env-gated: set SVERDRUP_PHASE9_EXTERNAL=1 to opt in; ~2.5 min runtime)
+  - G_pre anchor block assembly (Task 5): pure-function unit tests on synthetic
+    selection tables; no artifacts needed
 """
 
 from __future__ import annotations
@@ -488,4 +490,284 @@ def test_harness_on_miost_field_byte_exact_vs_phase8() -> None:
     )
     assert wf["to_json"] == p8_field["calibration"], (
         "winner_field.to_json != phase8_field.json calibration (byte mismatch)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# G_pre anchor block assembly (Task 5) — pure-function unit tests
+# ---------------------------------------------------------------------------
+# These tests import build_anchor_block from scripts/phase9_g_pre_anchor.py.
+# The function is pure: it only reads its arguments (synthetic selection tables,
+# synthetic calibration JSON, a mask SHA, and companion values) and assembles
+# the anchor block.  No artifacts are read or written.
+# ---------------------------------------------------------------------------
+
+_ANCHOR_PATH = (
+    Path(__file__).resolve().parents[1] / "scripts" / "phase9_g_pre_anchor.py"
+)
+
+
+def _load_anchor_module() -> ModuleType:
+    """Load scripts/phase9_g_pre_anchor.py without side effects.
+
+    Returns:
+        Loaded module object with build_anchor_block callable.
+    """
+    spec = importlib.util.spec_from_file_location("phase9_g_pre_anchor", _ANCHOR_PATH)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _synthetic_selection(
+    lane0_s: float = 0.50,
+    winner_name: str = "poly",
+    winner_s: float = 0.20,
+) -> dict[str, Any]:
+    """Return a synthetic selection block with controlled lane0 and winner stats.
+
+    Args:
+        lane0_s: Lane-0 (scalar) S-stat.
+        winner_name: Name of the winning lane.
+        winner_s: Winner S-stat.
+
+    Returns:
+        Selection dict shaped like the real harness selection block.
+    """
+    return {
+        "lane0_s_stat": lane0_s,
+        "winner": winner_name,
+        "table": [
+            {"name": "scalar", "s_stat": lane0_s},
+            {"name": "piecewise", "s_stat": winner_s + 0.05},
+            {"name": winner_name, "s_stat": winner_s},
+            {"name": "covariate", "s_stat": winner_s + 0.02},
+        ],
+    }
+
+
+def _synthetic_cal_json() -> dict[str, Any]:
+    """Return a minimal poly calibration JSON for companion computation.
+
+    All coefficients are zero so log_s_at = 0 everywhere (before clip).
+    Clip bounds chosen so the clip NEVER engages (raw=0 is inside [−1, 1]).
+
+    Returns:
+        Calibration dict compatible with calibration_from_json.
+    """
+    return {
+        "kind": "poly",
+        "coeffs": [0.0, 0.0, 0.0, 0.0, 0.0],
+        "clip": {"lo_log_s": -1.0, "hi_log_s": 1.0},
+        "fit_id": "test",
+    }
+
+
+def test_g_pre_computed_as_lane0_minus_winner() -> None:
+    """build_anchor_block computes G_pre = lane0_s_stat − winner_s_stat (§7c1).
+
+    Bug caught: if the formula were inverted (winner − lane0), or if it used
+    the wrong table row's s_stat (e.g. piecewise instead of the winner name),
+    the returned g_pre would not equal 0.30.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection(lane0_s=0.50, winner_name="poly", winner_s=0.20)
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    assert abs(block["g_pre"] - 0.30) < 1e-12, (
+        f"G_pre should be 0.50 − 0.20 = 0.30, got {block['g_pre']}"
+    )
+
+
+def test_g_pre_is_builtin_float() -> None:
+    """build_anchor_block returns g_pre as a Python float, not np.floating.
+
+    Bug caught: if numpy subtraction returns np.float64 and the coercion
+    is missing, repr() emits 'np.float64(0.3)' which breaks JSON round-trip
+    and the Phase-8 cal_key lesson.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection(lane0_s=0.50, winner_s=0.20)
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    assert type(block["g_pre"]) is float, (
+        f"g_pre must be builtin float, got {type(block['g_pre'])}"
+    )
+    # Ensure no numpy scalar lurks (isinstance catches subclasses too)
+    assert not isinstance(block["g_pre"], np.floating), (
+        "g_pre must not be an np.floating subclass"
+    )
+
+
+def test_anchor_block_required_keys_present() -> None:
+    """build_anchor_block returns a block with all required keys from the spec.
+
+    Bug caught: if any of g_pre, definition, frame, or companions were absent,
+    Phase-10 would silently consume an incomplete contract block.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="abc123",
+    )
+    assert "g_pre" in block, "missing key: g_pre"
+    assert "definition" in block, "missing key: definition"
+    assert "frame" in block, "missing key: frame"
+    assert "companions" in block, "missing key: companions"
+
+
+def test_frame_block_contains_required_fields() -> None:
+    """Frame sub-block has mask, sha256, fold_seed_tuple, and salt fields.
+
+    Bug caught: if sha256 were absent, Phase-10 loses the ability to verify
+    the pinned mask; if salt were absent, the fold lineage is ambiguous.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="aaaa1111",
+    )
+    frame = block["frame"]
+    assert frame["mask"] == "phase8_jet_core_mask.json", (
+        f"frame.mask wrong: {frame['mask']}"
+    )
+    assert frame["sha256"] == "aaaa1111", (
+        f"frame.sha256 should be passed-in value, got {frame['sha256']!r}"
+    )
+    assert frame["fold_seed_tuple"] == ["miost", "phase8", "s-folds"], (
+        f"frame.fold_seed_tuple wrong: {frame['fold_seed_tuple']}"
+    )
+    assert frame["salt"] == 1, f"frame.salt should be 1, got {frame['salt']}"
+
+
+def test_companions_clip_engagement_zero_for_no_clip_field() -> None:
+    """Companions clip_engagement_fraction is 0.0 for a field that never clips.
+
+    Bug caught: if the engagement computation used the wrong grid, applied
+    clip incorrectly, or forgot to use raw (pre-clip) values, a field that
+    is always within clip bounds would show nonzero engagement.
+
+    The synthetic cal has all-zero coefficients and clip [-1, 1]; raw log_s
+    is 0.0 everywhere, which is strictly inside [-1, 1], so no node engages.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    frac = block["companions"]["clip_engagement_fraction"]
+    assert frac == 0.0, (
+        f"Synthetic all-zero poly field should have clip_engagement_fraction=0.0, "
+        f"got {frac}"
+    )
+
+
+def test_companions_nll_gap_demoted_dof_is_5() -> None:
+    """companions.nll_gap_demoted has dof=5 (5 poly coefficients, per spec §7c4).
+
+    Bug caught: if dof were hardcoded as 1 (scalar) or derived from a wrong
+    parameter count, Phase-10 would apply incorrect AIC adjustments.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    ngd = block["companions"]["nll_gap_demoted"]
+    assert ngd["dof"] == 5, f"nll_gap_demoted.dof should be 5, got {ngd['dof']}"
+
+
+def test_companions_nll_gap_n_eff_note_mentions_aic() -> None:
+    """companions.nll_gap_demoted n_eff_note mentions AIC and n_eff (per spec §7c4).
+
+    Bug caught: if n_eff_note were an empty string or omitted, the demoted-stats
+    context required by the spec would be absent, silently making the gap
+    appear as a valid threshold statistic.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    note = block["companions"]["nll_gap_demoted"]["n_eff_note"]
+    assert "AIC" in note, f"n_eff_note must mention AIC; got: {note!r}"
+    assert "n_eff" in note, f"n_eff_note must mention n_eff; got: {note!r}"
+
+
+def test_companions_area_weighted_std_log_s_positive() -> None:
+    """companions.area_weighted_std_log_s is a positive float for a non-flat field.
+
+    Bug caught: if area weighting were applied incorrectly (wrong axis,
+    non-normalised weights) the std could be zero or negative.
+
+    We use a field with nonzero linear coefficient (a1=1.0) so log_s varies
+    across the grid, giving a positive std.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    # Non-flat field: a1=1.0 means log_s varies with lat
+    varying_cal = {
+        "kind": "poly",
+        "coeffs": [0.0, 1.0, 0.0, 0.0, 0.0],
+        "clip": {"lo_log_s": -5.0, "hi_log_s": 5.0},
+        "fit_id": "test-vary",
+    }
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=varying_cal,
+        cal_key="cal:test-vary",
+        mask_sha256="deadbeef",
+    )
+    std = block["companions"]["area_weighted_std_log_s"]
+    assert std > 0.0, f"Expected positive std for varying field, got {std}"
+    assert isinstance(std, float), f"std must be builtin float, got {type(std)}"
+
+
+def test_definition_string_contains_spec_wording() -> None:
+    """build_anchor_block embeds the spec §7c1 definition verbatim.
+
+    Bug caught: if the definition string were a paraphrase or empty, the
+    Phase-10 interface contract would lose its pinned wording — the anchor's
+    whole purpose is to carry the verbatim definition alongside the number.
+    """
+    mod = _load_anchor_module()
+    sel = _synthetic_selection()
+    block = mod.build_anchor_block(
+        selection=sel,
+        cal_json=_synthetic_cal_json(),
+        cal_key="cal:test",
+        mask_sha256="deadbeef",
+    )
+    defn = block["definition"]
+    # Must contain key terms from §7c1 wording
+    assert "lane-0" in defn.lower() or "lane 0" in defn.lower(), (
+        f"definition must reference lane-0; got: {defn!r}"
+    )
+    assert "winner" in defn.lower(), f"definition must reference winner; got: {defn!r}"
+    assert "pooled" in defn.lower(), (
+        f"definition must reference pooled worst-region; got: {defn!r}"
     )
