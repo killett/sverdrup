@@ -1,5 +1,20 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 9 — method-generic calibration: PLAN APPROVED (owner,
+> 2026-07-12) — READY TO EXECUTE in a fresh session.**
+> Spec: `docs/superpowers/specs/2026-07-12-phase9-generic-calibration-design.md`
+> Plan + tracker: `docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md(.tasks.json)`
+> (8 tasks; owner review addition folded: Task-6 map-level config audit —
+> regenerated OI means vs the signed artifact on matched days, STOP on
+> mismatch, dev smoke first). **Standing discipline for execution:** dual
+> review per task; push as you go; identity gate green BEFORE Task 4
+> starts; Task 8 = owner gate with evidence verbatim from artifacts;
+> ZERO c2 touches phase-wide (no task is capable of touching it).
+> PHASE 10 = lat-varying METHOD parameters (invariant-12) — deferred TO
+> Phase 10, owner-committed (spec §0); the Phase-10 brainstorm consumes
+> `phase9.g_pre_anchor` by reference after Phase-9 close.
+> **RESUME:** `/superpowers-extended-cc:subagent-driven-development docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md`
+
 > **✅ PHASE 8 — spatially varying uncertainty calibration: CLOSED
 > 2026-07-12 on the capability-flip commit (`baa7d9b`). ALL 13 plan
 > tasks resolved** (1–12 executed; 13 = negative-result branch CLOSED

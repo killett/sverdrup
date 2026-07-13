@@ -370,7 +370,9 @@ class ProductDescriptor:
       product's proxy; ρ̂/n_eff/merge; T+S families lanes 0/A/B+covariate-iff-
       promoted; select ABSOLUTE band; winner refit + clip; evidence blocks
       incl. `jet_core_ref_p8` row + `jaccard_vs_p8` (computed against the
-      committed `data/2021a_ssh_mapping_ose/ours/phase8_jet_core_mask.json`)
+      recorded artifact path with provenance,
+      `data/2021a_ssh_mapping_ose/ours/phase8_jet_core_mask.json` —
+      data/ours/ is untracked by design, consistent with PIN-C's skip guard)
       + per-product promotion record); NO math in the harness beyond what
       phase8_fit_run.py already inlined (functions move, don't fork)
 - [ ] `build_jet_core_mask.py --mean-maps <nc> --out <json>` generalizes the
@@ -392,6 +394,10 @@ def _leaves(d, prefix=()):
         for i, v in enumerate(d): yield from _leaves(v, (*prefix, str(i)))
     else: yield prefix, d
 
+# EXCLUDED is belt-and-suspenders under the superset assertion below
+# (l9.keys() >= l8.keys() already tolerates NEW p9-only leaves; the explicit
+# set documents WHICH new rows are expected). Do NOT "simplify" it away —
+# it guards against a future rename colliding with a phase8 leaf name.
 EXCLUDED = {("regional_table_ref",), ("jet_core_ref_p8",), ("jaccard_vs_p8",)}
 
 def test_harness_on_miost_reproduces_phase8_evidence_leaf_identical():
@@ -497,6 +503,18 @@ config; dev smoke FIRST with runtime/RAM recorded.
 - [ ] Grid/cadence: challenge grid, daily, 2017-01-01..2017-12-31 — matching
       harness track-interp expectations (same shape as stage_b maps:
       time 365 × lat 52 × lon 51)
+- [ ] **MAP-LEVEL CONFIG AUDIT (owner plan-review addition, 2026-07-12):**
+      after generation, compare the regenerated OI MEANS against the SIGNED
+      `OSE_ssh_mapping_OURS_OI.nc` on matched days — tight rtol (BIT-identical
+      if the producer path is shared with the artifact's; determine which and
+      record); comparison result recorded in the nc attrs AND the commit
+      body. PASS = the code constants are PROVEN to be the signed config (the
+      only zero-c2 verification available; the constants-level assert alone
+      is not proof). MISMATCH = **STOP and attribute BEFORE the demonstration
+      runs** — the Phase-7 0.16 m lesson: a regenerated map that differs from
+      the signed artifact is a finding, never a shrug. The dev smoke carries
+      the matched-day comparison on its 12-day scope BEFORE the full year
+      commits.
 
 **Verify:** dev smoke exit 0 + both nc written; full-year run exit 0;
 `ncdump -h`-equivalent attrs check via python one-liner.
@@ -513,10 +531,11 @@ verify attrs/shapes → commit
 tests close the Gaussian-path gap; evidence pack marked demonstration-only.
 
 **Files:**
-- Artifacts: `data/2021a_ssh_mapping_ose/ours/phase9_jet_core_mask_oi.json`
-  (committed? NO — data dir untracked; mask recorded with provenance like the
-  phase8 pattern), `phase9_field_oi.json` (or negative-result), evidence
-  block `phase9.oi.fit_run`
+- Artifacts: `data/2021a_ssh_mapping_ose/ours/phase9_jet_core_mask_oi.json` —
+  recorded artifact path with provenance (data/ours/ is untracked by design,
+  consistent with PIN-C's skip guard; the phase8 pattern), plus
+  `phase9_field_oi.json` (or negative-result), evidence block
+  `phase9.oi.fit_run`
 - Test: `tests/test_calibrated_distribution.py` (OI integration section,
   external-gated on artifact presence)
 
