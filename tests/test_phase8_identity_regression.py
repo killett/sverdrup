@@ -29,6 +29,7 @@ from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.distributions.calibration import (
+    CalibratedDistribution,
     ClipSpec,
     PolyCalibration,
     ScalarCalibration,
@@ -220,7 +221,7 @@ _external_optin = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def day0_shipped() -> tuple[MiostEnsembleDistribution, np.ndarray, GridSpec]:
+def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
     """Day-0 shipped-config reconstruction via the Stage-B runner's exact recipe.
 
     Mirrors ``scripts/stage_miost_gate_run.py::stage_b_main``: load the six
@@ -273,7 +274,11 @@ def day0_shipped() -> tuple[MiostEnsembleDistribution, np.ndarray, GridSpec]:
     train = _subset(obs, split.train_idx)
 
     dist = shipped_miost().solve(train, grid, ConstantProvider(winner), 0.0)
-    assert isinstance(dist, MiostEnsembleDistribution)
+    # Phase-9 §3: the shipped product is the CalibratedDistribution wrapper
+    # over the raw ensemble (type evidence updated with the migration; every
+    # behavioral pin below — rtol 1e-9/1e-12, mean bit-identity — unchanged).
+    assert isinstance(dist, CalibratedDistribution)
+    assert isinstance(dist.underlying, MiostEnsembleDistribution)
     mdt = load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
     return dist, np.asarray(mdt), grid
 
