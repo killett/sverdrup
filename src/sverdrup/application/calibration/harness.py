@@ -967,6 +967,16 @@ def build_evidence(
         per-product rows ``jet_core_ref_p8``, ``jaccard_vs_p8``, and
         ``promotion_record``.
     """
+    # Mask-predates-fit ordering guard (spec §5 + Task-7 AC 1a):
+    # The mask artifact MUST exist before any lane fit runs.  Build it with
+    # scripts/build_jet_core_mask.py before running the harness.
+    if not desc.mask_artifact.exists():
+        raise FileNotFoundError(
+            f"Jet-core mask artifact missing (mask must be built before fit): "
+            f"{desc.mask_artifact}\n"
+            "Run: pixi run python scripts/build_jet_core_mask.py "
+            f"--mean-maps <product_mean_maps> --out {desc.mask_artifact}"
+        )
     jet_mask = _jet_cell_mask(desc.mask_artifact)
 
     # ρ̂ once at frozen s*; n_eff per block + merge rule on the S-fold layout.

@@ -6,25 +6,39 @@ test AND a concrete bug that would make the test fail.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+from sverdrup.application.calibration.constants import SIGMA_OBS2
 from sverdrup.core.distribution import CapabilityNotAvailableError
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.provenance import (
     TransformKind,
     UncertaintyProvenance,
 )
+from sverdrup.core.types import CovFidelity
 from sverdrup.core.types import UncertaintyCapability as UC
 from sverdrup.distributions.calibration import (
     CalibratedDistribution,
     ClipSpec,
     PolyCalibration,
     ScalarCalibration,
+    calibration_from_json,
 )
+from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
+
+# ---------------------------------------------------------------------------
+# OI wrapper integration artifact paths
+# ---------------------------------------------------------------------------
+
+_OI_FIELD_ARTIFACT = Path("data/2021a_ssh_mapping_ose/ours/phase9_field_oi.json")
+_OI_MASK_ARTIFACT = Path("data/2021a_ssh_mapping_ose/ours/phase9_jet_core_mask_oi.json")
+
+_OI_ARTIFACTS_PRESENT = _OI_FIELD_ARTIFACT.exists() and _OI_MASK_ARTIFACT.exists()
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -791,4 +805,218 @@ def test_pin_d_miost_wrapper_provenance_sequence_matches_fixture() -> None:
         f"  actual:   {actual}\n"
         "This means the migration changed the number or order of "
         "transforms (double-append or missing append)."
+    )
+
+
+# ===========================================================================
+# 15 — OI wrapper integration (external-gated on phase9_field_oi.json)
+#
+# Batch-2 item 2: wrapper-integration tests close the Gaussian-path gap.
+# These tests use the OI product's fitted CalibrationField and construct a
+# GaussianPredictiveDistribution stub to verify the wrapper identity.
+#
+# Gates: skipped when phase9_field_oi.json or phase9_jet_core_mask_oi.json
+#        are absent (untracked artifacts).
+# ===========================================================================
+
+
+def _oi_prov() -> UncertaintyProvenance:
+    """Return SAMPLES-capable provenance for an OI-like underlying."""
+    return UncertaintyProvenance(
+        native_capability=UC.SAMPLES,
+        transformations=[],
+    )
+
+
+@dataclass
+class _ConstVarOp:
+    """Stub CovarianceOperator returning a fixed per-node variance array.
+
+    Bug probe: using a mis-scaled version (e.g. multiplying by 2) will cause
+    the marginal_variance identity test to fail if the wrapper does not delegate
+    correctly to the underlying's cov_op.
+
+    Attributes:
+        var_flat: (N,) array of known variances, one per grid node.
+        scale: Multiplicative mis-scale factor (set to 1.0 for correct stub;
+            set != 1.0 to probe the red path).
+        fidelity: CovarianceOperator protocol requirement (EXACT placeholder).
+    """
+
+    var_flat: np.ndarray
+    scale: float = 1.0
+    fidelity: CovFidelity = CovFidelity.EXACT
+
+    def marginal_var(self, pts: np.ndarray) -> np.ndarray:
+        """Return scaled per-node variance (scale != 1 → deliberately wrong)."""
+        return self.scale * self.var_flat
+
+    def cov(self, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """Return zero covariance (unused in these tests)."""
+        return np.zeros((len(a), len(b)))
+
+    def posterior_sample(self, s: np.ndarray, seed: int, m: int) -> np.ndarray:
+        """Return zero-mean samples (unused in these tests)."""
+        return np.zeros((m, len(s)))
+
+
+def _oi_cal_field() -> PolyCalibration:
+    """Load the fitted OI PolyCalibration from phase9_field_oi.json.
+
+    Returns:
+        PolyCalibration loaded from the OI field artifact.
+    """
+    d = json.loads(_OI_FIELD_ARTIFACT.read_text())
+    return calibration_from_json(d["calibration"])  # type: ignore[return-value]
+
+
+def _oi_underlying(
+    grid: GridSpec, var_flat: np.ndarray, scale: float = 1.0
+) -> GaussianPredictiveDistribution:
+    """Build a GaussianPredictiveDistribution stub using _ConstVarOp.
+
+    Args:
+        grid: The grid for the underlying distribution.
+        var_flat: (ny*nx,) known marginal variances at grid nodes.
+        scale: Mis-scale factor for the cov_op (1.0 = correct).
+
+    Returns:
+        GaussianPredictiveDistribution with the given grid and stub cov_op.
+    """
+    op = _ConstVarOp(var_flat=var_flat, scale=scale)
+    mean = np.zeros(grid.shape)
+    return GaussianPredictiveDistribution(
+        grid=grid,
+        mean=mean,
+        cov_op=op,
+        provenance=_oi_prov(),
+        time_days=50.0,
+    )
+
+
+@pytest.mark.skipif(
+    not _OI_ARTIFACTS_PRESENT,
+    reason="phase9_field_oi.json or phase9_jet_core_mask_oi.json absent",
+)
+def test_oi_wrapper_marginal_variance_pointwise_identity() -> None:
+    """OI wrapper marginal_variance == s(x)·v pointwise (rtol 1e-12).
+
+    This test constructs a GaussianPredictiveDistribution for a 5×5 grid
+    matching the calibration box, loads the fitted OI PolyCalibration, wraps
+    with CalibratedDistribution, and verifies the algebraic identity
+    wrapper.marginal_variance()[i,j] == cal.s(lon[j], lat[i]) * v[i,j].
+
+    Bug caught: wrapper applies sqrt(s) instead of s, or uses a scalar s
+    instead of the spatially-varying PolyCalibration, or delegates to the
+    wrong field — a mis-scaled underlying (scale=2.0) would produce
+    wrapper output equal to 2 * s(x) * v, failing the 1e-12 tolerance.
+    """
+    # 5×5 grid covering the calibration box
+    grid = GridSpec.lonlat(
+        lons=np.linspace(296.0, 304.0, 5),
+        lats=np.linspace(34.0, 42.0, 5),
+    )
+    ny, nx = grid.shape
+    rng = np.random.default_rng(101)
+    # Known positive variances (mimics OI raw variance maps)
+    v_grid = rng.uniform(0.01, 0.5, size=(ny, nx))
+    v_flat = v_grid.ravel()
+
+    cal = _oi_cal_field()
+
+    # Red-path verification: mis-scaled stub (scale=2.0) would fail
+    mis_underlying = _oi_underlying(grid, v_flat, scale=2.0)
+    mis_wrapped = CalibratedDistribution(mis_underlying, cal, UC.SAMPLES)
+    mis_mv = mis_wrapped.marginal_variance()
+    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
+    s_field = cal.sqrt_s_at(lon2d, lat2d) ** 2
+    expected = s_field * v_grid
+    # Mis-scaled wrapper deviates from expected (confirms the test is sensitive)
+    assert not np.allclose(mis_mv, expected, rtol=1e-12), (
+        "Red-path check: mis-scaled stub (×2) should NOT match expected — "
+        "if this asserts, the test is insensitive to wrong scaling."
+    )
+
+    # Green path: correctly-scaled underlying
+    underlying = _oi_underlying(grid, v_flat, scale=1.0)
+    wrapped = CalibratedDistribution(underlying, cal, UC.SAMPLES)
+    mv = wrapped.marginal_variance()
+
+    np.testing.assert_allclose(
+        mv,
+        expected,
+        rtol=1e-12,
+        err_msg=(
+            "OI wrapper marginal_variance failed identity s(x)·v pointwise. "
+            "Bug: wrapper applied wrong scale (sqrt(s) or scalar s or mis-delegated)."
+        ),
+    )
+
+
+@pytest.mark.skipif(
+    not _OI_ARTIFACTS_PRESENT,
+    reason="phase9_field_oi.json or phase9_jet_core_mask_oi.json absent",
+)
+def test_oi_wrapper_coverage_identity_via_sigma_floor() -> None:
+    """Coverage recomputed through wrapper + SIGMA_OBS2 floor == direct formula (rtol 1e-9).
+
+    This test verifies that computing held-out coverage as:
+        count(|resid| <= sqrt(wrapper.marginal_variance()[i,j] + SIGMA_OBS2)) / N
+    equals the direct harness formula:
+        count(|resid| <= sqrt(cal.s(x)*v[i,j] + SIGMA_OBS2)) / N
+    to rtol 1e-9.  The SIGMA_OBS2 floor is the same constant the harness uses
+    (SIGMA_OBS2 = 0.03^2).
+
+    Bug caught: wrapper omits SIGMA_OBS2 internally (changing the coverage
+    numerics), or uses wrong s(x) (mis-scaled underlying inflates variance,
+    changing which residuals fall within the band — a ×2 mis-scale would
+    produce coverage 1.0 on typical residuals since sqrt(2*s*v+σ) >> |resid|).
+    """
+    grid = GridSpec.lonlat(
+        lons=np.linspace(296.0, 304.0, 5),
+        lats=np.linspace(34.0, 42.0, 5),
+    )
+    ny, nx = grid.shape
+    rng = np.random.default_rng(202)
+    v_grid = rng.uniform(0.01, 0.5, size=(ny, nx))
+    v_flat = v_grid.ravel()
+
+    cal = _oi_cal_field()
+    lon2d, lat2d = np.meshgrid(grid.x, grid.y)
+    s_field = cal.sqrt_s_at(lon2d, lat2d) ** 2
+
+    # Synthetic residuals at grid nodes: drawn to produce ~68% coverage under
+    # the direct formula (so the test is sensitive, not trivially 0 or 1).
+    true_std = np.sqrt(s_field * v_grid + SIGMA_OBS2)
+    resid = rng.normal(0.0, 1.0, size=(ny, nx)) * true_std  # ~68% in-band
+
+    # --- Direct harness formula ---
+    var_direct = s_field * v_grid + SIGMA_OBS2
+    in_band_direct = np.abs(resid) <= np.sqrt(var_direct)
+    coverage_direct = float(np.mean(in_band_direct))
+
+    # --- Through wrapper ---
+    underlying = _oi_underlying(grid, v_flat, scale=1.0)
+    wrapped = CalibratedDistribution(underlying, cal, UC.SAMPLES)
+    var_wrapper = wrapped.marginal_variance() + SIGMA_OBS2
+    in_band_wrapper = np.abs(resid) <= np.sqrt(var_wrapper)
+    coverage_wrapper = float(np.mean(in_band_wrapper))
+
+    # Red-path: mis-scaled wrapper produces different (inflated) coverage
+    mis_underlying = _oi_underlying(grid, v_flat, scale=2.0)
+    mis_wrapped = CalibratedDistribution(mis_underlying, cal, UC.SAMPLES)
+    var_mis = mis_wrapped.marginal_variance() + SIGMA_OBS2
+    in_band_mis = np.abs(resid) <= np.sqrt(var_mis)
+    coverage_mis = float(np.mean(in_band_mis))
+    assert not np.isclose(coverage_mis, coverage_direct, rtol=1e-9), (
+        "Red-path check: mis-scaled wrapper (×2) should produce different coverage — "
+        "if this asserts, the test is insensitive to wrong scaling."
+    )
+
+    # Green path: wrapper + floor coverage == direct formula (same bits)
+    assert np.isclose(coverage_wrapper, coverage_direct, rtol=1e-9), (
+        f"Coverage through wrapper ({coverage_wrapper:.10f}) != "
+        f"direct formula ({coverage_direct:.10f}) at rtol 1e-9. "
+        "Bug: wrapper.marginal_variance() does not reproduce s(x)·v exactly, "
+        "or the SIGMA_OBS2 floor was applied differently."
     )
