@@ -389,7 +389,7 @@ def test_miost_calibration_arg_routes_to_product() -> None:
     Catches: the new ``calibration`` constructor arg being ignored (solve
     would return an uncalibrated product — the gate's s* silently dropped).
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.distributions.calibration import ScalarCalibration
 
     base = Miost(
         plan=WindowPlan(starts=(0.0, 45.0)), members=3, member_root=ROOT
@@ -419,7 +419,7 @@ def test_miost_both_calibration_and_inflation_raises() -> None:
     Catches: a silent precedence rule where one arg wins and the other is
     dropped — the caller would not learn their s* was ignored.
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.distributions.calibration import ScalarCalibration
 
     with pytest.raises(ValueError, match="calibration"):
         Miost(
@@ -436,7 +436,7 @@ def test_miost_inflation_s_still_maps_to_scalar_calibration() -> None:
     Catches: the compat mapping being lost — a caller relying on inflation_s
     would get an uncalibrated product.
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.distributions.calibration import ScalarCalibration
 
     m = Miost(members=3, member_root=ROOT, inflation_s=2.0)
     assert m._calibration == ScalarCalibration(2.0)
@@ -448,7 +448,7 @@ def test_params_key_includes_calibration() -> None:
     Catches: two products with different calibrations deriving the SAME CRN
     seed (silent member-stream collision across calibrations).
     """
-    from sverdrup.distributions.miost_ensemble import ScalarCalibration
+    from sverdrup.distributions.calibration import ScalarCalibration
 
     m1 = Miost(members=3, member_root=ROOT, calibration=ScalarCalibration(1.0))
     m2 = Miost(members=3, member_root=ROOT, calibration=ScalarCalibration(2.0))
@@ -472,7 +472,7 @@ def test_shipped_miost_uses_phase8_poly_field() -> None:
     away from the signed field (a wrong shipped calibration would silently
     mis-scale every production σ).
     """
-    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
+    from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
     from sverdrup.methods.miost import (
         PHASE8_CLIP_HI,
         PHASE8_CLIP_LO,

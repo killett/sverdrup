@@ -12,10 +12,8 @@ import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
-    from sverdrup.distributions.miost_ensemble import (
-        CalibrationField,
-        MiostEnsembleDistribution,
-    )
+    from sverdrup.distributions.calibration import CalibrationField
+    from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
 
 from sverdrup.core.distribution import CapabilityNotAvailableError
 from sverdrup.core.grid import GridSpec
@@ -411,7 +409,7 @@ class Miost:
                 "pass either calibration or inflation_s, not both "
                 "(inflation_s is the ScalarCalibration compat shim)"
             )
-        from sverdrup.distributions.miost_ensemble import ScalarCalibration
+        from sverdrup.distributions.calibration import ScalarCalibration
 
         self.n_dir = n_dir
         self.cache = cache
@@ -785,7 +783,7 @@ def shipped_miost() -> Miost:
     Returns:
         The ensemble-mode method with m, seed root, and the Phase-8 field.
     """
-    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
+    from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
 
     return Miost(
         members=STAGE_B_MEMBERS,

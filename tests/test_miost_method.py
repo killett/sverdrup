@@ -62,7 +62,7 @@ def test_protocol_compliant_and_registered() -> None:
     assert shipped.member_root == STAGE_B_ROOT
     # Phase-8 capability flip (Task 12): the shipped product now carries the
     # winning clipped-poly field, superseding the Stage-B scalar s*.
-    from sverdrup.distributions.miost_ensemble import ClipSpec, PolyCalibration
+    from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
 
     assert shipped._calibration == PolyCalibration(
         coeffs=PHASE8_POLY_COEFFS,

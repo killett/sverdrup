@@ -58,7 +58,7 @@ from sverdrup.application.calibration.constants import (
     SIGMA_OBS2,
     TIE_BAND,
 )
-from sverdrup.distributions.miost_ensemble import (
+from sverdrup.distributions.calibration import (
     CalibrationField,
     ClipSpec,
     CovariateCalibration,

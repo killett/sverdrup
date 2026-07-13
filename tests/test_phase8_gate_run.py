@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from sverdrup.application.calibration.constants import COVERAGE_TARGET, COVERAGE_TOL
-from sverdrup.distributions.miost_ensemble import ScalarCalibration
+from sverdrup.distributions.calibration import ScalarCalibration
 
 # Load the runner as a module directly from scripts/ (not on the package path).
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phase8_gate_run.py"

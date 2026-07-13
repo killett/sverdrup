@@ -85,7 +85,7 @@ from sverdrup.application.calibration.constants import (
     COVERAGE_TOL,
     SIGMA_OBS2,
 )
-from sverdrup.distributions.miost_ensemble import (
+from sverdrup.distributions.calibration import (
     CalibrationField,
     calibration_from_json,
 )

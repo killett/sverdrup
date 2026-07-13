@@ -28,12 +28,12 @@ from sverdrup.application.calibration.constants import S_STAR
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider
-from sverdrup.distributions.miost_ensemble import (
+from sverdrup.distributions.calibration import (
     ClipSpec,
-    MiostEnsembleDistribution,
     PolyCalibration,
     ScalarCalibration,
 )
+from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.miost_windows import WindowPlan
 

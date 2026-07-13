@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from sverdrup.application.calibration.constants import CLIP_PAD, S_STAR
-from sverdrup.distributions.miost_ensemble import (
+from sverdrup.distributions.calibration import (
     CalibrationField,
     ClipSpec,
     CovariateCalibration,
@@ -1254,3 +1254,26 @@ def test_factory_bytecompat_sigma(tmp_path: Path) -> None:
     )
     np.testing.assert_allclose(std, exp_std, rtol=1e-12)
     np.testing.assert_allclose(cov, exp_cov, rtol=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# Phase-9 Task 1: PIN C — cal_key byte-stability across the module move
+# ---------------------------------------------------------------------------
+
+
+def test_moved_code_reproduces_shipped_cal_key_bytes() -> None:
+    """The module move must not change key() output for the SHIPPED field.
+
+    Bug caught: key() accidentally hashing module paths/reprs that change
+    with the move (PIN C) — the gate runner asserts this exact key.
+    """
+    import json
+    from pathlib import Path
+
+    from sverdrup.distributions.calibration import calibration_from_json
+
+    art = Path("data/2021a_ssh_mapping_ose/ours/phase8_field.json")
+    if not art.exists():
+        pytest.skip("shipped field artifact absent")
+    d = json.loads(art.read_text())
+    assert calibration_from_json(d["calibration"]).key() == d["cal_key"]
