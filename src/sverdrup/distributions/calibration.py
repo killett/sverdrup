@@ -806,7 +806,14 @@ class CalibratedDistribution:
         self.underlying = underlying
         self.calibration = cal
         self.capability = capability
-        self.provenance = _prov_with(underlying.provenance, cal)
+        if isinstance(cal, ScalarCalibration) and cal.s == 1.0:
+            # Identity calibration: Phase-8's uncalibrated product carries NO
+            # inflation transform — recording a no-op DIAGONAL_INFLATION(s=1)
+            # would misreport an inflation that never happened (PIN D:
+            # transforms are appended only when a real calibration applies).
+            self.provenance = underlying.provenance
+        else:
+            self.provenance = _prov_with(underlying.provenance, cal)
         self._grid_sqrt_s = None
 
     # ------------------------------------------------------------------

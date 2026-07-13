@@ -4,17 +4,17 @@ Members live as coefficient anomalies about the UNPERTURBED eta^a per window;
 every query evaluates the blended basis on demand at arbitrary points — no
 node snapping. The mean field is the Stage-A mean, untouched by construction.
 
-Phase-9 note: calibration scaling has moved to the CalibratedDistribution
-wrapper (distributions/calibration.py). The raw class stores anomalies
-RAW and applies NO √s(x) factor; the wrapper applies it once at the method
-layer. :meth:`with_calibration` and :meth:`rescaled` are thin forwarders
-to the wrapper for backward-compat with existing call sites.
+Phase-9 note: calibration lives ONLY on the CalibratedDistribution wrapper
+(distributions/calibration.py). This raw class stores anomalies RAW, applies
+NO √s(x) factor, carries NO calibration field, and appends NO calibration
+transform to provenance (PIN D — single append, on the wrapper).
+``Miost.sample_members`` / ``Miost.solve`` return the wrapper; the raw
+instance is reachable as its ``.underlying``.
 """
 
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -28,12 +28,6 @@ from sverdrup.core.provenance import (
     UncertaintyTransform,
 )
 from sverdrup.core.types import Field, Points, Seed, UncertaintyCapability
-from sverdrup.distributions.calibration import (
-    CalibrationField,
-    ScalarCalibration,
-    _cal_kind,
-    calibration_from_json,
-)
 from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
 from sverdrup.methods.miost_basis import (
     W_DAYS,
@@ -50,7 +44,6 @@ if TYPE_CHECKING:
 
     from sverdrup.core.observations import ObsWindow
     from sverdrup.core.parameters import ParameterProvider
-    from sverdrup.distributions.calibration import CalibratedDistribution
     from sverdrup.methods.miost import Miost
 
 KIND = "miost-coeff-ensemble"
@@ -83,9 +76,10 @@ class MiostEnsembleDistribution:
 
     Anomalies are stored RAW (no √s(x) factor). Calibration scaling is
     applied by the :class:`~sverdrup.distributions.calibration.CalibratedDistribution`
-    wrapper at the method layer (Phase-9 §3). The ``calibration`` attribute
-    is retained for persistence compatibility only — it is NOT applied
-    internally; use :meth:`with_calibration` to obtain a calibrated product.
+    wrapper at the method layer (Phase-9 §3). This class carries NO
+    calibration surface — calibrate by wrapping:
+    ``CalibratedDistribution(raw, cal, capability)`` (or via the wrapper's
+    replace/compose methods).
     """
 
     grid: GridSpec
@@ -98,10 +92,6 @@ class MiostEnsembleDistribution:
     _anoms: dict[str, np.ndarray]  # window_id -> (n_el, m) RAW member anomalies
     _window_starts: dict[str, float]
     _w_days: float = W_DAYS
-    # Stored for persistence round-trips; NOT applied internally (Phase-9 §3).
-    calibration: CalibrationField = field(
-        default_factory=lambda: ScalarCalibration(1.0)
-    )
 
     def _eval(self, pts: Points, cols: dict[str, np.ndarray]) -> np.ndarray:
         """Blend-weighted basis evaluation of per-window column stacks.
@@ -230,74 +220,14 @@ class MiostEnsembleDistribution:
             time_days=time_days,
         )
 
-    def with_calibration(self, cal: CalibrationField) -> CalibratedDistribution:
-        """Return a CalibratedDistribution wrapping this raw ensemble with ``cal``.
-
-        Thin forwarder to the Phase-9 CalibratedDistribution wrapper (Phase-9
-        §3). Anomalies remain RAW; the wrapper applies √s(x) at query time.
-        This method is retained for call-site compatibility (test_phase8_identity
-        _regression.py, test_calibration_field.py). The raw class's calibration
-        attribute is set to ``cal`` on the returned wrapper's underlying for
-        persistence round-trips.
-
-        Args:
-            cal: The calibration field to apply.
-
-        Returns:
-            A CalibratedDistribution wrapping this instance with ``cal``.
-        """
-        from sverdrup.distributions.calibration import CalibratedDistribution
-
-        updated = replace(self, calibration=cal)
-        return CalibratedDistribution(updated, cal, UncertaintyCapability.SAMPLES)
-
-    def rescaled(self, s: float) -> CalibratedDistribution:
-        """Exact s-inflation via the CalibratedDistribution wrapper; composes ×√(st).
-
-        Thin forwarder to the Phase-9 wrapper. On a scalar-calibrated instance
-        this composes multiplicatively with the current scalar; on a
-        NON-scalar (field-calibrated) instance it RAISES (owner narrowing).
-        The mean is UNTOUCHED (D6). See
-        :meth:`~sverdrup.distributions.calibration.CalibratedDistribution.rescaled`
-        for the full contract.
-
-        Args:
-            s: Variance inflation factor.
-
-        Returns:
-            A CalibratedDistribution with variance exactly s × the original.
-
-        Raises:
-            ValueError: If this instance is field-calibrated (non-scalar).
-        """
-        from sverdrup.distributions.calibration import CalibratedDistribution
-
-        if isinstance(self.calibration, ScalarCalibration):
-            composed = ScalarCalibration(self.calibration.s * s)
-            updated = replace(self, calibration=composed)
-            wrapped = CalibratedDistribution(
-                updated, composed, UncertaintyCapability.SAMPLES
-            )
-            # Record the INCREMENTAL factor (Phase-8 semantics: each step is
-            # its own inflate, not the cumulative product).
-            from sverdrup.distributions.calibration import _prov_with
-
-            wrapped.provenance = _prov_with(self.provenance, composed, scalar_s=s)
-            return wrapped
-        raise ValueError(
-            "rescaled(scalar) on a field-calibrated product is ambiguous — "
-            "compose explicitly via with_calibration"
-        )
-
     def save_state(self, path: Path, anomalies_f32: bool = False) -> None:
         """Persist the representation-tagged coefficient ensemble.
 
-        Anomalies are always stored RAW (one convention — spec §8); the
-        calibration field is serialised alongside as ``cal_kind`` /
-        ``cal_params`` (a JSON string) / ``cal_key`` so the query-time √s(x)
-        layer round-trips exactly. Files WITHOUT these keys reload as
-        ScalarCalibration(1.0) (the FACTORY supplies s* for legacy raw-anoms
-        files).
+        Anomalies are always stored RAW (one convention — spec §8). This raw
+        class writes NO calibration keys — the CalibratedDistribution
+        wrapper's ``save_state`` adds ``cal_kind`` / ``cal_params`` /
+        ``cal_key`` on top (Phase-9 §3; legacy files without those keys load
+        as ScalarCalibration(1.0) through the wrapper's ``load_state``).
 
         Args:
             path: Destination .npz path.
@@ -317,9 +247,6 @@ class MiostEnsembleDistribution:
             "grid_lon": self.grid.x,
             "grid_lat": self.grid.y,
             "window_ids": np.asarray(list(self._etas_a.keys())),
-            "cal_kind": _cal_kind(self.calibration),
-            "cal_params": json.dumps(self.calibration.to_json()),
-            "cal_key": self.calibration.key(),
         }
         for wid in self._etas_a:
             arrays[f"eta_{wid}"] = self._etas_a[wid]
@@ -349,13 +276,8 @@ class MiostEnsembleDistribution:
             )
             wids = [str(w) for w in z["window_ids"]]
             m = int(z["m"])
-            # Files WITHOUT cal keys reload as ScalarCalibration(1.0) — the
-            # persisted anomalies are RAW and the factory supplies s* (spec §8).
-            calibration: CalibrationField = (
-                calibration_from_json(json.loads(str(z["cal_params"])))
-                if "cal_params" in z
-                else ScalarCalibration(1.0)
-            )
+            # cal_* keys, if present (wrapper-written files), are IGNORED here:
+            # the CalibratedDistribution wrapper's load_state reads them (§3).
             self = cls(
                 grid=GridSpec.lonlat(z["grid_lon"], z["grid_lat"]),
                 mean=np.asarray(z["mean"]),
@@ -367,7 +289,6 @@ class MiostEnsembleDistribution:
                 _anoms={w: np.asarray(z[f"anom_{w}"], dtype=float) for w in wids},
                 _window_starts={w: float(z[f"start_{w}"]) for w in wids},
                 _w_days=float(z["w_days"]),
-                calibration=calibration,
             )
         return self
 
@@ -438,7 +359,9 @@ def merged_members(
     anoms: dict[str, np.ndarray] = {}
     starts: dict[str, float] = {}
     for wid, day in exclusive_days(method._plan).items():
-        dist = method.sample_members(obs, grid, params, day, m, root)
+        # sample_members returns the CalibratedDistribution wrapper (Phase-9
+        # §3); the merge needs the RAW coefficient internals -> .underlying.
+        dist = method.sample_members(obs, grid, params, day, m, root).underlying
         spec = dist._spec
         etas_a.update(dist._etas_a)
         anoms.update(dist._anoms)

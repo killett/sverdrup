@@ -16,7 +16,6 @@ if TYPE_CHECKING:
         CalibratedDistribution,
         CalibrationField,
     )
-    from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
 
 from sverdrup.core.distribution import CapabilityNotAvailableError
 from sverdrup.core.grid import GridSpec
@@ -492,18 +491,14 @@ class Miost:
         """
         if self.members > 0:
             assert self.member_root is not None  # noqa: S101 (checked in __init__)
-            from sverdrup.distributions.calibration import CalibratedDistribution
-
-            ens = self.sample_members(
-                obs, grid, params, time_days, m=self.members, root=self.member_root
-            )
             # Phase-9 §3: calibration rides the shared CalibratedDistribution
             # wrapper (distributions/calibration.py) — relocated from the
             # class-internal seam with NO semantic change; identity-proven at
-            # rtol 1e-12 / mean-bit. ``self._calibration`` is either the
-            # scalar inflation_s shim or a Phase-8 CalibrationField.
-            return CalibratedDistribution(
-                ens, self._calibration, UncertaintyCapability.SAMPLES
+            # rtol 1e-12 / mean-bit. sample_members builds the wrapper (with
+            # ``self._calibration`` — the scalar inflation_s shim or a Phase-8
+            # CalibrationField); returning it directly keeps the append single.
+            return self.sample_members(
+                obs, grid, params, time_days, m=self.members, root=self.member_root
             )
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
@@ -543,7 +538,7 @@ class Miost:
         time_days: float,
         m: int,
         root: Seed,
-    ) -> MiostEnsembleDistribution:
+    ) -> CalibratedDistribution:
         """Generate m perturbed-observation members (spec 6.2; plan Task 15).
 
         Per covering window: build the m member RHS
@@ -551,6 +546,11 @@ class Miost:
         perturbations and run ONE batched solve. The unperturbed eta^a path
         (:meth:`solve` / ``_solve_window``) is untouched; the ensemble mean
         IS the Stage-A mean (D6).
+
+        Phase-9 §3: the raw coefficient ensemble is returned WRAPPED in a
+        CalibratedDistribution carrying ``self._calibration`` (default
+        ScalarCalibration(1.0) — an identity wrap that appends no provenance
+        transform). The raw instance is reachable as ``.underlying``.
 
         Args:
             obs: The FULL observation window (method re-subsets per window).
@@ -561,7 +561,8 @@ class Miost:
             root: CRN seed root (derive_seed of the unit of work).
 
         Returns:
-            The coefficient-space SAMPLES distribution.
+            A CalibratedDistribution wrapping the coefficient-space SAMPLES
+            distribution.
         """
         from sverdrup.distributions.miost_ensemble import (
             MiostEnsembleDistribution,
@@ -623,7 +624,9 @@ class Miost:
             etas_a[w.id] = np.asarray(eta_a)
             anoms[w.id] = np.asarray(members) - np.asarray(eta_a)[:, None]
             starts[w.id] = w.start_day
-        return MiostEnsembleDistribution(
+        from sverdrup.distributions.calibration import CalibratedDistribution
+
+        raw = MiostEnsembleDistribution(
             grid=grid,
             mean=mean.reshape(grid.shape),
             provenance=ensemble_provenance(m),
@@ -634,6 +637,9 @@ class Miost:
             _anoms=anoms,
             _window_starts=starts,
             _w_days=self._plan.w_days,
+        )
+        return CalibratedDistribution(
+            raw, self._calibration, UncertaintyCapability.SAMPLES
         )
 
     def _solve_window(

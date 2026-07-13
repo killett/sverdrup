@@ -13,6 +13,7 @@ import pytest
 
 from sverdrup.application.calibration.constants import CLIP_PAD, S_STAR
 from sverdrup.distributions.calibration import (
+    CalibratedDistribution,
     CalibrationField,
     ClipSpec,
     CovariateCalibration,
@@ -885,14 +886,14 @@ def _seam_method() -> Miost:
 
 
 @pytest.fixture(scope="module")
-def dist() -> MiostEnsembleDistribution:
+def dist() -> CalibratedDistribution:
     return _seam_method().sample_members(
         _seam_obs(), _SEAM_GRID, _SEAM_PARAMS, _SEAM_DAY, m=_SEAM_M, root=_SEAM_ROOT
     )
 
 
 def test_correlation_preserved_under_nonconstant_field(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """Corr' == Corr exactly under a non-constant positive field.
 
@@ -907,7 +908,7 @@ def test_correlation_preserved_under_nonconstant_field(
 
 
 def test_magnitude_marginal_variance_scales_pointwise(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """var'(x) == s(x) · var(x) node-by-node on the grid, analytic.
 
@@ -923,7 +924,7 @@ def test_magnitude_marginal_variance_scales_pointwise(
 
 
 def test_rescaled_composition_multiplicative(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """rescaled(4).rescaled(9) variance == 36 × base variance (rtol 1e-12)."""
     composed = dist.rescaled(4.0).rescaled(9.0)
@@ -941,7 +942,7 @@ def test_rescaled_composition_multiplicative(
 
 
 def test_rescaled_raises_on_field_calibrated(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """rescaled(s) on a field-calibrated product raises ValueError.
 
@@ -953,7 +954,7 @@ def test_rescaled_raises_on_field_calibrated(
         calibrated.rescaled(2.0)
 
 
-def test_no_stale_sqrt_s_cache(dist: MiostEnsembleDistribution) -> None:
+def test_no_stale_sqrt_s_cache(dist: CalibratedDistribution) -> None:
     """with_calibration returns a fresh instance; the original's grid
     queries are unchanged after the derived instance is queried.
 
@@ -969,7 +970,7 @@ def test_no_stale_sqrt_s_cache(dist: MiostEnsembleDistribution) -> None:
     assert derived is not dist
 
 
-def test_field_inert_beyond_box_halo(dist: MiostEnsembleDistribution) -> None:
+def test_field_inert_beyond_box_halo(dist: CalibratedDistribution) -> None:
     """Beyond box+halo, calibrated marginal stats equal uncalibrated to
     machine precision (anomalies ~0 there; spec §9 inertness pin).
 
@@ -991,7 +992,7 @@ def test_field_inert_beyond_box_halo(dist: MiostEnsembleDistribution) -> None:
     np.testing.assert_array_equal(v1.ravel()[far], v0.ravel()[far])
 
 
-def test_mean_untouched_by_field(dist: MiostEnsembleDistribution) -> None:
+def test_mean_untouched_by_field(dist: CalibratedDistribution) -> None:
     """mean_at under any field is the SAME ARRAY VALUES as uncalibrated
     (bitwise equal) — the D6 property the whole phase leans on.
     """
@@ -1052,7 +1053,7 @@ def _all_field_kinds() -> list[CalibrationField]:
 
 @pytest.mark.parametrize("cal", _all_field_kinds(), ids=lambda c: type(c).__name__)
 def test_persistence_roundtrip_all_field_kinds(
-    cal: CalibrationField, dist: MiostEnsembleDistribution, tmp_path: Path
+    cal: CalibrationField, dist: CalibratedDistribution, tmp_path: Path
 ) -> None:
     """save→load reconstructs the calibration bit-exactly (sqrt_s + key).
 
@@ -1063,7 +1064,9 @@ def test_persistence_roundtrip_all_field_kinds(
     calibrated = dist.with_calibration(cal)
     p = tmp_path / "cal.npz"
     calibrated.save_state(p)
-    back = MiostEnsembleDistribution.load_state(p)
+    # Phase-9 §3: cal keys live on the wrapper — reload through it (the raw
+    # class loads arrays only; the wrapper's load_state reads the cal keys).
+    back = CalibratedDistribution.load_state(p, MiostEnsembleDistribution.load_state(p))
     lon2d, lat2d = np.meshgrid(_GRID_LONS, _GRID_LATS)
     np.testing.assert_array_equal(
         back.calibration.sqrt_s_at(lon2d.ravel(), lat2d.ravel()),
@@ -1073,7 +1076,7 @@ def test_persistence_roundtrip_all_field_kinds(
 
 
 def test_legacy_load_without_cal_keys_is_scalar_one(
-    dist: MiostEnsembleDistribution, tmp_path: Path
+    dist: CalibratedDistribution, tmp_path: Path
 ) -> None:
     """A state file with NO cal_* keys loads as ScalarCalibration(1.0).
 
@@ -1091,7 +1094,8 @@ def test_legacy_load_without_cal_keys_is_scalar_one(
     np.savez(p, **arrays)
     with np.load(p) as z:
         assert not any(k.startswith("cal_") for k in z.files)
-    back = MiostEnsembleDistribution.load_state(p)
+    # Phase-9 §3: the legacy rule lives on the wrapper's load_state.
+    back = CalibratedDistribution.load_state(p, MiostEnsembleDistribution.load_state(p))
     assert back.calibration == ScalarCalibration(1.0)
 
 
@@ -1126,7 +1130,7 @@ def test_field_inflation_provenance_carries_key_kind_dof(
     cal: CalibrationField,
     expected_dof: int,
     expected_kind: str,
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """Non-scalar calibration records a FIELD_INFLATION transform with metadata.
 
@@ -1143,7 +1147,7 @@ def test_field_inflation_provenance_carries_key_kind_dof(
 
 
 def test_scalar_calibration_keeps_diagonal_inflation(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """Scalar calibration keeps DIAGONAL_INFLATION with params['s'] EXACTLY.
 
@@ -1157,7 +1161,7 @@ def test_scalar_calibration_keeps_diagonal_inflation(
 
 
 def test_rescaled_records_incremental_factor(
-    dist: MiostEnsembleDistribution,
+    dist: CalibratedDistribution,
 ) -> None:
     """Composed rescales record the INCREMENTAL factor, not the cumulative s.
 

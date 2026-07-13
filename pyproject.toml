@@ -109,15 +109,15 @@ disallow_untyped_defs = false
 disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
-# Phase-9 Task 3: with_calibration now returns CalibratedDistribution.
-# These two test files have return-type / identity-check annotations that were
-# written against the pre-migration type and cannot be edited (zero-touch
-# constraint). Suppress the two resulting false-positive errors locally.
-module = [
-  "tests.test_phase8_identity_regression",
-  "tests.test_calibration_field",
-]
-ignore_errors = true
+# Phase-9 Task 3 (zero-edit gate): tests/test_phase8_identity_regression.py
+# must not be edited, but its fixtures annotate the PRE-migration type
+# (MiostEnsembleDistribution) while sample_members now returns the
+# CalibratedDistribution wrapper — 1× return-value — and its
+# with_calibration calls resolve against that declared type — 5× attr-defined
+# (the method moved to the wrapper). Both are migration evidence, not bugs.
+# Scoped to this one module; do NOT widen.
+module = ["tests.test_phase8_identity_regression"]
+disable_error_code = ["return-value", "attr-defined"]
 
 [tool.pytest.ini_options]
 addopts = "-v"

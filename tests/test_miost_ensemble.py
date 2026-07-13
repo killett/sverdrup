@@ -48,7 +48,11 @@ def _method() -> Miost:
 
 @pytest.fixture(scope="module")
 def dist() -> MiostEnsembleDistribution:
-    return _method().sample_members(_obs(), GRID, PARAMS, DAY, m=M, root=ROOT)
+    # These tests pin the RAW coefficient-ensemble representation; Phase-9 §3
+    # sample_members returns the CalibratedDistribution wrapper -> .underlying.
+    raw = _method().sample_members(_obs(), GRID, PARAMS, DAY, m=M, root=ROOT).underlying
+    assert isinstance(raw, MiostEnsembleDistribution)
+    return raw
 
 
 def test_one_batched_solve_per_window(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -114,9 +114,11 @@ def test_merged_ensemble_matches_direct_sample_members(
     the production blend-day call reproduces both windows exactly.
     """
     _, etas_a, anoms, starts = merged
-    direct = Miost(plan=WindowPlan(starts=TWO_WIN)).sample_members(
-        _obs(), GRID, PARAMS, 50.0, m=M, root=ROOT
-    )  # day 50 = blend: covers BOTH windows
+    direct = (
+        Miost(plan=WindowPlan(starts=TWO_WIN))
+        .sample_members(_obs(), GRID, PARAMS, 50.0, m=M, root=ROOT)
+        .underlying
+    )  # day 50 = blend: covers BOTH windows; raw internals via .underlying (Phase-9 §3)
     assert set(anoms) == set(direct._anoms)
     assert set(etas_a) == set(direct._etas_a)
     for wid in direct._anoms:

@@ -197,9 +197,11 @@ def main() -> None:
             _log(
                 f"floor probe: windowed day {d_star:.0f} at maxiter {maxiter + 1000} ..."
             )
-            deep = Miost(pcg_rtol=rtol, pcg_maxiter=maxiter + 1000).sample_members(
-                obs, grid, PARAMS, d_star, m, root
-            )
+            deep = (
+                Miost(pcg_rtol=rtol, pcg_maxiter=maxiter + 1000)
+                .sample_members(obs, grid, PARAMS, d_star, m, root)
+                .underlying
+            )  # raw coefficient internals (Phase-9 §3 wrapper return)
             f_deep = std_fields(
                 deep._spec, deep._window_starts, deep._anoms, grid, plan_w, [d_star]
             )[0]
