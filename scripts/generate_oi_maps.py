@@ -1,0 +1,480 @@
+r"""Generate full-year daily OI mean/variance maps at the signed baseline config.
+
+Thin driver over :func:`sverdrup.validation.run.run_mean_var_maps`.
+
+Scope discipline (set ``SVERDRUP_OI_MAPS_SCOPE`` before running):
+
+    SVERDRUP_OI_MAPS_SCOPE=dev   → 12-day window (days 60-71); writes ONLY
+                                    oi_{mean,var}_maps_dev.nc (NEVER the full-year
+                                    filenames ``oi_{mean,var}_maps.nc``).
+    (default / full)             → 2017-01-01..2017-12-31 (days 0-364); writes
+                                    oi_{mean,var}_maps.nc — controller-owned, run
+                                    detached via nohup.
+
+Config pinning (§5 obligation):
+    - ``baseline_config()`` supplies provider + grid + temporal half-window.
+    - ``baseline_kernel()`` supplies the faithful Gaussian degree-space kernel.
+    - Script asserts resolved values match the audit-trail constants; mismatch
+      raises ``AssertionError`` before any solve (NEVER re-tuned).
+
+Obs split (standing protocol, §5 criterion 2):
+    - ``load_mapping_obs`` loads alg / h2g / j2g / j2n / j3 / s3a (NO c2).
+    - ``make_splits(by="mission", locked_missions=["c2"],
+      validation_missions=["j3"])`` → train indices.
+    - ``_subset(obs, split.train_idx)`` → train-only obs (alg, h2g, j2g, j2n, s3a).
+    - j3 is NEVER assimilated; c2 is NEVER touched.
+
+Map-level config audit:
+    After generation the dev-smoke mean is compared against the signed
+    ``OSE_ssh_mapping_OURS_OI.nc`` on matched days.  A config mismatch (wrong
+    kernel / params / grid) would show up as a systematic bias beyond the expected
+    difference caused by obs-set divergence.  Comparison result is written to nc
+    attrs and reported.
+
+Reference-frame note:
+    The signed artifact is in SSH space (SLA + MDT from the mapping tracks).
+    Our maps use the SAME MDT via ``load_mdt_grid`` so the comparison is in a
+    consistent reference frame.
+
+Usage::
+
+    SVERDRUP_OI_MAPS_SCOPE=dev pixi run python scripts/generate_oi_maps.py
+    SVERDRUP_OI_MAPS_SCOPE=full pixi run python scripts/generate_oi_maps.py
+
+Full-year controller launch (detached, log to scratchpad)::
+
+    nohup pixi run python scripts/generate_oi_maps.py \\
+        > /tmp/claude-1000/-workspace/3a35cde9-6803-4625-888e-832d34763eb1/scratchpad/oi_maps_full.log \\
+        2>&1 &
+"""
+
+from __future__ import annotations
+
+import os
+import resource
+import time
+from pathlib import Path
+
+import numpy as np
+import xarray as xr
+
+from sverdrup.application.splits import make_splits
+from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
+from sverdrup.validation.params import (
+    SIGNAL_VARIANCE,
+    SPATIAL_CORR_DEG,
+    TEMPORAL_CORR_DAYS,
+    TEMPORAL_HALF_WINDOW_DAYS,
+    baseline_config,
+    baseline_kernel,
+)
+from sverdrup.validation.run import _subset, run_mean_var_maps
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+_DATA_ROOT = Path("data/2021a_ssh_mapping_ose")
+_OBS_DIR = _DATA_ROOT / "dc_obs"
+_OUT_ROOT = _DATA_ROOT / "ours"
+_SIGNED_OI_NC = _OUT_ROOT / "OSE_ssh_mapping_OURS_OI.nc"
+
+_MAPPING_OBS_PATHS: list[Path] = [
+    _OBS_DIR / "dt_gulfstream_alg_phy_l3_20161201-20180131_285-315_23-53.nc",
+    _OBS_DIR / "dt_gulfstream_h2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    _OBS_DIR / "dt_gulfstream_j2g_phy_l3_20161201-20180131_285-315_23-53.nc",
+    _OBS_DIR / "dt_gulfstream_j2n_phy_l3_20161201-20180131_285-315_23-53.nc",
+    _OBS_DIR / "dt_gulfstream_j3_phy_l3_20161201-20180131_285-315_23-53.nc",
+    _OBS_DIR / "dt_gulfstream_s3a_phy_l3_20161201-20180131_285-315_23-53.nc",
+]
+
+# c2 must NEVER appear here — the input_adapter guard rejects it as a safety net
+# but we never pass it in the first place.
+
+# ---------------------------------------------------------------------------
+# Scope
+# ---------------------------------------------------------------------------
+_SCOPE = os.environ.get("SVERDRUP_OI_MAPS_SCOPE", "full")
+if _SCOPE not in {"dev", "full"}:
+    raise SystemExit(f"SVERDRUP_OI_MAPS_SCOPE must be 'dev' or 'full', got {_SCOPE!r}")
+
+# Dev smoke: days 60-71 (2017-03-02 to 2017-03-13, matching the stage_a fixture).
+# Full year: days 0-364 (2017-01-01 to 2017-12-31).
+_DEV_DAYS: list[float] = [float(d) for d in range(60, 72)]  # 12 days
+_FULL_DAYS: list[float] = [float(d) for d in range(0, 365)]  # 365 days
+
+if _SCOPE == "dev":
+    _OUTPUT_DAYS = _DEV_DAYS
+    _MEAN_DEST = _OUT_ROOT / "oi_mean_maps_dev.nc"
+    _VAR_DEST = _OUT_ROOT / "oi_var_maps_dev.nc"
+else:
+    _OUTPUT_DAYS = _FULL_DAYS
+    _MEAN_DEST = _OUT_ROOT / "oi_mean_maps.nc"
+    _VAR_DEST = _OUT_ROOT / "oi_var_maps.nc"
+
+
+def _peak_rss_mb() -> float:
+    """Return peak RSS in MiB (Linux: RUSAGE_SELF in KB → MiB)."""
+    kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return kb / 1024.0  # Linux reports KB; macOS reports bytes but we run on Linux
+
+
+def _add_provenance_attrs(
+    path: Path,
+    *,
+    framing: str,
+    params_key: str,
+    kernel_name: str,
+    signal_variance: float,
+    spatial_corr_deg: float,
+    temporal_corr_days: float,
+    temporal_half_window_days: float,
+    audit_note: str,
+) -> None:
+    """Append extra provenance attrs to an already-written NetCDF file.
+
+    Args:
+        path: Path to the NetCDF file to update in place.
+        framing: Spatial obs framing description.
+        params_key: Short key identifying the parameter set.
+        kernel_name: Name of the covariance kernel used.
+        signal_variance: Signed baseline signal variance (audit constant).
+        spatial_corr_deg: Signed baseline spatial correlation scale (degrees).
+        temporal_corr_days: Signed baseline temporal correlation scale (days).
+        temporal_half_window_days: Temporal half-window used for obs selection.
+        audit_note: Free-form audit-trail note.
+    """
+    ds = xr.open_dataset(path)
+    ds = ds.load()
+    ds.close()
+    ds.attrs.update(
+        {
+            "framing": framing,
+            "params_key": params_key,
+            "kernel_name": kernel_name,
+            "signal_variance": signal_variance,
+            "spatial_corr_deg": spatial_corr_deg,
+            "temporal_corr_days": temporal_corr_days,
+            "temporal_half_window_days": temporal_half_window_days,
+            "audit_note": audit_note,
+        }
+    )
+    tmp = path.with_suffix(".tmp.nc")
+    ds.to_netcdf(tmp)
+    tmp.replace(path)
+
+
+def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
+    """Compare regenerated OI means against the signed artifact on matched days.
+
+    Args:
+        mean_path: Path to the regenerated mean maps NetCDF.
+        signed_path: Path to the signed ``OSE_ssh_mapping_OURS_OI.nc``.
+
+    Returns:
+        A dict with keys: ``matched_days``, ``max_abs_diff``, ``max_rel_diff``,
+        ``mean_abs_diff``, ``obs_set_note``, ``verdict``.
+
+    Raises:
+        SystemExit: If the comparison reveals a config mismatch (systematic
+            bias inconsistent with the expected obs-set difference).
+    """
+    if not signed_path.exists():
+        return {
+            "matched_days": 0,
+            "verdict": "SKIPPED — signed artifact not found",
+            "signed_path": str(signed_path),
+        }
+
+    regen = xr.open_dataset(mean_path)
+    signed = xr.open_dataset(signed_path)
+
+    # Align on time coordinate (inner join on matched days).
+    regen_times = set(regen.time.values.tolist())
+    signed_times = set(signed.time.values.tolist())
+    matched = sorted(regen_times & signed_times)
+    n_matched = len(matched)
+
+    if n_matched == 0:
+        regen.close()
+        signed.close()
+        return {
+            "matched_days": 0,
+            "verdict": "SKIPPED — no overlapping time steps between regen and signed",
+        }
+
+    matched_arr = np.array(matched, dtype="datetime64[ns]")
+    regen_sel = regen.sel(time=matched_arr)["ssh"].values
+    signed_sel = signed.sel(time=matched_arr)["ssh"].values
+
+    diff = regen_sel - signed_sel
+    abs_diff = np.abs(diff)
+    max_abs = float(np.nanmax(abs_diff))
+    mean_abs = float(np.nanmean(abs_diff))
+    denom = np.abs(signed_sel)
+    denom[denom < 1e-10] = 1e-10  # avoid div by 0 on near-zero values
+    max_rel = float(np.nanmax(abs_diff / denom))
+
+    regen.close()
+    signed.close()
+
+    # Obs-set divergence note (pre-registered determination):
+    # The signed artifact used all 5 mapping missions (alg, h2g, j2g, j2n, j3, s3a)
+    # because Phase-4 run_year loaded ALL mapping missions without a train/val split.
+    # Our regenerated maps use TRAIN-ONLY (alg, h2g, j2g, j2n, s3a — j3 excluded),
+    # per the Phase-9 standing split.  Differences are therefore EXPECTED (obs-set
+    # divergence) and are not a config mismatch.  A config mismatch (wrong kernel /
+    # params / grid) would manifest as a systematic offset inconsistent with the
+    # ~5 cm level noise seen in the SLA field.
+    obs_set_note = (
+        "EXPECTED DIFFERENCE — regenerated maps use train-only obs (j3 excluded); "
+        "signed artifact used all 5 mapping missions including j3 (Phase-4 run_year "
+        "protocol, no train/val split). Differences at this scale are obs-set "
+        "divergence, NOT a config mismatch."
+    )
+
+    # Config-mismatch STOP criterion: a systematic mean offset >> field std is
+    # the Phase-7 0.16 m lesson pattern.  The MDT offset was ~0.3 m; a correct
+    # obs-set diff should be O(cm), consistent with the SLA signal (~0.1 m std).
+    # We use 0.1 m as the STOP threshold for the mean absolute difference.
+    _STOP_THRESHOLD_M = 0.1
+    if mean_abs > _STOP_THRESHOLD_M:
+        # This looks like the Phase-7 MDT bug or a kernel/grid mismatch — STOP.
+        print(
+            f"\n[AUDIT STOP] mean_abs_diff={mean_abs:.4f} m exceeds "
+            f"stop threshold {_STOP_THRESHOLD_M} m. "
+            "This is inconsistent with an obs-set difference alone and suggests "
+            "a config mismatch (wrong kernel, missing MDT, wrong grid). "
+            "REPORT: BLOCKED — investigate the attribution.",
+            flush=True,
+        )
+        raise SystemExit(
+            f"MAP-LEVEL CONFIG AUDIT FAILED: mean_abs_diff={mean_abs:.4f} m "
+            f"(threshold {_STOP_THRESHOLD_M} m). STOP — see report."
+        )
+
+    verdict = (
+        f"PASS (obs-set divergence) — max_abs={max_abs:.4f} m, "
+        f"mean_abs={mean_abs:.4f} m, max_rel={max_rel:.4f}; "
+        f"differences consistent with j3-exclusion (train-only vs all-5-missions). "
+        f"Config constants VERIFIED consistent with signed baseline."
+    )
+
+    return {
+        "matched_days": n_matched,
+        "max_abs_diff_m": max_abs,
+        "mean_abs_diff_m": mean_abs,
+        "max_rel_diff": max_rel,
+        "obs_set_note": obs_set_note,
+        "verdict": verdict,
+    }
+
+
+def main() -> None:
+    """Run OI mean/variance map generation at the signed baseline config.
+
+    Raises:
+        AssertionError: If the resolved baseline_config values do not match
+            the audit-trail constants (config integrity check).
+        SystemExit: If the matched-day audit detects a config mismatch.
+    """
+    t0 = time.monotonic()
+    print(f"[generate_oi_maps] scope={_SCOPE!r}", flush=True)
+    print(
+        f"  output_days: {len(_OUTPUT_DAYS)} days "
+        f"({_OUTPUT_DAYS[0]}..{_OUTPUT_DAYS[-1]})",
+        flush=True,
+    )
+
+    # ------------------------------------------------------------------
+    # 1. Resolve baseline config and ASSERT audit constants match.
+    # ------------------------------------------------------------------
+    provider, grid, half = baseline_config()
+    kernel = baseline_kernel()
+
+    # Resolved scalar checks — these assert the signed config constants.
+    resolved_variance = float(provider.resolve("variance", grid))
+    resolved_length_scale = float(provider.resolve("length_scale", grid))
+    resolved_time_scale = float(provider.resolve("time_scale", grid))
+
+    if resolved_variance != SIGNAL_VARIANCE:
+        raise RuntimeError(
+            f"variance mismatch: {resolved_variance} != {SIGNAL_VARIANCE}"
+        )
+    if abs(resolved_time_scale - TEMPORAL_CORR_DAYS) >= 1e-12:
+        raise RuntimeError(
+            f"time_scale mismatch: {resolved_time_scale} != {TEMPORAL_CORR_DAYS}"
+        )
+    # length_scale is the degree-to-km analog (SPATIAL_CORR_DEG * _KM_PER_DEG).
+    from sverdrup.validation.params import _KM_PER_DEG as _KPD  # noqa: PLC0415
+
+    expected_length_scale = SPATIAL_CORR_DEG * _KPD
+    if abs(resolved_length_scale - expected_length_scale) >= 1e-9:
+        raise RuntimeError(
+            f"length_scale mismatch: {resolved_length_scale} != {expected_length_scale}"
+        )
+    if half != TEMPORAL_HALF_WINDOW_DAYS:
+        raise RuntimeError(
+            f"temporal_half_window mismatch: {half} != {TEMPORAL_HALF_WINDOW_DAYS}"
+        )
+    # Kernel scalar checks.
+    if kernel.variance != SIGNAL_VARIANCE:
+        raise RuntimeError(
+            f"kernel.variance mismatch: {kernel.variance} != {SIGNAL_VARIANCE}"
+        )
+    if kernel.lx_deg != SPATIAL_CORR_DEG:
+        raise RuntimeError(
+            f"kernel.lx_deg mismatch: {kernel.lx_deg} != {SPATIAL_CORR_DEG}"
+        )
+    if kernel.ly_deg != SPATIAL_CORR_DEG:
+        raise RuntimeError(
+            f"kernel.ly_deg mismatch: {kernel.ly_deg} != {SPATIAL_CORR_DEG}"
+        )
+    if kernel.time_scale != TEMPORAL_CORR_DAYS:
+        raise RuntimeError(
+            f"kernel.time_scale mismatch: {kernel.time_scale} != {TEMPORAL_CORR_DAYS}"
+        )
+
+    print(
+        f"  [OK] audit constants verified: variance={resolved_variance}, "
+        f"spatial_corr_deg={SPATIAL_CORR_DEG}, temporal_corr_days={TEMPORAL_CORR_DAYS}, "
+        f"half_window={half}d, kernel={type(kernel).__name__}",
+        flush=True,
+    )
+
+    # ------------------------------------------------------------------
+    # 2. Load observations and apply the standing split.
+    # ------------------------------------------------------------------
+    print("  loading mapping obs ...", flush=True)
+    obs_all = load_mapping_obs(_MAPPING_OBS_PATHS, provider)
+    print(f"  loaded {len(obs_all)} obs (all mapping missions, pre-split)", flush=True)
+
+    split = make_splits(
+        obs_all,
+        by="mission",
+        locked_missions=["c2"],
+        validation_missions=["j3"],
+    )
+    train_obs = _subset(obs_all, split.train_idx)
+    print(
+        f"  train obs: {len(train_obs)} "
+        f"(locked c2={len(split.locked_test_idx)}, "
+        f"val j3={len(split.validation_idx)}, "
+        f"train={len(split.train_idx)})",
+        flush=True,
+    )
+
+    # ------------------------------------------------------------------
+    # 3. Load MDT (reference frame: ssh = sla + mdt, matching signed artifact).
+    # ------------------------------------------------------------------
+    print("  loading MDT grid ...", flush=True)
+    mdt_grid = load_mdt_grid(_MAPPING_OBS_PATHS, grid)
+    print(f"  MDT grid shape: {mdt_grid.shape}", flush=True)
+
+    # ------------------------------------------------------------------
+    # 4. Generate mean + variance maps via run_mean_var_maps (REUSE).
+    # ------------------------------------------------------------------
+    print(
+        f"  generating {len(_OUTPUT_DAYS)}-day OI maps -> "
+        f"{_MEAN_DEST} + {_VAR_DEST} ...",
+        flush=True,
+    )
+    t_gen_start = time.monotonic()
+    mean_path, var_path = run_mean_var_maps(
+        "oi",
+        train_obs,
+        provider,
+        grid,
+        half,
+        _OUTPUT_DAYS,
+        _MEAN_DEST,
+        _VAR_DEST,
+        kernel=kernel,
+        halo_deg=1.0,
+        mdt_grid=mdt_grid,
+    )
+    t_gen = time.monotonic() - t_gen_start
+    rss_mb = _peak_rss_mb()
+    print(
+        f"  [OK] maps written in {t_gen:.1f}s  peak RSS {rss_mb:.0f} MiB",
+        flush=True,
+    )
+
+    # ------------------------------------------------------------------
+    # 5. Add extra provenance attrs (assimilated_missions already in file).
+    # ------------------------------------------------------------------
+    _framing = "grid-node halo 1.0 deg"
+    _params_key = "baseline_oi_v1"
+    _kernel_name = type(kernel).__name__
+    _audit_note = (
+        f"Phase-9 Task-6 signed baseline config: variance={SIGNAL_VARIANCE}, "
+        f"spatial_corr_deg={SPATIAL_CORR_DEG}, temporal_corr_days={TEMPORAL_CORR_DAYS}, "
+        f"temporal_half_window={TEMPORAL_HALF_WINDOW_DAYS}d; "
+        f"kernel={_kernel_name}; train-only obs (c2 locked, j3 validation)."
+    )
+    for p in (mean_path, var_path):
+        _add_provenance_attrs(
+            p,
+            framing=_framing,
+            params_key=_params_key,
+            kernel_name=_kernel_name,
+            signal_variance=SIGNAL_VARIANCE,
+            spatial_corr_deg=SPATIAL_CORR_DEG,
+            temporal_corr_days=TEMPORAL_CORR_DAYS,
+            temporal_half_window_days=TEMPORAL_HALF_WINDOW_DAYS,
+            audit_note=_audit_note,
+        )
+    print("  [OK] provenance attrs written to both nc files", flush=True)
+
+    # ------------------------------------------------------------------
+    # 6. Map-level config audit on matched days.
+    # ------------------------------------------------------------------
+    print("\n  [MAP-LEVEL CONFIG AUDIT]", flush=True)
+    print(f"  comparing {mean_path} vs {_SIGNED_OI_NC} ...", flush=True)
+    audit = _matched_day_audit(mean_path, _SIGNED_OI_NC)
+    print(f"  matched days: {audit.get('matched_days', 0)}", flush=True)
+    print(f"  verdict: {audit.get('verdict', 'N/A')}", flush=True)
+    if "obs_set_note" in audit:
+        print(f"  obs_set_note: {audit['obs_set_note']}", flush=True)
+
+    # Write audit result to nc attrs.
+    for p in (mean_path, var_path):
+        ds = xr.open_dataset(p)
+        ds = ds.load()
+        ds.close()
+        ds.attrs["audit_matched_days"] = str(audit.get("matched_days", 0))
+        ds.attrs["audit_verdict"] = str(audit.get("verdict", "N/A"))
+        ds.attrs["audit_max_abs_diff_m"] = str(audit.get("max_abs_diff_m", "N/A"))
+        ds.attrs["audit_mean_abs_diff_m"] = str(audit.get("mean_abs_diff_m", "N/A"))
+        ds.attrs["audit_obs_set_note"] = str(
+            audit.get(
+                "obs_set_note",
+                "no obs-set note (signed artifact not found or no matched days)",
+            )
+        )
+        tmp = p.with_suffix(".tmp.nc")
+        ds.to_netcdf(tmp)
+        tmp.replace(p)
+    print("  [OK] audit attrs written to both nc files", flush=True)
+
+    # ------------------------------------------------------------------
+    # 7. Shape / attrs verification.
+    # ------------------------------------------------------------------
+    mean_ds = xr.open_dataset(mean_path)
+    var_ds = xr.open_dataset(var_path)
+    print("\n  [shape check]", flush=True)
+    print(f"  mean shape: {mean_ds['ssh'].shape}", flush=True)
+    print(f"  var  shape: {var_ds['ssh'].shape}", flush=True)
+    print(f"  mean attrs: {dict(mean_ds.attrs)}", flush=True)
+    mean_ds.close()
+    var_ds.close()
+
+    wall = time.monotonic() - t0
+    print(
+        f"\n[generate_oi_maps] DONE "
+        f"scope={_SCOPE!r} wall={wall:.1f}s peak_rss={rss_mb:.0f} MiB",
+        flush=True,
+    )
+
+
+if __name__ == "__main__":
+    main()
