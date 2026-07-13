@@ -31,6 +31,24 @@ Map-level config audit:
     difference caused by obs-set divergence.  Comparison result is written to nc
     attrs and reported.
 
+Config-audit PROOF mode (``SVERDRUP_OI_MAPS_AUDIT=j3_inclusive``):
+    The train-only maps CANNOT be bit-compared against the signed artifact
+    (different obs set: j3 excluded vs included).  This mode reruns the SAME
+    signed config through the SAME producer path as Phase-4
+    (``run_challenge_map`` — ``run_year`` delegates to it) with the signed
+    artifact's obs set (ALL mapping missions INCLUDING j3, no split) over the
+    12 smoke days, and compares means against the signed artifact:
+
+    - BIT-IDENTICAL → code path + constants PROVEN to be the signed config.
+    - tight rtol (< 1e-6 m max abs) → config proven; residual is solver/BLAS
+      version noise (report which).
+    - worse → REAL config mismatch → SystemExit (STOP, report BLOCKED).
+
+    Output goes ONLY to ``oi_mean_maps_audit_j3incl.nc`` — never the descriptor
+    artifact paths; the harness never consumes it.  On PASS the result is also
+    stamped as ``config_audit`` onto any existing train-only map files, which
+    upgrades their obs-set-divergence verdict to attributed-BY-CONSTRUCTION.
+
 Reference-frame note:
     The signed artifact is in SSH space (SLA + MDT from the mapping tracks).
     Our maps use the SAME MDT via ``load_mdt_grid`` so the comparison is in a
@@ -40,6 +58,7 @@ Usage::
 
     SVERDRUP_OI_MAPS_SCOPE=dev pixi run python scripts/generate_oi_maps.py
     SVERDRUP_OI_MAPS_SCOPE=full pixi run python scripts/generate_oi_maps.py
+    SVERDRUP_OI_MAPS_AUDIT=j3_inclusive pixi run python scripts/generate_oi_maps.py
 
 Full-year controller launch (detached, log to scratchpad)::
 
@@ -68,7 +87,7 @@ from sverdrup.validation.params import (
     baseline_config,
     baseline_kernel,
 )
-from sverdrup.validation.run import _subset, run_mean_var_maps
+from sverdrup.validation.run import _subset, run_challenge_map, run_mean_var_maps
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -96,6 +115,22 @@ _MAPPING_OBS_PATHS: list[Path] = [
 _SCOPE = os.environ.get("SVERDRUP_OI_MAPS_SCOPE", "full")
 if _SCOPE not in {"dev", "full"}:
     raise SystemExit(f"SVERDRUP_OI_MAPS_SCOPE must be 'dev' or 'full', got {_SCOPE!r}")
+
+# Config-audit proof mode (see module docstring). When set, NO train-only maps
+# are generated; only the j3-inclusive comparison against the signed artifact.
+_AUDIT_MODE = os.environ.get("SVERDRUP_OI_MAPS_AUDIT")
+if _AUDIT_MODE is not None and _AUDIT_MODE != "j3_inclusive":
+    raise SystemExit(
+        f"SVERDRUP_OI_MAPS_AUDIT must be 'j3_inclusive' (or unset), got {_AUDIT_MODE!r}"
+    )
+
+# Audit output — clearly separated from the descriptor artifact paths
+# (oi_{mean,var}_maps.nc); the harness NEVER consumes this file.
+_AUDIT_MEAN_DEST = _OUT_ROOT / "oi_mean_maps_audit_j3incl.nc"
+
+# Max abs threshold for the j3-inclusive proof: anything worse than 1e-6 m
+# cannot be solver/BLAS version noise and is a REAL config mismatch.
+_AUDIT_RTOL_THRESHOLD_M = 1e-6
 
 # Dev smoke: days 60-71 (2017-03-02 to 2017-03-13, matching the stage_a fixture).
 # Full year: days 0-364 (2017-01-01 to 2017-12-31).
@@ -269,6 +304,144 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
     }
 
 
+def _stamp_config_audit_attr(paths: list[Path], config_audit: str) -> None:
+    """Stamp the ``config_audit`` proof line onto existing map files.
+
+    Args:
+        paths: NetCDF files to update (missing files are skipped).
+        config_audit: The proof line, e.g.
+            ``"j3-inclusive matched-day: bit-identical (12 days)"``.
+    """
+    for p in paths:
+        if not p.exists():
+            continue
+        ds = xr.open_dataset(p)
+        ds = ds.load()
+        ds.close()
+        ds.attrs["config_audit"] = config_audit
+        tmp = p.with_suffix(".tmp.nc")
+        ds.to_netcdf(tmp)
+        tmp.replace(p)
+        print(f"  [OK] config_audit attr stamped on {p}", flush=True)
+
+
+def run_config_audit() -> None:
+    """PROOF-BY-CONSTRUCTION config audit: reproduce the signed artifact.
+
+    Reruns the signed config through the SAME producer path as Phase-4
+    (``run_challenge_map``; ``run_year`` delegates to it) with the signed
+    artifact's obs set (ALL mapping missions INCLUDING j3 — no split) over
+    the 12 smoke days, then compares means against the signed
+    ``OSE_ssh_mapping_OURS_OI.nc`` on those days.
+
+    Raises:
+        SystemExit: If max abs diff exceeds ``_AUDIT_RTOL_THRESHOLD_M`` —
+            a REAL config mismatch (STOP semantics, Phase-7 lesson).
+    """
+    t0 = time.monotonic()
+    print("[generate_oi_maps] CONFIG AUDIT MODE (j3_inclusive)", flush=True)
+    print(
+        "  reproducing the signed artifact's producer run: run_challenge_map, "
+        "ALL mapping missions (j3 INCLUDED), signed config, 12 smoke days",
+        flush=True,
+    )
+
+    provider, grid, half = baseline_config()
+    kernel = baseline_kernel()
+
+    print(
+        "  loading mapping obs (ALL missions, incl. j3; c2 never read) ...", flush=True
+    )
+    obs_all = load_mapping_obs(_MAPPING_OBS_PATHS, provider)
+    print(f"  loaded {len(obs_all)} obs", flush=True)
+
+    print("  loading MDT grid ...", flush=True)
+    mdt_grid = load_mdt_grid(_MAPPING_OBS_PATHS, grid)
+
+    print(
+        f"  generating {len(_DEV_DAYS)}-day j3-inclusive means -> {_AUDIT_MEAN_DEST} ...",
+        flush=True,
+    )
+    run_challenge_map(
+        "oi",
+        obs_all,
+        provider,
+        grid,
+        half,
+        _DEV_DAYS,
+        _AUDIT_MEAN_DEST,
+        kernel=kernel,
+        halo_deg=1.0,
+        mdt_grid=mdt_grid,
+    )
+
+    print(f"  comparing vs {_SIGNED_OI_NC} on matched days ...", flush=True)
+    regen = xr.open_dataset(_AUDIT_MEAN_DEST)
+    signed = xr.open_dataset(_SIGNED_OI_NC)
+    matched = sorted(set(regen.time.values.tolist()) & set(signed.time.values.tolist()))
+    n_matched = len(matched)
+    if n_matched == 0:
+        regen.close()
+        signed.close()
+        raise SystemExit("CONFIG AUDIT: no matched days — cannot prove config.")
+    matched_arr = np.array(matched, dtype="datetime64[ns]")
+    regen_sel = regen.sel(time=matched_arr)["ssh"].values
+    signed_sel = signed.sel(time=matched_arr)["ssh"].values
+    regen.close()
+    signed.close()
+
+    bit_identical = bool(np.array_equal(regen_sel, signed_sel))
+    abs_diff = np.abs(regen_sel - signed_sel)
+    max_abs = float(np.nanmax(abs_diff))
+    denom = np.abs(signed_sel)
+    denom[denom < 1e-10] = 1e-10
+    max_rel = float(np.nanmax(abs_diff / denom))
+
+    if bit_identical:
+        config_audit = f"j3-inclusive matched-day: bit-identical ({n_matched} days)"
+    elif max_abs < _AUDIT_RTOL_THRESHOLD_M:
+        config_audit = (
+            f"j3-inclusive matched-day: tight-rtol PASS ({n_matched} days, "
+            f"max_abs={max_abs:.3e} m, max_rel={max_rel:.3e}; "
+            f"residual attributed to solver/BLAS version noise, not config)"
+        )
+    else:
+        print(
+            f"\n[AUDIT STOP] j3-inclusive rerun does NOT reproduce the signed "
+            f"artifact: max_abs={max_abs:.6f} m (threshold "
+            f"{_AUDIT_RTOL_THRESHOLD_M} m), max_rel={max_rel:.3e}, "
+            f"bit_identical={bit_identical}. This is a REAL config mismatch "
+            "(same obs set, same nominal config) — the kernel, params, grid, "
+            "framing, or MDT differ from the Phase-4 producer. "
+            "REPORT: BLOCKED with attribution.",
+            flush=True,
+        )
+        raise SystemExit(
+            f"MAP-LEVEL CONFIG AUDIT FAILED (j3-inclusive proof): "
+            f"max_abs={max_abs:.6f} m exceeds {_AUDIT_RTOL_THRESHOLD_M} m. STOP."
+        )
+
+    print(f"  [PASS] {config_audit}", flush=True)
+
+    # Stamp the proof onto any existing train-only map files (dev + full).
+    _stamp_config_audit_attr(
+        [
+            _OUT_ROOT / "oi_mean_maps_dev.nc",
+            _OUT_ROOT / "oi_var_maps_dev.nc",
+            _OUT_ROOT / "oi_mean_maps.nc",
+            _OUT_ROOT / "oi_var_maps.nc",
+        ],
+        config_audit,
+    )
+
+    wall = time.monotonic() - t0
+    print(
+        f"\n[generate_oi_maps] CONFIG AUDIT DONE wall={wall:.1f}s "
+        f"peak_rss={_peak_rss_mb():.0f} MiB — {config_audit}",
+        flush=True,
+    )
+
+
 def main() -> None:
     """Run OI mean/variance map generation at the signed baseline config.
 
@@ -277,6 +450,10 @@ def main() -> None:
             the audit-trail constants (config integrity check).
         SystemExit: If the matched-day audit detects a config mismatch.
     """
+    if _AUDIT_MODE == "j3_inclusive":
+        run_config_audit()
+        return
+
     t0 = time.monotonic()
     print(f"[generate_oi_maps] scope={_SCOPE!r}", flush=True)
     print(
