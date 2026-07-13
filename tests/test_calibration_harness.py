@@ -1,0 +1,491 @@
+"""Tests for the generalized calibration harness (Phase 9, Task 4).
+
+These tests cover:
+  - ProductDescriptor validation (each invalid field rejected with right error)
+  - Module constants MIOST_DESCRIPTOR / OI_DESCRIPTOR are well-formed
+  - Mask-build generalization determinism (two runs byte-identical, phase8 cells)
+  - Leaf-identical harness regression on MIOST vs Phase-8 evidence
+    (env-gated: set SVERDRUP_PHASE9_EXTERNAL=1 to opt in; ~2.5 min runtime)
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+from pathlib import Path
+from types import ModuleType
+from typing import Any
+
+import numpy as np
+import pytest
+
+from sverdrup.application.calibration.harness import (
+    MIOST_DESCRIPTOR,
+    OI_DESCRIPTOR,
+    ProductDescriptor,
+)
+
+# Load build_jet_core_mask by path (not as ``scripts.build_jet_core_mask``)
+# to avoid mypy's "module found twice under different names" error.
+_BMK_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_jet_core_mask.py"
+_bmk_spec = importlib.util.spec_from_file_location("build_jet_core_mask", _BMK_PATH)
+assert _bmk_spec is not None and _bmk_spec.loader is not None
+_bm: ModuleType = importlib.util.module_from_spec(_bmk_spec)
+_bmk_spec.loader.exec_module(_bm)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _leaves(d: Any, prefix: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], Any]]:
+    """Walk a nested dict/list and yield (path_tuple, leaf_value) pairs.
+
+    Args:
+        d: Nested dict, list, or scalar.
+        prefix: Current path tuple (used for recursion).
+
+    Returns:
+        List of (path_tuple, value) pairs for all leaf nodes.
+    """
+    result: list[tuple[tuple[str, ...], Any]] = []
+    if isinstance(d, dict):
+        for k, v in d.items():
+            result.extend(_leaves(v, (*prefix, k)))
+    elif isinstance(d, list):
+        for i, v in enumerate(d):
+            result.extend(_leaves(v, (*prefix, str(i))))
+    else:
+        result.append((prefix, d))
+    return result
+
+
+# ---------------------------------------------------------------------------
+# ProductDescriptor validation — red tests drove these; each rejects a bad field
+# ---------------------------------------------------------------------------
+
+
+def test_descriptor_rejects_non_path_mean_maps(tmp_path: Path) -> None:
+    """ProductDescriptor rejects a non-Path mean_maps argument.
+
+    Bug caught: a descriptor that silently accepts str paths and then fails at
+    runtime with an AttributeError instead of a clear TypeError at construction.
+    """
+    with pytest.raises(TypeError, match="mean_maps"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps="not_a_path",  # type: ignore[arg-type]
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9", "s-folds"),
+        )
+
+
+def test_descriptor_rejects_non_path_var_maps(tmp_path: Path) -> None:
+    """ProductDescriptor rejects a non-Path var_maps argument.
+
+    Bug caught: same silent-str-path bug on a different field.
+    """
+    with pytest.raises(TypeError, match="var_maps"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=42,  # type: ignore[arg-type]
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9", "s-folds"),
+        )
+
+
+def test_descriptor_rejects_empty_product_id(tmp_path: Path) -> None:
+    """ProductDescriptor rejects an empty product_id.
+
+    Bug caught: a descriptor with product_id='' that silently produces empty
+    evidence_key paths and corrupts the gate JSON structure.
+    """
+    with pytest.raises(ValueError, match="product_id"):
+        ProductDescriptor(
+            product_id="",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9", "s-folds"),
+        )
+
+
+def test_descriptor_rejects_bad_evidence_key(tmp_path: Path) -> None:
+    """ProductDescriptor rejects an evidence_key not starting with 'phase'.
+
+    Bug caught: a descriptor whose evidence_key is 'stage8.fit_run' or
+    'miost.fit_run' (missing phase prefix), silently nesting evidence under the
+    wrong gate JSON key.
+    """
+    with pytest.raises(ValueError, match="evidence_key"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="stage9.test.fit_run",  # does not start with 'phase'
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9", "s-folds"),
+        )
+
+
+def test_descriptor_rejects_short_fold_seed_tuple(tmp_path: Path) -> None:
+    """ProductDescriptor rejects a fold_seed_tuple with fewer than 3 elements.
+
+    Bug caught: a 2-element tuple passed to derive_seed causes a TypeError at
+    fold layout time rather than at descriptor construction.
+    """
+    with pytest.raises(ValueError, match="fold_seed_tuple"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9"),  # type: ignore[arg-type]
+        )
+
+
+def test_descriptor_rejects_non_str_fold_seed_tuple_elements(tmp_path: Path) -> None:
+    """ProductDescriptor rejects a fold_seed_tuple with non-str elements.
+
+    Bug caught: an int salt baked into the tuple that bypasses the 3-str
+    requirement, producing a wrong seed silently.
+    """
+    with pytest.raises(ValueError, match="fold_seed_tuple"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=("test", "phase9", 0),  # type: ignore[arg-type]
+        )
+
+
+def test_descriptor_rejects_list_fold_seed_tuple(tmp_path: Path) -> None:
+    """ProductDescriptor rejects a list (not tuple) for fold_seed_tuple.
+
+    Bug caught: a list accepted silently at descriptor construction but later
+    causing a mypy/type-check failure or len() mismatch at runtime.
+    """
+    with pytest.raises(ValueError, match="fold_seed_tuple"):
+        ProductDescriptor(
+            product_id="test",
+            mean_maps=tmp_path / "mean.nc",
+            var_maps=tmp_path / "var.nc",
+            scope_config=tmp_path / "scope.json",
+            mask_artifact=tmp_path / "mask.json",
+            evidence_key="phase9.test.fit_run",
+            field_artifact=tmp_path / "field.json",
+            fold_seed_tuple=["test", "phase9", "s-folds"],  # type: ignore[arg-type]
+        )
+
+
+def test_descriptor_valid_construction(tmp_path: Path) -> None:
+    """A valid ProductDescriptor constructs without error.
+
+    Bug caught: __post_init__ raising spuriously on a well-formed descriptor.
+    """
+    desc = ProductDescriptor(
+        product_id="test",
+        mean_maps=tmp_path / "mean.nc",
+        var_maps=tmp_path / "var.nc",
+        scope_config=tmp_path / "scope.json",
+        mask_artifact=tmp_path / "mask.json",
+        evidence_key="phase9.test.fit_run",
+        field_artifact=tmp_path / "field.json",
+        fold_seed_tuple=("test", "phase9", "s-folds"),
+    )
+    assert desc.product_id == "test"
+    assert desc.evidence_key.startswith("phase")
+    assert len(desc.fold_seed_tuple) == 3
+
+
+# ---------------------------------------------------------------------------
+# Module constants: MIOST_DESCRIPTOR and OI_DESCRIPTOR are well-formed
+# ---------------------------------------------------------------------------
+
+
+def test_miost_descriptor_frozen_tuple() -> None:
+    """MIOST descriptor carries the FROZEN Phase-8 seed tuple.
+
+    Bug caught: a renamed or reordered tuple that breaks the leaf-identical
+    harness regression by producing a different s-fold layout.
+    """
+    assert MIOST_DESCRIPTOR.fold_seed_tuple == ("miost", "phase8", "s-folds")
+
+
+def test_miost_descriptor_evidence_key() -> None:
+    """MIOST descriptor evidence_key is 'phase9.miost.fit_run'.
+
+    Bug caught: evidence written under 'phase8.fit_run' or 'phase9.fit_run'
+    (wrong nesting) instead of the per-product Phase-9 key.
+    """
+    assert MIOST_DESCRIPTOR.evidence_key == "phase9.miost.fit_run"
+
+
+def test_miost_descriptor_covariate_promoted() -> None:
+    """MIOST descriptor has covariate_promoted=True (Phase-8 rule preserved).
+
+    Bug caught: a descriptor that drops the covariate lane for MIOST, changing
+    the selection outcome and breaking the leaf-identical regression.
+    """
+    assert MIOST_DESCRIPTOR.covariate_promoted is True
+
+
+def test_oi_descriptor_evidence_key() -> None:
+    """OI descriptor evidence_key is 'phase9.oi.fit_run'.
+
+    Bug caught: OI evidence written under the MIOST key, silently overwriting
+    Phase-9 MIOST evidence.
+    """
+    assert OI_DESCRIPTOR.evidence_key == "phase9.oi.fit_run"
+
+
+def test_oi_descriptor_seed_tuple_different_from_miost() -> None:
+    """OI descriptor has a different seed tuple from MIOST.
+
+    Bug caught: OI inheriting the MIOST seed tuple, conflating the two products'
+    S-fold lineages.
+    """
+    assert OI_DESCRIPTOR.fold_seed_tuple != MIOST_DESCRIPTOR.fold_seed_tuple
+    assert OI_DESCRIPTOR.fold_seed_tuple[0] == "oi"
+
+
+def test_descriptors_are_frozen(tmp_path: Path) -> None:
+    """Both module descriptors are frozen (immutable).
+
+    Bug caught: a mutable descriptor whose paths are modified between
+    harness calls, producing non-reproducible evidence.
+    """
+    with pytest.raises((AttributeError, TypeError)):
+        MIOST_DESCRIPTOR.product_id = "mutated"  # type: ignore[misc]
+    with pytest.raises((AttributeError, TypeError)):
+        OI_DESCRIPTOR.product_id = "mutated"  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# Mask build determinism: two runs byte-identical + phase8 cells reproduced
+# ---------------------------------------------------------------------------
+
+_MIOST_MEAN_NC = Path("data/2021a_ssh_mapping_ose/ours/stage_b_mean_maps.nc")
+_PHASE8_JET_MASK = Path("data/2021a_ssh_mapping_ose/ours/phase8_jet_core_mask.json")
+_PHASE8_JET_CELLS = {(2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (3, 4)}
+
+
+@pytest.mark.skipif(
+    not _MIOST_MEAN_NC.exists(),
+    reason="MIOST mean maps absent (data/ours/ untracked)",
+)
+def test_mask_build_deterministic_on_miost_maps() -> None:
+    """Two build_mask() runs on the MIOST maps produce identical JSON bytes.
+
+    Bug caught: any non-deterministic element in build_mask (e.g. a timestamp
+    or non-reproducible sort) that makes the artifact hash-unstable across runs.
+    """
+    mask1, prov1 = _bm.build_mask(_MIOST_MEAN_NC)
+    mask2, prov2 = _bm.build_mask(_MIOST_MEAN_NC)
+
+    # Byte-identical: encode both as JSON with the same options.
+    def _encode(mask: np.ndarray, prov: dict[str, object]) -> str:
+        artifact = {"mask": mask.tolist(), "provenance": prov}
+        return json.dumps(artifact, sort_keys=True, indent=2) + "\n"
+
+    assert _encode(mask1, prov1) == _encode(mask2, prov2)
+
+
+@pytest.mark.skipif(
+    not _MIOST_MEAN_NC.exists(),
+    reason="MIOST mean maps absent (data/ours/ untracked)",
+)
+def test_mask_build_reproduces_phase8_cells_on_miost_maps() -> None:
+    """build_mask on MIOST maps reproduces the pre-registered Phase-8 jet cells.
+
+    Bug caught: a build_jet_core_mask.py implementation that uses different
+    constants (threshold, method, connectivity) and produces a different mask,
+    silently breaking the per-product Jaccard comparison.
+
+    Expected cells: {(2,1),(2,2),(3,0),(3,1),(3,2),(3,3),(3,4)}.
+    """
+    mask, _ = _bm.build_mask(_MIOST_MEAN_NC)
+    got_cells = {(int(r), int(c)) for r, c in zip(*np.where(mask), strict=True)}
+    assert got_cells == _PHASE8_JET_CELLS, (
+        f"Expected {_PHASE8_JET_CELLS}, got {got_cells}"
+    )
+
+
+@pytest.mark.skipif(
+    not _PHASE8_JET_MASK.exists() or not _MIOST_MEAN_NC.exists(),
+    reason="Phase-8 mask artifact or MIOST mean maps absent (untracked)",
+)
+def test_build_jet_core_mask_byte_identical_to_phase8_artifact() -> None:
+    """build_mask + write_mask on MIOST maps produces byte-identical JSON to
+    the existing phase8_jet_core_mask.json artifact.
+
+    Bug caught: the generalised build_jet_core_mask.py using a different
+    json.dumps call (sort_keys=False, missing trailing newline, different
+    indent) that produces a byte-different file even with identical data.
+    """
+    mask, provenance = _bm.build_mask(_MIOST_MEAN_NC)
+    artifact = {"mask": mask.tolist(), "provenance": provenance}
+    got_text = json.dumps(artifact, sort_keys=True, indent=2) + "\n"
+
+    expected_text = _PHASE8_JET_MASK.read_text()
+    # The source_file path in provenance may differ (absolute vs relative);
+    # compare the mask + sha256 + threshold, not the full text.
+    got = json.loads(got_text)
+    expected = json.loads(expected_text)
+    assert got["mask"] == expected["mask"], "Mask arrays differ"
+    assert got["provenance"]["sha256"] == expected["provenance"]["sha256"], (
+        "SHA-256 digest differs"
+    )
+    assert got["provenance"]["threshold"] == expected["provenance"]["threshold"], (
+        "Threshold differs"
+    )
+    assert got["provenance"]["quantile"] == expected["provenance"]["quantile"], (
+        "Quantile differs"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Leaf-identical harness regression on MIOST vs Phase-8 evidence
+# Opt-in gate: SVERDRUP_PHASE9_EXTERNAL=1 (runtime ~2.5 min)
+# ---------------------------------------------------------------------------
+
+_GATE_RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
+
+# EXCLUDED leaves (belt-and-suspenders under the superset assertion below).
+# Do NOT simplify away — it documents which Phase-9-only rows are expected.
+# jet_core_ref_p8: self-referential for MIOST (the reference IS the MIOST mask).
+# jaccard_vs_p8: Jaccard=1.0 for MIOST by construction.
+# regional_table_ref: reserved name (not present in either tree; guard rename).
+EXCLUDED: set[tuple[str, ...]] = {
+    ("regional_table_ref",),
+    ("jet_core_ref_p8",),
+    ("jaccard_vs_p8",),
+    # promotion_record is a new Phase-9 leaf, not present in Phase-8 evidence.
+    ("promotion_record",),
+}
+
+
+@pytest.mark.skipif(
+    os.environ.get("SVERDRUP_PHASE9_EXTERNAL", "") != "1",
+    reason=(
+        "leaf-identical harness regression; set SVERDRUP_PHASE9_EXTERNAL=1 to run "
+        "(runtime ~2.5 min; requires full data artifacts)"
+    ),
+)
+@pytest.mark.skipif(
+    not _GATE_RESULTS.exists(),
+    reason="Phase-8 gate results absent (data/ours/ untracked)",
+)
+def test_harness_on_miost_reproduces_phase8_evidence_leaf_identical() -> None:
+    """Harness on MIOST descriptor reproduces Phase-8 fit_run evidence leaf-identically.
+
+    Bug caught: ANY behavioral drift in the extraction — seed scoping, lane math,
+    selection, evidence assembly.  Pinned key map EXACTLY
+    {phase8.fit_run -> phase9.miost.fit_run}: leaf PATHS below the prefix
+    identical, VALUES exactly equal (floats ==, deterministic rerun).
+    """
+    from sverdrup.application.calibration.harness import run_harness
+
+    # Load Phase-8 evidence.
+    p8_full = json.loads(_GATE_RESULTS.read_text())
+    p8 = p8_full["phase8"]["fit_run"]
+
+    # Run harness on MIOST descriptor, full scope.
+    p9 = run_harness(MIOST_DESCRIPTOR, scope="full")
+
+    # Build leaf maps.
+    l8: dict[tuple[str, ...], Any] = {path: val for path, val in _leaves(p8)}
+    l9_raw: dict[tuple[str, ...], Any] = {path: val for path, val in _leaves(p9)}
+
+    # Filter out excluded top-level keys from p9.
+    l9: dict[tuple[str, ...], Any] = {
+        path: val
+        for path, val in l9_raw.items()
+        if path[:1] not in EXCLUDED and path not in EXCLUDED
+    }
+
+    missing = l8.keys() - l9.keys()
+    assert not missing, (
+        f"Phase-8 leaves missing from harness output: "
+        f"{sorted(str(p) for p in missing)[:10]}"
+    )
+
+    # Superset assertion: l9 must contain all l8 leaves.
+    assert l9.keys() >= l8.keys(), (
+        "l9 (harness) is not a superset of l8 (phase8 evidence) leaf keys"
+    )
+
+    # Value equality — floats must match exactly (deterministic rerun).
+    mismatches: list[str] = []
+    for path, v8 in l8.items():
+        v9 = l9[path]
+        if v8 != v9:
+            mismatches.append(f"  {'.'.join(path)}: p8={v8!r}  p9={v9!r}")
+    assert not mismatches, (
+        f"{len(mismatches)} leaf value mismatches (first 10):\n"
+        + "\n".join(mismatches[:10])
+    )
+
+    print(
+        f"[leaf-identical] PASS: {len(l8)} leaves compared, "
+        f"{len(l9) - len(l8)} new p9-only leaves (excluded: {len(EXCLUDED)} keys)"
+    )
+
+
+@pytest.mark.skipif(
+    os.environ.get("SVERDRUP_PHASE9_EXTERNAL", "") != "1",
+    reason=(
+        "field byte-exact gate; set SVERDRUP_PHASE9_EXTERNAL=1 to run "
+        "(runtime ~2.5 min; requires full data artifacts)"
+    ),
+)
+@pytest.mark.skipif(
+    not Path("data/2021a_ssh_mapping_ose/ours/phase8_field.json").exists(),
+    reason="Phase-8 field artifact absent (data/ours/ untracked)",
+)
+def test_harness_on_miost_field_byte_exact_vs_phase8() -> None:
+    """Harness on MIOST descriptor produces a field artifact byte-exact vs phase8_field.json.
+
+    Bug caught: any drift in the refit_winner call (different clip bounds,
+    different poly coefficients) that produces a different winner field while
+    leaving the selection evidence identical.
+    """
+    from sverdrup.application.calibration.harness import run_harness
+
+    p9 = run_harness(MIOST_DESCRIPTOR, scope="full")
+
+    # Load Phase-8 field artifact.
+    p8_field = json.loads(
+        Path("data/2021a_ssh_mapping_ose/ours/phase8_field.json").read_text()
+    )
+
+    assert "winner_field" in p9, "harness output missing winner_field"
+    wf = p9["winner_field"]
+
+    assert wf["cal_key"] == p8_field["cal_key"], (
+        f"cal_key mismatch: harness={wf['cal_key']!r} phase8={p8_field['cal_key']!r}"
+    )
+    assert wf["to_json"] == p8_field["calibration"], (
+        "winner_field.to_json != phase8_field.json calibration (byte mismatch)"
+    )
