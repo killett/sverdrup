@@ -20,7 +20,7 @@
     {
       "id": 2,
       "subject": "P9 Task 2: CalibratedDistribution wrapper (pins A/B)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         1
       ],
@@ -83,5 +83,5 @@
       "description": "**Goal:** Single owner review of the phase (OI evidence + G_pre + migration identity report + spec-7 contract); then close records.\n\n**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in acceptanceCriteria has been re-validated independently, with output captured.\n\n**Files:** PROGRESS.md, README.md, tracker.\n\n**Acceptance Criteria:**\n- Evidence verbatim from artifacts (OI pack, G_pre block, identity report, contract)\n- Owner ruling in PROGRESS.md, dated, committed BEFORE close\n- No c2 anywhere (tally unchanged at 2); close banner + README + push\n\n**Verify:** rg -n 'phase-9' PROGRESS.md\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\", \"README.md\"], \"verifyCommand\": \"rg -n 'phase-9' PROGRESS.md\", \"acceptanceCriteria\": [\"owner ruling recorded + committed\", \"no c2, tally unchanged\", \"close + push\"], \"userGate\": true, \"tags\": [\"user-gate\"], \"gateScope\": \"phase\", \"requireEvidenceTokens\": [[\"g_pre\"], [\"identity\"], [\"oi\"]], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-13T07:30:00Z"
+  "lastUpdated": "2026-07-13T09:05:00Z"
 }
