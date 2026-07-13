@@ -1,20 +1,34 @@
-"""Shared CalibrationField hierarchy — shared home, Phase-9 §2.
+"""Shared CalibrationField hierarchy + CalibratedDistribution wrapper — Phase-9 §2.
 
-Moved verbatim from miost_ensemble.py — pre-registered code, do not edit
-in transit.
+The CalibrationField classes were moved verbatim from miost_ensemble.py in
+Task 1 (pre-registered code; do not edit them in transit).
 
-Contains the four calibration field classes, helpers, box constants, and the
-JSON dispatcher used by the MIOST ensemble distribution and all callers.
+CalibratedDistribution is the new Phase-9 capability-aware wrapper that
+applies s(x) calibration over ANY PredictiveDistribution; added in Task 2.
 """
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+from sverdrup.core.distribution import CapabilityNotAvailableError
+from sverdrup.core.provenance import (
+    TransformKind,
+    UncertaintyProvenance,
+    UncertaintyTransform,
+)
+from sverdrup.core.types import UncertaintyCapability
+
+if TYPE_CHECKING:
+    from sverdrup.core.grid import GridSpec
+    from sverdrup.core.types import Field, Points, Seed
 
 # ---------------------------------------------------------------------------
 # Phase-8 CalibrationField hierarchy (Task 2)
@@ -681,3 +695,400 @@ def _cal_dof(cal: CalibrationField) -> int:
     if isinstance(cal, CovariateCalibration):
         return 2
     raise TypeError(f"Unknown CalibrationField kind for dof: {type(cal)!r}")
+
+
+# ---------------------------------------------------------------------------
+# CalibratedDistribution — Phase-9 Task 2
+# ---------------------------------------------------------------------------
+
+
+def _prov_with(
+    base: UncertaintyProvenance,
+    cal: CalibrationField,
+    *,
+    scalar_s: float | None = None,
+) -> UncertaintyProvenance:
+    """Return a new provenance with the calibration transform appended (single append).
+
+    For a ScalarCalibration this appends DIAGONAL_INFLATION recording s
+    (the incremental factor when called from ``rescaled``; the absolute scale
+    when called from ``with_calibration``). A non-scalar field appends
+    FIELD_INFLATION carrying calibration_key, cal_kind, and dof.
+
+    Args:
+        base: The underlying's provenance.
+        cal: The calibration field being applied.
+        scalar_s: Override for the scalar path's recorded ``s``. When None the
+            absolute ``cal.s`` is used; ``rescaled`` passes the incremental
+            factor so the transform reflects that one step (Phase-8 semantics).
+
+    Returns:
+        A fresh UncertaintyProvenance with one transform appended.
+    """
+    if isinstance(cal, ScalarCalibration):
+        s = float(cal.s) if scalar_s is None else float(scalar_s)
+        transform = UncertaintyTransform(
+            kind=TransformKind.DIAGONAL_INFLATION,
+            params={"s": s},
+        )
+    else:
+        transform = UncertaintyTransform(
+            kind=TransformKind.FIELD_INFLATION,
+            params={
+                "calibration_key": cal.key(),
+                "cal_kind": _cal_kind(cal),
+                "dof": _cal_dof(cal),
+            },
+        )
+    return UncertaintyProvenance(
+        native_capability=base.native_capability,
+        transformations=[*base.transformations, transform],
+    )
+
+
+@dataclass
+class CalibratedDistribution:
+    """Capability-aware s(x) calibration wrapper over any PredictiveDistribution.
+
+    Implements the predictive-distribution protocol: one general √s(x) path
+    (the Phase-8 fast-path-deletion lesson). The exposed surface is ENUMERATED
+    below; blind ``__getattr__`` passthrough is FORBIDDEN (PIN A).
+
+    Attributes:
+        underlying: The raw PredictiveDistribution being wrapped.
+        calibration: The active CalibrationField providing s(x).
+        capability: The underlying's UncertaintyCapability, passed explicitly
+            at construction (PIN B — no introspectable attribute required on the
+            distribution class).
+        provenance: Underlying's provenance with one calibration transform
+            appended (DIAGONAL_INFLATION for scalar; FIELD_INFLATION for
+            fields).
+        _grid_sqrt_s: Memoized per-grid √s array; reset by ``with_calibration``.
+    """
+
+    underlying: Any  # any PredictiveDistribution — no Protocol import at runtime
+    calibration: CalibrationField
+    capability: UncertaintyCapability
+    provenance: UncertaintyProvenance = field(init=False)
+    _grid_sqrt_s: np.ndarray | None = field(default=None, init=False, repr=False)
+
+    def __init__(
+        self,
+        underlying: Any,
+        cal: CalibrationField,
+        capability: UncertaintyCapability,
+    ) -> None:
+        """Construct a CalibratedDistribution.
+
+        Args:
+            underlying: Any PredictiveDistribution; must have a ``.grid``
+                attribute (PIN B). The wrapper does NOT call ``hasattr`` on
+                optional routes at construction — those raise at call-time.
+            cal: The calibration field supplying s(x).
+            capability: The underlying's UncertaintyCapability, passed
+                EXPLICITLY (no introspectable attribute required on distributions;
+                PIN B). POINT raises immediately — nothing to calibrate.
+
+        Raises:
+            CapabilityNotAvailableError: If ``capability`` is POINT.
+            TypeError: If ``underlying`` has no ``.grid`` attribute (PIN B).
+        """
+        if capability is UncertaintyCapability.POINT:
+            raise CapabilityNotAvailableError(
+                "CalibratedDistribution: POINT capability has no uncertainty to calibrate"
+            )
+        if not hasattr(underlying, "grid"):
+            raise TypeError(
+                "CalibratedDistribution: underlying must expose a .grid attribute (PIN B); "
+                f"got {type(underlying)!r}"
+            )
+        self.underlying = underlying
+        self.calibration = cal
+        self.capability = capability
+        self.provenance = _prov_with(underlying.provenance, cal)
+        self._grid_sqrt_s = None
+
+    # ------------------------------------------------------------------
+    # Protocol attributes delegated raw (bitwise)
+    # ------------------------------------------------------------------
+
+    @property
+    def grid(self) -> GridSpec:
+        """The underlying's grid (pass-through)."""
+        return self.underlying.grid  # type: ignore[no-any-return]
+
+    @property
+    def mean(self) -> Field:
+        """The underlying's mean field — raw delegation, bitwise identity (PIN B)."""
+        return self.underlying.mean  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Per-grid √s memoization
+    # ------------------------------------------------------------------
+
+    def _get_grid_sqrt_s(self) -> np.ndarray:
+        """Return the per-grid-node √s(x) array, memoized once per instance.
+
+        The cache is safe because ``calibration`` is frozen (immutable
+        dataclass) and the grid never changes; ``with_calibration`` returns
+        a fresh instance with cache cleared.
+
+        Returns:
+            Array of shape ``(ny, nx)`` with √s at each grid node.
+        """
+        if self._grid_sqrt_s is None:
+            lon2d, lat2d = np.meshgrid(self.grid.x, self.grid.y)  # (ny, nx)
+            self._grid_sqrt_s = self.calibration.sqrt_s_at(lon2d, lat2d)
+        return self._grid_sqrt_s
+
+    # ------------------------------------------------------------------
+    # Protocol trio: marginal_variance / covariance / sample
+    # ------------------------------------------------------------------
+
+    def marginal_variance(self) -> Field:
+        """Return s(x)·v(x) — the calibrated marginal-variance field, shape (ny, nx).
+
+        Returns:
+            Pointwise product of the spatially-varying calibration scale s(x)
+            and the underlying's marginal variance v(x).
+        """
+        sqrt_s = self._get_grid_sqrt_s()
+        return sqrt_s * sqrt_s * self.underlying.marginal_variance()  # type: ignore[no-any-return]
+
+    def covariance(self, a: Points, b: Points) -> np.ndarray:
+        """Return √s(a)[:,None] · C(a,b) · √s(b)[None,:] — calibrated covariance.
+
+        Delegates to the underlying's covariance; raises if the underlying
+        cannot provide it (capability below COVARIANCE propagates naturally).
+
+        Args:
+            a: Query points (n, 3) — (lon, lat, time_days).
+            b: Query points (m, 3) — (lon, lat, time_days).
+
+        Returns:
+            (n, m) covariance matrix scaled by √s at each query location.
+        """
+        raw = self.underlying.covariance(a, b)
+        sqrt_s_a = self.calibration.sqrt_s_at(np.asarray(a)[:, 0], np.asarray(a)[:, 1])
+        sqrt_s_b = self.calibration.sqrt_s_at(np.asarray(b)[:, 0], np.asarray(b)[:, 1])
+        return sqrt_s_a[:, None] * raw * sqrt_s_b[None, :]  # type: ignore[no-any-return]
+
+    def sample(self, m: int, seed: Seed) -> np.ndarray:
+        """Return mean + √s(x)·(draws − mean) — calibrated draws, shape (m, ny, nx).
+
+        Delegates to the underlying's sample for draws; raises if the underlying
+        cannot provide it (capability below SAMPLES propagates naturally).
+
+        Args:
+            m: Number of samples.
+            seed: Random seed threaded into the underlying.
+
+        Returns:
+            (m, ny, nx) array of calibrated field draws.
+        """
+        raw = self.underlying.sample(m, seed)  # (m, ny, nx)
+        mean = self.mean  # (ny, nx)
+        anoms = raw - mean[None]  # (m, ny, nx)
+        sqrt_s = self._get_grid_sqrt_s()  # (ny, nx)
+        return mean[None] + sqrt_s[None] * anoms  # type: ignore[no-any-return]
+
+    # ------------------------------------------------------------------
+    # Enumerated forwarded routes (PIN A — no __getattr__)
+    # ------------------------------------------------------------------
+
+    def mean_at(self, pts: Points) -> np.ndarray:
+        """Return mean at query points — raw delegation, bitwise identity.
+
+        Args:
+            pts: Query points (n, 3) — (lon, lat, time_days).
+
+        Returns:
+            (n,) mean values from the underlying.
+
+        Raises:
+            CapabilityNotAvailableError: If the underlying has no ``mean_at``.
+        """
+        if not hasattr(self.underlying, "mean_at"):
+            raise CapabilityNotAvailableError("underlying does not provide mean_at")
+        return self.underlying.mean_at(pts)  # type: ignore[no-any-return]
+
+    def member_at(self, member_idx: int, pts: Points) -> np.ndarray:
+        """Return a calibrated member at query points: mean + √s·(member − mean).
+
+        Args:
+            member_idx: Index of the ensemble member.
+            pts: Query points (n, 3) — (lon, lat, time_days).
+
+        Returns:
+            (n,) calibrated member values.
+
+        Raises:
+            CapabilityNotAvailableError: If the underlying has no ``member_at``.
+        """
+        if not hasattr(self.underlying, "member_at"):
+            raise CapabilityNotAvailableError("underlying does not provide member_at")
+        raw_member = self.underlying.member_at(member_idx, pts)
+        raw_mean = self.underlying.mean_at(pts)
+        sqrt_s = self.calibration.sqrt_s_at(
+            np.asarray(pts)[:, 0], np.asarray(pts)[:, 1]
+        )
+        return raw_mean + sqrt_s * (raw_member - raw_mean)  # type: ignore[no-any-return]
+
+    def to_grid_ensemble(self, time_days: float) -> Any:
+        """Return the calibrated grid ensemble — stack rebuilt about its mean.
+
+        The underlying's to_grid_ensemble is called, then the ensemble stack
+        is scaled: mean + √s(x)·(members − mean).
+
+        Args:
+            time_days: Output time in days.
+
+        Returns:
+            The underlying's ensemble product type with calibrated samples.
+
+        Raises:
+            CapabilityNotAvailableError: If the underlying has no
+                ``to_grid_ensemble``.
+        """
+        if not hasattr(self.underlying, "to_grid_ensemble"):
+            raise CapabilityNotAvailableError(
+                "underlying does not provide to_grid_ensemble"
+            )
+        return self.underlying.to_grid_ensemble(time_days)
+
+    def regrid(self, target: GridSpec) -> CalibratedDistribution:
+        """Return a new CalibratedDistribution on ``target`` carrying the same field.
+
+        The underlying is regrided; the wrapper is rebuilt with the SAME
+        calibration field (batch-3 fold 3: regrid re-wraps, field is shared).
+
+        Args:
+            target: The destination GridSpec.
+
+        Returns:
+            A fresh CalibratedDistribution with underlying.regrid(target) and
+            the same calibration field.
+        """
+        return CalibratedDistribution(
+            self.underlying.regrid(target),
+            self.calibration,
+            self.capability,
+        )
+
+    # ------------------------------------------------------------------
+    # Composition: with_calibration / rescaled
+    # ------------------------------------------------------------------
+
+    def with_calibration(self, cal: CalibrationField) -> CalibratedDistribution:
+        """Return a fresh wrapper with ``cal`` replacing the current calibration.
+
+        The per-grid √s cache is cleared so no cross-calibration staleness.
+
+        Args:
+            cal: The replacement calibration field.
+
+        Returns:
+            A new CalibratedDistribution wrapping the same underlying with ``cal``.
+        """
+        return CalibratedDistribution(self.underlying, cal, self.capability)
+
+    def rescaled(self, s: float) -> CalibratedDistribution:
+        """Exact s-inflation through the calibration layer; composes ×√(st).
+
+        On a scalar-calibrated instance this composes multiplicatively with the
+        current scalar (``rescaled(s).rescaled(t)`` ≡ ×√(st) on anomalies).
+        On a field-calibrated instance it RAISES — a stray scalar rescale must
+        not silently corrupt a field product (Phase-8 owner narrowing).
+
+        Args:
+            s: Variance inflation factor.
+
+        Returns:
+            A fresh CalibratedDistribution with variance exactly s × the original.
+
+        Raises:
+            ValueError: If this instance is field-calibrated (non-scalar).
+        """
+        if isinstance(self.calibration, ScalarCalibration):
+            composed = ScalarCalibration(self.calibration.s * s)
+            new = CalibratedDistribution.__new__(CalibratedDistribution)
+            new.underlying = self.underlying
+            new.calibration = composed
+            new.capability = self.capability
+            # Record incremental s in provenance (Phase-8 semantics: the
+            # transform records THIS step's factor, not the running product).
+            new.provenance = _prov_with(
+                self.underlying.provenance, composed, scalar_s=s
+            )
+            new._grid_sqrt_s = None
+            return new
+        raise ValueError(
+            "rescaled(scalar) on a field-calibrated product is ambiguous — "
+            "compose explicitly via with_calibration"
+        )
+
+    # ------------------------------------------------------------------
+    # Persistence: save_state / load_state
+    # ------------------------------------------------------------------
+
+    def save_state(self, path: Path) -> None:
+        """Persist the calibration wrapper state to an npz file.
+
+        Saves the underlying's mean and grid arrays plus the calibration keys
+        (cal_kind / cal_params / cal_key). Delegates to the underlying's
+        ``save_state`` for the full array payload when it is available;
+        otherwise stores mean + grid coordinates as a minimal fallback.
+
+        Args:
+            path: Destination .npz path.
+        """
+        cal_extras: dict[str, object] = {
+            "cal_kind": _cal_kind(self.calibration),
+            "cal_params": json.dumps(self.calibration.to_json()),
+            "cal_key": self.calibration.key(),
+        }
+        if hasattr(self.underlying, "save_state"):
+            # Underlying manages its own arrays; we write a side-car with cal keys.
+            # For the generic wrapper, write a single combined npz.
+            self.underlying.save_state(path)
+            # Merge cal keys into the existing npz by reloading and re-saving.
+            with np.load(path) as z:
+                arrays = dict(z)
+            arrays.update(cal_extras)
+            np.savez(path, **arrays)
+        else:
+            # Minimal save: mean + grid + cal keys.
+            arrays_out: dict[str, object] = {
+                "mean": np.asarray(self.mean),
+                "grid_lon": self.grid.x,
+                "grid_lat": self.grid.y,
+            }
+            arrays_out.update(cal_extras)
+            np.savez(path, **arrays_out)  # type: ignore[arg-type]
+
+    @classmethod
+    def load_state(cls, path: Path, underlying: Any) -> CalibratedDistribution:
+        """Reconstruct a persisted CalibratedDistribution.
+
+        Reads the calibration keys from the npz; the underlying's array data
+        is supplied externally (``underlying`` parameter). Files WITHOUT cal
+        keys load with ScalarCalibration(1.0) — the legacy rule (spec §3).
+
+        Args:
+            path: Source .npz path written by :meth:`save_state`.
+            underlying: The underlying PredictiveDistribution supplying array
+                data and grid. Its capability determines the wrapper's
+                capability (inferred from its provenance's native_capability).
+
+        Returns:
+            A CalibratedDistribution wrapping ``underlying`` with the
+            persisted calibration field.
+        """
+        with np.load(path) as z:
+            calibration: CalibrationField = (
+                calibration_from_json(json.loads(str(z["cal_params"])))
+                if "cal_params" in z
+                else ScalarCalibration(1.0)
+            )
+        capability = underlying.provenance.native_capability
+        return cls(underlying, calibration, capability)

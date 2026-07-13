@@ -75,6 +75,10 @@ ignore = [
 # their_eval bridges the untyped, version-skewed vendored pyinterp surface;
 # Any is the honest type at that boundary.
 "src/sverdrup/validation/their_eval.py" = ["ANN401"]
+# CalibratedDistribution wraps any PredictiveDistribution — Any is honest here;
+# the generic wrapper cannot be statically typed without a Protocol import that
+# would create a circular dependency at runtime.
+"src/sverdrup/distributions/calibration.py" = ["ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
