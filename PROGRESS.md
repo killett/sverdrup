@@ -1,15 +1,22 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE 9 — method-generic calibration: PLAN APPROVED (owner,
-> 2026-07-12) — READY TO EXECUTE in a fresh session.**
+> **▶ PHASE 9 — method-generic calibration: IN PROGRESS. Tasks 1–3
+> COMPLETE (`eb308c6`). Next: Task 4 (ProductDescriptor + generalized
+> harness; leaf-identical gate).**
 > Spec: `docs/superpowers/specs/2026-07-12-phase9-generic-calibration-design.md`
 > Plan + tracker: `docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md(.tasks.json)`
 > (8 tasks; owner review addition folded: Task-6 map-level config audit —
 > regenerated OI means vs the signed artifact on matched days, STOP on
 > mismatch, dev smoke first). **Standing discipline for execution:** dual
 > review per task; push as you go; identity gate green BEFORE Task 4
-> starts; Task 8 = owner gate with evidence verbatim from artifacts;
-> ZERO c2 touches phase-wide (no task is capable of touching it).
+> starts (PASSED — 6+2, zero edits); Task 8 = owner gate with evidence
+> verbatim from artifacts; ZERO c2 touches phase-wide (no task is
+> capable of touching it). **Task 3 close evidence:** identity gate 6
+> passed 2 skipped; migration suites 105 passed; full suite 642/11/1
+> (baseline unchanged); pre-commit clean; PIN D fixture pinned;
+> mechanism pointer in shipped_miost() docstring; mypy suppressed on
+> two zero-touch test files (return-value/comparison-overlap from
+> with_calibration return type change).
 > PHASE 10 = lat-varying METHOD parameters (invariant-12) — deferred TO
 > Phase 10, owner-committed (spec §0); the Phase-10 brainstorm consumes
 > `phase9.g_pre_anchor` by reference after Phase-9 close.
