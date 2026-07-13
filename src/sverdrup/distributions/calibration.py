@@ -996,10 +996,31 @@ class CalibratedDistribution:
     # Composition: with_calibration / rescaled
     # ------------------------------------------------------------------
 
+    def _composed(
+        self, cal: CalibrationField, provenance: UncertaintyProvenance
+    ) -> CalibratedDistribution:
+        """Fresh wrapper on the same underlying with ``cal`` and ``provenance``.
+
+        Bypasses ``__init__`` so composition controls the provenance CHAIN
+        (the constructor bases provenance on the underlying — correct only for
+        a fresh wrap). The per-grid √s cache starts empty.
+        """
+        new = CalibratedDistribution.__new__(CalibratedDistribution)
+        new.underlying = self.underlying
+        new.calibration = cal
+        new.capability = self.capability
+        new.provenance = provenance
+        new._grid_sqrt_s = None
+        return new
+
     def with_calibration(self, cal: CalibrationField) -> CalibratedDistribution:
         """Return a fresh wrapper with ``cal`` replacing the current calibration.
 
         The per-grid √s cache is cleared so no cross-calibration staleness.
+        Provenance CHAINS: the new transform is appended to THIS wrapper's
+        provenance (which already records its own calibration step), matching
+        the pre-migration raw-class behavior — an auditor can reconstruct the
+        full composition history. An identity scalar (s=1.0) appends nothing.
 
         Args:
             cal: The replacement calibration field.
@@ -1007,7 +1028,9 @@ class CalibratedDistribution:
         Returns:
             A new CalibratedDistribution wrapping the same underlying with ``cal``.
         """
-        return CalibratedDistribution(self.underlying, cal, self.capability)
+        if isinstance(cal, ScalarCalibration) and cal.s == 1.0:
+            return self._composed(cal, self.provenance)
+        return self._composed(cal, _prov_with(self.provenance, cal))
 
     def rescaled(self, s: float) -> CalibratedDistribution:
         """Exact s-inflation through the calibration layer; composes ×√(st).
@@ -1016,6 +1039,12 @@ class CalibratedDistribution:
         current scalar (``rescaled(s).rescaled(t)`` ≡ ×√(st) on anomalies).
         On a field-calibrated instance it RAISES — a stray scalar rescale must
         not silently corrupt a field product (Phase-8 owner narrowing).
+
+        Provenance CHAINS off THIS wrapper's provenance and records the
+        INCREMENTAL factor of this step (Phase-8 semantics: each rescale is
+        its own record, never the running product; the cumulative inflation
+        is reconstructed by integrating the chain). ``rescaled(1.0)`` appends
+        nothing (identity composition).
 
         Args:
             s: Variance inflation factor.
@@ -1028,17 +1057,11 @@ class CalibratedDistribution:
         """
         if isinstance(self.calibration, ScalarCalibration):
             composed = ScalarCalibration(self.calibration.s * s)
-            new = CalibratedDistribution.__new__(CalibratedDistribution)
-            new.underlying = self.underlying
-            new.calibration = composed
-            new.capability = self.capability
-            # Record incremental s in provenance (Phase-8 semantics: the
-            # transform records THIS step's factor, not the running product).
-            new.provenance = _prov_with(
-                self.underlying.provenance, composed, scalar_s=s
+            if s == 1.0:
+                return self._composed(composed, self.provenance)
+            return self._composed(
+                composed, _prov_with(self.provenance, composed, scalar_s=s)
             )
-            new._grid_sqrt_s = None
-            return new
         raise ValueError(
             "rescaled(scalar) on a field-calibrated product is ambiguous — "
             "compose explicitly via with_calibration"

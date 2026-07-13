@@ -581,6 +581,54 @@ def test_provenance_field_inflation_for_poly(
     assert "dof" in last.params
 
 
+def test_identity_scalar_wrap_appends_no_provenance(stub: _StubGaussian) -> None:
+    """CalibratedDistribution(x, ScalarCalibration(1.0)) provenance IS x.provenance.
+
+    The identity wrap (Phase-9 §3: sample_members wraps every raw ensemble
+    with the method's calibration, default scalar-1.0) must not record any
+    transform — Phase-8's uncalibrated product carried none.
+
+    Bug caught: phantom DIAGONAL_INFLATION(s=1.0) entries polluting the
+    provenance history on every sample_members product — no-op inflation
+    records Phase-8 never wrote (PIN D appends only for REAL calibrations).
+    """
+    wrapped = CalibratedDistribution(stub, ScalarCalibration(1.0), UC.SAMPLES)
+    assert wrapped.provenance is stub.provenance
+
+
+def test_composition_chains_provenance_records(stub: _StubGaussian) -> None:
+    """with_calibration(4).rescaled(9): FULL chain [.., DIAG(4), DIAG(9)], 36× variance.
+
+    The pre-migration raw class appended each composition step to ITS OWN
+    provenance (a running log an auditor can integrate to the cumulative
+    inflation). The wrapper — now the ONLY calibration mechanism — must
+    preserve that chain; Phase-8 behavior is this migration's identity
+    standard.
+
+    Bug caught: composition rebuilding provenance from the UNDERLYING's
+    provenance, truncating the chain to [.., DIAG(9)] — the DIAG(4) step
+    vanishes from the record while its ×4 is still applied (false history;
+    the existing incremental-factor test checks only the LAST record and
+    cannot see this).
+    """
+    start = CalibratedDistribution(stub, ScalarCalibration(1.0), UC.SAMPLES)
+    base4 = start.with_calibration(ScalarCalibration(4.0))
+    composed = base4.rescaled(9.0)
+
+    transforms = composed.provenance.transformations
+    n_base = len(stub.provenance.transformations)
+    assert len(transforms) == n_base + 2  # DIAG(4) then DIAG(9) — nothing lost
+    assert [t.kind for t in transforms[n_base:]] == [
+        TransformKind.DIAGONAL_INFLATION,
+        TransformKind.DIAGONAL_INFLATION,
+    ]
+    assert [t.params["s"] for t in transforms[n_base:]] == [4.0, 9.0]
+    # The applied scale is the cumulative product regardless of the record.
+    np.testing.assert_allclose(
+        composed.marginal_variance(), 36.0 * stub.marginal_variance(), rtol=1e-12
+    )
+
+
 # ===========================================================================
 # 13 — save_state / load_state roundtrip including legacy rule
 # ===========================================================================
