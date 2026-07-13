@@ -45,9 +45,18 @@ Config-audit PROOF mode (``SVERDRUP_OI_MAPS_AUDIT=j3_inclusive``):
     - worse → REAL config mismatch → SystemExit (STOP, report BLOCKED).
 
     Output goes ONLY to ``oi_mean_maps_audit_j3incl.nc`` — never the descriptor
-    artifact paths; the harness never consumes it.  On PASS the result is also
-    stamped as ``config_audit`` onto any existing train-only map files, which
-    upgrades their obs-set-divergence verdict to attributed-BY-CONSTRUCTION.
+    artifact paths; the harness never consumes it.  On PASS the result is
+    stamped as ``config_audit`` onto the DEV map files only and persisted to
+    the ``oi_config_audit.json`` sidecar, which upgrades the train-only maps'
+    obs-set-divergence verdict to attributed-BY-CONSTRUCTION.
+
+One writer per nc file (race discipline):
+    A SCOPE=full run may be executing while the audit runs.  Audit mode
+    therefore NEVER touches the full-year descriptor paths
+    (``oi_{mean,var}_maps.nc``) — it stamps only its own audit/dev files and
+    writes the verdict to the ``oi_config_audit.json`` sidecar.  Each
+    generation run (dev or full) stamps its OWN outputs from the sidecar
+    after it finishes writing them, so every nc file has exactly one writer.
 
 Reference-frame note:
     The signed artifact is in SSH space (SLA + MDT from the mapping tracks).
@@ -69,6 +78,7 @@ Full-year controller launch (detached, log to scratchpad)::
 
 from __future__ import annotations
 
+import json
 import os
 import resource
 import time
@@ -127,6 +137,12 @@ if _AUDIT_MODE is not None and _AUDIT_MODE != "j3_inclusive":
 # Audit output — clearly separated from the descriptor artifact paths
 # (oi_{mean,var}_maps.nc); the harness NEVER consumes this file.
 _AUDIT_MEAN_DEST = _OUT_ROOT / "oi_mean_maps_audit_j3incl.nc"
+
+# Sidecar carrying the audit verdict.  ONE WRITER PER NC FILE: audit mode
+# writes ONLY this sidecar + its own audit/dev files; each generation run
+# stamps its OWN outputs from the sidecar after finishing them, so the audit
+# never races a live SCOPE=full run on the descriptor paths.
+_AUDIT_SIDECAR = _OUT_ROOT / "oi_config_audit.json"
 
 # Max abs threshold for the j3-inclusive proof: anything worse than 1e-6 m
 # cannot be solver/BLAS version noise and is a REAL config mismatch.
@@ -423,13 +439,29 @@ def run_config_audit() -> None:
 
     print(f"  [PASS] {config_audit}", flush=True)
 
-    # Stamp the proof onto any existing train-only map files (dev + full).
+    # Persist the verdict to the sidecar (atomic write).  The full-year
+    # descriptor files are NOT stamped here — a live SCOPE=full run may be
+    # writing them right now (one writer per nc file).  Each generation run
+    # stamps its OWN outputs from this sidecar after finishing them.
+    payload = {
+        "config_audit": config_audit,
+        "matched_days": n_matched,
+        "bit_identical": bit_identical,
+        "max_abs_diff_m": max_abs,
+        "max_rel_diff": max_rel,
+        "producer_path": "run_challenge_map (Phase-4 run_year delegate)",
+        "obs_set": "all mapping missions incl. j3 (signed-artifact producer set)",
+    }
+    tmp_json = _AUDIT_SIDECAR.with_name(_AUDIT_SIDECAR.name + ".tmp")
+    tmp_json.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n")
+    tmp_json.replace(_AUDIT_SIDECAR)
+    print(f"  [OK] audit verdict persisted to {_AUDIT_SIDECAR}", flush=True)
+
+    # Stamp ONLY the audit-owned dev files (never the descriptor paths).
     _stamp_config_audit_attr(
         [
             _OUT_ROOT / "oi_mean_maps_dev.nc",
             _OUT_ROOT / "oi_var_maps_dev.nc",
-            _OUT_ROOT / "oi_mean_maps.nc",
-            _OUT_ROOT / "oi_var_maps.nc",
         ],
         config_audit,
     )
@@ -632,6 +664,22 @@ def main() -> None:
         ds.to_netcdf(tmp)
         tmp.replace(p)
     print("  [OK] audit attrs written to both nc files", flush=True)
+
+    # ------------------------------------------------------------------
+    # 6b. Stamp the j3-inclusive config-audit proof from the sidecar, if a
+    #     config audit has run.  ONE WRITER PER NC FILE: this run stamps
+    #     ONLY the files IT just wrote (mean_path / var_path); audit mode
+    #     never touches the descriptor outputs.
+    # ------------------------------------------------------------------
+    if _AUDIT_SIDECAR.exists():
+        sidecar = json.loads(_AUDIT_SIDECAR.read_text())
+        _stamp_config_audit_attr([mean_path, var_path], str(sidecar["config_audit"]))
+    else:
+        print(
+            f"  [note] no config-audit sidecar at {_AUDIT_SIDECAR}; "
+            "run SVERDRUP_OI_MAPS_AUDIT=j3_inclusive first to stamp the proof.",
+            flush=True,
+        )
 
     # ------------------------------------------------------------------
     # 7. Shape / attrs verification.
