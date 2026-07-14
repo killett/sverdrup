@@ -44,24 +44,55 @@ def test_scalar_path_bit_identical_to_baseline() -> None:
     assert np.array_equal(k.evaluate(a, b), baseline_kernel().evaluate(a, b))
 
 
-def test_field_path_routes_nonstationary() -> None:
-    # A LatitudeField in ANY resolved slot must route the nonstationary
-    # branch (NotImplementedError until Task 4), never coerce to float.
+def test_multiplier_field_routes_nonstationary() -> None:
+    # A lat-varying length multiplier (lx_mult) must construct the Paciorek
+    # kernel with the scalar base + multiplier field, never coerce to float.
+    # (Task-4 update: the Task-3 NotImplementedError contract is replaced by
+    # the type dispatch; the multiplier lives under lx_mult — the base
+    # lx_deg stays scalar per the kernel signature / spec §2 L0·exp(l1·v).)
+    from sverdrup.methods.kernel import PaciorekGaussianDegrees
+
     p = LatitudeVaryingProvider(
-        core={"variance": 1.0, "time_scale": 7.0},
-        varied={"lx_deg": LatitudeField("exp-linear-mult", (-0.2,))},
+        core={"variance": 1.0, "lx_deg": 1.0, "time_scale": 7.0},
+        varied={"lx_mult": LatitudeField("exp-linear-mult", (-0.2,))},
     )
-    with pytest.raises(NotImplementedError):  # replaced by type check in Task 4
-        gaussian_kernel_from_params(p, None)
+    k = gaussian_kernel_from_params(p, None)
+    assert isinstance(k, PaciorekGaussianDegrees)
+    assert k.lx_deg_base == 1.0
+    assert k.l_mult_field == LatitudeField("exp-linear-mult", (-0.2,))
 
 
 def test_variance_field_also_routes_nonstationary() -> None:
     # The variance slot must route too — not only the length multiplier.
+    from sverdrup.methods.kernel import PaciorekGaussianDegrees
+
     p = LatitudeVaryingProvider(
         core={"lx_deg": 1.0, "time_scale": 7.0},
         varied={"variance": LatitudeField("exp-quad", (0.0, 0.3, -0.6))},
     )
-    with pytest.raises(NotImplementedError):
+    k = gaussian_kernel_from_params(p, None)
+    assert isinstance(k, PaciorekGaussianDegrees)
+    assert k.variance_field == LatitudeField("exp-quad", (0.0, 0.3, -0.6))
+    assert k.l_mult_field is None
+
+
+def test_nonpositive_scales_rejected() -> None:
+    # A zero/negative base or time scale would divide by zero deep in the
+    # kernel; the factory refuses at construction with the values named.
+    p = ConstantProvider({"variance": 1.0, "lx_deg": 0.0, "time_scale": 7.0})
+    with pytest.raises(ValueError, match="lx_deg"):
+        gaussian_kernel_from_params(p, None)
+
+
+def test_field_valued_base_rejected_loudly() -> None:
+    # The base L0 (lx_deg) must be scalar — a field there is a
+    # misparameterized provider (the lat-varying length enters ONLY via
+    # lx_mult). Silent acceptance would double-apply latitude structure.
+    p = LatitudeVaryingProvider(
+        core={"variance": 1.0, "time_scale": 7.0},
+        varied={"lx_deg": LatitudeField("exp-linear-mult", (-0.2,))},
+    )
+    with pytest.raises(TypeError, match="lx_mult"):
         gaussian_kernel_from_params(p, None)
 
 

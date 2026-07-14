@@ -41,8 +41,24 @@
 > factory in validation/run.py (scalar path np.array_equal-identical to
 > baseline_kernel on points AND 3-day maps; LatitudeField routes
 > NotImplementedError until Task 4); `oi_gaussian_kernel_from_params` flag
-> on both runners, both-flags ValueError guard. Suite 694/13/1.
-> **NEXT: Task 4 (Paciorek kernel — stage-2 gate).** Resume:
+> on both runners, both-flags ValueError guard. Suite 694/13/1. Task 4
+> COMPLETE — **PACIOREK GATE GREEN, stage-2 tasks unblocked**:
+> `PaciorekGaussianDegrees` (PS prefactor L(x)L(y)/L̄² verified against
+> the determinant form; constant reduction BIT-IDENTICAL to
+> baseline_kernel at L0=1 — no short-circuit needed; prior_var_at exact;
+> _stationary False). Factory contract: lx_deg = SCALAR base L0,
+> multiplier under `lx_mult` (field), TypeError on field-valued base —
+> the plan's Task-3 sketch (field under lx_deg) had no L0 slot; Task 6's
+> provider_for_trial MUST emit l1 as `lx_mult` and omit it at l1=0
+> (see gaussian_kernel_from_params docstring). GOTCHA (spec-review
+> finding): the spec-§3 pinned PD geometry does NOT discriminate the
+> naive constructions (bands ~9° apart, cross-band cov ≈ 0; every wrong
+> variant passes there) — teeth added as a dense 80-pt lat-sweep PD test
+> (row-substitution form measurably indefinite there, min eig ≈ −1e-3)
+> + a hand-computed cross-band entry (kills dropped/inverted prefactor
+> + wrong denominator). Suite 704/13/1 (clean re-run after a mid-run-edit
+> getsource artifact; lesson recorded).
+> **NEXT: Task 5 (pre-registration, ONE commit).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates

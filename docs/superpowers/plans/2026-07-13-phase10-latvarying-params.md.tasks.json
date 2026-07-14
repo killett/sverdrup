@@ -45,7 +45,7 @@
       "nativeId": 5,
       "name": "paciorek-kernel",
       "subject": "Task 4: PaciorekGaussianDegrees + PD/reduction/prior-diag tests",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3
       ],

@@ -14,6 +14,7 @@ from sverdrup.methods.kernel import (
     GaussianSpaceTimeDegrees,
     Kernel,
     Matern32SpaceTime,
+    PaciorekGaussianDegrees,
 )
 from sverdrup.methods.registry import METHODS, SHIPPED
 from sverdrup.validation.output_adapter import write_map
@@ -44,38 +45,66 @@ def gaussian_kernel_from_params(
 ) -> Kernel:
     """Build the Gaussian degree-space kernel from params, dispatching on type.
 
-    The Phase-10 seam (spec §2): resolves ``variance``, ``lx_deg`` (shared
-    ``ly``, the signed 1:1 anisotropy), and ``time_scale``. All-scalar
-    resolution constructs the STATIONARY ``GaussianSpaceTimeDegrees`` (same
-    instance semantics as ``baseline_kernel()`` at the signed values — the
-    byte-identical baseline gate); any ``LatitudeField`` routes the
-    nonstationary Paciorek path. Like ``_oi_kernel_from_params``, OI's
+    The Phase-10 seam (spec §2): resolves ``variance`` (float or
+    ``LatitudeField``), ``lx_deg`` (the SCALAR base L0; shared ``ly``, the
+    signed 1:1 anisotropy), ``time_scale`` (scalar), and the optional
+    ``lx_mult`` (the unitless length multiplier — the field half of the
+    spec's ``L(lat) = L0·exp(l1·v)``). All-scalar resolution constructs the
+    STATIONARY ``GaussianSpaceTimeDegrees`` (same instance semantics as
+    ``baseline_kernel()`` at the signed values — the byte-identical baseline
+    gate); a ``LatitudeField`` in ``variance`` or ``lx_mult`` routes
+    ``PaciorekGaussianDegrees``. Like ``_oi_kernel_from_params``, OI's
     parameter names live HERE in validation/, never in application/tuning/.
 
     Args:
-        params: Provider resolving ``variance``, ``lx_deg``, ``time_scale``.
+        params: Provider resolving ``variance``, ``lx_deg``, ``time_scale``
+            (and optionally ``lx_mult``).
         grid: Passed through to ``resolve`` (unused by scalar and latitude
             providers; ``None`` is fine in unit tests).
 
     Returns:
-        The stationary Gaussian kernel, or (Task 4) the Paciorek kernel.
+        The stationary Gaussian kernel, or the Paciorek kernel when any
+        resolved slot is latitude-varying.
 
     Raises:
-        NotImplementedError: For a field-valued resolution until Task 4 lands
-            ``PaciorekGaussianDegrees``.
+        TypeError: If ``lx_deg`` (the base) or ``time_scale`` resolves to a
+            field — the lat-varying length enters ONLY via ``lx_mult``
+            (a field base would double-apply latitude structure), and Lt
+            lat-variation is deferred by spec fork b.
     """
     g = cast(GridSpec, grid)  # resolve ignores grid for these providers
     variance = params.resolve("variance", g)
     lx_deg = params.resolve("lx_deg", g)
     time_scale = params.resolve("time_scale", g)
-    if any(isinstance(v, LatitudeField) for v in (variance, lx_deg, time_scale)):
-        raise NotImplementedError(
-            "nonstationary Gaussian path lands Task 4 (PaciorekGaussianDegrees)"
+    try:
+        lx_mult = params.resolve("lx_mult", g)
+    except KeyError:
+        lx_mult = None
+    if isinstance(lx_deg, LatitudeField) or isinstance(time_scale, LatitudeField):
+        raise TypeError(
+            "lx_deg (base L0) and time_scale must resolve to scalars; the "
+            "lat-varying length enters via lx_mult (multiplier field, "
+            "spec §2 L0·exp(l1·v))"
         )
+    if float(lx_deg) <= 0 or float(time_scale) <= 0:
+        raise ValueError(
+            f"lx_deg and time_scale must be positive, got "
+            f"lx_deg={float(lx_deg)!r}, time_scale={float(time_scale)!r}"
+        )
+    if isinstance(variance, LatitudeField) or isinstance(lx_mult, LatitudeField):
+        return PaciorekGaussianDegrees(
+            variance_field=(
+                variance if isinstance(variance, LatitudeField) else float(variance)
+            ),
+            lx_deg_base=float(lx_deg),
+            l_mult_field=lx_mult if isinstance(lx_mult, LatitudeField) else None,
+            time_scale=float(time_scale),
+        )
+    lx = float(lx_deg) if lx_mult is None else float(lx_deg) * float(lx_mult)
     return GaussianSpaceTimeDegrees(
         variance=float(variance),
-        lx_deg=float(lx_deg),
-        ly_deg=float(lx_deg),  # shared lx=ly per spec §2
+        lx_deg=lx,
+        ly_deg=lx,  # shared lx=ly per spec §2
         time_scale=float(time_scale),
     )
 
