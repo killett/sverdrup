@@ -31,7 +31,13 @@
 > consumers migrated incl. two POSITIONAL `run_challenge_map("miost",…)`
 > hits in stage_miost_gate_run.py the census regex missed — spec-review
 > catch; `shipped: bool` escape added to run_challenge_map per plan
-> clause). **NEXT: Task 2 (LatitudeField + provider).** Resume:
+> clause). Task 2 COMPLETE: `LatitudeField` (exp-quad / exp-linear-mult,
+> v=(lat−38)/5 hull-clamped, `__float__` raises per dispatch contract) +
+> `LatitudeVaryingProvider(core, varied)` superseded in place; Protocol
+> return widened to `ScalarOrField | LatitudeField`; three consumer test
+> files migrated (tiling halo tests keep invariant-5 falsifiability via a
+> local cos-blend stub — plan's empty-varied hint would have made them
+> vacuous). Suite 689/13/1. **NEXT: Task 3 (OI dispatch seam).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates

@@ -29,7 +29,10 @@ def test_coordinator_emits_one_unit_per_tile_and_blends():
     # Behavior: partition -> one submit per tile -> gather -> blend over target.
     # Bug caught: re-granularization (more units than tiles) or skipping the blend.
     target = GridSpec.lonlat(np.linspace(-10, 10, 41), np.array([0.0, 1.0]))
-    prov = LatitudeVaryingProvider(800.0, 100.0, {"variance": 0.1, "time_scale": 10.0})
+    prov = LatitudeVaryingProvider(
+        core={"correlation_length": 800.0, "variance": 0.1, "time_scale": 10.0},
+        varied={},
+    )
     partition = LonLatPartition(
         n_lon=2,
         n_lat=1,
@@ -67,7 +70,9 @@ def test_coordinator_blend_matches_cheap_path_crossfade():
     # Behavior: the coordinator's blended mean equals the Task-3 cheap-path crossfade.
     # Bug caught: the coordinator silently picks one tile instead of crossfading overlaps.
     target = GridSpec.lonlat(np.linspace(-10, 10, 41), np.array([0.0, 1.0]))
-    prov = LatitudeVaryingProvider(800.0, 100.0, {"variance": 0.1})
+    prov = LatitudeVaryingProvider(
+        core={"correlation_length": 800.0, "variance": 0.1}, varied={}
+    )
     partition = LonLatPartition(
         n_lon=2,
         n_lat=1,
