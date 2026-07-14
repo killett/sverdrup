@@ -34,7 +34,7 @@
       "nativeId": 4,
       "name": "oi-dispatch",
       "subject": "Task 3: OI dispatch seam (byte-identical baseline gate)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         2
       ],

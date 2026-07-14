@@ -11,7 +11,13 @@ IMPORTANT method caveat: the challenge BASELINE uses a **Gaussian
 ``OptimalInterpolation`` uses **Matern-3/2**, **isotropic**, in **km**. The
 mapping below (``length_scale = Lx_deg * km_per_deg``) is therefore an *analog*,
 not an exact reproduction; a faithful BASELINE needs a Gaussian degree-space
-kernel (see the audit trail Task-3 decision). The scalar values (variance,
+kernel (see the audit trail Task-3 decision).
+
+Parameter-name note (Phase 10): the Gaussian-degrees factory
+(``validation/run.py::gaussian_kernel_from_params``) resolves ``variance``,
+``lx_deg`` (degrees, shared ly), and ``time_scale`` — distinct from the
+Matérn analog's ``length_scale`` (km), so the two kernel-from-params paths
+cannot silently consume each other's providers. The scalar values (variance,
 noise, grid, window) are exact.
 """
 

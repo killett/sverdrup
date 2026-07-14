@@ -37,7 +37,12 @@
 > return widened to `ScalarOrField | LatitudeField`; three consumer test
 > files migrated (tiling halo tests keep invariant-5 falsifiability via a
 > local cos-blend stub — plan's empty-varied hint would have made them
-> vacuous). Suite 689/13/1. **NEXT: Task 3 (OI dispatch seam).** Resume:
+> vacuous). Suite 689/13/1. Task 3 COMPLETE: `gaussian_kernel_from_params`
+> factory in validation/run.py (scalar path np.array_equal-identical to
+> baseline_kernel on points AND 3-day maps; LatitudeField routes
+> NotImplementedError until Task 4); `oi_gaussian_kernel_from_params` flag
+> on both runners, both-flags ValueError guard. Suite 694/13/1.
+> **NEXT: Task 4 (Paciorek kernel — stage-2 gate).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates

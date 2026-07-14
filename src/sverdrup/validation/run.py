@@ -9,8 +9,12 @@ import numpy as np
 
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
-from sverdrup.core.parameters import ParameterProvider
-from sverdrup.methods.kernel import Kernel, Matern32SpaceTime
+from sverdrup.core.parameters import LatitudeField, ParameterProvider
+from sverdrup.methods.kernel import (
+    GaussianSpaceTimeDegrees,
+    Kernel,
+    Matern32SpaceTime,
+)
 from sverdrup.methods.registry import METHODS, SHIPPED
 from sverdrup.validation.output_adapter import write_map
 from sverdrup.validation.params import baseline_kernel
@@ -33,6 +37,80 @@ def _oi_kernel_from_params(
         length_scale=float(params.resolve("length_scale", grid)),
         time_scale=float(params.resolve("time_scale", grid)),
     )
+
+
+def gaussian_kernel_from_params(
+    params: ParameterProvider, grid: GridSpec | None
+) -> Kernel:
+    """Build the Gaussian degree-space kernel from params, dispatching on type.
+
+    The Phase-10 seam (spec §2): resolves ``variance``, ``lx_deg`` (shared
+    ``ly``, the signed 1:1 anisotropy), and ``time_scale``. All-scalar
+    resolution constructs the STATIONARY ``GaussianSpaceTimeDegrees`` (same
+    instance semantics as ``baseline_kernel()`` at the signed values — the
+    byte-identical baseline gate); any ``LatitudeField`` routes the
+    nonstationary Paciorek path. Like ``_oi_kernel_from_params``, OI's
+    parameter names live HERE in validation/, never in application/tuning/.
+
+    Args:
+        params: Provider resolving ``variance``, ``lx_deg``, ``time_scale``.
+        grid: Passed through to ``resolve`` (unused by scalar and latitude
+            providers; ``None`` is fine in unit tests).
+
+    Returns:
+        The stationary Gaussian kernel, or (Task 4) the Paciorek kernel.
+
+    Raises:
+        NotImplementedError: For a field-valued resolution until Task 4 lands
+            ``PaciorekGaussianDegrees``.
+    """
+    g = cast(GridSpec, grid)  # resolve ignores grid for these providers
+    variance = params.resolve("variance", g)
+    lx_deg = params.resolve("lx_deg", g)
+    time_scale = params.resolve("time_scale", g)
+    if any(isinstance(v, LatitudeField) for v in (variance, lx_deg, time_scale)):
+        raise NotImplementedError(
+            "nonstationary Gaussian path lands Task 4 (PaciorekGaussianDegrees)"
+        )
+    return GaussianSpaceTimeDegrees(
+        variance=float(variance),
+        lx_deg=float(lx_deg),
+        ly_deg=float(lx_deg),  # shared lx=ly per spec §2
+        time_scale=float(time_scale),
+    )
+
+
+def _resolve_oi_kernel(
+    params: ParameterProvider,
+    grid: GridSpec,
+    oi_kernel_from_params: bool,
+    oi_gaussian_kernel_from_params: bool,
+) -> Kernel:
+    """Pick the OI kernel source when no explicit kernel is given.
+
+    Args:
+        params: The method's parameter provider.
+        grid: The output grid.
+        oi_kernel_from_params: Matérn-from-params (the Phase-5 tuner path).
+        oi_gaussian_kernel_from_params: Gaussian-degrees factory (Phase-10).
+
+    Returns:
+        The kernel per the requested flag, else the faithful baseline.
+
+    Raises:
+        ValueError: If both flags are set (ambiguous kernel source).
+    """
+    if oi_kernel_from_params and oi_gaussian_kernel_from_params:
+        raise ValueError(
+            "ambiguous OI kernel source: at most one of oi_kernel_from_params / "
+            "oi_gaussian_kernel_from_params may be True (both False -> the "
+            "faithful baseline_kernel)"
+        )
+    if oi_gaussian_kernel_from_params:
+        return gaussian_kernel_from_params(params, grid)
+    if oi_kernel_from_params:
+        return _oi_kernel_from_params(params, grid)
+    return baseline_kernel()
 
 
 def _diag_variance(obs: ObsWindow) -> np.ndarray:
@@ -112,6 +190,7 @@ def run_challenge_map(
     halo_deg: float = 1.0,
     mdt_grid: np.ndarray | None = None,
     oi_kernel_from_params: bool = False,
+    oi_gaussian_kernel_from_params: bool = False,
     shipped: bool = False,
 ) -> Path:
     """Run the per-day single-tile solve for any method and write the stacked maps.
@@ -142,6 +221,10 @@ def run_challenge_map(
         oi_kernel_from_params: When True and ``method_name == "oi"`` and no explicit
             ``kernel`` is given, build the Matérn kernel from ``params`` (the Phase-5
             tuner path) instead of the default Gaussian ``baseline_kernel``.
+        oi_gaussian_kernel_from_params: When True and OI (no explicit kernel),
+            build the Gaussian degree-space kernel from ``params`` via the
+            type-dispatching factory (the Phase-10 path). Mutually exclusive
+            with ``oi_kernel_from_params``.
         shipped: Resolve ``method_name`` via the ``SHIPPED`` product table
             instead of ``METHODS`` (registry role-split escape; used ONLY by
             shipped-product map regeneration — never by tuning paths).
@@ -152,10 +235,8 @@ def run_challenge_map(
     method = cast(Any, (SHIPPED if shipped else METHODS)[method_name]())
     is_oi = method_name == "oi"
     if is_oi and kernel is None:
-        kernel = (
-            _oi_kernel_from_params(params, grid)
-            if oi_kernel_from_params
-            else baseline_kernel()
+        kernel = _resolve_oi_kernel(
+            params, grid, oi_kernel_from_params, oi_gaussian_kernel_from_params
         )
     region_obs = halo_obs(mapping_obs, grid, halo_deg)
     maps = []
@@ -194,6 +275,7 @@ def run_mean_var_maps(
     halo_deg: float = 1.0,
     mdt_grid: np.ndarray | None = None,
     oi_kernel_from_params: bool = False,
+    oi_gaussian_kernel_from_params: bool = False,
 ) -> tuple[Path, Path]:
     """Produce daily mean AND marginal-variance maps from one solve pass per day.
 
@@ -217,6 +299,10 @@ def run_mean_var_maps(
         mdt_grid: Optional gridded MDT added to the mean (not the variance).
         oi_kernel_from_params: When True and OI, build the Matérn kernel from
             ``params`` rather than the default Gaussian ``baseline_kernel``.
+        oi_gaussian_kernel_from_params: When True and OI, build the Gaussian
+            degree-space kernel from ``params`` via the type-dispatching
+            factory (Phase-10). Mutually exclusive with
+            ``oi_kernel_from_params``.
 
     Returns:
         ``(mean_dest, var_dest)``.
@@ -224,10 +310,8 @@ def run_mean_var_maps(
     method = cast(Any, METHODS[method_name]())
     is_oi = method_name == "oi"
     if is_oi and kernel is None:
-        kernel = (
-            _oi_kernel_from_params(params, grid)
-            if oi_kernel_from_params
-            else baseline_kernel()
+        kernel = _resolve_oi_kernel(
+            params, grid, oi_kernel_from_params, oi_gaussian_kernel_from_params
         )
     region_obs = halo_obs(mapping_obs, grid, halo_deg)
     means, variances = [], []
