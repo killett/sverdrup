@@ -123,8 +123,29 @@ def effective_resolution_lambda_x(
         # a cryptic out-of-range error. Detect it and raise the defined signal instead.
         with xr.open_dataset(str(psd_file)) as ds:
             coherence = (1.0 - ds.psd_diff / ds.psd_ref).to_numpy()
-        if not (np.nanmin(coherence) <= 0.5 <= np.nanmax(coherence)):
-            raise UnresolvedScaleError(
-                "map resolves no scale; λx undefined (no 0.5 coherence crossing)"
-            )
+        _coherence_guard(coherence)
         return float(find_wavelength_05_crossing(str(psd_file)))
+
+
+def _coherence_guard(coherence: np.ndarray) -> None:
+    """Refuse degenerate coherence arrays with the DEFINED signals.
+
+    A track long enough for the sample-count gate can still yield ZERO usable
+    spectral segments (e.g. block-bootstrap resamples with no contiguous run
+    of segment length) — the vendored code then writes an empty PSD and
+    ``nanmin`` would raise a cryptic zero-size ValueError.
+
+    Args:
+        coherence: The ``1 - psd_diff/psd_ref`` array from the PSD file.
+
+    Raises:
+        ShortTrackError: Empty or all-NaN coherence (no usable segment).
+        UnresolvedScaleError: No 0.5-coherence crossing (map resolves no
+            scale; the vendored interp1d would throw out-of-range).
+    """
+    if coherence.size == 0 or bool(np.all(np.isnan(coherence))):
+        raise ShortTrackError("no usable spectral segment (empty PSD); λx undefined")
+    if not (np.nanmin(coherence) <= 0.5 <= np.nanmax(coherence)):
+        raise UnresolvedScaleError(
+            "map resolves no scale; λx undefined (no 0.5 coherence crossing)"
+        )
