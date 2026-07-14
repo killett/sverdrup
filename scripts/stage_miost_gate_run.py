@@ -956,6 +956,8 @@ def regen_acceptance_main() -> None:
         _log(f"stale artifact renamed -> {tier3}")
 
     _log("regenerating the TRUE acceptance map (train-only, winner params) ...")
+    # Registry role-split (Phase-10 Task 1): the shipped miost lives in
+    # SHIPPED; this regeneration wants the shipped product -> shipped=True.
     run_challenge_map(
         "miost",
         train,
@@ -965,6 +967,7 @@ def regen_acceptance_main() -> None:
         days,
         acc,
         mdt_grid=mdt,
+        shipped=True,
     )
     with netCDF4.Dataset(acc, "a") as ds:
         ds.setncattr("winner_params", json.dumps(winner))
@@ -990,6 +993,7 @@ def regen_acceptance_main() -> None:
         days,
         variant,
         mdt_grid=mdt,
+        shipped=True,
     )
     import xarray as xr
 

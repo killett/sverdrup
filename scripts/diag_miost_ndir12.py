@@ -85,17 +85,19 @@ def main() -> None:
             validation_missions=[str(cfg["validation_mission"])],
         )
         scorer = _build_scorer(cfg, _subset(obs, split.train_idx), grid, half, mdt)
-        METHODS["miost"] = lambda: Miost(n_dir=12)
+        # Registry role-split (Phase-10 Task 1): "miost" lives in SHIPPED, not
+        # METHODS. The scorer resolves METHODS[method_name], so the 12-dir
+        # variant registers under a TEMPORARY search-side key and is deleted
+        # afterwards — SHIPPED stays untouched and METHODS stays miost-free.
+        METHODS["miost-ndir12"] = lambda: Miost(n_dir=12)
         try:
             t0 = time.time()
             scores12 = scorer.score(
-                "miost", dict(winner), split, 1, _Win("gulfstream-ndir12")
+                "miost-ndir12", dict(winner), split, 1, _Win("gulfstream-ndir12")
             )
             elapsed = int(time.time() - t0)
         finally:
-            from sverdrup.methods.miost import shipped_miost
-
-            METHODS["miost"] = shipped_miost  # post-flip registry default
+            del METHODS["miost-ndir12"]
         lines += [
             "## Side-by-side (validation track)",
             "",

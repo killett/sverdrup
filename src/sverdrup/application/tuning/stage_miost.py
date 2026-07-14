@@ -47,8 +47,9 @@ def run_stage_miost(
     """
     return _run_stage(
         # SEARCH entry (post-flip, Task 22): sweeps price/score the POINT
-        # method — the registered "miost" is the shipped SAMPLES product
-        # and must never generate members per trial (spec 6.1).
+        # method — the shipped SAMPLES product lives in SHIPPED["miost"]
+        # (registry role-split) and must never generate members per trial
+        # (spec 6.1).
         method_name="miost-point",
         space=Miost().parameter_space(),
         scope=scope,

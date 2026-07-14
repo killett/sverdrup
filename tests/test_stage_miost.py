@@ -5,21 +5,13 @@ from __future__ import annotations
 from sverdrup.application.tuning.stage_a import StageAReport, _objective_for
 
 
-def test_objective_for_shipped_miost_includes_coverage() -> None:
-    """Post-flip: registered miost is SAMPLES; coverage bar auto-present.
-
-    This is the spec-7.4 Stage-B AC observed ("bars_for now includes
-    coverage automatically"). Catches: the flip regressing to POINT.
-    """
-    bars = _objective_for("miost").bars
-    assert [b.metric for b in bars] == ["mu_score", "coverage_1sigma"]
-
-
 def test_objective_for_point_method_omits_coverage() -> None:
     """A POINT method is never judged on a coverage bar it cannot emit.
 
-    Fold B unchanged post-flip — exercised via a POINT-configured miost
-    (the registered "miost" is the shipped SAMPLES product).
+    Fold B unchanged post-flip — exercised via a POINT-configured miost.
+    (Registry role-split, Phase-10 Task 1: "miost" lives in SHIPPED now;
+    the shipped product's coverage-bar assertion is
+    test_miost_method.py::test_flip_observed_bars_include_coverage.)
     """
     from sverdrup.methods import registry
     from sverdrup.methods.miost import Miost

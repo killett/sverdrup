@@ -10,7 +10,7 @@ from sverdrup.core.method import Method
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.methods.miost import Miost, MiostPointDistribution
-from sverdrup.methods.registry import METHODS
+from sverdrup.methods.registry import SHIPPED
 
 PARAMS = ConstantProvider(
     {"spacing_alpha": 1.5, "log10_rho": 1.3, "q_slope": 2.0, "l_t_days": 10.0}
@@ -55,7 +55,7 @@ def test_protocol_compliant_and_registered() -> None:
     m = Miost()
     assert isinstance(m, Method)
     assert m.native_capability is UncertaintyCapability.POINT  # class default
-    shipped = METHODS["miost"]()
+    shipped = SHIPPED["miost"]()
     assert isinstance(shipped, Miost)
     assert shipped.native_capability is UncertaintyCapability.SAMPLES
     assert shipped.members == STAGE_B_MEMBERS == 100
@@ -79,7 +79,7 @@ def test_flip_observed_bars_include_coverage() -> None:
     """
     from sverdrup.application.tuning.objective import bars_for
 
-    shipped = METHODS["miost"]()
+    shipped = SHIPPED["miost"]()
     assert isinstance(shipped, Miost)
     metrics = [b.metric for b in bars_for(shipped.native_capability)]
     assert "coverage_1sigma" in metrics and "mu_score" in metrics

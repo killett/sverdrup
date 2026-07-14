@@ -11,7 +11,7 @@ from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ParameterProvider
 from sverdrup.methods.kernel import Kernel, Matern32SpaceTime
-from sverdrup.methods.registry import METHODS
+from sverdrup.methods.registry import METHODS, SHIPPED
 from sverdrup.validation.output_adapter import write_map
 from sverdrup.validation.params import baseline_kernel
 
@@ -112,6 +112,7 @@ def run_challenge_map(
     halo_deg: float = 1.0,
     mdt_grid: np.ndarray | None = None,
     oi_kernel_from_params: bool = False,
+    shipped: bool = False,
 ) -> Path:
     """Run the per-day single-tile solve for any method and write the stacked maps.
 
@@ -141,11 +142,14 @@ def run_challenge_map(
         oi_kernel_from_params: When True and ``method_name == "oi"`` and no explicit
             ``kernel`` is given, build the Matérn kernel from ``params`` (the Phase-5
             tuner path) instead of the default Gaussian ``baseline_kernel``.
+        shipped: Resolve ``method_name`` via the ``SHIPPED`` product table
+            instead of ``METHODS`` (registry role-split escape; used ONLY by
+            shipped-product map regeneration — never by tuning paths).
 
     Returns:
         ``dest``.
     """
-    method = cast(Any, METHODS[method_name]())
+    method = cast(Any, (SHIPPED if shipped else METHODS)[method_name]())
     is_oi = method_name == "oi"
     if is_oi and kernel is None:
         kernel = (
