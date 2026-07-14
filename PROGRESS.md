@@ -16,12 +16,20 @@
 > `phase9.g_pre_anchor`, that is MIOST's); registry role-split
 > (METHODS/SHIPPED, miost factory migrates). ZERO c2 touches until owner
 > gate 2. **SPEC FILE-REVIEW APPROVED 2026-07-13 (one-line fix `7cd7164`).
-> PLAN COMMITTED, ⛔ HELD FOR OWNER REVIEW before execution:**
+> PLAN REVIEW APPROVED 2026-07-13 after two corrections (`c9086e5`: band
+> PROTOCOL — sealed procedure, values computed per consulted pair at
+> read time, protocol_sha-bound, probe pair demoted to reference;
+> tasks.json names + explicit blockedBy):**
 > `docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
-> (+ `.tasks.json`, 16 tasks 0–15, native IDs = plan+5; gates 11/13 =
-> user-gates with evidence axes; negative branch = Task 9). Next action:
-> owner reviews the plan → then execution (subagent-driven or
-> executing-plans). No code, no re-solves yet.
+> (+ `.tasks.json`, 16 tasks 0–15; gates 11/13 = user-gates with
+> evidence axes; negative branch = Task 9). **READY TO EXECUTE in a
+> fresh session:**
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
+> Standing discipline: dual review per task; push as you go; Paciorek
+> tests green before any stage-2 task; ZERO c2 before Task 13; gates
+> stop for owner with evidence verbatim from artifacts; bring the
+> Task-11 evidence pack to the owner when the lanes land. No code, no
+> re-solves yet.
 
 > **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
 > ruling below; all 8 tasks resolved, dual review per task, every
