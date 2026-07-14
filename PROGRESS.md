@@ -22,8 +22,16 @@
 > tasks.json names + explicit blockedBy):**
 > `docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > (+ `.tasks.json`, 16 tasks 0–15; gates 11/13 = user-gates with
-> evidence axes; negative branch = Task 9). **READY TO EXECUTE in a
-> fresh session:**
+> evidence axes; negative branch = Task 9). **EXECUTION IN FLIGHT
+> (2026-07-13, executing-plans, on main): Tasks 0–1 COMPLETE** — Task 0
+> signed probe measured (365-day train-only OI re-solve: wall 2173.4 s,
+> peak RSS 1230 MiB, host 4 cpu / 5.5 GiB avail; `phase10.oi.probe.signed`
+> + budget TEMPLATE written; probe maps kept as band side A); Task 1
+> registry role-split landed (SHIPPED table; miost migrated; census'd
+> consumers migrated incl. two POSITIONAL `run_challenge_map("miost",…)`
+> hits in stage_miost_gate_run.py the census regex missed — spec-review
+> catch; `shipped: bool` escape added to run_challenge_map per plan
+> clause). **NEXT: Task 2 (LatitudeField + provider).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates
