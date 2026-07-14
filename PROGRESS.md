@@ -90,8 +90,60 @@
 > load-bearing, spec-review-endorsed): oi_gaussian_kernel_from_params,
 > provider_factory (trial dicts aren't kernel params), coverage_extra_var
 > (SIGMA_OBS2 convention). Task-7 note: use power-of-2 Sobol batches
-> where possible (scipy balance warning at n=30). Suite 733/13/1.
-> **NEXT: Task 7 (stage-1 execution — lane-0 + V runs).** Resume:
+> where possible (scipy balance warning at n=30; benign, budget n=30
+> sealed). Suite 733/13/1. Task 7 machinery COMMITTED `f2e3e01`
+> (lane runner with crash-durable per-trial checkpoints; flatten reader;
+> spectral empty-PSD hardening; G_pre_oi ANCHOR WRITTEN:
+> 0.27086964275496783 exact, OI pre-B companions std_log_s 0.6444 /
+> range 1.7138 / clip 0.3299; dev smokes green both lanes incl.
+> secondary row — LIVE bars tripped both arbitrary dev points exactly
+> as pre-registered).
+>
+> **▶ STAGE-1 CHAIN IN FLIGHT (launched 2026-07-14 ~02:00 UTC, pid
+> 1140532, nohup — survives an agent-session clear, NOT a container
+> restart): lane0 (30 screening trials ~4.5 h) → V lane → V-winner
+> re-solve → stage-1 frozen-frame reading. Log:
+> `data/2021a_ssh_mapping_ose/ours/phase10_stage1_chain.log`. Chain is
+> sequential BY DESIGN — single-writer evidence JSON; never run two
+> lanes in parallel.** RESUME PROTOCOL FOR THE FRESH SESSION:
+> 1. `ps -p 1140532` + tail the chain log. Still running → arm
+>    `scripts/watch_pid.sh 1140532` and wait. Dead BEFORE
+>    "chain: DONE" → records are checkpointed per trial under
+>    `phase10.oi.lanes.<lane>.records`, but the runner has NO
+>    resume-skip: re-running a lane restarts its trials and overwrites
+>    that lane's records (~4.5 h, acceptable). Re-run only the
+>    unfinished chain steps (lane0 → V → `phase10_flatten_read.py
+>    --stage 1 --from-winner V`).
+> 2. When DONE, EXAMINE before closing Task 7: per-lane admissibility
+>    counts (bars are LIVE — coverage-trip clusters are the
+>    pre-registered design working, not a defect);
+>    `phase10.oi.lanes.{lane0,V}.winner` (adjudication bands must carry
+>    protocol_sha 9982aad9… + write-times);
+>    `phase10.oi.lanes.stage1_secondary_v_vs_lane0` (attribution only,
+>    never claim-bearing); `phase10.oi.flattening_stage1`
+>    (frame_differences MUST be empty — else record and STOP to think;
+>    G_post vs the 0.27086964 anchor).
+> 3. Close Task 7: PROGRESS stage-1 close block states WHICH fork-a
+>    outcome occurred (structure moved INTO the prior [G_post < G_pre]
+>    vs product materially improved) — never conflated; dual review of
+>    the RESULTS; commit + push; tasks.json task 7 → completed.
+> 4. Then Task 8: VL lane via the same chain pattern (VL warm-starts
+>    from stage-1 V winner + l1=0 and lane-0 winner — anchors_for
+>    handles it); L-only decision: budget four-lane n=5 < 8 → L-only
+>    NOT run, record the probe number as the reason; write
+>    `scripts/phase10_compare.py` (refusal clock → winners →
+>    primary_verdict VL-vs-lane0 → `phase10.oi.lanes.verdict`).
+> GOTCHAS FOR THE FRESH SESSION: (a) the pre-commit-check-tasks hook
+> is ACTIVE — commits blocked while any native task is in_progress;
+> workaround: mark completed → commit → re-open. (b) NEVER edit source
+> while the chain or a gate suite runs (paired lanes must execute
+> identical code; the getsource-artifact lesson). (c) Two standing
+> gate-1 owner items: sealed n_lambda_resamples=200 + executor-set
+> 12 h wall budget. (d) evidence lives in
+> `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`
+> (gitignored data dir — numbers must be quoted into PROGRESS at
+> close). **NEXT: examine chain results → close Task 7 → Task 8.**
+> Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates

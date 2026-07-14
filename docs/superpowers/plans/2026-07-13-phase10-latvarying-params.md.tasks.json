@@ -79,7 +79,7 @@
       "nativeId": 8,
       "name": "stage1-lanes",
       "subject": "Task 7: Stage-1 execution — lane-0 + V runs, winners, stage-1 flattening reading",
-      "status": "pending",
+      "status": "in_progress",
       "blockedBy": [
         6
       ],
