@@ -37,13 +37,20 @@ finalizes the budget arithmetic. Both numbers land at `phase10.oi.probe`
 before any trial runs — the spec's requirement (budgets from measurement,
 recorded before trials) is satisfied; only the measurement is split.
 
-**Band-source pin (plan-level resolution of a spec obligation):** §9's refusal
-demands the band artifact predate lane-winner records, and the per-lane winner
-selection itself uses the bands (lexicographic read). Bands therefore cannot
-come from lane products. They are computed from the two Task-0/Task-5 PROBE
-map pairs (signed config vs pinned Paciorek probe config) — a pre-registered
-config pair that exists before any trial, at a typical config separation.
-Recorded inside the band artifact as `source_pair`.
+**Band protocol (owner plan-review correction 1 — supersedes §9's
+number-pre-registration reading, reviewer-owned):** pre-register the
+PROTOCOL, compute VALUES per consulted pair at read time. Statistical
+rationale: paired SE = f(Var_a + Var_b − 2Cov); nested tuned winners are
+error-correlated far beyond a half-excursion probe pair, so a probe-pair
+band over-sizes the comparison noise and biases the PRIMARY verdict toward
+the negative result by construction. Procedure-not-number is the orthodox
+paired-test pre-registration; shopping is impossible: sealed seed, SINGLE
+seeded execution per consulted pair, hash-bound — every quoted band carries
+`protocol_sha` == the sealed artifact's hash. The probe-pair computation is
+retained only as a demoted `probe_pair_reference` block (machinery
+shakedown + dissimilar-pair noise scale; never operative). The refusal
+clock's mechanics are unchanged, retargeted: `assert_band_predates` guards
+the PROTOCOL artifact's `created_utc` vs winner records.
 
 ---
 
@@ -486,11 +493,12 @@ def test_constant_reduction_identity_full_spacetime() -> None:
 
 ---
 
-### Task 5: Pre-registration artifact — Paciorek probe + bands + day list + k + budget (ONE commit)
+### Task 5: Pre-registration artifact — Paciorek probe + band PROTOCOL + day list + k + budget (ONE commit)
 
 **Goal:** Everything the spec demands recorded BEFORE any trial: the Paciorek
 probe measurement, finalized budget arithmetic, the screening day list + k,
-and both bands (seeded, timestamped) from the probe pair.
+and the sealed band PROTOCOL (values computed per consulted pair at read
+time; header rationale).
 
 **Files:**
 - Create: `scripts/phase10_prereg.py`,
@@ -512,7 +520,8 @@ and both bands (seeded, timestamped) from the probe pair.
       `screening_days` = every 4th day of 2017 starting day 1 (91 days,
       stratified across the year, pinned list serialized) and `k = 3`
       (full-year re-scores per lane). Recorded whether ACTIVE or NOT.
-- [ ] Band artifact `phase10_band_artifact.json` (schema pinned):
+- [ ] PROTOCOL artifact `phase10_band_artifact.json` (schema pinned; NO
+      operative band values):
 
 ```json
 {
@@ -520,52 +529,64 @@ and both bands (seeded, timestamped) from the probe pair.
   "resample_seed": 271828,
   "block_unit": "contiguous day/pass segments",
   "n_resamples": 2000,
-  "source_pair": {"a": "<sha256 signed probe mean nc>", "b": "<sha256 paciorek probe mean nc>"},
-  "band_mu": 0.0,
-  "se_mu": 0.0,
-  "band_lambda_x": 0.0,
-  "se_lambda_x": 0.0,
-  "lambda_informative": true
+  "machinery": "application/calibration folds rho/n_eff segmentation",
+  "lambda_informative_rule": "band_lambda_x <= 25 km, evaluated per computed pair",
+  "single_execution_rule": "one seeded computation per consulted pair; values recorded in the consuming record with write-times",
+  "probe_pair_reference": {
+    "source_pair": {"a": "<sha256 signed probe mean nc>", "b": "<sha256 paciorek probe mean nc>"},
+    "band_mu": 0.0,
+    "band_lambda_x": 0.0,
+    "note": "machinery shakedown + dissimilar-pair noise scale; NEVER operative"
+  }
 }
 ```
 
-      `band_mu = 2*se_mu` from block resampling of per-point squared-error
-      differences between the two probe products on the validation track
+      `band_mu = 2*SE` from block resampling of per-point squared-error
+      differences between the pair's products on the validation track
       (blocks = contiguous day/pass segments per the existing rho/n_eff
-      machinery); `band_lambda_x = 2*se_lambda_x` of the SNR-crossing estimate
-      over the same resamples; `lambda_informative` set by the pre-registered
-      rule `band_lambda_x < 0.5 * |lambda_x_a - lambda_x_b|_probe` is NOT the
-      rule — the rule is: informative iff `band_lambda_x <= 25 km` (2×SE at or
-      under the λx grid resolution scale; recorded rationale: coarser than
-      that cannot separate physically plausible gains).
-- [ ] `lane_compare.compute_bands(errs_a, errs_b, meta) -> BandArtifact`
-      deterministic under the recorded seed (reproducibility test).
-- [ ] Refusal clock implemented: `assert_band_predates(band, records)`
-      compares `created_utc` INSIDE artifacts, never mtimes (spec §9,
-      batch-3 fold 3); unit test: winner record with earlier internal
-      timestamp → `PreRegistrationError`.
+      machinery); `band_lambda_x = 2*SE` of the SNR-crossing estimate over
+      the same resamples; λx-informative rule: `band_lambda_x <= 25 km` (2×SE
+      at or under the λx grid resolution scale; coarser cannot separate
+      physically plausible gains), evaluated PER COMPUTED PAIR.
+- [ ] `lane_compare.compute_bands(errs_a, errs_b, protocol) -> BandValues`
+      runs AT READ TIME on the actual consulted pair (primary VL-vs-lane-0,
+      secondaries, within-lane top-2 adjudications); deterministic under the
+      protocol's seed (reproducibility test); every returned/quoted band
+      carries `protocol_sha` == sha256 of the sealed artifact (tamper test:
+      modified protocol → sha mismatch → refuse).
+- [ ] Single-execution rule enforced: one seeded computation per consulted
+      pair; computed values + write-times land in the CONSUMING record
+      (lane winner / verdict blocks), never back into the protocol artifact.
+- [ ] Refusal clock (mechanics unchanged, retargeted):
+      `assert_band_predates(protocol, records)` compares the PROTOCOL
+      artifact's `created_utc` vs winner-record write-times, INSIDE the JSON
+      artifacts, never mtimes (spec §9, batch-3 fold 3); unit test both
+      orders → `PreRegistrationError`.
+- [ ] Probe-pair shakedown computed ONCE and stored under
+      `probe_pair_reference` (demoted, never operative).
 - [ ] All of the above lands in ONE commit (batch-2 fold 3).
 
 **Verify:** `pixi run pytest tests/test_lane_compare.py -v` → PASS (incl.
-band determinism + refusal tests); `phase10_band_artifact.json` +
+band determinism + protocol_sha binding + refusal tests);
+`phase10_band_artifact.json` (protocol form) +
 `phase10.oi.probe.{paciorek,budget}` + contingency block present.
 
 **Steps:**
 
 - [ ] **Step 1: Failing tests** for `compute_bands` (seeded determinism: two
-      calls same seed → identical artifact dict; different seed → different
-      resample draws), `assert_band_predates` (both orders), schema
-      round-trip.
+      calls same protocol → identical values; different seed → different
+      resample draws), `protocol_sha` binding (tampered protocol refused),
+      `assert_band_predates` (both orders), schema round-trip.
 - [ ] **Step 2: FAIL.** **Step 3: Implement `lane_compare.py`** — block
       bootstrap: segment per (day, pass) contiguity (reuse
       `application/calibration/folds` rho machinery for the segment
       boundaries); Δµ per resample from resampled per-point squared-error
       differences; λx per resample via the existing SNR-crossing estimator in
-      the scorer path (import the vendored `interp_on_alongtrack` outputs the
-      scorer already produces — the band script consumes the probe products'
-      per-point along-track arrays persisted by `phase10_probe.py`).
+      the scorer path (consumes per-point along-track residual arrays
+      persisted by the producing script — probe or lane run).
 - [ ] **Step 4: PASS.** **Step 5: Run the Paciorek probe (detached +
-      watcher); run `phase10_prereg.py`; ONE commit; push.**
+      watcher); run `phase10_prereg.py` (seals the protocol + demoted
+      probe-pair shakedown); ONE commit; push.**
 
 ---
 
@@ -614,13 +635,16 @@ no tuner-core edits.
       (ŝ_OI=0.6621 → raw coverage at the band top edge; bar LIVE, trips =
       design working).
 - [ ] Selection layer in `lane_compare.py`:
-      `select_lane_winner(records, band) -> record` — lexicographic (µ then
-      λx per the §5 rule) over bar-passing validation records; degradation
-      branch (band.lambda_informative False → µ-primary + recorded note);
-      refusal clock called FIRST.
-      `primary_verdict(w_vl, w_lane0, band) -> Verdict` — beats/tie per §5;
-      wording pin enforced in the Verdict text ("improvements within band",
-      never "worse").
+      `select_lane_winner(records, protocol) -> record` — lexicographic (µ
+      then λx per the §5 rule) over bar-passing validation records; the
+      within-lane top-2 adjudication band computed AT READ TIME on that pair
+      via `compute_bands` (single execution, values + write-time into the
+      winner record with `protocol_sha`); degradation branch (computed
+      band_lambda_x > 25 km → µ-primary + recorded note); refusal clock
+      called FIRST (protocol created_utc vs records).
+      `primary_verdict(w_vl, w_lane0, protocol) -> Verdict` — bands computed
+      at read on the actual pair, quoted with `protocol_sha`; beats/tie per
+      §5; wording pin enforced ("improvements within band", never "worse").
 - [ ] Trial scoring: `ValidationTrackScorer` reused as-is with
       `oi_gaussian_kernel_from_params=True` maps production (scorer's
       `_produce_maps` gains the flag pass-through — the ONLY tuner-adjacent
@@ -654,9 +678,14 @@ no tuner-core edits.
       under `phase10.oi.lanes.<lane>` (each record carries `created_utc`,
       trial dict, scores, bar outcomes, admissibility); anchors evaluated;
       dev smoke (`SVERDRUP_PHASE10_SCOPE=dev`, 12-day) run FIRST both lanes.
-- [ ] Winners selected via `select_lane_winner` (band artifact refusal clock
-      passes by construction — bands predate all records); stage-1 SECONDARY
-      row V-vs-lane0 computed + recorded (attribution, never claim-bearing).
+- [ ] Per-trial validation-track residual arrays PERSISTED for each lane's
+      top-k (`phase10_residuals_<lane>_<trial>.npz`) — pair bands computable
+      at read; the contingency's full-year re-scores need these anyway.
+- [ ] Winners selected via `select_lane_winner` (protocol refusal clock
+      passes by construction — the sealed protocol predates all records);
+      within-lane adjudication band values + write-times + `protocol_sha`
+      recorded in the winner record; stage-1 SECONDARY row V-vs-lane0
+      computed at read + recorded (attribution, never claim-bearing).
 - [ ] `phase10_flatten_read.py`: (a) recomputes **G_pre_oi** canonically from
       `phase9.oi.fit_run` via the §7 definition → `phase10.g_pre_oi_anchor`
       (expected 0.27086964275496783; assert match to 1e-12, STOP otherwise);
@@ -712,10 +741,13 @@ written; PROGRESS committed.
       `n_sobol_per_lane ≥ 8` at four lanes (recorded either way with the
       probe number as the reason).
 - [ ] `phase10_compare.py`: refusal clock → per-lane winners → **PRIMARY
-      verdict = VL winner vs lane-0 winner** under the §5 rule; secondary
-      rows (V vs lane-0, L-only if run); full verdict block at
-      `phase10.oi.lanes.verdict` (bands quoted, deltas, rule branch taken,
-      wording pin respected).
+      verdict = VL winner vs lane-0 winner** under the §5 rule, bands
+      computed AT READ TIME on the actual pair from the persisted residual
+      arrays (single seeded execution; values + write-times into the verdict
+      block with `protocol_sha`); secondary rows (V vs lane-0, L-only if
+      run) same protocol; full verdict block at `phase10.oi.lanes.verdict`
+      (bands quoted with protocol_sha, deltas, rule branch taken, wording
+      pin respected).
 - [ ] BRANCH RECORDED: verdict POSITIVE → Tasks 10–15 proceed; NEGATIVE →
       Task 9 executes, Tasks 10–15 close as superseded (the Phase-8 Task-13
       branch-semantics precedent).
@@ -950,8 +982,9 @@ Tasks 0, 5, 7, 8, 10, 12, 13; §11 out-of-scope → no task builds any of it;
 named slots filled from measured evidence at execution — explicitly marked as
 such (measurement-dependent, not deferred design). No TBD/TODO remain.
 **Type consistency:** `LatitudeField` (Tasks 2→3→4→6), `gaussian_kernel_from_params`
-(3→4→6→7), `compute_bands`/`select_lane_winner`/`primary_verdict` (5→6→7→8),
-`trials_per_lane` (0→5), descriptor fields match `ProductDescriptor`
-(harness.py:65) — checked.
+(3→4→6→7), `compute_bands(errs_a, errs_b, protocol)`/`select_lane_winner(
+records, protocol)`/`primary_verdict(w_vl, w_lane0, protocol)` (5→6→7→8,
+protocol-form per the owner correction), `trials_per_lane` (0→5), descriptor
+fields match `ProductDescriptor` (harness.py:65) — checked.
 **Branch representability:** Task 9 vs Tasks 10–15 mutually exclusive;
 tracker semantics = the Phase-8 Task-13 precedent (close-as-superseded).
