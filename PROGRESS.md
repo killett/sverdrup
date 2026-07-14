@@ -77,7 +77,21 @@
 > to µ-primary + note); consumers pass expected_sha from
 > `phase10.oi.band_protocol`; provider_for_trial emits the multiplier
 > as `lx_mult` (NEVER a field under lx_deg) and OMITS it at l1=0.
-> **NEXT: Task 6 (lane machinery).** Resume:
+> Task 6 COMPLETE: `validation/phase10_lanes.py` (pre-registered boxes
+> with in-code rationale; lanes-as-restrictions frozen AT 0.0; paired
+> Sobol = ONE shared 6-dim engine `derive_seed("oi","phase10-lanes",
+> "sobol",0)` with per-lane masking — the plan's per-lane-engine clause
+> was stale text, fold-2a governs; anchors; bars_for(SAMPLES) +
+> SIGMA_OBS2 coverage convention with the ≈0.78 live-bar expectation)
+> + selection layer in lane_compare.py (lexicographic µ→λx, read-time
+> top-2 adjudication bands, degradation branches incl. the
+> n_lambda_used≥50% floor, refusal clock FIRST, wording pin). Scorer
+> gained THREE additive default-off seams (plan said one; all three
+> load-bearing, spec-review-endorsed): oi_gaussian_kernel_from_params,
+> provider_factory (trial dicts aren't kernel params), coverage_extra_var
+> (SIGMA_OBS2 convention). Task-7 note: use power-of-2 Sobol batches
+> where possible (scipy balance warning at n=30). Suite 733/13/1.
+> **NEXT: Task 7 (stage-1 execution — lane-0 + V runs).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates

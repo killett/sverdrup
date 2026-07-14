@@ -324,6 +324,210 @@ def compute_bands(
     )
 
 
+# Fraction of the sealed λ resamples that must produce a value on BOTH sides
+# for the λ band to be usable (spec-review Task-5 finding: a band on too few
+# successful spectral resamples must not fire the tie-break).
+_LAMBDA_USED_FLOOR_FRACTION = 0.5
+
+
+def _lambda_usable(bv: BandValues, protocol: BandProtocol) -> tuple[bool, str | None]:
+    """Return (usable, note) for the λ tie-break under the sealed rules.
+
+    Degradation branches (spec §5 self-calibration): a band wider than the
+    informativeness rule, an under-sampled band, or a failed point estimate
+    all degrade the rule to µ-primary with a recorded note — never a noisy
+    verdict.
+    """
+    if not np.isfinite(bv.delta_lambda_x):
+        return False, "λx point estimate failed on the full track — µ-primary"
+    floor = int(np.ceil(_LAMBDA_USED_FLOOR_FRACTION * protocol.n_lambda_resamples))
+    if bv.n_lambda_used < floor:
+        return False, (
+            f"λx band under-sampled (n_used={bv.n_lambda_used} < floor {floor} "
+            f"of {protocol.n_lambda_resamples} sealed resamples) — µ-primary"
+        )
+    if not bv.lambda_informative:
+        return False, (
+            f"λx uninformative at measured band "
+            f"(band={bv.band_lambda_x:.1f} km > {LAMBDA_INFORMATIVE_KM} km) — "
+            "µ-primary"
+        )
+    return True, None
+
+
+def _adjudication_block(
+    bv: BandValues, branch: str, note: str | None, written_utc: str
+) -> dict[str, Any]:
+    """Return the evidence-ready adjudication block.
+
+    Single-execution rule: the computed values + write-time land in the
+    CONSUMING record, never back into the protocol artifact.
+    """
+    return {
+        "delta_mu": bv.delta_mu,
+        "band_mu": bv.band_mu,
+        "delta_lambda_x": bv.delta_lambda_x,
+        "band_lambda_x": bv.band_lambda_x,
+        "lambda_informative": bv.lambda_informative,
+        "n_segments": bv.n_segments,
+        "n_lambda_used": bv.n_lambda_used,
+        "branch": branch,
+        "note": note,
+        "protocol_sha": bv.protocol_sha,
+        "written_utc": written_utc,
+    }
+
+
+def _now_utc(now_utc: str | None) -> str:
+    """Return ``now_utc`` if given, else the current UTC time (ISO 8601)."""
+    if now_utc is not None:
+        return now_utc
+    from datetime import UTC  # noqa: PLC0415
+
+    return datetime.now(UTC).isoformat()
+
+
+def select_lane_winner(
+    records: list[dict[str, Any]],
+    protocol: BandProtocol,
+    load_track: Callable[[dict[str, Any]], Mapping[str, np.ndarray]],
+    lambda_x_fn: Callable[..., float] = effective_resolution_lambda_x,
+    now_utc: str | None = None,
+) -> dict[str, Any]:
+    """Select one lane's winner: lexicographic µ → λx over bar-passing records.
+
+    The refusal clock runs FIRST. Records are ranked by ``mu_score``; the
+    within-lane top-2 adjudication band is computed AT READ TIME on that
+    pair via :func:`compute_bands` (single seeded execution; values +
+    write-time + protocol_sha land in the returned winner record). λx LOWER
+    is finer/better. Degradation branches per :func:`_lambda_usable`.
+
+    Args:
+        records: The lane's trial records (each with ``created_utc``,
+            ``scores`` and ``admissible``).
+        protocol: The sealed band protocol.
+        load_track: Maps a record to its persisted validation-track arrays.
+        lambda_x_fn: The λx estimator (injectable for tests).
+        now_utc: Override for the adjudication write-time (tests).
+
+    Returns:
+        A COPY of the winning record with an ``"adjudication"`` block.
+
+    Raises:
+        PreRegistrationError: If the protocol does not predate every record.
+        ValueError: If no record is admissible.
+    """
+    assert_band_predates(protocol, records)  # refusal clock FIRST
+    ok = [r for r in records if r.get("admissible")]
+    if not ok:
+        raise ValueError("no bar-passing records — no lane winner")
+    ranked = sorted(ok, key=lambda r: float(r["scores"]["mu_score"]), reverse=True)
+    leader = ranked[0]
+    if len(ranked) == 1:
+        return {
+            **leader,
+            "adjudication": {
+                "branch": "single-admissible",
+                "note": "only one bar-passing record; no pair to adjudicate",
+                "protocol_sha": protocol.protocol_sha,
+                "written_utc": _now_utc(now_utc),
+            },
+        }
+    runner_up = ranked[1]
+    bv = compute_bands(load_track(leader), load_track(runner_up), protocol, lambda_x_fn)
+    usable, note = _lambda_usable(bv, protocol)
+    written = _now_utc(now_utc)
+    if abs(bv.delta_mu) > bv.band_mu:
+        return {
+            **leader,
+            "adjudication": _adjudication_block(bv, "mu-clear", None, written),
+        }
+    if not usable:
+        return {
+            **leader,
+            "adjudication": _adjudication_block(
+                bv, "mu-primary-degraded", note, written
+            ),
+        }
+    # µ tie within band: λx breaks it — LOWER λx (finer resolution) wins.
+    if bv.delta_lambda_x > bv.band_lambda_x:  # leader coarser beyond band
+        return {
+            **runner_up,
+            "adjudication": _adjudication_block(bv, "lambda-tiebreak", None, written),
+        }
+    return {
+        **leader,
+        "adjudication": _adjudication_block(bv, "mu-leader-tie-held", None, written),
+    }
+
+
+def primary_verdict(
+    w_a: dict[str, Any],
+    w_lane0: dict[str, Any],
+    protocol: BandProtocol,
+    load_track: Callable[[dict[str, Any]], Mapping[str, np.ndarray]],
+    lambda_x_fn: Callable[..., float] = effective_resolution_lambda_x,
+    now_utc: str | None = None,
+) -> dict[str, Any]:
+    """Return the comparison verdict for a lat lane's winner vs lane-0's.
+
+    The spec-§5 lexicographic rule: BEATS iff Δµ > band_µ; if |Δµ| ≤ band_µ,
+    then Δλx-improvement > band_λx breaks the tie (finer resolution wins —
+    the L(lat) physics signature); both within bands → tie, counted toward
+    the negative result. Wording pin (batch-2 fold 1): a non-positive
+    outcome reads "improvements within band", never "worse".
+
+    Args:
+        w_a: The lat lane's winner record (side a).
+        w_lane0: The lane-0 winner record (side b).
+        protocol: The sealed band protocol.
+        load_track: Maps a record to its persisted validation-track arrays.
+        lambda_x_fn: The λx estimator (injectable for tests).
+        now_utc: Override for the verdict write-time (tests).
+
+    Returns:
+        The evidence-ready verdict block (bands + branch + wording +
+        protocol_sha + write-time).
+    """
+    assert_band_predates(protocol, [w_a, w_lane0])  # refusal clock FIRST
+    bv = compute_bands(load_track(w_a), load_track(w_lane0), protocol, lambda_x_fn)
+    usable, note = _lambda_usable(bv, protocol)
+    if bv.delta_mu > bv.band_mu:
+        branch, positive = "beats-mu", True
+    elif (
+        abs(bv.delta_mu) <= bv.band_mu
+        and usable
+        and (-bv.delta_lambda_x > bv.band_lambda_x)
+    ):
+        branch, positive = "beats-lambda-at-flat-mu", True
+    else:
+        branch, positive = "within-band", False
+    wording = (
+        f"{w_a.get('lane', 'lat-varying')} beats lane-0 beyond the measured "
+        f"band ({branch})"
+        if positive
+        else "improvements within band"
+    )
+    return {
+        "rule": "lexicographic mu->lambda_x (spec §5)",
+        "a_lane": w_a.get("lane"),
+        "b_lane": w_lane0.get("lane"),
+        "positive": positive,
+        "branch": branch,
+        "wording": wording,
+        "note": note,
+        "delta_mu": bv.delta_mu,
+        "band_mu": bv.band_mu,
+        "delta_lambda_x": bv.delta_lambda_x,
+        "band_lambda_x": bv.band_lambda_x,
+        "lambda_informative": bv.lambda_informative,
+        "n_segments": bv.n_segments,
+        "n_lambda_used": bv.n_lambda_used,
+        "protocol_sha": bv.protocol_sha,
+        "written_utc": _now_utc(now_utc),
+    }
+
+
 def assert_band_predates(protocol: BandProtocol, records: list[dict[str, Any]]) -> None:
     """Refuse unless the sealed protocol predates every consulted record.
 

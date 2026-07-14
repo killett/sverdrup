@@ -194,6 +194,203 @@ def test_assert_band_predates_refuses_equal_timestamps(tmp_path: Path) -> None:
         assert_band_predates(proto, [{"created_utc": "2026-07-13T22:00:00+00:00"}])
 
 
+# ---------------------------------------------------------------------------
+# Selection layer (Task 6): lexicographic winner + PRIMARY verdict.
+# Bugs caught: refusal clock skipped (post-hoc protocol accepted); λ
+# tie-break firing on an uninformative/under-sampled band; sign flip in the
+# λ rule (coarser resolution winning); the wording pin violated ("worse");
+# adjudication block missing protocol_sha/write-time.
+# ---------------------------------------------------------------------------
+
+from sverdrup.application.tuning.lane_compare import (  # noqa: E402
+    primary_verdict,
+    select_lane_winner,
+)
+
+_NOW = "2026-07-13T23:00:00+00:00"
+
+
+def _track_for(
+    rid: int, *, rms: float = 0.02, offset: float = 0.0
+) -> dict[str, np.ndarray]:
+    """Product track keyed by ``rid``: same consulted track, own residuals."""
+    day = np.repeat(np.arange(20, dtype=float), 30)
+    within = np.tile(np.arange(30, dtype=float) * (1.2 / 86400.0), 20)
+    lat = np.tile(np.linspace(33.5, 42.5, 30), 20)
+    lon = np.full(600, 300.0)
+    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(600)
+    resid = rms * np.random.default_rng(100 + rid).standard_normal(600) + offset
+    return {
+        "time": day + within,
+        "lat": lat,
+        "lon": lon,
+        "ssh": ssh,
+        "mean_interp": ssh - resid,
+    }
+
+
+def _mirror(track: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Same track, residuals NEGATED: identical rms -> exact µ tie, zero band."""
+    out = dict(track)
+    out["mean_interp"] = 2.0 * track["ssh"] - track["mean_interp"]
+    return out
+
+
+def _tie_tracks() -> dict[int, dict[str, np.ndarray]]:
+    a = _track_for(1, offset=+0.003)
+    return {1: a, 2: _mirror(a)}
+
+
+def _rec(rid: int, mu: float, lx: float, lane: str = "V") -> dict[str, Any]:
+    return {
+        "rid": rid,
+        "created_utc": "2026-07-13T21:00:00+00:00",
+        "lane": lane,
+        "trial": {},
+        "scores": {"mu_score": mu, "lambda_x": lx},
+        "admissible": True,
+    }
+
+
+def _loader(tracks: dict[int, dict[str, np.ndarray]]) -> Any:
+    return lambda rec: tracks[rec["rid"]]
+
+
+def test_select_winner_mu_clear(tmp_path: Path) -> None:
+    proto = _small_proto(tmp_path)
+    tracks = {1: _track_for(1, rms=0.005), 2: _track_for(2, rms=0.03)}
+    recs = [_rec(1, 0.92, 140.0), _rec(2, 0.86, 120.0)]
+    w = select_lane_winner(
+        recs, proto, _loader(tracks), lambda_x_fn=_cheap_lambda, now_utc=_NOW
+    )
+    assert w["rid"] == 1  # µ decides; runner-up's better λx never consulted
+    adj = w["adjudication"]
+    assert adj["branch"] == "mu-clear"
+    assert adj["protocol_sha"] == proto.protocol_sha
+    assert adj["written_utc"] == _NOW
+    assert adj["delta_mu"] > adj["band_mu"]
+
+
+def test_select_winner_mu_tie_lambda_flips(tmp_path: Path) -> None:
+    # Same residual RMS both sides (µ tie within band); side markers via the
+    # residual-mean sign drive a deterministic per-side λ: runner-up resolves
+    # FINER (lower λx) beyond a zero-width band -> tie-break flips to it.
+    proto = _small_proto(tmp_path)
+    tracks = _tie_tracks()
+    recs = [_rec(1, 0.880001, 150.0), _rec(2, 0.880000, 120.0)]
+
+    def side_lambda(time: Any, lat: Any, lon: Any, ssh: Any, interp: Any) -> float:
+        return 150.0 if float(np.mean(ssh - interp)) > 0 else 120.0
+
+    w = select_lane_winner(
+        recs, proto, _loader(tracks), lambda_x_fn=side_lambda, now_utc=_NOW
+    )
+    assert w["rid"] == 2
+    assert w["adjudication"]["branch"] == "lambda-tiebreak"
+
+
+def test_select_winner_degrades_to_mu_primary_on_wide_band(tmp_path: Path) -> None:
+    proto = _small_proto(tmp_path)
+    tracks = _tie_tracks()
+    recs = [_rec(1, 0.880001, 150.0), _rec(2, 0.880000, 120.0)]
+
+    calls = {"n": 0}
+
+    def noisy_lambda(*args: Any) -> float:
+        calls["n"] += 1
+        return 100.0 + 40.0 * (calls["n"] % 7)  # band >> 25 km
+
+    w = select_lane_winner(
+        recs, proto, _loader(tracks), lambda_x_fn=noisy_lambda, now_utc=_NOW
+    )
+    assert w["rid"] == 1  # µ leader stays
+    adj = w["adjudication"]
+    assert adj["branch"] == "mu-primary-degraded"
+    assert "uninformative" in adj["note"]
+
+
+def test_select_winner_degrades_when_lambda_undersampled(tmp_path: Path) -> None:
+    from sverdrup.eval.spectral import UnresolvedScaleError
+
+    proto = _small_proto(tmp_path)
+    tracks = _tie_tracks()
+    recs = [_rec(1, 0.880001, 150.0), _rec(2, 0.880000, 120.0)]
+
+    calls = {"n": 0}
+
+    def failing_lambda(*args: Any) -> float:
+        # Full-track point estimates (first two calls) succeed; every
+        # RESAMPLE fails -> the band is under-sampled, not point-failed.
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            return 140.0
+        raise UnresolvedScaleError("no crossing")
+
+    w = select_lane_winner(
+        recs, proto, _loader(tracks), lambda_x_fn=failing_lambda, now_utc=_NOW
+    )
+    assert w["rid"] == 1
+    assert "under-sampled" in w["adjudication"]["note"]
+
+
+def test_select_winner_refusal_clock_first(tmp_path: Path) -> None:
+    p, sha = _seal(tmp_path, created="2026-07-13T22:00:00+00:00")
+    proto = load_protocol(p, expected_sha=sha)
+    recs = [_rec(1, 0.92, 140.0), _rec(2, 0.86, 120.0)]  # written 21:00 < sealed
+    with pytest.raises(PreRegistrationError, match="predate"):
+        select_lane_winner(recs, proto, _loader({}), lambda_x_fn=_cheap_lambda)
+
+
+def test_primary_verdict_positive_mu(tmp_path: Path) -> None:
+    proto = _small_proto(tmp_path)
+    tracks = {1: _track_for(1, rms=0.005), 2: _track_for(2, rms=0.03)}
+    v = primary_verdict(
+        _rec(1, 0.92, 140.0, lane="VL"),
+        _rec(2, 0.86, 120.0, lane="lane0"),
+        proto,
+        _loader(tracks),
+        lambda_x_fn=_cheap_lambda,
+        now_utc=_NOW,
+    )
+    assert v["positive"] is True and v["branch"] == "beats-mu"
+    assert v["protocol_sha"] == proto.protocol_sha
+
+
+def test_primary_verdict_lambda_win_at_flat_mu(tmp_path: Path) -> None:
+    proto = _small_proto(tmp_path)
+    tracks = _tie_tracks()
+
+    def side_lambda(time: Any, lat: Any, lon: Any, ssh: Any, interp: Any) -> float:
+        # VL (side a, positive marker) resolves FINER: lower λx.
+        return 120.0 if float(np.mean(ssh - interp)) > 0 else 150.0
+
+    v = primary_verdict(
+        _rec(1, 0.880001, 120.0, lane="VL"),
+        _rec(2, 0.880000, 150.0, lane="lane0"),
+        proto,
+        _loader(tracks),
+        lambda_x_fn=side_lambda,
+        now_utc=_NOW,
+    )
+    assert v["positive"] is True and v["branch"] == "beats-lambda-at-flat-mu"
+
+
+def test_primary_verdict_within_band_wording_pin(tmp_path: Path) -> None:
+    proto = _small_proto(tmp_path)
+    tracks = _tie_tracks()
+    v = primary_verdict(
+        _rec(1, 0.880001, 140.0, lane="VL"),
+        _rec(2, 0.880000, 140.0, lane="lane0"),
+        proto,
+        _loader(tracks),
+        lambda_x_fn=lambda *a: 140.0,
+        now_utc=_NOW,
+    )
+    assert v["positive"] is False and v["branch"] == "within-band"
+    assert "improvements within band" in v["wording"]
+    assert "worse" not in v["wording"].lower()
+
+
 def test_assert_band_predates_refuses_naive_timestamps(tmp_path: Path) -> None:
     # A tz-naive record timestamp makes the clock ambiguous -> refuse loudly
     # (bug caught: silent TypeError killing the refusal clock mid-comparison).

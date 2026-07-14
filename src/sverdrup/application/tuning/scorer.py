@@ -28,7 +28,7 @@ import numpy as np
 from sverdrup.application.tuning.objective import BASELINE_BAR_MU
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import ObsWindow
-from sverdrup.core.parameters import ConstantProvider
+from sverdrup.core.parameters import ConstantProvider, ParameterProvider
 from sverdrup.core.types import UncertaintyCapability
 from sverdrup.eval.calibration import coverage
 from sverdrup.eval.skill_score import leaderboard_nrmse
@@ -106,6 +106,27 @@ class ValidationTrackScorer:
     mu_bar: float = (
         BASELINE_BAR_MU  # MUST match the objective's µ bar (reorder contract)
     )
+    # Phase-10 additive seams (defaults preserve pre-phase-10 behavior exactly):
+    # - oi_gaussian_kernel_from_params: route maps production through the
+    #   type-dispatching Gaussian-degrees factory instead of the Matérn-from-
+    #   params path (the two flags are mutually exclusive downstream; this
+    #   scorer sets exactly one).
+    # - provider_factory: build the trial's ParameterProvider from the trial
+    #   dict (phase-10 trials carry {c0, c1, c2, log_L0, l1, Lt}, which
+    #   ConstantProvider cannot express as kernel params). None -> the
+    #   historical ConstantProvider(params).
+    # - coverage_extra_var: variance added to the interpolated variance
+    #   before the coverage score (phase-10 convention: raw posterior var +
+    #   SIGMA_OBS2, ONE convention with acceptance at s == 1). 0.0 -> raw.
+    oi_gaussian_kernel_from_params: bool = False
+    provider_factory: Callable[[dict[str, float]], ParameterProvider] | None = None
+    coverage_extra_var: float = 0.0
+
+    def _provider(self, params: dict[str, float]) -> ParameterProvider:
+        """Return the trial's provider (factory when set, else constants)."""
+        if self.provider_factory is not None:
+            return self.provider_factory(params)
+        return ConstantProvider(params)
 
     def _produce_maps(
         self, method_name: str, params: dict[str, float], td: Path
@@ -125,31 +146,36 @@ class ValidationTrackScorer:
         """
         mean_p = Path(td) / "mean.nc"
         cap = cast(Any, METHODS[method_name]()).native_capability
+        # Exactly ONE kernel-from-params flag is True: the Gaussian factory
+        # (phase-10) when requested, else the historical Matérn path.
+        gaussian = self.oi_gaussian_kernel_from_params
         if cap is UncertaintyCapability.POINT:
             run_challenge_map(
                 method_name,
                 self.train_obs,
-                ConstantProvider(params),
+                self._provider(params),
                 self.grid,
                 self.temporal_half_window_days,
                 self.output_days,
                 mean_p,
                 mdt_grid=self.mdt_grid,
-                oi_kernel_from_params=True,
+                oi_kernel_from_params=not gaussian,
+                oi_gaussian_kernel_from_params=gaussian,
             )
             return mean_p, None
         var_p = Path(td) / "var.nc"
         run_mean_var_maps(
             method_name,
             self.train_obs,
-            ConstantProvider(params),
+            self._provider(params),
             self.grid,
             self.temporal_half_window_days,
             self.output_days,
             mean_p,
             var_p,
             mdt_grid=self.mdt_grid,
-            oi_kernel_from_params=True,  # OI tunes its Matérn from params (not Gaussian)
+            oi_kernel_from_params=not gaussian,
+            oi_gaussian_kernel_from_params=gaussian,
         )
         return mean_p, var_p
 
@@ -195,7 +221,11 @@ class ValidationTrackScorer:
         return _assemble_scores(
             ssh_a=np.asarray(ssh_a, dtype=float),
             mean_interp=np.asarray(mean_interp, dtype=float),
-            var_interp=None if var_interp is None else np.asarray(var_interp, float),
+            var_interp=(
+                None
+                if var_interp is None
+                else np.asarray(var_interp, float) + self.coverage_extra_var
+            ),
             time_a=np.asarray(time_a),
             lat_a=np.asarray(lat_a),
             lon_a=np.asarray(lon_a),
