@@ -136,20 +136,41 @@ def _write_evidence(key_path: str, block: dict[str, Any]) -> None:
     atomic_write_json(_RESULTS, results)
 
 
-def _run_signed_probe(output_days: list[float], suffix: str) -> dict[str, Any]:
-    """Run the signed-config mean+var re-solve and return the measurement block.
+# The PINNED Paciorek probe config (Task 5): a mid-box-bump + Rossby-sign
+# point at roughly half the box excursions. Recorded as the probe config —
+# NO tuning meaning.
+_PACIOREK_C: tuple[float, float, float] = (0.0, 0.3, -0.6)
+_PACIOREK_L1 = -0.25
+_PACIOREK_L0 = 1.0
+_PACIOREK_LT = 7.0
+_PACIOREK_PROBE: dict[str, Any] = {
+    "c": _PACIOREK_C,
+    "l1": _PACIOREK_L1,
+    "L0": _PACIOREK_L0,
+    "Lt": _PACIOREK_LT,
+}
+
+
+def _run_probe(config: str, output_days: list[float], suffix: str) -> dict[str, Any]:
+    """Run one probe config's mean+var re-solve and return the measurement.
 
     Args:
+        config: ``"signed"`` (baseline kernel) or ``"paciorek"`` (the pinned
+            probe config through the Task-3/4 factory path).
         output_days: Output day numbers (dev: 12 days; full: 365).
         suffix: Output filename suffix ("" for full scope, "_dev" for dev).
 
     Returns:
-        The ``phase10.oi.probe.signed`` evidence block (wall, RSS, framing,
+        The ``phase10.oi.probe.<config>`` evidence block (wall, RSS, framing,
         host fingerprint, map paths).
     """
     # Local imports keep module import light for the unit tests (pure function
     # only) — the heavy validation stack loads only when a probe actually runs.
     from sverdrup.application.splits import make_splits  # noqa: PLC0415
+    from sverdrup.core.parameters import (  # noqa: PLC0415
+        LatitudeField,
+        LatitudeVaryingProvider,
+    )
     from sverdrup.validation.input_adapter import (  # noqa: PLC0415
         load_mapping_obs,
         load_mdt_grid,
@@ -160,11 +181,10 @@ def _run_signed_probe(output_days: list[float], suffix: str) -> dict[str, Any]:
     )
     from sverdrup.validation.run import _subset, run_mean_var_maps  # noqa: PLC0415
 
-    provider, grid, half = baseline_config()
-    kernel = baseline_kernel()
+    base_provider, grid, half = baseline_config()
 
     print("  loading mapping obs (train-only split; c2 locked out) ...", flush=True)
-    obs_all = load_mapping_obs(_MAPPING_OBS_PATHS, provider)
+    obs_all = load_mapping_obs(_MAPPING_OBS_PATHS, base_provider)
     split = make_splits(
         obs_all, by="mission", locked_missions=["c2"], validation_missions=["j3"]
     )
@@ -172,8 +192,27 @@ def _run_signed_probe(output_days: list[float], suffix: str) -> dict[str, Any]:
     print(f"  train obs: {len(train_obs)} / {len(obs_all)}", flush=True)
     mdt_grid = load_mdt_grid(_MAPPING_OBS_PATHS, grid)
 
-    mean_dest = _OUT_ROOT / f"phase10_probe_signed_mean{suffix}.nc"
-    var_dest = _OUT_ROOT / f"phase10_probe_signed_var{suffix}.nc"
+    provider: Any
+    if config == "signed":
+        run_kwargs: dict[str, Any] = {"kernel": baseline_kernel()}
+        provider = base_provider
+        framing_kernel = "signed baseline config (Gaussian degree-space kernel)"
+    else:
+        provider = LatitudeVaryingProvider(
+            core={"lx_deg": _PACIOREK_L0, "time_scale": _PACIOREK_LT},
+            varied={
+                "variance": LatitudeField("exp-quad", _PACIOREK_C),
+                "lx_mult": LatitudeField("exp-linear-mult", (_PACIOREK_L1,)),
+            },
+        )
+        run_kwargs = {"oi_gaussian_kernel_from_params": True}
+        framing_kernel = (
+            f"pinned Paciorek probe config c={_PACIOREK_C}, l1={_PACIOREK_L1}, "
+            f"L0={_PACIOREK_L0}, Lt={_PACIOREK_LT} (factory path; no tuning meaning)"
+        )
+
+    mean_dest = _OUT_ROOT / f"phase10_probe_{config}_mean{suffix}.nc"
+    var_dest = _OUT_ROOT / f"phase10_probe_{config}_var{suffix}.nc"
     print(f"  solving {len(output_days)} days -> {mean_dest} + {var_dest}", flush=True)
     t0 = time.monotonic()
     run_mean_var_maps(
@@ -185,23 +224,24 @@ def _run_signed_probe(output_days: list[float], suffix: str) -> dict[str, Any]:
         output_days,
         mean_dest,
         var_dest,
-        kernel=kernel,
         halo_deg=1.0,
         mdt_grid=mdt_grid,
+        **run_kwargs,
     )
     wall_s = time.monotonic() - t0
     return {
-        "config": "signed",
+        "config": config,
         "wall_s": wall_s,
         "peak_rss_mib": _peak_rss_mib(),
         "n_days": len(output_days),
         "framing": (
             "grid-node halo 1.0 deg; train-only obs (c2 locked, j3 validation); "
-            "signed baseline config (Gaussian degree-space kernel)"
+            + framing_kernel
         ),
         "host": _host_fingerprint(),
         "mean_map": str(mean_dest),
         "var_map": str(var_dest),
+        **({"probe_config": _PACIOREK_PROBE} if config == "paciorek" else {}),
     }
 
 
@@ -229,31 +269,27 @@ def _budget_template() -> dict[str, Any]:
 
 
 def main() -> None:
-    """Run the requested probe config and record the measurement.
-
-    Raises:
-        SystemExit: For ``--config paciorek`` before Task 4 lands the kernel.
-    """
+    """Run the requested probe config and record the measurement."""
     parser = argparse.ArgumentParser(description="Phase-10 runtime probe (spec §4).")
     parser.add_argument("--config", choices=["signed", "paciorek"], required=True)
     args = parser.parse_args()
 
-    if args.config == "paciorek":
-        raise SystemExit("paciorek path lands Task 4")
-
     output_days = _DEV_DAYS if _SCOPE == "dev" else _FULL_DAYS
     suffix = "_dev" if _SCOPE == "dev" else ""
-    print(f"[phase10_probe] config=signed scope={_SCOPE!r}", flush=True)
-    block = _run_signed_probe(output_days, suffix)
+    print(f"[phase10_probe] config={args.config} scope={_SCOPE!r}", flush=True)
+    block = _run_probe(args.config, output_days, suffix)
     print(
-        f"[probe] signed wall={block['wall_s']:.1f} "
+        f"[probe] {args.config} wall={block['wall_s']:.1f} "
         f"peak_rss={block['peak_rss_mib']:.0f} MiB",
         flush=True,
     )
     if _SCOPE == "dev":
         print("[dev smoke] gate evidence NOT written (dev scope).", flush=True)
         return
-    _write_evidence("phase10.oi.probe.signed", block)
+    _write_evidence(f"phase10.oi.probe.{args.config}", block)
+    if args.config == "paciorek":
+        print(f"[probe] wrote phase10.oi.probe.paciorek to {_RESULTS}")
+        return
     # Clobber guard: never reset a budget already finalized by Task 5.
     existing = (
         json.loads(_RESULTS.read_text())

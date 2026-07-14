@@ -58,7 +58,26 @@
 > + a hand-computed cross-band entry (kills dropped/inverted prefactor
 > + wrong denominator). Suite 704/13/1 (clean re-run after a mid-run-edit
 > getsource artifact; lesson recorded).
-> **NEXT: Task 5 (pre-registration, ONE commit).** Resume:
+> Task 5 COMPLETE (ONE commit): Paciorek probe measured (full-year
+> factory-path re-solve at the pinned config: wall 1918.3 s, RSS 1833
+> MiB; maps kept as band side B); band PROTOCOL SEALED at
+> `phase10_band_artifact.json` sha256 9982aad9… (seed 271828,
+> n_resamples 2000, contiguous day/pass blocks, λ rule ≤25 km per
+> computed pair, single-execution rule, refusal clock on artifact
+> created_utc; demoted probe-pair shakedown: Δµ=−0.00096 band 0.00246,
+> Δλx=+0.14 band 6.69 km, 403 segments); contingency constants
+> co-sealed (91-day screening list = days 1,5,…,361; k=3). BUDGET:
+> t_trial=1918 s, wall 12.0 h → n_full=7 < 8 → **SCREENING CONTINGENCY
+> ACTIVE** (n_screening=30/lane). **TWO ITEMS FLAGGED FOR THE GATE-1
+> PACK (owner confirms): (1) sealed extra constant n_lambda_resamples
+> =200 (spectral cost; rationale in artifact); (2) wall_budget_h=12.0
+> EXECUTOR-SET (owner absent; provenance recorded; drives the
+> contingency).** Task-6 obligations from reviews: selection layer must
+> guard n_lambda_used (λ band on too-few successful resamples → degrade
+> to µ-primary + note); consumers pass expected_sha from
+> `phase10.oi.band_protocol`; provider_for_trial emits the multiplier
+> as `lx_mult` (NEVER a field under lx_deg) and OMITS it at l1=0.
+> **NEXT: Task 6 (lane machinery).** Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
 > Standing discipline: dual review per task; push as you go; Paciorek
 > tests green before any stage-2 task; ZERO c2 before Task 13; gates
