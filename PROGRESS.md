@@ -99,57 +99,90 @@
 > secondary row — LIVE bars tripped both arbitrary dev points exactly
 > as pre-registered).
 >
-> **▶ STAGE-1 CHAIN IN FLIGHT (launched 2026-07-14 ~02:00 UTC, pid
-> 1140532, nohup — survives an agent-session clear, NOT a container
-> restart): lane0 (30 screening trials ~4.5 h) → V lane → V-winner
-> re-solve → stage-1 frozen-frame reading. Log:
-> `data/2021a_ssh_mapping_ose/ours/phase10_stage1_chain.log`. Chain is
-> sequential BY DESIGN — single-writer evidence JSON; never run two
-> lanes in parallel.** RESUME PROTOCOL FOR THE FRESH SESSION:
-> 1. `ps -p 1140532` + tail the chain log. Still running → arm
->    `scripts/watch_pid.sh 1140532` and wait. Dead BEFORE
->    "chain: DONE" → records are checkpointed per trial under
->    `phase10.oi.lanes.<lane>.records`, but the runner has NO
->    resume-skip: re-running a lane restarts its trials and overwrites
->    that lane's records (~4.5 h, acceptable). Re-run only the
->    unfinished chain steps (lane0 → V → `phase10_flatten_read.py
->    --stage 1 --from-winner V`).
-> 2. When DONE, EXAMINE before closing Task 7: per-lane admissibility
->    counts (bars are LIVE — coverage-trip clusters are the
->    pre-registered design working, not a defect);
->    `phase10.oi.lanes.{lane0,V}.winner` (adjudication bands must carry
->    protocol_sha 9982aad9… + write-times);
->    `phase10.oi.lanes.stage1_secondary_v_vs_lane0` (attribution only,
->    never claim-bearing); `phase10.oi.flattening_stage1`
->    (frame_differences MUST be empty — else record and STOP to think;
->    G_post vs the 0.27086964 anchor).
-> 3. Close Task 7: PROGRESS stage-1 close block states WHICH fork-a
->    outcome occurred (structure moved INTO the prior [G_post < G_pre]
->    vs product materially improved) — never conflated; dual review of
->    the RESULTS; commit + push; tasks.json task 7 → completed.
-> 4. Then Task 8: VL lane via the same chain pattern (VL warm-starts
->    from stage-1 V winner + l1=0 and lane-0 winner — anchors_for
->    handles it); L-only decision: budget four-lane n=5 < 8 → L-only
->    NOT run, record the probe number as the reason; write
->    `scripts/phase10_compare.py` (refusal clock → winners →
->    primary_verdict VL-vs-lane0 → `phase10.oi.lanes.verdict`).
-> GOTCHAS FOR THE FRESH SESSION: (a) the pre-commit-check-tasks hook
-> is ACTIVE — commits blocked while any native task is in_progress;
-> workaround: mark completed → commit → re-open. (b) NEVER edit source
-> while the chain or a gate suite runs (paired lanes must execute
-> identical code; the getsource-artifact lesson). (c) Two standing
-> gate-1 owner items: sealed n_lambda_resamples=200 + executor-set
-> 12 h wall budget. (d) evidence lives in
+> **✅ STAGE-1 CLOSED 2026-07-15 (Task 7 COMPLETE). Fork-a mod-1
+> sentence: the outcome is STRUCTURE MOVED INTO THE PRIOR (G_post <
+> G_pre under the frozen frame); the product did NOT materially improve
+> (V within band of lane-0 on the validation track). Two facts, never
+> conflated.**
+> - OPERATIONS: the original chain (pid 1140532) was killed by a host
+>   crash 2026-07-14 mid-V-lane — lane0 had finished (winner written
+>   2026-07-14T10:24Z); V screening had finished but no winner. Per the
+>   recorded protocol the V lane was re-run WHOLE (no resume-skip;
+>   records overwritten by design) + flatten read; relaunched chain ran
+>   2026-07-14T23:43:20Z → 2026-07-15T06:58:16Z "chain: DONE".
+> - lane-0 WINNER: index 7, µ=0.8607234, λx=205.30 km, coverage
+>   0.6764, 6/30 admissible; within-lane adjudication branch=mu-clear
+>   (Δµ=0.004449 vs band 0.000753); λ NON-informative for that pair
+>   (band 46.13 km > 25 → µ-primary degradation branch fired exactly
+>   as pre-registered); protocol_sha 9982aad9…, written_utc inside the
+>   record (2026-07-14T10:24:47Z).
+> - V WINNER: index 7 (same Sobol index as lane-0 — paired draws),
+>   µ=0.8608470, λx=205.72 km, coverage 0.6696, 7/31 admissible
+>   (30 Sobol + lane-0 anchor); branch=mu-leader-tie-held (band_µ
+>   0.000373); λ informative (band 18.97 km ≤ 25); n_lambda_used
+>   186/403 ≥ 50% floor; protocol_sha 9982aad9…, written_utc
+>   2026-07-15T06:20:02Z. Winner trial: c0=−0.4380, c1=+0.6022,
+>   c2=−0.4800, log_L0=−0.1304, l1=0 (frozen), Lt=12.78.
+> - SECONDARY V-vs-lane0 (attribution, NEVER claim-bearing):
+>   Δµ=+0.000124 within band 0.000373; Δλx=+0.42 km within band
+>   18.97 km; branch=within-band; wording pin honored ("improvements
+>   within band"); positive=false.
+> - FLATTENING STAGE-1 (frozen pre-B frame; frame_differences EMPTY;
+>   mask sha 0deefcb9… asserted; tuple (oi,phase9,s-folds); s_salt 4,
+>   redraws [0,1,2,3]): G_pre_oi anchor 0.27086964275496783 recomputed
+>   EXACT → **G_post = 0.21517882, shrinkage +0.05569 (~20.6% of
+>   G_pre)**; s(x) selection winner still poly (structure remains,
+>   smaller); lane-0 S-stat 0.2939. Maps kept:
+>   `phase10_stage1_Vwinner_{mean,var}.nc`; top-k residual arrays
+>   persisted both lanes (lane0: 7,17,18; V: 7,18,30).
+> - READING: the lat-varying variance prior absorbed ~1/5 of the
+>   spatial structure the s(x) calibration field previously carried,
+>   without moving validation-track skill — the spec's
+>   modest-gains-here expectation-setter realized at stage 1. The
+>   claim-bearing comparison remains Task-8's PRIMARY (VL vs lane-0).
+> - DUAL REVIEW (results): spec-compliance PASS on every quoted value
+>   incl. refusal clock (protocol sealed 03:41Z < earliest record
+>   09:33Z) + protocol_sha == sha256(artifact). Adversarial integrity
+>   review: NO contamination — crash-restart cleanliness proven by V's
+>   anchor re-evaluation reproducing the pre-crash lane-0 winner
+>   BIT-EXACTLY (µ 0.8607234482058996, fresh 2024 s solve); all 31 V
+>   records post-relaunch; code identical across both runs (last
+>   src/scripts commit f2e3e01, 17 s before lane0 start). TWO NOTES
+>   CARRIED FORWARD: (i) evidence JSON is untracked — lane-0
+>   non-overwrite rests on internal timestamps + the bit-exact anchor,
+>   not git history; (ii) top-k=3 full re-scores INCLUDE anchors, so
+>   in V the anchor displaced screening rank-4 from full scoring
+>   (protocol-consistent; remember when reading Task-8's VL lane,
+>   which carries TWO anchors → only ONE Sobol candidate beyond the
+>   screening leader gets a full re-score... verify k vs anchor count
+>   at VL read time).
+> - c2 untouched — grep gate both scripts: ZERO code hits; the one
+>   textual match is the flatten reader's docstring line ASSERTING the
+>   property (spec-review finding, recorded as-is). Suite green at
+>   close (counts in the close commit message).
+> **NEXT: Task 8 — VL lane via the same chain pattern (VL warm-starts:
+> stage-1 V winner + l1=0, and lane-0 winner — anchors_for handles
+> it); L-only decision: budget four-lane n=5 < 8 → L-only NOT run,
+> record the probe number as the reason; write
+> `scripts/phase10_compare.py` (refusal clock → winners →
+> primary_verdict VL-vs-lane0 → `phase10.oi.lanes.verdict`).**
+> GOTCHAS STANDING: (a) pre-commit-check-tasks hook ACTIVE — commits
+> blocked while any native task is in_progress; workaround: mark
+> completed → commit → re-open. (b) NEVER edit source while a chain or
+> gate suite runs (paired lanes must execute identical code). (c) Two
+> standing gate-1 owner items: sealed n_lambda_resamples=200 +
+> executor-set 12 h wall budget. (d) evidence lives in
 > `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`
-> (gitignored data dir — numbers must be quoted into PROGRESS at
-> close). **NEXT: examine chain results → close Task 7 → Task 8.**
+> (gitignored — numbers quoted into PROGRESS at close, as above).
+> (e) chain scripts live in session scratchpad (/tmp) — a host crash
+> deletes them; rebuild from the two-command pattern (lane run →
+> flatten read), log appends to the same chain log.
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
-> Standing discipline: dual review per task; push as you go; Paciorek
-> tests green before any stage-2 task; ZERO c2 before Task 13; gates
-> stop for owner with evidence verbatim from artifacts; bring the
-> Task-11 evidence pack to the owner when the lanes land. No code, no
-> re-solves yet.
+> Standing discipline: dual review per task; push as you go; ZERO c2
+> before Task 13; gates stop for owner with evidence verbatim from
+> artifacts; bring the Task-11 evidence pack to the owner when the
+> lanes land.
 
 > **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
 > ruling below; all 8 tasks resolved, dual review per task, every

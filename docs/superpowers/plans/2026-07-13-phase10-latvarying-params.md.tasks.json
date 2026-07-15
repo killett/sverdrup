@@ -79,7 +79,7 @@
       "nativeId": 8,
       "name": "stage1-lanes",
       "subject": "Task 7: Stage-1 execution — lane-0 + V runs, winners, stage-1 flattening reading",
-      "status": "in_progress",
+      "status": "completed",
       "blockedBy": [
         6
       ],
@@ -175,5 +175,5 @@
       "description": "**Goal:** Close banner with the full evidence trail.\n\n**Files:**\n- Modify: PROGRESS.md\n\n**Acceptance Criteria:**\n- [ ] Close banner: verdict + bands, acceptance triplet, coverage, G_pre -> G_post + companions, touch tally, external sweep counts, deliverables, MIOST-B next-decision pointer (owner item, representation-dominated note)\n- [ ] Deferred-items hygiene: invariant-12 deferral entry retired (migrated, not duplicated)\n- [ ] Everything pushed; git status clean\n\n**Verify:** PROGRESS close block; git log --oneline -5 shows the trail; clean tree.\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"git status --short && git log --oneline -5\", \"acceptanceCriteria\": [\"close banner complete\", \"deferral entry retired\", \"all pushed, clean tree\"], \"modelTier\": \"mechanical\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-13T18:30:00Z"
+  "lastUpdated": "2026-07-15T07:21:09Z"
 }
