@@ -1,5 +1,53 @@
 # Sverdrup — Progress notebook
 
+> **✅ PHASE 10 — lat-varying OI parameters (invariant-12 B): CLOSED
+> 2026-07-15 with the PRE-REGISTERED NEGATIVE RESULT. PRIMARY verdict:
+> "improvements within band" (pinned wording) — the lat-varying
+> parameters do not beat the tuned-constant lane. NO c2 touch spent
+> phase-wide (phase-10 OI product tally: 0; gate 2 never armed).
+> Tasks 10–15 CLOSED AS SUPERSEDED per the plan's branch semantics
+> (Phase-8 Task-13 precedent); owner gates 1/2 never executed —
+> nothing they gate occurred (no ship, no c2 touch, registry "oi"
+> unchanged).**
+> - VERDICT (evidence: `phase10.oi.lanes.verdict`, 2026-07-15T14:07Z,
+>   protocol_sha 9982aad9…): VL winner vs lane-0 winner Δµ=+0.000124
+>   vs band 0.000373 (0.33× band); Δλx=+0.42 km vs band 18.97 km,
+>   direction against VL; branch=within-band. L-only lane NOT run
+>   (sealed budget: four-lane n=5 < floor 8). Stage-1 + stage-2 blocks
+>   below carry the full numbers; dual review passed on both (spec 6/6,
+>   adversarial 5/5 incl. selection-suppression void).
+> - THE INSTRUMENT FINDING STANDS INDEPENDENTLY: under the frozen
+>   phase-9 frame, the V winner moved structure INTO the prior —
+>   G_pre_oi 0.27086964 → G_post 0.21518 (shrinkage +0.0557, ~20.6%)
+>   — while product skill stayed within band. Lat-varying variance is
+>   real but the s(x) calibration field was already absorbing it;
+>   invariant-12 is RESOLVED as "option B measured, not shipped".
+> - DELIVERABLES THAT STAND (all merged, suite 741/13/1 at close):
+>   `LatitudeField` + `LatitudeVaryingProvider` (typed field dispatch);
+>   `PaciorekGaussianDegrees` (PD-proven nonstationary kernel);
+>   OI kernel-factory dispatch seam (byte-identical baseline gate);
+>   registry METHODS/SHIPPED role-split; sealed-band read-time
+>   adjudication machinery (`lane_compare`, reusable); lane runner +
+>   flattening reader with the frozen-frame discipline.
+> - **SEPARATE OWNER ITEM (flagged, NO recommendation): tuned-constant
+>   election.** The lane-0 (stationary, tuned constants) winner:
+>   trial c0=−0.4380, log_L0=−0.1304 (L0≈0.878°), Lt=12.78 d →
+>   µ=0.8607234, λx=205.30 km, coverage 0.6764 — vs the current
+>   signed constants. Electing it would be a NEW product decision with
+>   its own acceptance chain; recorded here only.
+> - **TWO STANDING OWNER ITEMS (were queued for gate-1; gate
+>   superseded, so surfacing at close): (1) sealed extra constant
+>   n_lambda_resamples=200 (spectral cost rationale in the artifact);
+>   (2) wall_budget_h=12.0 EXECUTOR-SET (owner absent; provenance
+>   recorded; drove the screening contingency and the L-only skip).**
+> - Deferred-items hygiene: the invariant-12 deferral entry (below)
+>   retired → resolution recorded there by pointer to this banner.
+> - MIOST-B next-decision pointer (owner item): with lat-varying OI
+>   measured-not-shipped, the flagship question returns to MIOST-B
+>   representation (representation-dominated per the phase-9 OI
+>   contrast finding: MIOST under-disperses ~10× jet-concentrated; OI
+>   over-disperses ~34% with spatial structure winning selection).
+>
 > **▶ PHASE 10 DESIGN COMMITTED 2026-07-13, ⛔ STOPPED FOR OWNER FILE
 > REVIEW before writing-plans.** Spec:
 > `docs/superpowers/specs/2026-07-13-phase10-latvarying-params-design.md`
@@ -2665,10 +2713,10 @@ above confirm them**, so the spec stops lagging the decision.
 
 ## Deferred items / open questions
 
-- **Phase-10 = lat-varying METHOD parameters (invariant-12) — deferred TO Phase 10,
-  owner-committed; A/B boundary per spec §0; G_pre anchor at `phase9.g_pre_anchor`.**
-  (Owner obligation 7, first half.) Phase 10 will consume `phase9.g_pre_anchor` by
-  reference and set its bar on G gap REDUCTION.
+- ~~**Phase-10 = lat-varying METHOD parameters (invariant-12) — deferred TO Phase 10,
+  owner-committed.**~~ **RETIRED 2026-07-15:** executed as Phase 10 and closed with the
+  pre-registered NEGATIVE result (measured, not shipped) — see the Phase-10 close banner
+  at the top of this file. G-shrinkage finding recorded there; no duplicate content here.
 
 - **Next release — relax the conda recipe Python cap.** `pyproject.toml` now declares
   `requires-python = ">=3.12"` (cap dropped, commit `e236591`; source uses only stable stdlib

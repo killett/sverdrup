@@ -101,7 +101,7 @@
       "nativeId": 10,
       "name": "negative-close",
       "subject": "Task 9: NEGATIVE-RESULT branch close (only if verdict negative)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         8
       ],
@@ -112,7 +112,7 @@
       "nativeId": 11,
       "name": "acceptance-chain",
       "subject": "Task 10: Winner re-solve → maps+hashes → mask → acceptance fit → stage-2 reading",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; plan branch semantics)",
       "blockedBy": [
         8
       ],
@@ -123,7 +123,7 @@
       "nativeId": 12,
       "name": "owner-gate-1",
       "subject": "Task 11: OWNER GATE 1 — j3-evidence review",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; plan branch semantics)",
       "blockedBy": [
         10
       ],
@@ -134,7 +134,7 @@
       "nativeId": 13,
       "name": "c2-touch-runner",
       "subject": "Task 12: c2 touch runner (built + fixture-tested BEFORE gate 2)",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; plan branch semantics)",
       "blockedBy": [
         10
       ],
@@ -145,7 +145,7 @@
       "nativeId": 14,
       "name": "owner-gate-2",
       "subject": "Task 13: OWNER GATE 2 — fresh-auth SINGLE c2 touch",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; plan branch semantics)",
       "blockedBy": [
         11,
         12
@@ -157,7 +157,7 @@
       "nativeId": 15,
       "name": "flip-commit",
       "subject": "Task 14: FLIP COMMIT — shipped_oi + SHIPPED update + σ-semantics + FULL external sweep",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; plan branch semantics)",
       "blockedBy": [
         13
       ],
@@ -168,12 +168,12 @@
       "nativeId": 16,
       "name": "phase-close",
       "subject": "Task 15: Phase close — PROGRESS + push",
-      "status": "pending",
+      "status": "superseded (negative Task-8 verdict; Task 9 carried the phase close banner)",
       "blockedBy": [
         14
       ],
       "description": "**Goal:** Close banner with the full evidence trail.\n\n**Files:**\n- Modify: PROGRESS.md\n\n**Acceptance Criteria:**\n- [ ] Close banner: verdict + bands, acceptance triplet, coverage, G_pre -> G_post + companions, touch tally, external sweep counts, deliverables, MIOST-B next-decision pointer (owner item, representation-dominated note)\n- [ ] Deferred-items hygiene: invariant-12 deferral entry retired (migrated, not duplicated)\n- [ ] Everything pushed; git status clean\n\n**Verify:** PROGRESS close block; git log --oneline -5 shows the trail; clean tree.\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"git status --short && git log --oneline -5\", \"acceptanceCriteria\": [\"close banner complete\", \"deferral entry retired\", \"all pushed, clean tree\"], \"modelTier\": \"mechanical\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-15T07:21:09Z"
+  "lastUpdated": "2026-07-15T14:29:01Z"
 }
