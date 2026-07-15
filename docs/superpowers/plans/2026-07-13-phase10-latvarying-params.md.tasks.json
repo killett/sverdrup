@@ -90,7 +90,7 @@
       "nativeId": 9,
       "name": "stage2-primary",
       "subject": "Task 8: Stage-2 execution — VL-joint (+ conditional L-only) + PRIMARY comparison",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         7
       ],

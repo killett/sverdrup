@@ -99,6 +99,43 @@
 > secondary row — LIVE bars tripped both arbitrary dev points exactly
 > as pre-registered).
 >
+> **⚖ STAGE-2 PRIMARY VERDICT 2026-07-15 (Task 8 COMPLETE): NEGATIVE —
+> "improvements within band" (pinned wording). The lat-varying
+> parameters do NOT beat the tuned-constant lane on the pre-registered
+> claim-bearing comparison.**
+> - VL lane: 30 Sobol + 2 warm-start anchors (lane-0 winner idx30, V
+>   winner idx31 — trials verified equal to the embedded winners at
+>   full precision), k=3, 7/32 admissible, screening 18092 s + 3 full
+>   re-scores. VL WINNER = idx31, the V-winner anchor re-evaluated
+>   FRESH (residuals npz sha256-identical to V's winner npz, computed
+>   8 h apart — determinism proven, not a copy; mtimes + inodes
+>   distinct): µ=0.8608470, λx=205.72 km. Released l1 bought nothing;
+>   no VL Sobol trial beat the warm start.
+> - PRIMARY VL-vs-lane0 (single seeded execution at read on the
+>   persisted pair; refusal clock first; protocol_sha 9982aad9…):
+>   Δµ=+0.000124 vs band 0.000373 (0.33× band); Δλx=+0.42 km vs band
+>   18.97 km — λ informative but the delta runs AGAINST VL (positive =
+>   coarser; the tie-break could never fire). Branch=within-band,
+>   positive=false. Verdict at `phase10.oi.lanes.verdict` (created
+>   2026-07-15T14:07:16Z) with the stage-1 secondary row COPIED
+>   verbatim (single-execution rule, provenance note) + L-only
+>   decision: NOT run — sealed budget four-lane n=5 < floor 8 (probe
+>   t_trial 1918.3 s, wall 12.0 h).
+> - DUAL REVIEW: spec-compliance 6/6 PASS (anchor equality, dev smoke
+>   precedence, protocol sha recomputed match, wording pin, k-slot
+>   accounting, full-precision number fidelity). Adversarial review
+>   all 5 angles HOLD — selection suppression EMPIRICALLY VOID (k=3
+>   set was exactly the top-3 admissible by screening µ; best excluded
+>   trial needs a +3.2e-3 screening→full shift while all 9 observed
+>   shifts are negative, range [−5.6e-3,−1.3e-3]); verdict arithmetic
+>   recomputed exact; timestamp scan clean (nothing postdates the
+>   verdict write); admissibility patterns near-identical across lanes
+>   (bar-driven exclusions only).
+> - **BRANCH RECORDED: NEGATIVE → Task 9 executes; Tasks 10–15 close
+>   as superseded (Phase-8 Task-13 branch-semantics precedent). NO c2
+>   touch spent — tally for the phase-10 OI product stays at 0.**
+> - Suite green at Task-8 close (counts in the close commit).
+>
 > **✅ STAGE-1 CLOSED 2026-07-15 (Task 7 COMPLETE). Fork-a mod-1
 > sentence: the outcome is STRUCTURE MOVED INTO THE PRIOR (G_post <
 > G_pre under the frozen frame); the product did NOT materially improve
