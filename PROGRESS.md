@@ -47,6 +47,46 @@
 >   representation (representation-dominated per the phase-9 OI
 >   contrast finding: MIOST under-disperses ~10× jet-concentrated; OI
 >   over-disperses ~34% with spatial structure winning selection).
+
+> **⚖ PHASE-10 POST-CLOSE OWNER RULINGS (2026-07-15, verbatim intent;
+> all four items from the close banner adjudicated):**
+> 1. **TUNED-CONSTANT ELECTION: DECLINED.** Rationale recorded:
+>    validation-vs-c2 incomparability (the one measured offset, MIOST
+>    0.8642→0.8573, puts the winner ≈0.854 on c2 — adjacent to the
+>    signed 0.853) + the resolution cliff (λx 205.3 vs 140.9 km;
+>    Lt 12.78 d + variance ×0.645 = smoothing trades resolution for
+>    µ). No touch, no chain; lane-0's winner stands as the
+>    tuned-constant REFERENCE MEASUREMENT; the OI product question
+>    re-opens at the global domain.
+> 2. **n_lambda_resamples=200: RATIFIED.** Ratification note:
+>    bootstrap-SE precision ≈ 1/√(2·199) ≈ 5% (ample for a 2×SE band);
+>    the λx tie-break was settled by SIGN (Δλx against VL), never by
+>    band width. RECORDING NOTE (executor): the protocol artifact is
+>    sha-SEALED — every recorded band carries the protocol_sha of the
+>    sealed bytes and the tamper test refuses a modified artifact — so
+>    this ratification note lives HERE, bound to that artifact's sha
+>    9982aad9…, NOT inside phase10_band_artifact.json (editing it
+>    would void the phase's own evidence chain).
+> 3. **12 h WALL BUDGET: RATIFIED as disclosed.** Two riders:
+>    (a) the negative result is SCOPED — "no lat-varying gain beyond
+>    the measured band UNDER THIS SEARCH (recorded n_sobol_per_lane:
+>    7 full-year equivalent / 30 screening per lane, 12 h wall,
+>    screening contingency active)" — a search-scoped negative, never
+>    a physics disproof (consistent with the recorded
+>    expectation-setter); (b) **STANDING RULE (project-wide):
+>    execution-blocking owner inputs get a pre-registered default in
+>    the plan, or the task WAITS — executor-set values remain a
+>    disclosed deviation, not a convention.**
+> 4. **MIOST-B: DECLINED** — the §0.2 post-reading owner decision, now
+>    made with the reading in hand: on OI (prior-side variance's best
+>    case) V relocated ~20.6% of structure with zero skill movement
+>    and l1 bought nothing; MIOST's deficit is
+>    representation-dominated per its own record. Revisit only at the
+>    global domain. **CLOSING LINE, invariant-12 (thread opened in
+>    Phase 5): deferral honored, vehicle built, measurement clean,
+>    answer = "the calibration layer already had it."**
+> No further phase queued — the next milestone (global domain,
+> production integration, or elsewhere) is the owner's call.
 >
 > **▶ PHASE 10 DESIGN COMMITTED 2026-07-13, ⛔ STOPPED FOR OWNER FILE
 > REVIEW before writing-plans.** Spec:
