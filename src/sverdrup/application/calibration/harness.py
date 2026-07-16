@@ -1090,6 +1090,15 @@ def build_evidence(
         },
     }
 
+    # Phase-11 report-only instruments (spec §7): reference-free rows on the
+    # product mean maps. NEVER gate-bearing; present on both return paths so
+    # every future pack carries it. Import is local to avoid a module-load
+    # cycle (application.eval_context -> eval.* is cycle-free, but harness is
+    # imported by orbit_geometry for atomic_write_json).
+    from sverdrup.application.eval_context import report_only_instruments_block
+
+    evidence["report_only_instruments"] = report_only_instruments_block(desc.mean_maps)
+
     if winner is None:
         evidence["selection"]["negative_result"] = True
         evidence["selection"]["stop_banner"] = (

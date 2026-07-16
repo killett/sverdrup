@@ -815,3 +815,52 @@ def test_definition_string_contains_spec_wording() -> None:
     assert "pooled" in defn.lower(), (
         f"definition must reference pooled worst-region; got: {defn!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase-11 dormant wiring (Task 6): report_only_instruments in every pack
+# ---------------------------------------------------------------------------
+
+_P11_SCHEMA_KEYS = {
+    "schema_version",
+    "evaluator",
+    "evaluator_version",
+    "metrics",
+    "context_keys_available",
+    "context_keys_used",
+    "params",
+    "n_modes",
+    "flags",
+    "provenance",
+}
+
+
+@pytest.mark.skipif(
+    not (
+        MIOST_DESCRIPTOR.mean_maps.exists()
+        and MIOST_DESCRIPTOR.var_maps.exists()
+        and MIOST_DESCRIPTOR.scope_config.exists()
+        and MIOST_DESCRIPTOR.mask_artifact.exists()
+    ),
+    reason="full data artifacts absent (data/ours/ untracked)",
+)
+def test_report_only_instruments_block_in_dev_scope_pack() -> None:
+    """Phase-11 dormant-wiring gate: a dev-scope harness pack carries the
+    report_only_instruments block with >= 2 full-schema rows.
+
+    Bug caught: the report-only instrument pattern silently absent from
+    future evidence packs (the exact wiring-drift failure the architecture
+    audit found for track_power)."""
+    from sverdrup.application.calibration.harness import run_harness
+
+    evidence = run_harness(MIOST_DESCRIPTOR, scope="dev")
+    block = evidence["report_only_instruments"]
+    assert block["mean_maps_sha256"]
+    rows = block["rows"]
+    assert len(rows) >= 2
+    for row in rows:
+        assert set(row) == _P11_SCHEMA_KEYS, row["evaluator"]
+    names = {r["evaluator"] for r in rows}
+    assert "spectral_fidelity" in names
+    fid = next(r for r in rows if r["evaluator"] == "spectral_fidelity")
+    assert any(f.startswith("wedge_exclusion:") for f in fid["flags"])

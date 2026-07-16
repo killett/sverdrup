@@ -9,11 +9,15 @@ import numpy as np
 
 from sverdrup.adapters.executor_dask import DaskExecutor, ExecutorConfig
 from sverdrup.adapters.storage_fsspec import FsspecResultSink
+from sverdrup.application.eval_context import (
+    build_eval_context,
+    build_report_rows,
+    default_registry,
+)
 from sverdrup.application.splits import make_splits
 from sverdrup.application.tiling import TilePartition, TilingCoordinator
 from sverdrup.application.uow import UnitOfWork
 from sverdrup.core.distribution import PredictiveDistribution
-from sverdrup.core.evaluation import ContextKey, EvalContext, Registry
 from sverdrup.core.geometry import Tile, Window
 from sverdrup.core.grid import GridSpec, PointSet
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
@@ -22,8 +26,6 @@ from sverdrup.core.product import Product
 from sverdrup.core.seeding import derive_seed
 from sverdrup.distributions.blend import BlendedDistribution, BlendInput, BlendOperator
 from sverdrup.distributions.persisted import PersistedPoints
-from sverdrup.eval.accuracy import Accuracy
-from sverdrup.eval.calibration import Calibration
 
 Range = tuple[float, float]
 
@@ -266,25 +268,37 @@ def _evaluate_blended(
     eval-point predictives against the withheld CryoSat-2 along-track. Same evaluator spine
     as Phase-1 ``_evaluate``; only the source of the eval mean/var differs.
     """
-    # ORBIT_GEOMETRY intentionally absent until the Task-6 context builder
-    # wires the real artifact-backed bag (the old stub bag died with the
-    # Phase-11 GroundTrack rebuild).
-    items: dict[ContextKey, object] = {}
-    result: dict[str, np.ndarray] = {"field": gb.mean, "grid_mean": gb.mean}
+    result: dict[str, Any] = {"field": gb.mean, "grid_mean": gb.mean}
+    if grid.crs.is_geographic:
+        # map-plane evaluators (fidelity; groundtrack once a geometry
+        # artifact is wired) need degree axes + a day axis
+        result["fields"] = np.asarray(gb.mean)[None]
+        result["grid_lon"] = np.asarray(grid.x, dtype=float)
+        result["grid_lat"] = np.asarray(grid.y, dtype=float)
+    truth_bag: dict[str, Any] | None = None
+    withheld_bag: dict[str, Any] | None = None
     if inp.mode == "OSSE":
         truth = np.asarray(cast(Any, inp.source).truth(inp.output_times[0], grid))
-        items[ContextKey.TRUTH] = {"field": truth}
-        items[ContextKey.WITHHELD_OBS] = {"values": truth.ravel()}
+        truth_bag = {"field": truth}
+        withheld_bag = {"values": truth.ravel()}
         result["eval_mean"] = gb.mean.ravel()
         result["eval_var"] = gb.marginal_variance().ravel()
     elif eval_locs is not None and eval_mean is not None and withheld_vals is not None:
-        items[ContextKey.WITHHELD_OBS] = {"values": withheld_vals}
+        withheld_bag = {"values": withheld_vals}
         result["eval_mean"] = eval_mean
         result["eval_var"] = cast(np.ndarray, eval_var)
-    ctx = EvalContext(items)
-    reg = Registry([Accuracy(), Calibration()])
-    scores: dict[str, Any] = dict(reg.run(result, ctx))
-    scores["context_keys"] = {k.name for k in ctx.keys()}
+    # ORBIT_GEOMETRY enters only via a real geometry artifact + product
+    # mission attr — pipeline experiments carry neither, so groundtrack
+    # stays inapplicable here (absence means absence).
+    built = build_eval_context(
+        result, field_kind="mean", truth=truth_bag, withheld=withheld_bag
+    )
+    scores: dict[str, Any] = {
+        "report_rows": build_report_rows(
+            default_registry(), built.result, built.context
+        )
+    }
+    scores["context_keys"] = {k.name for k in built.context.keys()}
     scores["fidelity"] = gb.fidelity.name
     scores["blend_transforms"] = [t.kind.name for t in gb.provenance.transformations]
     # Record the GMRF eval-point moment-crossfade simplification (a flag, not a hidden
@@ -347,19 +361,21 @@ def _evaluate(
     """
     pt = product.per_time[0]
     base = pt.base
-    # ORBIT_GEOMETRY intentionally absent until the Task-6 context builder
-    # wires the real artifact-backed bag (the old stub bag died with the
-    # Phase-11 GroundTrack rebuild).
-    items: dict[ContextKey, object] = {}
-    result: dict[str, np.ndarray] = {
+    result: dict[str, Any] = {
         "field": base.fields.mean,
         "grid_mean": base.fields.mean,
     }
+    if grid.crs.is_geographic:
+        result["fields"] = np.asarray(base.fields.mean)[None]
+        result["grid_lon"] = np.asarray(grid.x, dtype=float)
+        result["grid_lat"] = np.asarray(grid.y, dtype=float)
+    truth_bag: dict[str, Any] | None = None
+    withheld_bag: dict[str, Any] | None = None
     if inp.mode == "OSSE":
         truth = cast(Any, inp.source).truth(inp.output_times[0], grid)
         truth = np.asarray(truth)
-        items[ContextKey.TRUTH] = {"field": truth}
-        items[ContextKey.WITHHELD_OBS] = {"values": truth.ravel()}
+        truth_bag = {"field": truth}
+        withheld_bag = {"values": truth.ravel()}
         result["eval_mean"] = base.fields.mean.ravel()
         result["eval_var"] = base.marginal_variance().ravel()
     elif (
@@ -367,11 +383,18 @@ def _evaluate(
         and withheld_vals is not None
         and pt.eval_points is not None
     ):
-        items[ContextKey.WITHHELD_OBS] = {"values": withheld_vals}
+        withheld_bag = {"values": withheld_vals}
         result["eval_mean"] = pt.eval_points.mean
         result["eval_var"] = pt.eval_points.variance
-    ctx = EvalContext(items)
-    reg = Registry([Accuracy(), Calibration()])
-    scores: dict[str, Any] = dict(reg.run(result, ctx))
-    scores["context_keys"] = {k.name for k in ctx.keys()}
+    # ORBIT_GEOMETRY enters only via a real geometry artifact + product
+    # mission attr — pipeline experiments carry neither (absence means absence).
+    built = build_eval_context(
+        result, field_kind="mean", truth=truth_bag, withheld=withheld_bag
+    )
+    scores: dict[str, Any] = {
+        "report_rows": build_report_rows(
+            default_registry(), built.result, built.context
+        )
+    }
+    scores["context_keys"] = {k.name for k in built.context.keys()}
     return scores

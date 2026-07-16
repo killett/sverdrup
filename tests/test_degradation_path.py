@@ -18,6 +18,7 @@ from sverdrup.application.tiling import LonLatPartition, ScaleAwareHalo
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.core.provenance import KnownBias
 from sverdrup.distributions.coherent import PerturbEnsembleDegradation, select_driver
+from tests.helpers import row_metric
 
 
 def _inputs(tmp_path_factory, n_lon):
@@ -66,7 +67,7 @@ def test_degradation_runs_and_records_coherence_loss(tmp_path_factory):
         t.known_bias is KnownBias.DEGRADED_COHERENCE
         for t in gb.provenance.transformations
     )
-    assert np.isfinite(scores["rmse"])
+    assert np.isfinite(row_metric(scores, "accuracy", "rmse"))
 
 
 def test_degradation_mean_has_no_silent_seam(tmp_path_factory):

@@ -16,10 +16,19 @@
 > optional_context `c851d83` (band [100.0, 219.0] km — Lx = BOX EXTENT
 > 876 km pinned by test; Registry.run collision note pulled forward);
 > T5 integrity test + EffectiveResolution fix `e3a6f82` (suite
-> 785/13/1). GOTCHAS: full suite ≈ 22–24 min (run in background);
+> 785/13/1). T6 COMPLETE: eval_context builder (field_kind single
+> source; geometry filtered by assimilated_missions; ONE mask
+> derivation, wedge_masks_sha in BOTH consumer rows — pin 1b) +
+> default_registry (EffectiveResolution excluded, recorded decision) +
+> build_report_rows (full schema, visible skip rows, guards propagate)
+> + BOTH pipeline sites migrated (scores → report_rows; six enumerated
+> consumers on tests/helpers.row_metric) + harness packs gain
+> report_only_instruments (both return paths; dev-scope dormant-wiring
+> test 6.7 s) + fidelity empty-band {} skip guard for tiny grids.
+> Suite 799/13/1. GOTCHAS: full suite ≈ 20–24 min (run in background);
 > statistic small-sample offset on steep isotropic nulls documented in
-> test fixtures. **NEXT: Task 6 — context builder + default_registry +
-> row builder + pipeline migration (owner pin 1b provable mask sharing).**
+> test fixtures. **NEXT: Task 7 — retro one-shot (derive real geometry
+> artifact, score MIOST + OI mean maps, evidence at phase11.retro.*).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
 

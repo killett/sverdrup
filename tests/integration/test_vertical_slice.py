@@ -1,8 +1,11 @@
+import numpy as np
+
 from sverdrup.adapters.executor_dask import ExecutorConfig
 from sverdrup.adapters.odc.fixtures import FixtureSource
 from sverdrup.application.pipeline import PipelineInputs, run_pipeline
 from sverdrup.core.evaluation import ContextKey
 from sverdrup.eval.calibration import assert_relaxes_to_prior
+from tests.helpers import row_metric
 
 
 def _grid_cfg():
@@ -31,7 +34,9 @@ def test_osse_slice_produces_truth_rmse_and_calibration(tmp_path):
     )
     product, scores = run_pipeline(inp)
     assert product.times() == [2.0]
-    assert "rmse" in scores and "reduced_chi2" in scores and "coverage_1sigma" in scores
+    assert np.isfinite(row_metric(scores, "accuracy", "rmse"))
+    assert np.isfinite(row_metric(scores, "calibration", "reduced_chi2"))
+    assert np.isfinite(row_metric(scores, "calibration", "coverage_1sigma"))
 
 
 def test_ose_slice_uses_withheld_cryosat_not_truth(tmp_path):
@@ -45,7 +50,7 @@ def test_ose_slice_uses_withheld_cryosat_not_truth(tmp_path):
     )
     product, scores = run_pipeline(inp)
     # truth-based evaluator did not fire on a grid truth; rmse is vs withheld obs.
-    assert "rmse" in scores
+    assert np.isfinite(row_metric(scores, "accuracy", "rmse"))
     # ORBIT_GEOMETRY left this set with the Phase-11 GroundTrack rebuild (the
     # pipeline's stub bag died); the Task-6 builder restores the real one.
     assert scores["context_keys"] == {ContextKey.WITHHELD_OBS.name}

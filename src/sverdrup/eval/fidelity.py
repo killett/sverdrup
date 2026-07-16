@@ -191,6 +191,10 @@ class SpectralFidelity:
         # ring geometry (k centers, mode counts) is grid-fixed; power varies by day
         k, _e0, n_modes = ring_spectrum(*day_powers[0], dk=dk, exclude=exclude)
         band = (k >= 1.0 / hi_km) & (k <= 1.0 / lo_km) & (n_modes > 0)
+        if int(band.sum()) < 2:
+            # a grid whose pinned band holds fewer than 2 populated rings
+            # cannot support a slope — visible skip row via the {} precedent
+            return {}
         k_band, n_band = k[band], n_modes[band]
         log_k = np.log10(k_band)
         day_slopes = []

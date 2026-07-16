@@ -19,6 +19,7 @@ from sverdrup.core.provenance import UncertaintyProvenance
 from sverdrup.core.types import UncertaintyCapability
 from sverdrup.distributions.blend import BlendInput, BlendOperator
 from sverdrup.distributions.persisted import PersistedDistribution, PersistedFields
+from tests.helpers import row_metric
 
 
 def _pd(grid: GridSpec, mean: np.ndarray, sigma: np.ndarray) -> PersistedDistribution:
@@ -159,4 +160,4 @@ def test_global_area_weighted_run(tmp_path):
     gb = blends[0]
     rmse = area_weighted_rmse(np.zeros_like(gb.mean), gb.grid)
     assert np.isfinite(rmse)
-    assert np.isfinite(scores["rmse"])
+    assert np.isfinite(row_metric(scores, "accuracy", "rmse"))

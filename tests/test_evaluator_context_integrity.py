@@ -25,25 +25,10 @@ from typing import Any
 import numpy as np
 import pytest
 
+from sverdrup.core.context_spy import SpyItems
 from sverdrup.core.evaluation import ContextKey, EvalContext, Evaluator, MetricScope
 from sverdrup.eval import ALL_EVALUATORS
 from tests.test_eval_resolution import _track
-
-
-class _SpyItems(dict[ContextKey, object]):
-    """Items mapping that records reads (``__getitem__`` and ``.get``)."""
-
-    def __init__(self, data: dict[ContextKey, object]) -> None:
-        super().__init__(data)
-        self.reads: set[ContextKey] = set()
-
-    def __getitem__(self, key: ContextKey) -> object:
-        self.reads.add(key)
-        return super().__getitem__(key)
-
-    def get(self, key: ContextKey, default: object = None) -> object:
-        self.reads.add(key)
-        return super().get(key, default)
 
 
 def _real_axes() -> tuple[np.ndarray, np.ndarray]:
@@ -131,7 +116,7 @@ def _fixtures() -> dict[str, tuple[dict[str, Any], dict[ContextKey, object]]]:
 def _check_integrity(
     ev: Evaluator, result: object, items: dict[ContextKey, object]
 ) -> None:
-    spy = _SpyItems(items)
+    spy = SpyItems(items)
     out = ev.evaluate(result, EvalContext(spy))
     assert out, "fixture must exercise the non-skip path"
     assert ev.required_context <= spy.reads, (

@@ -14,6 +14,8 @@ from typing import Any, cast
 import numpy as np
 import pytest
 
+from tests.helpers import row_metric
+
 pytest.importorskip("sksparse")  # noqa: E402
 
 from sverdrup.core.geometry import Tile, Window  # noqa: E402
@@ -225,14 +227,14 @@ def test_gmrf_pipeline_osse_and_ose(tmp_path_factory):
     osse = run_tiled_pipeline(
         _gmrf_region_inputs(tmp_path_factory, "OSSE"), _partition(3)
     )
-    assert np.isfinite(osse[1]["rmse"])
-    assert np.isfinite(osse[1]["reduced_chi2"])
-    assert np.isfinite(osse[1]["coverage_1sigma"])
+    assert np.isfinite(row_metric(osse[1], "accuracy", "rmse"))
+    assert np.isfinite(row_metric(osse[1], "calibration", "reduced_chi2"))
+    assert np.isfinite(row_metric(osse[1], "calibration", "coverage_1sigma"))
     ose = run_tiled_pipeline(
         _gmrf_region_inputs(tmp_path_factory, "OSE"), _partition(3)
     )
     assert ContextKey.TRUTH.name not in ose[1]["context_keys"]
-    assert np.isfinite(ose[1]["rmse"])
+    assert np.isfinite(row_metric(ose[1], "accuracy", "rmse"))
 
 
 def test_gmrf_blend_provenance_and_first_class(tmp_path_factory):

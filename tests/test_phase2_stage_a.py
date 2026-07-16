@@ -26,6 +26,7 @@ from sverdrup.core.evaluation import ContextKey
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.core.provenance import KnownBias, TransformKind
 from sverdrup.core.types import CovFidelity
+from tests.helpers import row_metric
 
 _REGION: dict[str, Any] = dict(
     lon_range=(-64.0, -56.0),
@@ -147,16 +148,16 @@ def test_stage_a_withheld_eval_osse_and_ose(osse_multi, ose_multi):
     #   OSE scores come from the blended eval-point predictives, not the gridded blend.
     # Bug caught: reconstructing eval from the grid (invariant 4/6 violation), or NaN scores.
     osse_scores = osse_multi[1]
-    assert np.isfinite(osse_scores["rmse"])
-    assert np.isfinite(osse_scores["reduced_chi2"])
-    assert np.isfinite(osse_scores["coverage_1sigma"])
+    assert np.isfinite(row_metric(osse_scores, "accuracy", "rmse"))
+    assert np.isfinite(row_metric(osse_scores, "calibration", "reduced_chi2"))
+    assert np.isfinite(row_metric(osse_scores, "calibration", "coverage_1sigma"))
 
     ose_scores = ose_multi[1]
     # OSE used withheld CryoSat-2, never the gridded truth
     assert ContextKey.TRUTH.name not in ose_scores["context_keys"]
     assert ContextKey.WITHHELD_OBS.name in ose_scores["context_keys"]
-    assert np.isfinite(ose_scores["rmse"])
-    assert np.isfinite(ose_scores["reduced_chi2"])
+    assert np.isfinite(row_metric(ose_scores, "accuracy", "rmse"))
+    assert np.isfinite(row_metric(ose_scores, "calibration", "reduced_chi2"))
 
 
 def test_stage_a_provenance_and_withholding_exemplars(osse_multi):
