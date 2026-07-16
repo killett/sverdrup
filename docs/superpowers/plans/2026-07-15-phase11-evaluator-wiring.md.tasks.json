@@ -60,7 +60,7 @@
       "id": 12,
       "planTask": 8,
       "subject": "Task 8: Policy seam module (application/policy.py)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Comparison-only pairwise-criterion chain: sort() (unbanded-only, refuses banded) + winner() (sequential pinned-order reduction, always audited).\n\n**Files:** Create src/sverdrup/application/policy.py; Test tests/test_policy.py\n\n**Acceptance Criteria:**\n- [ ] sort() with any banded criterion -> ValueError; intransitivity property test constructs a~b, b~c, a-beats-c and asserts winner() deterministic in list order\n- [ ] sort() single unbanded criterion byte-identical to sorted(key=...) over 200 seeded-random lists, ties/stability included (gate-iii property test lives here)\n- [ ] winner() -> (winner, [[StageAudit,...],...]); StageAudit = {criterion, verdict, detail}; all-TIE keeps FIRST candidate (folds keep-running-winner semantics)\n- [ ] Criterion = {name, compare(a,b)->Verdict, banded, detail}; Verdict = A_WINS|B_WINS|TIE; seam computes NO bands, has NO conditional semantics\n\n**Verify:** pixi run pytest tests/test_policy.py -v -> all PASS\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/policy.py\", \"tests/test_policy.py\"], \"verifyCommand\": \"pixi run pytest tests/test_policy.py -v\", \"acceptanceCriteria\": [\"banded sort refused + intransitivity documented\", \"cmp-vs-key byte identity property test\", \"audit schema + all-TIE-keeps-first\"], \"modelTier\": \"standard\"}\n```"
     },
     {
