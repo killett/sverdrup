@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import cast
 
+from sverdrup.application.policy import Criterion, LexicographicPolicy, Verdict
 from sverdrup.application.tuning.trial import TrialRecord
 from sverdrup.core.types import UncertaintyCapability
 
@@ -76,7 +78,14 @@ class ConstrainedObjective:
         return all(b.passes(scores) for b in self.bars)
 
     def rank(self, records: list[TrialRecord]) -> list[TrialRecord]:
-        """Return admissible feasible records sorted ascending by the primary objective."""
+        """Return admissible feasible records sorted ascending by the primary objective.
+
+        The sort delegates to the Phase-11 Policy seam with a single unbanded
+        lower-is-better criterion — byte-identical order to the legacy
+        ``sorted(ok, key=lambda r: r.scores[primary])`` (gate-iii identity
+        property test in tests/test_tuning_objective.py). Bar filter and
+        :class:`NoAdmissibleTrial` stay HERE — the seam only compares.
+        """
         ok = [
             r
             for r in records
@@ -86,4 +95,18 @@ class ConstrainedObjective:
             raise NoAdmissibleTrial(
                 "no admissible trial — loosen the bar or widen the search"
             )
-        return sorted(ok, key=lambda r: r.scores[self.primary])  # type: ignore[index]
+        primary = self.primary
+
+        def _lower_primary(a: TrialRecord, b: TrialRecord) -> Verdict:
+            va = cast("dict[str, float]", a.scores)[primary]
+            vb = cast("dict[str, float]", b.scores)[primary]
+            if va < vb:
+                return Verdict.A_WINS
+            if vb < va:
+                return Verdict.B_WINS
+            return Verdict.TIE
+
+        policy: LexicographicPolicy[TrialRecord] = LexicographicPolicy(
+            (Criterion(primary, _lower_primary),)
+        )
+        return policy.sort(ok)

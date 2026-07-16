@@ -67,7 +67,7 @@
       "id": 13,
       "planTask": 9,
       "subject": "Task 9: Site migration 1 - ConstrainedObjective.rank (gate iii)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [12],
       "description": "**Goal:** Delegate the sort to the seam; bar-filter + NoAdmissibleTrial stay put; byte-identical order. Gate green in THIS commit.\n\n**Files:** Modify src/sverdrup/application/tuning/objective.py (rank body only); Test additions to tests/test_tuning_objective.py\n\n**Acceptance Criteria:**\n- [ ] rank() = same filter, then LexicographicPolicy single unbanded lambda_x criterion .sort(ok)\n- [ ] ALL existing objective tests pass UNCHANGED\n- [ ] Gate (iii): identity test written against CURRENT implementation FIRST (green pre-migration, kept): 200 seeded-random TrialRecord lists, rank() identical per position to sorted(ok, key=...), ties included\n\n**Verify:** pixi run pytest tests/test_tuning_objective.py tests/test_policy.py -v && pixi run test -> green in the same commit\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/tuning/objective.py\", \"tests/test_tuning_objective.py\"], \"verifyCommand\": \"pixi run pytest tests/test_tuning_objective.py tests/test_policy.py -v\", \"acceptanceCriteria\": [\"existing tests unchanged\", \"identity property test green pre- and post-migration\", \"gate green in same commit\"], \"modelTier\": \"standard\"}\n```"
     },
