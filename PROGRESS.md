@@ -87,6 +87,47 @@
 >    answer = "the calibration layer already had it."**
 > No further phase queued — the next milestone (global domain,
 > production integration, or elsewhere) is the owner's call.
+
+> **🔍 ARCHITECTURE-AUDIT FINDING (owner, 2026-07-15, recorded
+> verbatim-intent): the evaluator flexibility commitment
+> (`evaluate(result, context)`, `required_context`,
+> `Registry.applicable`, reference-based + reference-free families,
+> vector scores + bars-as-data) was implemented faithfully in
+> `core/evaluation.py` + `eval/` — and then Phases 4b–10 built the
+> acceptance spine BESIDE it: no gate or tuning path consults the
+> registry; GroundTrack has produced zero numbers in any evidence
+> pack; the reference-free family is unexercised. Withheld-data
+> became the only OPERATIVE test by wiring drift, not by design.**
+> WHAT REMAINS (a small standalone phase, if/when elected — no method
+> work, no c2):
+> 1. Rebuild GroundTrack to earn its declaration: derive oriented
+>    probe wavevectors FROM the ORBIT_GEOMETRY it already requires
+>    (per-mission inter-track spacing + ascending/descending
+>    orientations); score power against a LOCAL spectral baseline,
+>    not total power; document necessary-not-sufficient in the class.
+>    Its current declared-but-unread context is an integrity smell —
+>    required_context must mean consumed.
+> 2. Build the missing spectral-FIDELITY evaluator (wavenumber-slope
+>    sanity vs expected cascade); note `eval/spectral.py` is λx
+>    infrastructure, not this.
+> 3. Wire both into the STANDING report-only instrument pattern
+>    (evidence packs consume `Registry.applicable` for report rows;
+>    bars unchanged; promotion path = the existing pre-registration
+>    mechanism). MEAN maps only — σ maps legitimately carry track
+>    pattern (posterior variance tracks sampling geometry; Phase-8
+>    theorem) and must not be scored by it.
+> 4. RETROACTIVE one-shot: run the rebuilt metric on the shipped
+>    MIOST and signed OI mean maps; record the numbers (directly
+>    relevant to the product conversation).
+> 5. Extract the selection-Policy seam (lexicographic logic now
+>    triplicated: objective sort, folds.select, lane_compare — rule
+>    of three met).
+> 6. Reviewer's note for the record: six phases of gate reviews
+>    checked rubric compliance and never asked why track_power was
+>    absent — pre-registered-rubric auditing catches deviations from
+>    the plan, not omissions from the vision. Periodic architecture
+>    audits against founding commitments are the countermeasure; this
+>    was the first.
 >
 > **▶ PHASE 10 DESIGN COMMITTED 2026-07-13, ⛔ STOPPED FOR OWNER FILE
 > REVIEW before writing-plans.** Spec:
@@ -2757,6 +2798,12 @@ above confirm them**, so the spec stops lagging the decision.
   owner-committed.**~~ **RETIRED 2026-07-15:** executed as Phase 10 and closed with the
   pre-registered NEGATIVE result (measured, not shipped) — see the Phase-10 close banner
   at the top of this file. G-shrinkage finding recorded there; no duplicate content here.
+
+- **Evaluator-registry standalone phase (owner-electable, no method work, no c2):
+  GroundTrack rebuild + spectral-fidelity evaluator + report-only registry wiring +
+  retroactive one-shot on shipped/signed mean maps + selection-Policy seam extraction.**
+  Canonical content in the 2026-07-15 ARCHITECTURE-AUDIT FINDING block at the top of
+  this file — migrate (don't duplicate) into the design doc if elected.
 
 - **Next release — relax the conda recipe Python cap.** `pyproject.toml` now declares
   `requires-python = ">=3.12"` (cap dropped, commit `e236591`; source uses only stable stdlib
