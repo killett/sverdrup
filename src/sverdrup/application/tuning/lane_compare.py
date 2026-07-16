@@ -32,6 +32,7 @@ from typing import Any
 
 import numpy as np
 
+from sverdrup.application.policy import Criterion, LexicographicPolicy, Verdict
 from sverdrup.eval.skill_score import leaderboard_nrmse
 from sverdrup.eval.spectral import (
     ShortTrackError,
@@ -355,6 +356,121 @@ def _lambda_usable(bv: BandValues, protocol: BandProtocol) -> tuple[bool, str | 
     return True, None
 
 
+def _one_sided_criteria(bv: BandValues, usable: bool) -> tuple[Criterion[str], ...]:
+    """Primary-verdict criteria closing over ONE :class:`BandValues`.
+
+    Orientation: challenger = side a (the lat lane), incumbent = side b
+    (lane-0). µ stage: A_WINS iff Δµ > band; B_WINS iff a is WORSE beyond
+    band (decisive non-positive — the legacy ``abs(Δµ) <= band`` gate on the
+    λ stage, expressed as a verdict); TIE inside the band. λ stage (present
+    iff usable — degradation = the site DROPPING the criterion, the seam has
+    no conditionals): A_WINS iff −Δλx > band (finer beyond band), else TIE.
+    """
+
+    def _mu(a: str, b: str) -> Verdict:
+        if bv.delta_mu > bv.band_mu:
+            return Verdict.A_WINS
+        if -bv.delta_mu > bv.band_mu:
+            return Verdict.B_WINS
+        return Verdict.TIE
+
+    def _lam(a: str, b: str) -> Verdict:
+        if -bv.delta_lambda_x > bv.band_lambda_x:
+            return Verdict.A_WINS
+        return Verdict.TIE
+
+    criteria: list[Criterion[str]] = [Criterion("mu", _mu, banded=True)]
+    if usable:
+        criteria.append(Criterion("lambda_x", _lam, banded=True))
+    return tuple(criteria)
+
+
+def adjudicate_primary(bv: BandValues, usable: bool) -> tuple[str, bool]:
+    """Seam-backed PRIMARY branch selection (the reproduction entry point).
+
+    Accepts :class:`BandValues` directly — computed by the site at read
+    time, or RECONSTRUCTED from persisted verdict fields (bands-as-data;
+    gate ii replays the Phase-10 verdict through this function).
+
+    Args:
+        bv: The pair's band values (side a = the candidate lane).
+        usable: The :func:`_lambda_usable` outcome (λ criterion dropped
+            when False).
+
+    Returns:
+        ``(branch, positive)`` with branch in
+        {"beats-mu", "beats-lambda-at-flat-mu", "within-band"} — emitted
+        from the audit trail, verbatim mapping.
+    """
+    policy: LexicographicPolicy[str] = LexicographicPolicy(
+        _one_sided_criteria(bv, usable)
+    )
+    _winner, audits = policy.winner(["lane0", "candidate"])
+    last = audits[0][-1]
+    if last.criterion == "mu" and last.verdict == "A_WINS":
+        return "beats-mu", True
+    if last.criterion == "lambda_x" and last.verdict == "A_WINS":
+        return "beats-lambda-at-flat-mu", True
+    return "within-band", False
+
+
+def primary_wording(a_lane_label: str, positive: bool, branch: str) -> str:
+    """The pinned verdict wording (batch-2 fold 1), from the branch.
+
+    A non-positive outcome reads "improvements within band", never "worse".
+    """
+    return (
+        f"{a_lane_label} beats lane-0 beyond the measured band ({branch})"
+        if positive
+        else "improvements within band"
+    )
+
+
+def adjudicate_lane_pair(bv: BandValues, usable: bool) -> str:
+    """Seam-backed within-lane top-2 branch selection.
+
+    Symmetric variants of the criteria (|Δ| > band picks the side); the λ
+    criterion is DROPPED when unusable. Orientation: challenger = side a
+    (the µ leader), incumbent = side b (the runner-up).
+
+    Args:
+        bv: Band values for (leader, runner_up).
+        usable: The :func:`_lambda_usable` outcome.
+
+    Returns:
+        Branch in {"mu-clear", "mu-primary-degraded", "lambda-tiebreak",
+        "mu-leader-tie-held"} — emitted from the audit trail. The CALLER maps
+        the branch to the winning record (lambda-tiebreak → runner-up,
+        everything else → leader; legacy semantics).
+    """
+
+    def _mu(a: str, b: str) -> Verdict:
+        if abs(bv.delta_mu) > bv.band_mu:
+            return Verdict.A_WINS if bv.delta_mu > 0 else Verdict.B_WINS
+        return Verdict.TIE
+
+    def _lam(a: str, b: str) -> Verdict:
+        if -bv.delta_lambda_x > bv.band_lambda_x:
+            return Verdict.A_WINS
+        if bv.delta_lambda_x > bv.band_lambda_x:
+            return Verdict.B_WINS
+        return Verdict.TIE
+
+    criteria: list[Criterion[str]] = [Criterion("mu", _mu, banded=True)]
+    if usable:
+        criteria.append(Criterion("lambda_x", _lam, banded=True))
+    policy: LexicographicPolicy[str] = LexicographicPolicy(tuple(criteria))
+    _winner, audits = policy.winner(["runner_up", "leader"])
+    last = audits[0][-1]
+    if last.criterion == "mu" and last.verdict != "TIE":
+        return "mu-clear"
+    if not usable:
+        return "mu-primary-degraded"
+    if last.criterion == "lambda_x" and last.verdict == "B_WINS":
+        return "lambda-tiebreak"
+    return "mu-leader-tie-held"
+
+
 def _adjudication_block(
     bv: BandValues, branch: str, note: str | None, written_utc: str
 ) -> dict[str, Any]:
@@ -437,27 +553,17 @@ def select_lane_winner(
     bv = compute_bands(load_track(leader), load_track(runner_up), protocol, lambda_x_fn)
     usable, note = _lambda_usable(bv, protocol)
     written = _now_utc(now_utc)
-    if abs(bv.delta_mu) > bv.band_mu:
-        return {
-            **leader,
-            "adjudication": _adjudication_block(bv, "mu-clear", None, written),
-        }
-    if not usable:
-        return {
-            **leader,
-            "adjudication": _adjudication_block(
-                bv, "mu-primary-degraded", note, written
-            ),
-        }
-    # µ tie within band: λx breaks it — LOWER λx (finer resolution) wins.
-    if bv.delta_lambda_x > bv.band_lambda_x:  # leader coarser beyond band
-        return {
-            **runner_up,
-            "adjudication": _adjudication_block(bv, "lambda-tiebreak", None, written),
-        }
+    # Branch selection through the Policy seam (Phase-11): criteria close
+    # over the ONE BandValues computed above; λ degradation = dropping the
+    # criterion. Record mapping stays HERE (legacy semantics): the runner-up
+    # displaces the leader only on lambda-tiebreak.
+    branch = adjudicate_lane_pair(bv, usable)
+    record = runner_up if branch == "lambda-tiebreak" else leader
     return {
-        **leader,
-        "adjudication": _adjudication_block(bv, "mu-leader-tie-held", None, written),
+        **record,
+        "adjudication": _adjudication_block(
+            bv, branch, note if branch == "mu-primary-degraded" else None, written
+        ),
     }
 
 
@@ -492,22 +598,11 @@ def primary_verdict(
     assert_band_predates(protocol, [w_a, w_lane0])  # refusal clock FIRST
     bv = compute_bands(load_track(w_a), load_track(w_lane0), protocol, lambda_x_fn)
     usable, note = _lambda_usable(bv, protocol)
-    if bv.delta_mu > bv.band_mu:
-        branch, positive = "beats-mu", True
-    elif (
-        abs(bv.delta_mu) <= bv.band_mu
-        and usable
-        and (-bv.delta_lambda_x > bv.band_lambda_x)
-    ):
-        branch, positive = "beats-lambda-at-flat-mu", True
-    else:
-        branch, positive = "within-band", False
-    wording = (
-        f"{w_a.get('lane', 'lat-varying')} beats lane-0 beyond the measured "
-        f"band ({branch})"
-        if positive
-        else "improvements within band"
-    )
+    # Branch + wording through the Policy seam (Phase-11): bands stay
+    # read-time DATA; the seam only compares (gate ii replays this exact
+    # adjudication from persisted verdict fields).
+    branch, positive = adjudicate_primary(bv, usable)
+    wording = primary_wording(str(w_a.get("lane", "lat-varying")), positive, branch)
     return {
         "rule": "lexicographic mu->lambda_x (spec §5)",
         "a_lane": w_a.get("lane"),
