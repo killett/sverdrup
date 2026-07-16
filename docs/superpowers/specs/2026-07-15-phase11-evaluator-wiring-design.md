@@ -441,7 +441,14 @@ Red/green per behavior. Key tests beyond §10:
 - **SpectralFidelity**: synthetic |k|^(−q) field → E(k) slope ≈ −q+1 within
   tolerance; WLS weighting matches `n_modes`; band edges follow the rule on
   this box (≈ [100, ~220] km); the obs row appears iff WITHHELD_OBS present,
-  flagged; day-median/IQR computed over per-day fits.
+  flagged; day-median/IQR computed over per-day fits; `wedge_exclusion` flag
+  BOTH branches (masks present → true; absent → false with the slope still
+  computed — a visibly degraded estimand, the skip-row convention's sibling;
+  owner plan-review pin 1a); ONE mask derivation provably shared between
+  GroundTrack baseline exclusions and fidelity ring exclusions (object
+  identity or matching `params.wedge_masks_sha` in both rows — owner
+  plan-review pin 1b; §3's "one exclusion implementation, two consumers"
+  becomes checkable).
 - **Row builder / skip rows** (batch-2 additions): skip-row rendering test
   (absent optionals → visible skip row with `no_usable_context`,
   `context_keys_used: []`); row-builder tests (schema completeness,

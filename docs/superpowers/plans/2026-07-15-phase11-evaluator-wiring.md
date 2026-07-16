@@ -428,6 +428,7 @@ class GroundTrack:
 - [ ] `Evaluator` protocol carries `optional_context`; `Registry.applicable` UNCHANGED (required-based; a test proves an evaluator with unmet optionals is still applicable)
 - [ ] Accuracy: `optional_context == {TRUTH, WITHHELD_OBS}`; neither present → returns `{}` (the pinned precedent, batch-2 addition)
 - [ ] SpectralFidelity on synthetic |k|^(−3) field: `spec_slope` ≈ −2 ± 0.2; band edges on the real grid == [100.0, ≈219.3] km (rule of spec §5); day median/IQR present; `spec_slope_obs_1d` present iff WITHHELD_OBS given, absent otherwise
+- [ ] Absent-masks path VISIBLE (owner plan-review pin 1a): `result["track_wedge_masks"]` absent → fidelity still fires (required=∅ stays honest), slope still computed, and the evaluator emits `wedge_exclusion: false` for its row flags; masks present → `wedge_exclusion: true`. BOTH branches tested — a slope without track-wedge exclusion is a visibly degraded estimand, same convention that makes skips visible
 - [ ] σ/NaN guards identical to GroundTrack (shared behavior)
 
 **Verify:** `pixi run pytest tests/test_eval_fidelity.py tests/unit/test_accuracy.py tests/unit/test_evaluation.py -v` → all PASS
@@ -546,6 +547,7 @@ All four `ContextKey` members appear in every fixture's `items` (a dormant key c
 
 **Acceptance Criteria:**
 - [ ] `build_eval_context` sets `field_kind` (mean/sigma/other) — the σ-guard's single source; assembles ORBIT_GEOMETRY from the Task-1 artifact filtered by the product's `assimilated_missions` attr (space-separated); precomputes `track_wedge_masks` for fidelity
+- [ ] ONE mask derivation, provably shared (owner plan-review pin 1b): the builder computes the wedge masks ONCE from the geometry artifact and the SAME objects serve GroundTrack's baseline exclusions and fidelity's ring exclusions — a test asserts sharing (object identity through the row build, or an identical shared-provenance sha recorded in BOTH rows' `params.wedge_masks_sha`); spec §3's "one exclusion implementation, two consumers" becomes checkable, not aspirational
 - [ ] `build_report_rows(registry, result, context)` returns one row per APPLICABLE evaluator with full schema (`schema_version`, `evaluator`, `evaluator_version`, `metrics`, `context_keys_available/used`, `params`, `n_modes`, `flags`, `provenance`); evaluator returning `{}` → visible skip row (`flags: ["no_usable_context"]`, `context_keys_used: []`); guard raise propagates (crashes the run)
 - [ ] Pipeline: both sites use builder + `default_registry()` + row builder; scores shape = `{"report_rows": [...], "context_keys": ..., "fidelity": ..., "blend_transforms": ...}`; the six enumerated test files updated via `row_metric()` helper; `Registry.run()` docstring notes the collision hazard, unit-test consumers untouched
 - [ ] Dormant-wiring test: dev-scope harness run (12-day fixture path, artifact-gated skipif) asserts `report_only_instruments` present with ≥ 2 rows and full schema
