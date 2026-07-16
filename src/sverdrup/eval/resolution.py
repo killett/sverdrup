@@ -39,7 +39,10 @@ class EffectiveResolution:
     """λx (effective resolution) on the blocked validation track."""
 
     name = "effective_resolution"
-    required_context = frozenset({ContextKey.WITHHELD_OBS, ContextKey.ORBIT_GEOMETRY})
+    # ORBIT_GEOMETRY was over-declared here and never read (the track arrives
+    # via result channels) — the second declared-but-unread defect of the
+    # class the Phase-11 integrity test mechanizes; dropped 2026-07-15.
+    required_context = frozenset({ContextKey.WITHHELD_OBS})
     optional_context: frozenset[ContextKey] = frozenset()
     metric_scope = MetricScope.POINTWISE
 

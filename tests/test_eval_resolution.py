@@ -36,9 +36,10 @@ def test_effective_resolution_metadata() -> None:
     ev = EffectiveResolution()
     assert ev.name == "effective_resolution"
     assert ev.metric_scope is MetricScope.POINTWISE
-    assert ev.required_context == frozenset(
-        {ContextKey.WITHHELD_OBS, ContextKey.ORBIT_GEOMETRY}
-    )
+    # Pin updated (Phase-11 Task 5, enumerated in the fork-d pin table):
+    # ORBIT_GEOMETRY was declared-but-never-read; the integrity test now
+    # forbids that class, so the declaration shrank to what is consumed.
+    assert ev.required_context == frozenset({ContextKey.WITHHELD_OBS})
 
 
 def test_does_not_import_locked_test_harness() -> None:
