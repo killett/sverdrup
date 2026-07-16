@@ -45,10 +45,18 @@ class EvalContext:
 
 @runtime_checkable
 class Evaluator(Protocol):
-    """A scoring function that requires a declared subset of context keys."""
+    """A scoring function that requires a declared subset of context keys.
+
+    ``optional_context`` declares keys the evaluator READS when present but
+    can run without (Phase-11 additive extension). ``applicable()`` stays
+    required-based — optionals never gate. The declared⇒consumed contract
+    (constraint 3): required keys MUST be read; every read key must appear in
+    ``required_context | optional_context``.
+    """
 
     name: str
     required_context: frozenset[ContextKey]
+    optional_context: frozenset[ContextKey]
     metric_scope: MetricScope
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
@@ -77,6 +85,8 @@ class Registry:
     def applicable(self, context_keys: set[ContextKey]) -> list[Evaluator]:
         """Return evaluators whose required context is a subset of ``context_keys``.
 
+        optional_context NEVER gates applicability (spec §5 / fork-d pin 6).
+
         Args:
             context_keys: The available context keys.
 
@@ -93,6 +103,11 @@ class Registry:
 
     def run(self, result: object, context: EvalContext) -> dict[str, float]:
         """Run every applicable evaluator and merge their scores.
+
+        KEPT as the core spine (invariant 9) — but note the flat-merge
+        name-collision hazard: two evaluators emitting the same metric name
+        silently overwrite each other here. New report code never calls this;
+        it uses the per-evaluator report rows (batch-2 pin 2).
 
         Args:
             result: The result object under evaluation.

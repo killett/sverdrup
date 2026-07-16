@@ -13,8 +13,10 @@ class Accuracy:
     """RMSE vs truth (OSSE) or withheld obs (OSE); gated at runtime on available context."""
 
     name = "accuracy"
-    # Fires if either TRUTH or WITHHELD_OBS is present (checked at runtime).
+    # Fires if either TRUTH or WITHHELD_OBS is present (checked at runtime);
+    # neither present -> returns {} (the pinned skip precedent).
     required_context: frozenset[ContextKey] = frozenset()
+    optional_context = frozenset({ContextKey.TRUTH, ContextKey.WITHHELD_OBS})
     metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:

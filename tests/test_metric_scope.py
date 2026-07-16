@@ -17,6 +17,7 @@ from sverdrup.eval.groundtrack import GroundTrack
 class _FakeCrossSeam:
     name = "coherence"
     required_context: frozenset[ContextKey] = frozenset()
+    optional_context: frozenset[ContextKey] = frozenset()
     metric_scope = MetricScope.CROSS_SEAM
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:

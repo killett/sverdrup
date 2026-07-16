@@ -103,6 +103,15 @@ class PlaneGrid:
         """Periodic zonal extent the FFT sees: ``nx * dx_km`` (km)."""
         return self.x_km.size * self.dx_km
 
+    @property
+    def extent_x_km(self) -> float:
+        """Zonal BOX extent in km.
+
+        ``(nx - 1) * dx_km`` — the plan's pinned Lx (876 km on the real
+        grid); the fidelity band rule uses this.
+        """
+        return float(self.x_km[-1] - self.x_km[0])
+
 
 def detrend(field: np.ndarray) -> np.ndarray:
     """Subtract the least-squares plane fit on ``[1, x, y]``.

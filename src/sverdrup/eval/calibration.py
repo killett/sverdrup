@@ -57,6 +57,7 @@ class Calibration:
 
     name = "calibration"
     required_context = frozenset({ContextKey.WITHHELD_OBS})
+    optional_context: frozenset[ContextKey] = frozenset()
     metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:

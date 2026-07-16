@@ -40,6 +40,7 @@ class EffectiveResolution:
 
     name = "effective_resolution"
     required_context = frozenset({ContextKey.WITHHELD_OBS, ContextKey.ORBIT_GEOMETRY})
+    optional_context: frozenset[ContextKey] = frozenset()
     metric_scope = MetricScope.POINTWISE
 
     def evaluate(self, result: object, context: EvalContext) -> dict[str, float]:
