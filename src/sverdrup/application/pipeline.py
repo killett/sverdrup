@@ -24,7 +24,6 @@ from sverdrup.distributions.blend import BlendedDistribution, BlendInput, BlendO
 from sverdrup.distributions.persisted import PersistedPoints
 from sverdrup.eval.accuracy import Accuracy
 from sverdrup.eval.calibration import Calibration
-from sverdrup.eval.groundtrack import GroundTrack
 
 Range = tuple[float, float]
 
@@ -267,9 +266,10 @@ def _evaluate_blended(
     eval-point predictives against the withheld CryoSat-2 along-track. Same evaluator spine
     as Phase-1 ``_evaluate``; only the source of the eval mean/var differs.
     """
-    items: dict[ContextKey, object] = {
-        ContextKey.ORBIT_GEOMETRY: {"track_spacing_nodes": 4}
-    }
+    # ORBIT_GEOMETRY intentionally absent until the Task-6 context builder
+    # wires the real artifact-backed bag (the old stub bag died with the
+    # Phase-11 GroundTrack rebuild).
+    items: dict[ContextKey, object] = {}
     result: dict[str, np.ndarray] = {"field": gb.mean, "grid_mean": gb.mean}
     if inp.mode == "OSSE":
         truth = np.asarray(cast(Any, inp.source).truth(inp.output_times[0], grid))
@@ -282,7 +282,7 @@ def _evaluate_blended(
         result["eval_mean"] = eval_mean
         result["eval_var"] = cast(np.ndarray, eval_var)
     ctx = EvalContext(items)
-    reg = Registry([Accuracy(), Calibration(), GroundTrack(track_wavenumber=4)])
+    reg = Registry([Accuracy(), Calibration()])
     scores: dict[str, Any] = dict(reg.run(result, ctx))
     scores["context_keys"] = {k.name for k in ctx.keys()}
     scores["fidelity"] = gb.fidelity.name
@@ -347,9 +347,10 @@ def _evaluate(
     """
     pt = product.per_time[0]
     base = pt.base
-    items: dict[ContextKey, object] = {
-        ContextKey.ORBIT_GEOMETRY: {"track_spacing_nodes": 4}
-    }
+    # ORBIT_GEOMETRY intentionally absent until the Task-6 context builder
+    # wires the real artifact-backed bag (the old stub bag died with the
+    # Phase-11 GroundTrack rebuild).
+    items: dict[ContextKey, object] = {}
     result: dict[str, np.ndarray] = {
         "field": base.fields.mean,
         "grid_mean": base.fields.mean,
@@ -370,7 +371,7 @@ def _evaluate(
         result["eval_mean"] = pt.eval_points.mean
         result["eval_var"] = pt.eval_points.variance
     ctx = EvalContext(items)
-    reg = Registry([Accuracy(), Calibration(), GroundTrack(track_wavenumber=4)])
+    reg = Registry([Accuracy(), Calibration()])
     scores: dict[str, Any] = dict(reg.run(result, ctx))
     scores["context_keys"] = {k.name for k in ctx.keys()}
     return scores
