@@ -2263,6 +2263,13 @@ above confirm them**, so the spec stops lagging the decision.
 
 ## Current work (index — do not duplicate task state here)
 
+- **Phase 11: evaluator wiring (report-only) — DESIGN APPROVED 2026-07-15, awaiting
+  owner file review of the spec before writing-plans.**
+  - Design: `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`
+    (forks a–e + 7 batch pins owner-decided; prerequisites verified on public HEAD).
+  - Plan: not yet written (writing-plans blocked on owner spec review).
+  - Next action: owner reviews the spec file → on sign-off, invoke writing-plans.
+
 - **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — IN PROGRESS.**
   - **Stage A COMPLETE (Tasks 1–4); Stage-A GATE PASSED.** Projection seam
     (`core/projection.py`) consumed by `GMRFCovarianceOperator` (carries `q_prior`, C3
@@ -2799,11 +2806,13 @@ above confirm them**, so the spec stops lagging the decision.
   pre-registered NEGATIVE result (measured, not shipped) — see the Phase-10 close banner
   at the top of this file. G-shrinkage finding recorded there; no duplicate content here.
 
-- **Evaluator-registry standalone phase (owner-electable, no method work, no c2):
+- ~~**Evaluator-registry standalone phase (owner-electable, no method work, no c2):
   GroundTrack rebuild + spectral-fidelity evaluator + report-only registry wiring +
-  retroactive one-shot on shipped/signed mean maps + selection-Policy seam extraction.**
-  Canonical content in the 2026-07-15 ARCHITECTURE-AUDIT FINDING block at the top of
-  this file — migrate (don't duplicate) into the design doc if elected.
+  retroactive one-shot on shipped/signed mean maps + selection-Policy seam extraction.**~~
+  **MIGRATED 2026-07-15:** elected as Phase 11; the finding's WHAT-REMAINS content is
+  migrated into `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`
+  (owner-approved design; forks a–e + batch pins decided there). The dated
+  ARCHITECTURE-AUDIT FINDING block above stays as the historical record.
 
 - **Next release — relax the conda recipe Python cap.** `pyproject.toml` now declares
   `requires-python = ">=3.12"` (cap dropped, commit `e236591`; source uses only stable stdlib
