@@ -92,16 +92,23 @@ def test_drifting_mission_classified() -> None:
 
 def test_orbit_class_boundary_both_sides() -> None:
     """Bug caught: wrong comparison direction, or ratio over passes instead of
-    crossings. 4 clusters / 9 crossings = 0.444 <= 0.5 -> repeat;
-    5 / 9 = 0.556 > 0.5 -> drifting."""
-    below = np.array([295.0, 295.0, 295.0, 297.0, 297.0, 299.0, 299.0, 301.0, 301.0])
+    crossings. Threshold = REPEAT_RATIO_MAX = 0.25 (executor-set correction,
+    2026-07-16, disclosed — the plan's 0.5 misclassified real dense drifting
+    missions; measured real ratios: repeat <= ~0.14, drifting >= ~0.44).
+    2 clusters / 9 crossings = 0.222 <= 0.25 -> repeat;
+    3 / 9 = 0.333 > 0.25 -> drifting."""
+    below = np.array(
+        [295.0, 295.0, 295.0, 295.0, 295.0, 297.0, 297.0, 297.0, 297.0]
+    )  # 2 clusters / 9
     cls, centers = classify_orbit(below)
     assert cls == "repeat"
-    assert centers.size == 4
-    above = np.array([295.0, 295.0, 295.0, 297.0, 297.0, 299.0, 299.0, 301.0, 303.0])
+    assert centers.size == 2
+    above = np.array(
+        [295.0, 295.0, 295.0, 297.0, 297.0, 297.0, 299.0, 299.0, 299.0]
+    )  # 3 clusters / 9
     cls, centers = classify_orbit(above)
     assert cls == "drifting"
-    assert centers.size == 5
+    assert centers.size == 3
 
 
 def test_in_domain_crossings_only() -> None:

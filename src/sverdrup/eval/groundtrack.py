@@ -201,6 +201,10 @@ class GroundTrack:
                     out[key + "_estimand_drifting_band"] = 1.0
                 per_class[str(fam["orbit_class"])].append(value)
         for cls, vals in per_class.items():
-            if vals:
-                out[f"track_excess_log10_max_{cls}"] = float(max(vals))
+            # nan-safe: families whose probe band lies beyond the grid's
+            # Nyquist report nan + under_floor (visible flags) — they must
+            # not poison the class maximum; no finite family -> no max key.
+            finite = [v for v in vals if np.isfinite(v)]
+            if finite:
+                out[f"track_excess_log10_max_{cls}"] = float(max(finite))
         return out

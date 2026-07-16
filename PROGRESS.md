@@ -25,10 +25,38 @@
 > consumers on tests/helpers.row_metric) + harness packs gain
 > report_only_instruments (both return paths; dev-scope dormant-wiring
 > test 6.7 s) + fidelity empty-band {} skip guard for tiny grids.
-> Suite 799/13/1. GOTCHAS: full suite ≈ 20–24 min (run in background);
-> statistic small-sample offset on steep isotropic nulls documented in
-> test fixtures. **NEXT: Task 7 — retro one-shot (derive real geometry
-> artifact, score MIOST + OI mean maps, evidence at phase11.retro.*).**
+> Suite 799/13/1. T7 COMPLETE — retro one-shot RUN on the real
+> artifacts (script + 5 unit tests; provenance anchors verified on
+> rerun). **EXECUTOR-SET CORRECTION (disclosed, for owner ratification
+> at the Task-12 gate; Phase-10 wall-budget precedent):
+> REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION 2** — the plan's
+> pre-registered 0.5 misclassified the real dense DRIFTING missions
+> (alg = SARAL-DP since 2016-07, h2g = HY-2A geodetic since 2016-03;
+> measured ratios 0.464/0.438 vs true-repeat s3a 0.064, j2n ~0.14;
+> single-linkage chance chaining at ~170 crossings/10°). 0.25 =
+> geometric mean of the measured sides. Companion fix: per-class maxima
+> skip nan families (dense drifting probes below grid Nyquist → honest
+> under_floor rows). Geometry sha 84e8a19bfe4e (v2).
+>
+> ```
+> PHASE-11 RETRO NUMBERS (2026-07-16, evidence phase11.retro.*, geometry sha 84e8a19bfe4e):
+> - MIOST stage-B means: track_excess_log10 max repeat=0.410 (s3a/desc),
+>   max drifting=-0.253 (j2g/desc); spec_slope=-7.60 (WLS SE 0.12, day IQR 1.88),
+>   band [100, 219] km
+> - OI regenerated means: track_excess_log10 max repeat=1.233 (s3a/desc),
+>   max drifting=-0.227 (j2g/desc); spec_slope=-7.77 (WLS SE 0.26, day IQR 1.96),
+>   band [100, 219] km
+> ```
+>
+> READING (necessary-not-sufficient caveat applies): the regenerated OI
+> means carry a STRONG s3a-oriented signature at the s3a track spacing
+> (1.233 log10 ≈ 17× per-mode excess vs the same-|k| baseline; MIOST
+> 0.410 ≈ 2.6×); drifting probes show no signature on either product.
+> spec_slope ≈ −7.6/−7.8 sits in the sub-λx rolloff (λx 141–205 km lies
+> inside the [100, 219] band) — descriptive, no verdict semantics.
+> GOTCHAS: full suite ≈ 20–24 min (run in background); statistic
+> small-sample offset on steep isotropic nulls documented in fixtures.
+> **NEXT: Task 8 — Policy seam module (independent track).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
 

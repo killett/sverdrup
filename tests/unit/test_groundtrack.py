@@ -236,3 +236,28 @@ def test_metadata_and_docstring_pins() -> None:
         "NECESSARY-NOT-SUFFICIENT — a strong track signature proves a problem; "
         "a clean map does not prove correctness." in flat_doc
     )
+
+
+def test_per_class_max_skips_nan_families() -> None:
+    """Bug caught: a family whose probe band lies beyond the grid Nyquist
+    (real case: dense drifting missions with ~9 km spacings) reports nan +
+    under_floor — the class maximum must come from the FINITE families only,
+    never propagate the nan."""
+    lon, lat = _real_axes()
+    bag = _geometry_bag()
+    bag["dense"] = {
+        "asc": {
+            "heading_north_deg": 60.0,
+            "orbit_class": "repeat",
+            "d_perp_km": 9.0,  # 1/9 km^-1 is far beyond the grid Nyquist
+            "s_lon_km": 9.0,
+            "n_crossings": 160,
+        },
+        "desc": None,
+    }
+    maps = _rednoise(lon, lat, seed=11, n_days=2)
+    out = GroundTrack().evaluate(_result(maps, lon, lat), _ctx(bag))
+    assert np.isnan(out["track_excess_log10_dense_asc"])
+    assert out["track_excess_log10_dense_asc_under_floor"] == 1.0
+    assert np.isfinite(out["track_excess_log10_max_repeat"])
+    assert out["track_excess_log10_max_repeat"] == out["track_excess_log10_synth_asc"]
