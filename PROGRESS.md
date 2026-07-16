@@ -1,5 +1,28 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 11 — evaluator wiring: EXECUTION IN FLIGHT (2026-07-15,
+> executing-plans, on main).** Spec:
+> `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`;
+> plan + tracker:
+> `docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md(.tasks.json)`
+> (12 tasks; Task 12 = phase-close owner gate). **Tasks 1–5 COMPLETE**
+> (each committed + pushed, dual review per task):
+> T1 orbit-geometry provider `aa4cad4`; T2 map_spectrum shared prep
+> `4023a95` (DEVIATION recorded: plan's slope-test sketch contradicted
+> the spec's own mainlobe-clearance rule — test fits rings ≥4 on
+> ensemble power); T3 GroundTrack rebuild `de3fe60` (interim: pipeline's
+> two Registry sites drop GroundTrack + dead stub bag until T6;
+> vertical-slice pin updated per fork-d table); T4 SpectralFidelity +
+> optional_context `c851d83` (band [100.0, 219.0] km — Lx = BOX EXTENT
+> 876 km pinned by test; Registry.run collision note pulled forward);
+> T5 integrity test + EffectiveResolution fix `e3a6f82` (suite
+> 785/13/1). GOTCHAS: full suite ≈ 22–24 min (run in background);
+> statistic small-sample offset on steep isotropic nulls documented in
+> test fixtures. **NEXT: Task 6 — context builder + default_registry +
+> row builder + pipeline migration (owner pin 1b provable mask sharing).**
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
+
 > **✅ PHASE 10 — lat-varying OI parameters (invariant-12 B): CLOSED
 > 2026-07-15 with the PRE-REGISTERED NEGATIVE RESULT. PRIMARY verdict:
 > "improvements within band" (pinned wording) — the lat-varying
