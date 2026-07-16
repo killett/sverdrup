@@ -54,9 +54,25 @@
 > 0.410 ≈ 2.6×); drifting probes show no signature on either product.
 > spec_slope ≈ −7.6/−7.8 sits in the sub-λx rolloff (λx 141–205 km lies
 > inside the [100, 219] band) — descriptive, no verdict semantics.
-> GOTCHAS: full suite ≈ 20–24 min (run in background); statistic
+> GOTCHAS: full suite ≈ 20–33 min (run in background); statistic
 > small-sample offset on steep isotropic nulls documented in fixtures.
-> **NEXT: Task 8 — Policy seam module (independent track).**
+> **Tasks 8–11 COMPLETE (Policy-seam track):** T8 seam `fe45bdd`
+> (banded sort refused, semiorder documented); T9 objective.rank
+> `bee5c10` (gate iii: 200-list identity property green pre+post,
+> suite 806/13/1); T10 folds.select `0985918` (gate i: leaf-identical
+> external harness PASS pre- AND post-migration, independently
+> re-run); T11 lane_compare `6f25928` (gate ii: Phase-10 verdict
+> branch + wording reproduced string-equal from persisted records).
+> **⛔ TASK 12 — PHASE-CLOSE OWNER GATE: EVIDENCE PACK ASSEMBLED,
+> HELD FOR OWNER REVIEW (2026-07-16).** All criteria re-validated on
+> the final tree with captured output: retro numbers + provenance
+> (jq), gates i/ii/iii PASS, integrity + dormant-wiring PASS, full
+> suite w/ coverage 807/13/1 (92%), mean-map shas MATCH recorded,
+> registry METHODS/SHIPPED untouched (empty diff vs ad6d853), zero c2
+> re-checked. TWO EXECUTOR-SET ITEMS AWAIT RATIFICATION:
+> (1) REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION 2 (measured
+> basis in phase11_constants.py); (2) per-class maxima skip
+> nan-flagged families. Owner approval closes the phase.
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
 
