@@ -2267,8 +2267,11 @@ above confirm them**, so the spec stops lagging the decision.
   owner file review of the spec before writing-plans.**
   - Design: `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`
     (forks a–e + 7 batch pins owner-decided; prerequisites verified on public HEAD).
-  - Plan: not yet written (writing-plans blocked on owner spec review).
-  - Next action: owner reviews the spec file → on sign-off, invoke writing-plans.
+  - Plan: `docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
+    (12 tasks; tracker `.tasks.json` co-located with ids AND names; native ids 5–16).
+  - Next action: owner reviews the PLAN (spec approved 2026-07-15) → on sign-off,
+    execute via subagent-driven-development or executing-plans. Task 12 is the
+    phase-close owner gate.
 
 - **Phase 4: FEM/triangulation SPDE + non-chain coherent sampler — IN PROGRESS.**
   - **Stage A COMPLETE (Tasks 1–4); Stage-A GATE PASSED.** Projection seam
