@@ -45,6 +45,7 @@ from sverdrup.application.calibration.constants import (
     TIE_BAND,
 )
 from sverdrup.application.calibration.regions import LAT_MIN, LON_MIN, cell_index
+from sverdrup.application.policy import Criterion, LexicographicPolicy, Verdict
 from sverdrup.core.seeding import derive_seed
 
 # Smooth-lane preference order used to break exact selection ties.
@@ -538,27 +539,40 @@ def select(
             else len(_SMOOTH_PREFERENCE)
         )
 
-    winner = eligible[0]
-    for lane in eligible[1:]:
-        w_s = float(winner["s_stat"])  # type: ignore[arg-type]
-        w_t = float(winner["t_stat"])  # type: ignore[arg-type]
-        c_s = float(lane["s_stat"])  # type: ignore[arg-type]
-        c_t = float(lane["t_stat"])  # type: ignore[arg-type]
+    # Winner reduction through the Phase-11 Policy seam: three criteria
+    # mirroring the legacy loop EXACTLY — the S/T stages are banded closures
+    # over the ABSOLUTE ±TIE_BAND helpers (A_WINS iff the challenger beats
+    # beyond band, B_WINS iff the incumbent does, else TIE); the smooth
+    # preference stage: A_WINS iff strictly lower _pref_rank. Candidate order
+    # pinned = `eligible` list order — winner() is the same
+    # keep-running-winner loop shape (gate i: leaf-identical harness
+    # evidence pre/post migration).
 
-        # 1. Primary: S-fold statistic.
-        if _beats_beyond_band(c_s, w_s):
-            winner = lane
-            continue
-        if _beats_beyond_band(w_s, c_s):
-            continue
-        # S tie within band -> 2. Secondary: T-fold statistic.
-        if _beats_beyond_band(c_t, w_t):
-            winner = lane
-            continue
-        if _beats_beyond_band(w_t, c_t):
-            continue
-        # T tie within band -> 3. Smooth-lane preference.
-        if _pref_rank(lane) < _pref_rank(winner):
-            winner = lane
+    def _stat_criterion(key: str) -> Criterion[dict[str, object]]:
+        def _compare(a: dict[str, object], b: dict[str, object]) -> Verdict:
+            ca = float(a[key])  # type: ignore[arg-type]
+            cb = float(b[key])  # type: ignore[arg-type]
+            if _beats_beyond_band(ca, cb):
+                return Verdict.A_WINS
+            if _beats_beyond_band(cb, ca):
+                return Verdict.B_WINS
+            return Verdict.TIE
 
+        return Criterion(key, _compare, banded=True)
+
+    def _pref_criterion(a: dict[str, object], b: dict[str, object]) -> Verdict:
+        if _pref_rank(a) < _pref_rank(b):
+            return Verdict.A_WINS
+        if _pref_rank(b) < _pref_rank(a):
+            return Verdict.B_WINS
+        return Verdict.TIE
+
+    policy: LexicographicPolicy[dict[str, object]] = LexicographicPolicy(
+        (
+            _stat_criterion("s_stat"),
+            _stat_criterion("t_stat"),
+            Criterion("smooth_preference", _pref_criterion),
+        )
+    )
+    winner, _audit = policy.winner(eligible)
     return winner, lanes
