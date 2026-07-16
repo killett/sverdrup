@@ -13,7 +13,7 @@
       "id": 6,
       "planTask": 2,
       "subject": "Task 2: Shared spectral prep (eval/map_spectrum.py)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** One pure-numpy module owning phi0-plane, detrend, radial window, half-plane 2-D power, wedge/annulus masks with exclusions, ring-integrated E(k), mode counts.\n\n**Files:** Create src/sverdrup/eval/map_spectrum.py; Test tests/test_map_spectrum.py\n\n**Acceptance Criteria:**\n- [ ] Parseval: half-plane power (Hermitian-corrected) ~= windowed variance x N within 1e-6 relative\n- [ ] Synthetic isotropic |k|^(-3) field: ring-integrated E(k) slope ~= -2 +-0.15 over bins 3-10 (the -q+1 relation)\n- [ ] Wedge/annulus mode counts EXACT on 16x16 vs brute force; kx=0 column halved, no double count\n- [ ] Measured mainlobe half-width on the real 52x51 grid == MAINLOBE_HALFWIDTH_BINS (2.25) +-0.1\n\n**Verify:** pixi run pytest tests/test_map_spectrum.py -v -> all PASS\n\n```json:metadata\n{\"files\": [\"src/sverdrup/eval/map_spectrum.py\", \"tests/test_map_spectrum.py\"], \"verifyCommand\": \"pixi run pytest tests/test_map_spectrum.py -v\", \"acceptanceCriteria\": [\"Parseval sanity\", \"slope -q+1 recovery\", \"exact mode counts + Hermitian no-double-count\", \"mainlobe recorded-vs-measured within 0.1 bin\"], \"modelTier\": \"standard\"}\n```"
     },
     {
