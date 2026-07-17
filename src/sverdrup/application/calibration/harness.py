@@ -824,9 +824,7 @@ def _crps_per_lane(
     return out
 
 
-def _bars(
-    cal: CalibrationField, region_cov: dict[str, dict[str, float]]
-) -> dict[str, Any]:
+def _bars(region_cov: dict[str, dict[str, float]]) -> dict[str, Any]:
     """Return the pre-registered §6 bars (1-4) outcomes for the fitted field."""
     agg = region_cov["aggregate"]["coverage"]
     lo, hi = COVERAGE_TARGET - COVERAGE_TOL, COVERAGE_TARGET + COVERAGE_TOL
@@ -1126,7 +1124,7 @@ def build_evidence(
         "cal_key": cal.key(),
         "clip": {"lo_log_s": clip.lo_log_s, "hi_log_s": clip.hi_log_s},
     }
-    evidence["bars"] = _bars(cal, region_cov)
+    evidence["bars"] = _bars(region_cov)
     evidence["regional_table"] = {
         r: {
             "fitted": region_cov.get(r, {}),
