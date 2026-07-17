@@ -92,7 +92,52 @@ LATENT / SUSPECTED (owner look, no code change proposed):
   empty → "skipped" branch unreachable (every rerun re-downloads);
   `extract_existing` reports "extracted" for non-archives.
 
-### FIX NOW backlog (strictly behavior-preserving, low risk — NOT applied; needs explicit opt-in to a mutation pass)
+### FIX NOW backlog — APPLIED 2026-07-16 (owner-approved mutation pass)
+
+Executed same day as the audit: 71 commits on main (one per item,
+`52023a9`..`6ec1d03`), per-file pre-commit before every commit,
+all-files gate green after each area, full suite green after the last
+commit: **808 passed / 13 skipped / 1 xfailed** (the +1 vs the
+recorded 807 predates the pass — both HEAD and the baseline commit
+`14f59d9` collect exactly 822 nodes; collection is env/artifact-
+conditional, not a behavior change from this pass).
+
+TWO AUDIT ERRATA (items skipped — premises false at source):
+
+- `pipeline.py:196` — the function-local `partition_weights` import is
+  the ONLY import of that name; line 27 imports other names from
+  `blend`. Not a duplicate; deleting it would NameError.
+- `distributions/blend.py:232` — same shape: module-top import brings
+  `UncertaintyProvenance, blend_transform`, NOT
+  `degradation_transform`; the local import is the only one.
+
+DISCLOSED DEVIATIONS (all behavior-preserving, in-commit):
+
+- EPOCH single-sourcing repointed two importers
+  (`eval/resolution.py`, `tests/test_eval_resolution.py`) to
+  `validation.params` — mypy `no_implicit_reexport`. FOLLOW-UP
+  CANDIDATE: `calibration/harness.py:171` defines its own same-value
+  `EPOCH` (out of that item's scope, still duplicated).
+- Crossfade dedup found a THIRD verbatim consumer
+  (`GmrfCoreAuthoritativeSolve.crossfaded_member`); all three now call
+  one `_weight_crossfade` helper; oracle/gate tests green.
+- `_tree_gate._Quad` dead third slot removed from the type entirely
+  (file-private, rg-verified no external constructor).
+- `miost_basis` domain-box constants use the explicit
+  `BOX_LAT as BOX_LAT` re-export form so `scripts/diag_miost_*.py`
+  importers stay untouched.
+- Script-loader consolidation: `tests/helpers.load_script` (sys.modules
+  -registering variant); the five formerly module-level loaders now
+  also register in sys.modules (the mandated-correct variant);
+  `test_calibration_harness._load_anchor_module` deliberately NOT
+  migrated (avoids sys.modules by design).
+- `unit/test_accuracy.py` item was an assert INSIDE a test, not a
+  standalone test; only the vacuous disjunct was deleted.
+- Old test names `test_clip_engages_and_is_recorded` /
+  `test_piecewise_lookup_and_out_of_range_raises` still appear in the
+  frozen Phase-8 plan doc — historical record, left as-is.
+
+Original backlog as audited (line numbers refer to pre-pass tree):
 
 src core/libs (22): duplicate function-local imports shadowing
 module-top imports (`distributions/blend.py:232`,
