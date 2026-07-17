@@ -71,6 +71,8 @@ def _obs_slope_1d(
     Returns:
         Pooled slope, or ``None`` when fewer than 8 in-band points exist.
     """
+    # Deliberately local: application imports eval, so a module-top import of
+    # sverdrup.application.orbit_geometry here would create an import cycle.
     from sverdrup.application.orbit_geometry import KM_PER_DEG, split_passes
 
     lon = np.asarray(bag["lon"], dtype=float)
