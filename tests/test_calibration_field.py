@@ -413,7 +413,9 @@ def _make_proxy_cells(
 def test_covariate_b_zero_constant_log_s() -> None:
     """b=0 → log s = a everywhere (constant, independent of proxy).
 
-    Bug caught: proxy lookup called when b=0, crashing on log(0).
+    Bug caught: the proxy term leaking into log s despite b=0 (e.g. b
+    ignored and log(proxy) added unconditionally — proxy=5.0 is nonzero
+    precisely so such a leak shifts the result).
     """
     a = LOG_S_STAR
     proxy_val = 5.0  # arbitrary nonzero
