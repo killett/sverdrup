@@ -138,7 +138,8 @@ def load_mdt_grid(paths: list[Path], grid: GridSpec) -> np.ndarray:
         sel = np.random.default_rng(0).choice(lon.size, _MDT_SUBSAMPLE, replace=False)
         lon, lat, mdt = lon[sel], lat[sel], mdt[sel]
 
-    glon, glat = np.unique(grid._lonlat_nodes()[0]), np.unique(grid._lonlat_nodes()[1])
+    node_lon, node_lat = grid._lonlat_nodes()
+    glon, glat = np.unique(node_lon), np.unique(node_lat)
     gx, gy = np.meshgrid(glon, glat)
     out = griddata((lon, lat), mdt, (gx, gy), method="linear")
     holes = ~np.isfinite(out)
