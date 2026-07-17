@@ -1,6 +1,8 @@
 """Shared Stage-B gate harness: real solved tiles + dense global reference + per-edge metrics.
 
-Used by both the Task-8 oracles (fast, well-conditioned 2x2) and the Task-9 gate. Builds genuinely
+Used by the Task-8 oracles (fast, well-conditioned 2x2), the Task-9 gate, the authoritative core
+gate (``tests/test_core_authoritative_gate.py``), and the cross-seam diagnostic script
+(``scripts/diag_crossseam.py``). Builds genuinely
 real ``MaternGMRF``-solved tiles (NOT hand-stubbed fields) and the matching dense global posterior so
 joint covariance can be scored per adjacency edge against ground truth.
 """
