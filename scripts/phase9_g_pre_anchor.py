@@ -365,7 +365,8 @@ def main() -> None:
         )
     print(f"cal_key self-consistent: {cal_key}")
 
-    # Step 3-4: compute SHA-256 of mask artifact
+    # Mask artifact SHA-256 — an input to the step-6 anchor block.  (Steps
+    # 3-4, G_pre and companions, run inside build_anchor_block below.)
     mask_sha256 = hashlib.sha256(_MASK_ARTIFACT.read_bytes()).hexdigest()
 
     # Step 5: compute NLL gap on full j3
