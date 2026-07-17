@@ -12,9 +12,6 @@ import numpy as np
 # Helpers
 # ---------------------------------------------------------------------------
 
-LON_MID = 300.0
-LAT_MID = 38.0
-
 
 def _make_synthetic_mask(cells: list[tuple[int, int]]) -> np.ndarray:
     """Return a (5,5) bool array with True at the listed (row, col) pairs."""
