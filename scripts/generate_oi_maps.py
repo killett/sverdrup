@@ -286,8 +286,8 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
         signed_path: Path to the signed ``OSE_ssh_mapping_OURS_OI.nc``.
 
     Returns:
-        A dict with keys: ``matched_days``, ``max_abs_diff``, ``max_rel_diff``,
-        ``mean_abs_diff``, ``obs_set_note``, ``verdict``.
+        A dict with keys: ``matched_days``, ``max_abs_diff_m``,
+        ``max_rel_diff``, ``mean_abs_diff_m``, ``obs_set_note``, ``verdict``.
 
     Raises:
         SystemExit: If the comparison reveals a config mismatch (systematic
