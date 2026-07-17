@@ -403,7 +403,7 @@ def _strip_network(
     unique ``(lon,lat)`` keys over all tiles; ``per_tile[i][g]`` is tile ``i``'s local node
     index for global strip node ``g`` (absent if tile ``i`` does not contain it). Corner
     nodes shared by >=3 tiles appear once in ``global_keys`` and in every covering tile's map
-    — so the induced connectivity assembled in ``_draw_joint`` spans the junction (C1).
+    — so the induced strip-node connectivity spans the junction (C1).
 
     Raises:
         AssertionError: if a multi-tile ``parts`` produces an empty strip network, or if any
