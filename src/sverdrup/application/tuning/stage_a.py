@@ -204,7 +204,9 @@ def _run_stage(
         window=win,
         tile_geometry=tile_geometry
         if tile_geometry is not None
-        else TileGeometry(1e9, 1.0, "single"),  # ratio huge -> always feasible
+        # Feasibility keys on n_tiles (defaults to 1 -> feasible);
+        # core_size_deg/range_km are recorded context only.
+        else TileGeometry(1e9, 1.0, "single"),
         required_capabilities=frozenset({UncertaintyCapability.POINT}),
         rounds=rounds,
         on_empty="return_history",
