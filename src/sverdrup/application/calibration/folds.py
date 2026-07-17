@@ -34,6 +34,7 @@ from collections.abc import Iterator
 import numpy as np
 
 from sverdrup.application.calibration.constants import (
+    CELL_DEG,
     COVERAGE_TARGET,
     GUARD_RING_DEG,
     MIN_N_EFF,
@@ -77,18 +78,18 @@ def _block_centroid(block: int) -> tuple[float, float]:
     """
     row, col = _block_row_col(block)
     # Cell spans [LON_MIN + 2*col, LON_MIN + 2*(col+1)); centre is + 1 deg.
-    lon = LON_MIN + 2.0 * col + 1.0
-    lat = LAT_MIN + 2.0 * row + 1.0
+    lon = LON_MIN + CELL_DEG * col + 1.0
+    lat = LAT_MIN + CELL_DEG * row + 1.0
     return lon, lat
 
 
 def _block_bounds(block: int) -> tuple[float, float, float, float]:
     """Return (lon_lo, lon_hi, lat_lo, lat_hi) edges of a block."""
     row, col = _block_row_col(block)
-    lon_lo = LON_MIN + 2.0 * col
-    lon_hi = lon_lo + 2.0
-    lat_lo = LAT_MIN + 2.0 * row
-    lat_hi = lat_lo + 2.0
+    lon_lo = LON_MIN + CELL_DEG * col
+    lon_hi = lon_lo + CELL_DEG
+    lat_lo = LAT_MIN + CELL_DEG * row
+    lat_hi = lat_lo + CELL_DEG
     return lon_lo, lon_hi, lat_lo, lat_hi
 
 
