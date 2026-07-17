@@ -37,7 +37,7 @@ def _seal(
 
 
 def _pair(
-    seed_b: int = 2, shift: float = 0.0, n: int = 600
+    seed_b: int = 2, shift: float = 0.0
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
     """One consulted track, two products: sides share time/lat/lon/ssh.
 
@@ -48,14 +48,16 @@ def _pair(
     within = np.tile(np.arange(30, dtype=float) * (1.2 / 86400.0), 20)
     time = day + within
     lat = np.tile(np.linspace(33.5, 42.5, 30), 20)
-    lon = np.full(n, 300.0)
-    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(n)
+    lon = np.full(600, 300.0)
+    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(600)
     base = {"time": time, "lat": lat, "lon": lon, "ssh": ssh}
-    a = dict(base, mean_interp=ssh - 0.02 * np.random.default_rng(1).standard_normal(n))
+    a = dict(
+        base, mean_interp=ssh - 0.02 * np.random.default_rng(1).standard_normal(600)
+    )
     b = dict(
         base,
         mean_interp=ssh
-        - (0.02 * np.random.default_rng(seed_b).standard_normal(n) + shift),
+        - (0.02 * np.random.default_rng(seed_b).standard_normal(600) + shift),
     )
     return a, b
 
