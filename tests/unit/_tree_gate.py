@@ -36,7 +36,7 @@ _DEFAULT = ConstantProvider(
 _T = 2.0
 
 _Win = tuple[tuple[float, float], tuple[float, float]]
-_Quad = tuple[np.ndarray, np.ndarray, float, _Win, _Win]
+_Quad = tuple[np.ndarray, np.ndarray, _Win, _Win]
 
 
 def _scattered_obs() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -320,7 +320,7 @@ def _build(quads: list[_Quad], grid: GridSpec, prov: ParameterProvider) -> GateF
     """Solve each quad (obs windowed to its extended window) + the global reference."""
     olon, olat, oval = _scattered_obs()
     parts = []
-    for lon, lat, _val, core, ext in quads:
+    for lon, lat, core, ext in quads:
         tgrid = GridSpec.lonlat(lon, lat)
         dist = MaternGMRF().solve(_obs_in(olon, olat, oval, ext), tgrid, prov, _T)
         unit = GMRFPrecisionReduction().reduce(
@@ -359,10 +359,10 @@ def make_2x2(prov: ParameterProvider | None = None) -> GateFixture:
     """
     lo, hi = np.arange(0.0, 7.0), np.arange(3.0, 10.0)
     quads: list[_Quad] = [
-        (lo, lo, 1.0, ((0.0, 4.0), (0.0, 4.0)), ((0.0, 6.0), (0.0, 6.0))),
-        (hi, lo, 2.0, ((5.0, 9.0), (0.0, 4.0)), ((3.0, 9.0), (0.0, 6.0))),
-        (lo, hi, 3.0, ((0.0, 4.0), (5.0, 9.0)), ((0.0, 6.0), (3.0, 9.0))),
-        (hi, hi, 4.0, ((5.0, 9.0), (5.0, 9.0)), ((3.0, 9.0), (3.0, 9.0))),
+        (lo, lo, ((0.0, 4.0), (0.0, 4.0)), ((0.0, 6.0), (0.0, 6.0))),
+        (hi, lo, ((5.0, 9.0), (0.0, 4.0)), ((3.0, 9.0), (0.0, 6.0))),
+        (lo, hi, ((0.0, 4.0), (5.0, 9.0)), ((0.0, 6.0), (3.0, 9.0))),
+        (hi, hi, ((5.0, 9.0), (5.0, 9.0)), ((3.0, 9.0), (3.0, 9.0))),
     ]
     grid = GridSpec.lonlat(np.arange(0.0, 10.0), np.arange(0.0, 10.0))
     return _build(quads, grid, prov or _DEFAULT)
@@ -378,21 +378,18 @@ def make_chain(prov: ParameterProvider | None = None) -> GateFixture:
         (
             np.arange(0.0, 6.0),
             lat,
-            1.0,
             ((0.0, 3.0), (0.0, 9.0)),
             ((0.0, 5.0), (0.0, 9.0)),
         ),
         (
             np.arange(2.0, 8.0),
             lat,
-            2.0,
             ((4.0, 5.0), (0.0, 9.0)),
             ((2.0, 7.0), (0.0, 9.0)),
         ),
         (
             np.arange(4.0, 10.0),
             lat,
-            3.0,
             ((6.0, 9.0), (0.0, 9.0)),
             ((4.0, 9.0), (0.0, 9.0)),
         ),
