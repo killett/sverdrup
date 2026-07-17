@@ -21,6 +21,9 @@ from sverdrup.distributions.coherent import (
     select_driver,
 )
 
+_COHERENT_BATCH = 256
+"""Number of coherent members in the cached grid sample batch."""
+
 
 def _smootherstep(t: np.ndarray) -> np.ndarray:
     """Quintic 6t^5-15t^4+10t^3, clamped to [0,1]; value & 1st deriv vanish at 0 and 1."""
@@ -131,7 +134,7 @@ class BlendedDistribution:
         driver = select_driver(spec)
         return driver.crossfaded_member(parts, pts, w, member_index, noise)
 
-    def _grid_sample_batch(self, m: int = 256) -> np.ndarray:
+    def _grid_sample_batch(self, m: int = _COHERENT_BATCH) -> np.ndarray:
         """Return a cached ``(m, n_grid)`` coherent-member matrix over the grid points.
 
         Computed once and reused so derived operators that read ``covariance`` node by
@@ -150,7 +153,7 @@ class BlendedDistribution:
         Query points are matched to nearest grid nodes and read from one cached
         coherent-member batch, so repeated node-by-node reads stay cheap.
         """
-        m = 256
+        m = _COHERENT_BATCH
         s = self._grid_sample_batch(m)  # (m, n_grid)
         ia = _nearest(self.support, a, self.time_days)
         ib = _nearest(self.support, b, self.time_days)
