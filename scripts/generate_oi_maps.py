@@ -152,7 +152,7 @@ _AUDIT_SIDECAR = _OUT_ROOT / "oi_config_audit.json"
 
 # Max abs threshold for the j3-inclusive proof: anything worse than 1e-6 m
 # cannot be solver/BLAS version noise and is a REAL config mismatch.
-_AUDIT_RTOL_THRESHOLD_M = 1e-6
+_AUDIT_MAX_ABS_M = 1e-6
 
 # Dev smoke: days 60-71 (2017-03-02 to 2017-03-13, matching the stage_a fixture).
 # Full year: days 0-364 (2017-01-01 to 2017-12-31).
@@ -386,7 +386,7 @@ def run_config_audit() -> None:
     ``OSE_ssh_mapping_OURS_OI.nc`` on those days.
 
     Raises:
-        SystemExit: If max abs diff exceeds ``_AUDIT_RTOL_THRESHOLD_M`` —
+        SystemExit: If max abs diff exceeds ``_AUDIT_MAX_ABS_M`` —
             a REAL config mismatch (STOP semantics, Phase-7 lesson).
     """
     t0 = time.monotonic()
@@ -442,7 +442,7 @@ def run_config_audit() -> None:
 
     if bit_identical:
         config_audit = f"j3-inclusive matched-day: bit-identical ({n_matched} days)"
-    elif max_abs < _AUDIT_RTOL_THRESHOLD_M:
+    elif max_abs < _AUDIT_MAX_ABS_M:
         config_audit = (
             f"j3-inclusive matched-day: tight-rtol PASS ({n_matched} days, "
             f"max_abs={max_abs:.3e} m, max_rel={max_rel:.3e}; "
@@ -452,7 +452,7 @@ def run_config_audit() -> None:
         print(
             f"\n[AUDIT STOP] j3-inclusive rerun does NOT reproduce the signed "
             f"artifact: max_abs={max_abs:.6f} m (threshold "
-            f"{_AUDIT_RTOL_THRESHOLD_M} m), max_rel={max_rel:.3e}, "
+            f"{_AUDIT_MAX_ABS_M} m), max_rel={max_rel:.3e}, "
             f"bit_identical={bit_identical}. This is a REAL config mismatch "
             "(same obs set, same nominal config) — the kernel, params, grid, "
             "framing, or MDT differ from the Phase-4 producer. "
@@ -461,7 +461,7 @@ def run_config_audit() -> None:
         )
         raise SystemExit(
             f"MAP-LEVEL CONFIG AUDIT FAILED (j3-inclusive proof): "
-            f"max_abs={max_abs:.6f} m exceeds {_AUDIT_RTOL_THRESHOLD_M} m. STOP."
+            f"max_abs={max_abs:.6f} m exceeds {_AUDIT_MAX_ABS_M} m. STOP."
         )
 
     print(f"  [PASS] {config_audit}", flush=True)
