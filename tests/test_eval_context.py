@@ -125,7 +125,7 @@ def test_builder_sets_field_kind_and_filters_missions(tmp_path: Path) -> None:
     assert built.wedge_masks_sha is not None
 
 
-def test_builder_without_geometry_leaves_context_lean(tmp_path: Path) -> None:
+def test_builder_without_geometry_leaves_context_lean() -> None:
     """Bug caught: fabricating an ORBIT_GEOMETRY entry (or masks) when no
     artifact exists — absence must mean absence."""
     built = build_eval_context(_mean_result(), field_kind="mean")
