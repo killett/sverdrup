@@ -55,6 +55,7 @@ def _laplacian(grid: GridSpec) -> sparse.csc_matrix:
     rows, cols, vals = [], [], []
 
     def idx(j: int, i: int) -> int:
+        """Return the flat row-major node index for grid cell (j, i)."""
         return j * nx + i
 
     for j in range(ny):
