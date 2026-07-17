@@ -196,6 +196,9 @@ def fit_region_newton(r2: np.ndarray, v: np.ndarray) -> NewtonResult:
 
     Returns:
         NewtonResult(log_s_hat, n_iter, converged).
+
+    Raises:
+        ValueError: If ``r2`` is empty.
     """
     r2 = np.asarray(r2, dtype=float)
     v = np.asarray(v, dtype=float)
