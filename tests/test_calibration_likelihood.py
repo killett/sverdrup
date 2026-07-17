@@ -245,11 +245,10 @@ def test_newton_returns_not_converged_when_max_iter_hit(
     r = rng.standard_normal(n) * std
     r2 = r**2
 
-    # Use a very bad init (far from truth) so 1 iteration is not enough.
-    # We override the init externally by patching; the built-in init is
-    # log(mean(r2/v)) which for these data is ~log(5) ≈ 1.6 — one Newton
-    # step won't reach NEWTON_TOL=1e-10 from there because the floor makes
-    # the step finite but |step| > 1e-10.
+    # Nothing about the init is patched — only NEWTON_MAX_ITER (above). The
+    # built-in init is log(mean(r2/v)), which for these data is ~log(5) ≈ 1.6
+    # — one Newton step won't reach NEWTON_TOL=1e-10 from there because the
+    # floor makes the step finite but |step| > 1e-10.
     # With n=1000 and a curved likelihood, one step is insufficient.
     _log_s_hat, _n_iter, converged = _lik.fit_region_newton(r2, v)
 
