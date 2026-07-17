@@ -54,8 +54,8 @@ def reduce_with_basis(
 ) -> tuple[PersistedFields, GridBasis]:
     """Reduce a live covariance operator and also return the basis used.
 
-    Forms only ``P @ Omega`` (matrix-free) via the operator's ``cov()`` applied to
-    random probe vectors over the grid points; never materialises a dense ``(n, n)`` P.
+    Materialises the dense ``(n, n)`` P once via the operator's ``cov()`` over the
+    grid points, then applies a randomized range finder (``P @ Omega`` probes).
     The returned ``GridBasis`` lets eval-point rows be projected into the *same* basis
     as the gridded factor (so ``Cov(eval, grid) = B_eval @ B_grid^T``, never re-factored).
 
