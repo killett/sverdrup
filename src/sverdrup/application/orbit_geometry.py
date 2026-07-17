@@ -160,11 +160,13 @@ def _phi0_crossings(
     """
     crossings = []
     for lon, lat, *_ in passes:
-        lat = np.asarray(lat, dtype=float)
-        if not (lat.min() <= phi0 <= lat.max()):
+        lat_arr = np.asarray(lat, dtype=float)
+        if not (lat_arr.min() <= phi0 <= lat_arr.max()):
             continue
-        order = np.argsort(lat)
-        xlon = float(np.interp(phi0, lat[order], np.asarray(lon, dtype=float)[order]))
+        order = np.argsort(lat_arr)
+        xlon = float(
+            np.interp(phi0, lat_arr[order], np.asarray(lon, dtype=float)[order])
+        )
         if lon_lo <= xlon <= lon_hi:
             crossings.append(xlon)
     return np.asarray(crossings, dtype=float)
