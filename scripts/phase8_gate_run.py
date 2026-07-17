@@ -105,8 +105,9 @@ SCOPE_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 EPOCH = np.datetime64("2017-01-01")
 
 # Full challenge-year j3 box time bounds (owner rider 1 — one window source).
-# Mirrors phase8_fit_run._FULL_TMIN/_FULL_TMAX exactly; the triplet path already
-# evaluates the whole track, so the calibration block must use the SAME window.
+# Mirrors _FULL_TMIN/_FULL_TMAX in sverdrup.application.calibration.harness
+# exactly; the triplet path already evaluates the whole track, so the
+# calibration block must use the SAME window.
 _FULL_TMIN, _FULL_TMAX = "2017-01-01", "2018-01-01"
 
 # Window tripwire (owner rider 2): the loaded c2 set must span the challenge
