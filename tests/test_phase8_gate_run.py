@@ -564,8 +564,6 @@ def test_refusal_ordering_no_data_loaded(
     with pytest.raises(gate.GateRefusal) as exc:
         gate._run_refusal_checks()
     assert "already exists" in str(exc.value)
-    # The nonexistent maps were never opened — the refusal returned first.
-    assert not (tmp_path / "does_not_exist_mean.nc").exists()
 
 
 def test_refusal_ordering_dev_scope_refuses_before_load(
