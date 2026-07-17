@@ -1,5 +1,18 @@
 # Sverdrup — Progress notebook
 
+> **📋 HYGIENE REGISTER OPEN (2026-07-16, between phases).** Whole-repo
+> hygiene audit ran post-Phase-11-close; the 71 behavior-preserving
+> FIX NOW items are APPLIED and pushed (suite 808/13/1 post-pass; the
+> +1 vs 807 predates the pass — collection identical at the baseline
+> commit). What remains is a prioritized owner-review queue:
+> **`docs/hygiene-priorities.md`** (P0-P4 with effort + trigger per
+> item; full findings in `docs/hygiene-notes.md`). ⚠ TWO P0
+> EVIDENCE-INTEGRITY ITEMS gate any future evidence/gate rerun: the
+> unguarded inline c2 touch (`stage_miost_gate_run.py:801-817`) and
+> the Stage-B evidence clobber path (`tune_miost_inflation.py:117`) —
+> decide those BEFORE rerunning either script. Also flagged: Task-22
+> owner-ordered `PeakFeasibility` is wired nowhere (P3 item 21).
+
 > **✅ PHASE 11 — evaluator wiring: CLOSED 2026-07-16 (Task-12 owner
 > ruling, all 12 tasks resolved; every commit pushed; suite 807/13/1 at
 > 92% coverage).** THE META-LINE: the reference-free metric conceived at

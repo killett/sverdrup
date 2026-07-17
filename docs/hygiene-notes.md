@@ -3,6 +3,9 @@
 Running log of hygiene audits and smells we are intentionally keeping.
 Future passes: read this before re-flagging anything.
 
+> Prioritized owner-review queue for everything left open here:
+> `docs/hygiene-priorities.md` (P0-P4, effort + trigger per item).
+
 ## 2026-07-16 — whole-repo audit (AUDIT-ONLY, no mutations)
 
 Baseline: HEAD `14f59d9` (Phase 11 closed), tree clean, canonical gate
