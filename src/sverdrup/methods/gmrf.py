@@ -19,6 +19,7 @@ from sverdrup.core.provenance import (
 from sverdrup.core.types import CovFidelity, Points, Seed, UncertaintyCapability
 from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
 from sverdrup.methods.gmrf_grid import (
+    GridIdentityProjection,
     kappa_from_range,
     matern_precision,
 )
@@ -50,8 +51,6 @@ class GMRFCovarianceOperator:
             time_days: Output time.
             q_prior: Prior precision (CSC), persisted for the Stage-B strip-prior draw.
         """
-        from sverdrup.methods.gmrf_grid import GridIdentityProjection
-
         proj = (
             GridIdentityProjection(projection_or_grid)
             if isinstance(projection_or_grid, GridSpec)
@@ -125,8 +124,6 @@ class MaternGMRF:
             kappa = kappa_from_range(np.asarray(rng_resolved))  # elementwise κ field
             range_repr = "field(lat-varying)"
         q_prior = matern_precision(grid, kappa, tau)
-
-        from sverdrup.methods.gmrf_grid import GridIdentityProjection
 
         projection = GridIdentityProjection(grid)
         a_op = projection.weights(obs.coords())  # (n_obs, n_nodes): node -> obs
