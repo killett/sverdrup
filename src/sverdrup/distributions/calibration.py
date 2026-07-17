@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 BOX_LON: tuple[float, float] = (295.0, 305.0)
 BOX_LAT: tuple[float, float] = (33.0, 43.0)
 
-_LON_EDGES: np.ndarray = np.arange(295.0, 305.0 + 2.0, 2.0)
-_LAT_EDGES: np.ndarray = np.arange(33.0, 43.0 + 2.0, 2.0)
+_LON_EDGES: np.ndarray = np.arange(BOX_LON[0], BOX_LON[1] + 2.0, 2.0)
+_LAT_EDGES: np.ndarray = np.arange(BOX_LAT[0], BOX_LAT[1] + 2.0, 2.0)
 
 
 def _clamp_hull(lon: np.ndarray, lat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
