@@ -433,11 +433,6 @@ def test_harness_on_miost_reproduces_phase8_evidence_leaf_identical() -> None:
         f"{sorted(str(p) for p in missing)[:10]}"
     )
 
-    # Superset assertion: l9 must contain all l8 leaves.
-    assert l9.keys() >= l8.keys(), (
-        "l9 (harness) is not a superset of l8 (phase8 evidence) leaf keys"
-    )
-
     # Value equality — floats must match exactly (deterministic rerun).
     mismatches: list[str] = []
     for path, v8 in l8.items():
