@@ -3,10 +3,12 @@
 This script is run ONCE, against a side git worktree checked out at commit
 3f88ccb (the last commit before the Task-3 eval-time √s seam, where the shipped
 factory applied ``inflation_s`` via the old ``ens.rescaled(self.inflation_s)``
-anomaly path).  It records, through the FACTORY (``shipped_miost()``), a small
-set of derived σ / mean / covariance probes on a compact fixture config so that
-the current (post-seam) factory path can be asserted byte-compatible against it
-at rtol 1e-12 (plan Task 4, acceptance criterion 4).
+anomaly path).  It records, via a direct ``Miost(...)`` that mirrors the
+factory's ensemble+inflation_s wiring on a compact config (m=24 —
+``shipped_miost()`` itself bakes in members=100 / STAGE_B_ROOT, too heavy for
+a fixture), a small set of derived σ / mean / covariance probes so that the
+current (post-seam) path can be asserted byte-compatible against it at
+rtol 1e-12 (plan Task 4, acceptance criterion 4).
 
 Why a worktree and not an in-tree checkout: the user's standing rule forbids
 ``git checkout <sha>`` inside the working tree (it has silently restored deleted
