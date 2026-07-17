@@ -18,7 +18,7 @@ import numpy as np
 
 from sverdrup.core.evaluation import ContextKey, EvalContext, MetricScope
 from sverdrup.eval.spectral import effective_resolution_lambda_x
-from sverdrup.validation.input_adapter import EPOCH
+from sverdrup.validation.params import EPOCH
 
 _US_PER_DAY = 86_400_000_000
 

@@ -21,14 +21,11 @@ from scipy.interpolate import griddata  # type: ignore[import-untyped]
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ParameterProvider
-from sverdrup.validation.params import COARSEN_TIME, OBS_NOISE_VARIANCE
+from sverdrup.validation.params import COARSEN_TIME, EPOCH, OBS_NOISE_VARIANCE
 
 # Cap for gridding the (static) MDT — it is smooth, so a subsample suffices and
 # keeps the Delaunay triangulation fast. Deterministic via a fixed seed.
 _MDT_SUBSAMPLE = 150_000
-
-# day 0 == 2017-01-01; spin-up obs carry negative day numbers.
-EPOCH = np.datetime64("2017-01-01")
 
 # The five mapping missions (Jason-2 ships as geodetic ``j2g`` + interleaved
 # ``j2n``). Cryosat-2 (``c2``) is deliberately absent — it is the withheld

@@ -18,9 +18,7 @@ from sverdrup.methods.kernel import (
 )
 from sverdrup.methods.registry import METHODS, SHIPPED
 from sverdrup.validation.output_adapter import write_map
-from sverdrup.validation.params import baseline_kernel
-
-EPOCH = np.datetime64("2017-01-01")
+from sverdrup.validation.params import EPOCH, baseline_kernel
 
 
 def _oi_kernel_from_params(

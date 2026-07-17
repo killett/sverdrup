@@ -44,6 +44,9 @@ LON_MIN, LON_MAX = 295.0, 305.0
 LAT_MIN, LAT_MAX = 33.0, 43.0
 TIME_MIN, TIME_MAX = "2017-01-01", "2017-12-31"
 
+# Challenge day 0 == 2017-01-01; spin-up obs carry negative day numbers.
+EPOCH = np.datetime64("2017-01-01")
+
 # Obs influence window: oi_core keeps |obs.time - grid.time| < 2*Lt.
 TEMPORAL_HALF_WINDOW_DAYS = 2.0 * TEMPORAL_CORR_DAYS  # 14 days
 
