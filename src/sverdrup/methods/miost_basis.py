@@ -184,6 +184,7 @@ class _ScaleLayout:
 
     @property
     def n_t(self) -> int:
+        """Number of temporal slots in the window (inclusive j_lo..j_hi)."""
         return self.j_hi - self.j_lo + 1
 
 
