@@ -335,7 +335,7 @@ def test_piecewise_jet_cell_takes_jet_region() -> None:
     np.testing.assert_allclose(result, np.array([jet_val]), rtol=1e-15)
 
 
-def test_piecewise_lookup_and_out_of_range_raises() -> None:
+def test_piecewise_out_of_range_region_value_raises() -> None:
     """Region values outside [lo, hi] must raise at construction.
 
     Bug caught: silently clipping evidence-side values (spec §9 assert).
