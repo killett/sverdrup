@@ -25,6 +25,8 @@ from sverdrup.application.calibration.harness import atomic_write_json
 from sverdrup.eval.phase11_constants import (
     CLUSTER_TOL_DEG,
     DERIVATION_VERSION,
+    RATIO_GAP_HI,
+    RATIO_GAP_LO,
     REPEAT_RATIO_MAX,
 )
 from sverdrup.validation.input_adapter import _days_since_epoch, _mission_code
@@ -49,6 +51,11 @@ class FamilyGeometry:
         s_lon_km: Repeat only — median adjacent cluster-center gap at phi0.
         d_perp_km: Repeat only — ``s_lon_km * |cos(heading_north)|``.
         spacing_quantiles_km: Drifting only — (q10, q50, q90) adjacent gaps.
+        classifier_ratio: ``n_clusters / n_crossings`` — the classifier's
+            decision variable, recorded per the Task-12 rider (2026-07-16).
+        n_clusters: Single-linkage cluster count at the pinned tolerance.
+        cluster_size_median: Median crossings per cluster — the corroborating
+            second evidence axis (true repeat ~revisit count; chance chains ~2).
     """
 
     heading_north_deg: float
@@ -58,6 +65,9 @@ class FamilyGeometry:
     s_lon_km: float | None
     d_perp_km: float | None
     spacing_quantiles_km: tuple[float, float, float] | None
+    classifier_ratio: float
+    n_clusters: int
+    cluster_size_median: float
 
 
 def split_passes(
@@ -169,6 +179,11 @@ def classify_orbit(
     applies the pinned rule: ``"repeat"`` iff
     ``n_clusters / n_crossings <= REPEAT_RATIO_MAX``.
 
+    Gap-tabling rider (owner Task-12 ruling, 2026-07-16): a ratio strictly
+    inside the measured gap between the classified sides
+    ``(RATIO_GAP_LO, RATIO_GAP_HI)`` refuses — it TABLES an owner decision,
+    never a silent classification.
+
     Args:
         crossing_lons: In-domain crossing longitudes (degrees).
         tol_deg: Single-linkage cluster tolerance (degrees).
@@ -177,19 +192,33 @@ def classify_orbit(
         ``(orbit_class, cluster_centers)`` with centers in degrees, sorted.
 
     Raises:
-        ValueError: If there are no crossings to classify.
+        ValueError: If there are no crossings to classify, or if the ratio
+            lands inside the tabling gap (owner decision required).
     """
     xs = np.sort(np.asarray(crossing_lons, dtype=float))
     if xs.size == 0:
         raise ValueError("no phi0 crossings in domain — cannot classify orbit")
-    breaks = np.nonzero(np.diff(xs) > tol_deg)[0]
-    bounds = np.concatenate([[0], breaks + 1, [xs.size]])
-    centers = np.array(
-        [xs[a:b].mean() for a, b in zip(bounds[:-1], bounds[1:], strict=True)]
-    )
+    centers, _sizes = _clusters(xs, tol_deg)
     ratio = centers.size / xs.size
+    if RATIO_GAP_LO < ratio < RATIO_GAP_HI:
+        raise ValueError(
+            f"orbit-class ratio {ratio:.4f} lands inside the measured gap "
+            f"({RATIO_GAP_LO}, {RATIO_GAP_HI}) — TABLES an owner decision; "
+            "never silently classified (Task-12 rider, 2026-07-16)"
+        )
     orbit_class = "repeat" if ratio <= REPEAT_RATIO_MAX else "drifting"
     return orbit_class, centers
+
+
+def _clusters(xs_sorted: np.ndarray, tol_deg: float) -> tuple[np.ndarray, list[int]]:
+    """Single-linkage clusters of sorted crossings: (centers, sizes)."""
+    breaks = np.nonzero(np.diff(xs_sorted) > tol_deg)[0]
+    bounds = np.concatenate([[0], breaks + 1, [xs_sorted.size]])
+    centers = np.array(
+        [xs_sorted[a:b].mean() for a, b in zip(bounds[:-1], bounds[1:], strict=True)]
+    )
+    sizes = [int(b - a) for a, b in zip(bounds[:-1], bounds[1:], strict=True)]
+    return centers, sizes
 
 
 def derive_family(passes: list[Pass], phi0: float, ascending: bool) -> FamilyGeometry:
@@ -210,6 +239,7 @@ def derive_family(passes: list[Pass], phi0: float, ascending: bool) -> FamilyGeo
     heading = _fit_heading(passes, phi0)
     crossings = _phi0_crossings(passes, phi0)
     orbit_class, centers = classify_orbit(crossings)
+    _centers, sizes = _clusters(np.sort(crossings), CLUSTER_TOL_DEG)
     deg_to_km = KM_PER_DEG * abs(np.cos(np.deg2rad(phi0)))
     s_lon_km: float | None = None
     d_perp_km: float | None = None
@@ -231,6 +261,9 @@ def derive_family(passes: list[Pass], phi0: float, ascending: bool) -> FamilyGeo
         s_lon_km=s_lon_km,
         d_perp_km=d_perp_km,
         spacing_quantiles_km=quantiles,
+        classifier_ratio=float(centers.size / crossings.size),
+        n_clusters=int(centers.size),
+        cluster_size_median=float(np.median(sizes)),
     )
 
 

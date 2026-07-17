@@ -66,6 +66,13 @@ def test_ring_spectrum_slope_recovers_isotropic_power_law() -> None:
     single-realization slope is -2.44. The fit here follows the clearance
     rule (rings >= 4) on 20-realization ensemble-averaged power; seeds 0-5
     all land within +-0.15 of -2.
+
+    OWNER-ACCEPTED deviation (Task-12 ruling, 2026-07-16): this test pins
+    implementation-consistent WINDOWED E(k) behavior; the spec-§3 -q+1
+    exponent relation remains the documented ASYMPTOTIC IDEALIZATION. Do
+    NOT "fix" this fixture back toward the idealized form (the sketch's
+    bins-3-10 single-realization variant measures -2.44 under the window
+    by construction, not by defect).
     """
     rng = np.random.default_rng(11)
     ny, nx = 128, 128

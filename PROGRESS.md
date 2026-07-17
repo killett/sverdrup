@@ -1,6 +1,83 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE 11 — evaluator wiring: EXECUTION IN FLIGHT (2026-07-15,
+> **✅ PHASE 11 — evaluator wiring: CLOSED 2026-07-16 (Task-12 owner
+> ruling, all 12 tasks resolved; every commit pushed; suite 807/13/1 at
+> 92% coverage).** THE META-LINE: the reference-free metric conceived at
+> the project's founding was exercised for the FIRST time this phase and
+> discriminates products in the physically expected direction — the
+> architecture-audit debt is PAID: the reference-free family is wired
+> (Registry.applicable, three surfaces: pipeline, harness packs, retro
+> script), tested (two-directional declared⇒consumed integrity;
+> dormant-wiring), and producing product-relevant numbers; the Policy
+> seam consolidated the three lexicographic implementations behind three
+> green identity gates (i leaf-identical, ii verdict-reproduction,
+> iii sort-identity).
+>
+> ```
+> PHASE-11 RETRO NUMBERS (2026-07-16, evidence phase11.retro.*, geometry sha 4e1d0db12971 v3):
+> - MIOST stage-B means: track_excess_log10 max repeat=0.410 (s3a/desc),
+>   max drifting=-0.253 (j2g/desc); spec_slope=-7.60 (WLS SE 0.12, day IQR 1.88),
+>   band [100, 219] km
+> - OI regenerated means: track_excess_log10 max repeat=1.233 (s3a/desc),
+>   max drifting=-0.227 (j2g/desc); spec_slope=-7.77 (WLS SE 0.26, day IQR 1.96),
+>   band [100, 219] km
+> ```
+>
+> READING (NECESSARY-NOT-SUFFICIENT — a strong track signature proves a
+> problem; a clean map does not prove correctness): the regenerated OI
+> means carry ~17× s3a-oriented per-mode excess at the s3a track
+> spacing/orientation vs the same-|k| baseline; MIOST ~2.6×; drifting
+> probes clean on both products. spec_slope −7.6/−7.8 sits in the
+> sub-λx rolloff — descriptive, no verdict semantics. **MIOST's 0.410
+> is the STANDING BASELINE for future products.**
+>
+> **RATIFICATIONS (owner Task-12 ruling, 2026-07-16):**
+> 1. REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION bump. Basis:
+>    measured ratios s3a 0.064 / j2n ~0.095 vs h2g 0.438 / alg 0.464;
+>    geometric-mean placement, ≥1.75× margin each way; cluster-size
+>    medians 16 vs 2 as the corroborating second axis; single-linkage
+>    chaining named as the mechanism the pre-registered rationale
+>    missed. EPISTEMICS: the threshold is calibrated on the classified
+>    set; transferability = margins + physics, not pre-registration.
+>    **STANDING RIDER: a future mission whose ratio lands inside the
+>    measured gap TABLES an owner decision — never silently classified**
+>    (implemented: classify_orbit refuses on RATIO_GAP (0.14, 0.431) —
+>    lower edge = the ruling's 0.14 verbatim; upper edge pinned just
+>    inside the MEASURED drifting side 0.431953 = alg/desc, since the
+>    ruling's rounded 0.44 would table the very missions it ratified).
+>    Per-family ratios + cluster-size medians live IN the geometry
+>    artifact (v3 schema), not only the constants comment.
+> 2. Per-class maxima computed over non-flagged families only;
+>    under_floor/NaN rows remain visible and flagged (regression-tested).
+>    A max over NaN is meaningless; the rows stay honest.
+>
+> **ACCEPTED RECORDED DEVIATIONS:** (a) the synthetic-slope test pins
+> implementation-consistent WINDOWED E(k) behavior (the sketch's
+> bins-3-10 single-realization variant measures −2.44 on the q=3 fixture
+> by construction) — the spec-§3 −q+1 exponent relation remains the
+> documented ASYMPTOTIC IDEALIZATION; the test is never to be "fixed"
+> back toward −2.0 (distinction recorded in the test docstring);
+> (b) fidelity Lx = box extent 876 km (219 km upper edge) — the
+> FFT-length variant (223.4) is caught by test.
+>
+> DELIVERABLES: orbit-geometry provider (data-derived headings/spacings/
+> orbit-class, pinnable v3 artifact incl. classifier evidence);
+> map_spectrum shared prep (Parseval-exact half-plane, ring-integrated
+> E(k), recorded-vs-measured 2.25-bin mainlobe); GroundTrack rebuilt
+> (geometry-consumed oriented probes vs same-|k| baseline, widening +
+> under_floor); SpectralFidelity (descriptive WLS in-band slope, visible
+> wedge_exclusion flag, obs 1-D companion); optional_context protocol
+> extension (applicable() unchanged); declared⇒consumed integrity test +
+> EffectiveResolution over-declaration fix; eval_context builder
+> (field_kind single source, ONE mask derivation shared sha in both
+> consumer rows — owner pin 1b) + default_registry + report rows with
+> visible skip rows; pipeline migrated to report_rows; harness packs
+> carry report_only_instruments; retro one-shot with
+> refuse-before-scoring provenance; Policy seam + three site migrations.
+> Zero c2 phase-wide (refusal guards by test). No phase queued — the
+> next milestone is the owner's call.
+
+> **[closed above] ▶ PHASE 11 — evaluator wiring: EXECUTION IN FLIGHT (2026-07-15,
 > executing-plans, on main).** Spec:
 > `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`;
 > plan + tracker:

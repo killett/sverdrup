@@ -1,6 +1,9 @@
 """Phase-11 pre-registered constants (spec §1 pins; owner plan-approval obligations 1, 2, 5)."""
 
-DERIVATION_VERSION = 2  # orbit-geometry artifact schema/algorithm version
+DERIVATION_VERSION = 3  # orbit-geometry artifact schema/algorithm version
+# v3 (2026-07-16, Task-12 owner ruling): per-family classifier evidence
+# (ratio, n_clusters, cluster-size median) recorded IN the artifact + the
+# gap-tabling rider below — schema + algorithm change invalidates v2 keys.
 # v2 (2026-07-16): REPEAT_RATIO_MAX corrected 0.5 -> 0.25 (see below); the
 # version bump invalidates v1 cache keys so stale artifacts re-derive.
 
@@ -34,6 +37,23 @@ REPEAT_RATIO_MAX = 0.25
 # = 0.248), >= 1.75x margin each way.
 # Cluster-size evidence corroborates: median cluster size 16 (s3a) vs 2
 # (alg/h2g chance pairs).
+# RATIFIED at the Task-12 phase-close ruling (owner, 2026-07-16).
+# EPISTEMICS (owner, verbatim intent): the threshold is calibrated on the
+# classified set; transferability = margins + physics, not
+# pre-registration.
+
+# Gap-tabling rider (owner Task-12 ruling, 2026-07-16): a family whose
+# ratio lands strictly inside the measured gap between the classified
+# sides TABLES an owner decision — never silently classified. The lower
+# edge is the ruling's 0.14 verbatim (measured repeat-side max 0.095238 =
+# j2n/desc sits comfortably below). The upper edge pins just inside the
+# MEASURED drifting side (full 10-family measurement, 2026-07-16:
+# drifting-side min 0.431953 = alg/desc) — the ruling's rounded 0.44
+# would table the very missions the same ruling ratified as drifting.
+# Per-family ratios + cluster-size medians live in the geometry artifact
+# (v3 schema), not only here.
+RATIO_GAP_LO = 0.14
+RATIO_GAP_HI = 0.431
 
 # Spectral fidelity band rule (spec §5).
 BAND_LO_FLOOR_KM = 100.0  # lower edge = max(100, 3 * grid dy_km)

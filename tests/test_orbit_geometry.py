@@ -6,6 +6,7 @@ heading, known crossing longitudes), never by running the code under test.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -70,6 +71,13 @@ def test_repeat_mission_recovered() -> None:
     )
     assert fams.n_passes == 48
     assert fams.spacing_quantiles_km is None
+    # classifier evidence recorded per family (Task-12 rider): 4 tracks
+    # revisited 12x; jitter drops 7 of the lon0=295 crossings out of the
+    # domain box, so 41 in-domain crossings -> ratio 4/41
+    assert fams.n_clusters == 4
+    assert fams.classifier_ratio == pytest.approx(fams.n_clusters / fams.n_crossings)
+    assert fams.classifier_ratio == pytest.approx(4 / 41)
+    assert fams.cluster_size_median == 12.0
 
 
 def test_drifting_mission_classified() -> None:
@@ -92,23 +100,32 @@ def test_drifting_mission_classified() -> None:
 
 def test_orbit_class_boundary_both_sides() -> None:
     """Bug caught: wrong comparison direction, or ratio over passes instead of
-    crossings. Threshold = REPEAT_RATIO_MAX = 0.25 (executor-set correction,
-    2026-07-16, disclosed — the plan's 0.5 misclassified real dense drifting
-    missions; measured real ratios: repeat <= ~0.14, drifting >= ~0.44).
-    2 clusters / 9 crossings = 0.222 <= 0.25 -> repeat;
-    3 / 9 = 0.333 > 0.25 -> drifting."""
-    below = np.array(
-        [295.0, 295.0, 295.0, 295.0, 295.0, 297.0, 297.0, 297.0, 297.0]
-    )  # 2 clusters / 9
+    crossings. Threshold = REPEAT_RATIO_MAX = 0.25 (owner-RATIFIED at the
+    Task-12 ruling, 2026-07-16; measured envelope: repeat side <= 0.0952,
+    drifting side >= 0.4320). Sides sit OUTSIDE the tabling gap
+    (RATIO_GAP_LO, RATIO_GAP_HI) = (0.14, 0.431):
+    2 clusters / 24 crossings = 0.083 -> repeat;
+    6 clusters / 9 crossings = 0.667 -> drifting."""
+    below = np.array([295.0] * 12 + [297.0] * 12)  # 2 clusters / 24 = 0.083
     cls, centers = classify_orbit(below)
     assert cls == "repeat"
     assert centers.size == 2
     above = np.array(
-        [295.0, 295.0, 295.0, 297.0, 297.0, 297.0, 299.0, 299.0, 299.0]
-    )  # 3 clusters / 9
+        [295.0, 295.0, 295.0, 297.0, 297.0, 299.0, 301.0, 303.0, 304.0]
+    )  # 6 clusters / 9 = 0.667
     cls, centers = classify_orbit(above)
     assert cls == "drifting"
-    assert centers.size == 3
+    assert centers.size == 6
+
+
+def test_gap_ratio_tables_owner_decision() -> None:
+    """OWNER RIDER (Task-12 ruling, 2026-07-16) — bug caught: silently
+    classifying a family whose ratio lands strictly inside the measured gap
+    between the classified sides. 2 clusters / 8 crossings = 0.25 is inside
+    (0.14, 0.431) and MUST refuse."""
+    in_gap = np.array([295.0] * 4 + [297.0] * 4)  # 2 clusters / 8 = 0.25
+    with pytest.raises(ValueError, match="owner decision"):
+        classify_orbit(in_gap)
 
 
 def test_in_domain_crossings_only() -> None:
@@ -152,7 +169,9 @@ def _write_synth_obs(
     lon_parts, lat_parts, time_parts = [], [], []
     t0 = np.datetime64("2017-01-01T00:00:00", "s")
     k = 0
-    for _rev in range(3):
+    # 12 revisits keep the classifier ratio (n_tracks / crossings ~ 1/12)
+    # clear of the Task-12 tabling gap's lower edge (0.14)
+    for _rev in range(12):
         for lon0 in base_lons:
             lon = (
                 lon0
@@ -191,6 +210,11 @@ def test_artifact_deterministic_and_key_sensitive(tmp_path: Path) -> None:
     out = tmp_path / "phase11_orbit_geometry.json"
 
     sha1 = build_geometry_artifact(obs_dir, ["alg", "s3a"], PHI0, out)
+    # Task-12 rider: classifier evidence lives IN the artifact, not only in
+    # the constants comment
+    art = json.loads(out.read_text())
+    fam = art["missions"]["alg"]["asc"]
+    assert {"classifier_ratio", "n_clusters", "cluster_size_median"} <= set(fam)
     out.unlink()  # force a full re-derivation, not a cache load
     sha2 = build_geometry_artifact(obs_dir, ["alg", "s3a"], PHI0, out)
     assert sha1 == sha2
