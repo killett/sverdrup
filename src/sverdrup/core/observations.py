@@ -15,7 +15,11 @@ class ObservationErrorModel(Protocol):
     """Observation-error covariance R. Not merely a scalar noise sigma."""
 
     def add_to_diagonal(self, k: np.ndarray) -> None:
-        """In-place add R's diagonal contribution to obs-obs kernel ``k``."""
+        """In-place add R's contribution for these observations to obs-obs kernel ``k``.
+
+        Implementations may add off-diagonal structure (e.g. a full
+        correlated block), not just the diagonal.
+        """
 
     def as_matrix(self, n: int) -> np.ndarray:
         """Materialise the (n, n) R (used for correlated models / tests)."""
