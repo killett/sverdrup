@@ -64,16 +64,15 @@ def test_rescaled_mean_bit_identical_variance_scaled(dist: Any) -> None:
     D6 violation), or scaling by s instead of sqrt(s) (variance x s^2).
     """
     s = 2.7
+    var_before = np.asarray(dist.marginal_variance()).copy()
     re = dist.rescaled(s)
     assert np.array_equal(np.asarray(re.mean), np.asarray(dist.mean))
     np.testing.assert_allclose(
         re.marginal_variance(), s * dist.marginal_variance(), rtol=1e-12
     )
-    # Original untouched (no aliasing mutation).
-    np.testing.assert_allclose(
-        dist.marginal_variance() * 0 + dist.marginal_variance(),
-        dist.marginal_variance(),
-    )
+    # Original untouched (no aliasing mutation): compare against a snapshot
+    # taken BEFORE rescaled() was called.
+    np.testing.assert_array_equal(dist.marginal_variance(), var_before)
 
 
 def test_rescaled_records_provenance(dist: Any) -> None:
