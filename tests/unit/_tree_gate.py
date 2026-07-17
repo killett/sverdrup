@@ -39,6 +39,13 @@ _Win = tuple[tuple[float, float], tuple[float, float]]
 _Quad = tuple[np.ndarray, np.ndarray, _Win, _Win]
 
 
+def _grid_adjacent(gp: np.ndarray, a: int, b: int) -> bool:
+    """True when nodes ``a`` and ``b`` are one grid step apart along exactly one axis."""
+    dlon = abs(gp[a, 0] - gp[b, 0])
+    dlat = abs(gp[a, 1] - gp[b, 1])
+    return (dlon <= 1.0 + 1e-6 and dlat < 1e-6) or (dlat <= 1.0 + 1e-6 and dlon < 1e-6)
+
+
 def _scattered_obs() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """A deterministic 4x4 lattice of obs spread across 0..9 (so every halo shares seam data)."""
     coords = np.array([1.0, 3.5, 6.0, 8.5])
@@ -208,12 +215,7 @@ class GateFixture:
         for a in gi:
             for b in gi:
                 if a < b:
-                    dlon = abs(gp[a, 0] - gp[b, 0])
-                    dlat = abs(gp[a, 1] - gp[b, 1])
-                    adjacent = (dlon <= 1.0 + 1e-6 and dlat < 1e-6) or (
-                        dlat <= 1.0 + 1e-6 and dlon < 1e-6
-                    )
-                    if not adjacent:
+                    if not _grid_adjacent(gp, a, b):
                         continue
                     denom = float(np.sqrt(max(ref[a, a] * ref[b, b], 1e-30)))
                     errs.append(abs(float(emp[a, b] - ref[a, b])) / denom)
@@ -301,12 +303,7 @@ class GateFixture:
         for a in gi:
             for b in gi:
                 if a < b:
-                    dlon = abs(gp[a, 0] - gp[b, 0])
-                    dlat = abs(gp[a, 1] - gp[b, 1])
-                    adjacent = (dlon <= 1.0 + 1e-6 and dlat < 1e-6) or (
-                        dlat <= 1.0 + 1e-6 and dlon < 1e-6
-                    )
-                    if not adjacent:
+                    if not _grid_adjacent(gp, a, b):
                         continue
                     var_ref = float(np.var(ref_s[:, a] - ref_s[:, b]))
                     if var_ref >= ref_floor:
