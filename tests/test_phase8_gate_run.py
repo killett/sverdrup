@@ -10,7 +10,6 @@ enough to prove no touch occurs.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
 from typing import Any
@@ -20,13 +19,10 @@ import pytest
 
 from sverdrup.application.calibration.constants import COVERAGE_TARGET, COVERAGE_TOL
 from sverdrup.distributions.calibration import ScalarCalibration
+from tests.helpers import load_script
 
 # Load the runner as a module directly from scripts/ (not on the package path).
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phase8_gate_run.py"
-_spec = importlib.util.spec_from_file_location("phase8_gate_run", _SCRIPT)
-assert _spec is not None and _spec.loader is not None
-gate = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(gate)
+gate = load_script("phase8_gate_run")
 
 
 # ---------------------------------------------------------------------------

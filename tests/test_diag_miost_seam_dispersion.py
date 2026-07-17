@@ -7,9 +7,7 @@ reference (`MiostEnsembleDistribution`), which Task 16 proved exact.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -24,10 +22,7 @@ from sverdrup.distributions.miost_ensemble import (
 )
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.miost_windows import WindowPlan
-
-_SCRIPT = (
-    Path(__file__).resolve().parents[1] / "scripts" / "diag_miost_seam_dispersion.py"
-)
+from tests.helpers import load_script
 
 M = 6
 ROOT = 12345
@@ -55,11 +50,7 @@ def _obs(n: int = 80) -> ObsWindow:
 
 @pytest.fixture(scope="module")
 def diag_mod() -> Any:
-    spec = importlib.util.spec_from_file_location("diag_miost_seam_dispersion", _SCRIPT)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["diag_miost_seam_dispersion"] = mod
-    spec.loader.exec_module(mod)
+    mod = load_script("diag_miost_seam_dispersion")
     yield mod
     del sys.modules["diag_miost_seam_dispersion"]
 

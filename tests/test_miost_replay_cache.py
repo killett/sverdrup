@@ -8,7 +8,6 @@ identical points, so a hit is a faithful reproduction, not a shortcut.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -16,17 +15,13 @@ from typing import Any
 
 import pytest
 
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "stage_miost_gate_run.py"
+from tests.helpers import load_script
 
 
 @pytest.fixture(scope="module")
 def gate_mod() -> Any:
     """Import the gate-runner script as a module (scripts/ is not a package)."""
-    spec = importlib.util.spec_from_file_location("stage_miost_gate_run", _SCRIPT)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["stage_miost_gate_run"] = mod
-    spec.loader.exec_module(mod)
+    mod = load_script("stage_miost_gate_run")
     yield mod
     # The script monkeypatches ValidationTrackScorer.score at import; restore.
     from sverdrup.application.tuning.scorer import ValidationTrackScorer

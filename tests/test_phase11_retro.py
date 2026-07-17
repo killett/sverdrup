@@ -7,7 +7,6 @@ build_jet_core_mask pattern in test_calibration_harness.py.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
 from types import ModuleType
@@ -17,11 +16,9 @@ import numpy as np
 import pytest
 import xarray as xr
 
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phase11_retro_run.py"
-_spec = importlib.util.spec_from_file_location("phase11_retro_run", _SCRIPT)
-assert _spec is not None and _spec.loader is not None
-_rr: ModuleType = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_rr)
+from tests.helpers import load_script
+
+_rr: ModuleType = load_script("phase11_retro_run")
 
 
 def _fam(heading: float) -> dict[str, Any]:

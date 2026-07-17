@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -16,8 +14,7 @@ from sverdrup.core.parameters import ConstantProvider
 from sverdrup.core.provenance import TransformKind
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.miost_windows import WindowPlan
-
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tune_miost_inflation.py"
+from tests.helpers import load_script
 
 M = 5
 DAY = 50.0
@@ -29,11 +26,7 @@ GRID = GridSpec.lonlat(np.linspace(296.0, 304.0, 6), np.linspace(34.0, 42.0, 6))
 
 @pytest.fixture(scope="module")
 def infl_mod() -> Any:
-    spec = importlib.util.spec_from_file_location("tune_miost_inflation", _SCRIPT)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["tune_miost_inflation"] = mod
-    spec.loader.exec_module(mod)
+    mod = load_script("tune_miost_inflation")
     yield mod
     del sys.modules["tune_miost_inflation"]
 

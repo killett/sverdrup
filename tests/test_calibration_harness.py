@@ -27,14 +27,11 @@ from sverdrup.application.calibration.harness import (
     OI_DESCRIPTOR,
     ProductDescriptor,
 )
+from tests.helpers import load_script
 
 # Load build_jet_core_mask by path (not as ``scripts.build_jet_core_mask``)
 # to avoid mypy's "module found twice under different names" error.
-_BMK_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_jet_core_mask.py"
-_bmk_spec = importlib.util.spec_from_file_location("build_jet_core_mask", _BMK_PATH)
-assert _bmk_spec is not None and _bmk_spec.loader is not None
-_bm: ModuleType = importlib.util.module_from_spec(_bmk_spec)
-_bmk_spec.loader.exec_module(_bm)
+_bm: ModuleType = load_script("build_jet_core_mask")
 
 # ---------------------------------------------------------------------------
 # Helpers

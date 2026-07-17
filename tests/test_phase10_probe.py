@@ -8,18 +8,13 @@ imported here beyond module load (no data touched at import).
 
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-
 import pytest
+
+from tests.helpers import load_script
 
 # Load the probe as a module directly from scripts/ (repo convention: scripts/
 # is not a package; mirrors tests/test_phase8_gate_run.py).
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phase10_probe.py"
-_spec = importlib.util.spec_from_file_location("phase10_probe", _SCRIPT)
-assert _spec is not None and _spec.loader is not None
-probe = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(probe)
+probe = load_script("phase10_probe")
 
 
 def test_trials_per_lane_floor_exact() -> None:

@@ -9,10 +9,8 @@ predate the provenance (the distributed challenge products).
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pytest
@@ -28,6 +26,7 @@ from sverdrup.validation.provenance_guard import (
     assert_scored_not_assimilated,
 )
 from sverdrup.validation.run import run_challenge_map
+from tests.helpers import load_script
 
 J3_TRACK = Path("dt_gulfstream_j3_phy_l3_20161201-20180131_285-315_23-53.nc")
 
@@ -180,17 +179,6 @@ def test_validation_track_scorer_asserts(
         scorer.score("oi", {}, split=None, seed=0, window=None)
 
 
-def _load_script(name: str) -> Any:
-    spec = importlib.util.spec_from_file_location(
-        name, Path(__file__).resolve().parents[1] / "scripts" / f"{name}.py"
-    )
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
 def test_gate_runner_scoring_asserts(tmp_path: Path) -> None:
     """stage_miost_gate_run._score_map_on_validation is guard-wired.
 
@@ -201,7 +189,7 @@ def test_gate_runner_scoring_asserts(tmp_path: Path) -> None:
 
     orig = ValidationTrackScorer.score
     try:
-        mod = _load_script("stage_miost_gate_run")
+        mod = load_script("stage_miost_gate_run")
         leaked = _map_file(tmp_path, ("alg", "j3"))
         cfg = {
             "val_track_path": str(tmp_path / J3_TRACK.name),
@@ -222,7 +210,7 @@ def test_localization_diag_scoring_asserts(tmp_path: Path) -> None:
     future rerun (its VAL_TRACK is the blocked j3 file).
     """
     try:
-        mod = _load_script("diag_miost_localization")
+        mod = load_script("diag_miost_localization")
         leaked = _map_file(tmp_path, ("alg", "j3"))
         with pytest.raises(TrainScoreLeakError, match="j3"):
             mod._score_on_validation(leaked)

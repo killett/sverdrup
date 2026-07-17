@@ -8,9 +8,7 @@ The full --stage-b evidence assembly runs on real data at the gate.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -20,6 +18,7 @@ from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.methods.miost_windows import WindowPlan
+from tests.helpers import load_script
 
 M = 3
 ROOT = 12345
@@ -50,14 +49,7 @@ def runner() -> Any:
     from sverdrup.application.tuning.scorer import ValidationTrackScorer
 
     orig = ValidationTrackScorer.score
-    spec = importlib.util.spec_from_file_location(
-        "stage_miost_gate_run",
-        Path(__file__).resolve().parents[1] / "scripts" / "stage_miost_gate_run.py",
-    )
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["stage_miost_gate_run"] = mod
-    spec.loader.exec_module(mod)
+    mod = load_script("stage_miost_gate_run")
     yield mod
     ValidationTrackScorer.score = orig  # type: ignore[method-assign]  # script wraps at import
     sys.modules.pop("stage_miost_gate_run", None)

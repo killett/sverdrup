@@ -9,9 +9,6 @@ signal (the class that killed the V-lane dev smoke inside a resample).
 
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-
 import numpy as np
 import pytest
 
@@ -20,12 +17,9 @@ from sverdrup.eval.spectral import (
     UnresolvedScaleError,
     _coherence_guard,
 )
+from tests.helpers import load_script
 
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phase10_lane_run.py"
-_spec = importlib.util.spec_from_file_location("phase10_lane_run", _SCRIPT)
-assert _spec is not None and _spec.loader is not None
-lane_run = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(lane_run)
+lane_run = load_script("phase10_lane_run")
 
 _TRIAL = {"c0": 0.0, "c1": 0.0, "c2": 0.0, "log_L0": 0.0, "l1": 0.0, "Lt": 7.0}
 _NOW = "2026-07-14T01:00:00+00:00"
