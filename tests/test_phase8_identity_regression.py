@@ -300,7 +300,7 @@ def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
     ),
 )
 def test_external_var_maps_pin_s_star_identity(
-    day0_shipped: tuple[MiostEnsembleDistribution, np.ndarray, GridSpec],
+    day0_shipped: tuple[CalibratedDistribution, np.ndarray, GridSpec],
 ) -> None:
     """Shipped-config variance vs the SIGNED var maps at day 0 (rtol 1e-9).
 
@@ -473,7 +473,7 @@ def test_mean_unchanged_nonconstant_field_small_fixture(
     ),
 )
 def test_external_mean_unchanged_vs_acceptance_map(
-    day0_shipped: tuple[MiostEnsembleDistribution, np.ndarray, GridSpec],
+    day0_shipped: tuple[CalibratedDistribution, np.ndarray, GridSpec],
 ) -> None:
     """Shipped-config mean map at day 0 == the signed acceptance map, BITWISE.
 
