@@ -261,7 +261,7 @@ class TestEvaluationMasks:
         """Return 25 cell-centroid lon/lat and a simple jet_core mask."""
         lon_centers = np.repeat(np.arange(296.0, 305.0, 2.0), 5)  # 5 lons × 5 lats
         lat_centers = np.tile(np.arange(34.0, 43.0, 2.0), 5)
-        # Mark 3 cells as jet_core (row=2,col=2 region ~ lon=300,lat=38)
+        # Mark 3 cells as jet_core (first 3 flat points: lon=296, lat=34/36/38)
         n = len(lon_centers)
         jet_mask_flat = np.zeros(n, dtype=bool)
         jet_mask_flat[:3] = True  # arbitrary 3 points
