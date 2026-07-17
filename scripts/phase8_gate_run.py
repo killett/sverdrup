@@ -119,7 +119,8 @@ CHALLENGE_TMAX = np.datetime64("2018-01-01")
 _COVER_MIN = np.datetime64("2017-01-31")  # loaded min must be <= end of Jan
 _COVER_MAX = np.datetime64("2017-12-01")  # loaded max must be >= start of Dec
 
-# The six pre-registered evaluation classes (mirror phase8_fit_run.py).
+# The six pre-registered evaluation classes (mirror _EVAL_REGIONS in
+# sverdrup.application.calibration.harness).
 _EVAL_REGIONS = ("SW", "SE", "NW", "NE", "jet_core", "aggregate")
 
 _ENV_FLAG = "SVERDRUP_MIOST_C2"
