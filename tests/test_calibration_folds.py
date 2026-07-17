@@ -311,11 +311,9 @@ def test_merge_tiny_block_to_nearest_same_fold_lowest_index_tiebreak() -> None:
     # Untouched blocks in the other fold keep their identity.
     assert all(6 not in f for f in merged)
 
-    # Tie-break: block 6 equidistant to 8 and 4 -> pick lowest index.
-    # 6 center (298,36); 8 center (302,36) dist 4; 4 (row0,col4, center 304,34)
-    # is far. Use symmetric neighbours 2 (302,34?) — construct explicit tie:
-    # blocks 5 (row1,col0, center 296,36) dist 2 and 7 (row1,col2, center
-    # 300,36) dist 2 are both distance 2 from 6 -> lowest index 5 wins.
+    # Tie-break: blocks 5 (row1,col0, center 296,36) and 7 (row1,col2, center
+    # 300,36) are both distance 2 from block 6 (center 298,36) -> the lowest
+    # index, 5, wins.
     fold2 = frozenset({5, 6, 7})
     other2 = frozenset(set(range(25)) - {5, 6, 7})
     layout2 = (fold2, other2)
