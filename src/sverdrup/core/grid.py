@@ -138,6 +138,8 @@ class PointSet:
     """A bag of ``(k, 3)`` space-time points with a CRS — the non-grid blend support.
 
     Attributes:
+        _points: The ``(k, 3)`` space-time points ``(lon, lat, time)``;
+            accessed via the ``points()`` method.
         crs: The coordinate reference system of the points.
     """
 
