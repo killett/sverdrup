@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import shutil
 import tarfile
 from dataclasses import dataclass
@@ -35,6 +34,7 @@ import httpx
 
 from sverdrup.validation.access import fetch
 from sverdrup.validation.config import ValidationConfig
+from sverdrup.validation.download_ssh_mapping_data_challenge_2021a import sha256_of
 
 _MEOM = (
     "https://ige-meom-opendap.univ-grenoble-alpes.fr/thredds/fileServer/"
@@ -113,15 +113,6 @@ CHALLENGES: dict[str, Challenge] = {
         ),
     ),
 }
-
-
-def sha256_of(path: Path) -> str:
-    """Return the SHA256 hex digest of ``path`` (streamed, 1 MiB chunks)."""
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            h.update(block)
-    return h.hexdigest()
 
 
 def _mirror_config() -> ValidationConfig:
