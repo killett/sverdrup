@@ -130,7 +130,10 @@ def test_scalar_json_roundtrip() -> None:
 def test_poly_scalar_reduction_exact() -> None:
     """Coeffs (log s*, 0,...) must equal ScalarCalibration(s*) everywhere.
 
-    Bug caught: wrong normalization of (u, v) or a stray offset term.
+    Bug caught: a wrong log->sqrt link (e.g. exp(log s) instead of
+    exp(0.5*log s)) or a stray offset term. The spatial coeffs are zero, so
+    (u, v) normalization is NOT exercised here (the clamp/quadrant tests
+    cover it with nonzero coeffs).
     """
     poly = PolyCalibration(
         coeffs=(math.log(S_STAR), 0.0, 0.0, 0.0, 0.0),
