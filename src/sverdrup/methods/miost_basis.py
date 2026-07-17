@@ -8,7 +8,22 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
-from sverdrup.methods.miost_sizing import D_X_KM, D_Y_KM, KM_PER_DEG, scale_set
+from sverdrup.methods.miost_sizing import (
+    BOX_LAT as BOX_LAT,  # noqa: PLC0414  (explicit re-export for scripts/)
+)
+from sverdrup.methods.miost_sizing import (
+    BOX_LON as BOX_LON,  # noqa: PLC0414  (explicit re-export for scripts/)
+)
+from sverdrup.methods.miost_sizing import (
+    D_X_KM,
+    D_Y_KM,
+    KM_PER_DEG,
+    MID_LAT,
+    scale_set,
+)
+from sverdrup.methods.miost_sizing import (
+    SUPPORT_FACTOR as SUPPORT,  # L = 1.5*lam
+)
 
 LADDER: tuple[float, ...] = tuple(scale_set(80.0, lam_max=905.0))  # D1: 8 rungs
 N_DIR = 8  # D1: mod-180 degrees
@@ -17,10 +32,6 @@ R_REF = 0.03**2  # D8 anchor (gauge-inert)
 W_DAYS, V_DAYS, STRIDE_DAYS = 60.0, 15.0, 45.0  # D3 run-constants
 LT_MAX, BETA = 12.0, 0.5  # D3: placement designed at ceiling; dt = BETA*l_t
 HALO_DEG = 1.0  # D7
-BOX_LON = (295.0, 305.0)
-BOX_LAT = (33.0, 43.0)
-MID_LAT = 38.0
-SUPPORT = 1.5  # L = 1.5*lam
 
 
 @dataclass(frozen=True)
