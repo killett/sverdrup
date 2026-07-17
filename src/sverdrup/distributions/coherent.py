@@ -282,6 +282,25 @@ def _in_window(pt: np.ndarray, win: Window, eps: float = 1e-6) -> bool:
     )
 
 
+def _weight_crossfade(
+    parts: Sequence[Any],
+    pts: Points,
+    weights: np.ndarray,
+    corrected: list[np.ndarray],
+) -> np.ndarray:
+    """Weight-crossfade the per-tile corrected fields onto ``pts``."""
+    n = pts.shape[0]
+    out = np.zeros(n)
+    for i, p in enumerate(parts):
+        d = p.distribution
+        idx = _nearest(d.grid, pts, d.time_days)
+        cover = weights[i] > 0
+        field_i = np.zeros(n)
+        field_i[cover] = corrected[i][idx[cover]]
+        out += weights[i] * field_i
+    return np.asarray(out)
+
+
 class GmrfKrigingSolve:
     """GMRF driver: conditioning-by-kriging toward ONE global realization (spec §5.3.1).
 
@@ -359,16 +378,7 @@ class GmrfKrigingSolve:
         """Realize one coherent member: forward-sweep kriging + weight-crossfade onto ``pts``."""
         t = cast(Any, parts[0].distribution).time_days
         corrected = self._sweep(parts, t, member_index, noise)
-        n = pts.shape[0]
-        out = np.zeros(n)
-        for i, p in enumerate(parts):
-            d = p.distribution
-            idx = _nearest(d.grid, pts, d.time_days)
-            cover = weights[i] > 0
-            field_i = np.zeros(n)
-            field_i[cover] = corrected[i][idx[cover]]
-            out += weights[i] * field_i
-        return np.asarray(out)
+        return _weight_crossfade(parts, pts, weights, corrected)
 
 
 def _assert_separates(gpts: Points, ov_indices: list[int]) -> None:
@@ -726,7 +736,7 @@ class GmrfTreeKrigingSolve:
         """Realize one coherent member: spanning-tree hand-forward + weight-crossfade onto ``pts``."""
         t = cast(Any, parts[0].distribution).time_days
         corrected = self._sweep_tree(parts, t, member_index, noise)
-        return self._crossfade(parts, pts, weights, corrected)
+        return _weight_crossfade(parts, pts, weights, corrected)
 
     def crossfaded_member_with_tree(
         self,
@@ -744,26 +754,7 @@ class GmrfTreeKrigingSolve:
         corrected = self._sweep_with_tree(
             parts, t, member_index, noise, parent, order, tree_edges
         )
-        return self._crossfade(parts, pts, weights, corrected)
-
-    @staticmethod
-    def _crossfade(
-        parts: Sequence[Any],
-        pts: Points,
-        weights: np.ndarray,
-        corrected: list[np.ndarray],
-    ) -> np.ndarray:
-        """Weight-crossfade the per-tile corrected fields onto ``pts``."""
-        n = pts.shape[0]
-        out = np.zeros(n)
-        for i, p in enumerate(parts):
-            d = p.distribution
-            idx = _nearest(d.grid, pts, d.time_days)
-            cover = weights[i] > 0
-            field_i = np.zeros(n)
-            field_i[cover] = corrected[i][idx[cover]]
-            out += weights[i] * field_i
-        return np.asarray(out)
+        return _weight_crossfade(parts, pts, weights, corrected)
 
 
 class GmrfCoreAuthoritativeSolve:
@@ -838,7 +829,7 @@ class GmrfCoreAuthoritativeSolve:
         """Realize one coherent member: core-authoritative patchwork, weight-crossfaded onto pts."""
         t = cast(Any, parts[0].distribution).time_days
         fields = self._authoritative_fields(parts, t, member_index, noise)
-        return GmrfTreeKrigingSolve._crossfade(parts, pts, weights, fields)
+        return _weight_crossfade(parts, pts, weights, fields)
 
 
 class PerturbEnsembleDegradation:
