@@ -36,6 +36,16 @@ def _seal(
     return p, sha
 
 
+def _consulted_track() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """The shared consulted track (time, lat, lon, ssh): 20 one-day passes x 30 pts."""
+    day = np.repeat(np.arange(20, dtype=float), 30)  # 20 one-day passes
+    within = np.tile(np.arange(30, dtype=float) * (1.2 / 86400.0), 20)
+    lat = np.tile(np.linspace(33.5, 42.5, 30), 20)
+    lon = np.full(600, 300.0)
+    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(600)
+    return day + within, lat, lon, ssh
+
+
 def _pair(
     seed_b: int = 2, shift: float = 0.0
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
@@ -44,12 +54,7 @@ def _pair(
     Side a's residuals come from seed 1, side b's from ``seed_b`` plus a
     constant ``shift`` (a real skill difference the bands should straddle).
     """
-    day = np.repeat(np.arange(20, dtype=float), 30)  # 20 one-day passes
-    within = np.tile(np.arange(30, dtype=float) * (1.2 / 86400.0), 20)
-    time = day + within
-    lat = np.tile(np.linspace(33.5, 42.5, 30), 20)
-    lon = np.full(600, 300.0)
-    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(600)
+    time, lat, lon, ssh = _consulted_track()
     base = {"time": time, "lat": lat, "lon": lon, "ssh": ssh}
     a = dict(
         base, mean_interp=ssh - 0.02 * np.random.default_rng(1).standard_normal(600)
@@ -216,14 +221,10 @@ def _track_for(
     rid: int, *, rms: float = 0.02, offset: float = 0.0
 ) -> dict[str, np.ndarray]:
     """Product track keyed by ``rid``: same consulted track, own residuals."""
-    day = np.repeat(np.arange(20, dtype=float), 30)
-    within = np.tile(np.arange(30, dtype=float) * (1.2 / 86400.0), 20)
-    lat = np.tile(np.linspace(33.5, 42.5, 30), 20)
-    lon = np.full(600, 300.0)
-    ssh = np.sin(lat) + 0.05 * np.random.default_rng(0).standard_normal(600)
+    time, lat, lon, ssh = _consulted_track()
     resid = rms * np.random.default_rng(100 + rid).standard_normal(600) + offset
     return {
-        "time": day + within,
+        "time": time,
         "lat": lat,
         "lon": lon,
         "ssh": ssh,
