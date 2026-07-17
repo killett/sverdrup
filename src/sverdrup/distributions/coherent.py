@@ -835,7 +835,7 @@ class GmrfCoreAuthoritativeSolve:
 class PerturbEnsembleDegradation:
     """Degradation driver: per-tile INDEPENDENT members, weight-crossfaded (coherence lost).
 
-    Each tile is forced by a tile-distinct seed (sweep position x member), so members do NOT
+    Each tile is forced by a tile-distinct seed (tile index x member), so members do NOT
     agree across the seam — cross-tile coherence is deliberately not guaranteed. The blend
     records ``DEGRADED_COHERENCE`` (the seam is flagged, not silent) and the crossfaded MEAN
     stays continuous via the partition-of-unity weights. This is the OPPOSITE contract from
