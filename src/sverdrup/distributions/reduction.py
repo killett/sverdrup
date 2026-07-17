@@ -137,8 +137,6 @@ class GMRFPrecisionReduction:
         seed: int,
     ) -> ReducedUnit:
         """Persist the sparse precision + permutation + projection + prior + exact var."""
-        from sverdrup.distributions.persisted import PrecisionFields
-
         d = cast(Any, dist)
         op = d.cov_op
         base = PrecisionFields(
