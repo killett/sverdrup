@@ -1002,7 +1002,6 @@ def test_mean_untouched_by_field(dist: CalibratedDistribution) -> None:
     m1 = dist.with_calibration(field).mean_at(pts)
     np.testing.assert_array_equal(m0, m1)
     # Grid mean part of to_grid_ensemble is likewise bit-untouched.
-    e0 = dist.to_grid_ensemble(_SEAM_DAY).samples.mean(axis=0)
     field_grid = PolyCalibration(
         coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t"
     )
@@ -1015,7 +1014,6 @@ def test_mean_untouched_by_field(dist: CalibratedDistribution) -> None:
     gm0 = dist.mean_at(gpts)
     gm1 = dist.with_calibration(field_grid).mean_at(gpts)
     np.testing.assert_array_equal(gm0, gm1)
-    del e0
 
 
 # ---------------------------------------------------------------------------
