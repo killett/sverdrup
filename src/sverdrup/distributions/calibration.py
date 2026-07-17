@@ -1088,8 +1088,8 @@ class CalibratedDistribution:
             "cal_key": self.calibration.key(),
         }
         if hasattr(self.underlying, "save_state"):
-            # Underlying manages its own arrays; we write a side-car with cal keys.
-            # For the generic wrapper, write a single combined npz.
+            # Underlying manages its own arrays; write a single combined npz
+            # by merging the cal keys into the underlying's saved arrays.
             self.underlying.save_state(path)
             # Merge cal keys into the existing npz by reloading and re-saving.
             with np.load(path) as z:
