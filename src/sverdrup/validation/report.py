@@ -190,16 +190,16 @@ def main() -> None:  # pragma: no cover - heavy end-to-end orchestration
 
     # Parallel cross-check: our own skill score (1 - rmse/rms) on the same track.
     om = xr.open_dataset(our_map)
+    t = xr.open_dataset(track)
     interp = (
         om["ssh"]
         .interp(
-            time=xr.DataArray(xr.open_dataset(track).time.values, dims="p"),
-            lat=xr.DataArray(np.asarray(xr.open_dataset(track).latitude), dims="p"),
-            lon=xr.DataArray(np.asarray(xr.open_dataset(track).longitude), dims="p"),
+            time=xr.DataArray(t.time.values, dims="p"),
+            lat=xr.DataArray(np.asarray(t.latitude), dims="p"),
+            lon=xr.DataArray(np.asarray(t.longitude), dims="p"),
         )
         .values
     )
-    t = xr.open_dataset(track)
     track_ssh = (
         np.asarray(t["sla_unfiltered"]) + np.asarray(t["mdt"]) - np.asarray(t["lwe"])
     )
