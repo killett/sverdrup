@@ -11,6 +11,7 @@ implementation.
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from sverdrup.core.parameters import LatitudeField, LatitudeVaryingProvider
 
@@ -89,9 +90,5 @@ def test_params_key_order_independent_and_stable() -> None:
 def test_unknown_form_raises() -> None:
     # Bug caught: a typo'd form silently returning garbage instead of failing.
     f = LatitudeField("exp-cubic", (0.1, 0.2))
-    try:
+    with pytest.raises(ValueError, match="exp-cubic"):
         f.at(np.array([38.0]))
-    except ValueError as e:
-        assert "exp-cubic" in str(e)
-    else:
-        raise AssertionError("unknown form must raise ValueError")
