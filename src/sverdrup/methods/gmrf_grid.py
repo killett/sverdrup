@@ -188,6 +188,8 @@ class GridIdentityProjection:
 
     def assert_adjacency(self, q: sparse.spmatrix) -> None:
         """Delegate to the 5-point-pattern precondition for the grid."""
+        # Deliberately local: gmrf_linalg imports sksparse.cholmod at module
+        # top, so importing it here defers that hard dependency until needed.
         from sverdrup.methods.gmrf_linalg import assert_adjacency_in_pattern
 
         assert_adjacency_in_pattern(q.tocsc(), self.grid.shape)
@@ -224,6 +226,8 @@ class BilinearProjection:
 
     def assert_adjacency(self, q: sparse.spmatrix) -> None:
         """Delegate to the 5-point-pattern precondition for the grid."""
+        # Deliberately local: gmrf_linalg imports sksparse.cholmod at module
+        # top, so importing it here defers that hard dependency until needed.
         from sverdrup.methods.gmrf_linalg import assert_adjacency_in_pattern
 
         assert_adjacency_in_pattern(q.tocsc(), self.grid.shape)
