@@ -310,7 +310,7 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
         }
 
     # Obs-set divergence note (pre-registered determination):
-    # The signed artifact used all 5 mapping missions (alg, h2g, j2g, j2n, j3, s3a)
+    # The signed artifact used all 6 mapping missions (alg, h2g, j2g, j2n, j3, s3a)
     # because Phase-4 run_year loaded ALL mapping missions without a train/val split.
     # Our regenerated maps use TRAIN-ONLY (alg, h2g, j2g, j2n, s3a — j3 excluded),
     # per the Phase-9 standing split.  Differences are therefore EXPECTED (obs-set
