@@ -126,10 +126,10 @@ class PaciorekGaussianDegrees:
 
     def evaluate(self, a: Points, b: Points) -> np.ndarray:
         """Return the ``(len(a), len(b))`` nonstationary covariance."""
-        lx = self.lx_deg_base * self._mult(a[:, 1])[:, None]
-        ly = self.lx_deg_base * self._mult(b[:, 1])[None, :]
-        l2 = 0.5 * (lx**2 + ly**2)
-        prefactor = lx * ly / l2
+        l_a = self.lx_deg_base * self._mult(a[:, 1])[:, None]
+        l_b = self.lx_deg_base * self._mult(b[:, 1])[None, :]
+        l2 = 0.5 * (l_a**2 + l_b**2)
+        prefactor = l_a * l_b / l2
         dlon = a[:, None, 0] - b[None, :, 0]
         dlat = a[:, None, 1] - b[None, :, 1]
         dt = (a[:, None, 2] - b[None, :, 2]) / self.time_scale
