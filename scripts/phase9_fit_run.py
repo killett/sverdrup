@@ -6,7 +6,8 @@ harness module; this script is pure CLI glue.
 
 Scope discipline (mirrors phase8_fit_run.py):
     SVERDRUP_PHASE9_SCOPE=dev  -> 12-day dev fixture window; writes ONLY
-                                  phase9_dev_smoke.json (NEVER gate evidence).
+                                  phase9_dev_smoke_<product_id>.json (NEVER
+                                  gate evidence).
     (default / full)           -> full j3 year; writes per-product gate evidence
                                   into stage_miost_gate_results.json under the
                                   descriptor's evidence_key, and writes the
