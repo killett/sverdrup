@@ -1001,7 +1001,8 @@ def test_mean_untouched_by_field(dist: CalibratedDistribution) -> None:
     m0 = dist.mean_at(pts)
     m1 = dist.with_calibration(field).mean_at(pts)
     np.testing.assert_array_equal(m0, m1)
-    # Grid mean part of to_grid_ensemble is likewise bit-untouched.
+    # The analytic mean path over grid nodes is likewise bit-untouched
+    # (the member SAMPLE mean is not — see NOTE below).
     field_grid = PolyCalibration(
         coeffs=(0.2, 0.6, -0.3, 0.1, 0.0), clip=WIDE, fit_id="t"
     )
