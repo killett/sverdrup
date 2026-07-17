@@ -40,7 +40,8 @@ def default_registry() -> Registry:
     Returns:
         A :class:`Registry` over the default evaluator family.
     """
-    return Registry([f() for f in ALL_EVALUATORS if f().name != "effective_resolution"])
+    instances = [f() for f in ALL_EVALUATORS]
+    return Registry([ev for ev in instances if ev.name != "effective_resolution"])
 
 
 @dataclass(frozen=True)
