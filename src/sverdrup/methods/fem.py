@@ -98,6 +98,7 @@ class FEMBasisProjection:
         return self.mesh
 
     def _delaunay(self) -> Delaunay:
+        """Return the Delaunay triangulation of the mesh's (x, y) node coordinates."""
         return Delaunay(self.mesh.points_xy)
 
     def weights(self, pts: Points) -> sparse.csr_matrix:
