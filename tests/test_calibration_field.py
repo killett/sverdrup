@@ -254,7 +254,9 @@ def test_poly_json_roundtrip_bitexact() -> None:
 def test_piecewise_scalar_reduction() -> None:
     """All-regions-log-s* must equal ScalarCalibration(s*) everywhere in box.
 
-    Bug caught: wrong region lookup or log/exp error.
+    Bug caught: a log/exp error in the region-value -> sqrt-s link. With
+    every region set to the same value the fixture is blind to region-lookup
+    mistakes — the quadrant-lookup test below covers those.
     """
     pw = _make_piecewise(log_s_by_region=_ALL_STAR_PIECEWISE)
     lon = np.array([296.0, 300.0, 304.0])
