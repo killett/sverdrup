@@ -93,6 +93,12 @@ class MiostEnsembleDistribution:
     _window_starts: dict[str, float]
     _w_days: float = W_DAYS
 
+    def _plan(self) -> WindowPlan:
+        """Return the WindowPlan over this distribution's sorted window starts."""
+        return WindowPlan(
+            starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
+        )
+
     def _eval(self, pts: Points, cols: dict[str, np.ndarray]) -> np.ndarray:
         """Blend-weighted basis evaluation of per-window column stacks.
 
@@ -106,9 +112,7 @@ class MiostEnsembleDistribution:
         pts = np.asarray(pts, float)
         x, y = lonlat_to_km(pts[:, 0], pts[:, 1])
         t = pts[:, 2]
-        plan = WindowPlan(
-            starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
-        )
+        plan = self._plan()
         k = next(iter(cols.values())).shape[1]
         out = np.zeros((pts.shape[0], k))
         for wid, c in cols.items():
@@ -154,9 +158,7 @@ class MiostEnsembleDistribution:
         Returns:
             (n_nodes, k) blended values on the grid.
         """
-        plan = WindowPlan(
-            starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
-        )
+        plan = self._plan()
         lon2d, lat2d = np.meshgrid(self.grid.x, self.grid.y)
         k = next(iter(cols.values())).shape[1]
         out = np.zeros((lon2d.size, k))
