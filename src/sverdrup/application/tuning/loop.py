@@ -96,9 +96,8 @@ def tune(
             trial = Trial(method_name, params, split_id, seed, window_id)
             if not predicate.feasible(params, tile_geometry, required_capabilities):
                 expl = getattr(predicate, "explain", None)
-                reason = (
-                    str(expl(params)) if expl is not None and expl(params) else None
-                )
+                explanation = expl(params) if expl is not None else None
+                reason = str(explanation) if explanation else None
                 history.records.append(
                     TrialRecord(
                         trial, scores=None, feasible=False, exclusion_reason=reason
