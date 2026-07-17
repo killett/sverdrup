@@ -59,7 +59,7 @@ def test_repeat_mission_recovered() -> None:
     fams = derive_family(_synth_passes(12.0, 2.8, 4, 12), phi0=PHI0, ascending=True)
     assert fams.orbit_class == "repeat"
     assert abs(fams.heading_north_deg - 12.0) < 1.0
-    expected_s_lon = 2.8 * 111.32 * np.cos(np.deg2rad(PHI0))  # ~245.3 km by hand
+    expected_s_lon = 2.8 * KM_PER_DEG * np.cos(np.deg2rad(PHI0))  # ~245.3 km by hand
     assert fams.s_lon_km is not None
     assert abs(fams.s_lon_km - expected_s_lon) < 0.05 * expected_s_lon
     assert fams.d_perp_km is not None
