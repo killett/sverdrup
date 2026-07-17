@@ -35,6 +35,7 @@ from sverdrup.methods.miost_basis import (
     lonlat_to_km,
     time_contract,
 )
+from sverdrup.methods.miost_crn import coef_noise, obs_noise
 from sverdrup.methods.miost_solver import (
     PCG_MAXITER,
     PCG_RTOL,
@@ -347,8 +348,6 @@ def member_rhs_matrix(
     Returns:
         (n_el, m) RHS matrix.
     """
-    from sverdrup.methods.miost_crn import coef_noise, obs_noise
-
     base = rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
     b = np.empty((q.size, m))
     for i in range(m):
