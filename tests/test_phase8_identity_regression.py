@@ -124,8 +124,8 @@ def test_identity_covariance_diagonal_arb_points(
 
     Points are track-like off-grid positions; queries route through the dense
     _anoms_at path.  Bug caught: sqrt_s applied once to only one side of the
-    covariance (one-sided scaling would give factor S_STAR, not S_STAR for the
-    diagonal — but the correlation test is blind to this, so we pin the
+    covariance (one-sided scaling would give factor √S_STAR, not S_STAR, for
+    the diagonal — but the correlation test is blind to this, so we pin the
     magnitude here per spec §2 identity (ii)).
     """
     pts = np.array(
