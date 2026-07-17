@@ -425,12 +425,10 @@ def test_covariate_b_zero_constant_log_s() -> None:
 
 
 def test_covariate_scalar_reduction_via_log_proxy() -> None:
-    """a=log(s*), b=1, proxy=s* → log s = log s* + log s* = 2*log(s*)?
+    """a + b*log(proxy) with proxy=1.0 gives log s = a everywhere (log(1)=0).
 
-    Specific scalar reduction: a + b*log(proxy) with proxy=exp(0) = 1.0
-    gives log s = a everywhere (since log(1)=0).
-
-    Bug caught: wrong sign or factor on the b term.
+    b=1.5 is deliberately nonzero, so any spurious contribution from the
+    proxy term (wrong log base, proxy used un-logged) shifts the result.
     """
     a = LOG_S_STAR
     # proxy = 1.0 → log(proxy) = 0 → log s = a regardless of b
