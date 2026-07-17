@@ -72,7 +72,7 @@ def test_paired_sobol_shared_dims_identical_across_lanes() -> None:
             assert t0[i][dim] == tv[i][dim] == tvl[i][dim]
         for dim in ("c1", "c2"):
             assert tv[i][dim] == tvl[i][dim]
-        assert tv[i][dim] != 0.0  # released draws are real draws
+            assert tv[i][dim] != 0.0  # released draws are real draws
 
 
 def test_provider_lane0_routes_stationary_class() -> None:
