@@ -11,9 +11,9 @@ reproduces the exact sequence of ``notebooks/example_eval_baseline.ipynb``:
 4. ``src.mod_spectral.compute_spectral_scores`` -> PSD NetCDF.
 5. ``src.mod_plot.find_wavelength_05_crossing`` -> lambda_x (effective resolution).
 
-The eval-region box, time window, binning and spectral parameters below are
-transcribed verbatim from that notebook; they *are* the published-leaderboard
-eval definition, so ``score`` takes only the two file paths.
+The eval-region box, time window and binning below are transcribed verbatim
+from that notebook; they *are* the published-leaderboard eval definition, so
+``score`` takes only the two file paths.
 """
 
 from __future__ import annotations
@@ -32,10 +32,6 @@ _TIME_MIN, _TIME_MAX = "2017-01-01", "2017-12-31"
 _BIN_LON_STEP = 1.0
 _BIN_LAT_STEP = 1.0
 _BIN_TIME_STEP = "1D"
-_DELTA_T = 0.9434  # s — Cryosat-2 along-track sampling interval
-_VELOCITY = 6.77  # km/s — satellite ground-track speed
-_DELTA_X = _VELOCITY * _DELTA_T  # km — along-track spatial sampling
-_LENGTH_SCALE = 1000.0  # km — spectral segment length
 
 
 def _prepare_imports() -> None:
