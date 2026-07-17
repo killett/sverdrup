@@ -164,7 +164,7 @@ def test_clamp_constant_continuation_outside_hull() -> None:
     np.testing.assert_array_equal(inside, outside)
 
 
-def test_clip_engages_and_is_recorded() -> None:
+def test_clip_engages_at_hi_in_log_space() -> None:
     """A poly whose raw value exceeds hi must return exactly hi.
 
     Bug caught: clip applied to s instead of log s, or not at all.
