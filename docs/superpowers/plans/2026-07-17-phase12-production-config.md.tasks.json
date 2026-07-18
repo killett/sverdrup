@@ -28,7 +28,7 @@
       "id": 4,
       "nativeId": 4,
       "subject": "Task 4: six-mission orbit-geometry artifact (the ONE derivation)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Derive phase12_orbit_geometry_miost6.json with j3's FIRST classification; gap rider fires here, blocks here if tabled.\n\n**Files:**\n- Create: scripts/phase12_geometry.py\n- Test: extend tests/test_phase12_config.py (artifact-gated presence test)\n\n**Acceptance Criteria:**\n- [ ] build_geometry_artifact(dc_obs, [alg,h2g,j2g,j2n,j3,s3a], 38.1, ours/phase12_orbit_geometry_miost6.json) runs; sha recorded\n- [ ] j3 classified repeat-class; RATIO_GAP (0.14,0.431) landing -> STOP, quote ratio, TABLE for owner, do NOT proceed\n- [ ] Artifact carries per-family ratios + cluster medians (v3); phase11_orbit_geometry.json byte-untouched\n- [ ] j3 ratio + family rows quoted in commit message\n\n**Verify:** pixi run python scripts/phase12_geometry.py -> sha + j3 rows; artifact exists; pixi run test green\n\n```json:metadata\n{\"files\": [\"scripts/phase12_geometry.py\", \"tests/test_phase12_config.py\"], \"verifyCommand\": \"pixi run python scripts/phase12_geometry.py\", \"acceptanceCriteria\": [\"artifact derived once with six missions\", \"j3 classified or gap-tabled with STOP\", \"five-mission artifact untouched\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -68,7 +68,7 @@
       "id": 8,
       "nativeId": 8,
       "subject": "Task 8: the ONE c2 touch — OWNER GATE (three-branch ruling)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         7
       ],
@@ -78,7 +78,7 @@
       "id": 9,
       "nativeId": 9,
       "subject": "Task 9: flip commit + full external sweep (owner sign-off only)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         8
       ],
@@ -88,12 +88,12 @@
       "id": 10,
       "nativeId": 10,
       "subject": "Task 10: phase close — checks, PROGRESS banner, tally",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         9
       ],
       "description": "**Goal:** Close verification with captured output; PROGRESS close banner; honest tally.\n\n**Files:**\n- Modify: PROGRESS.md\n\n**Acceptance Criteria:**\n- [ ] Zero j3-side evaluation of miost6: runner grep reviewed + guard-refusal test green\n- [ ] Byte-untouched diff check, enumerated paths: git diff <pre-phase-sha> -- tests/validation/fixtures/stage_a_scope.json src/sverdrup/validation/input_adapter.py src/sverdrup/application/calibration/constants.py -> empty; P0-1 disarm commit named in banner as the ONE deliberate legacy-script edit (stage_miost_gate_run.py deliberately NOT in the check's path list)\n- [ ] Seed-root literal test green; suite green (counts recorded)\n- [ ] PROGRESS close banner: branch taken, measured numbers verbatim (mu, sigma, lambda_x, coverage vs 0.7350 referent, chi2/CRPS), tally miost5: 2 / miost6: 1, flip sha (if taken), external sweep counts, untouched list verbatim\n- [ ] Explicit PROGRESS edits: (1) close banner above design-committed banner; (2) mark design-committed banner [closed above]; (3) refresh next-action line\n\n**Verify:** pixi run test green; PROGRESS committed + pushed; working tree clean\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"pixi run test\", \"acceptanceCriteria\": [\"zero j3-side eval verified\", \"byte-untouched diff empty on enumerated paths\", \"close banner with verbatim numbers + tally\", \"pushed clean\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-18T12:30:00Z"
+  "lastUpdated": "2026-07-18T16:30:00Z"
 }

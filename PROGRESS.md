@@ -1,6 +1,80 @@
 # Sverdrup — Progress notebook
 
-> **⛔ PHASE 12 EXECUTION PAUSED 2026-07-18 — LAUNCH DECISION TABLED FOR
+> **✅ PHASE 12 — production configuration (six-mission MIOST): CLOSED
+> 2026-07-18, BRANCH = SIGN-OFF (owner three-branch ruling; flip
+> executed). All 10 tasks complete; every commit pushed; flip commit
+> `b4878a0`; FULL external sweep 848 passed / 9 skipped / 1 xfailed
+> (1:05:52) on the flip tree (standing rule, second application).**
+>
+> **THE PRODUCT LINE:** `SHIPPED["miost"]` → `shipped_miost6` (six
+> missions, j3 assimilated, leaderboard convention); `shipped_miost5`
+> retained as the named five-mission calibration-lineage reference.
+> Honest tally **{miost5: 2, miost6: 1}** c2 touches.
+>
+> ```
+> PHASE-12 ACCEPTANCE (the ONE c2 touch, owner-authorized fresh 2026-07-18,
+> n=44,844 full challenge year, window+provenance tripwires PASS):
+> - mu      0.8677794298228094   (miost5: 0.8572611954190728; floor 0.85)
+> - sigma   0.08229205674809689
+> - lambda_x 151.22280673169575 km (miost5: 156.43)
+> - coverage 0.7307332084559808 IN band 0.6827±0.10
+>   (referent 0.7350 field-calibrated; 0.7481 scalar-era beside)
+> - chi2_red 0.9906981743442226; CRPS 0.0427
+> - regional SW 0.7752 / SE 0.7468 / NW 0.6962 / NE 0.7043 /
+>   jet_core 0.6777 (max |Δ| vs miost5 = 0.011)
+> ```
+>
+> **OWNER RECORDINGS AT CLOSE:** (1) σ-transfer NEUTRAL within noise —
+> Δcoverage −0.0043 ≈ 0.6·SE (n_eff ≈ n/10.27, SE ≈ 0.0067); the
+> pre-registered mild-over-coverage expectation did not materialize;
+> direction-miss recorded in the §3 frame with the SE arithmetic.
+> (2) August 0.6364 / χ²_red 1.466 = the persisting seasonal
+> limitation (in band; fork-c lineage, unchanged by transfer);
+> jet_core 0.6777 still the weakest region, slightly improved.
+> (3) Tier-3 = cross-generation reproduction at ~1e-5 (0.047230 /
+> 0.76094 / 0.92997 vs anchor 0.0472 / 0.761 / 0.930) — the j3
+> increment is largely the increment CLS already carried; 0.047 m
+> stands as the method-family residual; max mean-delta 0.512 m
+> reproduces the Phase-7 attribution number. (4) GroundTrack: max
+> repeat DOWN 0.410 → 0.376 (s3a/desc) — j3 diluted the s3a-specific
+> structure, a secondary improvement signal from the reference-free
+> family; j2n ≡ j3 desc (0.13493626602935876) = geometry-derivation
+> consistency check. (5) σ-signature localization ratio 3.157 (the
+> pre-registered structural read, PRESENT). (6) GAP ACCOUNTING: +j3
+> closed +0.0105 of the 0.0327 gap to published MIOST 0.89; remainder
+> = settings/tuning at matched inputs; future levers (six-mission
+> re-tuning = the §8 decision, structured/per-mission R) named,
+> neither elected. (7) Task-22 ledger: peak model AND amended
+> measured-scaling both under-predicted (actual 3436.7 MiB; mechanism
+> = retained member store ≈1.42 GB, the accumulator both misses);
+> re-grounding queue entry carries the retained-store term BY NAME.
+> Wall leg validated at 0.84× (22,289.6 s vs amended 26,684.5 s).
+>
+> **CLOSE CHECKS (captured 2026-07-18):** zero j3-side evaluation of
+> miost6 (runner grep: `their_score` on the c2 track only; guard
+> refusal by test + smoke job 1); byte-untouched diff EMPTY vs
+> pre-phase `ffaf423` on the enumerated list —
+> `tests/validation/fixtures/stage_a_scope.json`,
+> `src/sverdrup/validation/input_adapter.py`,
+> `src/sverdrup/application/calibration/constants.py` (the P0-1
+> disarm `54db3e5` is the ONE deliberate legacy-script edit;
+> `stage_miost_gate_run.py` deliberately not in the check list);
+> seed-root exact-int test green (4836134738817689931); suite green
+> (848/9/1 external sweep).
+>
+> TASK RECORD: T1 disarm `54db3e5`; T2 scope cfg `64adf45`; T3 census
+> `44f8ca1`; T4 geometry `c7654a9` (j3 REPEAT 0.0235/0.0233 —
+> physically exact for the 10-day repeat, ~1/35 revisits; cleanest
+> classification yet); T5 schema+runner `8ba440d`; T6 smoke `c18505e`
+> (launch tabled); T7 adjudication `2b388bb` + run (6.19 h) + pack
+> approved `f079e7e`; T8 touch `15b09c3`; T9 flip `b4878a0`.
+> Evidence store: `phase12_miost6_results.json` (gitignored; numbers
+> quoted above); touch log `phase12_c2_touch.log`.
+> No further phase queued — the next milestone is the owner's call
+> (recorded levers: six-mission re-tuning §8, structured/per-mission
+> R, Task-22 peak-model re-grounding, hygiene P1-P4 queue).
+
+> **[closed above] ⛔ PHASE 12 EXECUTION PAUSED 2026-07-18 — LAUNCH DECISION TABLED FOR
 > OWNER (Tasks 1–6 COMPLETE, all pushed; head `c18505e`).** Dev smoke
 > 6/6 PASS; budget recorded under `phase12.miost6.budget`; but the
 > pre-registered LAUNCH rule fails on its own arithmetic, so the Task-7
@@ -106,7 +180,7 @@
 > decide those BEFORE rerunning either script. Also flagged: Task-22
 > owner-ordered `PeakFeasibility` is wired nowhere (P3 item 21).
 
-> **▶ PHASE 12 DESIGN COMMITTED 2026-07-17 (`f0ef329`), ⛔ STOPPED FOR
+> **[closed above] ▶ PHASE 12 DESIGN COMMITTED 2026-07-17 (`f0ef329`), ⛔ STOPPED FOR
 > OWNER FILE REVIEW before writing-plans.** Spec:
 > `docs/superpowers/specs/2026-07-17-phase12-production-config-design.md`
 > (owner-approved in-session: forks a–d ruled + three review batches).
