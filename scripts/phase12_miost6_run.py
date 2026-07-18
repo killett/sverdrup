@@ -218,6 +218,7 @@ def solve_maps(
     var_out: Path,
     member_store_out: Path | None,
     plan: WindowPlan | None = None,
+    monitor_flag_s: float | None = None,
 ) -> dict[str, Any]:
     """The frozen-config six-mission solve: members -> day fields -> maps.
 
@@ -229,6 +230,8 @@ def solve_maps(
         member_store_out: Member-store npz destination (None = skip, smoke).
         plan: Window-plan override (smoke restricts to covering windows);
             None = the full-year production plan.
+        monitor_flag_s: Owner safety (a): elapsed wall beyond this FLAGS
+            loudly per window (never kills); None = no flag.
 
     Returns:
         Telemetry block (converged, maxiter_used, batches, wall, peak RSS,
@@ -268,6 +271,29 @@ def solve_maps(
     if plan is None:
         plan = WindowPlan()
     provider = ConstantProvider(dict(WINNER_PARAMS))
+    window_log: list[dict[str, float | str]] = []
+
+    def _on_window(wid: str, day: float) -> None:
+        elapsed = time.time() - t_start
+        rss = _peak_rss_mib()
+        window_log.append(
+            {
+                "window": wid,
+                "elapsed_s": round(elapsed, 1),
+                "peak_rss_mib": round(rss, 1),
+            }
+        )
+        _log(
+            f"  members solved: {wid} (day {day:.0f}); elapsed {elapsed:.0f} s, "
+            f"peak RSS {rss:.0f} MiB"
+        )
+        if monitor_flag_s is not None and elapsed > monitor_flag_s:
+            _log(
+                f"  ⚑ MONITOR FLAG: elapsed {elapsed:.0f} s exceeds "
+                f"1.5x amended estimate ({monitor_flag_s:.0f} s) — owner "
+                "informed at the pack; run continues (flag, never a kill)"
+            )
+
     esc: dict[str, Any] = {}
     for cap in CAPS:
         method = Miost(plan=plan, pcg_rtol=RTOL, pcg_maxiter=cap)
@@ -279,7 +305,7 @@ def solve_maps(
             provider,
             M_MEMBERS,
             root,
-            on_window=lambda wid, day: _log(f"  members solved: {wid} (day {day:.0f})"),
+            on_window=lambda wid, day: _on_window(wid, day),
         )
         batches = [dict(e) for e in CONVERGENCE_LOG if e.get("kind") == "member-batch"]
         worst = max(float(cast("float", b["final_rel_residual"])) for b in batches)
@@ -343,6 +369,12 @@ def solve_maps(
         "m": M_MEMBERS,
         "pcg_rtol": RTOL,
         "budget_caps": list(CAPS),
+        "per_window_log": window_log,
+        "monitor_flag_s": monitor_flag_s,
+        "monitor_flag_tripped": bool(
+            monitor_flag_s is not None
+            and any(float(w["elapsed_s"]) > monitor_flag_s for w in window_log)
+        ),
     }
 
 
@@ -526,15 +558,21 @@ def run_main(scope_path: Path, signed_record: Path) -> None:
             "launch is blocked on the recorded budget derivation (obligation 4)"
         )
     winner = assert_winner_matches_signed(signed_record)
+    amended = budget.get("amended") or {}
     _log(
-        "LAUNCH: budget recorded "
+        "LAUNCH: budget recorded — sealed template "
         f"(t_full_est_s={budget.get('t_full_est_s')}, "
         f"peak_est_mib={budget.get('peak_est_mib')}, "
+        f"launch_ok={budget.get('launch_ok_sealed', budget.get('launch_ok'))}); "
+        f"amended per owner T7 adjudication "
+        f"(t_full_est_s={amended.get('t_full_est_s')}, "
+        f"peak_est_mib={amended.get('peak_est_mib')}, "
         f"launch_ok={budget.get('launch_ok')}); winner params verified "
         f"against the signed record: {winner}"
     )
     if not budget.get("launch_ok"):
         raise SystemExit("REFUSED: recorded budget derivation says launch_ok=false")
+    monitor_flag_s = amended.get("monitor_flag_s")
 
     write_pack_entry(
         RESULTS,
@@ -544,7 +582,12 @@ def run_main(scope_path: Path, signed_record: Path) -> None:
 
     days = [float(d) for d in range(365)]
     telemetry = solve_maps(
-        scope, days, scope.mean_map_out, scope.var_map_out, scope.member_store_out
+        scope,
+        days,
+        scope.mean_map_out,
+        scope.var_map_out,
+        scope.member_store_out,
+        monitor_flag_s=monitor_flag_s,
     )
     write_pack_entry(RESULTS, f"{MIOST6_PREFIX}.telemetry", telemetry)
     _log("telemetry recorded")

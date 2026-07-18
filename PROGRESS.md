@@ -29,8 +29,36 @@
 > T3 census `44f8ca1`; T4 geometry `c7654a9` (j3 REPEAT, ratios
 > 0.0235/0.0233, gap rider not fired); T5 schema+runner `8ba440d`
 > (suite 837/13/1; CRN s3a bit-equal live); T6 smoke `c18505e`.
-> Next action: owner ruling on the launch legs → Task 7 (--run + pack,
-> owner gate).
+>
+> **⚖ T7 LAUNCH ADJUDICATION (owner, 2026-07-18, verbatim intent) —
+> AMENDED AND RULED; LAUNCH AUTHORIZED. Tie-band recording protocol:
+> sealed verdicts preserved beside the amendment in
+> `phase12.miost6.budget` (`sealed_verdict` + `launch_ok_sealed`).**
+> 1. TIME LEG AMENDED (defect owner-owned: sealed formula conflated
+>    total halo-loaded obs with per-window obs; approved at plan review
+>    without re-derivation; the refusal design caught it):
+>    `t_full_est = t_smoke_wall × Σ_w(n_w)/n_smoke` over the NINE
+>    measured per-window counts = 3165.1 × 108,151/12,828 = 26,684 s
+>    = **7.41 h PASS**, sealed 44.3 h FAIL beside; precedent bracket
+>    quoted (five-mission ≈4.5 h, +20% ⇒ ≈5.4 h).
+> 2. PEAK LEG RULED on measured evidence (option c, sequential
+>    windows): 2041.5 × (13,945/12,828) ≈ **2219 MiB PASS** vs 2410.4
+>    ceiling (~8% headroom); model 2474.8 FAIL beside; model/measured
+>    ratio ≈1.21 logged to the Task-22 conservatism ledger (model
+>    unchanged this phase; re-grounding = its own future task,
+>    Phase-7 precedent).
+> 3. TWO SAFETIES wired into the runner: monitor FLAG (never kill) at
+>    1.5× amended estimate = 40,027 s, owner informed at the pack;
+>    per-window peak-RSS logged for the close's measured-vs-estimated
+>    ledger row.
+> 4. j3-ratio note for the record: 0.0235/0.0233 physically exact for
+>    a 10-day repeat (~1/35 revisits) — cleanest classification yet;
+>    rider armed, not fired, as designed.
+> Next action: T7 full-year six-mission run IN FLIGHT (detached; log
+> `phase12_miost6_run.log` + pid file in ours/); on completion assemble
+> the pack led by the σ-map structural-signature read, Tier-3 vs the
+> 0.0472 anchor, j3-family GroundTrack beside s3a's 0.410, realized
+> wall/peak vs amended estimates — then STOP at the gate.
 
 > **📋 HYGIENE REGISTER OPEN (2026-07-16, between phases).** Whole-repo
 > hygiene audit ran post-Phase-11-close; the 71 behavior-preserving
