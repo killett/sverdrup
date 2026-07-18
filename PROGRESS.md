@@ -1,5 +1,37 @@
 # Sverdrup — Progress notebook
 
+> **⛔ PHASE 12 EXECUTION PAUSED 2026-07-18 — LAUNCH DECISION TABLED FOR
+> OWNER (Tasks 1–6 COMPLETE, all pushed; head `c18505e`).** Dev smoke
+> 6/6 PASS; budget recorded under `phase12.miost6.budget`; but the
+> pre-registered LAUNCH rule fails on its own arithmetic, so the Task-7
+> full-year run WAITS (Phase-10 standing rule 3b: blocked input → wait,
+> never executor-set):
+> - MEASURED: smoke window w+27 = 12,828 obs, wall 3165.1 s, peak RSS
+>   2041.5 MiB (m=100, single covering window). Per-window obs across
+>   the full plan: 10,763–13,945 (near-uniform; total halo-framed load
+>   71,867 incl. 14-month file span).
+> - TIME LEG (fails): sealed template `t_full_est = t_window_smoke ×
+>   n_windows_full × (n_obs_full / n_obs_smoke)` = 3165.1 × 9 ×
+>   (71,867/12,828) = 159,588 s = **44.3 h > 12 h**. EXECUTOR ANALYSIS
+>   (for the ruling, not applied): the total-obs ratio triple-counts —
+>   t_window_smoke already paid the smoke window's obs, and window obs
+>   are near-uniform; per-window scaling `t_window_smoke ×
+>   Σ_w(n_obs_w/12,828)` = **≈7.3 h ≤ 12 h**.
+> - PEAK LEG (fails, marginal): model 2474.8 MiB (Task-22 × 1.11) vs
+>   0.5×MemAvailable = 2410.4 MiB (64 MiB over); measured smoke peak
+>   2041.5 MiB; windows solve sequentially (no accumulation).
+> - OWNER OPTIONS: (a) amend the budget formula to per-window scaling
+>   (recorded as a pre-registration amendment) → launch (est ≈7.3 h);
+>   (b) ratify a different wall ceiling; (c) rule on the peak leg
+>   (marginal; measured < half-avail); (d) HOLD.
+> Zero c2 phase-wide so far (T1 disarm + refusing --c2-touch stub, by
+> test). Task record: T1 disarm `54db3e5`; T2 scope cfg `64adf45`;
+> T3 census `44f8ca1`; T4 geometry `c7654a9` (j3 REPEAT, ratios
+> 0.0235/0.0233, gap rider not fired); T5 schema+runner `8ba440d`
+> (suite 837/13/1; CRN s3a bit-equal live); T6 smoke `c18505e`.
+> Next action: owner ruling on the launch legs → Task 7 (--run + pack,
+> owner gate).
+
 > **📋 HYGIENE REGISTER OPEN (2026-07-16, between phases).** Whole-repo
 > hygiene audit ran post-Phase-11-close; the 71 behavior-preserving
 > FIX NOW items are APPLIED and pushed (suite 808/13/1 post-pass; the

@@ -5,80 +5,95 @@
   "tasks": [
     {
       "id": 1,
-      "nativeId": 5,
+      "nativeId": 1,
       "subject": "Task 1: P0-1 disarm + P0-2 queue hardening",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Inline env-gated c2 touch in stage_b_main becomes a refusal naming --c2-touch; READY early-return preserved; hygiene-priorities.md gets P0-1 resolution note + P0-2 blocking-precondition wording.\n\n**Files:**\n- Modify: scripts/stage_miost_gate_run.py (~801-817, stage_b_main tail)\n- Modify: docs/hygiene-priorities.md (P0 entries 1+2)\n- Test: tests/validation/test_stage_miost_disarm.py\n\n**Acceptance Criteria:**\n- [ ] rg 'sb\\[\"c2_acceptance\"\\]' in stage_b_main -> zero hits (only --c2-touch mode writes acceptance)\n- [ ] SVERDRUP_MIOST_C2=1 -> SystemExit(2) with pinned INLINE_TOUCH_DISARMED text naming --c2-touch; c2 file never opened; signed stage_b.c2_acceptance untouched\n- [ ] Env unset -> READY early-return preserved\n- [ ] hygiene-priorities.md: P0-1 RESOLVED note; P0-2 BLOCKING PRECONDITION wording\n\n**Verify:** pixi run pytest tests/validation/test_stage_miost_disarm.py -v -> PASS; pixi run test green\n\n```json:metadata\n{\"files\": [\"scripts/stage_miost_gate_run.py\", \"docs/hygiene-priorities.md\", \"tests/validation/test_stage_miost_disarm.py\"], \"verifyCommand\": \"pixi run pytest tests/validation/test_stage_miost_disarm.py -v\", \"acceptanceCriteria\": [\"no sb c2_acceptance write in stage_b_main\", \"env=1 refuses with pinned text, c2 untouched\", \"READY early-return preserved\", \"P0-1 resolved + P0-2 blocking precondition wording\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 2,
-      "nativeId": 6,
+      "nativeId": 2,
       "subject": "Task 2: phase12 scope cfg — schema, loader, refusal tests",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Declared-null mission-role cfg for miost6: schema-validated loader, pinned NO_VALIDATION_REFUSAL text, named no-default grep test, five-mission files byte-untouched.\n\n**Files:**\n- Create: src/sverdrup/validation/phase12_config.py\n- Create: tests/validation/fixtures/phase12_miost6_scope.json\n- Test: tests/test_phase12_config.py\n\n**Acceptance Criteria:**\n- [ ] Required keys exact (mapping_obs_paths x6 codes == {alg,h2g,j2g,j2n,j3,s3a}, val_track_path present AND null, validation_mission present AND null, no_validation_reason == 'j3-assimilated', c2_track_path, mdt_paths, time_min/max, smoke_days, mean/var/member outs, window_id)\n- [ ] Missing val_track_path key -> Phase12ConfigError naming key; non-null -> NO_VALIDATION_REFUSAL\n- [ ] require_validation_track(scope) raises pinned text\n- [ ] Named test test_no_default_for_val_track_path: .get default regex over src/+scripts/ -> zero hits\n- [ ] Harness path handed phase12 cfg refuses/KeyErrors, never binds j3\n- [ ] stage_a_scope.json + input_adapter.py diff empty\n\n**Verify:** pixi run pytest tests/test_phase12_config.py -v -> PASS\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/phase12_config.py\", \"tests/validation/fixtures/phase12_miost6_scope.json\", \"tests/test_phase12_config.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase12_config.py -v\", \"acceptanceCriteria\": [\"schema validates exact key set\", \"declared-null semantics enforced\", \"no-default grep test green\", \"refusal texts pinned\", \"five-mission files byte-untouched\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 3,
-      "nativeId": 7,
+      "nativeId": 3,
       "subject": "Task 3: SHIPPED-consumer census + pin-retarget table (flip-prep)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Committed census doc the flip commit executes: every SHIPPED[\"miost\"] consumer + external pin, per-pin retarget decision, miost5/miost6 factory plan.\n\n**Files:**\n- Create: docs/validation/phase12_flip_census.md\n\n**Acceptance Criteria:**\n- [ ] Census commands verbatim with full output (rg SHIPPED/shipped=True/shipped_miost over src scripts tests README; SVERDRUP_*EXTERNAL over tests; README/PROGRESS miost claims)\n- [ ] Per-hit table: file:line | role | flip action; known rows completed\n- [ ] Factory plan: shipped_miost5 named factory (+alias until flip), shipped_miost6 new fn identical frozen config; flip sets SHIPPED[\"miost\"]=shipped_miost6\n- [ ] NEW miost6 pin list named (factory + map shas, captured at flip)\n- [ ] Doc states: executed at T9 only on owner sign-off message\n\n**Verify:** doc committed; no TBD rows; every census output embedded\n\n```json:metadata\n{\"files\": [\"docs/validation/phase12_flip_census.md\"], \"verifyCommand\": \"rg -n 'TBD' docs/validation/phase12_flip_census.md; test $? -eq 1\", \"acceptanceCriteria\": [\"census outputs embedded\", \"per-pin retarget table complete\", \"factory plan stated\", \"T9-only execution stated\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 4,
-      "nativeId": 8,
+      "nativeId": 4,
       "subject": "Task 4: six-mission orbit-geometry artifact (the ONE derivation)",
       "status": "pending",
       "description": "**Goal:** Derive phase12_orbit_geometry_miost6.json with j3's FIRST classification; gap rider fires here, blocks here if tabled.\n\n**Files:**\n- Create: scripts/phase12_geometry.py\n- Test: extend tests/test_phase12_config.py (artifact-gated presence test)\n\n**Acceptance Criteria:**\n- [ ] build_geometry_artifact(dc_obs, [alg,h2g,j2g,j2n,j3,s3a], 38.1, ours/phase12_orbit_geometry_miost6.json) runs; sha recorded\n- [ ] j3 classified repeat-class; RATIO_GAP (0.14,0.431) landing -> STOP, quote ratio, TABLE for owner, do NOT proceed\n- [ ] Artifact carries per-family ratios + cluster medians (v3); phase11_orbit_geometry.json byte-untouched\n- [ ] j3 ratio + family rows quoted in commit message\n\n**Verify:** pixi run python scripts/phase12_geometry.py -> sha + j3 rows; artifact exists; pixi run test green\n\n```json:metadata\n{\"files\": [\"scripts/phase12_geometry.py\", \"tests/test_phase12_config.py\"], \"verifyCommand\": \"pixi run python scripts/phase12_geometry.py\", \"acceptanceCriteria\": [\"artifact derived once with six missions\", \"j3 classified or gap-tabled with STOP\", \"five-mission artifact untouched\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 5,
-      "nativeId": 9,
+      "nativeId": 5,
       "subject": "Task 5: evidence schema + miost6 runner (no c2 capability)",
-      "status": "pending",
-      "blockedBy": [2, 4],
+      "status": "completed",
+      "blockedBy": [
+        2,
+        4
+      ],
       "description": "**Goal:** phase12_evidence.py (shared key layout + provenance hash field names; writer and touch-asserter import the same module) + scripts/phase12_miost6_run.py --run: frozen-config six-mission solve -> maps + member store + telemetry + report rows + deltas + Tier-3, incrementally written to phase12_miost6_results.json. Zero c2 capability.\n\n**Files:**\n- Create: src/sverdrup/validation/phase12_evidence.py\n- Create: scripts/phase12_miost6_run.py\n- Test: tests/test_phase12_evidence.py\n\n**Acceptance Criteria:**\n- [ ] Keys phase12.miost6.{geometry,telemetry,budget,report_rows,deltas,tier3,provenance,c2_acceptance} + phase12_dev_smoke.*; PROVENANCE_HASH_FIELDS = (mean_maps_sha256, var_maps_sha256, member_store_sha256, cal_key, scope_cfg_sha256, geometry_artifact_sha256); provenance_block() + assert_provenance_matches() shared by construction\n- [ ] Named anti-clobber sibling-survival test (leaf-key merge preserves siblings incl. foreign phase8.c2_acceptance)\n- [ ] Path-constants test: runner never names stage_miost_gate_results.json; RESULTS = phase12_miost6_results.json\n- [ ] Seed-root literal test: derive_seed(\"miost\",\"stage-b-winner\",\"members\",0) == 4836134738817689931 (int ==)\n- [ ] --run sequence per plan (winner params asserted vs signed record; six-path load_mapping_obs; halo_obs; merged_members caps [500,2000,8000] rtol 1e-6 m=100; write_map with derived assimilated_missions; save_state members npz cal_key-asserted; report rows via build_eval_context(geometry_artifact=phase12 artifact); mean/sigma deltas vs stage_miost_acceptance.nc / stage_b_var_maps.nc; Tier-3 vs dc_maps MIOST; provenance LAST)\n- [ ] Sigma-signature STOP on absent j3-track imprint (write block, print STOP, exit nonzero)\n- [ ] crn_shared_mission_assert(scope) replays s3a draws vs five-mission derivation, bit-equal\n- [ ] --run refuses launch if phase12.miost6.budget absent\n- [ ] --c2-touch stub refuses until T8; no c2 file open anywhere\n\n**Verify:** pixi run pytest tests/test_phase12_evidence.py -v -> PASS; pixi run test green\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/phase12_evidence.py\", \"scripts/phase12_miost6_run.py\", \"tests/test_phase12_evidence.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase12_evidence.py -v\", \"acceptanceCriteria\": [\"shared evidence schema with six hash fields\", \"sibling-survival anti-clobber test\", \"runner path constants isolated\", \"seed-root int literal test\", \"no c2 capability\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 6,
-      "nativeId": 10,
+      "nativeId": 6,
       "subject": "Task 6: dev smoke (six jobs) + budget derivation",
-      "status": "pending",
-      "blockedBy": [1, 5],
+      "status": "completed",
+      "blockedBy": [
+        1,
+        5
+      ],
       "description": "**Goal:** --smoke runs the six-job list on the 12-day scope; measurements fill the budget template; recorded derivation unblocks --run.\n\n**Files:**\n- Modify: scripts/phase12_miost6_run.py (--smoke mode)\n\n**Acceptance Criteria:**\n- [ ] Job 1: guard refusal demonstrated (j3-scoring of smoke map raises assert_scored_not_assimilated)\n- [ ] Job 2: declared-null schema round-trip (missing key -> schema error; non-null -> refusal text)\n- [ ] Job 3: geometry artifact ASSERTED present + j3 repeat-classified (no re-derivation)\n- [ ] Job 4: CRN shared-mission assert green for s3a\n- [ ] Job 5: per-window wall + peak RSS measured; budget recorded under phase12.miost6.budget per template (t_full_est; peak_est via Task-22 model x1.11; LAUNCH iff peak_est <= 0.5*MemAvailable AND t_full_est <= 12h)\n- [ ] Job 6: dest isolation — smoke writes only phase12_dev_smoke.* (+ budget with source: dev_smoke); smoke maps to phase12_dev_smoke_*.nc\n\n**Verify:** pixi run python scripts/phase12_miost6_run.py --smoke -> 'SMOKE: 6/6 jobs PASS; budget recorded; LAUNCH criteria met'\n\n```json:metadata\n{\"files\": [\"scripts/phase12_miost6_run.py\"], \"verifyCommand\": \"pixi run python scripts/phase12_miost6_run.py --smoke\", \"acceptanceCriteria\": [\"six smoke jobs pass\", \"budget derivation recorded\", \"dest isolation held\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 7,
-      "nativeId": 11,
+      "nativeId": 7,
       "subject": "Task 7: authorized evidence run + pack — OWNER GATE (pack review)",
       "status": "pending",
-      "blockedBy": [3, 6],
+      "blockedBy": [
+        3,
+        6
+      ],
       "description": "**Goal:** The one full-year six-mission solve; complete pre-touch pack assembled and reported for owner review.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Files:** artifacts only (runner from Task 5).\n\n**Acceptance Criteria:**\n- [ ] Launch only after recorded budget derivation; launch log quotes the numbers\n- [ ] Telemetry: members converged at standing caps (phase12.miost6.telemetry)\n- [ ] Report rows: GroundTrack + SpectralFidelity; j3-family row present; 0.410 standing baseline beside (phase12.miost6.report_rows)\n- [ ] Deltas: mean RMS/max/map vs shipped five-mission product; delta-sigma with j3-track-localization read, signature PRESENT (phase12.miost6.deltas)\n- [ ] Tier-3 vs anchor 0.0472 m / 0.761@100 / 0.930@200; deviation attributed (phase12.miost6.tier3)\n- [ ] Provenance block LAST with all six PROVENANCE_HASH_FIELDS\n- [ ] Pack REPORT to owner: rows verbatim; five-mission context beside (mu 0.8572611954190728, lambda_x 156.43, coverage 0.7350 / 0.7481 scalar-era); sigma-signature read; budget actuals vs estimate\n- [ ] NO c2 touched (run log grep; touch mode still refuses)\n\n**Verify:** owner reviews the pack; T8 proceeds only on explicit pack-review approval\n\n```json:metadata\n{\"files\": [], \"verifyCommand\": \"pixi run python -c \\\"import json; d=json.load(open('data/2021a_ssh_mapping_ose/ours/phase12_miost6_results.json')); print(sorted(d.get('phase12',{}).get('miost6',{}).keys()))\\\"\", \"acceptanceCriteria\": [\"budget-gated launch\", \"telemetry converged\", \"report rows with j3 family\", \"deltas with sigma signature present\", \"tier3 vs anchor\", \"provenance block complete\", \"owner pack report delivered\", \"zero c2\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"report_rows\", \"groundtrack\", \"fidelity\"], [\"delta\", \"sigma\"], [\"telemetry\", \"budget\"], [\"tier3\"]]}\n```"
     },
     {
       "id": 8,
-      "nativeId": 12,
+      "nativeId": 8,
       "subject": "Task 8: the ONE c2 touch — OWNER GATE (three-branch ruling)",
       "status": "pending",
-      "blockedBy": [7],
+      "blockedBy": [
+        7
+      ],
       "description": "**Goal:** --c2-touch: fresh authorization, closed-input-set hash assert, window tripwire, one-invocation mechanics, the c2 reading; report carries the three-branch menu with the spec-§3 reading verbatim.\n\n**USER-ORDERED GATE — NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Files:**\n- Modify: scripts/phase12_miost6_run.py (implement --c2-touch)\n- Test: extend tests/test_phase12_evidence.py (gate mechanics, pure)\n\n**Acceptance Criteria:**\n- [ ] check_authorized: exact-string SVERDRUP_MIOST_C2 == \"1\" (any other value refuses, no data loaded) — unit-tested\n- [ ] Determinism tripwire at entry: recompute all six PROVENANCE_HASH_FIELDS from disk; assert_provenance_matches BEFORE c2 opens; never a re-solve — unit-tested with tampered copy\n- [ ] Window tripwire after load: n == 44,844 AND year-span 2017-01-01..2018-01-01, else window_tripwire block + nonzero exit\n- [ ] One-invocation mechanics: first writes phase12.miost6.c2_acceptance; second needs SVERDRUP_MIOST_C2_CORRECTED=1 + dated defect key migrating the first; third refuses — unit-tested\n- [ ] Reading recorded: (mu, sigma, lambda_x) via their_eval.score; coverage/chi2/CRPS on calibrated sigma (member store + s(x), cal_key asserted); regional + monthly tables; tally {\"miost5\": 2, \"miost6\": 1}\n- [ ] Owner REPORT carries three-branch menu with the spec-§3 reading verbatim: bar 0.6827±0.10; baseline 0.7350 (0.7481 scalar-era beside); expected landing above; mu >= 0.85 hard floor; branches sign-off / HOLD / no-flip. The ruling is the OWNER'S message.\n- [ ] Zero c2 before this task's authorization (invariant restated)\n\n**Verify:** mechanics tests PASS without data; authorized invocation output captured in gate report; owner returns one of three branches\n\n```json:metadata\n{\"files\": [\"scripts/phase12_miost6_run.py\", \"tests/test_phase12_evidence.py\"], \"verifyCommand\": \"pixi run pytest tests/test_phase12_evidence.py -v -k 'touch or tripwire or authorized'\", \"acceptanceCriteria\": [\"exact-1 authorization\", \"closed-input-set hash assert pre-open\", \"window tripwire n=44844 + year span\", \"one-invocation mechanics with defect-key path\", \"reading + tally recorded\", \"three-branch owner menu with spec-3 verbatim\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"], \"requireEvidenceTokens\": [[\"mu\", \"lambda_x\"], [\"coverage\"], [\"sign-off\", \"hold\", \"no-flip\"]]}\n```"
     },
     {
       "id": 9,
-      "nativeId": 13,
+      "nativeId": 9,
       "subject": "Task 9: flip commit + full external sweep (owner sign-off only)",
       "status": "pending",
-      "blockedBy": [8],
+      "blockedBy": [
+        8
+      ],
       "description": "**Goal:** One commit: SHIPPED repoint to shipped_miost6 + sigma-semantics + README/leaderboard claims + honest tally + pin retargeting per the Task-3 census + FULL external sweep green.\n\n**Precondition (hard):** the owner's Task-8 message is SIGN-OFF. HOLD or no-flip -> closes as superseded per branch semantics (Phase-8 Task-13 precedent); Task 10 records the branch.\n\n**Files:**\n- Modify: src/sverdrup/methods/miost.py (shipped_miost5 named factory + shipped_miost6), src/sverdrup/methods/registry.py (SHIPPED repoint), README.md, sigma-semantics doc per census, every pin in the census table\n- Test: retargeted miost5 pins + NEW miost6 external pins\n\n**Acceptance Criteria:**\n- [ ] SHIPPED[\"miost\"] is shipped_miost6; shipped_miost5 importable + constructible; registry disjointness green\n- [ ] Sigma-semantics per spec §3 pinned structure (\"transferred-and-verified\" verbatim; measured c2 coverage + regional rows as THIS product's record)\n- [ ] README/leaderboard: six-mission headline at matched convention vs 0.89; five-mission beside as calibration-lineage reference; honest tally\n- [ ] Every census row executed; NEW miost6 external pins captured (factory + map shas)\n- [ ] FULL external/artifact-gated sweep green — counts quoted in commit message\n\n**Verify:** pixi run test green + external sweep commands from census doc green, counts captured; single flip commit\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost.py\", \"src/sverdrup/methods/registry.py\", \"README.md\"], \"verifyCommand\": \"pixi run test\", \"acceptanceCriteria\": [\"SHIPPED repointed with named miost5 factory retained\", \"sigma-semantics per pinned structure\", \"leaderboard wording honest\", \"census executed + new pins\", \"full external sweep green\"], \"modelTier\": \"standard\"}\n```"
     },
     {
       "id": 10,
-      "nativeId": 14,
+      "nativeId": 10,
       "subject": "Task 10: phase close — checks, PROGRESS banner, tally",
       "status": "pending",
-      "blockedBy": [9],
+      "blockedBy": [
+        9
+      ],
       "description": "**Goal:** Close verification with captured output; PROGRESS close banner; honest tally.\n\n**Files:**\n- Modify: PROGRESS.md\n\n**Acceptance Criteria:**\n- [ ] Zero j3-side evaluation of miost6: runner grep reviewed + guard-refusal test green\n- [ ] Byte-untouched diff check, enumerated paths: git diff <pre-phase-sha> -- tests/validation/fixtures/stage_a_scope.json src/sverdrup/validation/input_adapter.py src/sverdrup/application/calibration/constants.py -> empty; P0-1 disarm commit named in banner as the ONE deliberate legacy-script edit (stage_miost_gate_run.py deliberately NOT in the check's path list)\n- [ ] Seed-root literal test green; suite green (counts recorded)\n- [ ] PROGRESS close banner: branch taken, measured numbers verbatim (mu, sigma, lambda_x, coverage vs 0.7350 referent, chi2/CRPS), tally miost5: 2 / miost6: 1, flip sha (if taken), external sweep counts, untouched list verbatim\n- [ ] Explicit PROGRESS edits: (1) close banner above design-committed banner; (2) mark design-committed banner [closed above]; (3) refresh next-action line\n\n**Verify:** pixi run test green; PROGRESS committed + pushed; working tree clean\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"pixi run test\", \"acceptanceCriteria\": [\"zero j3-side eval verified\", \"byte-untouched diff empty on enumerated paths\", \"close banner with verbatim numbers + tally\", \"pushed clean\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-17"
+  "lastUpdated": "2026-07-18T00:15:00Z"
 }
