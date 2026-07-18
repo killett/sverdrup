@@ -740,8 +740,13 @@ PHASE8_CLIP_HI = 2.9290288130316813
 PHASE8_FIT_ID = "L-BFGS-B;gtol=1e-08"
 
 
-def shipped_miost() -> Miost:
-    """The SHIPPED miost product: SAMPLES-native at the accepted Phase-8 config.
+def shipped_miost5() -> Miost:
+    """The five-mission calibration-lineage REFERENCE product (miost5 generation).
+
+    SHIPPED["miost"] until the Phase-12 flip (owner sign-off 2026-07-18);
+    retained as a named factory forever: every five-mission signed artifact
+    (stage-B maps, phase8 field selection, the 0.8573/156.43 acceptance) pins
+    THIS configuration. SAMPLES-native at the accepted Phase-8 config.
 
     Sigma semantics (owner-ordered at the Phase-8 gate close, 2026-07-12): the
     shipped sigma is CALIBRATED PREDICTIVE uncertainty against along-track
@@ -814,3 +819,42 @@ def shipped_miost() -> Miost:
             fit_id=PHASE8_FIT_ID,
         ),
     )
+
+
+def shipped_miost6() -> Miost:
+    """The SHIPPED six-mission flagship (miost6 generation, Phase-12 flip).
+
+    Identical FROZEN solver/calibration configuration to
+    :func:`shipped_miost5` — winner params, m=100, STAGE_B_ROOT, the Phase-8
+    s(x) field — run with j3 ASSIMILATED (six missions, leaderboard
+    convention). A separate function purely for provenance: the phase-12
+    record (`phase12.miost6.*` in the evidence store) anchors THIS name.
+
+    Acceptance (the ONE phase-12 c2 touch, owner-authorized fresh
+    2026-07-18): µ 0.8677794298228094, σ 0.08229205674809689,
+    λx 151.22280673169575 km; aggregate c2 coverage 0.7307332084559808
+    (χ²_red 0.9906981743442226, CRPS 0.0427).
+
+    Sigma semantics — TRANSFERRED-AND-VERIFIED: s(x) fit on the
+    five-mission configuration (j3 held out), transferred frozen; the
+    pre-registered expectation was mild over-coverage; MEASURED
+    Δcoverage = −0.0043 vs the 0.7350 referent ≈ 0.6·SE (n_eff ≈ n/10.27,
+    SE ≈ 0.0067) — the transfer is NEUTRAL within noise; χ²_red 0.991;
+    the regional structure reproduces region-by-region (max |Δ| 0.011:
+    SW 0.7752/0.775, SE 0.7468/0.753, NW 0.6962/0.707, NE 0.7043/0.705,
+    jet_core 0.6777/0.674). The constellation-dependence caveat for LARGE
+    constellation changes (the 1993-era case) stands unchanged — this
+    measured one small step, not that one.
+
+    Recorded limitations (fork-c lineage, unchanged by transfer): August
+    coverage 0.6364 / χ²_red 1.466 — the persisting seasonal trough, in
+    band; jet_core 0.6777 remains the weakest region, slightly improved.
+
+    Honest tally: this product line has spent THREE c2 touches —
+    {miost5: 2 (defect-run + accepted), miost6: 1 (this acceptance)}.
+
+    Returns:
+        The ensemble-mode method at the frozen config (six-mission use is a
+        property of the obs handed to solve, not of this factory).
+    """
+    return shipped_miost5()

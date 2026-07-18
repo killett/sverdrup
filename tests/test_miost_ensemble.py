@@ -293,7 +293,7 @@ def test_ensemble_mode_capability_and_routing() -> None:
 def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
     """The shipped product routes to SAMPLES and stamps FIELD_INFLATION provenance.
 
-    A solve from ``shipped_miost()`` must (a) be SAMPLES-native and (b) carry a
+    A solve from ``shipped_miost5()`` must (a) be SAMPLES-native and (b) carry a
     FIELD_INFLATION transform recording the Phase-8 poly field's ``cal_kind``
     ('poly'), ``dof`` (5), and the byte-exact artifact ``calibration_key`` —
     the auditable proof the production σ is the clipped-poly field, not the
@@ -304,13 +304,13 @@ def test_shipped_miost_solve_records_field_inflation_provenance() -> None:
     shipped σ becomes unauditable.
     """
     from sverdrup.distributions.calibration import CalibratedDistribution
-    from sverdrup.methods.miost import shipped_miost
+    from sverdrup.methods.miost import shipped_miost5
 
     ship = Miost(
         plan=WindowPlan(starts=(0.0, 45.0)),
         members=3,
         member_root=ROOT,
-        calibration=shipped_miost()._calibration,
+        calibration=shipped_miost5()._calibration,
     )
     assert ship.native_capability is UncertaintyCapability.SAMPLES
     d = ship.solve(_obs(), GRID, PARAMS, DAY)
@@ -469,7 +469,7 @@ def test_params_key_includes_calibration() -> None:
 
 
 def test_shipped_miost_uses_phase8_poly_field() -> None:
-    """shipped_miost() carries the Phase-8 clipped-poly PolyCalibration.
+    """shipped_miost5() carries the Phase-8 clipped-poly PolyCalibration.
 
     The winning field from the signed evidence (phase8_field.json /
     stage_miost_gate_results.json ``phase8`` block): the exact 5-dof poly
@@ -487,7 +487,7 @@ def test_shipped_miost_uses_phase8_poly_field() -> None:
         PHASE8_CLIP_LO,
         PHASE8_FIT_ID,
         PHASE8_POLY_COEFFS,
-        shipped_miost,
+        shipped_miost5,
     )
 
     expected = PolyCalibration(
@@ -495,7 +495,7 @@ def test_shipped_miost_uses_phase8_poly_field() -> None:
         clip=ClipSpec(lo_log_s=PHASE8_CLIP_LO, hi_log_s=PHASE8_CLIP_HI),
         fit_id=PHASE8_FIT_ID,
     )
-    cal = shipped_miost()._calibration
+    cal = shipped_miost5()._calibration
     assert cal == expected
     # byte-exact against the signed artifact cal_key
     assert cal.key() == (
@@ -503,3 +503,19 @@ def test_shipped_miost_uses_phase8_poly_field() -> None:
         "-2.2371390187292186, -0.1485348137468948, 0.5330366783275191);"
         "clip=(1.1731020392124571,2.9290288130316813);fit=L-BFGS-B;gtol=1e-08"
     )
+
+
+def test_shipped_miost6_carries_the_same_phase8_field() -> None:
+    """The six-mission flagship ships the IDENTICAL frozen s(x) field.
+
+    Phase-12 flip census row: shipped_miost6 is a provenance-only twin of
+    shipped_miost5 — a calibration divergence between the generations would
+    silently break the transferred-and-verified σ-semantics claim.
+    """
+    from sverdrup.methods.miost import shipped_miost5, shipped_miost6
+
+    m5, m6 = shipped_miost5(), shipped_miost6()
+    assert m6._calibration == m5._calibration
+    assert m6._calibration.key() == m5._calibration.key()
+    assert m6.members == m5.members == 100
+    assert m6.member_root == m5.member_root

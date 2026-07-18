@@ -9,7 +9,7 @@ entry vanishing (run_stage_miost would KeyError).
 
 from __future__ import annotations
 
-from sverdrup.methods.miost import shipped_miost
+from sverdrup.methods.miost import shipped_miost6
 from sverdrup.methods.registry import METHODS, SHIPPED
 
 
@@ -19,7 +19,7 @@ def test_tables_disjoint() -> None:
 
 def test_miost_migrated() -> None:
     assert "miost" not in METHODS
-    assert SHIPPED["miost"] is shipped_miost
+    assert SHIPPED["miost"] is shipped_miost6
 
 
 def test_search_entry_remains() -> None:

@@ -13,7 +13,7 @@ from collections.abc import Callable
 
 from sverdrup.methods.fem import FEMMatern
 from sverdrup.methods.gmrf import MaternGMRF
-from sverdrup.methods.miost import Miost, shipped_miost
+from sverdrup.methods.miost import Miost, shipped_miost6
 from sverdrup.methods.oi import OptimalInterpolation
 from sverdrup.methods.trivial import TrivialInterpolation
 
@@ -32,6 +32,9 @@ METHODS: dict[str, Callable[[], object]] = {
 }
 
 # Flagship product factories: the signed, calibrated, shipping configurations.
+# Phase-12 flip (owner sign-off 2026-07-18): miost6 = the six-mission
+# flagship; shipped_miost5 stays importable as the five-mission
+# calibration-lineage reference (its signed artifacts pin that name).
 SHIPPED: dict[str, Callable[[], object]] = {
-    "miost": shipped_miost,
+    "miost": shipped_miost6,
 }

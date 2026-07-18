@@ -122,9 +122,9 @@ def shipped_calibration() -> CalibrationField:
         SystemExit: If the factory field's cal_key drifts from the SIGNED
             artifact.
     """
-    from sverdrup.methods.miost import shipped_miost
+    from sverdrup.methods.miost import shipped_miost6
 
-    cal = shipped_miost()._calibration
+    cal = shipped_miost6()._calibration
     art = json.loads(FIELD_ART.read_text())
     if cal.key() != art["cal_key"]:
         raise SystemExit(

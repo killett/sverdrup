@@ -57,7 +57,7 @@
       "id": 7,
       "nativeId": 7,
       "subject": "Task 7: authorized evidence run + pack — OWNER GATE (pack review)",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         3,
         6
@@ -95,5 +95,5 @@
       "description": "**Goal:** Close verification with captured output; PROGRESS close banner; honest tally.\n\n**Files:**\n- Modify: PROGRESS.md\n\n**Acceptance Criteria:**\n- [ ] Zero j3-side evaluation of miost6: runner grep reviewed + guard-refusal test green\n- [ ] Byte-untouched diff check, enumerated paths: git diff <pre-phase-sha> -- tests/validation/fixtures/stage_a_scope.json src/sverdrup/validation/input_adapter.py src/sverdrup/application/calibration/constants.py -> empty; P0-1 disarm commit named in banner as the ONE deliberate legacy-script edit (stage_miost_gate_run.py deliberately NOT in the check's path list)\n- [ ] Seed-root literal test green; suite green (counts recorded)\n- [ ] PROGRESS close banner: branch taken, measured numbers verbatim (mu, sigma, lambda_x, coverage vs 0.7350 referent, chi2/CRPS), tally miost5: 2 / miost6: 1, flip sha (if taken), external sweep counts, untouched list verbatim\n- [ ] Explicit PROGRESS edits: (1) close banner above design-committed banner; (2) mark design-committed banner [closed above]; (3) refresh next-action line\n\n**Verify:** pixi run test green; PROGRESS committed + pushed; working tree clean\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"pixi run test\", \"acceptanceCriteria\": [\"zero j3-side eval verified\", \"byte-untouched diff empty on enumerated paths\", \"close banner with verbatim numbers + tally\", \"pushed clean\"], \"modelTier\": \"standard\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-18T00:15:00Z"
+  "lastUpdated": "2026-07-18T12:30:00Z"
 }

@@ -229,7 +229,7 @@ def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
     mapping missions (``load_mapping_obs``), apply the production halo cut
     (``halo_obs`` at ``HALO_DEG``), split by mission (c2 locked, j3
     validation), train subset (``_subset``), then solve at the SIGNED winner
-    params through ``shipped_miost()`` (m=100, STAGE_B_ROOT, factory
+    params through ``shipped_miost5()`` (m=100, STAGE_B_ROOT, factory
     ScalarCalibration(s*), default PCG budget rtol 1e-6 / maxiter 500 — the
     exact budget the gate converged at, per the gate evidence JSON).
 
@@ -246,7 +246,7 @@ def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
 
     from sverdrup.application.splits import make_splits
     from sverdrup.application.tuning.stage_a import _subset
-    from sverdrup.methods.miost import shipped_miost
+    from sverdrup.methods.miost import shipped_miost5
     from sverdrup.methods.miost_basis import HALO_DEG
     from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
     from sverdrup.validation.params import baseline_config
@@ -274,7 +274,7 @@ def day0_shipped() -> tuple[CalibratedDistribution, np.ndarray, GridSpec]:
     )
     train = _subset(obs, split.train_idx)
 
-    dist = shipped_miost().solve(train, grid, ConstantProvider(winner), 0.0)
+    dist = shipped_miost5().solve(train, grid, ConstantProvider(winner), 0.0)
     # Phase-9 §3: the shipped product is the CalibratedDistribution wrapper
     # over the raw ensemble (type evidence updated with the migration; every
     # behavioral pin below — rtol 1e-9/1e-12, mean bit-identity — unchanged).

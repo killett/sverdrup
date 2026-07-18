@@ -157,6 +157,51 @@ def _runner() -> ModuleType:
 
 
 # ---------------------------------------------------------------------------
+# NEW miost6 external pins (captured at the T9 flip; artifact-gated)
+# ---------------------------------------------------------------------------
+
+_OURS = Path("data/2021a_ssh_mapping_ose/ours")
+_MIOST6_MEAN = _OURS / "phase12_miost6_mean_maps.nc"
+_MIOST6_VAR = _OURS / "phase12_miost6_var_maps.nc"
+# Anchored at the T8 acceptance (phase12.miost6.provenance, 2026-07-18).
+_MIOST6_MEAN_SHA = "34e764d032a51760963e843b351b7f9d16c19ac3aef33b61b58df5fd7da0257f"
+_MIOST6_VAR_SHA = "19edd1bc4acfa2dd2a53d1a8077d894ac079dc5fec423bce135d8aca470d3ac1"
+
+
+@pytest.mark.skipif(not _MIOST6_MEAN.exists(), reason="miost6 maps absent")
+def test_miost6_map_sha_pins() -> None:
+    """The accepted six-mission maps are sha-anchored (flip-time capture).
+
+    Bug caught: any regeneration or overwrite of the accepted artifacts —
+    the c2 acceptance is bound to THESE bytes via the provenance block.
+    """
+    assert sha256_file(_MIOST6_MEAN) == _MIOST6_MEAN_SHA
+    assert sha256_file(_MIOST6_VAR) == _MIOST6_VAR_SHA
+
+
+def test_miost6_factory_pin() -> None:
+    """SHIPPED["miost"] is shipped_miost6 at the frozen five-mission-lineage config.
+
+    Bug caught: a flip that repointed SHIPPED at a differently-configured
+    factory (calibration, member count, or seed root drift), voiding the
+    transferred-and-verified σ-semantics and the CRN reproducibility claim.
+    """
+    from sverdrup.methods.miost import (
+        STAGE_B_MEMBERS,
+        STAGE_B_ROOT,
+        shipped_miost5,
+        shipped_miost6,
+    )
+    from sverdrup.methods.registry import SHIPPED
+
+    assert SHIPPED["miost"] is shipped_miost6
+    m5, m6 = shipped_miost5(), shipped_miost6()
+    assert m6._calibration.key() == m5._calibration.key()
+    assert m6.members == STAGE_B_MEMBERS == 100
+    assert m6.member_root == STAGE_B_ROOT == 4836134738817689931
+
+
+# ---------------------------------------------------------------------------
 # T8 touch mechanics (pure — no data; owner ceremony verbatim)
 # ---------------------------------------------------------------------------
 

@@ -243,8 +243,17 @@ code (vendored as a submodule and driven through `sverdrup.validation`):
 | **sverdrup OI** | **0.853** | **0.090** | **140.9** |
 | BASELINE (published) | 0.85 | 0.09 | 140 |
 | DUACS (published) | 0.88 | 0.07 | 152 |
-| **sverdrup MIOST** (5 missions) | **0.857** | **0.080** | **156.4** |
+| **sverdrup MIOST (6 missions, shipped)** | **0.8678** | **0.0823** | **151.2** |
 | MIOST (published, 6 missions) | 0.89 | 0.08 | 139 |
+| sverdrup MIOST (5 missions, calibration-lineage reference) | 0.857 | 0.080 | 156.4 |
+
+The shipped six-mission row is the matched-convention comparison against the
+published 0.89 (both assimilate six missions; DUACS 0.88 sits at DUACS-class
+resolution 152 km, beside our 151.2). **Gap accounting** (recorded at the
+Phase-12 flip): assimilating j3 closed **+0.0105 of the 0.0327 gap** to the
+published MIOST row; the remainder is settings/tuning at matched inputs.
+Named future levers — six-mission re-tuning (the §8 decision) and
+structured/per-mission R — are recorded, neither elected.
 
 **OI verdict: PASS** (µ tolerance ±0.03, never loosened). The challenge's eval is
 independently trusted — it reproduces the published DUACS, MIOST, and BFN rows to
@@ -254,18 +263,26 @@ degree-space kernel (`GaussianSpaceTimeDegrees`) and the SLA→SSH MDT reference
 frame; details, the decomposed read, and the data-source notes are in the
 [`docs/validation/`](docs/validation/) records below.
 
-**MIOST verdict: PASS** against its hard floor (BASELINE µ ≥ 0.85, met at 0.857
-on a single withheld-CryoSat-2 acceptance touch). The published MIOST row is an
-aspirational anchor, not a gate, and the comparison is conservative by
-construction: sverdrup assimilates five missions (Jason-3 is held out for
-validation) where the published row assimilates six. Its uncertainty is a
-100-member perturbed-observation ensemble rescaled by a spatially-varying,
-regionally-calibrated field s(x) — a clipped low-order polynomial — so that 1σ
-coverage lands at 0.735 aggregate (target 0.6827 ± 0.10, per-region SW 0.775 →
-jet-core 0.674) on the withheld full-year test track. It is a *predictive* σ
-that includes representation error and unresolved scales, with correlation
-structure from the exact posterior; the calibration touches σ only, leaving the
-mean maps bit-identical (proven on the c2 acceptance touch).
+**MIOST verdict: PASS** against its hard floor (µ ≥ 0.85, met at 0.8678 on the
+shipped six-mission product; single withheld-CryoSat-2 acceptance touch per
+generation, honest tally {miost5: 2, miost6: 1}). The five-mission row remains
+the calibration-lineage reference: the s(x) field was fit there (Jason-3 held
+out) and transferred frozen to the six-mission product.
+
+**σ-semantics (transferred-and-verified):** the uncertainty is a 100-member
+perturbed-observation ensemble rescaled by the spatially-varying,
+regionally-calibrated field s(x) — a clipped low-order polynomial — fit on the
+five-mission configuration (j3 held out) and transferred frozen; the
+pre-registered expectation was mild over-coverage; MEASURED Δcoverage = −0.0043
+vs the 0.7350 referent ≈ 0.6·SE (n_eff ≈ n/10.27, SE ≈ 0.0067) — transfer
+NEUTRAL within noise; χ²_red 0.991; regional structure reproduces
+region-by-region (max |Δ| 0.011; SW 0.775 → jet-core 0.678, still the weakest
+region; August 0.636 remains the recorded seasonal trough, in band). It is a
+*predictive* σ that includes representation error and unresolved scales, with
+correlation structure from the exact posterior; the calibration touches σ only,
+leaving the mean maps bit-identical (proven on the c2 acceptance touch). The
+constellation-dependence caveat for LARGE constellation changes (the 1993-era
+case) stands unchanged — this measured one small step, not that one.
 
 The s(x) calibration layer is method-generic (Phase 9): any method's predictive
 distribution can be wrapped in `CalibratedDistribution` and fitted per-product

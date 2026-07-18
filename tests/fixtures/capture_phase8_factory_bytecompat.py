@@ -5,7 +5,7 @@ This script is run ONCE, against a side git worktree checked out at commit
 factory applied ``inflation_s`` via the old ``ens.rescaled(self.inflation_s)``
 anomaly path).  It records, via a direct ``Miost(...)`` that mirrors the
 factory's ensemble+inflation_s wiring on a compact config (m=24 —
-``shipped_miost()`` itself bakes in members=100 / STAGE_B_ROOT, too heavy for
+``shipped_miost5()`` itself bakes in members=100 / STAGE_B_ROOT, too heavy for
 a fixture), a small set of derived σ / mean / covariance probes so that the
 current (post-seam) path can be asserted byte-compatible against it at
 rtol 1e-12 (plan Task 4, acceptance criterion 4).
@@ -94,7 +94,7 @@ def main(worktree: Path, out: Path) -> None:
         mission,
     )
 
-    # THROUGH THE FACTORY-equivalent config: shipped_miost() bakes in
+    # THROUGH THE FACTORY-equivalent config: shipped_miost5() bakes in
     # members=100 / STAGE_B_ROOT; we mirror its ensemble+inflation_s wiring on
     # the compact config here so the current test can reconstruct it identically.
     method = Miost(
