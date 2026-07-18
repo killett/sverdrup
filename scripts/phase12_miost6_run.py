@@ -30,8 +30,12 @@ import numpy as np
 if TYPE_CHECKING:
     from sverdrup.core.observations import ObsWindow
     from sverdrup.distributions.calibration import CalibrationField
+    from sverdrup.methods.miost_windows import WindowPlan
 
 from sverdrup.validation.phase12_config import Phase12Scope, load_phase12_scope
+from sverdrup.validation.phase12_evidence import (
+    DEV_SMOKE_PREFIX as DEV_SMOKE_KEY,
+)
 from sverdrup.validation.phase12_evidence import (
     MIOST6_PREFIX,
     provenance_block,
@@ -213,6 +217,7 @@ def solve_maps(
     mean_out: Path,
     var_out: Path,
     member_store_out: Path | None,
+    plan: WindowPlan | None = None,
 ) -> dict[str, Any]:
     """The frozen-config six-mission solve: members -> day fields -> maps.
 
@@ -222,6 +227,8 @@ def solve_maps(
         mean_out: Mean maps NetCDF destination.
         var_out: Variance maps NetCDF destination.
         member_store_out: Member-store npz destination (None = skip, smoke).
+        plan: Window-plan override (smoke restricts to covering windows);
+            None = the full-year production plan.
 
     Returns:
         Telemetry block (converged, maxiter_used, batches, wall, peak RSS,
@@ -258,7 +265,8 @@ def solve_maps(
 
     from sverdrup.distributions.miost_ensemble import merged_members
 
-    plan = WindowPlan()
+    if plan is None:
+        plan = WindowPlan()
     provider = ConstantProvider(dict(WINNER_PARAMS))
     esc: dict[str, Any] = {}
     for cap in CAPS:
@@ -576,9 +584,217 @@ def run_main(scope_path: Path, signed_record: Path) -> None:
     _log("provenance recorded LAST — pack complete; c2 NOT touched")
 
 
+def _mem_available_mib() -> float:
+    """MemAvailable from /proc/meminfo [MiB]."""
+    for line in Path("/proc/meminfo").read_text().splitlines():
+        if line.startswith("MemAvailable:"):
+            return float(line.split()[1]) / 1024.0
+    raise SystemExit("MemAvailable not found in /proc/meminfo")
+
+
 def smoke_main(scope_path: Path) -> None:
-    """--smoke arrives in Task 6."""
-    raise SystemExit("REFUSED: --smoke is implemented in Task 6")
+    """--smoke: the six-job dev list on the 12-day scope (plan Task 6; spec §4).
+
+    Evidence-dest isolation (job 6): every smoke record lands under
+    ``phase12_dev_smoke.*``; the ONE cross-over is ``phase12.miost6.budget``
+    (recorded with ``source: dev_smoke``) — the derivation that unblocks
+    ``--run``. Smoke maps go to ``phase12_dev_smoke_{mean,var}_maps.nc``.
+
+    Raises:
+        SystemExit: Naming the failing job, or reporting LAUNCH criteria.
+    """
+    from sverdrup.application.tuning.feasibility import PeakFeasibility
+    from sverdrup.methods.miost import _window_mask
+    from sverdrup.methods.miost_windows import WindowPlan
+    from sverdrup.validation.params import baseline_config
+    from sverdrup.validation.phase12_config import (
+        NO_VALIDATION_REFUSAL,
+        Phase12ConfigError,
+    )
+    from sverdrup.validation.phase12_config import (
+        load_phase12_scope as _load,
+    )
+    from sverdrup.validation.provenance_guard import (
+        TrainScoreLeakError,
+        assert_scored_not_assimilated,
+        read_assimilated,
+    )
+
+    scope = load_phase12_scope(scope_path)
+    pre_keys = set(
+        (json.loads(RESULTS.read_text()) if RESULTS.exists() else {})
+        .get("phase12", {})
+        .get("miost6", {})
+    )
+
+    import tempfile
+
+    # Job 2: declared-null schema round-trip.
+    raw = json.loads(Path(scope_path).read_text())
+    with tempfile.TemporaryDirectory() as td:
+        broken = dict(raw)
+        del broken["val_track_path"]
+        p = Path(td) / "missing.json"
+        p.write_text(json.dumps(broken))
+        try:
+            _load(p)
+            raise SystemExit("SMOKE FAIL job2: missing val_track_path accepted")
+        except Phase12ConfigError as exc:
+            if "val_track_path" not in str(exc):
+                raise SystemExit("SMOKE FAIL job2: missing-key error unnamed") from exc
+        nonnull = dict(raw)
+        nonnull["val_track_path"] = str(scope.c2_track_path)
+        p2 = Path(td) / "nonnull.json"
+        p2.write_text(json.dumps(nonnull))
+        try:
+            _load(p2)
+            raise SystemExit("SMOKE FAIL job2: non-null val_track_path accepted")
+        except Phase12ConfigError as exc:
+            if str(exc) != NO_VALIDATION_REFUSAL:
+                raise SystemExit("SMOKE FAIL job2: refusal text drifted") from exc
+    write_pack_entry(
+        RESULTS,
+        f"{DEV_SMOKE_KEY}.schema_roundtrip",
+        {"missing_key_refused": True, "non_null_refused": True},
+    )
+    _log("smoke job 2 PASS: declared-null schema round-trip")
+
+    # Job 3: geometry artifact present + j3 repeat-classified (NO re-derivation).
+    if not GEOMETRY.exists():
+        raise SystemExit("SMOKE FAIL job3: geometry artifact absent — run Task 4")
+    art = json.loads(GEOMETRY.read_text())
+    fams = art["missions"].get("j3")
+    if not fams or any(fams[f]["orbit_class"] != "repeat" for f in ("asc", "desc")):
+        raise SystemExit("SMOKE FAIL job3: j3 not repeat-classified in artifact")
+    if not art.get("key"):
+        raise SystemExit("SMOKE FAIL job3: artifact stored key missing")
+    write_pack_entry(
+        RESULTS,
+        f"{DEV_SMOKE_KEY}.geometry_present",
+        {
+            "sha256": sha256_file(GEOMETRY),
+            "j3_orbit_class": {f: fams[f]["orbit_class"] for f in ("asc", "desc")},
+            "j3_classifier_ratio": {
+                f: fams[f]["classifier_ratio"] for f in ("asc", "desc")
+            },
+        },
+    )
+    _log("smoke job 3 PASS: geometry present, j3 repeat both families")
+
+    # Job 4: CRN shared-mission assert (s3a).
+    crn = crn_shared_mission_assert(scope)
+    write_pack_entry(RESULTS, f"{DEV_SMOKE_KEY}.crn", crn)
+    _log("smoke job 4 PASS: CRN s3a bit-equal")
+
+    # Job 5 solve: smoke windows only (those covering the 12-day dev scope).
+    full_plan = WindowPlan()
+    smoke_starts = tuple(
+        sorted({w.start_day for d in scope.smoke_days for w in full_plan.covering(d)})
+    )
+    smoke_plan = WindowPlan(starts=smoke_starts)
+    smoke_mean = OURS / "phase12_dev_smoke_mean_maps.nc"
+    smoke_var = OURS / "phase12_dev_smoke_var_maps.nc"
+    telemetry = solve_maps(
+        scope, list(scope.smoke_days), smoke_mean, smoke_var, None, plan=smoke_plan
+    )
+    write_pack_entry(RESULTS, f"{DEV_SMOKE_KEY}.telemetry", telemetry)
+
+    # Job 1: guard refusal on the smoke six-mission map (needs the map).
+    j3_path = next(p for p in scope.mapping_obs_paths if "_j3_" in p.name)
+    try:
+        assert_scored_not_assimilated(smoke_mean, j3_path)
+        raise SystemExit("SMOKE FAIL job1: j3 scoring of the six-mission map PASSED")
+    except TrainScoreLeakError:
+        pass
+    assimilated = read_assimilated(smoke_mean) or ()
+    if "c2" in assimilated:
+        raise SystemExit("SMOKE FAIL job1: c2 in assimilated attr")
+    write_pack_entry(
+        RESULTS,
+        f"{DEV_SMOKE_KEY}.guard_refusal",
+        {
+            "j3_scoring_refused": True,
+            "c2_scoring_permitted_by_attr": True,
+            "assimilated": list(assimilated),
+        },
+    )
+    _log("smoke job 1 PASS: j3-scoring refused; c2 permitted by attr logic")
+
+    # Job 5 budget derivation (obligation 4, template verbatim).
+    _, grid, _ = baseline_config()
+    obs_halo = load_obs_for(scope)
+    n_obs_full = len(obs_halo)
+    l_t = float(WINNER_PARAMS["l_t_days"])
+    per_window_counts = {
+        f"{w.start_day:g}": int(_window_mask(obs_halo, w, l_t).sum())
+        for w in full_plan.windows
+    }
+    n_obs_smoke = max(
+        int(_window_mask(obs_halo, w, l_t).sum()) for w in smoke_plan.windows
+    )
+    n_obs_max_window = max(per_window_counts.values())
+    n_windows_smoke = len(smoke_plan.windows)
+    n_windows_full = len(full_plan.windows)
+    t_window_smoke = telemetry["wall_s"] / n_windows_smoke
+    t_full_est = t_window_smoke * n_windows_full * (n_obs_full / n_obs_smoke)
+    g_full_per_window_gb = 0.78 * (n_obs_full / 54_345)
+    peak = PeakFeasibility(
+        n_obs_max=n_obs_max_window,
+        m=M_MEMBERS,
+        n_grid_nodes=int(grid.shape[0] * grid.shape[1]),
+    )
+    peak_est_mib = peak.predicted_peak_bytes(dict(WINNER_PARAMS)) * 1.11 / 2**20
+    mem_avail_mib = _mem_available_mib()
+    launch_ok = bool(peak_est_mib <= 0.5 * mem_avail_mib and t_full_est <= 12 * 3600)
+    budget = {
+        "source": "dev_smoke",
+        "n_obs_smoke": n_obs_smoke,
+        "n_obs_full": n_obs_full,
+        "n_obs_max_window": n_obs_max_window,
+        "per_window_obs": per_window_counts,
+        "t_window_smoke_s": round(t_window_smoke, 1),
+        "peak_rss_smoke_mib": telemetry["peak_rss_mib"],
+        "n_windows_smoke": n_windows_smoke,
+        "n_windows_full": n_windows_full,
+        "g_full_per_window_gb": round(g_full_per_window_gb, 3),
+        "t_full_est_s": round(t_full_est, 1),
+        "peak_est_mib": round(peak_est_mib, 1),
+        "peak_model": "PeakFeasibility.predicted_peak_bytes x 1.11 (Task-22)",
+        "mem_available_mib": round(mem_avail_mib, 1),
+        "launch_rule": "peak_est <= 0.5*MemAvailable AND t_full_est <= 12 h",
+        "launch_ok": launch_ok,
+    }
+    write_pack_entry(RESULTS, f"{MIOST6_PREFIX}.budget", budget)
+    _log(
+        f"smoke job 5 PASS: budget recorded (t_full_est {t_full_est / 3600:.2f} h, "
+        f"peak_est {peak_est_mib:.0f} MiB vs avail {mem_avail_mib:.0f} MiB)"
+    )
+
+    # Job 6: dest isolation — smoke added NOTHING to phase12.miost6 but budget.
+    post = json.loads(RESULTS.read_text())
+    post_keys = set(post.get("phase12", {}).get("miost6", {}))
+    added = post_keys - pre_keys
+    if added - {"budget"}:
+        raise SystemExit(f"SMOKE FAIL job6: smoke wrote miost6 keys {sorted(added)}")
+    if post["phase12"]["miost6"]["budget"].get("source") != "dev_smoke":
+        raise SystemExit("SMOKE FAIL job6: budget missing source=dev_smoke")
+    write_pack_entry(
+        RESULTS,
+        f"{DEV_SMOKE_KEY}.dest_isolation",
+        {
+            "miost6_keys_added": sorted(added),
+            "smoke_maps": [str(smoke_mean), str(smoke_var)],
+        },
+    )
+    _log("smoke job 6 PASS: dest isolation held")
+
+    verdict = "met" if launch_ok else "NOT met"
+    print(
+        f"SMOKE: 6/6 jobs PASS; budget recorded; LAUNCH criteria {verdict}",
+        flush=True,
+    )
+    if not launch_ok:
+        raise SystemExit(4)
 
 
 def c2_touch_main() -> None:
