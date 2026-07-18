@@ -643,7 +643,6 @@ def stage_b_main() -> None:
     from sverdrup.eval.calibration import reduced_chi2
     from sverdrup.validation.input_adapter import load_mdt_grid
     from sverdrup.validation.output_adapter import write_map
-    from sverdrup.validation.their_eval import score as their_score
 
     scope = _scope()
     cfg = json.loads(scope.read_text())
@@ -798,24 +797,34 @@ def stage_b_main() -> None:
             "verdict": verdict[0] if verdict else "(no verdict line found)",
         }
 
-    if os.environ.get("SVERDRUP_MIOST_C2") != "1":
-        _flush(
-            "READY: evidence assembled; c2 NOT touched (set "
-            "SVERDRUP_MIOST_C2=1 for the single acceptance touch)"
-        )
-        _log("stage-b READY (c2 untouched)")
-        return
+    refuse_inline_touch()
+    _flush(
+        "READY: evidence assembled; c2 NOT touched (the inline touch is "
+        "disarmed — the single acceptance touch lives in --c2-touch)"
+    )
+    _log("stage-b READY (c2 untouched; inline touch disarmed)")
+    return
 
-    _flush("RUNNING: the single c2 touch")
-    c2_track = Path(cfg["c2_track_path"])
-    mu_c, var_c, ssh_c = _interp_mean_var_on_track(mean_nc, var_nc, c2_track, cfg)
-    sb["c2_acceptance"] = {
-        "mu_sigma_lambda_x": list(their_score(mean_nc, c2_track)),
-        "calibration_at_s_star": _calibration_at(mu_c, var_c, ssh_c, s=s_star),
-        "semantics": "the ONE Stage-B c2 touch (hygiene order: winner-only)",
-    }
-    _flush("DONE: awaiting owner sign-off + capability-flip commit")
-    _log("stage-b DONE")
+
+INLINE_TOUCH_DISARMED = (
+    "REFUSED: the inline stage-b c2 touch is DISARMED (hygiene P0-1) — use "
+    "--c2-touch, which carries _assert_c2_untouched and the pre-registered "
+    "_c2_reading (template mechanics; fresh owner authorization required)"
+)
+
+
+def refuse_inline_touch(env: dict[str, str] | None = None) -> None:
+    """Disarmed inline touch (hygiene P0-1): the env flag now REFUSES here.
+
+    The single acceptance touch lives exclusively in the --c2-touch mode,
+    which carries _assert_c2_untouched + the pre-registered _c2_reading.
+
+    Raises:
+        SystemExit: code 2 with INLINE_TOUCH_DISARMED when the flag is set.
+    """
+    e = os.environ if env is None else env
+    if e.get("SVERDRUP_MIOST_C2") == "1":
+        raise SystemExit(INLINE_TOUCH_DISARMED)
 
 
 def _assert_c2_untouched(stage_b: dict[str, Any]) -> None:

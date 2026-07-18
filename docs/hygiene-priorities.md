@@ -22,12 +22,19 @@ Nothing else in this file can.
    "never rerun --stage-b with the env var set" recorded in
    PROGRESS.md. Effort S either way. Recommend (a): rules rot, guards
    don't.
+   **RESOLVED (Phase 12, spec §5): disarmed** — the env branch in
+   `stage_b_main` now refuses, naming `--c2-touch`; test
+   `tests/validation/test_stage_miost_disarm.py`.
 2. **Stage-B evidence clobber path** — `scripts/tune_miost_inflation.py:117`.
    Superseded Task-17 script writes `stage_b_{mean,var}_maps.nc` into
    the same `OUT_DIR` the gate runner uses for Stage-B evidence maps
    (which `diag_stage_b_localized_calibration.py` reads). Any rerun
    clobbers gate evidence. Options: retire the script (it is a record —
    move aside or refuse-on-run), or retarget its OUT_DIR. Effort S.
+   **BLOCKING PRECONDITION (pre-registered, Phase 12, spec §5):** any
+   future plan invoking `tune_miost_inflation` or writing `stage_b_*`
+   canonical names fixes this first. Detection covered by the
+   sha-anchored external pins (loud at the next sweep).
 
 ## P1 — firm bugs in live machinery. Fix soon, red/green, before the machinery is next exercised
 
