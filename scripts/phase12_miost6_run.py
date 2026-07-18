@@ -840,12 +840,354 @@ def smoke_main(scope_path: Path) -> None:
         raise SystemExit(4)
 
 
-def c2_touch_main() -> None:
-    """--c2-touch arrives in Task 8 (fresh owner authorization required)."""
-    raise SystemExit(
-        "REFUSED: --c2-touch is not implemented until T8 (the ONE touch "
-        "requires fresh owner authorization; zero c2 before then)"
+# ---------------------------------------------------------------------------
+# T8 — the ONE c2 touch (owner-authorized 2026-07-18; ceremony verbatim)
+# ---------------------------------------------------------------------------
+
+C2_FLAG = "SVERDRUP_MIOST_C2"
+C2_CORRECTED_FLAG = "SVERDRUP_MIOST_C2_CORRECTED"
+DEFECT_KEY_PREFIX = "c2_defect_run_"
+N_C2_FULL_YEAR = 44_844  # spec §5: the Task-19 signed full-year c2 count
+CHALLENGE_TMIN = np.datetime64("2017-01-01")
+CHALLENGE_TMAX = np.datetime64("2018-01-01")
+_COVER_MIN = np.datetime64("2017-01-31")  # loaded min must be ≤ end of Jan
+_COVER_MAX = np.datetime64("2017-12-01")  # loaded max must be ≥ start of Dec
+TALLY = {"miost5": 2, "miost6": 1}
+COVERAGE_BASELINE = 0.7350370172152351  # field-calibrated c2 aggregate (miost5)
+COVERAGE_BASELINE_SCALAR_ERA = 0.7481
+MU_HARD_FLOOR = 0.85
+
+
+def check_authorized(env: dict[str, str] | None = None) -> None:
+    """Fresh authorization: exact-string SVERDRUP_MIOST_C2 == "1" only.
+
+    Args:
+        env: Environment mapping (defaults to ``os.environ``).
+
+    Raises:
+        SystemExit: Any other value; no data loaded.
+    """
+    import os
+
+    e = os.environ if env is None else env
+    if e.get(C2_FLAG) != "1":
+        raise SystemExit(
+            f"REFUSED: set {C2_FLAG}=1 exactly (owner-gated touch; fresh "
+            "authorization required). No data loaded."
+        )
+
+
+def check_touch_protocol(
+    evidence: dict[str, Any], env: dict[str, str] | None = None
+) -> None:
+    """One-invocation mechanics (phase8 owner-rider-3 matrix, phase12 keys).
+
+    C = corrected flag set, A = ``phase12.miost6.c2_acceptance`` present,
+    D = any ``c2_defect_run_<date>`` key present:
+
+    unset C:  A -> REFUSE (one-touch spent); no A -> PROCEED (first touch).
+    set C:    A, no D -> PROCEED (migrate then re-evaluate);
+              no A, D -> PROCEED (resume);
+              A and D -> REFUSE (third invocation);
+              neither -> REFUSE (flag invalid without a recorded defect).
+
+    Args:
+        evidence: The parsed phase12 evidence JSON.
+        env: Environment mapping (defaults to ``os.environ``).
+
+    Raises:
+        SystemExit: On every REFUSE row; no data loaded.
+    """
+    import os
+
+    e = os.environ if env is None else env
+    corrected = e.get(C2_CORRECTED_FLAG) == "1"
+    m = evidence.get("phase12", {}).get("miost6", {})
+    acceptance = "c2_acceptance" in m
+    defect = any(k.startswith(DEFECT_KEY_PREFIX) for k in m)
+
+    if not corrected:
+        if acceptance:
+            raise SystemExit(
+                "REFUSED: phase12.miost6.c2_acceptance already exists — the "
+                "ONE touch is spent. A corrected re-touch requires "
+                f"{C2_CORRECTED_FLAG}=1 + a dated defect key. No data loaded."
+            )
+        return  # first touch — the authorized invocation
+    if acceptance and defect:
+        raise SystemExit(
+            "REFUSED: third invocation — c2_acceptance exists alongside a "
+            "defect key; further touches are owner-gated. No data loaded."
+        )
+    if not acceptance and not defect:
+        raise SystemExit(
+            f"REFUSED: {C2_CORRECTED_FLAG}=1 is invalid without a recorded "
+            "defect — nothing to correct. No data loaded."
+        )
+    # PROCEED rows: (A, no D) migrate-then-evaluate; (no A, D) resume.
+
+
+def migrate_defect_run(evidence: dict[str, Any], date_str: str) -> bool:
+    """Rename a defect-run acceptance to the dated defect key (in place).
+
+    Args:
+        evidence: The parsed phase12 evidence JSON (mutated).
+        date_str: Migration date, ``YYYYMMDD``.
+
+    Returns:
+        True when a migration happened; False on the resume no-op.
+    """
+    m = evidence.setdefault("phase12", {}).setdefault("miost6", {})
+    if any(k.startswith(DEFECT_KEY_PREFIX) for k in m) or "c2_acceptance" not in m:
+        return False
+    blk = m.pop("c2_acceptance")
+    if isinstance(blk, dict):
+        blk["defect"] = "defect run migrated; numbers are context, never evidence"
+        blk["defect_recorded"] = date_str
+    m[f"{DEFECT_KEY_PREFIX}{date_str}"] = blk
+    return True
+
+
+def window_tripwire(n_points: int, times: np.ndarray) -> dict[str, Any]:
+    """Assert the loaded c2 set is the FULL challenge year (phase8 template).
+
+    Args:
+        n_points: Loaded c2 point count.
+        times: Loaded per-point times.
+
+    Returns:
+        The passing tripwire record (embedded in the acceptance block).
+
+    Raises:
+        SystemExit: On count or span mismatch — record in the message,
+            partial-window defect-STOP.
+    """
+    tt = np.asarray(times, dtype="datetime64[ns]")
+    has = bool(tt.size)
+    in_bounds = (
+        has and bool((tt >= CHALLENGE_TMIN).all()) and bool((tt < CHALLENGE_TMAX).all())
     )
+    spans = has and bool(tt.min() <= _COVER_MIN) and bool(tt.max() >= _COVER_MAX)
+    n_ok = n_points == N_C2_FULL_YEAR
+    record: dict[str, Any] = {
+        "passed": bool(n_ok and in_bounds and spans),
+        "n_points_loaded": int(n_points),
+        "n_points_expected": N_C2_FULL_YEAR,
+        "in_challenge_bounds": in_bounds,
+        "spans_challenge_year": spans,
+        "loaded_time_min": str(tt.min()) if has else None,
+        "loaded_time_max": str(tt.max()) if has else None,
+    }
+    if not record["passed"]:
+        raise SystemExit(
+            "WINDOW-TRIPWIRE defect-STOP: loaded c2 set is not the full "
+            f"challenge year — n_points={n_points} (expected "
+            f"{N_C2_FULL_YEAR}), span ok={spans}, bounds ok={in_bounds}. "
+            f"Record: {json.dumps(record)}"
+        )
+    return record
+
+
+def provenance_tripwire(
+    recorded: dict[str, Any],
+    mean_maps: Path,
+    var_maps: Path,
+    member_store: Path,
+    cal_key: str,
+    scope_cfg: Path,
+    geometry_artifact: Path,
+) -> None:
+    """Recompute ALL SIX provenance fields from disk; refuse on any mismatch.
+
+    Runs BEFORE the c2 file is opened. Never a re-solve — a mismatch is an
+    attribution task, not a regeneration order.
+
+    Args:
+        recorded: The provenance block the evidence run persisted.
+        mean_maps: On-disk mean maps to re-hash.
+        var_maps: On-disk var maps to re-hash.
+        member_store: On-disk member store to re-hash.
+        cal_key: The factory field's live cal_key.
+        scope_cfg: The scope JSON to re-hash.
+        geometry_artifact: The geometry artifact to re-hash.
+
+    Raises:
+        ValueError: Naming every mismatched field (assert_provenance_matches).
+    """
+    from sverdrup.validation.phase12_evidence import assert_provenance_matches
+
+    recomputed = provenance_block(
+        mean_maps=mean_maps,
+        var_maps=var_maps,
+        member_store=member_store,
+        cal_key=cal_key,
+        scope_cfg=scope_cfg,
+        geometry_artifact=geometry_artifact,
+    )
+    assert_provenance_matches(recorded, recomputed)
+
+
+def _interp_c2(mean_nc: Path, var_nc: Path, c2_track: Path) -> tuple[np.ndarray, ...]:
+    """Interp mean/var maps on the c2 track over the FULL challenge year.
+
+    The one place in this script that opens the c2 file. Both maps carry the
+    provenance guard first.
+
+    Returns:
+        (lon, lat, time, resid, v) finite/positive-var masked arrays.
+    """
+    import sverdrup.validation.their_eval as te
+    from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
+
+    assert_scored_not_assimilated(mean_nc, c2_track)
+    assert_scored_not_assimilated(var_nc, c2_track)
+    te._prepare_imports()
+    from src.mod_inout import read_l3_dataset
+    from src.mod_interp import interp_on_alongtrack
+
+    box = dict(
+        lon_min=295.0,
+        lon_max=305.0,
+        lat_min=33.0,
+        lat_max=43.0,
+        time_min="2017-01-01",
+        time_max="2018-01-01",
+    )
+    ds_at = read_l3_dataset(str(c2_track), **box)
+    time_a, lat_a, lon_a, ssh, mu = interp_on_alongtrack(
+        str(mean_nc), ds_at, is_circle=False, **box
+    )
+    _, _, _, _, var = interp_on_alongtrack(str(var_nc), ds_at, is_circle=False, **box)
+    ssh, mu, var = (np.asarray(a, float) for a in (ssh, mu, var))
+    lon_a, lat_a = np.asarray(lon_a, float), np.asarray(lat_a, float)
+    time_a = np.asarray(time_a)
+    ok = np.isfinite(ssh) & np.isfinite(mu) & np.isfinite(var) & (var > 0)
+    return lon_a[ok], lat_a[ok], time_a[ok], (ssh - mu)[ok], var[ok]
+
+
+def _cal_stats(resid: np.ndarray, vt: np.ndarray) -> dict[str, float]:
+    """Coverage / reduced chi2 / CRPS on a calibrated track variance."""
+    import math
+
+    band = np.sqrt(vt)
+    sigma = band
+    z = resid / sigma
+    phi = np.exp(-0.5 * z * z) / math.sqrt(2.0 * math.pi)
+    cdf = 0.5 * (1.0 + np.vectorize(math.erf)(z / math.sqrt(2.0)))
+    crps = sigma * (z * (2.0 * cdf - 1.0) + 2.0 * phi - 1.0 / math.sqrt(math.pi))
+    return {
+        "n": int(resid.size),
+        "coverage": float(np.count_nonzero(np.abs(resid) <= band) / resid.size),
+        "reduced_chi2": float(np.mean(resid**2 / vt)),
+        "crps": float(np.mean(crps)),
+    }
+
+
+def c2_touch_main(scope_path: Path, signed_record: Path) -> None:
+    """The ONE c2 touch (T8; owner-authorized fresh 2026-07-18).
+
+    Ceremony order: authorization -> protocol matrix -> provenance tripwire
+    (all six fields, BEFORE the c2 file opens; never a re-solve) -> c2 load
+    with the provenance guard -> window tripwire -> the sealed reading ->
+    one write of ``phase12.miost6.c2_acceptance``.
+
+    Args:
+        scope_path: The phase12 scope JSON (hashed in the closed input set).
+        signed_record: The signed gate evidence JSON (winner-params assert).
+    """
+    from datetime import UTC, datetime
+
+    from sverdrup.application.calibration import regions as R
+    from sverdrup.application.calibration.constants import (
+        COVERAGE_TARGET,
+        COVERAGE_TOL,
+        SIGMA_OBS2,
+    )
+    from sverdrup.validation.their_eval import score as their_score
+
+    check_authorized()
+    evidence = json.loads(RESULTS.read_text()) if RESULTS.exists() else {}
+    check_touch_protocol(evidence)
+    scope = load_phase12_scope(scope_path)
+    assert_winner_matches_signed(signed_record)
+    cal = shipped_calibration()
+
+    m6 = evidence.get("phase12", {}).get("miost6", {})
+    recorded_prov = m6.get("provenance")
+    if not recorded_prov:
+        raise SystemExit("REFUSED: phase12.miost6.provenance absent — run --run first")
+    provenance_tripwire(
+        recorded_prov,
+        mean_maps=scope.mean_map_out,
+        var_maps=scope.var_map_out,
+        member_store=scope.member_store_out,
+        cal_key=cal.key(),
+        scope_cfg=scope_path,
+        geometry_artifact=GEOMETRY,
+    )
+    _log("provenance tripwire PASS (all six fields recomputed, bit-match)")
+
+    date_str = datetime.now(UTC).strftime("%Y%m%d")
+    if migrate_defect_run(evidence, date_str):
+        write_pack_entry(
+            RESULTS,
+            f"{MIOST6_PREFIX}.{DEFECT_KEY_PREFIX}{date_str}",
+            evidence["phase12"]["miost6"][f"{DEFECT_KEY_PREFIX}{date_str}"],
+        )
+        _log(f"defect run migrated to {DEFECT_KEY_PREFIX}{date_str}")
+
+    _log("opening the c2 track (the ONE authorized touch)")
+    lon, lat, tt, resid, v = _interp_c2(
+        scope.mean_map_out, scope.var_map_out, scope.c2_track_path
+    )
+    tripwire = window_tripwire(int(resid.size), tt)
+    _log(f"window tripwire PASS (n={resid.size}, full challenge year)")
+
+    triplet = [float(x) for x in their_score(scope.mean_map_out, scope.c2_track_path)]
+    vt = (cal.sqrt_s_at(lon, lat) ** 2) * v + SIGMA_OBS2
+    aggregate = _cal_stats(resid, vt)
+
+    jet_cells = np.asarray(
+        json.loads((OURS / "phase8_jet_core_mask.json").read_text())["mask"],
+        dtype=bool,
+    )
+    row, col = R.cell_index(lon, lat)
+    jet_pts = jet_cells[row, col]
+    regional = {}
+    for reg, mask in R.evaluation_masks(lon, lat, jet_pts).items():
+        if mask.any():
+            regional[reg] = _cal_stats(resid[mask], vt[mask])
+    months = np.asarray(tt, dtype="datetime64[M]").astype(int) % 12 + 1
+    monthly = {
+        f"{mo:02d}": _cal_stats(resid[months == mo], vt[months == mo])
+        for mo in range(1, 13)
+        if (months == mo).any()
+    }
+
+    acceptance = {
+        "mu_sigma_lambda_x": triplet,
+        "aggregate_calibration": aggregate,
+        "regional_table": regional,
+        "monthly_table": monthly,
+        "window_tripwire": tripwire,
+        "reading_frame": {
+            "coverage_bar": {"target": COVERAGE_TARGET, "tol": COVERAGE_TOL},
+            "coverage_baseline_miost5": COVERAGE_BASELINE,
+            "coverage_baseline_scalar_era": COVERAGE_BASELINE_SCALAR_ERA,
+            "mu_hard_floor": MU_HARD_FLOOR,
+            "sigma_convention": "s(x)*v + SIGMA_OBS2 (track-side, phase8)",
+        },
+        "c2_touch_tally": dict(TALLY),
+        "semantics": (
+            "the ONE phase-12 c2 touch (owner-authorized fresh 2026-07-18; "
+            "everything frozen from the signed record; nothing refit on c2; "
+            "three-branch ruling is the owner's message)"
+        ),
+        "written_utc": datetime.now(UTC).isoformat(),
+    }
+    write_pack_entry(RESULTS, f"{MIOST6_PREFIX}.c2_acceptance", acceptance)
+    _log("c2_acceptance written — the ONE touch is spent")
+    print(json.dumps(acceptance, indent=2))
 
 
 def main() -> None:
@@ -871,7 +1213,11 @@ def main() -> None:
             raise SystemExit("--run requires --signed-record <signed evidence JSON>")
         run_main(args.scope, args.signed_record)
     else:
-        c2_touch_main()
+        if args.signed_record is None:
+            raise SystemExit(
+                "--c2-touch requires --signed-record <signed evidence JSON>"
+            )
+        c2_touch_main(args.scope, args.signed_record)
 
 
 if __name__ == "__main__":

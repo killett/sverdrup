@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 import pytest
 
@@ -148,10 +150,125 @@ def test_seed_root_literal_exact_int() -> None:
     assert root == 4836134738817689931
 
 
-def test_runner_c2_touch_stub_refuses() -> None:
-    """Until Task 8, --c2-touch must refuse loudly; no c2 open exists in the runner."""
+def _runner() -> ModuleType:
     from tests.helpers import load_script
 
-    runner = load_script("phase12_miost6_run")
-    with pytest.raises(SystemExit, match="not implemented until T8"):
-        runner.c2_touch_main()
+    return load_script("phase12_miost6_run")
+
+
+# ---------------------------------------------------------------------------
+# T8 touch mechanics (pure — no data; owner ceremony verbatim)
+# ---------------------------------------------------------------------------
+
+
+def test_check_authorized_exact_one_only() -> None:
+    """Any value but exact-string '1' refuses with no data loaded."""
+    r = _runner()
+    r.check_authorized({"SVERDRUP_MIOST_C2": "1"})  # no raise
+    for bad in (
+        {},
+        {"SVERDRUP_MIOST_C2": "0"},
+        {"SVERDRUP_MIOST_C2": " 1"},
+        {"SVERDRUP_MIOST_C2": "true"},
+        {"SVERDRUP_MIOST_C2": "1 "},
+    ):
+        with pytest.raises(SystemExit, match="SVERDRUP_MIOST_C2"):
+            r.check_authorized(bad)
+
+
+def _mk_evidence(acceptance: bool, defect: bool) -> dict[str, Any]:
+    m: dict[str, Any] = {}
+    if acceptance:
+        m["c2_acceptance"] = {"mu": 0.85}
+    if defect:
+        m["c2_defect_run_20260718"] = {"mu": 0.85, "defect": "x"}
+    return {"phase12": {"miost6": m}}
+
+
+def test_touch_protocol_matrix() -> None:
+    """The six-row one-touch/corrected matrix (phase8 owner-rider-3 template)."""
+    r = _runner()
+    flag = {"SVERDRUP_MIOST_C2_CORRECTED": "1"}
+
+    # unset + acceptance -> refuse (one-touch spent)
+    with pytest.raises(SystemExit, match="already"):
+        r.check_touch_protocol(_mk_evidence(True, False), {})
+    # unset + no acceptance -> PROCEED (this is the FIRST touch)
+    r.check_touch_protocol(_mk_evidence(False, False), {})
+    # set + acceptance + no defect -> proceed (migrate then re-evaluate)
+    r.check_touch_protocol(_mk_evidence(True, False), flag)
+    # set + no acceptance + defect -> proceed (resume)
+    r.check_touch_protocol(_mk_evidence(False, True), flag)
+    # set + acceptance + defect -> refuse (third invocation)
+    with pytest.raises(SystemExit, match="third"):
+        r.check_touch_protocol(_mk_evidence(True, True), flag)
+    # set + neither -> refuse (flag invalid without a defect to correct)
+    with pytest.raises(SystemExit, match="invalid"):
+        r.check_touch_protocol(_mk_evidence(False, False), flag)
+
+
+def test_migrate_defect_run_renames_and_is_idempotent() -> None:
+    r = _runner()
+    ev = _mk_evidence(True, False)
+    assert r.migrate_defect_run(ev, "20260718") is True
+    m = ev["phase12"]["miost6"]
+    assert "c2_acceptance" not in m
+    blk = m["c2_defect_run_20260718"]
+    assert blk["mu"] == 0.85
+    assert "defect" in blk
+    assert r.migrate_defect_run(ev, "20260718") is False  # no-op on resume
+
+
+def test_window_tripwire_refuses_wrong_count_and_partial_span() -> None:
+    import numpy as np
+
+    r = _runner()
+    full = np.arange("2017-01-01", "2018-01-01", dtype="datetime64[D]").astype(
+        "datetime64[ns]"
+    )
+    rec = r.window_tripwire(44_844, full)  # count pinned; full span
+    assert rec["passed"] is True
+    with pytest.raises(SystemExit, match="n_points"):
+        r.window_tripwire(44_843, full)
+    partial = full[:30]  # January only
+    with pytest.raises(SystemExit, match="span"):
+        r.window_tripwire(44_844, partial)
+
+
+def test_provenance_tripwire_refuses_tampered_store(tmp_path: Path) -> None:
+    """Tampered member store refuses BEFORE any c2 open; never a re-solve."""
+    r = _runner()
+    files = {}
+    for name in ("mean.nc", "var.nc", "members.npz", "scope.json", "geom.json"):
+        p = tmp_path / name
+        p.write_text(name)
+        files[name] = p
+    recorded = provenance_block(
+        mean_maps=files["mean.nc"],
+        var_maps=files["var.nc"],
+        member_store=files["members.npz"],
+        cal_key="poly:key",
+        scope_cfg=files["scope.json"],
+        geometry_artifact=files["geom.json"],
+    )
+    # untampered: passes
+    r.provenance_tripwire(
+        recorded,
+        mean_maps=files["mean.nc"],
+        var_maps=files["var.nc"],
+        member_store=files["members.npz"],
+        cal_key="poly:key",
+        scope_cfg=files["scope.json"],
+        geometry_artifact=files["geom.json"],
+    )
+    files["members.npz"].write_text("TAMPERED")
+    with pytest.raises(ValueError, match="member_store_sha256"):
+        r.provenance_tripwire(
+            recorded,
+            mean_maps=files["mean.nc"],
+            var_maps=files["var.nc"],
+            member_store=files["members.npz"],
+            cal_key="poly:key",
+            scope_cfg=files["scope.json"],
+            geometry_artifact=files["geom.json"],
+        )
