@@ -1,5 +1,30 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 13 DESIGN COMMITTED 2026-07-18, ⛔ STOPPED FOR OWNER FILE
+> REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-18-phase13-structured-r-design.md`
+> (owner-approved in-session: forks a–f ruled with riders + three review
+> batches with pins). Phase 13 = structured observation error for
+> flagship MIOST at box scale: per-mission σ²_m = R_REF·exp(δ_m)
+> (gauge mean(δ)=0, δ_s3a = −Σ balance) + per-pass {bias, tilt} error
+> modes in s-units via STATE AUGMENTATION ([G B], Q_aug = diag(Q, Λ);
+> field-block marginal ≡ solve under R_eff = diag(σ²_m)+BΛBᵀ — extended
+> duality oracle proves mean AND variance at rtol 1e-8). ONE 7-dim
+> parameterization, lanes as frozen restrictions {lane-0 signed / D
+> 5-dim / C 7-dim / modes-only probe-conditional}; ρ REOPENED
+> (α/q_slope/L_t frozen); PRIMARY = lane-C vs lane-0 under a NEW sealed
+> phase13 band artifact; winner-lane rule = simpler lane on tie;
+> negative path = "improvements within band," measured-not-shipped.
+> Fits at the FIVE-mission config (j3 validation; identity target =
+> signed miost5 artifacts, rtol 1e-12 four routes); SHIPPED["miost"]
+> (= miost6) UNCHANGED this phase — six-mission refresh = recorded
+> election. New CRN axis "err" (mission_hash, pass_time_int, mode_idx);
+> white-fed-ensemble hazard killed by construction + teeth-companion
+> test. Sizing re-derived: +0.24% cols / +0.05% nnz (~480 cols/window).
+> Prereqs verified: Phase 11 CLOSED (0.410 five-mission baseline
+> governs); Phase 12 CLOSED (recorded, ship-shape fork consumes it).
+> Next action: owner file review of the spec, then writing-plans.
+
 > **✅ PHASE 12 — production configuration (six-mission MIOST): CLOSED
 > 2026-07-18, BRANCH = SIGN-OFF (owner three-branch ruling; flip
 > executed). All 10 tasks complete; every commit pushed; flip commit
