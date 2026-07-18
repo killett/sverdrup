@@ -26,7 +26,9 @@ import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
 # The segmentation gap rule is the geometry artifact's (imported, spec §3).
-from sverdrup.application.orbit_geometry import _GAP_SEC as PASS_GAP_SEC
+from sverdrup.application.orbit_geometry import _GAP_SEC
+
+PASS_GAP_SEC: float = _GAP_SEC
 
 _EARTH_RADIUS_KM = 6371.0
 _SECONDS_PER_DAY = 86400.0

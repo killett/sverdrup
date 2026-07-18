@@ -168,12 +168,20 @@ def test_pcg_overrides_enter_params_key() -> None:
 
 
 def test_parameter_space_boxes() -> None:
+    # Phase-13 extension: the space gains the structured-R dims with WIDE
+    # method-level bounds; the four signed dims are unchanged (plan Task 2).
     space = Miost().parameter_space()
     assert space.bounds == {
         "spacing_alpha": (0.5, 1.5),
         "log10_rho": (-2.0, 3.0),
         "q_slope": (0.0, 4.0),
         "l_t_days": (5.0, 12.0),
+        "delta_alg": (-3.0, 3.0),
+        "delta_h2g": (-3.0, 3.0),
+        "delta_j2g": (-3.0, 3.0),
+        "delta_j2n": (-3.0, 3.0),
+        "log_lam_bias": (-8.0, -1.0),
+        "log_lam_tilt": (-8.0, -1.0),
     }
 
 

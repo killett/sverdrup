@@ -36,6 +36,13 @@ from sverdrup.methods.miost_basis import (
     time_contract,
 )
 from sverdrup.methods.miost_crn import coef_noise, obs_noise
+from sverdrup.methods.miost_error_basis import (
+    build_b,
+    lam_diag,
+    mission_hash_ints,
+    segment_passes,
+)
+from sverdrup.methods.miost_rspec import RSpec
 from sverdrup.methods.miost_solver import (
     PCG_MAXITER,
     PCG_RTOL,
@@ -375,6 +382,7 @@ class Miost:
         member_root: Seed | None = None,
         inflation_s: float = 1.0,
         calibration: CalibrationField | None = None,
+        rspec: RSpec | None = None,
     ) -> None:
         """Create the method with empty caches.
 
@@ -398,6 +406,12 @@ class Miost:
                 ensemble product (the general s(x) layer). Defaults to
                 ``ScalarCalibration(inflation_s)``. Passing BOTH a calibration
                 and a non-unit ``inflation_s`` is ambiguous and raises.
+            rspec: Phase-13 structured observation-error spec. None (the
+                default) = the scalar-era configuration, byte-identical
+                behavior AND params_key. A structured spec switches
+                ``_solve_window`` to per-mission R (and, when modes are
+                active, the augmented [G B] assembly with the field-block
+                slice at return).
 
         Raises:
             ValueError: If ``members > 0`` without ``member_root``, or if both
@@ -419,6 +433,7 @@ class Miost:
         self.members = members
         self.member_root = member_root
         self.inflation_s = inflation_s
+        self.rspec = rspec if rspec is not None else RSpec()
         self._calibration: CalibrationField = (
             calibration if calibration is not None else ScalarCalibration(inflation_s)
         )
@@ -434,13 +449,31 @@ class Miost:
         ] = OrderedDict()
 
     def parameter_space(self) -> ParameterSpace:
-        """Return the Stage-A tunable boxes (plan-fixed)."""
+        """Return the tunable boxes (plan-fixed + phase-13 structured-R dims).
+
+        The structured-R bounds are WIDE method-level boxes (plan Task 2);
+        the pre-registered SWEEP boxes are sealed in ``phase13_boxes.py``.
+
+        CONSUMPTION SEAM (recorded at Task-2 review): the structured-R dims
+        are consumed through the ``rspec`` constructor argument — the
+        phase-13 lane runner builds an :class:`RSpec` per trial. ``solve``
+        does NOT read them from the ParameterProvider, so a tuner that
+        enumerates these bounds into trial params (the legacy Stage-A
+        sweep) would sweep dead dimensions; that tuner must not be pointed
+        at the structured dims.
+        """
         return ParameterSpace(
             bounds={
                 "spacing_alpha": (0.5, 1.5),
                 "log10_rho": (-2.0, 3.0),
                 "q_slope": (0.0, 4.0),
                 "l_t_days": (5.0, 12.0),
+                "delta_alg": (-3.0, 3.0),
+                "delta_h2g": (-3.0, 3.0),
+                "delta_j2g": (-3.0, 3.0),
+                "delta_j2n": (-3.0, 3.0),
+                "log_lam_bias": (-8.0, -1.0),
+                "log_lam_tilt": (-8.0, -1.0),
             }
         )
 
@@ -457,10 +490,12 @@ class Miost:
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
+        # rspec fragment is "" for the scalar config — scalar-era keys stay
+        # byte-identical (cache lineage, spec §2 rider 5 / §11).
         return (
             f"{spec.key()};rho={rho!r};q_slope={q_slope!r};"
             f"pcg_rtol={self.pcg_rtol!r};pcg_maxiter={self.pcg_maxiter};"
-            f"cal={self._calibration.key()}"
+            f"cal={self._calibration.key()}{self.rspec.key()}"
         )
 
     def solve(
@@ -568,6 +603,14 @@ class Miost:
             ensemble_provenance,
         )
 
+        if not self.rspec.is_scalar:
+            # Augmented member sampling (per-mission ε', "err" axis for c̃)
+            # lands at plan Task 4 — refusing beats a silently-wrong
+            # scalar-R ensemble on a structured config.
+            raise NotImplementedError(
+                "member sampling on a structured rspec lands at phase-13 "
+                "Task 4 (err CRN axis); the point solve is available now"
+            )
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
@@ -651,22 +694,58 @@ class Miost:
         fp: str,
         obs: ObsWindow,
     ) -> np.ndarray:
-        """Solve one window's reduced normal equations (cached; G freed after)."""
+        """Solve one window's reduced normal equations (cached; G freed after).
+
+        Phase-13 structured R (spec §2): a per-mission ``rspec`` swaps the
+        scalar R for the identity-keyed σ²_m lookup; active modes augment
+        the assembly to [G B] with Q_aug = concat(Q, Λ). The returned (and
+        cached) eta is ALWAYS the field-block slice — the c-block is
+        solver-internal and contributes nothing downstream (rider 1).
+        """
         key = (w.id, pk, fp)
         if self.cache and key in self._eta_cache:
             return self._eta_cache[key]
-        lon, lat, t, y = _window_obs(obs, w, spec.l_t_days)
+        mask = _window_mask(obs, w, spec.l_t_days)
+        coords = obs.coords()
+        lon, lat, t = coords[mask, 0], coords[mask, 1], coords[mask, 2]
+        y = obs.values()[mask]
         els = spec.elements_for_window(w.start_day, w.w_days)
+        n_elem = els.identity.shape[0]
         g = build_g(spec, els, lon, lat, t)
         q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
-        r = np.full(y.size, R_REF)
+        if self.rspec.is_scalar:
+            r = np.full(y.size, R_REF)
+            mission_mh: np.ndarray | None = None
+        else:
+            if obs.mission is None:
+                raise ValueError(
+                    "structured rspec requires per-obs mission labels "
+                    "(identity-keyed σ²_m lookup, never positional)"
+                )
+            mission_mh = mission_hash_ints(obs.mission[mask])
+            r = self.rspec.sigma2_for(mission_mh)
+        if self.rspec.modes_active:
+            assert mission_mh is not None  # noqa: S101 (guarded above)
+            pt = segment_passes(lon, lat, t, mission_mh)
+            g_use = sparse.hstack([g, build_b(pt)], format="csr")
+            q_use = np.concatenate(
+                [q, lam_diag(pt.n_pass, self.rspec.lam_bias, self.rspec.lam_tilt)]
+            )
+        else:
+            # structural COLUMN ABSENCE (rider 3) — never a Λ=0 diagonal
+            g_use, q_use = g, q
         solver = MiostSolver(
-            g, r_diag=r, q_diag=q, pcg_rtol=self.pcg_rtol, pcg_maxiter=self.pcg_maxiter
+            g_use,
+            r_diag=r,
+            q_diag=q_use,
+            pcg_rtol=self.pcg_rtol,
+            pcg_maxiter=self.pcg_maxiter,
         )
         eta, report = solver.solve(
-            rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
+            rhs_from_obs(g_use, r, y) if y.size else np.zeros(q_use.size)
         )
-        del g, solver  # G freed after the window solve (hardening 2)
+        eta = np.asarray(eta)[:n_elem]  # field block ONLY (rider 1)
+        del g, g_use, solver  # G freed after the window solve (hardening 2)
         CONVERGENCE_LOG.append(
             {
                 "window": w.id,
@@ -689,7 +768,6 @@ class Miost:
                 f"{report.final_rel_residual.max():.2e} after "
                 f"{report.iterations.max()} iters (rtol {self.pcg_rtol})"
             )
-        eta = np.asarray(eta)
         if self.cache:
             self._eta_cache[key] = eta
         return eta
