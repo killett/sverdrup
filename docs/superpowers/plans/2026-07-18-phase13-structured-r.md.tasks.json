@@ -4,7 +4,7 @@
     {
       "id": 0,
       "subject": "Task 0: Probe leg A — scalar baseline + real pass counts",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Measure the scalar-config baseline (t_trial, peak RSS, PCG iterations) and extract REAL per-window pass counts from the Phase-11 geometry artifact, writing `phase13.probe.scalar` + `phase13.probe.passes`.\n\n**Files:**\n- Create: `scripts/phase13_probe.py` (leg A path)\n- Test: `tests/test_phase13_probe.py`\n\n**Acceptance Criteria:**\n- [ ] `phase13.probe.scalar` records wall s, peak RSS MiB, per-window PCG iteration counts (~302 expected; record, don't assert value), host cpu/mem\n- [ ] `phase13.probe.passes`: per 60-day window (9) x mission: pass count, median pass length, chord stats — from the geometry-artifact segmentation (sha recorded)\n- [ ] Analytic ~240 passes/window compared vs measured; delta recorded, no bar\n- [ ] Task-22 ledger quoted (conservatism ratio + retained-store term BY NAME); model not retuned\n- [ ] Zero c2: five-mission obs only; j3/c2 in input list -> ValueError (tested)\n\n**Verify:** `pixi run test -- tests/test_phase13_probe.py -v` -> PASS; `jq '.phase13.probe | keys'` shows scalar+passes\n\n**Steps:** TDD per plan Task 0 (failing tests -> leg A implementation -> background run nohup+pid+log -> evidence -> commit+push)\n\n```json:metadata\n{\"files\": [\"scripts/phase13_probe.py\", \"tests/test_phase13_probe.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase13_probe.py -v\", \"acceptanceCriteria\": [\"probe.scalar recorded with PCG counts\", \"probe.passes per window x mission from geometry artifact\", \"analytic-vs-measured delta recorded\", \"Task-22 ledger quoted\", \"zero c2 guard tested\"], \"modelTier\": \"standard\"}\n```"
     },
     {
@@ -134,5 +134,5 @@
       ]
     }
   ],
-  "lastUpdated": "2026-07-18T00:00:00Z"
+  "lastUpdated": "2026-07-18T12:00:00Z"
 }
