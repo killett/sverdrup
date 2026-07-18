@@ -54,11 +54,44 @@
 > 4. j3-ratio note for the record: 0.0235/0.0233 physically exact for
 >    a 10-day repeat (~1/35 revisits) — cleanest classification yet;
 >    rider armed, not fired, as designed.
-> Next action: T7 full-year six-mission run IN FLIGHT (detached; log
-> `phase12_miost6_run.log` + pid file in ours/); on completion assemble
-> the pack led by the σ-map structural-signature read, Tier-3 vs the
-> 0.0472 anchor, j3-family GroundTrack beside s3a's 0.410, realized
-> wall/peak vs amended estimates — then STOP at the gate.
+> **✅ T7 RUN + PACK COMPLETE, OWNER-APPROVED 2026-07-18 (ruling
+> verbatim-intent, bound to provenance mean_maps 34e764d032a5… /
+> member_store e410b81cb255…).** Run: wall 22,289.6 s (6.19 h, 0.84×
+> amended — wall leg VALIDATED), converged at first cap 500, flag never
+> tripped. σ signature PRESENT: on-track Δσ median 0.005948 vs
+> off-track 0.001884, localization ratio 3.157 (636 nodes at 0.15°).
+> **PACK RULING RECORDS:**
+> 1. Tier-3 (0.047230/0.76094/0.92997 vs anchor 0.0472/0.761/0.930) =
+>    cross-generation REPRODUCTION at ~1e-5 — the Phase-7 j3-variant
+>    was this configuration; common-mode reading: the j3 increment is
+>    largely the increment CLS already carried; 0.047 m stands as the
+>    method-family residual. Max mean-delta 0.512 m independently
+>    reproduces the Phase-7 attribution number (same comparison, two
+>    phases apart).
+> 2. PEAK MISS adjudicated (actual 3436.7 MiB > amended 2219.3 >
+>    ceiling 2410.4; host margin held): mechanism = RETAINED MEMBER
+>    STORE (197k × 9 × 100 × 8 B ≈ 1.42 GB, matching the 1.28 GB
+>    monotone per-window growth 1883.5→3159.4); reviewer's "peak ≈ max
+>    window" error owned (transient modeled, accumulator forgotten).
+>    **Task-22 re-grounding queue entry gains the retained-store term
+>    BY NAME; no model retune mid-phase; no further memory exposure
+>    this phase (touch = no solve).**
+> 3. GROUNDTRACK finding: six-mission max repeat = s3a 0.376, DOWN
+>    from the 0.410 five-mission baseline — adding j3 diluted the
+>    s3a-specific structure; a secondary improvement signal from the
+>    reference-free family. j2n ≡ j3 desc (0.13493626602935876)
+>    recorded as the geometry-derivation consistency check it is.
+> **▶ T8 AUTHORIZED FRESH (owner, same message): the ONE c2 touch.**
+> Ceremony verbatim: SVERDRUP_MIOST_C2 exact-string-"1"; provenance
+> tripwire recomputes ALL SIX fields, refuses BEFORE the c2 file
+> opens; window tripwire n=44,844 + year-span; one-invocation
+> mechanics (corrected = owner flag + dated defect key; third
+> refuses). Reading sealed: µ ≥ 0.85 hard floor; coverage bar
+> 0.6827±0.10, baseline 0.7350 (0.7481 scalar-era beside); (µ,σ,λx) +
+> chi2/CRPS + regional/monthly rows. Numbers back → three-branch
+> ruling is the OWNER'S next message; no branch pre-committed.
+> Next action: implement --c2-touch (TDD mechanics), execute the
+> authorized touch, report the reading + three-branch menu, STOP.
 
 > **📋 HYGIENE REGISTER OPEN (2026-07-16, between phases).** Whole-repo
 > hygiene audit ran post-Phase-11-close; the 71 behavior-preserving
