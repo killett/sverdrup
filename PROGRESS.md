@@ -13,6 +13,28 @@
 > decide those BEFORE rerunning either script. Also flagged: Task-22
 > owner-ordered `PeakFeasibility` is wired nowhere (P3 item 21).
 
+> **▶ PHASE 12 DESIGN COMMITTED 2026-07-17 (`f0ef329`), ⛔ STOPPED FOR
+> OWNER FILE REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-17-phase12-production-config-design.md`
+> (owner-approved in-session: forks a–d ruled + three review batches).
+> Phase 12 = production configuration: shipped MIOST re-run with j3
+> ASSIMILATED (six missions, leaderboard convention), everything FROZEN
+> from the signed record (winner params verbatim; s(x) field cal_key;
+> m=100, root 4836134738817689931 EXACT INT — jq float-rounds it),
+> one acceptance chain, ONE c2 touch (closed-input-set hash tripwire,
+> no re-solve at touch). Ship shape: repoint SHIPPED["miost"] ON
+> SIGN-OFF only (three-branch owner ruling; miost5 = calibration-
+> lineage reference, miost6 = flagship; five-mission config stays the
+> calibration workhorse). Pre-registered coverage reading: bar
+> 0.6827±0.10, baseline 0.7350 (field-calibrated c2 aggregate; 0.7481
+> = scalar-era), expected mild over-coverage; ABOVE-band → HOLD, no
+> refit (no legal substrate — j3 assimilated ⇒ no validation track).
+> P0 ADJUDICATIONS IN SPEC §5: P0-1 inline-touch DISARM in-phase
+> before the evidence run (legacy branch OVERWRITES the signed
+> sb["c2_acceptance"] — worse than labeled); P0-2 leave-on-queue,
+> hardened to a blocking precondition.
+> Next action: owner reviews the spec file, then writing-plans.
+
 > **✅ PHASE 11 — evaluator wiring: CLOSED 2026-07-16 (Task-12 owner
 > ruling, all 12 tasks resolved; every commit pushed; suite 807/13/1 at
 > 92% coverage).** THE META-LINE: the reference-free metric conceived at
