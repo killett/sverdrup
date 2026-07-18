@@ -33,7 +33,25 @@
 > before the evidence run (legacy branch OVERWRITES the signed
 > sb["c2_acceptance"] — worse than labeled); P0-2 leave-on-queue,
 > hardened to a blocking precondition.
-> Next action: owner reviews the spec file, then writing-plans.
+> **SPEC FILE-REVIEW APPROVED 2026-07-17 (no changes). PLAN + TRACKER
+> APPROVED 2026-07-17 (`93d050e`, no changes):**
+> `docs/superpowers/plans/2026-07-17-phase12-production-config.md`
+> (+ `.tasks.json`, 10 tasks; gates = Tasks 7/8, user-gates with
+> evidence axes; T9 executes ONLY on the owner's sign-off message).
+> **▶ EXECUTION DISPATCHED to a fresh session (this one stays
+> design/review context). OWNER EXECUTION RIDERS (verbatim intent):**
+> (1) T7 pack REPORT led by, in order: the σ-map STRUCTURAL SIGNATURE
+> read (j3-track-localized variance reduction — absence is a STOP, not
+> a footnote), the Tier-3 row vs the 0.0472 anchor, the j3-family
+> GroundTrack row beside s3a's 0.410, the smoke-derived budget
+> arithmetic. (2) T8 authorization comes FRESH from the owner after
+> that review. (3) T9 only on the sign-off message (three-branch
+> ruling). Standing discipline: TDD red/green per behavior, dual
+> review per task, push as you go, ZERO c2 before T8's fresh
+> authorization (T1 disarm + T5 no-c2-capability AC enforce it),
+> evidence verbatim from artifacts at both gates.
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-17-phase12-production-config.md`
 
 > **✅ PHASE 11 — evaluator wiring: CLOSED 2026-07-16 (Task-12 owner
 > ruling, all 12 tasks resolved; every commit pushed; suite 807/13/1 at
