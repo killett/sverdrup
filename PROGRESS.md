@@ -23,7 +23,27 @@
 > test. Sizing re-derived: +0.24% cols / +0.05% nnz (~480 cols/window).
 > Prereqs verified: Phase 11 CLOSED (0.410 five-mission baseline
 > governs); Phase 12 CLOSED (recorded, ship-shape fork consumes it).
-> Next action: owner file review of the spec, then writing-plans.
+> **SPEC FILE-REVIEW APPROVED 2026-07-18 (no changes; 07-18 date stands).
+> PLAN + TRACKER APPROVED 2026-07-18 (`b07a004` + gate-1 source-table
+> pin folded `1d38968`):**
+> `docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
+> (+ `.tasks.json`, 15 tasks 0–14; probe split T0/T5 accepted per
+> Phase-10 precedent; gates = Tasks 12/13/14, user-gates; branch
+> semantics: negative → T10, winner → T11–14; T13 tally arithmetic
+> miost5 2 → 3). **▶ EXECUTION TO BE DISPATCHED to a fresh session.
+> OWNER EXECUTION RIDERS (verbatim intent):** TDD red/green per
+> behavior (teeth test fails against the unextended path BEFORE the
+> sampler lands); dual review per task; push as you go; launch rule
+> WAITS for owner if estimate > 12 h default; zero c2 before Task 13;
+> no source edits during runs or gate suites; STOP at Task 12 with the
+> pack — the owner reads FIRST: GroundTrack direction vs 0.410, then
+> the saturation + lag-1 + field-correlation triplet (real / absorbed /
+> absent is the measurement this phase exists to make either way).
+> Gate-1 pack quotes the phase13_boxes.py source table verbatim; its
+> verify-at-review marks resolve at gate 1 before any touch
+> authorization.
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
 > **✅ PHASE 12 — production configuration (six-mission MIOST): CLOSED
 > 2026-07-18, BRANCH = SIGN-OFF (owner three-branch ruling; flip
