@@ -638,6 +638,12 @@ evidence keys `phase13.miost.{members,refit,diagnostics,readings}` present.
       registry untouched check (empty diff on `SHIPPED`), zero-c2 grep.
 - [ ] Pack ORDER per template: readings/diagnostics first, then verdict
       arithmetic, then budget/telemetry ledger rows.
+- [ ] SOURCE-TABLE row (owner pin): the pack quotes the `phase13_boxes.py`
+      SOURCE TABLE verbatim (published per-mission noise + residual-LWE
+      citations WITH their verify-at-review marks) — the marks RESOLVE at
+      gate 1, by owner verification, before any touch authorization. A
+      pre-registered box whose cited sources were never checked is a
+      pre-registration in name only.
 - [ ] HELD for owner review — the task closes on the owner's approval
       message, never on pack assembly.
 
