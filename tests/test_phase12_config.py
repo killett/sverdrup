@@ -145,6 +145,25 @@ def test_harness_load_track_refuses_phase12_cfg(tmp_path: Path) -> None:
         load_track(desc, scope="dev")
 
 
+_GEOMETRY = Path("data/2021a_ssh_mapping_ose/ours/phase12_orbit_geometry_miost6.json")
+
+
+@pytest.mark.skipif(not _GEOMETRY.exists(), reason="phase12 geometry artifact absent")
+def test_geometry_artifact_has_j3_repeat_classification() -> None:
+    """The six-mission artifact carries j3's first classification as repeat.
+
+    Bug caught: a derivation that silently dropped j3 (five-mission set), or a
+    j3 record whose classifier landed drifting/gap without the Task-4 STOP.
+    """
+    art = json.loads(_GEOMETRY.read_text())
+    assert sorted(art["missions"]) == ["alg", "h2g", "j2g", "j2n", "j3", "s3a"]
+    for family in ("asc", "desc"):
+        rec = art["missions"]["j3"][family]
+        assert rec["orbit_class"] == "repeat"
+        assert rec["classifier_ratio"] < 0.14  # below the RATIO_GAP lower edge
+        assert rec["cluster_size_median"] > 2  # repeat-side corroborating axis
+
+
 def test_five_mission_files_byte_untouched() -> None:
     """This phase never edits the five-mission scope fixture or the input adapter."""
     import subprocess
