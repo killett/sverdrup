@@ -72,6 +72,22 @@ SIGNED_PARAMS = {
 ANALYTIC_PASSES_PER_WINDOW = 240
 SIGNED_PCG_ITERS_BASELINE = 302
 
+# The PINNED augmented probe config (Task 5) — NO tuning meaning:
+# delta = 0.2*[+1,+1,-1,-1] over (alg, h2g, j2g, j2n): a mid-scale
+# contrast pattern whose derived s3a balance is exactly 0.0; Lambda at
+# the MID of the pre-registered sweep box log10 in [-6, -2.5] (Task-6
+# bundle) -> -4.25 for both modes (sigma_mode ~ 7.5 mm, cm-order).
+_PROBE_DELTAS = {"alg": 0.2, "h2g": 0.2, "j2g": -0.2, "j2n": -0.2}
+_PROBE_LOG_LAM = -4.25
+
+# Budget constants (spec §7): trials floor, sealed screening contingency.
+N_FULL_FLOOR = 8
+SCREENING_N_PER_LANE = 30
+SCREENING_K_FULL = 3
+WALL_BUDGET_H_DEFAULT = 12.0  # pre-registered OWNER-AMENDABLE default
+# (standing rule 3b: pre-registered default or the task WAITS — never
+# executor-set; Task-6 bundle co-seals this value.)
+
 _EARTH_RADIUS_KM = 6371.0
 
 _SCOPE = os.environ.get("SVERDRUP_PHASE13_SCOPE", "full")
@@ -88,6 +104,88 @@ def _log(msg: str) -> None:
     """Print a timestamped, flushed heartbeat line."""
     s = int(time.time() - _T0)
     print(f"[+{s // 3600:02d}:{(s % 3600) // 60:02d}:{s % 60:02d}] {msg}", flush=True)
+
+
+def trials_per_lane(t_trial_s: float, wall_budget_h: float, n_lanes: int) -> int:
+    """Full-score trials per lane (spec §7 template, Phase-10 family).
+
+    Args:
+        t_trial_s: Measured wall seconds per trial (one full-year score).
+        wall_budget_h: Wall budget in hours (12 h owner-amendable default).
+        n_lanes: Number of SWEEPING lanes sharing the budget.
+
+    Returns:
+        ``floor(wall_budget_h*3600 / (t_trial_s * n_lanes))``, never negative.
+
+    Raises:
+        ValueError: If ``t_trial_s`` is not positive (bad measurement).
+    """
+    if t_trial_s <= 0:
+        raise ValueError("t_trial_s must be positive")
+    return max(0, int(wall_budget_h * 3600.0 // (t_trial_s * n_lanes)))
+
+
+def budget_determination(
+    t_trial_s: float, wall_budget_h: float = WALL_BUDGET_H_DEFAULT
+) -> dict[str, Any]:
+    """The §7 lane-budget determination, including the modes-only conditional.
+
+    Rules (spec §7, pre-registered): lane-0 is QUOTED (costless); lane-D
+    and lane-C are the committed sweeping lanes. The modes-only 4th lane
+    runs iff the budget covers THREE sweeping lanes at n >= the floor
+    (n3 >= 8) — in that case all three sweep at n3. Otherwise the two
+    committed lanes sweep at n2 when n2 >= 8; below the floor the sealed
+    91-day screening contingency arms (n=30/lane screening, k=3 full
+    re-scores).
+
+    Args:
+        t_trial_s: Measured augmented trial cost (leg B wall seconds).
+        wall_budget_h: Wall budget in hours.
+
+    Returns:
+        The determination block (recorded verbatim in the evidence).
+    """
+    n2 = trials_per_lane(t_trial_s, wall_budget_h, 2)
+    n3 = trials_per_lane(t_trial_s, wall_budget_h, 3)
+    modes_only = n3 >= N_FULL_FLOOR
+    screening = (not modes_only) and n2 < N_FULL_FLOOR
+    if modes_only:
+        lanes, n_per_lane = ["D", "C", "modes-only"], n3
+    else:
+        lanes, n_per_lane = ["D", "C"], n2
+    out: dict[str, Any] = {
+        "formula": "n = floor(wall_budget_h*3600 / (t_trial_s * n_lanes))",
+        "t_trial_s": t_trial_s,
+        "wall_budget_h": wall_budget_h,
+        "wall_budget_provenance": (
+            "12 h pre-registered owner-amendable default (standing rule 3b; "
+            "co-sealed in the Task-6 bundle)"
+        ),
+        "n_two_lanes": n2,
+        "n_three_lanes": n3,
+        "minimum_floor": N_FULL_FLOOR,
+        "lanes": lanes,
+        "n_per_lane": n_per_lane,
+        "modes_only_runs": modes_only,
+        "semantics_note": (
+            "EQUAL-SHARING reading of spec §7 (recorded at Task-5 review): "
+            "when the modes-only lane runs, all three sweeping lanes share "
+            "the wall equally (n3 each). The alternative reading (committed "
+            "lanes keep n2, modes-only gets the remainder) yields 2 lanes "
+            "at n2 with modes-only unfunded at this t_trial; the sealed "
+            "Task-6 bundle carries this choice for owner review at gate 1."
+        ),
+        "modes_only_reason": (
+            f"n3 = {n3} >= floor {N_FULL_FLOOR}: 4th lane covered"
+            if modes_only
+            else f"n3 = {n3} < floor {N_FULL_FLOOR}: not run (recorded, spec §7)"
+        ),
+        "screening_contingency_active": screening,
+    }
+    if screening:
+        out["n_screening_per_lane"] = SCREENING_N_PER_LANE
+        out["k_full_rescores"] = SCREENING_K_FULL
+    return out
 
 
 def guard_five_mission_inputs(paths: list[Path]) -> list[Path]:
@@ -329,17 +427,36 @@ def _pass_stats_block(obs: ObsWindow, plan: WindowPlan) -> dict[str, Any]:
     }
 
 
-def _run_leg_scalar(output_days: list[float]) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Leg A: the full-year five-mission point solve + pass statistics.
-
-    Args:
-        output_days: Output day numbers (dev: 12 days; full: 365).
-
-    Returns:
-        ``(phase13.probe.scalar, phase13.probe.passes)`` evidence blocks.
-    """
+def _point_solve_run(
+    method: Any,  # noqa: ANN401 - Miost, imported lazily by callers
+    obs: ObsWindow,
+    grid: Any,  # noqa: ANN401 - GridSpec, lazy
+    params: dict[str, float],
+    output_days: list[float],
+) -> tuple[float, list[dict[str, Any]], float]:
+    """Timed full-span point solve; returns (wall_s, PCG entries, checksum)."""
     from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
-    from sverdrup.methods.miost import CONVERGENCE_LOG, Miost  # noqa: PLC0415
+    from sverdrup.methods.miost import CONVERGENCE_LOG  # noqa: PLC0415
+
+    CONVERGENCE_LOG.clear()
+    t0 = time.monotonic()
+    checksum = 0.0
+    for d in output_days:
+        dist = method.solve(obs, grid, ConstantProvider(params), float(d))
+        checksum += float(np.asarray(dist.mean).sum())
+        if int(d) % 60 == 0:
+            _log(f"  day {d:.0f} solved; elapsed {time.monotonic() - t0:.0f} s")
+    wall_s = time.monotonic() - t0
+    entries = [
+        {k: v for k, v in e.items() if k != "params_key_hash"}
+        for e in CONVERGENCE_LOG
+        if "kind" not in e
+    ]
+    return wall_s, entries, checksum
+
+
+def _load_probe_obs() -> tuple[ObsWindow, Any, dict[str, float]]:
+    """Load the guarded five-mission obs + grid + signed params."""
     from sverdrup.validation.input_adapter import load_mapping_obs  # noqa: PLC0415
     from sverdrup.validation.params import baseline_config  # noqa: PLC0415
     from sverdrup.validation.run import halo_obs  # noqa: PLC0415
@@ -353,7 +470,77 @@ def _run_leg_scalar(output_days: list[float]) -> tuple[dict[str, Any], dict[str,
     if missions != sorted(_FIVE_MISSIONS):
         raise SystemExit(f"REFUSED: loaded missions {missions} != {_FIVE_MISSIONS}")
     _log(f"obs {len(obs)} across {missions}")
+    return obs, grid, params
 
+
+def _run_leg_augmented(output_days: list[float]) -> dict[str, Any]:
+    """Leg B: the full-year point solve at the pinned augmented config.
+
+    Args:
+        output_days: Output day numbers (dev: 12 days; full: 365).
+
+    Returns:
+        The ``phase13.probe.augmented`` evidence block (budget arithmetic
+        is derived from it and written separately).
+    """
+    from sverdrup.methods.miost import Miost  # noqa: PLC0415
+    from sverdrup.methods.miost_rspec import RSpec  # noqa: PLC0415
+
+    obs, grid, params = _load_probe_obs()
+    rspec = RSpec(
+        deltas=dict(_PROBE_DELTAS),
+        log_lam_bias=_PROBE_LOG_LAM,
+        log_lam_tilt=_PROBE_LOG_LAM,
+    )
+    method = Miost(rspec=rspec)
+    wall_s, point_entries, checksum = _point_solve_run(
+        method, obs, grid, params, output_days
+    )
+    return {
+        "config": "augmented probe (pinned; no tuning meaning)",
+        "params": params,
+        "rspec": {
+            "deltas": rspec.all_deltas,
+            "log_lam_bias": _PROBE_LOG_LAM,
+            "log_lam_tilt": _PROBE_LOG_LAM,
+            "rationale": (
+                "delta 0.2*[+1,+1,-1,-1] mid-scale contrast pattern "
+                "(derived s3a = 0.0); Lambda at the mid of the sweep box "
+                "log10 [-6, -2.5]"
+            ),
+        },
+        "wall_s": round(wall_s, 1),
+        "peak_rss_mib": round(_peak_rss_mib(), 1),
+        "peak_note": (
+            "point solve — the RETAINED MEMBER STORE term (the Task-22 "
+            "accumulator miss, BY NAME) applies to ensemble runs only; "
+            "quoted in the ledger below, model NOT retuned"
+        ),
+        "n_days": len(output_days),
+        "n_obs": len(obs),
+        "per_window_pcg": point_entries,
+        "pcg_baseline_note": (
+            f"conditioning watch (spec §2 rider 4): iterations beside leg A's "
+            f"and the signed ~{SIGNED_PCG_ITERS_BASELINE} figure"
+        ),
+        "mean_map_checksum": checksum,
+        "host": _host_fingerprint(),
+        "task22_ledger": _task22_ledger_quote(),
+    }
+
+
+def _run_leg_scalar(output_days: list[float]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Leg A: the full-year five-mission point solve + pass statistics.
+
+    Args:
+        output_days: Output day numbers (dev: 12 days; full: 365).
+
+    Returns:
+        ``(phase13.probe.scalar, phase13.probe.passes)`` evidence blocks.
+    """
+    from sverdrup.methods.miost import Miost  # noqa: PLC0415
+
+    obs, grid, params = _load_probe_obs()
     method = Miost()
     plan = method._plan
     passes_block = _pass_stats_block(obs, plan)
@@ -363,20 +550,9 @@ def _run_leg_scalar(output_days: list[float]) -> tuple[dict[str, Any], dict[str,
         f" passes/window (analytic {ANALYTIC_PASSES_PER_WINDOW})"
     )
 
-    CONVERGENCE_LOG.clear()
-    t0 = time.monotonic()
-    checksum = 0.0
-    for d in output_days:
-        dist = method.solve(obs, grid, ConstantProvider(params), float(d))
-        checksum += float(np.asarray(dist.mean).sum())
-        if int(d) % 60 == 0:
-            _log(f"  day {d:.0f} solved; elapsed {time.monotonic() - t0:.0f} s")
-    wall_s = time.monotonic() - t0
-    point_entries = [
-        {k: v for k, v in e.items() if k != "params_key_hash"}
-        for e in CONVERGENCE_LOG
-        if "kind" not in e
-    ]
+    wall_s, point_entries, checksum = _point_solve_run(
+        method, obs, grid, params, output_days
+    )
     scalar_block = {
         "config": "scalar signed miost5",
         "params": params,
@@ -403,25 +579,61 @@ def main() -> None:
     parser.add_argument("--leg", choices=["scalar", "augmented"], required=True)
     args = parser.parse_args()
 
-    if args.leg == "augmented":
-        raise SystemExit(
-            "leg B (augmented) lands at Task 5 — the augmented solve path "
-            "does not exist yet (plan probe split, Phase-10 precedent)"
-        )
-
     output_days = _DEV_DAYS if _SCOPE == "dev" else _FULL_DAYS
-    _log(f"[phase13_probe] leg=scalar scope={_SCOPE!r}")
-    scalar_block, passes_block = _run_leg_scalar(output_days)
+    _log(f"[phase13_probe] leg={args.leg} scope={_SCOPE!r}")
+
+    if args.leg == "scalar":
+        scalar_block, passes_block = _run_leg_scalar(output_days)
+        _log(
+            f"[probe] scalar wall={scalar_block['wall_s']:.1f} s "
+            f"peak_rss={scalar_block['peak_rss_mib']:.0f} MiB"
+        )
+        if _SCOPE == "dev":
+            _log("[dev smoke] gate evidence NOT written (dev scope).")
+            return
+        _write_evidence("phase13.probe.scalar", scalar_block)
+        _write_evidence("phase13.probe.passes", passes_block)
+        _log("[probe] wrote phase13.probe.scalar + phase13.probe.passes")
+        return
+
+    # leg B: augmented cost + the §7 budget determination
+    aug_block = _run_leg_augmented(output_days)
     _log(
-        f"[probe] scalar wall={scalar_block['wall_s']:.1f} s "
-        f"peak_rss={scalar_block['peak_rss_mib']:.0f} MiB"
+        f"[probe] augmented wall={aug_block['wall_s']:.1f} s "
+        f"peak_rss={aug_block['peak_rss_mib']:.0f} MiB"
     )
     if _SCOPE == "dev":
         _log("[dev smoke] gate evidence NOT written (dev scope).")
         return
-    _write_evidence("phase13.probe.scalar", scalar_block)
-    _write_evidence("phase13.probe.passes", passes_block)
-    _log(f"[probe] wrote phase13.probe.scalar + phase13.probe.passes to {_RESULTS}")
+    scalar_rec = (
+        json.loads(_RESULTS.read_text())
+        .get("phase13", {})
+        .get("probe", {})
+        .get("scalar")
+    )
+    if scalar_rec is None:
+        raise SystemExit(
+            "REFUSED: phase13.probe.scalar absent — run leg A first "
+            "(the delta and the budget consume it)"
+        )
+    aug_block["delta_vs_scalar"] = {
+        "wall_s_scalar": scalar_rec["wall_s"],
+        "wall_s_augmented": aug_block["wall_s"],
+        "wall_delta_s": round(aug_block["wall_s"] - scalar_rec["wall_s"], 1),
+        "wall_ratio": round(aug_block["wall_s"] / scalar_rec["wall_s"], 4),
+        "note": "expected ~negligible at +0.24% cols (spec §7); measured anyway",
+    }
+    # t_trial: the augmented full-year point solve IS one sweep trial's
+    # solve cost; validation scoring overhead rides on top (small, noted).
+    budget = budget_determination(t_trial_s=aug_block["wall_s"])
+    budget["t_trial_note"] = (
+        "t_trial_s = leg-B wall (full-year augmented point solve); "
+        "per-trial validation scoring overhead not included (small; the "
+        "launch rule re-checks against measured trial wall at Task 8)"
+    )
+    _write_evidence("phase13.probe.augmented", aug_block)
+    _write_evidence("phase13.probe.budget", budget)
+    _log("[probe] wrote phase13.probe.augmented + phase13.probe.budget")
 
 
 if __name__ == "__main__":

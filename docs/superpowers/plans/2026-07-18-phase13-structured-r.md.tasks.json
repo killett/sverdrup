@@ -46,7 +46,7 @@
     {
       "id": 5,
       "subject": "Task 5: Probe leg B — augmented cost + budget arithmetic",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Measure augmented t_trial/peak/PCG vs scalar delta; derive n-per-lane + the modes-only conditional.\n\n**Files:**\n- Modify: `scripts/phase13_probe.py` (leg B)\n- Test: `tests/test_phase13_probe.py` (budget arithmetic units)\n\n**Acceptance Criteria:**\n- [ ] `phase13.probe.augmented`: full-year five-mission POINT solve at pinned probe config (delta = 0.2*[+1,+1,-1,-1], mid-box Lambda; rationale comment in-script); wall, peak RSS (retained-store term named), per-window PCG iterations beside leg A\n- [ ] Delta vs scalar recorded (expected ~negligible at +0.24% cols; measured anyway)\n- [ ] Budget arithmetic: n_full/lane = floor(wall_h*3600/t_trial_B); floor 8; screening contingency determination; MODES-ONLY CONDITIONAL resolved and recorded either way with arithmetic\n- [ ] Wall default 12 h carried owner-amendable (standing rule 3b note)\n\n**Verify:** `pixi run test -- tests/test_phase13_probe.py -v` -> PASS; evidence keys probe.augmented + probe.budget present\n\n**Steps:** TDD per plan Task 5 (hand-computed budget fixtures -> FAIL -> implement -> run leg B background -> record -> commit+push)\n\n```json:metadata\n{\"files\": [\"scripts/phase13_probe.py\", \"tests/test_phase13_probe.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase13_probe.py -v\", \"acceptanceCriteria\": [\"augmented probe recorded with PCG telemetry\", \"scalar delta measured\", \"n-per-lane arithmetic with floor 8\", \"modes-only conditional resolved recorded\", \"12h owner-amendable default\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         4

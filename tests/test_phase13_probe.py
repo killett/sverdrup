@@ -127,6 +127,69 @@ def test_chord_length_uses_great_circle_not_raw_degrees() -> None:
     assert stats["w0"]["a"]["chord_km"]["median"] == pytest.approx(55.6, abs=0.4)
 
 
+def test_trials_per_lane_floor_exact() -> None:
+    # 12 h wall, 1200 s trial, 3 lanes -> floor(43200/3600) = 12 (hand).
+    # Bug caught: the h->s conversion drifting (3600 lost -> 0 trials).
+    assert probe.trials_per_lane(t_trial_s=1200.0, wall_budget_h=12.0, n_lanes=3) == 12
+
+
+def test_trials_per_lane_floor_fractional() -> None:
+    # floor(43200 / (1300*2)) = floor(16.615) = 16 (hand).
+    # Bug caught: round/ceil instead of floor over-booking the wall.
+    assert probe.trials_per_lane(t_trial_s=1300.0, wall_budget_h=12.0, n_lanes=2) == 16
+
+
+def test_trials_per_lane_rejects_nonpositive_cost() -> None:
+    # Bug caught: silent ZeroDivisionError/inf trials on a bad measurement.
+    with pytest.raises(ValueError, match="t_trial_s"):
+        probe.trials_per_lane(t_trial_s=0.0, wall_budget_h=12.0, n_lanes=2)
+
+
+def test_budget_three_lanes_when_conditional_covered() -> None:
+    # t=1200 s: n3 = floor(43200/3600) = 12 >= 8 -> the modes-only 4th
+    # lane RUNS and all three sweeping lanes get n = 12 (hand).
+    # Bug caught: conditional rule inverted (modes-only run only when
+    # budget is SHORT), or the committed lanes keeping the 2-lane n.
+    d = probe.budget_determination(t_trial_s=1200.0, wall_budget_h=12.0)
+    assert d["modes_only_runs"] is True
+    assert d["n_per_lane"] == 12
+    assert d["screening_contingency_active"] is False
+    assert d["lanes"] == ["D", "C", "modes-only"]
+
+
+def test_budget_conditional_boundary_exactly_at_floor() -> None:
+    # t=1800 s: n3 = floor(43200/5400) = 8 == floor -> runs (>= is the
+    # pinned rule, spec §7 "n >= the floor").
+    # Bug caught: a strict > at the boundary silently dropping the lane.
+    d = probe.budget_determination(t_trial_s=1800.0, wall_budget_h=12.0)
+    assert d["modes_only_runs"] is True
+    assert d["n_per_lane"] == 8
+
+
+def test_budget_two_lanes_when_conditional_uncovered() -> None:
+    # t=2400 s: n3 = floor(43200/7200) = 6 < 8 but n2 = floor(43200/4800)
+    # = 9 >= 8 -> committed lanes at 9, modes-only NOT run (hand).
+    # Bug caught: the conditional lane stealing budget the committed
+    # lanes need (n dropping to 6 for everyone).
+    d = probe.budget_determination(t_trial_s=2400.0, wall_budget_h=12.0)
+    assert d["modes_only_runs"] is False
+    assert d["n_per_lane"] == 9
+    assert d["screening_contingency_active"] is False
+    assert d["lanes"] == ["D", "C"]
+
+
+def test_budget_screening_contingency_below_floor() -> None:
+    # t=6000 s: n2 = floor(43200/12000) = 3 < 8 -> the sealed 91-day
+    # screening contingency arms (n=30/lane screening, k=3 re-scores).
+    # Bug caught: under-floor budgets silently sweeping with tiny n
+    # instead of arming the pre-registered contingency.
+    d = probe.budget_determination(t_trial_s=6000.0, wall_budget_h=12.0)
+    assert d["screening_contingency_active"] is True
+    assert d["modes_only_runs"] is False
+    assert d["n_screening_per_lane"] == 30
+    assert d["k_full_rescores"] == 3
+
+
 def test_overlap_obs_counted_in_both_windows() -> None:
     # Windows [0, 1] and [0.5, 1.5] overlap; a pass at day 0.75 belongs to
     # BOTH windows' per-window load statistics (windows solve independently).
