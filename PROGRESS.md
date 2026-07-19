@@ -42,6 +42,28 @@
 > Gate-1 pack quotes the phase13_boxes.py source table verbatim; its
 > verify-at-review marks resolve at gate 1 before any touch
 > authorization.
+>
+> **▶ EXECUTION IN FLIGHT (2026-07-19, executing-plans, on main). Tasks
+> 0–5 COMPLETE (each committed + pushed, dual review per task):** T0
+> probe leg A `b4896f2` (wall 260.1 s; 320.9 passes/window measured vs
+> 240 analytic); T1 pass table + B-builder `3bdb70a`; T2 RSpec +
+> augmented assembly + extended duality oracle `bc54df6` (mean AND
+> variance rtol 1e-8; scalar params_key byte-identical); T3 identity
+> suite `5be6a65` — EXTERNAL FOUR-ROUTE IDENTITY vs signed miost5
+> PASSED (day-0 m=100: member arrays sha-bit-equal zeros≡scalar, mean
+> vs acceptance, Γ-route ≤1e-12, variance 2.2e-16; 2:50 h; three OOM
+> kills on this host produced two recorded hardenings — MiostSolver
+> PCG checkpoint/resume, bit-identical, and chunked Γ evaluation); T4
+> err CRN axis + augmented sampling `efa2c29` (teeth: white-fed
+> ensemble fails variance consistency, 0.77 median deficit vs 0.45
+> band, fixture tuned by analytic probe at Λ log10 (−2.6,−2.2);
+> ensemble kind versioned aug1); T5 probe leg B `48e6f29` (aug wall
+> 253.4 s = 0.974× scalar; PCG 221–273 < 302 baseline; **BUDGET:
+> n3=56 ≥ 8 → THREE lanes at n=56/lane, modes-only RUNS, no
+> screening**; equal-sharing reading recorded with the alternative
+> beside for gate 1).
+> Next action: Task 6 — pre-registration ONE-COMMIT bundle (sealed
+> bands, boxes + source table, lane-0 residual arrays, designations).
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
