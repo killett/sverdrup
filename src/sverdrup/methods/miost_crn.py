@@ -79,3 +79,28 @@ def coef_noise(
     """
     u = _keyed_uniform(_member_key(root, member, "elem"), identity)
     return np.asarray(np.sqrt(q_var) * ndtri(u))
+
+
+def err_noise(
+    member: int, identity: np.ndarray, lam_var: np.ndarray, root: Seed
+) -> np.ndarray:
+    """Error-mode perturbation c̃ ~ N(0, Λ), keyed by mode identity (spec §5).
+
+    The phase-13 "err" axis: stream-key separation from the obs/elem axes
+    makes collisions impossible by construction; identity rows are the
+    TIME-BASED ``err_identity`` rows (mission_hash, pass_start_s,
+    mode_idx), so overlapping windows draw identical c̃ for a shared pass
+    — the cross-window CRN property extended to the new draws.
+
+    Args:
+        member: Ensemble member index.
+        identity: (n, 3) int64 mode identity rows (``err_identity``).
+        lam_var: (n,) mode prior variances (the tiled Λ diagonal).
+        root: Seed root from :func:`sverdrup.core.seeding.derive_seed`.
+
+    Returns:
+        (n,) draws; identical for the same (root, member, identity row)
+        regardless of window membership or array position.
+    """
+    u = _keyed_uniform(_member_key(root, member, "err"), identity)
+    return np.asarray(np.sqrt(lam_var) * ndtri(u))

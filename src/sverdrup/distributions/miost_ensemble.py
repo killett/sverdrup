@@ -47,6 +47,28 @@ if TYPE_CHECKING:
     from sverdrup.methods.miost import Miost
 
 KIND = "miost-coeff-ensemble"
+# Phase-13 (spec §11): ensembles produced under a STRUCTURED rspec persist
+# under a versioned tag — a scalar-era consumer refuses them by the existing
+# kind-refusal pattern instead of silently mistaking their provenance.
+KIND_AUG = "miost-coeff-ensemble-aug1"
+_KNOWN_KINDS = frozenset({KIND, KIND_AUG})
+
+
+def variance_consistency_rtol(m: int) -> float:
+    """5·SE relative tolerance for the member-variance consistency statistic.
+
+    χ² arithmetic: the sample variance of m N(0, v) draws has
+    Var = 2 v² / (m − 1), so SE/v = √(2/(m−1)) and the pre-registered
+    band is 5·√(2/(m−1)) — 0.158 at the in-test m = 2000, 0.711 at the
+    m = 100 acceptance runs (spec §19.4, recorded).
+
+    Args:
+        m: Member count.
+
+    Returns:
+        The relative tolerance (dimensionless).
+    """
+    return float(5.0 * np.sqrt(2.0 / (m - 1)))
 
 
 def ensemble_provenance(m: int) -> UncertaintyProvenance:
@@ -92,6 +114,9 @@ class MiostEnsembleDistribution:
     _anoms: dict[str, np.ndarray]  # window_id -> (n_el, m) RAW member anomalies
     _window_starts: dict[str, float]
     _w_days: float = W_DAYS
+    # persisted kind tag: KIND for scalar-era configs, KIND_AUG for
+    # ensembles produced under a structured rspec (spec §11 versioning)
+    state_kind: str = KIND
 
     def _plan(self) -> WindowPlan:
         """Return the WindowPlan over this distribution's sorted window starts."""
@@ -237,7 +262,7 @@ class MiostEnsembleDistribution:
                 float64 regardless — the mean is never compressed).
         """
         arrays: dict[str, object] = {
-            "kind": KIND,
+            "kind": self.state_kind,
             "alpha": self._spec.alpha,
             "l_t_days": self._spec.l_t_days,
             "n_dir": self._spec.n_dir,
@@ -262,14 +287,16 @@ class MiostEnsembleDistribution:
         """Reconstruct a persisted ensemble; refuses non-ensemble files.
 
         Raises:
-            ValueError: If the file's kind tag is not ``miost-coeff-ensemble``.
+            ValueError: If the file's kind tag is not one of the known
+                ensemble kinds (scalar-era or the phase-13 augmented tag).
         """
         with np.load(path) as z:
-            if "kind" not in z or str(z["kind"]) != KIND:
+            if "kind" not in z or str(z["kind"]) not in _KNOWN_KINDS:
                 raise ValueError(
-                    f"not a {KIND!r} state file: kind="
-                    f"{str(z['kind']) if 'kind' in z else 'MISSING'!r}"
+                    f"not a known ensemble state file ({sorted(_KNOWN_KINDS)}): "
+                    f"kind={str(z['kind']) if 'kind' in z else 'MISSING'!r}"
                 )
+            loaded_kind = str(z["kind"])
             spec = BasisSpec(
                 alpha=float(z["alpha"]),
                 l_t_days=float(z["l_t_days"]),
@@ -291,6 +318,7 @@ class MiostEnsembleDistribution:
                 _anoms={w: np.asarray(z[f"anom_{w}"], dtype=float) for w in wids},
                 _window_starts={w: float(z[f"start_{w}"]) for w in wids},
                 _w_days=float(z["w_days"]),
+                state_kind=loaded_kind,
             )
         return self
 

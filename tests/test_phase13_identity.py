@@ -225,24 +225,31 @@ def test_crn_elem_axis_draws_pinned_bit_exact() -> None:
     assert got.tolist() == pinned
 
 
-def test_member_guard_allows_zeros_refuses_structured() -> None:
-    # The nesting identity needs the EXPLICIT-ZEROS restriction on the
-    # member path (σ²_m ≡ R_REF bit-exactly); non-trivial configs must
-    # refuse until the Task-4 sampler lands.
-    # Bug caught: a guard blocking the legal Task-3 identity, or one
-    # letting a lane-D/C config produce a silently-wrong scalar ensemble.
+def test_member_path_zeros_restriction_and_structured_kinds() -> None:
+    # The nesting identity runs the EXPLICIT-ZEROS restriction on the
+    # member path (σ²_m ≡ R_REF bit-exactly) under the scalar-era kind;
+    # a structured config (Task-4 sampler) produces the VERSIONED kind.
+    # Bug caught: the zeros restriction blocked, or a structured ensemble
+    # persisted under the scalar-era provenance tag.
+    from sverdrup.distributions.miost_ensemble import KIND, KIND_AUG
+
     obs, grid, params = _aug_fixture()
     plan = WindowPlan(starts=(0.0,))
     zeros = Miost(plan=plan, members=2, member_root=99, rspec=RSpec(deltas=_ZEROS))
-    dist = zeros.solve(obs, grid, params, 30.0)
-    assert dist is not None
-    for bad in (
-        RSpec(deltas={**_ZEROS, "alg": 0.1}),
-        RSpec(deltas=_ZEROS, log_lam_bias=-3.5, log_lam_tilt=-4.0),
-    ):
-        m_bad = Miost(plan=plan, members=2, member_root=99, rspec=bad)
-        with pytest.raises(NotImplementedError, match="Task 4"):
-            m_bad.solve(obs, grid, params, 30.0)
+    d0 = zeros.solve(obs, grid, params, 30.0)
+    # structured rspec (zeros) -> the versioned tag
+    assert d0.underlying.state_kind == KIND_AUG  # type: ignore[union-attr]
+    scalar = Miost(plan=plan, members=2, member_root=99)
+    d1 = scalar.solve(obs, grid, params, 30.0)
+    assert d1.underlying.state_kind == KIND  # type: ignore[union-attr]
+    structured = Miost(
+        plan=plan,
+        members=2,
+        member_root=99,
+        rspec=RSpec(deltas={**_ZEROS, "alg": 0.1}),
+    )
+    d2 = structured.solve(obs, grid, params, 30.0)
+    assert d2.underlying.state_kind == KIND_AUG  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------

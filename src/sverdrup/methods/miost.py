@@ -35,9 +35,10 @@ from sverdrup.methods.miost_basis import (
     lonlat_to_km,
     time_contract,
 )
-from sverdrup.methods.miost_crn import coef_noise, obs_noise
+from sverdrup.methods.miost_crn import coef_noise, err_noise, obs_noise
 from sverdrup.methods.miost_error_basis import (
     build_b,
+    err_identity,
     lam_diag,
     mission_hash_ints,
     segment_passes,
@@ -334,32 +335,43 @@ def member_rhs_matrix(
     els_identity: np.ndarray,
     m: int,
     root: Seed,
+    err_ident: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Build the m member right-hand sides for one window (spec 6.2).
+    """Build the m member right-hand sides for one window (spec 6.2, §5).
 
-    Column i is ``G^T R^-1 (y + eps'_i) + Q^-1 eta~_i`` with identity-keyed
-    CRN perturbations. Shared by :meth:`Miost.sample_members` and the
-    Stage-B exactness oracle — one construction, tested against dense
-    ``A^-1`` on the oracle geometry.
+    Column i is ``G_aug^T R^-1 (y + eps'_i) + Q_aug^-1 [eta~_i; c~_i]``
+    with identity-keyed CRN perturbations; without ``err_ident`` this is
+    the scalar-era ``G^T R^-1 (y + eps'_i) + Q^-1 eta~_i`` unchanged.
+    Shared by :meth:`Miost.sample_members` and the Stage-B exactness
+    oracle — one construction, tested against dense ``A^-1``.
 
     Args:
-        g: CSR observation operator for the window.
-        r: (n_obs,) diagonal R.
+        g: CSR observation operator (augmented [G B] when modes active).
+        r: (n_obs,) diagonal R (per-mission under a structured rspec).
         y: (n_obs,) observed values (empty allowed).
-        q: (n_el,) diagonal Q.
+        q: (n_col,) diagonal Q (``Q_aug = concat(Q, Λ)`` when augmented).
         obs_identity: (n_obs, 4) CRN identity rows (see _obs_identity).
-        els_identity: (n_el, 6) element identity rows.
+        els_identity: (n_el, 6) element identity rows (the FIELD block).
         m: Member count.
         root: CRN seed root.
+        err_ident: Optional (n_mode, 3) mode identity rows (``err_identity``)
+            — present iff ``q`` carries the Λ tail; c̃ draws ride the
+            "err" axis (spec §5).
 
     Returns:
-        (n_el, m) RHS matrix.
+        (n_col, m) RHS matrix.
     """
+    n_field = els_identity.shape[0]
     base = rhs_from_obs(g, r, y) if y.size else np.zeros(q.size)
     b = np.empty((q.size, m))
     for i in range(m):
-        eta_t = coef_noise(i, els_identity, q, root)
-        b[:, i] = base + eta_t / q
+        eta_t = coef_noise(i, els_identity, q[:n_field], root)
+        if err_ident is not None:
+            c_t = err_noise(i, err_ident, q[n_field:], root)
+            prior = np.concatenate([eta_t, c_t])
+        else:
+            prior = eta_t
+        b[:, i] = base + prior / q
         if y.size:
             eps = obs_noise(i, obs_identity, r, root)
             b[:, i] += g.T @ (eps / r)
@@ -609,18 +621,6 @@ class Miost:
             ensemble_provenance,
         )
 
-        if self.rspec.modes_active or any(v != 0.0 for v in self.rspec.deltas.values()):
-            # Augmented member sampling (per-mission ε', "err" axis for c̃)
-            # lands at plan Task 4 — refusing beats a silently-wrong
-            # scalar-R ensemble on a structured config. The EXPLICIT-ZEROS
-            # restriction (all δ = 0, modes column-absent) is legal now:
-            # its σ²_m ≡ R_REF bit-exactly, so the scalar member path below
-            # is already correct for it (the Task-3 nesting identity).
-            raise NotImplementedError(
-                "member sampling on a non-trivial structured rspec lands at "
-                "phase-13 Task 4 (err CRN axis); the point solve is "
-                "available now"
-            )
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
         q_slope = float(params.resolve("q_slope", grid))
@@ -639,15 +639,41 @@ class Miost:
             y = obs.values()[mask]
             mission = None if obs.mission is None else obs.mission[mask]
             els = spec.elements_for_window(w.start_day, w.w_days)
+            n_elem = els.identity.shape[0]
             g = build_g(spec, els, lon, lat, t)
             q = DiagonalQ(rho=rho, q_slope=q_slope).variances_for(els)
-            r = np.full(y.size, R_REF)
+            # Structured R (spec §5): ε' stays WHITE per-obs with the
+            # per-mission variances; active modes augment [G B] and the c̃
+            # prior draws ride the "err" axis on time-based identities.
+            if self.rspec.is_scalar:
+                r = np.full(y.size, R_REF)
+                mission_mh: np.ndarray | None = None
+            else:
+                if mission is None:
+                    raise ValueError(
+                        "structured rspec requires per-obs mission labels "
+                        "(identity-keyed σ²_m lookup, never positional)"
+                    )
+                mission_mh = mission_hash_ints(mission)
+                r = self.rspec.sigma2_for(mission_mh)
+            if self.rspec.modes_active:
+                assert mission_mh is not None  # noqa: S101 (guarded above)
+                pt = segment_passes(lon, lat, t, mission_mh)
+                g_use = sparse.hstack([g, build_b(pt)], format="csr")
+                q_use = np.concatenate(
+                    [q, lam_diag(pt.n_pass, self.rspec.lam_bias, self.rspec.lam_tilt)]
+                )
+                err_id: np.ndarray | None = err_identity(pt)
+            else:
+                g_use, q_use, err_id = g, q, None
             obs_ident = _obs_identity(lon, lat, t, mission)
-            b = member_rhs_matrix(g, r, y, q, obs_ident, els.identity, m, root)
+            b = member_rhs_matrix(
+                g_use, r, y, q_use, obs_ident, els.identity, m, root, err_ident=err_id
+            )
             solver = MiostSolver(
-                g,
+                g_use,
                 r_diag=r,
-                q_diag=q,
+                q_diag=q_use,
                 pcg_rtol=self.pcg_rtol,
                 pcg_maxiter=self.pcg_maxiter,
             )
@@ -656,7 +682,7 @@ class Miost:
                 b,
                 checkpoint=(ck_dir / f"pcg_{w.id}.npz" if ck_dir else None),
             )
-            del g, solver
+            del g, g_use, solver
             CONVERGENCE_LOG.append(
                 {
                     "window": w.id,
@@ -678,9 +704,13 @@ class Miost:
                 s @ time_contract(spec, els_s, eta_a, time_days)
             )
             etas_a[w.id] = np.asarray(eta_a)
-            anoms[w.id] = np.asarray(members) - np.asarray(eta_a)[:, None]
+            # retention slicing (spec §12): the c-block is TRANSIENT — the
+            # retained anomaly store holds FIELD-BLOCK rows only, so its
+            # size is unchanged by augmentation (eta_a is already sliced).
+            anoms[w.id] = np.asarray(members)[:n_elem] - np.asarray(eta_a)[:, None]
             starts[w.id] = w.start_day
         from sverdrup.distributions.calibration import CalibratedDistribution
+        from sverdrup.distributions.miost_ensemble import KIND, KIND_AUG
 
         raw = MiostEnsembleDistribution(
             grid=grid,
@@ -693,6 +723,7 @@ class Miost:
             _anoms=anoms,
             _window_starts=starts,
             _w_days=self._plan.w_days,
+            state_kind=KIND if self.rspec.is_scalar else KIND_AUG,
         )
         return CalibratedDistribution(
             raw, self._calibration, UncertaintyCapability.SAMPLES
