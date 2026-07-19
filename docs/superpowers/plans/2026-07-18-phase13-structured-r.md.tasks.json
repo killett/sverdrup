@@ -28,7 +28,7 @@
     {
       "id": 3,
       "subject": "Task 3: Identity / nesting suite (miost5 target)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** Prove the constant restriction reproduces the signed FIVE-MISSION (miost5) product exactly; close the c-block leak class.\n\n**Files:**\n- Test: `tests/test_phase13_identity.py`\n\n**Acceptance Criteria:**\n- [ ] Constant restriction (delta=0, modes column-absent) vs signed miost5 artifacts: rtol 1e-12 on all FOUR routes (S-path grid, Gamma-path points, member route, variance route); mean maps bit where achievable. Target = miost5, NEVER SHIPPED (resolves to miost6)\n- [ ] Query-route test BOTH forms: (a) structural — routes consume eta slice alone; (b) behavioral — perturb c-slice of solved state, every product route bit-unchanged\n- [ ] CRN no-perturbation regression BOTH pre-existing axes: delta=0 obs-axis draws bit-identical to scalar-era AND elem-axis bit-identical (pinned fixture)\n- [ ] Lane-0 record QUOTED (mu=0.8642 constant), no re-proving; dev-scope windows where full-year not needed\n\n**Verify:** `pixi run test -- tests/test_phase13_identity.py -v` -> all PASS\n\n**Steps:** TDD per plan Task 3 (behavioral c-perturb test catches variance-route-sums-all-columns bug -> implement fixes -> PASS -> commit+push)\n\n```json:metadata\n{\"files\": [\"tests/test_phase13_identity.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase13_identity.py -v\", \"acceptanceCriteria\": [\"four routes rtol 1e-12 vs miost5\", \"query-route structural + behavioral\", \"CRN bit-equal obs + elem axes\", \"lane-0 quoted not re-proven\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         2

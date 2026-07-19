@@ -64,9 +64,9 @@ def test_one_batched_solve_per_window(monkeypatch: pytest.MonkeyPatch) -> None:
     shapes: list[tuple[int, ...]] = []
     orig = MiostSolver.solve
 
-    def spy(self: MiostSolver, b: np.ndarray) -> object:
+    def spy(self: MiostSolver, b: np.ndarray, **kwargs: object) -> object:
         shapes.append(np.atleast_2d(np.asarray(b).T).T.shape)
-        return orig(self, b)
+        return orig(self, b, **kwargs)  # type: ignore[arg-type]
 
     monkeypatch.setattr(MiostSolver, "solve", spy)
     _method().sample_members(_obs(), GRID, PARAMS, DAY, m=M, root=ROOT)

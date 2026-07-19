@@ -383,6 +383,7 @@ class Miost:
         inflation_s: float = 1.0,
         calibration: CalibrationField | None = None,
         rspec: RSpec | None = None,
+        member_solve_checkpoint_dir: Path | None = None,
     ) -> None:
         """Create the method with empty caches.
 
@@ -412,6 +413,10 @@ class Miost:
                 ``_solve_window`` to per-mission R (and, when modes are
                 active, the augmented [G B] assembly with the field-block
                 slice at return).
+            member_solve_checkpoint_dir: Optional directory for per-window
+                crash-durable PCG checkpoints of the member batch (the
+                solve resumes bit-identically after a kill; see
+                ``MiostSolver.solve``). None = no checkpointing.
 
         Raises:
             ValueError: If ``members > 0`` without ``member_root``, or if both
@@ -434,6 +439,7 @@ class Miost:
         self.member_root = member_root
         self.inflation_s = inflation_s
         self.rspec = rspec if rspec is not None else RSpec()
+        self.member_solve_checkpoint_dir = member_solve_checkpoint_dir
         self._calibration: CalibrationField = (
             calibration if calibration is not None else ScalarCalibration(inflation_s)
         )
@@ -603,13 +609,17 @@ class Miost:
             ensemble_provenance,
         )
 
-        if not self.rspec.is_scalar:
+        if self.rspec.modes_active or any(v != 0.0 for v in self.rspec.deltas.values()):
             # Augmented member sampling (per-mission ε', "err" axis for c̃)
             # lands at plan Task 4 — refusing beats a silently-wrong
-            # scalar-R ensemble on a structured config.
+            # scalar-R ensemble on a structured config. The EXPLICIT-ZEROS
+            # restriction (all δ = 0, modes column-absent) is legal now:
+            # its σ²_m ≡ R_REF bit-exactly, so the scalar member path below
+            # is already correct for it (the Task-3 nesting identity).
             raise NotImplementedError(
-                "member sampling on a structured rspec lands at phase-13 "
-                "Task 4 (err CRN axis); the point solve is available now"
+                "member sampling on a non-trivial structured rspec lands at "
+                "phase-13 Task 4 (err CRN axis); the point solve is "
+                "available now"
             )
         spec = self._spec_from(params, grid)
         rho = 10.0 ** float(params.resolve("log10_rho", grid))
@@ -641,7 +651,11 @@ class Miost:
                 pcg_rtol=self.pcg_rtol,
                 pcg_maxiter=self.pcg_maxiter,
             )
-            members, mreport = solver.solve(b)  # ONE batched solve per window
+            ck_dir = self.member_solve_checkpoint_dir
+            members, mreport = solver.solve(  # ONE batched solve per window
+                b,
+                checkpoint=(ck_dir / f"pcg_{w.id}.npz" if ck_dir else None),
+            )
             del g, solver
             CONVERGENCE_LOG.append(
                 {

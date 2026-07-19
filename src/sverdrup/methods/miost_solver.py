@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
@@ -87,24 +89,65 @@ class MiostSolver:
             gtx + (self.q_inv[:, None] * x if x.ndim > 1 else self.q_inv * x)
         )
 
-    def solve(self, b: np.ndarray) -> tuple[np.ndarray, ConvergenceReport]:
+    def solve(
+        self,
+        b: np.ndarray,
+        checkpoint: Path | None = None,
+        checkpoint_every: int = 50,
+    ) -> tuple[np.ndarray, ConvergenceReport]:
         """Blocked PCG; B is (n,) or (n, k); columns solved jointly, converged per-column.
+
+        Optional mid-solve durability (phase-13 operational hardening): with
+        ``checkpoint`` set, the full PCG state ``(x, r, p, rz, iters, it)``
+        is persisted every ``checkpoint_every`` iterations and an existing
+        checkpoint resumes the solve EXACTLY — the resumed iterate sequence
+        is bit-identical to the uninterrupted one (z is dead state at the
+        iteration boundary and is recomputed). The checkpoint binds to a
+        hash of the RHS bytes; a mismatched system refuses. The file is
+        removed after a completed solve.
 
         Args:
             b: Right-hand side(s) — arbitrary, not necessarily derived from obs.
+            checkpoint: Optional path for crash-durable PCG state.
+            checkpoint_every: Iterations between checkpoint writes.
 
         Returns:
             (solution matching ``b``'s shape, per-RHS convergence report).
+
+        Raises:
+            ValueError: If an existing checkpoint does not match this
+                system's RHS (stale-checkpoint refusal).
         """
         b2 = np.atleast_2d(np.asarray(b, float).T).T  # (n, k)
-        x = np.zeros_like(b2)
-        r = b2 - self.apply_a(x)
-        z = self._m_inv[:, None] * r
-        p = z.copy()
-        rz = np.einsum("ij,ij->j", r, z)
         b_norm = np.maximum(np.linalg.norm(b2, axis=0), 1e-300)
-        iters = np.zeros(b2.shape[1], dtype=int)
-        for it in range(1, self.pcg_maxiter + 1):
+        b_hash = ""
+        if checkpoint is not None:
+            b_hash = hashlib.blake2b(
+                np.ascontiguousarray(b2).tobytes(), digest_size=16
+            ).hexdigest()
+        start_it = 1
+        if checkpoint is not None and checkpoint.exists():
+            with np.load(checkpoint) as ck:
+                if str(ck["b_hash"]) != b_hash or tuple(ck["shape"]) != b2.shape:
+                    raise ValueError(
+                        "stale PCG checkpoint: saved state belongs to a "
+                        "different system (RHS hash/shape mismatch) — delete "
+                        f"{checkpoint} to solve fresh"
+                    )
+                x = np.asarray(ck["x"])
+                r = np.asarray(ck["r"])
+                p = np.asarray(ck["p"])
+                rz = np.asarray(ck["rz"])
+                iters = np.asarray(ck["iters"])
+                start_it = int(ck["it"]) + 1
+        else:
+            x = np.zeros_like(b2)
+            r = b2 - self.apply_a(x)
+            z = self._m_inv[:, None] * r
+            p = z.copy()
+            rz = np.einsum("ij,ij->j", r, z)
+            iters = np.zeros(b2.shape[1], dtype=int)
+        for it in range(start_it, self.pcg_maxiter + 1):
             ap = self.apply_a(p)
             alpha = rz / np.maximum(np.einsum("ij,ij->j", p, ap), 1e-300)
             x += alpha * p
@@ -118,6 +161,20 @@ class MiostSolver:
             rz_new = np.einsum("ij,ij->j", r, z)
             p = z + (rz_new / np.maximum(rz, 1e-300)) * p
             rz = rz_new
+            if checkpoint is not None and it % checkpoint_every == 0:
+                np.savez(
+                    checkpoint,
+                    x=x,
+                    r=r,
+                    p=p,
+                    rz=rz,
+                    iters=iters,
+                    it=it,
+                    b_hash=b_hash,
+                    shape=np.asarray(b2.shape),
+                )
+        if checkpoint is not None:
+            checkpoint.unlink(missing_ok=True)
         report = ConvergenceReport(iters, np.linalg.norm(r, axis=0) / b_norm)
         return (x[:, 0], report) if np.asarray(b).ndim == 1 else (x, report)
 
