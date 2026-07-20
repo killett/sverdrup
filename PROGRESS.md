@@ -61,9 +61,66 @@
 > 253.4 s = 0.974× scalar; PCG 221–273 < 302 baseline; **BUDGET:
 > n3=56 ≥ 8 → THREE lanes at n=56/lane, modes-only RUNS, no
 > screening**; equal-sharing reading recorded with the alternative
-> beside for gate 1).
-> Next action: Task 6 — pre-registration ONE-COMMIT bundle (sealed
-> bands, boxes + source table, lane-0 residual arrays, designations).
+> beside for gate 1); T6 pre-registration bundle `4766db9` (sealed
+> `phase13_band_artifact.json` sha `79e4e486…`; both degradation
+> criteria; source table with verify-at-review marks; lane-0 residual
+> arrays regenerated, µ 0.8641999994291494 EXACT — first attempt
+> missed at 4e-6, cause = five-file vs SIX-file MDT list, recorded);
+> T7 lane machinery + dev smokes `a03f98c` (lanes as frozen
+> restrictions, ONE Sobol engine + per-lane masking, anchors at Λ
+> box-floor, crash-durable checkpoints + resume-identity guard,
+> POINT-capability µ-only bars).
+>
+> **⏳ TASK 8 SWEEPS RUNNING DETACHED (started 2026-07-19 ~09:45Z).
+> DO NOT RELAUNCH — monitor only; the runner resumes from per-trial
+> checkpoints if re-invoked, but a fresh manual launch is unnecessary.**
+> - Wrapper: a retry loop (D → C → modes_only, sequential; per-lane
+>   retry on OOM kill) — its script is in the ORIGINATING session's
+>   scratchpad (path not portable). The DURABLE signals a resumed
+>   session reads instead:
+>   - LOG: `data/2021a_ssh_mapping_ose/ours/phase13_sweeps.log`
+>     (grep `WINNER` / `SWEEPS-DONE` / `HARD-FAIL`).
+>   - Winners + per-trial records land in the evidence JSON under
+>     `phase13.miost.lanes.<lane>` (gitignored; `jq '.phase13.miost.lanes|keys'`).
+>   - Launch rule PASSED and is recorded at `phase13.miost.lanes.launch`
+>     (est 11.83 h ≤ 12 h; monitor-flag 63856.8 s = 1.5×, never a kill;
+>     scoring overhead is a ledger row for the close).
+> - **LANE D DONE** (6.06 h wall): winner index 24, µ 0.8655 /
+>   λx 174.5 (lane-0 quoted 0.8642 / 178.0 — nominally better, bands
+>   decide at T9). **LANE C DONE** (scoring 25802 s): winner index 24,
+>   µ 0.8656 / λx 174.2.
+> - **NAME-MISMATCH BUG FOUND + FIXED (2026-07-20, owner-approved
+>   fix-then-run):** the wrapper's `modes_only` lane HARD-FAILED — the
+>   `LANES` dict keyed the conditional lane `"modes_only"` (underscore)
+>   while the probe budget, the sha-sealed `phase13_band_artifact.json`,
+>   and the boxes all spell it `"modes-only"` (hyphen). Runner draws
+>   `--lane` choices from `LANES` but checks membership vs
+>   `budget["lanes"]`, so neither spelling could launch the third lane.
+>   Fix `ebab4ac`: renamed the lone odd-one-out `LANES` key to the
+>   sealed hyphen name (NO sealed artifact altered; D/C evidence
+>   untouched); two red tests added (hyphen-name pin + cross-namespace
+>   choices⊇budget invariant), 38 phase13 tests green on the final tree.
+>   **modes-only RELAUNCHED** with `--lane modes-only` (wrapper pid 553652
+>   in this session's scratchpad `run_modes_only.sh`, retry-on-OOM,
+>   appends to the sweeps log; sweeping n=56, anchors=0, scope=full).
+> - Operational: this host OOM-kills long jobs under co-tenant pressure
+>   (~hourly; cgroup `oom_kill`). The retry wrapper + PCG
+>   checkpoint/resume + chunked-Γ eval make kills cost ≤1 trial. NO
+>   source edits during the run (standing memory — a fix voids affected
+>   trials).
+> - **If a resumed session finds the wrapper DEAD mid-sweep** (no
+>   pytest/lane_run process, no SWEEPS-DONE): relaunch the runner per
+>   lane — `pixi run python scripts/phase13_lane_run.py --lane <D|C|modes-only>`
+>   (HYPHEN — the sealed name; nohup + pid + log; watcher on pid-exit) —
+>   it resumes from the checkpointed records via the resume-identity
+>   guard. Run lanes SEQUENTIALLY (single-writer discipline on the
+>   evidence JSON).
+> Next action after SWEEPS-DONE: Task 9 — `scripts/phase13_compare.py`
+> (sealed comparison read, refusal clock FIRST, lane-C-vs-0 primary
+> under the sealed bands, lexicographic µ→λx with BOTH degradation
+> criteria, winner-lane rule; verdict + BRANCH recorded). Then branch:
+> negative → T10 close; winner → T11 chain. **STOP at Task 12 with the
+> gate-1 pack for owner review (source-table marks first).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
