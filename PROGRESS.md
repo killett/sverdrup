@@ -120,12 +120,28 @@
 >   it resumes from the checkpointed records via the resume-identity
 >   guard. Run lanes SEQUENTIALLY (single-writer discipline on the
 >   evidence JSON).
-> Next action after SWEEPS-DONE: Task 9 — `scripts/phase13_compare.py`
+> **⚖ T9 GO (owner, 2026-07-20, verbatim intent) — three recordings:**
+> 1. **MISFIRE PROTOCOL, pre-registered for the T9 read:** if the read
+>    MISFIRES after its single execution (wrong arrays loaded, code
+>    defect discovered post-run, any Phase-8-defect-run-shaped event) —
+>    STOP + preserve the defective read under a dated defect key +
+>    owner adjudication for a corrected read. The touch-mechanics ethic
+>    applies to EVERY single-execution ceremony; never a silent
+>    re-execution.
+> 2. **Watch-rows clarification:** the owner watch rows (GroundTrack
+>    direction vs 0.410; saturation / lag-1 / field-correlation
+>    triplet) land at T11's diagnostics and are read at gate 1 — T8
+>    done means the substrate exists, not that the mandate is
+>    discharged.
+> 3. **Hyphen fix-and-relaunch ACCEPTED** as the standing rule
+>    correctly applied (disclosed, clean re-run of the affected lane).
+> Next action: Task 9 — `scripts/phase13_compare.py`
 > (sealed comparison read, refusal clock FIRST, lane-C-vs-0 primary
 > under the sealed bands, lexicographic µ→λx with BOTH degradation
-> criteria, winner-lane rule; verdict + BRANCH recorded). Then branch:
-> negative → T10 close; winner → T11 chain. **STOP at Task 12 with the
-> gate-1 pack for owner review (source-table marks first).**
+> criteria, winner-lane rule; verdict + BRANCH recorded; misfire
+> protocol above). Then branch: negative → T10 close; winner → T11
+> chain. **STOP at Task 12 with the gate-1 pack for owner review
+> (source-table marks first).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
