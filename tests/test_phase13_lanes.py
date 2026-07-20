@@ -22,7 +22,7 @@ def test_pairing_shared_dims_equal_across_lanes() -> None:
     # pairing the sealed §7 design depends on.
     d = lanes.sobol_trials("D", 5)
     c = lanes.sobol_trials("C", 5)
-    m = lanes.sobol_trials("modes_only", 5)
+    m = lanes.sobol_trials("modes-only", 5)
     for i in range(5):
         for dim in ("delta_alg", "delta_h2g", "delta_j2g", "delta_j2n", "log10_rho"):
             assert d[i][dim] == c[i][dim], (i, dim)
@@ -37,7 +37,7 @@ def test_masked_lambda_is_none_never_zero() -> None:
     for t in lanes.sobol_trials("D", 3):
         assert t["log_lam_bias"] is None
         assert t["log_lam_tilt"] is None
-    for t in lanes.sobol_trials("modes_only", 3):
+    for t in lanes.sobol_trials("modes-only", 3):
         assert t["delta_alg"] == 0.0
         assert isinstance(t["log_lam_bias"], float)
 
@@ -136,3 +136,29 @@ def test_runner_refuses_without_the_sealed_bundle(
     monkeypatch.setattr(runner, "_RESULTS", empty)
     with pytest.raises(SystemExit, match="prereg"):
         runner.main_for_lane("D")
+
+
+def test_modes_only_lane_uses_the_sealed_hyphen_name() -> None:
+    # The sealed band artifact (phase13_band_artifact.json) and the probe's
+    # budget determination both spell the conditional lane "modes-only"
+    # (hyphen); LANES must match so the runner is invokable with the name
+    # the sealed budget lists.
+    # Bug caught: the LANES key keyed "modes_only" (the underscore odd-one-
+    # out vs the sha-sealed artifact) — the incident that left the
+    # pre-registered third lane unrunnable.
+    assert "modes-only" in lanes.LANES
+    assert "modes_only" not in lanes.LANES
+
+
+def test_runner_choices_cover_every_budget_funded_lane() -> None:
+    # Cross-namespace invariant: the lane runner draws its --lane argparse
+    # choices from LANES, but its launch guard checks membership against the
+    # sealed budget's lane list. If the two name-spaces disagree, a budget-
+    # funded lane is rejected at the CLI and can never sweep.
+    # Bug caught: LANES and the probe's lane strings diverging for the
+    # modes-only lane (funded=["D","C","modes-only"] vs a choice set missing
+    # it) — exactly the hard-fail that blocked Task 8's third lane.
+    probe = load_script("phase13_probe")
+    funded = probe.budget_determination(t_trial_s=1200.0, wall_budget_h=12.0)["lanes"]
+    runner_choices = set(lanes.LANES) - {"lane0"}
+    assert set(funded) <= runner_choices, (funded, sorted(runner_choices))

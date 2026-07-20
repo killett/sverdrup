@@ -56,7 +56,7 @@ LANES: dict[str, frozenset[str]] = {
     "lane0": frozenset(),
     "D": frozenset({*_DELTA_DIMS, "log10_rho"}),
     "C": frozenset(ALL_DIMS),
-    "modes_only": frozenset({"log10_rho", *_LAM_DIMS}),
+    "modes-only": frozenset({"log10_rho", *_LAM_DIMS}),
 }
 
 Trial = dict[str, float | None]
