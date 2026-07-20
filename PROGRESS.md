@@ -71,9 +71,14 @@
 > box-floor, crash-durable checkpoints + resume-identity guard,
 > POINT-capability µ-only bars).
 >
-> **⏳ TASK 8 SWEEPS RUNNING DETACHED (started 2026-07-19 ~09:45Z).
-> DO NOT RELAUNCH — monitor only; the runner resumes from per-trial
-> checkpoints if re-invoked, but a fresh manual launch is unnecessary.**
+> **✅ TASK 8 SWEEPS COMPLETE (SWEEPS-DONE 2026-07-20 ~06:00Z). All
+> THREE lanes swept; winners recorded under `phase13.miost.lanes.<lane>`.
+> Next = Task 9 comparison read.**
+> WINNERS (all index 24; µ→λx point solves):
+> lane-0 quoted 0.8642 / 178.0 · D 0.8655 / 174.5 · C 0.8656 / 174.2 ·
+> modes-only 0.8657 / 174.2. All three sweeping lanes ~+0.0013–0.0015 µ /
+> ~−3.6 km λx vs lane-0 — the sealed degradation bands + refusal clock
+> decide the verdict at T9 (this is NOT the verdict).
 > - Wrapper: a retry loop (D → C → modes_only, sequential; per-lane
 >   retry on OOM kill) — its script is in the ORIGINATING session's
 >   scratchpad (path not portable). The DURABLE signals a resumed
@@ -100,9 +105,9 @@
 >   sealed hyphen name (NO sealed artifact altered; D/C evidence
 >   untouched); two red tests added (hyphen-name pin + cross-namespace
 >   choices⊇budget invariant), 38 phase13 tests green on the final tree.
->   **modes-only RELAUNCHED** with `--lane modes-only` (wrapper pid 553652
->   in this session's scratchpad `run_modes_only.sh`, retry-on-OOM,
->   appends to the sweeps log; sweeping n=56, anchors=0, scope=full).
+>   **modes-only RAN CLEAN** under `--lane modes-only` (n=56, anchors=0,
+>   scope=full; scoring 21027 s; attempt 1 exit 0, no OOM): winner
+>   index 24, µ 0.8657 / λx 174.2.
 > - Operational: this host OOM-kills long jobs under co-tenant pressure
 >   (~hourly; cgroup `oom_kill`). The retry wrapper + PCG
 >   checkpoint/resume + chunked-Γ eval make kills cost ≤1 trial. NO
