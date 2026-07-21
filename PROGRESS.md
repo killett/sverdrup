@@ -135,13 +135,21 @@
 >    discharged.
 > 3. **Hyphen fix-and-relaunch ACCEPTED** as the standing rule
 >    correctly applied (disclosed, clean re-run of the affected lane).
-> Next action: Task 9 — `scripts/phase13_compare.py`
-> (sealed comparison read, refusal clock FIRST, lane-C-vs-0 primary
-> under the sealed bands, lexicographic µ→λx with BOTH degradation
-> criteria, winner-lane rule; verdict + BRANCH recorded; misfire
-> protocol above). Then branch: negative → T10 close; winner → T11
-> chain. **STOP at Task 12 with the gate-1 pack for owner review
-> (source-table marks first).**
+> **⏳ T9 READ IN FLIGHT (launched 2026-07-20, detached pid 691756,
+> log `data/2021a_ssh_mapping_ose/ours/phase13_compare.log`).**
+> Machinery committed + dual-reviewed BEFORE execution (spec-compliance
+> PASS all ACs; adversarial zero confirmed defects; both findings
+> actioned: no lane-0 wording on the C-vs-D row + pre-flight track
+> loading). Design decision recorded: refusal clock covers the three
+> WINNER records (all postdate the seal); lane-0 is CO-SEALED so its
+> integrity check is byte-level (recomputed residuals_sha256 vs the
+> sealed value) — a clock on the co-sealed reference is impossible by
+> construction, byte identity is stronger. Single-execution guard:
+> re-run refuses if `phase13.miost.lanes.verdict` exists (misfire
+> protocol). Verdict lands at `phase13.miost.lanes.verdict`.
+> Then branch: negative → T10 close; winner → T11 chain. **STOP at
+> Task 12 with the gate-1 pack for owner review (source-table marks
+> first).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
