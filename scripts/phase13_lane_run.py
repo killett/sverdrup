@@ -388,12 +388,258 @@ def main_for_lane(lane: str) -> None:
     print(f"[lane {lane}] DONE", flush=True)
 
 
+def _ensemble_root() -> int:
+    """The §11 phase-13 winner-ensemble seed root (exact-int convention).
+
+    Its OWN unit of work — never the miost5/miost6 "stage-b-winner" root
+    (reuse would collide the CRN streams with the signed products').
+    """
+    from sverdrup.core.seeding import derive_seed  # noqa: PLC0415
+
+    return int(derive_seed("miost", "phase13-winner", "members", 0))
+
+
+def main_winner_ctap(lane: str) -> None:
+    """§8.5 c-tap run: point solve at a modes-active winner config.
+
+    Winner-only diagnostics (plan Task 11): solves the full year at the
+    lane's recorded winner trial with ``c_tap_dir`` set, so every window
+    writes its per-pass ĉ artifact. Evidence under
+    ``phase13.miost.ctap.<lane>``.
+
+    Args:
+        lane: The winner lane to tap ("C" or "modes-only").
+
+    Raises:
+        SystemExit: On a missing winner record, or a modes-absent winner
+            (no c-block exists — a tap would fabricate empty §8 rows).
+    """
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.methods.miost import Miost  # noqa: PLC0415
+
+    ev = _read_evidence()
+    w = (
+        ev.get("phase13", {})
+        .get("miost", {})
+        .get("lanes", {})
+        .get(lane, {})
+        .get("winner")
+    )
+    if not w:
+        raise SystemExit(f"lane {lane!r} has no recorded winner — run the lane first")
+    trial = cast(Trial, w["trial"])
+    rspec = rspec_for_trial(trial)
+    if not rspec.modes_active:
+        raise SystemExit(
+            f"lane {lane!r} winner is modes-absent — no c-block exists; "
+            "the §8 tap applies only to modes-active winners"
+        )
+    tap_dir = _OUT_ROOT / f"phase13_ctap_{lane}"
+    ctx = _load_ctx()
+    method = Miost(rspec=rspec, c_tap_dir=tap_dir)
+    params = ConstantProvider(params_for_trial(trial))
+    days = _FULL_DAYS if _SCOPE == "full" else _DEV_DAYS
+    t0 = time.monotonic()
+    for d in days:
+        method.solve(ctx["train"], ctx["grid"], params, d)
+    files = sorted(p.name for p in tap_dir.glob("ctap_*.npz"))
+    _write_evidence(
+        f"phase13.miost.ctap.{lane}",
+        {
+            "created_utc": _now(),
+            "tap_dir": str(tap_dir),
+            "files": files,
+            "n_windows": len(files),
+            "winner_index": w.get("index"),
+            "lam_bias": rspec.lam_bias,
+            "lam_tilt": rspec.lam_tilt,
+            "wall_s": round(time.monotonic() - t0, 1),
+        },
+    )
+    print(f"[ctap {lane}] {len(files)} window artifacts -> {tap_dir}", flush=True)
+
+
+def main_winner_ensemble() -> None:
+    """The m=100 acceptance ensemble at the CHAIN-LANE winner (Task 11).
+
+    Executes ONLY on branch=winner (the T9 verdict's recorded branch);
+    root = the §11 exact-int convention; retention slicing verified
+    (field-block only); mean/var maps + raw member store persisted as the
+    refit substrate. Evidence under ``phase13.miost.members``.
+
+    Raises:
+        SystemExit: Without a WINNER-branch verdict, or on member
+            under-convergence at every cap (biased draws unacceptable).
+    """
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.core.types import UncertaintyCapability  # noqa: PLC0415
+    from sverdrup.distributions.calibration import (  # noqa: PLC0415
+        CalibratedDistribution,
+        ScalarCalibration,
+    )
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        MiostEnsembleDistribution,
+        ensemble_provenance,
+        mean_fields,
+        merged_members,
+        std_fields,
+        variance_consistency_rtol,
+    )
+    from sverdrup.methods.miost import CONVERGENCE_LOG, Miost  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+    from sverdrup.validation.output_adapter import write_map  # noqa: PLC0415
+
+    ev = _read_evidence()
+    lanes = ev.get("phase13", {}).get("miost", {}).get("lanes", {})
+    verdict = lanes.get("verdict")
+    if not verdict or not str(verdict.get("branch_recorded", "")).startswith("WINNER"):
+        raise SystemExit(
+            "no WINNER branch recorded at phase13.miost.lanes.verdict — the "
+            "acceptance ensemble executes only on branch=winner"
+        )
+    chain = verdict["winner_lane_rule"]["chain_lane"]
+    w = lanes.get(chain, {}).get("winner")
+    if not w:
+        raise SystemExit(f"chain lane {chain!r} has no winner record")
+    trial = cast(Trial, w["trial"])
+    rspec = rspec_for_trial(trial)
+    provider = ConstantProvider(params_for_trial(trial))
+    root = _ensemble_root()
+    m_members = 100
+    days = _FULL_DAYS if _SCOPE == "full" else _DEV_DAYS
+    ctx = _load_ctx()
+    obs, grid = ctx["train"], ctx["grid"]
+    print(
+        f"[members] chain lane {chain} winner idx {w.get('index')}; m={m_members} "
+        f"root={root} days={len(days)}",
+        flush=True,
+    )
+
+    t0 = time.monotonic()
+    caps = (500, 2000, 8000)
+    esc: dict[str, Any] = {}
+    for cap in caps:
+        method = Miost(plan=WindowPlan(), pcg_maxiter=cap, rspec=rspec)
+        CONVERGENCE_LOG.clear()
+        spec, etas_a, anoms, starts = merged_members(
+            method,
+            obs,
+            grid,
+            provider,
+            m_members,
+            root,
+            on_window=lambda wid, day: print(
+                f"[members] window {wid} solved (day {day:.0f}); "
+                f"{time.monotonic() - t0:.0f}s",
+                flush=True,
+            ),
+        )
+        batches = [dict(e) for e in CONVERGENCE_LOG if e.get("kind") == "member-batch"]
+        worst = max(float(cast(float, b["final_rel_residual"])) for b in batches)
+        esc = {"converged": worst <= method.pcg_rtol, "maxiter_used": cap}
+        if esc["converged"]:
+            break
+        print(f"[members] under-converged at cap {cap} — escalating", flush=True)
+    if not esc["converged"]:
+        raise SystemExit(
+            "STOPPED: member batches under-converged at every cap — biased "
+            "draws are not acceptable (spec §5); owner call"
+        )
+
+    # Retention slicing verified (plan AC): the anomaly store carries the
+    # FIELD block only — augmentation must not change its row count.
+    slicing_ok = all(
+        anoms[wid].shape[0]
+        == spec.elements_for_window(starts[wid], WindowPlan().w_days).identity.shape[0]
+        for wid in anoms
+    )
+    if not slicing_ok:
+        raise SystemExit("retention slicing FAILED: anomaly store not field-block-only")
+
+    means = mean_fields(spec, starts, etas_a, grid, WindowPlan(), days)
+    stds = std_fields(spec, starts, anoms, grid, WindowPlan(), days)
+    epoch = np.datetime64("2017-01-01")
+    times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
+    tag = "dev_" if _SCOPE == "dev" else ""
+    mean_out = _OUT_ROOT / f"phase13_{tag}winner_mean.nc"
+    var_out = _OUT_ROOT / f"phase13_{tag}winner_var.nc"
+    mean_stack = np.stack([mn.reshape(grid.shape) for mn in means]) + ctx["mdt"][None]
+    var_stack = np.stack([(sd**2).reshape(grid.shape) for sd in stds])
+    assimilated = tuple(sorted({str(s) for s in np.asarray(obs.mission)}))
+    write_map(
+        times, grid.y, grid.x, mean_stack, mean_out, assimilated_missions=assimilated
+    )
+    write_map(
+        times, grid.y, grid.x, var_stack, var_out, assimilated_missions=assimilated
+    )
+
+    store_out = _OUT_ROOT / f"phase13_{tag}winner_members.npz"
+    raw = MiostEnsembleDistribution(
+        grid=grid,
+        mean=means[0].reshape(grid.shape),
+        provenance=ensemble_provenance(m_members),
+        time_days=float(days[0]),
+        m=m_members,
+        _spec=spec,
+        _etas_a=etas_a,
+        _anoms=anoms,
+        _window_starts=starts,
+        _w_days=WindowPlan().w_days,
+    )
+    # RAW store (identity calibration): the Task-11 refit fits s(x) fresh
+    # on this posterior — never the miost5 field (not transferable across
+    # an R change, spec §10.2).
+    wrapped = CalibratedDistribution(
+        raw, ScalarCalibration(1.0), UncertaintyCapability.SAMPLES
+    )
+    wrapped.save_state(store_out)
+
+    _write_evidence(
+        "phase13.miost.members",
+        {
+            "created_utc": _now(),
+            "chain_lane": chain,
+            "winner_index": w.get("index"),
+            "m": m_members,
+            "root_int": root,
+            "root_str": str(root),
+            "maxiter_used": esc["maxiter_used"],
+            "retention_slicing_field_block_only": slicing_ok,
+            "variance_consistency_rtol_m100": variance_consistency_rtol(m_members),
+            "mean_maps": str(mean_out),
+            "var_maps": str(var_out),
+            "member_store": str(store_out),
+            "n_days": len(days),
+            "wall_s": round(time.monotonic() - t0, 1),
+        },
+    )
+    print(f"[members] DONE in {time.monotonic() - t0:.0f}s -> {store_out}", flush=True)
+
+
 def main() -> None:
-    """CLI entry: one lane per invocation (sequential by protocol)."""
+    """CLI entry: one lane sweep, or a winner-run mode (Task 11)."""
     parser = argparse.ArgumentParser(description="Phase-13 lane run (spec §7).")
-    parser.add_argument("--lane", choices=sorted(set(LANES) - {"lane0"}), required=True)
+    parser.add_argument("--lane", choices=sorted(set(LANES) - {"lane0"}))
+    parser.add_argument(
+        "--winner-ctap",
+        choices=sorted(set(LANES) - {"lane0"}),
+        metavar="LANE",
+        help="§8.5 c-tap run at the lane's winner (modes-active only)",
+    )
+    parser.add_argument(
+        "--winner-ensemble",
+        action="store_true",
+        help="m=100 acceptance ensemble at the chain-lane winner",
+    )
     args = parser.parse_args()
-    main_for_lane(args.lane)
+    if args.winner_ctap:
+        main_winner_ctap(args.winner_ctap)
+    elif args.winner_ensemble:
+        main_winner_ensemble()
+    elif args.lane:
+        main_for_lane(args.lane)
+    else:
+        parser.error("one of --lane / --winner-ctap / --winner-ensemble required")
 
 
 if __name__ == "__main__":
