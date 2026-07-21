@@ -6,6 +6,8 @@ Each test names the bug it catches; expected values are hand-computed
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from tests.helpers import load_script
@@ -176,6 +178,49 @@ def test_adjacent_window_agreement_matches_by_identity() -> None:
     out = diag.adjacent_window_agreement([win_a, win_b])
     assert out["n_matched"] == 2
     assert np.isclose(out["rmse_bias"], 0.5)
+
+
+def test_read_tap_dir_dedups_overlap_passes_by_identity(tmp_path: Path) -> None:
+    # A pass in two overlapping windows appears ONCE in the per-pass rows
+    # (identity = (mission_hash, pass_start_s); earlier window kept) while
+    # BOTH copies feed the §8.5 stability scatter.
+    # Bug caught: overlap passes double-counted — n_passes inflated and
+    # every per-pass statistic biased toward the overlap region.
+    import numpy as np
+
+    def _write(name: str, starts: list[int], cb: list[float]) -> None:
+        np.savez(
+            tmp_path / name,
+            window=np.asarray(name),
+            c_bias=np.asarray(cb),
+            c_tilt=np.zeros(len(cb)),
+            pass_mission=np.asarray([7] * len(cb), dtype=np.int64),
+            pass_mission_label=np.asarray(["j3"] * len(cb)),
+            pass_start_s=np.asarray(starts, dtype=np.int64),
+            family=np.asarray(["asc"] * len(cb)),
+            t_mean_days=np.asarray([s / 86400.0 for s in starts]),
+            field_chord_mean=np.zeros(len(cb)),
+            n_obs=np.asarray([5] * len(cb), dtype=np.int64),
+            lam_bias=np.asarray(0.01),
+            lam_tilt=np.asarray(0.01),
+        )
+
+    _write("ctap_w+00000.0+60.npz", [100, 200], [1.0, 2.0])
+    _write("ctap_w+00045.0+60.npz", [200, 300], [2.5, 3.0])  # 200 overlaps
+    rows, windows = diag.read_tap_dir(tmp_path)
+    assert len(rows) == 3  # 100, 200 (once), 300
+    assert len(windows) == 2
+    agree = diag.adjacent_window_agreement(windows)
+    assert agree["n_matched"] == 1  # the overlap pass, matched by identity
+
+
+def test_tables_for_json_flattens_tuple_keys() -> None:
+    # Evidence is JSON: (mission, family) tuple keys must flatten to
+    # "mission/family" strings.
+    # Bug caught: json.dumps crashing on tuple keys AFTER the ensemble
+    # run's evidence write window (a mid-assembly abort).
+    out = diag.tables_for_json({("j3", "asc"): {"r1": 0.5}})
+    assert out == {"j3/asc": {"r1": 0.5}}
 
 
 def test_small_sample_rows_flagged_not_dropped() -> None:

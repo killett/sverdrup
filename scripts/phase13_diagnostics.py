@@ -21,12 +21,16 @@ dropped — an absent row reads as "no problem" in a pack.
 
 from __future__ import annotations
 
+import json
 from collections import defaultdict
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 
 Rows = list[dict[str, Any]]
+
+_RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 
 #: lag-1 needs >= 3 passes (two lagged pairs) for a correlation.
 _LAG1_MIN_PASSES = 3
@@ -176,6 +180,128 @@ def field_correlation(rows: Rows) -> dict[tuple[str, str], dict[str, Any]]:
     return out
 
 
+def read_tap_dir(tap_dir: Path) -> tuple[Rows, list[dict[str, Any]]]:
+    """Load a lane's ctap artifacts into per-pass rows + per-window blocks.
+
+    Overlap passes (present in two adjacent windows) are DEDUPED in the
+    per-pass rows by value-derived identity (mission_hash, pass_start_s),
+    keeping the earlier window's row — double counting would bias every
+    per-pass statistic toward the overlap regions. BOTH copies stay in
+    the per-window blocks (the §8.5 stability scatter needs them).
+
+    Args:
+        tap_dir: Directory of ``ctap_*.npz`` artifacts.
+
+    Returns:
+        (deduped per-pass rows, per-window blocks sorted by window id).
+    """
+    rows: Rows = []
+    windows: list[dict[str, Any]] = []
+    seen: set[tuple[int, int]] = set()
+    for p in sorted(tap_dir.glob("ctap_*.npz")):
+        with np.load(p, allow_pickle=False) as z:
+            keys = [
+                (int(m), int(s))
+                for m, s in zip(z["pass_mission"], z["pass_start_s"], strict=True)
+            ]
+            windows.append(
+                {
+                    "window": str(z["window"]),
+                    "keys": keys,
+                    "c_bias": [float(c) for c in z["c_bias"]],
+                }
+            )
+            for i, key in enumerate(keys):
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append(
+                    {
+                        "mission": str(z["pass_mission_label"][i]),
+                        "family": str(z["family"][i]),
+                        "t_mean_days": float(z["t_mean_days"][i]),
+                        "c_bias": float(z["c_bias"][i]),
+                        "c_tilt": float(z["c_tilt"][i]),
+                        "field_chord_mean": float(z["field_chord_mean"][i]),
+                        "n_obs": int(z["n_obs"][i]),
+                    }
+                )
+    return rows, windows
+
+
+def tables_for_json(table: dict[Any, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Flatten (mission, family) tuple keys to "mission/family" strings."""
+    return {
+        ("/".join(k) if isinstance(k, tuple) else str(k)): v for k, v in table.items()
+    }
+
+
+def assemble_lane(tap_dir: Path, lam_bias: float, lam_tilt: float) -> dict[str, Any]:
+    """All five §8 tables for one lane's tap directory.
+
+    Args:
+        tap_dir: The lane's ctap directory.
+        lam_bias: Winner Λ_bias [m²] (from the recorded ctap evidence).
+        lam_tilt: Winner Λ_tilt [m²].
+
+    Returns:
+        Evidence-ready block (JSON-safe keys) with the §8 shrinkage note.
+    """
+    rows, windows = read_tap_dir(tap_dir)
+    return {
+        "n_passes_deduped": len(rows),
+        "n_windows": len(windows),
+        "estimator_note": (
+            "var(chat)/Lambda < 1 under a CORRECT model (posterior "
+            "shrinkage; law of total variance) — the follow-on trigger "
+            "reads CROSS-MISSION CONTRASTS, never absolute distance "
+            "from 1 (spec §8.1)"
+        ),
+        "variance_ratio": variance_ratio_table(rows, lam_bias, lam_tilt),
+        "saturation": saturation_fraction(rows, lam_bias, lam_tilt),
+        "lag1_autocorr": tables_for_json(lag1_autocorr(rows)),
+        "lag1_confounder_note": (
+            "persistent genuine environmental residuals (SSB, wet-tropo) "
+            "also autocorrelate; the flag is HIGH multi-day persistence, "
+            "and the field-correlation row breaks the ambiguity (spec §8.3)"
+        ),
+        "field_correlation": tables_for_json(field_correlation(rows)),
+        "adjacent_window_agreement": adjacent_window_agreement(windows),
+    }
+
+
+def main() -> None:
+    """Assemble §8 diagnostics for the tapped winners → evidence.
+
+    Reads ``phase13.miost.ctap.<lane>`` (written by the winner-ctap runs)
+    and writes ``phase13.miost.diagnostics.<lane>``. REPORT-ONLY.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+
+    results = cast(dict[str, Any], json.loads(_RESULTS.read_text()))
+    miost = results.setdefault("phase13", {}).setdefault("miost", {})
+    ctap = miost.get("ctap", {})
+    if not ctap:
+        raise SystemExit("no phase13.miost.ctap evidence — run --winner-ctap first")
+    diagnostics: dict[str, Any] = {}
+    for lane, block in ctap.items():
+        diagnostics[lane] = assemble_lane(
+            Path(block["tap_dir"]),
+            lam_bias=float(block["lam_bias"]),
+            lam_tilt=float(block["lam_tilt"]),
+        )
+        print(
+            f"[diag {lane}] {diagnostics[lane]['n_passes_deduped']} passes, "
+            f"{diagnostics[lane]['n_windows']} windows",
+            flush=True,
+        )
+    miost["diagnostics"] = diagnostics
+    atomic_write_json(_RESULTS, results)
+    print("[diag] written to phase13.miost.diagnostics", flush=True)
+
+
 def adjacent_window_agreement(windows: list[dict[str, Any]]) -> dict[str, Any]:
     """§8.5 free stability row: overlap-pass ĉ agreement across windows.
 
@@ -209,3 +335,7 @@ def adjacent_window_agreement(windows: list[dict[str, Any]]) -> dict[str, Any]:
         if len(pairs) >= 2 and np.std(x) > 0 and np.std(y) > 0
         else None,
     }
+
+
+if __name__ == "__main__":
+    main()
