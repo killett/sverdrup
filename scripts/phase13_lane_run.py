@@ -616,6 +616,135 @@ def main_winner_ensemble() -> None:
     print(f"[members] DONE in {time.monotonic() - t0:.0f}s -> {store_out}", flush=True)
 
 
+def main_variance_row() -> None:
+    """The measured m=100 member-variance consistency row (plan Task 11 AC).
+
+    Re-runs the Task-4 oracle comparison (empirical member variance vs
+    dense analytic posterior on the proven dev fixture) at the ACCEPTANCE
+    member count m=100 with the chain-lane winner's rspec. Evidence:
+    ``phase13.miost.members.variance_consistency_row``.
+
+    Raises:
+        SystemExit: If the members evidence is absent (row belongs to the
+            acceptance ensemble), or the statistic exceeds the tolerance.
+    """
+    # The PROVEN Task-4 fixture geometry + tiny 2-rung spec (dense
+    # analytic side needs an invertible A) — loaded by path (scripts run
+    # with scripts/ on sys.path, not the repo root), not duplicated.
+    import importlib.util  # noqa: PLC0415
+
+    from scipy import sparse  # type: ignore[import-untyped]  # noqa: PLC0415
+
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        variance_consistency_rtol,
+    )
+    from sverdrup.methods.miost import (  # noqa: PLC0415
+        _obs_identity,
+        member_rhs_matrix,
+    )
+    from sverdrup.methods.miost_basis import (  # noqa: PLC0415
+        BasisSpec,
+        DiagonalQ,
+        build_g,
+        lonlat_to_km,
+    )
+    from sverdrup.methods.miost_error_basis import (  # noqa: PLC0415
+        build_b,
+        err_identity,
+        lam_diag,
+        mission_hash_ints,
+        segment_passes,
+    )
+    from sverdrup.methods.miost_solver import (  # noqa: PLC0415
+        MiostSolver,
+        rhs_from_obs,
+    )
+
+    fixture_spec = importlib.util.spec_from_file_location(
+        "test_miost_ensemble_augmented",
+        Path("tests/test_miost_ensemble_augmented.py"),
+    )
+    if fixture_spec is None or fixture_spec.loader is None:
+        raise SystemExit("cannot load tests/test_miost_ensemble_augmented.py")
+    fixture_mod = importlib.util.module_from_spec(fixture_spec)
+    fixture_spec.loader.exec_module(fixture_mod)
+    _obs = fixture_mod._obs  # noqa: SLF001 (the proven fixture, by design)
+
+    ev = _read_evidence()
+    mem = ev.get("phase13", {}).get("miost", {}).get("members")
+    if not mem:
+        raise SystemExit("phase13.miost.members absent — run --winner-ensemble first")
+    chain = mem["chain_lane"]
+    trial = cast(
+        Trial,
+        ev["phase13"]["miost"]["lanes"][chain]["winner"]["trial"],
+    )
+    rspec = rspec_for_trial(trial)
+    m = int(mem["m"])
+    root = int(mem["root_int"])
+
+    spec = BasisSpec(alpha=1.5, l_t_days=10.0, ladder=(320.0, 452.548))
+    obs = _obs()
+    coords = obs.coords()
+    lon, lat, t = coords[:, 0], coords[:, 1], coords[:, 2]
+    y = obs.values()
+    els = spec.elements_for_window(0.0)
+    n_elem = els.identity.shape[0]
+    q = DiagonalQ(rho=20.0, q_slope=2.0).variances_for(els)
+    g = build_g(spec, els, lon, lat, t)
+    if obs.mission is None:
+        raise SystemExit("fixture missing mission labels")
+    mh = mission_hash_ints(obs.mission)
+    r = rspec.sigma2_for(mh)
+    if rspec.modes_active:
+        pt = segment_passes(lon, lat, t, mh)
+        g_use = sparse.hstack([g, build_b(pt)], format="csr")
+        q_use = np.concatenate([q, lam_diag(pt.n_pass, rspec.lam_bias, rspec.lam_tilt)])
+        err_id: np.ndarray | None = err_identity(pt)
+    else:
+        g_use, q_use, err_id = g, q, None
+    obs_id = _obs_identity(lon, lat, t, obs.mission)
+
+    qlon, qlat = np.meshgrid(np.linspace(297, 303, 4), np.linspace(35, 41, 4))
+    qx, qy = lonlat_to_km(qlon.ravel(), qlat.ravel())
+    gamma_q = spec.evaluate(els, qx, qy, np.full(qx.size, 27.0))
+    ga = g_use.toarray() if sparse.issparse(g_use) else np.asarray(g_use)
+    a_full = ga.T / r @ ga + np.diag(1.0 / q_use)
+    a_inv_ee = np.linalg.inv(a_full)[:n_elem, :n_elem]
+    analytic = np.diag(gamma_q @ a_inv_ee @ gamma_q.T)
+
+    b = member_rhs_matrix(
+        g_use, r, y, q_use, obs_id, els.identity, m, root, err_ident=err_id
+    )
+    solver = MiostSolver(
+        g_use, r_diag=r, q_diag=q_use, pcg_rtol=1e-11, pcg_maxiter=20000
+    )
+    eta_full, _ = solver.solve(rhs_from_obs(g_use, r, y))
+    members, _ = solver.solve(b)
+    anoms = np.asarray(members)[:n_elem] - np.asarray(eta_full)[:n_elem, None]
+    empirical = (gamma_q @ anoms).var(axis=1, ddof=1)
+    rel_dev = np.abs(empirical - analytic) / analytic
+    rtol = variance_consistency_rtol(m)
+    row = {
+        "created_utc": _now(),
+        "m": m,
+        "rspec_lane": chain,
+        "median_rel_dev": float(np.median(rel_dev)),
+        "max_rel_dev": float(np.max(rel_dev)),
+        "rtol": float(rtol),
+        "passes": bool(np.max(rel_dev) <= rtol),
+        "fixture": "tests/test_miost_ensemble_augmented dev geometry (2-rung)",
+    }
+    _write_evidence("phase13.miost.members.variance_consistency_row", row)
+    print(
+        f"[variance-row] m={m} median={row['median_rel_dev']:.4f} "
+        f"max={row['max_rel_dev']:.4f} rtol={rtol:.4f} passes={row['passes']}",
+        flush=True,
+    )
+    if not row["passes"]:
+        raise SystemExit("variance consistency FAILED at m=100 — owner call")
+
+
 def main() -> None:
     """CLI entry: one lane sweep, or a winner-run mode (Task 11)."""
     parser = argparse.ArgumentParser(description="Phase-13 lane run (spec §7).")
@@ -631,15 +760,25 @@ def main() -> None:
         action="store_true",
         help="m=100 acceptance ensemble at the chain-lane winner",
     )
+    parser.add_argument(
+        "--variance-row",
+        action="store_true",
+        help="measured m=100 variance-consistency row (post-ensemble)",
+    )
     args = parser.parse_args()
     if args.winner_ctap:
         main_winner_ctap(args.winner_ctap)
     elif args.winner_ensemble:
         main_winner_ensemble()
+    elif args.variance_row:
+        main_variance_row()
     elif args.lane:
         main_for_lane(args.lane)
     else:
-        parser.error("one of --lane / --winner-ctap / --winner-ensemble required")
+        parser.error(
+            "one of --lane / --winner-ctap / --winner-ensemble / "
+            "--variance-row required"
+        )
 
 
 if __name__ == "__main__":
