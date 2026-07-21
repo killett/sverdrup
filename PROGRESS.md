@@ -224,10 +224,39 @@
 > 7742201642112487637 EXACT, converged cap 500, variance row median
 > 0.068 vs rtol 0.711 PASS), suites: oracle/identity/teeth 21p/1s,
 > FULL 952/14/1 at 93% (57:04). Registry diff EMPTY; zero c2.
-> **STOPPED — the gate closes only on the owner's approval message.
-> On approval: T13 = the ONE c2 touch (template tripwires verbatim;
-> tally miost5 2→3), then T14 owner ruling (lineage flip + external
-> sweep + six-mission-refresh election record + close).**
+> **✅ T12 GATE 1 APPROVED (owner, 2026-07-21, verbatim intent) — four
+> recordings at the gate close:**
+> 1. **SOURCE-TABLE MARKS RESOLVED by owner at this gate:** (a)
+>    alg-low/h2g-high ordering CONFIRMED (Ka-band vs Ku-band physics;
+>    HY-2A noisiest of the set); ×2 bracket ADEQUATE under
+>    contrasts-only semantics (4× spread between extreme pair). (b)
+>    cm-order residual reading CONFIRMED (DT2021 corrected-SLA lineage
+>    per the verified extraction; σ_mode 1–56 mm brackets generously).
+>    Marks cleared BEFORE touch authorization, per the pin.
+> 2. **SATURATION TRIGGER (§4 q_slope table): FIRED and DECLINED this
+>    phase.** Reasoning recorded: the shipping lane (D) carries no
+>    modes, so the entanglement the trigger guards is moot for the
+>    product; and the triplet's compensation + window-local evidence
+>    (6/10 seesaw, cross-window 0.041) says the MODE LAYER needs
+>    redesign — cross-window-coherent pass modes, one physical error
+>    per pass rather than nine window-local absorbers — before any
+>    prior dims are tuned around it. Routed to the residual-structure
+>    ledger for the global-domain revisit.
+> 3. **FINDINGS NAMED:** the triplet measurement (real + persistent +
+>    compensating + window-local; band-concordant at 0.19×); the
+>    flattening-direction MISS recorded honestly (pre-registered
+>    "flatter" not confirmed; G −0.0544, s(x) MORE informative post-R —
+>    interpretation recorded, report-only); GroundTrack 0.410 → 0.331
+>    (pre-registered direction confirmed; necessary-not-sufficient
+>    verbatim); ŝ 8.738 → 5.106.
+> 4. **PROCEED TO T13:** fresh authorization requested next message
+>    quoting the sealed pre-touch reading verbatim. Gate approval is
+>    NOT touch authorization; no new conditions at the authorization
+>    step.
+> **▶ T13 AUTHORIZATION REQUESTED (executor message sent; touch
+> machinery to be TDD'd refusals-first while awaiting the fresh
+> authorization; the touch itself executes ONLY on the owner's
+> authorization message).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
