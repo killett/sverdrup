@@ -176,10 +176,31 @@
 > construction for the co-sealed reference). Single-execution guard
 > live: any re-run refuses on the existing verdict key (misfire
 > protocol, owner 2026-07-20).
-> Next: **T11 chain on lane D** — members m=100 at the D winner
-> config, s*/s(x) refit via Phase-9 harness (SIGMA_OBS2 untouched),
-> §8 diagnostics + §9 readings (owner watch rows land HERE: GroundTrack
-> direction vs 0.410; saturation / lag-1 / field-correlation triplet).
+> **⏳ T11 IN FLIGHT (2026-07-21).** Landed so far (each committed +
+> pushed): §8 diagnostics statistics (`scripts/phase13_diagnostics.py`,
+> 7 hand-fixture tests); c-block tap (`Miost(c_tap_dir=…)` — §8.5
+> window-tagged per-pass ĉ npz, field-chord mean from the FIELD block
+> only, observational-only proven by bit-equality test; 228-test miost+
+> phase13 regression green); winner-run modes in `phase13_lane_run.py`
+> (`--winner-ctap <C|modes-only>` + `--winner-ensemble` m=100 at the
+> chain-lane winner, root = derive_seed("miost","phase13-winner",
+> "members",0) EXACT INT, branch=winner guarded, retention slicing
+> verified, RAW member store = refit substrate).
+> **RUNS DETACHED (wrapper pid 724587, log
+> `data/2021a_ssh_mapping_ose/ours/phase13_t11.log`, grep
+> `T11-RUNS-DONE|HARD-FAIL`):** ctap C → ctap modes-only → m=100
+> ensemble (hours). Evidence keys: `phase13.miost.ctap.<lane>`,
+> `phase13.miost.members`.
+> STILL TO BUILD (T11 remainder): diagnostics assembly main() (taps →
+> §8 tables → `phase13.miost.diagnostics`); s*/s(x) REFIT via Phase-9
+> harness on the member store (SIGMA_OBS2 untouched; ŝ delta +
+> G_pre→G_post vs MIOST anchor family + shape summary →
+> `phase13.miost.refit`); §9 readings (GroundTrack retro on winner mean
+> maps — direction vs 0.410 owner watch row; SpectralFidelity row;
+> mean-map deltas vs miost5 → `phase13.miost.readings`); registry AC-1
+> note (verified: five-mission lineage entry = `shipped_miost5()`
+> factory at `methods/miost.py:866` — clean factory, no migration
+> surprise; a win updates THIS entry at T14, SHIPPED["miost"] untouched).
 > **STOP at Task 12 with the gate-1 pack (source-table marks first).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
