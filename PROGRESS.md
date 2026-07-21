@@ -210,10 +210,24 @@
 > ensemble (~08:00Z proj.); wrapper B (pid 750377) waits on
 > `T11-RUNS-DONE` then runs `--refit` → `--readings` (grep
 > `T11-ALL-DONE|HARD-FAIL` in phase13_t11.log).
-> After T11-ALL-DONE: variance-consistency row check (recorded by the
-> ensemble mode), then **Task 12 — assemble the gate-1 pack and STOP
-> (source-table marks first; §3 frame: the saturation + lag-1 +
-> field-correlation triplet is the phase's measurement either way).**
+> **✅ T11 COMPLETE (2026-07-21). ⛔ T12 GATE-1 PACK ASSEMBLED + HELD
+> FOR OWNER REVIEW:** `docs/superpowers/2026-07-21-phase13-gate1-pack.md`
+> (committed). Owner reads FIRST: the source-table verify-at-review
+> marks (§0 — two marks resolve at this gate), then GroundTrack
+> direction (0.331 DOWN from 0.410), then the saturation/lag-1/
+> field-correlation triplet (§1b — reading shape: modes carry REAL
+> persistent structure, saturation 10–16% fires the §4 q_slope trigger,
+> attribution SEESAWS with the field (6/10 compensation, 0 absorption),
+> window-local ĉ). T11 numbers: refit ŝ 8.738→5.106 (pre-registered
+> LOWER direction), G shrinkage −0.0544 (s(x) MORE informative —
+> opposite Phase-10), m=100 ensemble at chain-lane-D winner (root
+> 7742201642112487637 EXACT, converged cap 500, variance row median
+> 0.068 vs rtol 0.711 PASS), suites: oracle/identity/teeth 21p/1s,
+> FULL 952/14/1 at 93% (57:04). Registry diff EMPTY; zero c2.
+> **STOPPED — the gate closes only on the owner's approval message.
+> On approval: T13 = the ONE c2 touch (template tripwires verbatim;
+> tally miost5 2→3), then T14 owner ruling (lineage flip + external
+> sweep + six-mission-refresh election record + close).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 

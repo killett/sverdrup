@@ -103,20 +103,22 @@
     {
       "id": 11,
       "subject": "Task 11: WINNER chain \u2014 members, s(x) refit, diagnostics, readings",
-      "status": "in_progress",
+      "status": "completed",
       "description": "**Goal:** Full acceptance substrate on the winner (executes only on branch=winner).\n\n**Files:**\n- Create: `scripts/phase13_diagnostics.py`\n- Modify: winner-run wiring in `scripts/phase13_lane_run.py` (ensemble mode)\n- Test: `tests/test_phase13_diagnostics.py`\n\n**Acceptance Criteria:**\n- [ ] FIRST: verify five-mission lineage entry point in `src/sverdrup/methods/registry.py` (miost5 factory/record/sigma-semantics; spec \u00a719.6); migration noted if form surprises; win updates THIS entry, SHIPPED[\"miost\"] untouched\n- [ ] Members m=100 at winner config (recorded exact-int seed-root convention); retention slicing verified; m=100 member-variance consistency row recorded\n- [ ] s*/s(x) REFIT via Phase-9 harness (refit_winner/run_harness) on the new posterior \u2014 five-mission/j3 discipline; SIGMA_OBS2 untouched; s-hat delta + G_pre->G_post (MIOST anchor family) + s(x) shape recorded\n- [ ] Spec \u00a78 diagnostics for lane-D + lane-C winners (+ conditional lane): variance-ratio table + shrinkage note, saturation fraction, lag-1 autocorr per mission x family (asc/desc, median dt, +-2/sqrt(n) null), field-correlation complement (spec \u00a78.4 sign logic), adjacent-window c-hat scatter \u2014 winner-only window-tagged c-block tap\n- [ ] Spec \u00a79 readings: GroundTrack (direction vs 0.410 recorded), SpectralFidelity descriptive, mean-map deltas vs miost5\n- [ ] Zero c2 still\n\n**Verify:** `pixi run test -- tests/test_phase13_diagnostics.py -v` -> PASS; evidence keys `phase13.miost.{members,refit,diagnostics,readings}` present\n\n**Steps:** TDD diagnostics on hand-computed fixtures -> implement -> execute members + refit + diagnostics + readings (background) -> commit+push\n\n```json:metadata\n{\"files\": [\"scripts/phase13_diagnostics.py\", \"scripts/phase13_lane_run.py\", \"tests/test_phase13_diagnostics.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase13_diagnostics.py -v\", \"acceptanceCriteria\": [\"registry entry verified first\", \"members m=100 + consistency row\", \"refit via phase-9 harness SIGMA_OBS2 untouched\", \"full diagnostic package\", \"readings with directions\", \"zero c2\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         9
-      ]
+      ],
+      "note": "All ACs closed 2026-07-21: registry AC-1 verified; m=100 ensemble (root 7742201642112487637, slicing ok, variance row PASS 0.068/0.711); refit shat 8.738->5.106, G shrink -0.0544; \u00a78 tables + \u00a79 readings recorded; zero c2"
     },
     {
       "id": 12,
       "subject": "Task 12: OWNER GATE 1 \u2014 evidence pack review",
-      "status": "pending",
+      "status": "in_progress",
       "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Goal:** Assemble and hold the gate-1 pack for owner review.\n\n**Files:**\n- Modify: `PROGRESS.md` (pack-held banner)\n\n**Acceptance Criteria:**\n- [ ] Pack re-validated on FINAL tree with captured output: verdict + bands (jq), identity suite PASS, oracle + member-variance + teeth PASS, full suite w/ coverage, \u00a78 diagnostics + \u00a79 readings quoted verbatim from artifacts, refit rows, sizing/telemetry rows (PCG vs 302), registry untouched check (empty diff on SHIPPED), zero-c2 grep\n- [ ] Pack ORDER per template: readings/diagnostics first, then verdict arithmetic, then budget/telemetry ledger rows\n- [ ] SOURCE-TABLE row (owner pin): pack quotes the phase13_boxes.py SOURCE TABLE verbatim (published per-mission noise + residual-LWE citations WITH verify-at-review marks) \u2014 marks RESOLVE at gate 1, by owner verification, before any touch authorization\n- [ ] HELD for owner review \u2014 closes on the owner's approval message, never on pack assembly\n\n**Verify:** every pack row quotes a captured command output (no from-memory numbers); PROGRESS \"pack held\" banner committed + pushed\n\n**Steps:** Assemble on final tree (no source edits during gate suite) -> commit -> push -> STOP for owner\n\n```json:metadata\n{\"files\": [\"PROGRESS.md\"], \"verifyCommand\": \"pixi run test 2>&1 | tail -3\", \"acceptanceCriteria\": [\"pack re-validated on final tree with captured output\", \"template pack order\", \"source table quoted verbatim; verify-at-review marks resolve at gate 1 before touch authorization\", \"held for owner; closes only on approval message\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"]}\n```",
       "blockedBy": [
         11
-      ]
+      ],
+      "note": "PACK ASSEMBLED + HELD: docs/superpowers/2026-07-21-phase13-gate1-pack.md; closes only on owner approval"
     },
     {
       "id": 13,
