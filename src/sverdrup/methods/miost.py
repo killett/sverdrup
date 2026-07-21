@@ -37,6 +37,7 @@ from sverdrup.methods.miost_basis import (
 )
 from sverdrup.methods.miost_crn import coef_noise, err_noise, obs_noise
 from sverdrup.methods.miost_error_basis import (
+    PassTable,
     build_b,
     err_identity,
     lam_diag,
@@ -396,6 +397,7 @@ class Miost:
         calibration: CalibrationField | None = None,
         rspec: RSpec | None = None,
         member_solve_checkpoint_dir: Path | None = None,
+        c_tap_dir: Path | None = None,
     ) -> None:
         """Create the method with empty caches.
 
@@ -429,6 +431,13 @@ class Miost:
                 crash-durable PCG checkpoints of the member batch (the
                 solve resumes bit-identically after a kill; see
                 ``MiostSolver.solve``). None = no checkpointing.
+            c_tap_dir: Phase-13 §8.5 c-block diagnostic tap — when set AND
+                the rspec has active modes, ``_solve_window`` writes each
+                window's per-pass posterior-mean mode coefficients (ĉ) to
+                ``ctap_<window-id>.npz`` in this directory (winner-only
+                diagnostics; NEVER a product output — §2 rider 1). Purely
+                observational: the solve numerics, params_key, and returned
+                distribution are untouched. None = no tap.
 
         Raises:
             ValueError: If ``members > 0`` without ``member_root``, or if both
@@ -452,6 +461,7 @@ class Miost:
         self.inflation_s = inflation_s
         self.rspec = rspec if rspec is not None else RSpec()
         self.member_solve_checkpoint_dir = member_solve_checkpoint_dir
+        self.c_tap_dir = c_tap_dir
         self._calibration: CalibrationField = (
             calibration if calibration is not None else ScalarCalibration(inflation_s)
         )
@@ -729,6 +739,76 @@ class Miost:
             raw, self._calibration, UncertaintyCapability.SAMPLES
         )
 
+    @staticmethod
+    def _write_c_tap(
+        out_dir: Path,
+        w: Window,
+        pt: PassTable,
+        eta_full: np.ndarray,
+        n_elem: int,
+        g_field: sparse.csr_matrix,
+        lat: np.ndarray,
+        t: np.ndarray,
+        mission_str: np.ndarray,
+        lam_bias: float,
+        lam_tilt: float,
+    ) -> None:
+        """Write the §8.5 window-tagged per-pass ĉ diagnostic artifact.
+
+        Observational only (winner diagnostics; NEVER a product output —
+        §2 rider 1). ``field_chord_mean`` uses the FIELD-block prediction
+        ``g_field @ eta_field`` — never the augmented sum, so the §8.4
+        detector cannot correlate c with itself. Family is the per-pass
+        lat trend over time-ordered obs; a single-obs pass (no trend)
+        defaults to "asc".
+
+        Args:
+            out_dir: Tap directory (created if absent).
+            w: The window being solved.
+            pt: The window's pass table.
+            eta_full: Full augmented posterior mean [field | c-block].
+            n_elem: Field-block length (c-block starts here).
+            g_field: The FIELD-block operator for the window's obs subset.
+            lat: Window obs latitudes.
+            t: Window obs times [days].
+            mission_str: Window obs mission labels.
+            lam_bias: Winner Λ_bias [m²] (recorded beside the rows).
+            lam_tilt: Winner Λ_tilt [m²].
+        """
+        c = eta_full[n_elem:]
+        fitted = np.asarray(g_field @ eta_full[:n_elem]).ravel()
+        n_pass = pt.n_pass
+        family = np.empty(n_pass, dtype="U4")
+        labels = np.empty(n_pass, dtype="U8")
+        t_mean = np.empty(n_pass)
+        chord = np.empty(n_pass)
+        n_obs = np.empty(n_pass, dtype=np.int64)
+        for p in range(n_pass):
+            sel = pt.obs_pass_idx == p
+            tp = t[sel]
+            latp = lat[sel][np.argsort(tp, kind="stable")]
+            family[p] = "asc" if latp[-1] >= latp[0] else "desc"
+            labels[p] = str(mission_str[sel][0])
+            t_mean[p] = float(tp.mean())
+            chord[p] = float(fitted[sel].mean())
+            n_obs[p] = int(sel.sum())
+        out_dir.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            out_dir / f"ctap_{w.id}.npz",
+            window=np.asarray(w.id),
+            c_bias=c[0::2],  # build_b per-pass [bias, tilt] interleave
+            c_tilt=c[1::2],
+            pass_mission=pt.pass_mission,
+            pass_mission_label=labels,
+            pass_start_s=pt.pass_start_s,
+            family=family,
+            t_mean_days=t_mean,
+            field_chord_mean=chord,
+            n_obs=n_obs,
+            lam_bias=np.asarray(lam_bias),
+            lam_tilt=np.asarray(lam_tilt),
+        )
+
     def _solve_window(
         self,
         w: Window,
@@ -769,6 +849,7 @@ class Miost:
                 )
             mission_mh = mission_hash_ints(obs.mission[mask])
             r = self.rspec.sigma2_for(mission_mh)
+        pt: PassTable | None = None
         if self.rspec.modes_active:
             assert mission_mh is not None  # noqa: S101 (guarded above)
             pt = segment_passes(lon, lat, t, mission_mh)
@@ -789,7 +870,26 @@ class Miost:
         eta, report = solver.solve(
             rhs_from_obs(g_use, r, y) if y.size else np.zeros(q_use.size)
         )
-        eta = np.asarray(eta)[:n_elem]  # field block ONLY (rider 1)
+        eta_full = np.asarray(eta)
+        if self.c_tap_dir is not None and pt is not None and y.size:
+            # §8.5 diagnostic tap — observational only, before the rider-1
+            # slice discards the c-block. obs.mission is non-None here
+            # (structured rspec guard above).
+            assert obs.mission is not None  # noqa: S101 (guarded above)
+            self._write_c_tap(
+                self.c_tap_dir,
+                w,
+                pt,
+                eta_full,
+                n_elem,
+                g,
+                lat,
+                t,
+                np.asarray(obs.mission)[mask],
+                self.rspec.lam_bias,
+                self.rspec.lam_tilt,
+            )
+        eta = eta_full[:n_elem]  # field block ONLY (rider 1)
         del g, g_use, solver  # G freed after the window solve (hardening 2)
         CONVERGENCE_LOG.append(
             {
