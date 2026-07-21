@@ -135,21 +135,52 @@
 >    discharged.
 > 3. **Hyphen fix-and-relaunch ACCEPTED** as the standing rule
 >    correctly applied (disclosed, clean re-run of the affected lane).
-> **⏳ T9 READ IN FLIGHT (launched 2026-07-20, detached pid 691756,
-> log `data/2021a_ssh_mapping_ose/ours/phase13_compare.log`).**
-> Machinery committed + dual-reviewed BEFORE execution (spec-compliance
-> PASS all ACs; adversarial zero confirmed defects; both findings
-> actioned: no lane-0 wording on the C-vs-D row + pre-flight track
-> loading). Design decision recorded: refusal clock covers the three
-> WINNER records (all postdate the seal); lane-0 is CO-SEALED so its
-> integrity check is byte-level (recomputed residuals_sha256 vs the
-> sealed value) — a clock on the co-sealed reference is impossible by
-> construction, byte identity is stronger. Single-execution guard:
-> re-run refuses if `phase13.miost.lanes.verdict` exists (misfire
-> protocol). Verdict lands at `phase13.miost.lanes.verdict`.
-> Then branch: negative → T10 close; winner → T11 chain. **STOP at
-> Task 12 with the gate-1 pack for owner review (source-table marks
-> first).**
+> **✅ T9 COMPLETE (read executed ONCE 2026-07-21T00:10Z; ~7 h wall;
+> verdict at `phase13.miost.lanes.verdict`). BRANCH = WINNER, CHAIN
+> LANE = D.** Machinery dual-reviewed BEFORE execution (spec PASS all
+> ACs; adversarial zero confirmed defects; findings actioned); verdict
+> dual-reviewed AFTER (spec: arithmetic recomputed EXACT, all 5 PASS;
+> adversarial: NO refutations — Δµ/band reproduce BITWISE under sealed
+> seed 271828; seal bytes unchanged since `4766db9`).
+>
+> ```
+> T9 VERDICT (protocol_sha 79e4e486…, n_segments 403, n=46780):
+> - PRIMARY C-vs-0: beats-mu POSITIVE. dmu +0.0013757179 vs band
+>   0.0009258590 (1.49x); dlx -3.82 km, band_lx 4.59 (informative,
+>   n_lambda_used 178/200; never consulted — mu decided).
+>   Wording pin: "C beats lane-0 beyond the measured band (beats-mu)".
+> - D-vs-0 (attribution, never claim-bearing): beats-mu, dmu
+>   +0.0012603 vs band 0.0012055 (1.046x — thin).
+> - modes-only-vs-0 (2x2 cell, never claim-bearing, NEVER ships):
+>   beats-mu, dmu +0.0015140 vs band 0.0009532 (1.59x) — the HIGHEST
+>   mu of all lanes (0.8657140).
+> - Winner-lane rule: C-vs-D dmu +0.0001154 vs band 0.0006190 (0.19x)
+>   WITHIN BAND -> chain lane D (simpler lane, spec §10 pin).
+> - BRANCH RECORDED: "WINNER: Tasks 11-14 proceed on lane D".
+> ```
+>
+> **CAVEATS PERSISTED (adversarial review, for the gate-1 pack):**
+> (1) within-lane winner-selection optimism (max-µ of 32 admissible /
+> 58 trials, selected on the scored track) is NOT priced by the pair
+> band and unadjudicated in any spec — read the 1.49x margin with
+> that in mind; mitigant IN the record: all three lanes' winners are
+> the SAME paired Sobol index 24 with Δµ ≈ +0.0013–0.0015 — a shared
+> real-effect signature, not selection noise. (2) ρ is released in
+> EVERY sweeping lane and gains are near-equal across lanes — the
+> attribution question (ρ vs δ vs modes) is exactly the 2x2 cell,
+> lands at T11 diagnostics, owner reads at gate 1.
+>
+> Design decision recorded: refusal clock covers the three WINNER
+> records; lane-0 is CO-SEALED — integrity = byte-level recomputed
+> residuals_sha256 (stronger than a clock, which is impossible by
+> construction for the co-sealed reference). Single-execution guard
+> live: any re-run refuses on the existing verdict key (misfire
+> protocol, owner 2026-07-20).
+> Next: **T11 chain on lane D** — members m=100 at the D winner
+> config, s*/s(x) refit via Phase-9 harness (SIGMA_OBS2 untouched),
+> §8 diagnostics + §9 readings (owner watch rows land HERE: GroundTrack
+> direction vs 0.410; saturation / lag-1 / field-correlation triplet).
+> **STOP at Task 12 with the gate-1 pack (source-table marks first).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
