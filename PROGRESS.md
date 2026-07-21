@@ -191,17 +191,29 @@
 > `T11-RUNS-DONE|HARD-FAIL`):** ctap C → ctap modes-only → m=100
 > ensemble (hours). Evidence keys: `phase13.miost.ctap.<lane>`,
 > `phase13.miost.members`.
-> STILL TO BUILD (T11 remainder): diagnostics assembly main() (taps →
-> §8 tables → `phase13.miost.diagnostics`); s*/s(x) REFIT via Phase-9
-> harness on the member store (SIGMA_OBS2 untouched; ŝ delta +
-> G_pre→G_post vs MIOST anchor family + shape summary →
-> `phase13.miost.refit`); §9 readings (GroundTrack retro on winner mean
-> maps — direction vs 0.410 owner watch row; SpectralFidelity row;
-> mean-map deltas vs miost5 → `phase13.miost.readings`); registry AC-1
-> note (verified: five-mission lineage entry = `shipped_miost5()`
-> factory at `methods/miost.py:866` — clean factory, no migration
-> surprise; a win updates THIS entry at T14, SHIPPED["miost"] untouched).
-> **STOP at Task 12 with the gate-1 pack (source-table marks first).**
+> ALL T11 MACHINERY NOW LANDED (committed + pushed): ctap runs DONE
+> (9 windows × 2 lanes); **§8 DIAGNOSTICS ASSEMBLED + RECORDED at
+> `phase13.miost.diagnostics`** (2233 deduped passes/lane; headline
+> rows, report-only: bias var-ratios 8–21× cross-mission (tilt < 1
+> everywhere), bias saturation 0.10–0.16 vs 0.05 null → fires the §4
+> q_slope table trigger, lag-1 persistence beyond null 9/10 families,
+> field-correlation 6/10 COMPENSATION + 4 clean + 0 absorption,
+> adjacent-window ĉ_bias corr 0.041 / rmse 0.036 m n=1073 — reading
+> shape: real persistent track-correlated structure, attribution
+> seesawing with the field, NOT clean absorption; owner reads at
+> gate 1); refit+readings glue (`scripts/phase13_refit_readings.py`,
+> frozen anchor-family frame, G_pre 0.13510401012055406 verified-or-
+> STOP, ŝ vs signed 8.737979722446696, direction row vs 0.410).
+> Registry AC-1 verified: lineage entry = `shipped_miost5()` factory,
+> clean, no migration; a win updates it at T14, SHIPPED untouched.
+> **PIPELINE ARMED:** wrapper A (pid 724587) finishing the m=100
+> ensemble (~08:00Z proj.); wrapper B (pid 750377) waits on
+> `T11-RUNS-DONE` then runs `--refit` → `--readings` (grep
+> `T11-ALL-DONE|HARD-FAIL` in phase13_t11.log).
+> After T11-ALL-DONE: variance-consistency row check (recorded by the
+> ensemble mode), then **Task 12 — assemble the gate-1 pack and STOP
+> (source-table marks first; §3 frame: the saturation + lag-1 +
+> field-correlation triplet is the phase's measurement either way).**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
