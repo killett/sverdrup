@@ -148,8 +148,23 @@
 > three) and the compute_stats-lineage value constants are pinned AT the
 > Stage-1 anchor run into `phase14.stage1.gate5`. λx tile-extent band
 > parameterization deferred to first non-anchor consumer (Stage 1) —
-> anchor identity requires box convention verbatim. Next action: Task 11
-> (seam rubric + instrument configs).**
+> anchor identity requires box convention verbatim.
+> **T8 COMPLETE-MACHINERY (`05a4e3b`) — real-series leg PENDING epochs:**
+> `adapters/insitu/` — UHSLC rqds hourly→daily parser (validated on REAL
+> h057a; ≥12-valid-hours/day rule), PSMSL RLR catalog parser (XXX codes
+> tolerated), `LockedGaugeError` structural refusal (BEFORE any open,
+> exact-string env, canonical split path never bypassed by custom
+> data_dir), 5-criteria screening IN ORDER with visible per-gauge rows,
+> §4-F firewall sentence verbatim + no-map test, seeded stratified split
+> (8-box basin × era class, 30%/stratum, byte-equal rebuild);
+> `scripts/download_gauges.py` (httpx+stamina, sha manifest,
+> verify-and-skip, storage-ledgered, SINGLE-WRITER). REAL catalog leg
+> RUN: PSMSL 1618 rows + UHSLC 598 stations + h057a series
+> (ledger 0.018 GiB); evidence `phase14.stage0.gauges` =
+> catalog-leg-complete. Series screening + locked split WAIT on the
+> census epoch table (T4, blocked on the T3 vintage ruling) — recorded
+> in evidence `pending`. 19 tests green; dual review actioned. Next
+> action: Task 9 (in-situ evaluator + sealed nulls).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
