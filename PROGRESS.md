@@ -1,5 +1,16 @@
 # Sverdrup — Progress notebook
 
+> **✅ README REFRESH — EXECUTED 2026-07-22, both tasks committed
+> (`c15551f` validation section: phase-11 instruments + phase-13
+> structured R; `1f6eac0` report-rows output shape, rspec clause,
+> extras + config rows). Net +41 lines vs `b4878a0` (budget ≤ ~45);
+> all eight spec deltas (D1–D8) verified in the diff; stale strings
+> ("neither elected", `miost5: 2`, 0.857 row, `requests`) grep-clean.
+> Spec: `docs/superpowers/specs/2026-07-22-readme-refresh-design.md`;
+> plan: `docs/superpowers/plans/2026-07-22-readme-refresh.md` (tracker
+> synced, both tasks completed). Next action: none — README current
+> through phase 13.**
+
 > **✅ PHASE 13 — structured observation error (per-mission R + error
 > modes): CLOSED 2026-07-21, BRANCH = SIGN-OFF (owner T14 ruling; flip
 > executed `e1eda16`; FULL external sweep on the flip tree 965 passed /
