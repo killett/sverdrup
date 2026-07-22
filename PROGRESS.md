@@ -1,6 +1,57 @@
 # Sverdrup — Progress notebook
 
-> **▶ PHASE 13 DESIGN COMMITTED 2026-07-18, ⛔ STOPPED FOR OWNER FILE
+> **✅ PHASE 13 — structured observation error (per-mission R + error
+> modes): CLOSED 2026-07-21, BRANCH = SIGN-OFF (owner T14 ruling; flip
+> executed `e1eda16`; FULL external sweep on the flip tree 965 passed /
+> 14 skipped / 1 xfailed (44:54) — the standing rule's fourth
+> application). All 15 tasks resolved; every commit pushed.**
+>
+> **THE PRODUCT LINE:** `shipped_miost5()` → the phase-13 chain-lane-D
+> winner (per-mission R, five δ recorded as CONTRASTS-never-physical-
+> noise per the §4 gauge; refit s(x); m=100 at root 7742201642112487637)
+> — acceptance µ **0.8587600198136843** / λx **151.86 km** / coverage
+> **0.7361** in band at the field-calibrated referent / χ²_red
+> **0.98035**. The pre-flip signed scalar-era config preserved FOREVER
+> as `shipped_miost5_scalar_phase8()` (identity/artifact pins;
+> `shipped_miost6` — SHIPPED headline UNCHANGED — delegates to IT; the
+> factory-pin tests caught the delegate mid-flip exactly as designed).
+> Honest tally **{miost5: 3, miost6: 1}** c2 touches.
+>
+> **ELECTION (six-mission refresh on the R-winner): DEFERRED WITH A
+> BUNDLING RULE (owner T14 item 2, verbatim intent):** the refresh
+> requires a δ_j3 assignment the five-mission contrasts never fit —
+> presumptive rule recorded: instrument-class match, **δ_j3 := δ_j2n**
+> (Poseidon-series); it runs with its OWN chain + touch when the next
+> six-mission-relevant improvement can share the chain, or at the
+> global-domain transition — whichever first. Neither silent fold-in
+> nor flat decline.
+>
+> **LEDGER LINES (owner T14 item 3):**
+> (a) **validation→c2 Δ-transfer measured at FULL SIZE** (+0.00138 →
+> +0.00150) — the first recorded delta-transfer datum; future phases
+> citing transfer assumptions point HERE.
+> (b) **χ²_red 0.98035** = the project's strongest calibration
+> generalization.
+> (c) **August 0.629** — the seasonal limitation survives the R change:
+> one more candidate mechanism eliminated; the axis stays named future
+> work with n>1-years as its substrate.
+> (d) **§16 physics predictions scored:** λx CONFIRMED (−4.6 km);
+> GroundTrack CONFIRMED at gate 1 (0.410 → 0.331); flattening MISSED
+> (recorded at gate 1: ŝ dropped 8.738 → 5.106 but s(x) got MORE
+> informative, G −0.0544); µ EXCEEDED expectation (1.49× band,
+> transferred).
+>
+> **CLOSING LINE (owner):** Phase 13 closes with the SWOT capability
+> contract delivered as specified — structured error components proven
+> (extended duality oracle, mean AND variance), sampled consistently
+> (aug1 CRN "err" axis; m=100 row 0.068 vs 0.711), measured honestly
+> (the §8 triplet: real + persistent + compensating + window-local) —
+> and the MODE-LAYER REDESIGN note (cross-window-coherent pass modes,
+> one physical error per pass rather than nine window-local absorbers)
+> waiting in the residual-structure ledger for the geometry that needs
+> it. Owner verifies the flip tree on public HEAD post-close.
+
+> **[closed above] ▶ PHASE 13 DESIGN COMMITTED 2026-07-18, ⛔ STOPPED FOR OWNER FILE
 > REVIEW before writing-plans.** Spec:
 > `docs/superpowers/specs/2026-07-18-phase13-structured-r-design.md`
 > (owner-approved in-session: forks a–f ruled with riders + three review

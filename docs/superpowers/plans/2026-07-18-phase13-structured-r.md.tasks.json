@@ -133,12 +133,12 @@
     {
       "id": 14,
       "subject": "Task 14: Owner ruling \u2014 lineage flip + sweep + election record + close",
-      "status": "in_progress",
+      "status": "completed",
       "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Goal:** Execute the owner's three-branch ruling; close the phase.\n\n**Files:**\n- Modify: `src/sverdrup/methods/registry.py` (five-mission lineage entry ONLY \u2014 on sign-off branch), `PROGRESS.md`\n\n**Acceptance Criteria:**\n- [ ] Executes ONLY on the owner's sign-off message (three-branch ruling; no branch pre-committed)\n- [ ] On sign-off: five-mission lineage entry updated; SHIPPED[\"miost\"] = miost6 UNCHANGED (spec \u00a714 pin); FULL external sweep on the flip tree (standing rule, third application); \u00a714 six-mission-refresh election RECORDED as named owner item \u2014 never folded in\n- [ ] PROGRESS close banner with full task record + honest tally + deferred-items hygiene; everything pushed\n\n**Verify:** external sweep counts recorded on the flip tree; `git log origin/main..HEAD` empty; PROGRESS close banner quotes artifacts verbatim\n\n**Steps:** Execute per ruling -> commit flip + docs(progress) close -> push\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/registry.py\", \"PROGRESS.md\"], \"verifyCommand\": \"git log origin/main..HEAD --oneline | wc -l\", \"acceptanceCriteria\": [\"executes only on sign-off message\", \"lineage flip with SHIPPED untouched + full external sweep + election recorded\", \"PROGRESS close pushed\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"]}\n```",
       "blockedBy": [
         13
       ],
-      "note": "Awaiting the owner three-branch ruling"
+      "note": "T14 SIGN-OFF executed 2026-07-21: flip e1eda16 (lineage -> D winner + refit s(x); scalar era preserved as shipped_miost5_scalar_phase8; miost6 headline unchanged); full sweep 965/14/1 on flip tree; election deferred with bundling rule (delta_j3 := delta_j2n presumptive); ledger lines a-d recorded; PHASE CLOSED"
     }
   ],
   "lastUpdated": "2026-07-18T12:00:00Z"
