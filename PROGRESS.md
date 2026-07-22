@@ -103,8 +103,22 @@
 > anonymous HTTPS GET confirmed — no credentials needed for the census or
 > scoped downloads.
 > **EXECUTION CONTINUES on the independent tasks meanwhile:**
-> T12→T13/T14, T8→T9, T11, T16, T17, T6. Next action: Task 12
-> (tile-frame helper).**
+> T12→T13/T14, T8→T9, T11, T16, T17, T6.
+> **T12 COMPLETE (`494488b`):** `application/spatial_tiles.py` —
+> `TileFrame` (frozen; solve_bbox extends overlap ONLY toward existing
+> neighbors, obs framing delegates to the EXISTING `halo_obs`; obs_bbox
+> from GRID NODE extent ± halo, 43.2°N-sliver pinned byte-equal vs
+> legacy), `frame_grid` (verbatim arange construction — anchor grid
+> byte-equal `baseline_config`), `tile_plan` (row-major, ragged clip,
+> exhaustive missing-neighbor flags, fp-ceil guard, wraparound refusal),
+> `operative_halo_deg()` hook = 1.0; 12 tests green; dual review actioned
+> (fp zero-width tile bug fixed + guards + exhaustive flag map).
+> **GOTCHA RECORDED for T13:** per-tile `np.arange` node construction can
+> fp-shift overlap nodes across adjacent tiles (~1e-14) — the blend
+> `assemble` must not assume bit-shared node coordinates across tiles;
+> resolve at T13 (shared-lattice snap or coordinate-tolerant weights)
+> when the partition-of-unity tests land. Next action: Task 13 (spatial
+> blend + partition of unity).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
