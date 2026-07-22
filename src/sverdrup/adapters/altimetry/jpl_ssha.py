@@ -60,6 +60,10 @@ class JplSshaSource:
         return EPOCH
 
     def _files(self, mission: str) -> list[Path]:
+        # STRUCTURAL locality guarantee: every file the adapter ever opens
+        # comes from this local glob under the bound root — no URL can
+        # reach xarray's network backends through this class. (The source
+        # grep in the governance test is a tripwire; THIS is the argument.)
         return sorted((self._root / mission).glob("*.nc"))
 
     def descriptor(self) -> SourceDescriptor:
@@ -85,7 +89,11 @@ class JplSshaSource:
         t1: np.datetime64,
         missions: Sequence[str] | None = None,
     ) -> ObsWindow:
-        """Load SSHA obs — a pure restriction of the on-disk stream.
+        """Load SSHA obs — a restriction of the on-disk stream.
+
+        Non-finite ``ssha`` samples are DROPPED (the documented finite
+        filter — gap flags in source files are NaN-encoded); everything
+        else is a pure restriction.
 
         Args:
             bbox: Inclusive spatial box (lon compared mod 360).

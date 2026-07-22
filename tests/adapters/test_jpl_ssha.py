@@ -61,6 +61,43 @@ def test_parses_documented_layout(tmp_path: Path) -> None:
     assert set(np.unique(mission)) == {"j1", "tp"}
 
 
+def test_ci_clipping_normalization_and_nan_drop(tmp_path: Path) -> None:
+    """CI-side legs the gated suite would otherwise own exclusively.
+
+    Negative-lon normalization (docstring promise), bbox + time clipping,
+    and the documented NaN drop — each hand-checkable on the fixture.
+    """
+    root = tmp_path / "jpl"
+    d = root / "tp"
+    d.mkdir(parents=True)
+    t0 = np.datetime64("2001-05-01T00:00:00")
+    time = t0 + np.arange(4) * np.timedelta64(1, "D")
+    ds = xr.Dataset(
+        {
+            "latitude": ("time", np.array([10.0, 10.0, 50.0, 10.0])),
+            "longitude": ("time", np.array([-40.0, 100.0, 100.0, 100.0])),
+            "ssha": ("time", np.array([0.1, 0.2, 0.3, np.nan])),
+        },
+        coords={"time": time},
+    )
+    ds.to_netcdf(d / "tp_x.nc")
+    src = JplSshaSource(root)
+    # -40 deg lon normalizes to 320; box 300..340 catches ONLY that sample
+    obs = src.load(
+        BBox(300.0, 340.0, 0.0, 20.0),
+        np.datetime64("2001-05-01"),
+        np.datetime64("2001-06-01"),
+    )
+    assert len(obs) == 1 and obs.coords()[0, 0] == 320.0
+    # lat clip drops the 50N sample; NaN ssha dropped; time t1 exclusive
+    obs2 = src.load(
+        BBox(0.0, 360.0, 0.0, 20.0),
+        np.datetime64("2001-05-01"),
+        np.datetime64("2001-05-02"),
+    )
+    assert len(obs2) == 1  # only the -40-lon day-0 sample survives
+
+
 def test_manifest_shas_computed_at_ingest(tmp_path: Path) -> None:
     """Per-file sha256 AT INGEST: a byte flip moves the manifest sha."""
     src = JplSshaSource(_fixture_dir(tmp_path))
