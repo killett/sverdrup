@@ -333,7 +333,7 @@ def day0_pair() -> tuple[dict[str, object], dict[str, object], np.ndarray]:
     from sverdrup.methods.miost import (
         STAGE_B_MEMBERS,
         STAGE_B_ROOT,
-        shipped_miost5,
+        shipped_miost5_scalar_phase8,
     )
     from sverdrup.methods.miost_basis import HALO_DEG
     from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
@@ -357,7 +357,7 @@ def day0_pair() -> tuple[dict[str, object], dict[str, object], np.ndarray]:
     )
     train = _subset(obs, split.train_idx)
 
-    scalar = shipped_miost5()  # miost5, NEVER SHIPPED (that is miost6 now)
+    scalar = shipped_miost5_scalar_phase8()  # the SIGNED scalar-era config
     cache_dir = os.environ.get("SVERDRUP_PHASE13_EXT_CACHE")
     if cache_dir:
         # crash-durable member-batch PCG (bit-identical resume; the same

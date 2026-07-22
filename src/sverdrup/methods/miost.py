@@ -962,14 +962,114 @@ PHASE8_CLIP_LO = 1.1731020392124571
 PHASE8_CLIP_HI = 2.9290288130316813
 PHASE8_FIT_ID = "L-BFGS-B;gtol=1e-08"
 
+# --- Phase-13 accepted structured-R configuration (T14 owner sign-off
+# 2026-07-21; the five-mission lineage flip) ---
+# The chain-lane-D winner (paired Sobol index 24; winner-lane rule: C-vs-D
+# within band -> the simpler lane takes the chain, spec §10). The five δ are
+# CONTRASTS, never physical noise (spec §4 gauge bookkeeping: σ²_m =
+# R_REF·exp(δ_m) with mean(δ) = 0 over the five assimilated missions —
+# δ_s3a is DERIVED as -Σ of the four swept contrasts and is never an input).
+PHASE13_DELTAS: dict[str, float] = {
+    "alg": 0.46612810250371695,
+    "h2g": 0.016500577144324735,
+    "j2g": -0.28275567367672916,
+    "j2n": 0.05258145108819012,
+}
+#: Solve params for the lineage product (ρ was the swept dim; α/q_slope/L_t
+#: FROZEN at the signed record, spec §4).
+PHASE13_WINNER_PARAMS: dict[str, float] = {
+    "spacing_alpha": 1.0656719505786896,
+    "log10_rho": -1.294232533313334,
+    "q_slope": 1.4518111273646355,
+    "l_t_days": 6.00630128569901,
+}
+#: m=100 acceptance root — derive_seed("miost", "phase13-winner",
+#: "members", 0); its OWN unit of work, never the stage-b-winner root.
+PHASE13_MEMBER_ROOT = 7742201642112487637
+# The phase-13 REFIT s(x) (the Phase-8 field is NOT transferable across an
+# R change — spec §10.2); byte-identical to phase13_field_miost.json.
+PHASE13_POLY_COEFFS: tuple[float, float, float, float, float] = (
+    2.092224073887358,
+    0.6489542054292229,
+    -2.248923702652568,
+    -0.13171404228104058,
+    0.5666631920161437,
+)
+PHASE13_CLIP_LO = 0.6242458164212836
+PHASE13_CLIP_HI = 2.399898103470334
+
 
 def shipped_miost5() -> Miost:
-    """The five-mission calibration-lineage REFERENCE product (miost5 generation).
+    """The five-mission calibration-lineage product (phase-13 structured-R flip).
 
-    SHIPPED["miost"] until the Phase-12 flip (owner sign-off 2026-07-18);
-    retained as a named factory forever: every five-mission signed artifact
-    (stage-B maps, phase8 field selection, the 0.8573/156.43 acceptance) pins
-    THIS configuration. SAMPLES-native at the accepted Phase-8 config.
+    T14 OWNER SIGN-OFF 2026-07-21: this entry point — which all future
+    five-mission calibration fits consume — carries the phase-13
+    chain-lane-D winner: PER-MISSION observation-error variances
+    σ²_m = R_REF·exp(δ_m) with the five δ recorded as CONTRASTS, never
+    physical noise (§4 gauge: mean(δ) = 0; δ_s3a derived as −Σ), the
+    swept ρ at the winner value, and the REFIT s(x) field. ``SHIPPED
+    ["miost"]`` (= miost6, the six-mission flagship headline) is
+    UNCHANGED by this flip. The pre-flip signed scalar-era configuration
+    is preserved forever as :func:`shipped_miost5_scalar_phase8`.
+
+    Acceptance (the ONE phase-13 c2 touch, owner-authorized fresh
+    2026-07-21, n = 44,844): µ **0.8587600198136843** (superseding the
+    scalar-era lineage quote 0.8573; the validation-side Δµ +0.00138
+    transferred to c2 at +0.00150), σ 0.08120374647069982,
+    λx **151.85557852669348 km** (156.43 scalar-era; 4.6 km finer).
+
+    Sigma semantics: CALIBRATED PREDICTIVE uncertainty via the phase-13
+    REFIT clipped-poly field (dof 5) —
+    ``cal:poly;coeffs=(2.092224073887358, 0.6489542054292229,
+    -2.248923702652568, -0.13171404228104058, 0.5666631920161437);
+    clip=(0.6242458164212836,2.399898103470334);fit=L-BFGS-B;gtol=1e-08``
+    (byte-identical to phase13_field_miost.json). Refit provenance: the
+    Phase-9 harness under the FROZEN MIOST anchor-family frame (mask,
+    scope, fold tuple byte-identical; G_pre 0.13510401012055406 verified
+    at fit); ŝ 8.738 → 5.106 (the R change reattributed representation
+    error to obs error, the pre-registered direction); the Phase-8 field
+    is NOT transferable across an R change (spec §10.2) and rides only
+    :func:`shipped_miost5_scalar_phase8`. Coverage referent: aggregate
+    c2 coverage **0.7361073945232361** ∈ 0.6827 ± 0.10 at the
+    field-calibrated referent convention (0.7350 pre-flip referent;
+    0.7481 scalar-era beside); χ²_red 0.9803495648850493.
+
+    Honest tally note: the five-mission lineage has spent THREE c2
+    touches — {miost5: 3, miost6: 1} after this acceptance (touch 1 the
+    disclosed phase-8 defect run; touch 2 the phase-8 acceptance;
+    touch 3 the phase-13 acceptance).
+
+    Tuning note: parameter SEARCHES must use a POINT-configured
+    ``Miost()`` (members=0) — members are generated at tuned winners
+    only, never per-trial. Solve params ride the ParameterProvider:
+    consume :data:`PHASE13_WINNER_PARAMS`.
+
+    Returns:
+        The ensemble-mode method with m=100, the phase-13 acceptance
+        root, the winner rspec, and the refit field.
+    """
+    from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
+
+    return Miost(
+        members=STAGE_B_MEMBERS,
+        member_root=PHASE13_MEMBER_ROOT,
+        rspec=RSpec(deltas=dict(PHASE13_DELTAS)),
+        calibration=PolyCalibration(
+            coeffs=PHASE13_POLY_COEFFS,
+            clip=ClipSpec(lo_log_s=PHASE13_CLIP_LO, hi_log_s=PHASE13_CLIP_HI),
+            fit_id=PHASE8_FIT_ID,
+        ),
+    )
+
+
+def shipped_miost5_scalar_phase8() -> Miost:
+    """The pre-phase-13 SIGNED five-mission configuration (scalar-era R).
+
+    Preserved FOREVER (T14 flip, 2026-07-21): every pre-phase-13 signed
+    artifact (stage-B maps, phase8 field selection, the 0.8573/156.43
+    acceptance) pins THIS configuration, and the phase-13 four-route
+    identity suite targets it as the scalar reference. SAMPLES-native at
+    the accepted Phase-8 config; scalar-era params_key byte-identical.
 
     Sigma semantics (owner-ordered at the Phase-8 gate close, 2026-07-12): the
     shipped sigma is CALIBRATED PREDICTIVE uncertainty against along-track
@@ -1048,10 +1148,14 @@ def shipped_miost6() -> Miost:
     """The SHIPPED six-mission flagship (miost6 generation, Phase-12 flip).
 
     Identical FROZEN solver/calibration configuration to
-    :func:`shipped_miost5` — winner params, m=100, STAGE_B_ROOT, the Phase-8
-    s(x) field — run with j3 ASSIMILATED (six missions, leaderboard
-    convention). A separate function purely for provenance: the phase-12
-    record (`phase12.miost6.*` in the evidence store) anchors THIS name.
+    :func:`shipped_miost5_scalar_phase8` — winner params, m=100,
+    STAGE_B_ROOT, the Phase-8 s(x) field — run with j3 ASSIMILATED (six
+    missions, leaderboard convention). A separate function purely for
+    provenance: the phase-12 record (`phase12.miost6.*` in the evidence
+    store) anchors THIS name. (The phase-13 T14 flip changed
+    :func:`shipped_miost5` to the structured-R winner; THIS product is
+    untouched by that flip — the six-mission refresh on the R-winner is
+    a recorded deferred election, never a silent fold-in.)
 
     Acceptance (the ONE phase-12 c2 touch, owner-authorized fresh
     2026-07-18): µ 0.8677794298228094, σ 0.08229205674809689,
@@ -1080,4 +1184,7 @@ def shipped_miost6() -> Miost:
         The ensemble-mode method at the frozen config (six-mission use is a
         property of the obs handed to solve, not of this factory).
     """
-    return shipped_miost5()
+    # T14 flip guard: the flagship delegates to the PRESERVED scalar-era
+    # config — never the flipped lineage entry (the six-mission refresh on
+    # the R-winner is a recorded deferred election).
+    return shipped_miost5_scalar_phase8()

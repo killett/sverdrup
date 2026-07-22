@@ -189,13 +189,13 @@ def test_miost6_factory_pin() -> None:
     from sverdrup.methods.miost import (
         STAGE_B_MEMBERS,
         STAGE_B_ROOT,
-        shipped_miost5,
+        shipped_miost5_scalar_phase8,
         shipped_miost6,
     )
     from sverdrup.methods.registry import SHIPPED
 
     assert SHIPPED["miost"] is shipped_miost6
-    m5, m6 = shipped_miost5(), shipped_miost6()
+    m5, m6 = shipped_miost5_scalar_phase8(), shipped_miost6()
     assert m6._calibration.key() == m5._calibration.key()
     assert m6.members == STAGE_B_MEMBERS == 100
     assert m6.member_root == STAGE_B_ROOT == 4836134738817689931
