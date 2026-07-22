@@ -52,7 +52,7 @@ product, scores = run_pipeline(PipelineInputs(
     lon_range=(-64, -56), lat_range=(34, 42), time_range=(0, 5), output_times=[2.0],
     params={"length_scale": 300.0, "time_scale": 10.0, "variance": 0.05},
 ))
-print(scores)  # RMSE vs truth, calibration (reduced chi^2, coverage), ground-track power
+print(scores)  # report_rows: RMSE vs truth + calibration (chi^2, coverage) + instrument rows
 ```
 
 Or run the same thing from the shipped config:
@@ -79,7 +79,7 @@ Extras (install only what you need):
 | Extra     | Pulls in                                       | Needed for |
 |-----------|------------------------------------------------|------------|
 | `[dask]`  | `dask[distributed]`                            | the parallel executor (any pipeline run) |
-| `[io]`    | `xarray`, `fsspec`, `netcdf4`, `requests`, …   | reading NetCDF obs + writing the zarr product |
+| `[io]`    | `xarray`, `fsspec`, `netcdf4`                  | reading NetCDF obs + writing the zarr product |
 | `[all]`   | `[dask]` + `[io]`                              | running reconstructions end-to-end |
 
 > The bare `import sverdrup` surface (core grid/types/distributions) works with no extras. The
@@ -145,7 +145,7 @@ The shipped example, `tests/integration/config_osse.json`:
 | Key                  | Type            | Meaning |
 |----------------------|-----------------|---------|
 | `mode`               | `"OSSE"`/`"OSE"` | scoring mode (gridded truth vs withheld along-track) |
-| `method`             | `"oi"`/`"gmrf"`/`"trivial"` | reconstruction method |
+| `method`             | `"oi"`/`"gmrf"`/`"fem"`/`"trivial"` | reconstruction method |
 | `obs_path`           | path            | observation NetCDF |
 | `ref_path`           | path (optional) | gridded-truth NetCDF (OSSE) |
 | `out_url`            | fsspec URL      | where the zarr product is written (`file://`, `s3://`, …) |
@@ -195,7 +195,7 @@ blends, scores = run_tiled_pipeline(inp, partition)   # one BlendedDistribution 
 | `oi`       | `length_scale` (km), `time_scale` (days), `variance`      | exact dense space-time GP / OI |
 | `gmrf`     | `range` (km), `variance`, `temporal_taper_scale` (days)   | sparse Matérn SPDE; `range` may be a latitude-varying field (nonstationary κ) |
 | `fem`      | `range` (km), `variance`, `temporal_taper_scale` (days)   | the same Matérn SPDE on a Delaunay mesh built from the grid; grid-agnostic |
-| `miost`    | `spacing_alpha`, `log10_rho`, `q_slope`, `l_t_days` (tuned values ship in the registry) | validation-track only: geometry is fixed to the 2021a Gulf-Stream box — run from a clone via the challenge harness (see Validation) |
+| `miost`    | `spacing_alpha`, `log10_rho`, `q_slope`, `l_t_days` (tuned values ship in the registry) | validation-track only (2021a Gulf-Stream box; run from a clone — see Validation); carries structured per-mission obs-error at the method level (`rspec`: δ contrasts + optional per-pass bias/tilt modes; shipped values in the registry factories) |
 | `trivial`  | `{}` (none)                                               | inverse-distance baseline; degradation path |
 
 ## Cheatsheet
@@ -225,11 +225,16 @@ python -m sverdrup path/to/config.json
 `(blends, scores)`. The product is written to `out_url` as zarr (via fsspec, so local
 `file://`, `s3://`, `gcs://`, … all work). Each per-time entry carries the mean, marginal
 variance, coherent samples, off-grid eval-point predictions, and the typed uncertainty
-**provenance** (every transform + any `KnownBias`). `scores` is the merged evaluator dictionary:
+**provenance** (every transform + any `KnownBias`). `scores` carries typed
+evaluator rows plus product provenance:
 
-- RMSE vs truth + calibration (reduced χ², 1σ coverage) for OSSE
-- withheld-track RMSE for OSE
-- ground-track power (both modes)
+- `report_rows` — one row per evaluator: RMSE vs truth + calibration (reduced
+  χ², 1σ coverage) for OSSE, withheld-track RMSE for OSE, and the
+  reference-free instrument rows — with a **visible skip row** when an
+  evaluator's required context is absent (a missing instrument never
+  disappears silently)
+- `fidelity`, the blend's provenance transforms, and the context keys the
+  evaluators consumed
 
 ## Validation — scored by the 2021a SSH-mapping OSE challenge
 

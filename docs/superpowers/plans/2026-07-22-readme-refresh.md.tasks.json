@@ -10,12 +10,12 @@
     {
       "id": 1,
       "subject": "Task 1: Mechanical corrections (D3, D6-D8) + verification",
-      "status": "pending",
+      "status": "completed",
       "blockedBy": [
         0
       ],
       "description": "**Goal:** Methods-table clause, Output/Quickstart score shape, extras row, config method row; then verify the full diff against the spec budgets.\n\n**Files:**\n- Modify: `README.md` (four spots outside Validation)\n\n**Acceptance Criteria:**\n- [ ] `miost` methods row names `rspec` (delta contrasts + optional per-pass bias/tilt modes; registry factories)\n- [ ] Output section describes `report_rows` + visible skip rows + fidelity/provenance/context keys; Quickstart comment matches\n- [ ] `[io]` extras row = `xarray`, `fsspec`, `netcdf4` (no `requests`)\n- [ ] Config `method` row = `\"oi\"/\"gmrf\"/\"fem\"/\"trivial\"`\n- [ ] Whole-file: net growth <= ~45 lines; every spec delta present; nothing else changed\n\n**Verify:** `git diff b4878a0..HEAD --stat -- README.md` net <= ~45 added; `rg -n 'neither elected|miost5: 2|requests' README.md` no hits in edited spots. Exact replacement text in the plan doc Task 1 steps 1-5.\n\n```json:metadata\n{\"files\": [\"README.md\"], \"verifyCommand\": \"git diff b4878a0..HEAD --stat -- README.md && rg -n 'neither elected|requests' README.md\", \"acceptanceCriteria\": [\"rspec clause in miost row\", \"report_rows output shape + quickstart comment\", \"no requests in extras\", \"fem in config method row\", \"net growth <= 45 lines\"], \"modelTier\": \"mechanical\"}\n```"
     }
   ],
-  "lastUpdated": "2026-07-22T04:20:00+00:00"
+  "lastUpdated": "2026-07-22T04:30:00+00:00"
 }
