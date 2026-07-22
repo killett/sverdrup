@@ -193,8 +193,21 @@
 > seam thresholds, T9 sealed nulls) + byte-deterministic canonical-JSON
 > serialization; doc↔code pinned on BOTH the machine comment AND the
 > prose cells. 4 tests green; review actioned (D_int ambiguity, 2.5
-> provenance, vacuous-pin, path anchor). Next action: Task 16 (ladder +
-> spend table).**
+> provenance, vacuous-pin, path anchor).
+> **T16 COMPLETE (`1bb329d` + review fixes `65ecea6`):**
+> `application/ladder.py` — Tier 0–3 (§4-G docstrings), STAGE0 spend
+> table (tier2_probe $25/8vCPU/64GiB/6h/1-region; cmems ≤50 GiB egress
+> 0; rest Tier 0/1 $0), `authorize` → Authorization|Wait ("executor-set
+> spend never happens" sentence pinned; unknown class WAITs; exact-
+> ceiling authorizes), `Authorization.__post_init__` refuses over-
+> ceiling on EVERY leg (review-refuted under-cost 999-vCPU bypass),
+> `tier1_eligible` reads MemAvailable AT CALL TIME (fake-meminfo flip
+> test), governance + audit-locality verbatim + test-pinned. **Review
+> catch honored (monied rule):** probe storage/egress were NOT
+> owner-registered → ceilings set 0 (any use WAITs; owner rules at T18)
+> — test-pinned. 14 tests green. Storage WAIT enforcement for downloads
+> lives in the T3 downloader per plan (recorded gap, planned). Next
+> action: Task 17 (cross-env gate machinery).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
