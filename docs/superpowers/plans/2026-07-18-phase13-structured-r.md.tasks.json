@@ -123,21 +123,22 @@
     {
       "id": 13,
       "subject": "Task 13: The ONE c2 touch",
-      "status": "in_progress",
+      "status": "completed",
       "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Goal:** Execute the single acceptance touch under fresh owner authorization; report; STOP.\n\n**Files:**\n- Modify: `scripts/phase13_compare.py` or dedicated `--c2-touch` runner (TDD mechanics per Phase-12 precedent `15b09c3`)\n- Test: touch-refusal tests\n\n**Acceptance Criteria:**\n- [ ] AUTHORIZATION FRESH: touch executes only after an explicit owner message following Task 12 \u2014 never carried over\n- [ ] Ceremony verbatim: exact-string-\"1\" env SVERDRUP_MIOST_C2; provenance tripwire recomputes ALL fields, refuses BEFORE the c2 file opens; window tripwire n=44,844 + year-span; one-invocation mechanics (third refuses)\n- [ ] Reading sealed pre-touch: mu >= 0.85 floor; coverage 0.6827+-0.10 (field-calibrated referent); (mu,sigma,lambda_x) + chi2/CRPS + regional/monthly rows; mean-map deltas + c2 regional rows vs miost5\n- [ ] Tally arithmetic recorded: {miost5: 2 -> 3, miost6: 1}\n- [ ] Report + THREE-BRANCH menu to owner; no branch pre-committed; STOP\n\n**Verify:** refusal tests green BEFORE the touch; touch log captured; tally row in report; session STOPPED awaiting ruling\n\n**Steps:** TDD touch mechanics (refusals first, red/green) -> commit -> execute authorized touch ONCE -> report -> STOP\n\n```json:metadata\n{\"files\": [\"scripts/phase13_compare.py\"], \"verifyCommand\": \"pixi run test -- tests/ -k phase13 -v 2>&1 | tail -5\", \"acceptanceCriteria\": [\"fresh authorization only\", \"ceremony + tripwires verbatim, refusal-tested\", \"sealed reading with floors and bars\", \"tally miost5 2->3\", \"three-branch menu + STOP\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"]}\n```",
       "blockedBy": [
         12
       ],
-      "note": "Fresh authorization REQUESTED; refusal mechanics TDD in progress; touch only on the owner authorization message"
+      "note": "Touch executed 2026-07-21 under fresh authorization; tripwires PASS; mu 0.85876 (floor met, +0.0015 vs miost5), coverage 0.73611 in band (+0.0011 vs referent), chi2 0.9803, lx 151.86; tally miost5:3; STOPPED for T14 ruling"
     },
     {
       "id": 14,
       "subject": "Task 14: Owner ruling \u2014 lineage flip + sweep + election record + close",
-      "status": "pending",
+      "status": "in_progress",
       "description": "**USER-ORDERED GATE \u2014 NON-SKIPPABLE.** This task was requested by the user in the current conversation. It MUST NOT be closed by walking around it, by declaring it \"verified inline\", or by substituting a cheaper check. Close only after every item in `acceptanceCriteria` has been re-validated independently, with output captured.\n\n**Goal:** Execute the owner's three-branch ruling; close the phase.\n\n**Files:**\n- Modify: `src/sverdrup/methods/registry.py` (five-mission lineage entry ONLY \u2014 on sign-off branch), `PROGRESS.md`\n\n**Acceptance Criteria:**\n- [ ] Executes ONLY on the owner's sign-off message (three-branch ruling; no branch pre-committed)\n- [ ] On sign-off: five-mission lineage entry updated; SHIPPED[\"miost\"] = miost6 UNCHANGED (spec \u00a714 pin); FULL external sweep on the flip tree (standing rule, third application); \u00a714 six-mission-refresh election RECORDED as named owner item \u2014 never folded in\n- [ ] PROGRESS close banner with full task record + honest tally + deferred-items hygiene; everything pushed\n\n**Verify:** external sweep counts recorded on the flip tree; `git log origin/main..HEAD` empty; PROGRESS close banner quotes artifacts verbatim\n\n**Steps:** Execute per ruling -> commit flip + docs(progress) close -> push\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/registry.py\", \"PROGRESS.md\"], \"verifyCommand\": \"git log origin/main..HEAD --oneline | wc -l\", \"acceptanceCriteria\": [\"executes only on sign-off message\", \"lineage flip with SHIPPED untouched + full external sweep + election recorded\", \"PROGRESS close pushed\"], \"modelTier\": \"standard\", \"userGate\": true, \"tags\": [\"user-gate\"]}\n```",
       "blockedBy": [
         13
-      ]
+      ],
+      "note": "Awaiting the owner three-branch ruling"
     }
   ],
   "lastUpdated": "2026-07-18T12:00:00Z"

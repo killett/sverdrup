@@ -253,10 +253,36 @@
 >    quoting the sealed pre-touch reading verbatim. Gate approval is
 >    NOT touch authorization; no new conditions at the authorization
 >    step.
-> **▶ T13 AUTHORIZATION REQUESTED (executor message sent; touch
-> machinery to be TDD'd refusals-first while awaiting the fresh
-> authorization; the touch itself executes ONLY on the owner's
-> authorization message).**
+> **✅ T13 — THE ONE c2 TOUCH EXECUTED (owner-authorized fresh
+> 2026-07-21; ceremony clean: provenance tripwire bit-match on
+> mean/var/store/field sha256 + cal_key BEFORE the c2 open; window
+> tripwire n=44,844 PASS; 8 refusal tests green pre-touch; log
+> `phase13_c2_touch.log`). Reading at `phase13.miost.c2_acceptance`:**
+>
+> ```
+> PHASE-13 c2 ACCEPTANCE (chain-lane-D winner + refit s(x); n=44,844):
+> - mu      0.8587600198136843   (>= 0.85 floor; miost5 0.8572611954,
+>   delta +0.0014988 — the validation-side gain TRANSFERRED to c2 at
+>   full size; miost6 0.8677794 beside, different mission set)
+> - sigma   0.08120374647069982
+> - lambda_x 151.85557852669348 km (miost5 156.43 — FINER by 4.6 km;
+>   miost6 151.22 beside)
+> - coverage 0.7361073945232361 IN band 0.6827±0.10 (referent 0.7350
+>   field-calibrated: +0.0011, essentially AT the referent; 0.7481
+>   scalar-era beside)
+> - chi2_red 0.9803495648850493 (the honest generalization number);
+>   CRPS 0.0464072
+> - regional (vs miost5 0.7753/0.7528/0.7065/0.7050/0.6742):
+>   SW 0.7735 / SE 0.7524 / NW 0.7105 / NE 0.7076 / jet_core 0.6758
+>   — max |delta| ≈ 0.004, remarkably stable; jet_core still weakest,
+>   slightly improved
+> - monthly: August 0.629 weakest (the persisting seasonal limitation,
+>   in band); Dec 0.781 max
+> - tally {miost5: 3, miost6: 1}
+> ```
+>
+> **⛔ STOPPED — three-branch menu reported; T14 ruling is the OWNER'S
+> next message; no branch pre-committed.**
 > Resume:
 > `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
 
