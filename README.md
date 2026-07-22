@@ -245,15 +245,18 @@ code (vendored as a submodule and driven through `sverdrup.validation`):
 | DUACS (published) | 0.88 | 0.07 | 152 |
 | **sverdrup MIOST (6 missions, shipped)** | **0.8678** | **0.0823** | **151.2** |
 | MIOST (published, 6 missions) | 0.89 | 0.08 | 139 |
-| sverdrup MIOST (5 missions, calibration-lineage reference) | 0.857 | 0.080 | 156.4 |
+| sverdrup MIOST (5 missions, calibration lineage, structured R) | 0.8588 | 0.0812 | 151.9 |
 
 The shipped six-mission row is the matched-convention comparison against the
 published 0.89 (both assimilate six missions; DUACS 0.88 sits at DUACS-class
 resolution 152 km, beside our 151.2). **Gap accounting** (recorded at the
 Phase-12 flip): assimilating j3 closed **+0.0105 of the 0.0327 gap** to the
 published MIOST row; the remainder is settings/tuning at matched inputs.
-Named future levers — six-mission re-tuning (the §8 decision) and
-structured/per-mission R — are recorded, neither elected.
+Of the named levers, structured/per-mission R has since been **executed**
+(Phase 13, five-mission lineage: **+0.0015 µ**, transferred validation→c2 at
+full size — the first recorded Δ-transfer datum); six-mission re-tuning stays
+recorded-not-elected, and the six-mission refresh on the structured-R winner
+is deferred with a bundling rule.
 
 **OI verdict: PASS** (µ tolerance ±0.03, never loosened). The challenge's eval is
 independently trusted — it reproduces the published DUACS, MIOST, and BFN rows to
@@ -264,10 +267,11 @@ frame; details, the decomposed read, and the data-source notes are in the
 [`docs/validation/`](docs/validation/) records below.
 
 **MIOST verdict: PASS** against its hard floor (µ ≥ 0.85, met at 0.8678 on the
-shipped six-mission product; single withheld-CryoSat-2 acceptance touch per
-generation, honest tally {miost5: 2, miost6: 1}). The five-mission row remains
-the calibration-lineage reference: the s(x) field was fit there (Jason-3 held
-out) and transferred frozen to the six-mission product.
+shipped six-mission product and at 0.8588 on the five-mission lineage; every
+generation pays a single withheld-CryoSat-2 acceptance touch — honest tally
+{miost5: 3, miost6: 1}). The five-mission row is the calibration lineage —
+since Phase 13 the structured-R product with its own refit s(x) (see below);
+the six-mission product keeps the Phase-8 field it received frozen.
 
 **σ-semantics (transferred-and-verified):** the uncertainty is a 100-member
 perturbed-observation ensemble rescaled by the spatially-varying,
@@ -283,6 +287,38 @@ correlation structure from the exact posterior; the calibration touches σ only,
 leaving the mean maps bit-identical (proven on the c2 acceptance touch). The
 constellation-dependence caveat for LARGE constellation changes (the 1993-era
 case) stands unchanged — this measured one small step, not that one.
+
+### Reference-free track-signature validation
+
+Beside the challenge scores, sverdrup carries a report-only instrument family
+that needs no reference field. **GroundTrack** probes each mission's imprint
+directly: oriented spectral probes at that mission's inter-track spacing and
+ascending/descending orientations (derived from the data's own orbit
+geometry), scored against a same-|k| isotropic baseline. The reading is
+necessary-not-sufficient — a strong track signature proves a problem; a clean
+map does not prove correctness. First exercised retroactively (Phase 11), it
+discriminates in the physically expected direction: repeat-family max excess
+(log10, s3a/desc) — regenerated OI **1.233** (~17× per-mode excess), lineage
+MIOST **0.410** (~2.6×); drifting-mission probes are clean on both.
+**SpectralFidelity** adds a descriptive in-band wavenumber-slope row (no
+verdict semantics). These rows ride the evidence packs and never gate.
+
+### Structured observation error (per-mission R + error modes)
+
+Phase 13 replaced MIOST's scalar observation-error variance with a structured
+R: per-mission variances σ²ₘ = R_REF·exp(δₘ) with the five δ identified as
+CONTRASTS under a mean-zero gauge (δ_s3a is derived; σ²ₘ is never quoted as
+physical noise), plus optional per-pass {bias, tilt} error modes via [G B]
+state augmentation — proven against a dense-solve oracle (mean AND variance)
+and nested to the scalar era bit-for-bit. Three frozen restriction lanes swept
+under a sealed pre-registered band protocol; the per-mission-only lane ships
+(the full lane was indistinguishable — simpler lane on tie). Acceptance on the
+five-mission lineage: µ 0.8588 (+0.0015, transferred to the withheld track at
+full size), λx 151.9 km, coverage 0.7361 with the refit s(x) (ŝ 8.74 → 5.11),
+χ²_red 0.980. GroundTrack dropped 0.410 → **0.331** (the pre-registered
+direction). Measured honestly: the per-pass modes see real, persistent
+track-correlated structure, but its attribution seesaws with the field and is
+window-local — the mode layer ships nowhere; a redesign note is recorded.
 
 The s(x) calibration layer is method-generic (Phase 9): any method's predictive
 distribution can be wrapped in `CalibratedDistribution` and fitted per-product
