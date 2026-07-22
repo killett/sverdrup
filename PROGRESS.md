@@ -178,8 +178,23 @@
 > Builder gains `insitu=` provider param. 20 tests green.
 > **NOTE for Stage 1:** the pipeline payload contract for insitu maps is
 > `map_days/map_lon/map_lat/map_ssha` — the producer that assembles it
-> from product maps lands with the first Stage-1 consumer. Next action:
-> Task 11 (seam rubric + instrument configs).**
+> from product maps lands with the first Stage-1 consumer.
+> **T11 COMPLETE (`ddd8249`):** `docs/validation/phase14_seam_rubric.md`
+> — PRE-REGISTERED spatial seam rubric (Task-18 pattern): computable
+> `D_int` (pooled-interior one-grid-step increment RMS, perpendicular
+> axis), co-located `delta` definition, Rule-0 solver-floor validity gate
+> inherited, ONE-SIDED by design (R→0 = success, recorded), verdict
+> cells CLEAN ≤1.0 / ELEVATED ≤2.5 / STRUCTURAL-STOP >2.5 (2.5 recorded
+> HONESTLY as an a-priori anchor — midpoint of the phase-4 C∈[2,3]
+> range, different metric class; owner may re-pin at Gate 0), seam-
+> ORACLE clause (no published precedent, gap-register).
+> `validation/phase14_instruments.py` — `instrument_configs()` (four
+> families: GroundTrack per-tile×era, SpectralFidelity tile-extent band,
+> seam thresholds, T9 sealed nulls) + byte-deterministic canonical-JSON
+> serialization; doc↔code pinned on BOTH the machine comment AND the
+> prose cells. 4 tests green; review actioned (D_int ambiguity, 2.5
+> provenance, vacuous-pin, path anchor). Next action: Task 16 (ladder +
+> spend table).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
