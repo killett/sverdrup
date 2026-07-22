@@ -71,8 +71,20 @@
 > are float days, so each source declares its epoch; dc2021a declares
 > 2017-01-01 preserving gate-2 byte identity (spec-reviewer: serves intent).
 > **Note for T2:** conformance sha test is a descriptor-level proxy; dc2021a
-> subclass adds a real file-byte-mutation check. Next action: Task 2
-> (dc2021a adapter + gate-2 loader identity).**
+> subclass adds a real file-byte-mutation check (done).
+> **T2 COMPLETE (`a946778`) — GATE 2 LOADER-IDENTITY PASSED on this box:**
+> `Dc2021aSource` wraps the legacy path (load_mapping_obs imported, not
+> copied); per-mission byte identity vs legacy PASSED full-span AND
+> 2017-frame (five mapping missions + j3 track; float64 dtype pinned;
+> mission labels compared by value — numpy U2/U3 promotion note in test
+> docstring); c2 structurally absent (missions/manifest/refusal); real
+> byte-mutation manifest test; evidence recorded WRITE-ONCE at
+> `phase14.stage0.gate2_loader_identity` (pass, per-mission n_obs
+> alg 80812 / h2g 71293 / j2g 14639 / j2n 22504 / j3 87460 / s3a 82014,
+> manifest_sha c688b0d8…); 19 tests green; dual review: two evidence-write
+> defects found (hardcoded date, rewrite-every-run) → fixed (write-once +
+> real date, inode in sha cache key). Next action: Task 3 (CMEMS DT2021
+> multi-year adapter).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
