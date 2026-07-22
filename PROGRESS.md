@@ -237,6 +237,10 @@
 > governance pin (source tripwire + STRUCTURAL locality note: all opens
 > come from the local glob — no URL reaches xarray backends). 4 CI
 > tests green.
+> **FULL SWEEP ON THE FINAL TREE: 1051 passed / 18 skipped / 1 xfailed
+> (33:55; non-validation tree; skips = data-gated JPL conformance +
+> gate-5 Stage-1 guard + standing data-gated legs — every skip reason
+> named).**
 > **⛔ EXECUTION PAUSED — ALL UNBLOCKED TASKS DONE; the rest WAITS on
 > the T3 VINTAGE RULING (owner):** complete = T0,1,2,6,9,11,12,13,14,
 > 16,17 (+T8 machinery/catalog leg). Blocked chain = T3→T4→T5→T7→T10→
