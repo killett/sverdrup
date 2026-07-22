@@ -56,3 +56,4 @@ results/
 docs/papers/*.pdf
 docs/papers/*.extraction.md
 docs/papers/*.pdftext.txt
+data/insitu/
