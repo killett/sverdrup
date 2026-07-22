@@ -83,8 +83,28 @@
 > alg 80812 / h2g 71293 / j2g 14639 / j2n 22504 / j3 87460 / s3a 82014,
 > manifest_sha c688b0d8…); 19 tests green; dual review: two evidence-write
 > defects found (hardcoded date, rewrite-every-run) → fixed (write-once +
-> real date, inode in sha cache key). Next action: Task 3 (CMEMS DT2021
-> multi-year adapter).**
+> real date, inode in sha cache key).
+> **⚖ T3 VINTAGE RULING NEEDED (owner input not covered by
+> pre-registration — WAIT semantics applied to the T3 chain):** the fork-A
+> pin "DT2021 pinned — the papers' lineage" cannot be satisfied: the
+> Copernicus Marine Data Store native buckets (all of mdl-native-01..14
+> scanned 2026-07-22, anonymous S3 listing works) carry ONLY
+> `_202411`-version datasets for `SEALEVEL_GLO_PHY_L3_MY_008_062`
+> (DT2024-lineage reprocessing; file production tag `_20240205`). DT2021
+> was removed upstream — an upstream version migration, exactly the fork-a
+> pin-5 event. OWNER OPTIONS: (a) ratify 202411 as the pinned vintage
+> (dataset_version records the 202411 tag; the golden-tile comparison
+> becomes an honest CROSS-DT lineage measurement dc2021a/DT2021 vs
+> CMEMS-MY/DT2024 — the instrument working as designed, divergence TABLES);
+> (b) owner supplies DT2021 L3 files from another archive (AVISO auth) as
+> a separate source_id; (c) HOLD the T3 chain. BLOCKED pending ruling:
+> T3→T4→T5→T7→T10(needs T5)→T15→T18→T19→T20. Access facts recorded: STAC
+> catalog public, per-mission datasets 29, daily global nc ~0.5 MB/file,
+> anonymous HTTPS GET confirmed — no credentials needed for the census or
+> scoped downloads.
+> **EXECUTION CONTINUES on the independent tasks meanwhile:**
+> T12→T13/T14, T8→T9, T11, T16, T17, T6. Next action: Task 12
+> (tile-frame helper).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
