@@ -49,11 +49,18 @@
 > delta = the cross-lineage BRIDGE); (5) owner defaults RATIFIED as
 > owner-set (Tier-2 probe ≤ US$25 / 8 vCPU / 64 GiB / 6 h / one region;
 > CMEMS ≤ 50 GiB, egress $0; WAIT above any ceiling).
-> ▶ EXECUTION TO BE DISPATCHED to a fresh session. OWNER EXECUTION RIDERS
-> (verbatim intent): T0 first; TDD red/green; dual review per task; push as
-> you go; zero evaluation-bearing maps; zero locked opens; tally untouched;
-> STOP at T20 (Gate 0) with the seal sha + full evidence axes — the sealed
-> evaluation set is the program's founding artifact, owner walks it.**
+> ▶ EXECUTION IN FLIGHT (2026-07-22, executing-plans, on main). OWNER
+> EXECUTION RIDERS (verbatim intent): T0 first; TDD red/green; dual review
+> per task; push as you go; zero evaluation-bearing maps; zero locked opens;
+> tally untouched; STOP at T20 (Gate 0) with the seal sha + full evidence
+> axes — the sealed evaluation set is the program's founding artifact, owner
+> walks it.
+> **T0 COMPLETE (`56b9f24`):** P0-2 stage-B evidence clobber path hardened —
+> `_write_evidence_guarded` refuses (RuntimeError naming P0-2) unless
+> `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"` exact-string, BEFORE any file open;
+> 8 tests (refusal-before-write, exact-string, opt-in unchanged, unguarded-
+> call source pin); dual review clean. Next action: Task 1 (along-track
+> contract + synthetic adapter).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
@@ -589,9 +596,11 @@
 > **`docs/hygiene-priorities.md`** (P0-P4 with effort + trigger per
 > item; full findings in `docs/hygiene-notes.md`). ⚠ TWO P0
 > EVIDENCE-INTEGRITY ITEMS gate any future evidence/gate rerun: the
-> unguarded inline c2 touch (`stage_miost_gate_run.py:801-817`) and
-> the Stage-B evidence clobber path (`tune_miost_inflation.py:117`) —
-> decide those BEFORE rerunning either script. Also flagged: Task-22
+> unguarded inline c2 touch (`stage_miost_gate_run.py:801-817`) —
+> P0-1 DISARMED in-phase 12 (`54db3e5`) — and the Stage-B evidence
+> clobber path (`tune_miost_inflation.py:117`) — **P0-2 HARDENED
+> 2026-07-22 (`56b9f24`, phase-14 T0): blocking precondition, write
+> refuses without `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"` exact-string.** Also flagged: Task-22
 > owner-ordered `PeakFeasibility` is wired nowhere (P3 item 21).
 
 > **[closed above] ▶ PHASE 12 DESIGN COMMITTED 2026-07-17 (`f0ef329`), ⛔ STOPPED FOR

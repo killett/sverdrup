@@ -26,6 +26,9 @@ Nothing else in this file can.
    `stage_b_main` now refuses, naming `--c2-touch`; test
    `tests/validation/test_stage_miost_disarm.py`.
 2. **Stage-B evidence clobber path** — `scripts/tune_miost_inflation.py:117`.
+   **HARDENED 2026-07-22 (`56b9f24`, phase-14 Task 0):** write path refuses
+   (`RuntimeError` naming P0-2) unless `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"`
+   exact-string; tests `tests/test_phase14_p02_guard.py`.
    Superseded Task-17 script writes `stage_b_{mean,var}_maps.nc` into
    the same `OUT_DIR` the gate runner uses for Stage-B evidence maps
    (which `diag_stage_b_localized_calibration.py` reads). Any rerun
