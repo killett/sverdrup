@@ -163,8 +163,23 @@
 > (ledger 0.018 GiB); evidence `phase14.stage0.gauges` =
 > catalog-leg-complete. Series screening + locked split WAIT on the
 > census epoch table (T4, blocked on the T3 vintage ruling) — recorded
-> in evidence `pending`. 19 tests green; dual review actioned. Next
-> action: Task 9 (in-situ evaluator + sealed nulls).**
+> in evidence `pending`. 19 tests green; dual review actioned.
+> **T9 COMPLETE (`581f9fb`):** `ContextKey.INSITU_GAUGES` added;
+> `eval/insitu.py` — `InSituGauges` (reference-based, required_context =
+> the provider key, in ALL_EVALUATORS + default_registry;
+> declared⇒consumed integrity fixture extended to FIVE keys); sealed
+> nulls (`InSituNullConfig` 15-day circular-boxcar doy climatology +
+> lag-1 persistence; NO scoring-time null choice — signature pinned);
+> `bilinear_wet` (wet-node renormalization, never extrapolates outside
+> grid); per_gauge_rows with ONE day population + ONE demeaning
+> convention (review fix: prior draft mixed populations/means across the
+> three RMSEs); graceful `{}` skip on non-gauge payloads (visible skip
+> row, never KeyError); wrong-null bug value-pinned at wrap day 171.33.
+> Builder gains `insitu=` provider param. 20 tests green.
+> **NOTE for Stage 1:** the pipeline payload contract for insitu maps is
+> `map_days/map_lon/map_lat/map_ssha` — the producer that assembles it
+> from product maps lands with the first Stage-1 consumer. Next action:
+> Task 11 (seam rubric + instrument configs).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
