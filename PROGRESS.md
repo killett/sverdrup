@@ -29,8 +29,24 @@
 > CLOSED (production convention), Phase 13 CLOSED (augmentation machinery
 > the trend stage requires). Anchor identity-gate set = FIVE gates (§10);
 > deferred-thread ledger with unlock stages + owner-election markers (§9).
-> Next action: owner reviews the spec FILE; on approval → writing-plans
-> for Stage 0 (+ Stage 1).**
+> **SPEC FILE-REVIEW APPROVED 2026-07-22 (no changes; coverage map audited
+> both directions on samples). OWNER PLAN RULING: Stage-0 plan ONLY (Stage-1
+> plan is written after Gate 0 — no-plans-on-unmeasured-constants rule);
+> plan-structure expectations recorded in the ruling (task groups per
+> workstream; 0a-6 seal last in 0a; Gate 0 userGate; 0a-7 first; gate
+> scheduling split Stage 0/1/2; owner spend inputs pre-registered-or-WAIT).
+> ⛔ STAGE-0 PLAN + TRACKER WRITTEN, HELD FOR OWNER REVIEW before execution:**
+> `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
+> (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
+> userGate; deps mirror the spec's consumption order). Pre-registered owner
+> defaults IN the plan header: Tier-2 probe ceiling US$25 / 8 vCPU / 64 GiB /
+> 6 h / one region; CMEMS storage ≤ 50 GiB. Recorded interpretation flagged
+> for review: SPEC §10 gate 2 runs on a dc2021a-WRAPPED source (the current
+> box input path's actual files — byte-comparable testable today);
+> dc2021a-vs-CMEMS-MY becomes the FIRST golden-tile comparison (public both
+> sides). Next action: owner reviews plan + tracker; on approval → dispatch
+> execution (fresh session,
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`).**
 
 > **✅ README REFRESH — EXECUTED 2026-07-22, both tasks committed
 > (`c15551f` validation section: phase-11 instruments + phase-13
