@@ -1,5 +1,37 @@
 # Sverdrup — Progress notebook
 
+> **▶ PHASE 14 — SCALING PROGRAM DESIGN COMMITTED 2026-07-22 (`f25042c`),
+> ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-21-phase14-scaling-program-design.md`
+> (owner-approved in-session: seven forks a–g ruled with pins + two design
+> batches approved with pins; §13 carries the full pin-coverage map — the
+> reviewer walks it). PROGRAM design, not capability design: five stages
+> (0 foundations / 1 spatial-at-2017 / 2 temporal / 2G global assembly /
+> 3 trend product), owner gates between, contracts C0→1, C1→2, C2→2G,
+> C2G→3 (the trend contract carries constraint 8 verbatim: published-budget
+> bias/drift terms via the Phase-13 augmentation machinery + era-keyed CRN
+> temporal coherence + gauge-trend/budget validation). Stages 0/1 fully
+> designed for writing-plans; 2/2G/3 contract-only, own specs later.
+> Named destination: per-gridpoint sea-level-trend error bars through the
+> 25+ year record. Key rulings: dual-source loader (CMEMS public evidence /
+> JPL adapter conformance-gated, synthetic third adapter in CI); Stage 1 =
+> mesoscale-only ("MIOST allsat-1" lineage), six-tile roster (GS anchor +
+> seam-pair ORACLE vs seamless signed truth + equatorial + Southern Ocean +
+> quiet gyre + Kuroshio), frozen five-mission config, zero touches;
+> role-split era validation (reference epochs fit+validate, sparse epochs
+> transfer-validated once, ±66° mask); hybrid era calibration (per-era
+> reference fits + gauged kernel-density covariate n_eff, identity at
+> n_eff₀ by construction); locked tier = gauges (universal spine) + c2
+> (2010→), first opened at Stage-2G's acceptance touch; compute ladder
+> Tier 0–3 with owner spend tables + honest two-tolerance determinism
+> contract. Phase-13 six-mission-refresh election fires at Gate 1 (named
+> trigger). Prereqs recorded: Phase 11 CLOSED (hard prereq), Phase 12
+> CLOSED (production convention), Phase 13 CLOSED (augmentation machinery
+> the trend stage requires). Anchor identity-gate set = FIVE gates (§10);
+> deferred-thread ledger with unlock stages + owner-election markers (§9).
+> Next action: owner reviews the spec FILE; on approval → writing-plans
+> for Stage 0 (+ Stage 1).**
+
 > **✅ README REFRESH — EXECUTED 2026-07-22, both tasks committed
 > (`c15551f` validation section: phase-11 instruments + phase-13
 > structured R; `1f6eac0` report-rows output shape, rspec clause,
