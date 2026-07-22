@@ -881,3 +881,34 @@ matches the program-not-monolith mandate.
 | Batch-2 pin 4 (marker column + verbatim pin record) | §9; §4 |
 | Settled constraint 8 verbatim in the Stage-3 contract | §3.2 C2G→3 |
 | Kickoff evidence-design requirements | §3 (architecture+gates), §5/§6 (Stage 0/1), §9 (ledger), §10 (anchor gates), §11 (expectation-setters) |
+
+---
+
+## 14. Postscript — owner-accepted refinements at Stage-0 plan review (2026-07-22)
+
+**Gate-2 decomposition (supersedes the §10 gate-2 single-sentence reading):**
+gate 2 decomposes into **loader-identity** (byte-comparable; runs on the
+dc2021a-WRAPPED source — the current box input path's actual files — in
+Stage 0) + **lineage-sensitivity** (the first pre-registered golden-tile
+comparison: dc2021a vs CMEMS-MY, tile = the anchor box, period = 2017,
+config = frozen signed — i.e. "what would the signed numbers have been on
+CMEMS-MY directly"; map deltas + track-metric deltas recorded; divergence
+TABLES an owner decision, never blocks Stage 1). Rationale recorded: dc2021a
+is a derived distribution of the CMEMS lineage; forcing byte-equality across
+the lineage gap would fail spuriously or corrupt the CMEMS adapter into
+replicating dc2021a's editing. The dc2021a wrapper is a REAL adapter through
+the loader contract — conformance-suite covered, uniform content-manifested
+descriptor, never a test-only bypass (adapter census: synthetic + CMEMS-MY +
+dc2021a + JPL-code).
+
+**Stage-1 source map (the consequence this decomposition surfaces):** the
+anchor and seam-pair tiles run on the dc2021a lineage (signed-comparable —
+the identity gates and the seam ORACLE compare against signed records);
+the non-box tiles (equatorial, Southern Ocean, quiet gyre, Kuroshio)
+necessarily run on CMEMS-MY (dc2021a is box-scoped). Per-tile source is
+recorded in provenance; the golden-tile delta is the recorded BRIDGE for any
+cross-lineage reading. No cross-lineage number is ever quoted without it.
+
+**Owner-input defaults RATIFIED as pre-registered (recorded owner-set at this
+review):** Tier-2 probe ≤ US$25 / 8 vCPU / 64 GiB / 6 h / one region; CMEMS
+storage ≤ 50 GiB, egress $0; WAIT above any ceiling, test-pinned.

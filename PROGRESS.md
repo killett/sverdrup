@@ -35,7 +35,26 @@
 > plan-structure expectations recorded in the ruling (task groups per
 > workstream; 0a-6 seal last in 0a; Gate 0 userGate; 0a-7 first; gate
 > scheduling split Stage 0/1/2; owner spend inputs pre-registered-or-WAIT).
-> ⛔ STAGE-0 PLAN + TRACKER WRITTEN, HELD FOR OWNER REVIEW before execution:**
+> **STAGE-0 PLAN APPROVED 2026-07-22 (owner review; `8cfd16f` stands) WITH
+> FIVE PINS, folded same day: (1) SPEC §14 POSTSCRIPT added — gate 2
+> decomposes into loader-identity (byte-comparable, dc2021a-wrapped source,
+> runs Stage 0) + lineage-sensitivity (first golden-tile comparison,
+> dc2021a vs CMEMS-MY); (2) dc2021a wrapper = REAL adapter (conformance-
+> covered, content-manifested, never test-only; adapter census = synthetic
+> + CMEMS-MY + dc2021a + JPL-code); (3) golden-tile pre-registration
+> sharpened (anchor box × 2017 × frozen signed — "what would the signed
+> numbers have been on CMEMS-MY directly"; TABLES, never blocks Stage 1);
+> (4) STAGE-1 SOURCE MAP recorded (anchor + seam-pair on dc2021a lineage;
+> non-box tiles on CMEMS-MY; per-tile source in provenance; golden-tile
+> delta = the cross-lineage BRIDGE); (5) owner defaults RATIFIED as
+> owner-set (Tier-2 probe ≤ US$25 / 8 vCPU / 64 GiB / 6 h / one region;
+> CMEMS ≤ 50 GiB, egress $0; WAIT above any ceiling).
+> ▶ EXECUTION TO BE DISPATCHED to a fresh session. OWNER EXECUTION RIDERS
+> (verbatim intent): T0 first; TDD red/green; dual review per task; push as
+> you go; zero evaluation-bearing maps; zero locked opens; tally untouched;
+> STOP at T20 (Gate 0) with the seal sha + full evidence axes — the sealed
+> evaluation set is the program's founding artifact, owner walks it.**
+> Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
 > userGate; deps mirror the spec's consumption order). Pre-registered owner
@@ -44,9 +63,8 @@
 > for review: SPEC §10 gate 2 runs on a dc2021a-WRAPPED source (the current
 > box input path's actual files — byte-comparable testable today);
 > dc2021a-vs-CMEMS-MY becomes the FIRST golden-tile comparison (public both
-> sides). Next action: owner reviews plan + tracker; on approval → dispatch
-> execution (fresh session,
-> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`).**
+> sides). Next action: CLEAR, then execute in a fresh session:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`**
 
 > **✅ README REFRESH — EXECUTED 2026-07-22, both tasks committed
 > (`c15551f` validation section: phase-11 instruments + phase-13

@@ -43,15 +43,17 @@ ladder (`application/ladder.py`).
   in Stage 0; 1/5 + solve-half-of-4 run in Stage 1; 3 runs in Stage 2; test
   CODE lands at earliest consumer); owner inputs pre-registered or WAIT.
 
-**Recorded interpretation (owner reviews at plan review):** SPEC §10 gate 2
-says "CMEMS adapter … reproduces the current 2017 box input path". The current
-box path reads the dc2021a challenge files (CMEMS-derived, repackaged). Gate 2
-therefore runs on a **dc2021a-wrapped source** through the new loader
-(byte-comparable is guaranteed-testable, locally, today). The CMEMS-MY
-multi-year adapter is a SEPARATE source; dc2021a-vs-CMEMS-MY on the box
-tile×year becomes the FIRST pre-registered golden-tile comparison (public data
-both sides — the fork-a pin-2 machinery exercised without waiting for JPL
-data). Divergence TABLES an owner decision, per the pin.
+**Recorded interpretation — OWNER-ACCEPTED at plan review 2026-07-22 (SPEC
+§14 postscript):** gate 2 decomposes into **loader-identity** (byte-comparable,
+dc2021a-wrapped source, runs Stage 0) + **lineage-sensitivity** (the first
+golden-tile comparison, dc2021a vs CMEMS-MY, anchor box × 2017 × frozen signed
+config — "what would the signed numbers have been on CMEMS-MY directly").
+Divergence TABLES, never blocks Stage 1. The dc2021a wrapper is a REAL adapter
+(conformance-covered, content-manifested descriptor — never a test-only
+bypass). **Stage-1 source map (recorded now):** anchor + seam-pair run dc2021a
+lineage (signed-comparable); non-box tiles necessarily run CMEMS-MY (dc2021a
+is box-scoped); per-tile source in provenance; the golden-tile delta is the
+recorded BRIDGE for any cross-lineage reading.
 
 **Owner-input pre-registered defaults (the monied standing rule — tasks WAIT
 if these do not cover reality):**
@@ -209,7 +211,10 @@ current 2017 box input path exactly.
 - [ ] `Dc2021aSource` wraps the existing per-mission challenge files (reuses
       `validation/input_adapter.py` reading logic — imported, not copied);
       `source_id="dc2021a"`; manifest = the challenge files' shas; passes the
-      Task-1 conformance suite (skip-guarded on local data presence).
+      Task-1 conformance suite (skip-guarded on local data presence). A REAL
+      adapter through the contract — uniform content-manifested descriptor,
+      never a test-only bypass (owner pin 2, plan review 2026-07-22; adapter
+      census = synthetic + CMEMS-MY + dc2021a + JPL-code).
 - [ ] GATE 2 test: for the signed box frame and full 2017, obs arrays
       (lon, lat, t, value, mission) via `Dc2021aSource.load(...)` are
       **byte-identical** (`np.array_equal` + dtype equality) to the legacy
@@ -409,7 +414,12 @@ both sides).
       records: obs-count deltas per mission, mean-map RMS/max delta per
       window, j3-track µ delta. NO verdict logic — numbers + a
       `tabled_for_owner: true` flag when any delta exceeds the recording
-      threshold (all deltas recorded regardless).
+      threshold (all deltas recorded regardless). Pre-registration sharpened
+      (owner pin 3): tile = the ANCHOR box, period = 2017, config = frozen
+      signed — the comparison's meaning is "what would the signed numbers
+      have been on CMEMS-MY directly"; divergence TABLES, never blocks
+      Stage 1; the recorded delta is the cross-lineage BRIDGE for the Stage-1
+      source map.
 - [ ] Output under `phase14.stage0.golden_tile.<a>_vs_<b>` with both
       descriptors' manifest shas — the version-migration protocol reuses this
       key shape verbatim (fork-a pin 5).
