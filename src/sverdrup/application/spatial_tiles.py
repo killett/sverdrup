@@ -21,6 +21,7 @@ constraint-3 (kernel-scale-driven halo) decision (fork-d pin 4).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -157,6 +158,118 @@ def anchor_frame() -> TileFrame:
     )
 
 
+def _axis_weight(
+    x: np.ndarray,
+    core_lo: float,
+    core_hi: float,
+    overlap: float,
+    lo_has_neighbor: bool,
+    hi_has_neighbor: bool,
+) -> np.ndarray:
+    """1-D linear blend weight along one axis (the U2022 edge rule).
+
+    On a side WITH a neighbor the weight ramps linearly across the shared
+    2·overlap region — 1 at ``core boundary − overlap``, 0.5 at the core
+    boundary, 0 at ``core boundary + overlap`` (weight ∝ boundary relative
+    distance; the complementary neighbor ramp sums to 1 by construction).
+    On a missing-neighbor side the weight is 1 up to the boundary and 0
+    beyond it (no neighbor to blend against).
+    """
+    w = np.ones_like(np.asarray(x, dtype=float))
+    if lo_has_neighbor and overlap > 0:
+        w = np.minimum(w, np.clip((x - (core_lo - overlap)) / (2 * overlap), 0, 1))
+    else:
+        w = np.where(x < core_lo, 0.0, w)
+    if hi_has_neighbor and overlap > 0:
+        w = np.minimum(w, np.clip(((core_hi + overlap) - x) / (2 * overlap), 0, 1))
+    else:
+        w = np.where(x > core_hi, 0.0, w)
+    return w
+
+
+def blend_weight(frame: TileFrame, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+    """The tile's blend weight at points — separable product of axis ramps.
+
+    Per-axis linear ramps over the ACTUAL overlap (U2022 verbatim on
+    edges), multiplied across axes. The separable product is OUR corner
+    completion — the papers are silent on corners (gap-register entry);
+    the product closes the four-tile corner square to a partition of unity
+    exactly (each pair of axis ramps sums to 1, so the four products sum
+    to 1), asserted numerically in the Task-13 tests.
+
+    Args:
+        frame: The tile frame.
+        lon: Point longitudes [degrees].
+        lat: Point latitudes [degrees].
+
+    Returns:
+        Weights in [0, 1]; 0 outside the tile's solve region.
+    """
+    m = frame.missing_neighbors
+    w_lon = _axis_weight(
+        np.asarray(lon, dtype=float),
+        frame.core.lon_min,
+        frame.core.lon_max,
+        frame.overlap_deg,
+        "W" not in m,
+        "E" not in m,
+    )
+    w_lat = _axis_weight(
+        np.asarray(lat, dtype=float),
+        frame.core.lat_min,
+        frame.core.lat_max,
+        frame.overlap_deg,
+        "S" not in m,
+        "N" not in m,
+    )
+    return np.asarray(w_lon * w_lat)
+
+
+def assemble(
+    frames: Sequence[TileFrame],
+    fields: Sequence[np.ndarray],
+    lon: np.ndarray,
+    lat: np.ndarray,
+) -> np.ndarray:
+    """Blend per-tile field values at points, renormalized by the ACTUAL sum.
+
+    Normalization divides by the local sum of the weights of the tiles
+    ACTUALLY present (the actual-overlap normalization lesson,
+    spatialized): a missing neighbor — domain edge or a land-dropped tile —
+    renormalizes instead of denting the field. Field values are consulted
+    only where their tile's weight is positive (a NaN outside a tile's
+    support never poisons the sum). Points covered by no tile return NaN.
+
+    Args:
+        frames: The tile frames present.
+        fields: Per-tile field values at the SAME points (aligned with
+            ``frames``).
+        lon: Point longitudes [degrees].
+        lat: Point latitudes [degrees].
+
+    Returns:
+        The blended field at the points.
+
+    Raises:
+        ValueError: If ``frames`` and ``fields`` lengths differ.
+    """
+    if len(frames) != len(fields):
+        raise ValueError(
+            f"got {len(frames)} frames but {len(fields)} fields — inputs "
+            "must align one-to-one"
+        )
+    lon_arr = np.asarray(lon, dtype=float)
+    num = np.zeros_like(lon_arr)
+    den = np.zeros_like(lon_arr)
+    for frame, tile_field in zip(frames, fields, strict=True):
+        w = blend_weight(frame, lon_arr, np.asarray(lat, dtype=float))
+        contrib = np.where(w > 0, np.asarray(tile_field, dtype=float), 0.0)
+        num += w * contrib
+        den += w
+    with np.errstate(invalid="ignore"):
+        return np.asarray(np.where(den > 0, num / np.where(den > 0, den, 1.0), np.nan))
+
+
 def tile_plan(
     domain_bbox: BBox,
     tile_deg: float = TILE_DEG,
@@ -191,6 +304,12 @@ def tile_plan(
     # tiles) from ceiling into a zero-width extra tile column/row.
     n_lon = max(1, int(np.ceil(width / tile_deg - 1e-9)))
     n_lat = max(1, int(np.ceil(height / tile_deg - 1e-9)))
+    if overlap_deg <= 0 and (n_lon > 1 or n_lat > 1):
+        raise ValueError(
+            "multi-tile plans require positive overlap_deg: with zero "
+            "overlap adjacent tiles both claim weight 1 at the shared "
+            "boundary and the partition of unity breaks"
+        )
     tiles: list[TileFrame] = []
     for iy in range(n_lat):
         lat_lo = domain_bbox.lat_min + iy * tile_deg
