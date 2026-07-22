@@ -130,8 +130,26 @@
 > multi-tile plans now REFUSE (double-count regime), tolerances tightened
 > to 1e-12. Note: seam fp-lattice gotcha did not bite (blend is
 > coordinate-based, not node-based); node-level assembly alignment
-> re-checked at T14/Stage-1. Next action: Task 14 (per-tile scorer +
-> gate-5 test code).**
+> re-checked at T14/Stage-1.
+> **T14 COMPLETE (`84b4db4`):** `validation/pertile_scoring.py` —
+> `score_tile` (guard FIRST, core-only extraction via vendored
+> read_l3_dataset with frame.core bounds, vendored interp + compute_stats
+> + shared λx helper UNCHANGED, empty-core refusal, `n_scored_points`
+> honest post-interp count); unit tests: boundary off-by-one pinned
+> (305.0 in / 305.1 out / 306.9-in-solve-bbox out), lat clip, time
+> window, provenance refusal via write_map fixture. Gate-5 test lands
+> SKIP-GUARDED on `ours/phase14_stage1/anchor_signed_maps.nc`.
+> **ADVERSARIAL CATCH (load-bearing):** near-pinned
+> `phase13.lane0_reference.mu_score` 0.8641999994291494 as the gate-5
+> constant — WRONG LINEAGE: that number is `leaderboard_nrmse` at track
+> granularity; `compute_stats` µ is a different quantity (the two only
+> "track" each other, see eval/skill_score.py). Gate 5 now asserts
+> machinery identity (score_tile ≡ their_eval.score, rtol 1e-12, all
+> three) and the compute_stats-lineage value constants are pinned AT the
+> Stage-1 anchor run into `phase14.stage1.gate5`. λx tile-extent band
+> parameterization deferred to first non-anchor consumer (Stage 1) —
+> anchor identity requires box convention verbatim. Next action: Task 11
+> (seam rubric + instrument configs).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
