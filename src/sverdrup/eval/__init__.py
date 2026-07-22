@@ -15,6 +15,7 @@ from sverdrup.eval.accuracy import Accuracy
 from sverdrup.eval.calibration import Calibration
 from sverdrup.eval.fidelity import SpectralFidelity
 from sverdrup.eval.groundtrack import GroundTrack
+from sverdrup.eval.insitu import InSituGauges
 from sverdrup.eval.resolution import EffectiveResolution
 from sverdrup.eval.skill import NormalizedSkillScore
 
@@ -23,6 +24,7 @@ ALL_EVALUATORS: tuple[Callable[[], Evaluator], ...] = (
     Calibration,
     NormalizedSkillScore,
     GroundTrack,
+    InSituGauges,
     SpectralFidelity,
     EffectiveResolution,
 )

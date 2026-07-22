@@ -97,6 +97,7 @@ def build_eval_context(
     field_kind: str,
     truth: dict[str, Any] | None = None,
     withheld: dict[str, Any] | None = None,
+    insitu: dict[str, Any] | None = None,
     geometry_artifact: Path | str | None = None,
     assimilated_missions: str | None = None,
 ) -> BuiltEval:
@@ -112,6 +113,8 @@ def build_eval_context(
         field_kind: ``"mean"`` | ``"sigma"`` | ``"other"``.
         truth: Optional TRUTH bag.
         withheld: Optional WITHHELD_OBS bag.
+        insitu: Optional INSITU_GAUGES provider bag (``{"gauges": [...]}``)
+            — the in-situ provider key (phase-14 0a-3b).
         geometry_artifact: Optional path to the orbit-geometry artifact; a
             missing file simply yields no ORBIT_GEOMETRY (absence means
             absence).
@@ -130,6 +133,8 @@ def build_eval_context(
         items[ContextKey.TRUTH] = truth
     if withheld is not None:
         items[ContextKey.WITHHELD_OBS] = withheld
+    if insitu is not None:
+        items[ContextKey.INSITU_GAUGES] = insitu
     masks_sha: str | None = None
     if geometry_artifact is not None and assimilated_missions is not None:
         artifact = Path(geometry_artifact)

@@ -14,6 +14,7 @@ class ContextKey(Enum):
     WITHHELD_OBS = auto()
     ORBIT_GEOMETRY = auto()
     PHYSICAL_CONSTANTS = auto()
+    INSITU_GAUGES = auto()
 
 
 class MetricScope(Enum):

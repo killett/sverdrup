@@ -12,7 +12,7 @@ probes. The same narrowing applies to whole-dict iteration
 "reading every key" would flag every evaluator that checks availability.
 An evaluator consuming data via iteration instead of keyed access would slip
 rule 2; none does, and keyed access is the protocol's documented contract.
-With that scope, a dormant key cannot hide: all four ContextKey members are
+With that scope, a dormant key cannot hide: all five ContextKey members are
 present in every fixture's items, so an evaluator that keyed-read an
 undeclared key WOULD get data and WOULD be caught.
 """
@@ -93,13 +93,37 @@ def _fixtures() -> dict[str, tuple[dict[str, Any], dict[ContextKey, object]]]:
         "eval_mean": mapped,
     }
 
+    n_g = 400
+    g_days = np.datetime64("2017-01-01") + np.arange(n_g).astype("timedelta64[D]")
+    g_anom = np.sin(2 * np.pi * np.arange(n_g) / 60.0) * 0.1
+    insitu_bag = {
+        "gauges": [
+            {
+                "gauge_id": "gI",
+                "lon": 300.5,
+                "lat": 40.5,
+                "days": g_days,
+                "anomaly_m": g_anom,
+            }
+        ]
+    }
+    insitu_result: dict[str, Any] = {
+        "map_days": g_days,
+        "map_lon": lon,
+        "map_lat": lat,
+        "map_ssha": np.broadcast_to(
+            g_anom[:, None, None], (n_g, lat.size, lon.size)
+        ).copy(),
+    }
+
     def items(withheld: dict[str, np.ndarray]) -> dict[ContextKey, object]:
-        # ALL FOUR members present — a dormant undeclared read cannot hide.
+        # ALL FIVE members present — a dormant undeclared read cannot hide.
         return {
             ContextKey.TRUTH: {"field": np.zeros((4, 4))},
             ContextKey.WITHHELD_OBS: withheld,
             ContextKey.ORBIT_GEOMETRY: _geometry_bag(),
             ContextKey.PHYSICAL_CONSTANTS: {},
+            ContextKey.INSITU_GAUGES: insitu_bag,
         }
 
     plain_obs = {"values": obs_vals}
@@ -110,6 +134,7 @@ def _fixtures() -> dict[str, tuple[dict[str, Any], dict[ContextKey, object]]]:
         "groundtrack": (map_result, items(plain_obs)),
         "spectral_fidelity": (map_result, items(plain_obs)),
         "effective_resolution": (res_result, items({"values": observed})),
+        "insitu_gauges": (insitu_result, items(plain_obs)),
     }
 
 
@@ -162,6 +187,7 @@ def test_canary_declares_but_never_reads_fails_rule_1() -> None:
         ContextKey.WITHHELD_OBS: {},
         ContextKey.ORBIT_GEOMETRY: {},
         ContextKey.PHYSICAL_CONSTANTS: {},
+        ContextKey.INSITU_GAUGES: {},
     }
     with pytest.raises(AssertionError, match="never read"):
         _check_integrity(_DeclaresNeverReads(), {}, items)
