@@ -117,8 +117,21 @@
 > fp-shift overlap nodes across adjacent tiles (~1e-14) — the blend
 > `assemble` must not assume bit-shared node coordinates across tiles;
 > resolve at T13 (shared-lattice snap or coordinate-tolerant weights)
-> when the partition-of-unity tests land. Next action: Task 13 (spatial
-> blend + partition of unity).**
+> when the partition-of-unity tests land.
+> **T13 COMPLETE (`c348bb3`):** blend in `spatial_tiles.py` —
+> `blend_weight` (per-axis linear ramp over the actual 2·overlap region,
+> U2022 edges; separable product = our corner completion, papers-silent
+> gap noted in docstring), `assemble` (renormalizes by ACTUAL local
+> weight sum; NaN-outside-support never poisons; refuses count mismatch).
+> Partition of unity numeric to 1e-12: 2×1 edge, 2×2 corner (0.25×4 at
+> the four-tile point), domain edge, dropped-land tile (constant
+> recovered on covered region, NaN in uncovered core), degenerate anchor
+> ≡ 1; edge-reduction == 1-D rule. Dual review actioned: zero-overlap
+> multi-tile plans now REFUSE (double-count regime), tolerances tightened
+> to 1e-12. Note: seam fp-lattice gotcha did not bite (blend is
+> coordinate-based, not node-based); node-level assembly alignment
+> re-checked at T14/Stage-1. Next action: Task 14 (per-tile scorer +
+> gate-5 test code).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0

@@ -113,11 +113,12 @@
     {
       "id": 13,
       "subject": "Task 13: Spatial blend + partition-of-unity EVERYWHERE (0d-2)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** The paper's linear edge blend + our separable corner completion,\nwith partition of unity asserted numerically in every configuration —\ninterior, edges, corners, missing-neighbor renormalization.\n\n**Files:**\n- Modify: `src/sverdrup/application/spatial_tiles.py` (blend weights)\n- Test: `tests/test_phase14_spatial_blend.py`\n\n**Acceptance Criteria:**\n- [ ] `blend_weight(frame, lon, lat)`: per-axis linear ramp over the actual\n      overlap (weight ∝ boundary relative distance — U2022 verbatim on\n      edges), separable product across axes (our corner completion —\n      docstring cites the gap-register: papers silent on corners).\n- [ ] `assemble(tiles, fields)` normalizes by the ACTUAL local weight sum\n      (missing-neighbor/domain-edge renormalization — the actual-overlap\n      normalization lesson, spatialized).\n- [ ] **Partition-of-unity tests (fork-d pin 2), all numeric to 1e-12:**\n      2×1 edge; 2×2 corner (four-tile point); domain edge (missing\n      neighbor); land-adjacent clipped tile; degenerate single tile\n      (weight ≡ 1 everywhere — the anchor path adds NOTHING).\n- [ ] Edge-reduction test: on a pure two-tile edge the separable weight\n      equals the 1-D paper rule exactly.\n\n**Verify:** `pixi run test -- tests/test_phase14_spatial_blend.py -v` → PASS.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/spatial_tiles.py\", \"tests/test_phase14_spatial_blend.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase14_spatial_blend.py -v\", \"acceptanceCriteria\": [\"`blend_weight(frame, lon, lat)`: per-axis linear ramp over the actual overlap (weight \\u221d boundary relative distance \\u2014 U2022 verbatim on edges), separable product across axes (our corner completion \\u2014 docstring cites the gap-register: papers silent on corners).\", \"`assemble(tiles, fields)` normalizes by the ACTUAL local weight sum (missing-neighbor/domain-edge renormalization \\u2014 the actual-overlap normalization lesson, spatialized).\", \"**Partition-of-unity tests (fork-d pin 2), all numeric to 1e-12:** 2\\u00d71 edge; 2\\u00d72 corner (four-tile point); domain edge (missing neighbor); land-adjacent clipped tile; degenerate single tile (weight \\u2261 1 everywhere \\u2014 the anchor path adds NOTHING).\", \"Edge-reduction test: on a pure two-tile edge the separable weight equals the 1-D paper rule exactly.\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         12
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 14,
