@@ -39,7 +39,7 @@ def test_same_host_smoke_two_runs_equal(tmp_path: Path) -> None:
 def test_manifest_determinism_and_content(tmp_path: Path) -> None:
     """The manifest carries per-axis shas, root, recipe, versions."""
     m = json.loads(_crn(tmp_path, "a.json").read_text())
-    assert set(m["axes"]) == {"obs", "coef"}
+    assert set(m["axes"]) == {"obs", "elem"}
     for axis in m["axes"].values():
         assert len(axis["sha256"]) == 64
         assert axis["n"] > 0
@@ -64,6 +64,18 @@ def test_compare_crn_mismatch_exits_nonzero(tmp_path: Path) -> None:
     assert "MISMATCH" in res.output
 
 
+def test_synthetic_obs_stream_golden_sha() -> None:
+    """The synthetic obs stream's sha is PINNED — a semantic change to the
+    production randomness layer (_keyed_uniform / _member_key) cannot slip
+    through with two hosts silently agreeing on rebased streams."""
+    import hashlib
+
+    ident = _mod._synthetic_identities()["obs"]
+    s = _mod._uniform_stream("obs", ident, 12345, 0)
+    got = hashlib.sha256(np.ascontiguousarray(s).tobytes()).hexdigest()
+    assert got == "db0e6423b2e46cc23ced73109eb8b868d5aefbf342f4ff47aa8daa4bce10591c"
+
+
 def test_stream_sensitive_to_root_and_member() -> None:
     """Different root or member -> different stream bytes (keying works)."""
     ident = _mod._synthetic_identities()["obs"]
@@ -80,14 +92,14 @@ def test_compare_solve_reports_deltas(tmp_path: Path) -> None:
     b = tmp_path / "b.npz"
     mean_a = np.zeros((1, 2, 2))
     mean_b = np.full((1, 2, 2), 3e-7)
-    np.savez(a, mean=mean_a, member_std=np.ones((1, 2, 2)))
-    np.savez(b, mean=mean_b, member_std=np.ones((1, 2, 2)))
+    np.savez(a, mean=mean_a, member0_anom=np.ones((1, 2, 2)))
+    np.savez(b, mean=mean_b, member0_anom=np.ones((1, 2, 2)))
     res = runner.invoke(_mod.app, ["compare-solve", str(a), str(b)])
     assert res.exit_code == 0
     report = json.loads(res.output)
     assert report["mean"]["max_abs"] == pytest.approx(3e-7)
     assert report["mean"]["rms"] == pytest.approx(3e-7)
-    assert report["member_std"]["max_abs"] == 0.0
+    assert report["member0_anom"]["max_abs"] == 0.0
 
 
 def test_print_env_recipe() -> None:

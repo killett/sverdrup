@@ -17,7 +17,7 @@ Pinned subject: the SIGNED BOX frame, window w0 (first 60-day window of
 2017), dc2021a source (five mapping missions), frozen signed config
 (``shipped_miost5`` + ``PHASE13_WINNER_PARAMS``), signed member root.
 The lane-D signed config carries NO pass modes, so the consumed axes are
-``obs`` + ``coef`` (recorded in the manifest).
+``obs`` + ``elem`` (the production axis keys; recorded in the manifest).
 
 Pinned single-thread deterministic recipe (exported by ``print-env``):
 ``OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
@@ -46,8 +46,9 @@ PINNED_ENV = {
     "PYTHONHASHSEED": "0",
 }
 
-# Window-obs subset rule for the pinned subject (recorded; half-open).
-_W0_RULE = "t >= w0.start_day and t < w0.start_day + w_days"
+# Window-obs subset rule for the pinned subject — THE PRODUCTION MASK
+# (methods.miost._window_mask): inclusive temporal support with L_t halo.
+_W0_RULE = "t >= w0.start - l_t_days and t <= w0.end + l_t_days (inclusive)"
 
 
 def _sha(arr: np.ndarray) -> str:
@@ -64,11 +65,14 @@ def _versions() -> dict[str, str]:
         cfg: Any = np.show_config(mode="dicts")
     except TypeError:  # pragma: no cover - older numpy
         cfg = {}
-    blas = str(cfg.get("Build Dependencies", {}).get("blas", {}).get("name", "unknown"))
+    bd = cfg.get("Build Dependencies", {}) if isinstance(cfg, dict) else {}
+    blas_info = bd.get("blas", {}) if isinstance(bd, dict) else {}
+    blas = f"{blas_info.get('name', 'unknown')} {blas_info.get('version', '')}".strip()
     return {
         "numpy": np.__version__,
         "scipy": scipy.__version__,
         "blas": blas,
+        "pixi_blas_rows": _pixi_blas_versions(),
         "python": sys.version.split()[0],
         "container_digest": os.environ.get("CONTAINER_IMAGE_DIGEST", "unrecorded"),
     }
@@ -94,10 +98,10 @@ def _synthetic_identities() -> dict[str, np.ndarray]:
     t = np.linspace(0.0, 60.0, n)
     mh = np.arange(n, dtype=float) % 5.0
     obs_identity = np.ascontiguousarray(np.column_stack([lon, lat, t, mh]))
-    coef_identity = np.ascontiguousarray(
+    elem_identity = np.ascontiguousarray(
         np.column_stack([np.arange(32, dtype=float)] * 6)
     )
-    return {"obs": obs_identity, "coef": coef_identity}
+    return {"obs": obs_identity, "elem": elem_identity}
 
 
 def _pinned_identities() -> tuple[dict[str, np.ndarray], int, dict[str, Any]]:
@@ -109,6 +113,7 @@ def _pinned_identities() -> tuple[dict[str, np.ndarray], int, dict[str, Any]]:
     from sverdrup.methods.miost import (  # noqa: PLC0415
         PHASE13_WINNER_PARAMS,
         _obs_identity,
+        _window_mask,
         shipped_miost5,
     )
     from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
@@ -126,8 +131,11 @@ def _pinned_identities() -> tuple[dict[str, np.ndarray], int, dict[str, Any]]:
     grid = baseline_config()[1]
     framed = halo_obs(obs, grid, halo_deg=1.0)
     w0 = WindowPlan().windows[0]
+    l_t_days = float(PHASE13_WINNER_PARAMS["l_t_days"])
+    # THE PRODUCTION RULE: [start - L_t, end + L_t] inclusive (_window_mask)
+    # — the manifest must cover exactly the obs the member solve consumes.
+    keep = _window_mask(framed, w0, l_t_days)
     c = framed.coords()
-    keep = (c[:, 2] >= w0.start_day) & (c[:, 2] < w0.start_day + w0.w_days)
     mission = framed.mission
     if mission is None:  # pragma: no cover - dc2021a always tags
         raise RuntimeError("dc2021a returned untagged obs")
@@ -139,14 +147,17 @@ def _pinned_identities() -> tuple[dict[str, np.ndarray], int, dict[str, Any]]:
     prov = {
         "subject": "signed-box w0, dc2021a five-mission, frozen signed config",
         "window_rule": _W0_RULE,
+        "l_t_days": l_t_days,
         "w0_start_day": float(w0.start_day),
         "w_days": float(w0.w_days),
         "n_obs": int(keep.sum()),
         "manifest_sha_source": src.descriptor().manifest_sha(),
-        "axes_note": "lane-D signed config: no pass modes -> obs+coef only",
+        "axes_note": "lane-D signed config: no pass modes -> obs+elem only",
     }
     return (
-        {"obs": obs_identity, "coef": np.asarray(els.identity, dtype=float)},
+        # elem identity hashed at its NATIVE dtype — the exact bytes
+        # coef_noise consumes (axis key "elem", the production stream).
+        {"obs": obs_identity, "elem": np.ascontiguousarray(els.identity)},
         int(root),
         prov,
     )
@@ -216,12 +227,14 @@ def solve(
     PROBE-labeled output; runs under the pinned recipe at Task 18 (Tier-2)
     and on this box for the same-host legs. Never evaluation-bearing.
     """
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
     from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
     from sverdrup.core.seeding import derive_seed  # noqa: PLC0415
     from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
         mean_fields,
         merged_members,
-        std_fields,
     )
     from sverdrup.methods.miost import (  # noqa: PLC0415
         PHASE13_WINNER_PARAMS,
@@ -232,9 +245,6 @@ def solve(
     from sverdrup.validation.run import halo_obs  # noqa: PLC0415
 
     identities, root, prov = _pinned_identities()  # provenance reuse
-    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
-    from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
-
     obs = Dc2021aSource().load(
         BBox(0.0, 360.0, -90.0, 90.0),
         np.datetime64("2016-11-01"),
@@ -243,27 +253,34 @@ def solve(
     )
     grid = baseline_config()[1]
     framed = halo_obs(obs, grid, halo_deg=1.0)
+    # SINGLE-WINDOW subject: the pinned w0 only (a full-plan run would
+    # solve nine windows and blend — subject drift + 9x the cost).
+    plan = WindowPlan(starts=(WindowPlan().starts[0],))
     method = shipped_miost5()
+    method._plan = plan  # PROBE-scope override of the internal plan
     provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
     root = derive_seed("miost", "stage-b-winner", "members", 0)
-    plan = WindowPlan(starts=(WindowPlan().starts[0],))
     days = [float(plan.starts[0] + 30.0)]  # one mid-window day map
+    log_start = len(miost_mod.CONVERGENCE_LOG)
     spec, etas_a, anoms, starts = merged_members(
         method, framed, grid, provider, 1, root
     )
+    pcg_rows = list(miost_mod.CONVERGENCE_LOG[log_start:])
     means = mean_fields(spec, starts, etas_a, grid, plan, days)
-    stds = std_fields(spec, starts, anoms, grid, plan, days)
+    member0 = {w: a[:, 0] for w, a in anoms.items()}
+    member0_anom = mean_fields(spec, starts, member0, grid, plan, days)
     out.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         out,
         mean=means,
-        member_std=stds,
+        member0_anom=member0_anom,
         label="PROBE",
+        pcg_log=json.dumps(pcg_rows),
         env_recipe=json.dumps(PINNED_ENV),
         versions=json.dumps(_versions()),
         provenance=json.dumps(prov),
     )
-    typer.echo(f"wrote {out} (PROBE)")
+    typer.echo(f"wrote {out} (PROBE; PCG rows: {len(pcg_rows)})")
 
 
 @app.command("compare-solve")
@@ -275,7 +292,7 @@ def compare_solve(a: Path, b: Path) -> None:
     """
     da, db = np.load(a), np.load(b)
     report = {}
-    for key in ("mean", "member_std"):
+    for key in ("mean", "member0_anom"):
         delta = np.asarray(da[key], dtype=float) - np.asarray(db[key], dtype=float)
         report[key] = {
             "max_abs": float(np.nanmax(np.abs(delta))),
