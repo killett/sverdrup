@@ -226,7 +226,25 @@
 > cross-host. **REAL SAME-HOST LEG RUN: two manifests EQUAL** (obs
 > 0d91d5505109…/11041, elem 27747e67d5eb…/187264; lane-D → no err axis,
 > recorded). Cross-host half runs at T18 (blocked chain). 7 CI tests
-> green. Next action: Task 6 (JPL adapter).**
+> green.
+> **T6 COMPLETE (`8b6c732` + review fixes):** `adapters/altimetry/
+> jpl_ssha.py` — documented directory-layout contract (per-mission dirs;
+> time/latitude/longitude/ssha vars; lon normalized mod 360; non-finite
+> ssha DROPPED, documented), per-file sha256 AT INGEST, EPOCH 1992-10-01
+> declared; conformance subclass skip-guarded on `SVERDRUP_JPL_SSHA_DIR`
+> (7 SKIPPED in CI, reason names the env var); CI legs: parse, byte-flip
+> manifest sensitivity, clipping/normalization/NaN-drop, read-only
+> governance pin (source tripwire + STRUCTURAL locality note: all opens
+> come from the local glob — no URL reaches xarray backends). 4 CI
+> tests green.
+> **⛔ EXECUTION PAUSED — ALL UNBLOCKED TASKS DONE; the rest WAITS on
+> the T3 VINTAGE RULING (owner):** complete = T0,1,2,6,9,11,12,13,14,
+> 16,17 (+T8 machinery/catalog leg). Blocked chain = T3→T4→T5→T7→T10→
+> T15→T18→T19→T20 + T8 series-screening leg (needs the census epoch
+> table). Owner options recorded at the T3 banner above (ratify 202411 /
+> supply DT2021 externally / HOLD). On the ruling: resume with
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
+> — next task = T3 under the ruled vintage.**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0

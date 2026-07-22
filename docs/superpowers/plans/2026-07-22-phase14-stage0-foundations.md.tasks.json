@@ -57,11 +57,12 @@
     {
       "id": 6,
       "subject": "Task 6: JPL adapter code + artifact-gated conformance (0c-4)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** The production-source adapter: code public, conformance runnable\nonly where the data lives, ingest-time content manifest.\n\n**Files:**\n- Create: `src/sverdrup/adapters/altimetry/jpl_ssha.py`\n- Test: `tests/adapters/test_jpl_ssha.py`\n\n**Acceptance Criteria:**\n- [ ] `JplSshaSource` reads a documented directory layout (per-mission\n      along-track SSHA netCDF; layout + variable names in the module\n      docstring as the interface contract); computes per-file sha256 AT\n      INGEST for the manifest (fork-a pin 3 — no processing-tag branch).\n- [ ] Conformance suite subclass behind the standing skip-guard\n      (`pytest.mark.skipif` on `SVERDRUP_JPL_SSHA_DIR` unset/absent) — the\n      artifact-gated pattern; CI shows SKIPPED, never green-by-vacuity\n      (skip reason names the env var).\n- [ ] Parsing logic unit-tested in CI against a committed synthetic fixture\n      file matching the documented layout (no private data in repo).\n- [ ] Data-governance line enforced in code comment + test: no code path\n      uploads/copies JPL data off-host (adapter is read-only local).\n\n**Verify:** `pixi run test -- tests/adapters/test_jpl_ssha.py -v` → CI legs\nPASS, conformance leg SKIPPED here.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/adapters/altimetry/jpl_ssha.py\", \"tests/adapters/test_jpl_ssha.py\"], \"verifyCommand\": \"pixi run test -- tests/adapters/test_jpl_ssha.py -v\", \"acceptanceCriteria\": [\"`JplSshaSource` reads a documented directory layout (per-mission along-track SSHA netCDF; layout + variable names in the module docstring as the interface contract); computes per-file sha256 AT INGEST for the manifest (fork-a pin 3 \\u2014 no processing-tag branch).\", \"Conformance suite subclass behind the standing skip-guard (`pytest.mark.skipif` on `SVERDRUP_JPL_SSHA_DIR` unset/absent) \\u2014 the artifact-gated pattern; CI shows SKIPPED, never green-by-vacuity (skip reason names the env var).\", \"Parsing logic unit-tested in CI against a committed synthetic fixture file matching the documented layout (no private data in repo).\", \"Data-governance line enforced in code comment + test: no code path uploads/copies JPL data off-host (adapter is read-only local).\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         1
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 7,
