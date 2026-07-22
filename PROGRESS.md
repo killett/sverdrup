@@ -59,8 +59,20 @@
 > `_write_evidence_guarded` refuses (RuntimeError naming P0-2) unless
 > `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"` exact-string, BEFORE any file open;
 > 8 tests (refusal-before-write, exact-string, opt-in unchanged, unguarded-
-> call source pin); dual review clean. Next action: Task 1 (along-track
-> contract + synthetic adapter).**
+> call source pin); dual review clean.
+> **T1 COMPLETE (`137c610`):** along-track contract (`adapters/altimetry/`)
+> — `SourceDescriptor` (frozen, sorted per-file-sha manifest, canonical-JSON
+> `manifest_sha`), `AlongTrackSource` Protocol, `apply_superobs` no-op hook
+> (refuses non-None cfg), `AltimetryConformance` suite (region/time/mission
+> clipping exact, descriptor stability, sha sensitivity, determinism) +
+> synthetic adapter (synA 10-day repeat / synB drifting, 500 obs/day/mission,
+> two-Gaussian SSH); 19 tests green, no skips; dual review clean.
+> **Recorded deviation:** Protocol gained `time_epoch()` — ObsWindow times
+> are float days, so each source declares its epoch; dc2021a declares
+> 2017-01-01 preserving gate-2 byte identity (spec-reviewer: serves intent).
+> **Note for T2:** conformance sha test is a descriptor-level proxy; dc2021a
+> subclass adds a real file-byte-mutation check. Next action: Task 2
+> (dc2021a adapter + gate-2 loader identity).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
