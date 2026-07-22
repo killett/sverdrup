@@ -206,8 +206,27 @@
 > catch honored (monied rule):** probe storage/egress were NOT
 > owner-registered → ceilings set 0 (any use WAITs; owner rules at T18)
 > — test-pinned. 14 tests green. Storage WAIT enforcement for downloads
-> lives in the T3 downloader per plan (recorded gap, planned). Next
-> action: Task 17 (cross-env gate machinery).**
+> lives in the T3 downloader per plan (recorded gap, planned).
+> **T17 COMPLETE (`db06c2b` + review fixes `129cc66`):**
+> `scripts/phase14_crossenv.py` — gate 4 decomposed: `crn`/`compare-crn`
+> (bit-exact half: sha256 of the PRODUCTION keyed-uniform streams per
+> consumed axis — recorded interpretation: randomness layer hashed,
+> ndtri/variance scaling = arithmetic priced in the solve half) +
+> `solve`/`compare-solve` (mean + member-0 anomaly maps + PCG
+> CONVERGENCE_LOG rows + BLAS recipe; compare REPORTS max-abs/RMS,
+> tolerance recorded at T18, never asserted before). Pinned subject:
+> signed box w0, dc2021a five-mission, `shipped_miost5` +
+> PHASE13_WINNER_PARAMS, signed root 4836134738817689931 (verified ==
+> derive_seed("miost","stage-b-winner","members",0)). REVIEW CATCHES
+> FIXED: window mask now THE PRODUCTION `_window_mask` [start−L_t,
+> end+L_t] inclusive (n_obs 9242→11041 — the L_t-halo obs the old rule
+> missed), coef axis → production "elem" key at native identity bytes,
+> single-window plan (no 9-window drift), golden synthetic-stream sha
+> pinned (db0e6423…) so a rebased randomness layer cannot silently agree
+> cross-host. **REAL SAME-HOST LEG RUN: two manifests EQUAL** (obs
+> 0d91d5505109…/11041, elem 27747e67d5eb…/187264; lane-D → no err axis,
+> recorded). Cross-host half runs at T18 (blocked chain). 7 CI tests
+> green. Next action: Task 6 (JPL adapter).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
