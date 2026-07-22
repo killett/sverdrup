@@ -69,9 +69,14 @@ STAGE0_SPEND_TABLE: tuple[SpendRow, ...] = (
         task_class="tier2_probe",
         tier=Tier.CLOUD_NODE,
         cost_ceiling_usd=25.0,
-        storage_gib=10.0,
-        egress_gib=5.0,
-        basis="pre-registered owner default (plan header 2026-07-22)",
+        storage_gib=0.0,
+        egress_gib=0.0,
+        # storage/egress ceilings were NOT owner-registered for the probe:
+        # 0 ceiling means ANY storage/egress estimate WAITs (monied rule).
+        basis=(
+            "pre-registered owner default (plan header 2026-07-22); "
+            "storage/egress unregistered -> 0 ceiling, any use WAITs"
+        ),
         max_vcpu=8,
         max_ram_gib=64.0,
         max_wall_h=6.0,
@@ -108,22 +113,52 @@ class Wait:
 class Authorization:
     """An in-ceiling authorization bound to its spend-table row.
 
-    Construction REFUSES an over-ceiling estimate — even a caller
-    bypassing :func:`authorize` cannot mint executor-set spend.
+    Construction carries EVERY estimate leg and REFUSES any over-ceiling
+    value — even a caller bypassing :func:`authorize` cannot mint
+    executor-set spend on any axis.
     """
 
     row: SpendRow
     est_cost_usd: float
+    est_vcpu: int = 0
+    est_ram_gib: float = 0.0
+    est_wall_h: float = 0.0
 
     def __post_init__(self) -> None:
-        """Refuse construction above the row's cost ceiling."""
-        if self.est_cost_usd > self.row.cost_ceiling_usd:
+        """Refuse construction above ANY of the row's ceilings."""
+        over = _over_ceilings(
+            self.row,
+            self.est_cost_usd,
+            self.est_vcpu,
+            self.est_ram_gib,
+            self.est_wall_h,
+        )
+        if over:
             raise ValueError(
-                f"estimate US${self.est_cost_usd} exceeds the pre-registered "
-                f"ceiling US${self.row.cost_ceiling_usd} for "
-                f"{self.row.task_class!r} — executor-set spend never happens; "
-                "this WAITS for the owner"
+                f"estimate exceeds the pre-registered ceiling(s) for "
+                f"{self.row.task_class!r} ({'; '.join(over)}) — executor-set "
+                "spend never happens; this WAITS for the owner"
             )
+
+
+def _over_ceilings(
+    row: SpendRow,
+    est_cost_usd: float,
+    est_vcpu: int,
+    est_ram_gib: float,
+    est_wall_h: float,
+) -> list[str]:
+    """The list of estimate legs exceeding their row ceilings (empty = ok)."""
+    over = []
+    if est_cost_usd > row.cost_ceiling_usd:
+        over.append(f"cost {est_cost_usd} > {row.cost_ceiling_usd} USD")
+    if row.max_vcpu and est_vcpu > row.max_vcpu:
+        over.append(f"vcpu {est_vcpu} > {row.max_vcpu}")
+    if row.max_ram_gib and est_ram_gib > row.max_ram_gib:
+        over.append(f"ram {est_ram_gib} > {row.max_ram_gib} GiB")
+    if row.max_wall_h and est_wall_h > row.max_wall_h:
+        over.append(f"wall {est_wall_h} > {row.max_wall_h} h")
+    return over
 
 
 def authorize(
@@ -157,15 +192,7 @@ def authorize(
                 "never happens)"
             ),
         )
-    over = []
-    if est_cost_usd > row.cost_ceiling_usd:
-        over.append(f"cost {est_cost_usd} > {row.cost_ceiling_usd} USD")
-    if row.max_vcpu and est_vcpu > row.max_vcpu:
-        over.append(f"vcpu {est_vcpu} > {row.max_vcpu}")
-    if row.max_ram_gib and est_ram_gib > row.max_ram_gib:
-        over.append(f"ram {est_ram_gib} > {row.max_ram_gib} GiB")
-    if row.max_wall_h and est_wall_h > row.max_wall_h:
-        over.append(f"wall {est_wall_h} > {row.max_wall_h} h")
+    over = _over_ceilings(row, est_cost_usd, est_vcpu, est_ram_gib, est_wall_h)
     if over:
         return Wait(
             task_class=task_class,
@@ -175,7 +202,13 @@ def authorize(
                 "executor-set spend never happens"
             ),
         )
-    return Authorization(row=row, est_cost_usd=est_cost_usd)
+    return Authorization(
+        row=row,
+        est_cost_usd=est_cost_usd,
+        est_vcpu=est_vcpu,
+        est_ram_gib=est_ram_gib,
+        est_wall_h=est_wall_h,
+    )
 
 
 def tier1_eligible(predicted_peak_mib: float, meminfo: Path = _MEMINFO) -> bool:

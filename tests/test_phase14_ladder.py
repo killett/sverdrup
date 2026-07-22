@@ -93,14 +93,44 @@ def test_authorize_unknown_task_class_waits() -> None:
 
 
 def test_no_code_path_builds_authorization_over_ceiling() -> None:
-    """Authorization construction itself refuses an over-ceiling estimate.
+    """Authorization construction refuses an over-ceiling estimate on ANY leg.
 
     Executor-set spend never happens: even a buggy caller bypassing
-    ``authorize`` cannot mint an over-ceiling Authorization.
+    ``authorize`` cannot mint an over-ceiling Authorization — cost OR
+    resource legs (the under-cost 999-vCPU bypass is the refuted attack).
     """
     row = next(r for r in STAGE0_SPEND_TABLE if r.task_class == "tier2_probe")
     with pytest.raises(ValueError, match="ceiling"):
         Authorization(row=row, est_cost_usd=999.0)
+    with pytest.raises(ValueError, match="vcpu"):
+        Authorization(row=row, est_cost_usd=1.0, est_vcpu=999)
+
+
+def test_authorize_exact_ceiling_authorizes() -> None:
+    """Estimates AT every ceiling authorize (a >= mutant fails here)."""
+    out = authorize(
+        "tier2_probe",
+        est_cost_usd=25.0,
+        est_vcpu=8,
+        est_ram_gib=64.0,
+        est_wall_h=6.0,
+    )
+    assert isinstance(out, Authorization)
+
+
+def test_wait_carries_the_standing_sentence() -> None:
+    """The owner-facing sentence is the recorded rule, verbatim."""
+    out = authorize("tier2_probe", est_cost_usd=26.0)
+    assert isinstance(out, Wait)
+    assert "executor-set spend never happens" in out.reason
+
+
+def test_probe_storage_egress_unregistered_zero_ceiling() -> None:
+    """Probe storage/egress were NOT owner-registered: ceiling 0 (any use
+    WAITs) — an invented 10/5 GiB default violates the monied rule."""
+    row = next(r for r in STAGE0_SPEND_TABLE if r.task_class == "tier2_probe")
+    assert row.storage_gib == 0.0
+    assert row.egress_gib == 0.0
 
 
 def test_tier1_eligible_reads_meminfo_at_call_time(tmp_path: Path) -> None:
