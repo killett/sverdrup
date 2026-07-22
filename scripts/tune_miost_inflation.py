@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,36 @@ from sverdrup.eval.calibration import coverage, crps_gaussian, reduced_chi2
 RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 OUT_DIR = Path("data/2021a_ssh_mapping_ose/ours")
 SCOPE = Path("tests/validation/fixtures/stage_a_scope.json")
+
+
+def _write_evidence_guarded(
+    write_fn: Callable[..., object], *args: object, **kwargs: object
+) -> object:
+    """Refuse the stage-B evidence write unless the P0-2 opt-in env is set.
+
+    This script's outputs share ``OUT_DIR`` canonical names with the signed
+    Stage-B gate evidence maps; an unguarded rerun clobbers gate evidence
+    (hygiene P0-2, hardened to a blocking precondition per Phase-12 spec §5).
+
+    Args:
+        write_fn: The writer to invoke (e.g. ``write_map``).
+        *args: Positional arguments forwarded to ``write_fn``.
+        **kwargs: Keyword arguments forwarded to ``write_fn``.
+
+    Returns:
+        Whatever ``write_fn`` returns.
+
+    Raises:
+        RuntimeError: If ``SVERDRUP_ALLOW_STAGEB_EVIDENCE`` is not the exact
+            string ``"1"`` — raised BEFORE any file is opened for writing.
+    """
+    if os.environ.get("SVERDRUP_ALLOW_STAGEB_EVIDENCE") != "1":
+        raise RuntimeError(
+            "P0-2 blocking precondition: stage-B evidence write refused. "
+            "Set SVERDRUP_ALLOW_STAGEB_EVIDENCE=1 only after owner adjudication "
+            "(docs/hygiene-priorities.md P0-2)."
+        )
+    return write_fn(*args, **kwargs)
 
 
 def assert_scalar_r(r_var: np.ndarray) -> None:
@@ -121,7 +152,8 @@ def main() -> None:
         if obs.mission is None
         else tuple(sorted({str(x) for x in np.asarray(obs.mission)}))
     )
-    write_map(
+    _write_evidence_guarded(
+        write_map,
         times,
         np.unique(lat2d),
         np.unique(lon2d),
@@ -129,7 +161,8 @@ def main() -> None:
         mean_nc,
         assimilated_missions=assimilated,
     )
-    write_map(
+    _write_evidence_guarded(
+        write_map,
         times,
         np.unique(lat2d),
         np.unique(lon2d),
