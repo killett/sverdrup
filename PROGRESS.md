@@ -342,8 +342,49 @@
 > repackaging delta; wired into probe + golden-tile CMEMS side, cfg in
 > provenance) — CMEMS raw 1-Hz was 15× the signed obs density; probe
 > model dropped 20.2→4.26 GiB peak, wall est 748 s.
-> **⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK IS POSTED,
-> AWAITING OWNER REVIEW:** `docs/superpowers/2026-07-23-phase14-gate0-pack.md`.
+> **✅ GATE 0 CLOSED / APPROVED (owner ruling 2026-07-23) — seal v1
+> SIGNED as the program's founding artifact. ITEM RULINGS (verbatim
+> intent):**
+> 1. GOLDEN-TILE: tabled row accepted; **ATTRIBUTION BEFORE ELECTION** —
+>    addendum COMPUTED + APPENDED to the pack same day (per-mission
+>    n/mean/std deltas + spans): reference surface CONSISTENT (+0.36 mm
+>    overall), variance IDENTICAL (≤1.6 mm), **structural driver
+>    candidate = j2n coverage window (dc2021a j2n ends ~2017-04-01;
+>    _202411 carries it ~45 d longer; −27% n, +21.1 mm co-moving
+>    mean)**; others = +0.6–2.4% edge trims (repackaging). AVISO
+>    election DECISION waits on the owner's readout; option recorded:
+>    j2n-trimmed re-solve isolates the span effect for one box-solve
+>    (~7 min), no auth. Stage-1 cross-lineage readings carry the bridge
+>    caveat until the readout; Stage-1 interpretation language WAITS.
+> 2. T18: Gate 0 closed WITH the cloud leg open — restructured as a
+>    LADDER-ENFORCED PRECONDITION on first Tier-2 production use (WAIT
+>    machinery already refuses). C0→1 ships same-host tolerances +
+>    CRN-EQUAL now; cross-host slot marked pending-T18. Credentials
+>    owner-side; leg runs when supplied.
+> 3. Probe ratios accepted (0.513 wall / 0.785 RAM, PCG-cap caveat
+>    recorded); Stage 1 stays measured-first (task 1-0).
+> 4. Deferrals SIGNED with pinned readings: gate-5 µ pins at the
+>    Stage-1 anchor run; **PROXIMITY = SCORING-TIME FILTER, never a
+>    membership change** — locked/dev membership sealed + immutable; a
+>    locked gauge failing proximity is unscoreable but never leaves the
+>    set. (Code semantics confirmed to match: screening rows deferred
+>    pass-through, membership sealed, evaluator wet-node interp
+>    self-excludes at scoring time.)
+> 5. OFF-BOX EXECUTED (`5cca5be`): `sealed/` tracked home — seal v1
+>    copy (self-verifying, test-pinned) + Gate-0 evidence snapshot
+>    (phase14 subtree + tally, frozen at gate close). Third leg =
+>    `scripts/phase14_seal_run.py check`. NON-COMMITTABLE items (raw
+>    CMEMS/gauge data, golden-tile nc maps, live evidence store): the
+>    owner-side off-box copy is OWNER-NAMED when made — record the
+>    name here; until then re-derivation (verify-and-skip downloads +
+>    byte-equal rebuilds, reviewer-verified) is the recovery path.
+> **NEXT ACTION: Stage-1 plan writing (writing-plans, C0→1 contract,
+> measured constants; zero evaluation-bearing maps until the plan is
+> approved, zero locked opens, tally untouched); attribution readout
+> runs in parallel with owner.**
+> **(pre-ruling record below, kept for the trail)**
+> ⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK WAS POSTED:
+> `docs/superpowers/2026-07-23-phase14-gate0-pack.md`.
 > Seal v1 sha `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2`
 > (re-derivable: `pixi run python scripts/phase14_seal_run.py check`).
 > FULL SWEEP on the final tree (`7ef555a`): 1167 passed / 22 skipped /

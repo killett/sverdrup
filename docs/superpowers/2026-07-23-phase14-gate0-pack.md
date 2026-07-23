@@ -245,3 +245,69 @@ translation). The Phase-13 six-mission-refresh election trigger sits at
 Gate 1, not here.
 
 **STOP: awaiting owner review of this pack (T20 userGate).**
+
+---
+
+## ADDENDUM (Gate-0 ruling item 1, 2026-07-23) — attribution readout from data in hand
+
+**Ruling context:** GATE 0 CLOSED/APPROVED, seal v1 signed. Attribution
+BEFORE election; this readout is computed read-only from the exact
+framed sets the golden tile solved (same loads, same transforms; no
+re-solve, no maps).
+
+### A.1 Per-mission along-track table (A = dc2021a, B = cmems_my `_202411`)
+
+| Mission | n_A | n_B | Δn | mean_A − mean_B | std_A − std_B | day-span note |
+|---|---|---|---|---|---|---|
+| alg | 15916 | 15622 | +294 (+1.9%) | −4.4 mm | +1.6 mm | B ends ~1 d later |
+| h2g | 14546 | 14452 | +94 (+0.6%) | −4.5 mm | +0.2 mm | B ends ~1 d later |
+| j2g | 2886 | 2818 | +68 (+2.4%) | −6.0 mm | +0.2 mm | spans equal (d191–255) |
+| j2n | 4506 | 6202 | **−1696 (−27%)** | **+21.1 mm** | −1.5 mm | **A ends day 91.5; B extends to day 136.5** |
+| s3a | 16491 | 16267 | +224 (+1.4%) | −2.0 mm | −1.6 mm | B ends ~1 d later |
+
+Overall: mean_A 0.112664 m vs mean_B 0.112301 m; std_A 0.236801 m vs
+std_B 0.236877 m.
+
+### A.2 The three ordered checks
+
+1. **Reference-surface / mean-epoch consistency: CONSISTENT.** Overall
+   mean offset **+0.36 mm** — no reference-surface or mean-epoch shift
+   between lineages on the box. Per-mission mean deltas are mm-level
+   (−2.0 to −6.0 mm for four missions, a common-mode processing-baseline
+   scale), not a surface change.
+2. **Along-track variance/RMS: ESSENTIALLY IDENTICAL.** std deltas
+   ≤ 1.6 mm against ~237 mm signal — the DT generations do not differ
+   in along-track energy on the box. The map-level 4.1 cm RMS delta is
+   therefore NOT a noise-floor or variance-scaling effect.
+3. **n_obs structure: ONE STRUCTURAL DIFFERENCE + edge trims.** Four
+   missions show small +0.6–2.4% A-excess consistent with coarsen
+   bin-phase/daily-file chunking at the region and window edges (the
+   recorded repackaging delta; B's spans run ~1 day longer at the
+   window tail). **j2n is categorically different: dc2021a's j2n
+   record STOPS at day 91.5 (~2017-04-01) while `_202411` carries j2n
+   through day 136.5 (~2017-05-16) — ~45 extra days of a whole mission
+   on the box, −27% count delta.** Its +21.1 mm mean delta co-moves
+   (different span samples different seasonal state), consistent with
+   check 1's verdict that this is coverage, not datum.
+
+### A.3 Reading (candidate driver, honestly bounded)
+
+The measured bridge delta is **not attributable to reference surface or
+variance scaling** (checks 1–2). The dominant structural candidate is
+the **j2n coverage-window difference** — an entire mission present for
+~45 more days in CMEMS on the box — plus mm-level common-mode mean
+offsets. Attribution of the 6.2×/4.1× map+µ deltas to the j2n span
+specifically would require a controlled re-solve (j2n-trimmed CMEMS
+side); NOT run — not ordered, and it spends a solve on a question the
+owner may answer by election instead.
+
+**What AVISO DT2021 would and would not decide:** it would tell whether
+the j2n truncation is DT2021-generation behavior (j2n retired earlier in
+that lineage) or dc2021a repackaging; it would NOT change checks 1–2
+(already clean). If the owner prefers the cheaper instrument first: the
+j2n-trimmed re-solve isolates the span effect with zero new data and no
+auth, at one box-solve of compute (~7 min measured).
+
+Stage-1 interpretation language WAITS on the owner's readout of this
+addendum, per the ruling; every cross-lineage Stage-1 reading carries
+the bridge caveat until then.
