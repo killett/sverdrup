@@ -202,5 +202,96 @@ def tile_sizing(
     typer.echo(f"PROBE tile solve done: wall {wall_s:.1f} s, peak {peak_mib:.0f} MiB")
 
 
+def assemble_tier2_report(
+    crn_equal: bool,
+    cross_host_deltas: dict[str, dict[str, float]],
+    multithread_runs: list[dict[str, dict[str, float]]],
+    cost_usd: float,
+    wall_s: float,
+    egress_gib: float,
+) -> dict[str, Any]:
+    """The 0b-3 determinism + cost report (pure assembly, fixture-testable).
+
+    The TWO tolerances land as SEPARATE numbers (fork-g pin 2):
+    ``tolerance_gate`` = the cross-host single-thread deltas;
+    ``tolerance_threading`` = the same-host multi-thread spread (max
+    pairwise max-abs across the repeated runs). The production spot-check
+    tolerance = their per-key envelope (max), computed and recorded
+    BESIDE, formula in the record. A CRN mismatch is a STOP marker —
+    owner adjudication, it breaks the CRN identity assumption.
+    """
+    spread: dict[str, float] = {}
+    for key in cross_host_deltas:
+        vals = [r[key]["max_abs"] for r in multithread_runs]
+        spread[key] = max(vals) - min(vals) if len(vals) > 1 else 0.0
+    envelope = {
+        key: max(cross_host_deltas[key]["max_abs"], spread[key])
+        for key in cross_host_deltas
+    }
+    return {
+        "crn_cross_host": "EQUAL" if crn_equal else "STOP-MISMATCH",
+        "stop_for_owner": not crn_equal,
+        "tolerance_gate": cross_host_deltas,
+        "tolerance_threading": spread,
+        "spotcheck_envelope": envelope,
+        "envelope_formula": "per-key max(tolerance_gate.max_abs, tolerance_threading)",
+        "cost_basis": {
+            "cost_usd": cost_usd,
+            "wall_s": wall_s,
+            "egress_gib": egress_gib,
+        },
+    }
+
+
+@app.command("tier2-report")
+def tier2_report(
+    crn_a: Annotated[Path, typer.Option(help="Local CRN manifest")],
+    crn_b: Annotated[Path, typer.Option(help="Cloud CRN manifest")],
+    solve_local: Annotated[Path, typer.Option(help="Local solve npz")],
+    solve_cloud: Annotated[Path, typer.Option(help="Cloud single-thread npz")],
+    mt_runs: Annotated[str, typer.Option(help="Comma-sep cloud MT npz paths")],
+    cost_usd: Annotated[float, typer.Option()],
+    wall_s: Annotated[float, typer.Option()],
+    egress_gib: Annotated[float, typer.Option()],
+) -> None:
+    """Assemble + record the Tier-2 report from pulled-back artifacts.
+
+    Launch obeys ``ladder.authorize("tier2_probe", est)`` — WAIT above the
+    pre-registered ceiling; VM deletion is checked by the runbook (the
+    SkyPilot task file tears down on completion).
+    """
+
+    def _deltas(a: Path, b: Path) -> dict[str, dict[str, float]]:
+        da, db = np.load(a), np.load(b)
+        out = {}
+        for key in ("mean", "member0_anom"):
+            d = np.asarray(da[key], float) - np.asarray(db[key], float)
+            out[key] = {
+                "max_abs": float(np.nanmax(np.abs(d))),
+                "rms": float(np.sqrt(np.nanmean(d**2))),
+            }
+        return out
+
+    ma = json.loads(crn_a.read_text())
+    mb = json.loads(crn_b.read_text())
+    crn_equal = ma["axes"] == mb["axes"] and ma["root"] == mb["root"]
+    cross = _deltas(solve_local, solve_cloud)
+    mt = [_deltas(solve_local, Path(p)) for p in mt_runs.split(",") if p.strip()]
+    report = assemble_tier2_report(crn_equal, cross, mt, cost_usd, wall_s, egress_gib)
+    if EVIDENCE.exists():
+        from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+            atomic_write_json,
+        )
+
+        results = json.loads(EVIDENCE.read_text())
+        results.setdefault("phase14", {}).setdefault("stage0", {})["determinism"] = (
+            report
+        )
+        atomic_write_json(EVIDENCE, results)
+    typer.echo(json.dumps(report, indent=1))
+    if report["stop_for_owner"]:
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()

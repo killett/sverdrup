@@ -1,0 +1,25 @@
+# Phase-14 Tier-2 probe (0b-3) — the ONE ceilinged cloud run.
+# Launch ONLY after `ladder.authorize("tier2_probe", est)` returns an
+# Authorization (US$25 / 8 vCPU / 64 GiB / 6 h / one region; ephemeral
+# disk <= 50 GiB, persistent storage 0, egress <= 1 GiB — owner-set).
+# VM deletion on completion is REQUIRED (run `sky down` and verify).
+name: phase14-tier2-probe
+resources:
+  cpus: 8
+  memory: 64+
+  disk_size: 50
+workdir: .
+setup: |
+  curl -fsSL https://pixi.sh/install.sh | bash
+  ~/.pixi/bin/pixi install
+run: |
+  export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONHASHSEED=0
+  ~/.pixi/bin/pixi run python scripts/phase14_crossenv.py print-env
+  ~/.pixi/bin/pixi run python scripts/phase14_crossenv.py crn --out out/crn_manifest_cloud.json
+  ~/.pixi/bin/pixi run python scripts/phase14_crossenv.py solve --out out/solve_cloud_st.npz
+  # 3 repeated multi-thread legs (threading tolerance)
+  unset OPENBLAS_NUM_THREADS OMP_NUM_THREADS MKL_NUM_THREADS
+  for i in 1 2 3; do
+    ~/.pixi/bin/pixi run python scripts/phase14_crossenv.py solve --out out/solve_cloud_mt$i.npz
+  done
+  # artifacts pulled back via `sky storage`/rsync by the runbook
