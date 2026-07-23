@@ -58,3 +58,4 @@ docs/papers/*.extraction.md
 docs/papers/*.pdftext.txt
 data/insitu/
 data/cmems_my/
+logs/
