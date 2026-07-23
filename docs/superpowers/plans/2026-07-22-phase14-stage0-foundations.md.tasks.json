@@ -28,31 +28,35 @@
     {
       "id": 3,
       "subject": "Task 3: CMEMS DT2021 multi-year adapter (0c-2)",
-      "status": "blocked",
+      "status": "in_progress",
       "description": "**Goal:** The public multi-year source: pinned DT2021 L3 product, reproducible\nscoped downloads (catalog metadata for the census; probe-tile and box-region\nsubsets for Stage-0 runs), content-manifested.\n\n**Files:**\n- Create: `src/sverdrup/adapters/altimetry/cmems_my.py`,\n  `scripts/download_cmems_my.py`\n- Test: `tests/adapters/test_cmems_my.py` (fixture-driven; network tests\n  data-gated)\n\n**Acceptance Criteria:**\n- [ ] Product pinned: `SEALEVEL_GLO_PHY_L3_MY_008_062` (DT2021 vintage — the\n      papers' lineage), per-mission along-track SLA; `dataset_version` carries\n      the product id + DT tag; version migration = a NEW source_id, never a\n      mutation (fork-a pin 5 recorded in the module docstring).\n- [ ] Downloader follows the dc-download reproducer pattern (httpx + stamina\n      retry on `_is_retryable`, sha256 manifest written beside data, re-run =\n      verify-and-skip); scope arguments (bbox, t0, t1, missions) — NEVER an\n      implicit full-globe pull; downloaded layout is deterministic.\n- [ ] **Census leg:** `mission_catalog()` returns per-mission\n      (first_date, last_date, n_files) from catalog/manifest metadata WITHOUT\n      bulk data download; result content-addressed, written to\n      `data/cmems_my/census_raw.json` + sha.\n- [ ] `CmemsMySource` passes the Task-1 conformance suite on a downloaded\n      fixture subset (data-gated skip otherwise); parsing tested against a\n      small committed synthetic-netCDF fixture in CI (no network).\n- [ ] Storage accounting: every download logs GiB to\n      `phase14.stage0.storage_ledger`; refuses to start a pull whose estimate\n      would exceed the Task-16 storage budget remaining (WAIT semantics).\n\n**Verify:** `pixi run test -- tests/adapters/test_cmems_my.py -v` → PASS\n(CI legs green; network legs skip-guarded).\n\n```json:metadata\n{\"files\": [\"src/sverdrup/adapters/altimetry/cmems_my.py\", \"scripts/download_cmems_my.py\", \"tests/adapters/test_cmems_my.py\"], \"verifyCommand\": \"pixi run test -- tests/adapters/test_cmems_my.py -v\", \"acceptanceCriteria\": [\"Product pinned: `SEALEVEL_GLO_PHY_L3_MY_008_062` (DT2021 vintage \\u2014 the papers' lineage), per-mission along-track SLA; `dataset_version` carries the product id + DT tag; version migration = a NEW source_id, never a mutation (fork-a pin 5 recorded in the module docstring).\", \"Downloader follows the dc-download reproducer pattern (httpx + stamina retry on `_is_retryable`, sha256 manifest written beside data, re-run = verify-and-skip); scope arguments (bbox, t0, t1, missions) \\u2014 NEVER an implicit full-globe pull; downloaded layout is deterministic.\", \"**Census leg:** `mission_catalog()` returns per-mission (first_date, last_date, n_files) from catalog/manifest metadata WITHOUT bulk data download; result content-addressed, written to `data/cmems_my/census_raw.json` + sha.\", \"`CmemsMySource` passes the Task-1 conformance suite on a downloaded fixture subset (data-gated skip otherwise); parsing tested against a small committed synthetic-netCDF fixture in CI (no network).\", \"Storage accounting: every download logs GiB to `phase14.stage0.storage_ledger`; refuses to start a pull whose estimate would exceed the Task-16 storage budget remaining (WAIT semantics).\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         1
       ],
       "lastUpdated": "2026-07-22T00:00:00Z",
-      "blockedReason": "owner vintage ruling: DT2021 gone upstream, only 202411 (DT2024) available"
+      "note": "vintage ratified; machinery+census done; subset pull in flight"
     },
     {
       "id": 4,
       "subject": "Task 4: Census artifact + epoch partition (0a-1)",
-      "status": "pending",
+      "status": "in_progress",
       "description": "**Goal:** The deterministic constellation census and epoch partition the whole\nprogram keys on — from loader metadata, schema-versioned, content-addressed,\nreference-epoch candidates computed net-of-locked.\n\n**Files:**\n- Create: `src/sverdrup/application/epochs.py`\n- Test: `tests/test_phase14_epochs.py`\n\n**Acceptance Criteria:**\n- [ ] `build_census(catalog) -> CensusArtifact`: per-mission ACTIVE intervals\n      = [first_obs_date, last_obs_date] split where an intra-mission gap\n      > `MISSION_GAP_SPLIT_D = 90` days; day resolution; `schema_version=1`;\n      `content_sha()` deterministic (two builds byte-equal).\n- [ ] `partition_epochs(census) -> tuple[Epoch, ...]`: boundaries = union of\n      active-interval endpoints (constellation-change dates);\n      **minimum-epoch rule:** any epoch shorter than `MIN_EPOCH_DAYS = 365`\n      is MERGED into the neighbor with the higher mission-set Jaccard\n      similarity (tie → earlier neighbor); merge trail recorded IN the\n      artifact (the pre-merge boundaries kept as `raw_boundaries`).\n- [ ] Epoch naming: `e{index:02d}_{start ISO date}` (e.g. `e00_1993-01-01`) —\n      index in time order, deterministic.\n- [ ] `window_epoch(window_center_date, epochs)` — the WINDOW-CENTER rule\n      (fork-d D6), with the accepted-approximation sentence in the docstring.\n- [ ] `reference_candidates(epochs, locked_exclusions) -> list[EpochId]`:\n      constellation counted NET of locked missions per epoch (fork-e pin 3);\n      candidates = epochs with net count ≥ 4.\n- [ ] Fixture tests: synthetic catalog reproducing the known shape (1993\n      two-satellite; a mid-2000s 4-mission span; 2017 six-mission) → expected\n      epochs, merges, candidates; boundary-day off-by-one pinned by test.\n\n**Verify:** `pixi run test -- tests/test_phase14_epochs.py -v` → PASS.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/epochs.py\", \"tests/test_phase14_epochs.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase14_epochs.py -v\", \"acceptanceCriteria\": [\"`build_census(catalog) -> CensusArtifact`: per-mission ACTIVE intervals = [first_obs_date, last_obs_date] split where an intra-mission gap > `MISSION_GAP_SPLIT_D = 90` days; day resolution; `schema_version=1`; `content_sha()` deterministic (two builds byte-equal).\", \"`partition_epochs(census) -> tuple[Epoch, ...]`: boundaries = union of active-interval endpoints (constellation-change dates); **minimum-epoch rule:** any epoch shorter than `MIN_EPOCH_DAYS = 365` is MERGED into the neighbor with the higher mission-set Jaccard similarity (tie \\u2192 earlier neighbor); merge trail recorded IN the artifact (the pre-merge boundaries kept as `raw_boundaries`).\", \"Epoch naming: `e{index:02d}_{start ISO date}` (e.g. `e00_1993-01-01`) \\u2014 index in time order, deterministic.\", \"`window_epoch(window_center_date, epochs)` \\u2014 the WINDOW-CENTER rule (fork-d D6), with the accepted-approximation sentence in the docstring.\", \"`reference_candidates(epochs, locked_exclusions) -> list[EpochId]`: constellation counted NET of locked missions per epoch (fork-e pin 3); candidates = epochs with net count \\u2265 4.\", \"Fixture tests: synthetic catalog reproducing the known shape (1993 two-satellite; a mid-2000s 4-mission span; 2017 six-mission) \\u2192 expected epochs, merges, candidates; boundary-day off-by-one pinned by test.\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         3
-      ]
+      ],
+      "note": "code complete; real-data leg pending census/subset",
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 5,
       "subject": "Task 5: Epoch table draft (0a-2)",
-      "status": "pending",
+      "status": "in_progress",
       "description": "**Goal:** The single registry: epoch → missions → holdout(validation) →\nlocked-instrument → fit-vs-transferred, with the sparse-era handicap columns —\ndrafted from the census, sealed later by Task 19.\n\n**Files:**\n- Modify: `src/sverdrup/application/epochs.py` (table builder)\n- Test: `tests/test_phase14_epoch_table.py`\n\n**Acceptance Criteria:**\n- [ ] `build_epoch_table(epochs, census) -> EpochTable` applies the fork-c\n      holdout criteria IN ORDER, mechanically: (1) never the climate-reference\n      line (`{tp, j1, j2*, j3}` family ids) where an alternative exists;\n      (2) prefer a holdout with an instrument-class sibling still assimilated\n      (class map recorded in the module: Poseidon-series / ERS-Envisat-AltiKa\n      / HY-2 / Sentinel-3 / CryoSat); (3) prefer minimal geometry-class-mix\n      distortion (repeat/drifting balance via the Phase-11 classifier\n      classes); (4) one holdout per epoch, stable.\n- [ ] Columns per epoch: missions; holdout + recorded criterion that selected\n      it; role (`fit+validate` for reference epochs, `validate-only` sparse);\n      locked instruments (`gauges` always; `c2` where c2 flies — 2010→);\n      fit-vs-transferred; handicap: fit-substrate fraction, ±66° mask flag\n      for ERS-line holdouts (fork-c pin 3), sibling-less flag (fork-c pin 4).\n- [ ] 2017 epoch row: holdout = j3, role = reference (`fit+validate`) — the\n      workhorse, by construction; test pins it.\n- [ ] Table serializes deterministically (the seal consumes these bytes).\n\n**Verify:** `pixi run test -- tests/test_phase14_epoch_table.py -v` → PASS.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/application/epochs.py\", \"tests/test_phase14_epoch_table.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase14_epoch_table.py -v\", \"acceptanceCriteria\": [\"`build_epoch_table(epochs, census) -> EpochTable` applies the fork-c holdout criteria IN ORDER, mechanically: (1) never the climate-reference line (`{tp, j1, j2*, j3}` family ids) where an alternative exists; (2) prefer a holdout with an instrument-class sibling still assimilated (class map recorded in the module: Poseidon-series / ERS-Envisat-AltiKa / HY-2 / Sentinel-3 / CryoSat); (3) prefer minimal geometry-class-mix distortion (repeat/drifting balance via the Phase-11 classifier classes); (4) one holdout per epoch, stable.\", \"Columns per epoch: missions; holdout + recorded criterion that selected it; role (`fit+validate` for reference epochs, `validate-only` sparse); locked instruments (`gauges` always; `c2` where c2 flies \\u2014 2010\\u2192); fit-vs-transferred; handicap: fit-substrate fraction, \\u00b166\\u00b0 mask flag for ERS-line holdouts (fork-c pin 3), sibling-less flag (fork-c pin 4).\", \"2017 epoch row: holdout = j3, role = reference (`fit+validate`) \\u2014 the workhorse, by construction; test pins it.\", \"Table serializes deterministically (the seal consumes these bytes).\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         4
-      ]
+      ],
+      "note": "code complete; real-data leg pending census/subset",
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 6,
@@ -72,7 +76,8 @@
       "blockedBy": [
         2,
         3
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 8,
@@ -95,11 +100,12 @@
     {
       "id": 10,
       "subject": "Task 10: Touch mechanics generalized (0a-4)",
-      "status": "pending",
+      "status": "completed",
       "description": "**Goal:** The one-touch discipline at program scale: per-product-per-era tally\nledger + the generalized ceremony (tripwires recompute sealed shas before any\nlocked data opens), misfire protocol inherited.\n\n**Files:**\n- Create: `src/sverdrup/validation/locked_tier.py`\n- Test: `tests/test_phase14_locked_tier.py`\n\n**Acceptance Criteria:**\n- [ ] `TallyLedger` in the evidence JSON at `phase14.locked_tally`:\n      `{product_id: {era_id: n_touches}}`; `open_touch(product_id, eras)`\n      refuses (a) without `SVERDRUP_PHASE14_TOUCH=\"1\"` exact-string, (b) if\n      any (product, era) tally would exceed 1 without an owner\n      `corrected_by` dated defect key (misfire protocol — the owner\n      2026-07-20 recording, applied verbatim), (c) if the seal verification\n      (Task 19's `verify_seal()`) fails — tripwire BEFORE any locked data\n      opens.\n- [ ] The ceremony function is the ONLY code path that sets\n      `SVERDRUP_INSITU_LOCKED` / future locked-instrument envs for its\n      child scope (structural: refusals in Task 8 stay independent).\n- [ ] 8 refusal tests (the phase-13 pre-touch pattern): no env; tally\n      exceeded; seal sha mismatch; missing seal; double-open; defect-key\n      path accepted; env exact-string (not \"true\"/\"yes\"); dev-pool\n      unaffected.\n- [ ] Docstring carries: gate approval is NOT touch authorization (the\n      standing rule).\n\n**Verify:** `pixi run test -- tests/test_phase14_locked_tier.py -v` → PASS.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/validation/locked_tier.py\", \"tests/test_phase14_locked_tier.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase14_locked_tier.py -v\", \"acceptanceCriteria\": [\"`TallyLedger` in the evidence JSON at `phase14.locked_tally`: `{product_id: {era_id: n_touches}}`; `open_touch(product_id, eras)` refuses (a) without `SVERDRUP_PHASE14_TOUCH=\\\"1\\\"` exact-string, (b) if any (product, era) tally would exceed 1 without an owner `corrected_by` dated defect key (misfire protocol \\u2014 the owner 2026-07-20 recording, applied verbatim), (c) if the seal verification (Task 19's `verify_seal()`) fails \\u2014 tripwire BEFORE any locked data opens.\", \"The ceremony function is the ONLY code path that sets `SVERDRUP_INSITU_LOCKED` / future locked-instrument envs for its child scope (structural: refusals in Task 8 stay independent).\", \"8 refusal tests (the phase-13 pre-touch pattern): no env; tally exceeded; seal sha mismatch; missing seal; double-open; defect-key path accepted; env exact-string (not \\\"true\\\"/\\\"yes\\\"); dev-pool unaffected.\", \"Docstring carries: gate approval is NOT touch authorization (the standing rule).\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         5
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 11,
@@ -138,12 +144,14 @@
     {
       "id": 15,
       "subject": "Task 15: Sizing model at tile scale + Tier-0/1 probe (0b-1)",
-      "status": "pending",
+      "status": "in_progress",
       "description": "**Goal:** Task-22 arithmetic extended to tile geometry with the retained-store\nterm BY NAME, then re-grounded by ONE measured production-geometry tile probe\nat reduced days.\n\n**Files:**\n- Modify: `src/sverdrup/methods/miost_sizing.py` (tile-scale entry +\n  retained-store term)\n- Create: `scripts/phase14_probe.py` (leg: `--tile-sizing`)\n- Test: `tests/test_phase14_sizing.py`\n\n**Acceptance Criteria:**\n- [ ] `size_tile(frame, window_days, n_windows, m_members)` returns\n      {n_coef, nnz, stored_g_gib, peak_model_mib, wall_est_s} where\n      peak_model EXPLICITLY includes `retained_member_store_mib =\n      n_grid · n_windows · m · 8 B` (the Phase-12 miss, carried BY NAME —\n      docstring cites the ledger entry).\n- [ ] Probe config PINNED: frame = 15°×15° + 2° overlap + 1.0° halo, core\n      lon [292, 307]°E lat [30, 45]°N (contains the signed box; CMEMS\n      box-region+tile subset from Task 3); ONE 60-day window\n      (2017-01-15 → 2017-03-15); mean solve + member 0 only; PROBE-labeled\n      outputs; Tier 0/1.\n- [ ] Probe records at `phase14.stage0.probe_tile`: wall s, peak RSS MiB,\n      n_obs, PCG iters, measured-vs-model ratios for wall and peak; model\n      NOT retuned in-code (re-grounding = recorded ratios, the Phase-12\n      precedent).\n- [ ] Tier-1 launch check runs FIRST: measured MemAvailable at launch vs\n      predicted peak (fork-g pin 4); refusal path tested.\n\n**Verify:** `pixi run test -- tests/test_phase14_sizing.py -v` → PASS;\n`phase14.stage0.probe_tile` populated after the run.\n\n```json:metadata\n{\"files\": [\"src/sverdrup/methods/miost_sizing.py\", \"scripts/phase14_probe.py\", \"tests/test_phase14_sizing.py\"], \"verifyCommand\": \"pixi run test -- tests/test_phase14_sizing.py -v\", \"acceptanceCriteria\": [\"`size_tile(frame, window_days, n_windows, m_members)` returns {n_coef, nnz, stored_g_gib, peak_model_mib, wall_est_s} where peak_model EXPLICITLY includes `retained_member_store_mib = n_grid \\u00b7 n_windows \\u00b7 m \\u00b7 8 B` (the Phase-12 miss, carried BY NAME \\u2014 docstring cites the ledger entry).\", \"Probe config PINNED: frame = 15\\u00b0\\u00d715\\u00b0 + 2\\u00b0 overlap + 1.0\\u00b0 halo, core lon [292, 307]\\u00b0E lat [30, 45]\\u00b0N (contains the signed box; CMEMS box-region+tile subset from Task 3); ONE 60-day window (2017-01-15 \\u2192 2017-03-15); mean solve + member 0 only; PROBE-labeled outputs; Tier 0/1.\", \"Probe records at `phase14.stage0.probe_tile`: wall s, peak RSS MiB, n_obs, PCG iters, measured-vs-model ratios for wall and peak; model NOT retuned in-code (re-grounding = recorded ratios, the Phase-12 precedent).\", \"Tier-1 launch check runs FIRST: measured MemAvailable at launch vs predicted peak (fork-g pin 4); refusal path tested.\"], \"modelTier\": \"standard\"}\n```",
       "blockedBy": [
         12,
         3
-      ]
+      ],
+      "note": "code complete; real-data leg pending census/subset",
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 16,
@@ -168,7 +176,8 @@
         15,
         16,
         17
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 19,
@@ -182,7 +191,8 @@
         11,
         1,
         10
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     },
     {
       "id": 20,
@@ -210,7 +220,8 @@
         17,
         18,
         19
-      ]
+      ],
+      "lastUpdated": "2026-07-22T00:00:00Z"
     }
   ],
   "lastUpdated": "2026-07-22T00:00:00Z"

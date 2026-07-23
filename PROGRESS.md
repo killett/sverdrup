@@ -273,7 +273,40 @@
 >    semantics unchanged above.
 > **▶ EXECUTION RESUMED: T3 under the ratified vintage, through T20;
 > STOP at Gate 0 with the seal sha + full evidence axes. Zero
-> evaluation-bearing maps, zero locked opens, tally untouched.**
+> evaluation-bearing maps, zero locked opens, tally untouched.
+> **T3 MACHINERY + CENSUS DONE; SUBSET PULL IN FLIGHT:** `cmems_my.py`
+> (dataset_version `SEALEVEL_GLO_PHY_L3_MY_008_062_202411` + ruling
+> pointer; locked c2/c2n structurally excluded incl. the DOWNLOADER;
+> CHALLENGE_TO_CMEMS map h2g→h2ag recorded) +
+> `scripts/download_cmems_my.py` (STAC+anonymous-S3, sha manifest,
+> verify-and-skip, budget WAIT vs the 50-GiB ladder row). CENSUS RUN:
+> 29 missions, `data/cmems_my/census_raw.json` sha f7007b88… (evidence
+> `cmems_census_raw_sha`) — NOTE: predates schema v2 (dates lists);
+> RE-RUN census after the subset pull (single-writer). Six-mission
+> 14-month subset (alg,h2ag,j2g,j2n,s3a,j3 × 2016-12→2018-01,
+> ~1.3 GiB) downloading.
+> **T4 CODE COMPLETE (`f249939` + review fixes `05b6929`):** census
+> artifact (90-d gap split, content sha), partition (endpoint union,
+> 365-d Jaccard merge — FULL expected partition hand-pinned after
+> review; merge-loop fuzzed clean by reviewer), window-center rule,
+> net-of-locked candidates. Real-artifact leg waits on census re-run.
+> **T5 CODE COMPLETE (`7fd1e57`):** `epoch_table.py` (criteria chain
+> mechanical; ANCHOR exception j3 by construction; instrument-class +
+> drifting maps recorded; handicap columns; deterministic bytes).
+> Real draft table waits on census re-run.
+> **T10 COMPLETE (`9623b0f`):** `locked_tier.py` open_touch ceremony —
+> 8 refusal legs green, default verifier REFUSES pre-seal, tally
+> increments on clean completion only, LOCKED env set for child scope
+> only; "gate approval is NOT touch authorization" pinned.
+> **T15 CODE COMPLETE (`249a08d`):** `size_tile` (retained-store term
+> BY NAME, box-identity defaults, wall basis = phase-13 leg-B 253.4 s
+> at the 11041-obs pinned subject) + **BasisSpec DOMAIN GENERALIZATION**
+> (x0/y0/d_x/d_y pavement fields, defaults byte-identical — key()
+> suffix only when non-default; `_layouts`/`_axis_candidates` threaded;
+> 48-test miost identity sweep GREEN post-change) + `Miost(basis_domain=…)`
+> hook + `scripts/phase14_probe.py --tile-sizing` (pinned frame
+> [292,307]×[30,45], tier1_eligible FIRST, PROBE-labeled, ratios
+> recorded never retuned). Probe RUN waits on the CMEMS subset.**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
