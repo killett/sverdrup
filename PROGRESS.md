@@ -344,10 +344,11 @@
 > model dropped 20.2→4.26 GiB peak, wall est 748 s.
 > **⏸ SESSION PAUSE (context). RESUME SEQUENCE (fresh session, in
 > order, single-writer discipline):**
-> 1. Wait/verify gauge `stations-all` pull done (log
->    tasks/blpu7vj8y.output equivalent: `data/insitu/uhslc/*.nc` ~700
->    files + manifest; re-run `pixi run python
->    scripts/download_gauges.py stations-all` — verify-and-skip).
+> 1. Gauge `stations-all` pull DIED at 516/716 files (ConnectTimeout,
+>    retries exhausted) — RE-RUN `pixi run python
+>    scripts/download_gauges.py stations-all` (verify-and-skip resumes;
+>    repeat until "stations-all done"; ledger row appends only for new
+>    bytes).
 > 2. `pixi run python scripts/phase14_probe.py tile-sizing` — the
 >    Tier-1 predicate REFUSED at MemAvailable 5.4 GiB (needs ≥ 8.5);
 >    retry when co-tenant pressure drops (hourly cycles); nohup+log.
