@@ -28,12 +28,16 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import numpy as np
 import typer
 
 from sverdrup.core.observations import ObsWindow
+
+if TYPE_CHECKING:
+    from sverdrup.adapters.altimetry import BBox
+    from sverdrup.core.grid import GridSpec
 
 app = typer.Typer(add_completion=False)
 
@@ -66,6 +70,26 @@ def compute_deltas(maps_a: np.ndarray, maps_b: np.ndarray) -> dict[str, float]:
 def tabled_flag(map_deltas: dict[str, float], mu_delta: float) -> bool:
     """The pre-registered recording thresholds (record always, flag over)."""
     return abs(mu_delta) > TABLED_MU_DELTA or map_deltas["rms_m"] > TABLED_MAP_RMS_M
+
+
+def cmems_load_bbox(grid: GridSpec, halo_deg: float = 1.0) -> BBox:
+    """The CMEMS load region: grid NODE extent ± halo (the halo_obs rule).
+
+    Loading the globe pulls every daily file's full track (~100M 1-Hz
+    samples) and OOM-kills the run (observed exit 137, 2026-07-22);
+    conformance-exact clipping to the framing region yields the identical
+    framed set. Clip-then-coarsen is the recorded transform semantic —
+    the probe's wiring and the signed convention's regional inputs.
+    """
+    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
+
+    lon_nodes, lat_nodes = grid._lonlat_nodes()
+    return BBox(
+        float(lon_nodes.min()) - halo_deg,
+        float(lon_nodes.max()) + halo_deg,
+        float(lat_nodes.min()) - halo_deg,
+        float(lat_nodes.max()) + halo_deg,
+    )
 
 
 def superobs_cfg_for(source_id: str) -> dict[str, object] | None:
@@ -116,7 +140,7 @@ def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int
         src = CmemsMySource()
         cmems_codes = tuple(CHALLENGE_TO_CMEMS[m] for m in _MAPPING_FIVE)
         raw = src.load(
-            globe,
+            cmems_load_bbox(grid, halo_deg=1.0),
             np.datetime64("2016-11-01"),
             np.datetime64("2018-03-01"),
             missions=cmems_codes,

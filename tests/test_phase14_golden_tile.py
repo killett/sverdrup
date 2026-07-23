@@ -66,6 +66,30 @@ def test_superobs_cfg_for_sides() -> None:
         _mod.superobs_cfg_for("nope")
 
 
+def test_cmems_load_bbox_is_the_halo_region() -> None:
+    """CMEMS side loads the halo_obs keep-region, never the globe.
+
+    Bug caught: a global-bbox CMEMS load pulls ~100M 1-Hz samples
+    (all 1899 daily files) and OOM-kills the run (observed exit 137,
+    2026-07-22); conformance-exact load clipping to the grid node
+    extent +/- halo yields the identical framed set. Node extent, not
+    the nominal box — the recorded 43.2N sliver quirk.
+    """
+    from sverdrup.validation.params import baseline_config
+
+    grid = baseline_config()[1]
+    lon_nodes, lat_nodes = grid._lonlat_nodes()
+    box = _mod.cmems_load_bbox(grid, halo_deg=1.0)
+    assert box.lon_min == pytest.approx(float(lon_nodes.min()) - 1.0)
+    assert box.lon_max == pytest.approx(float(lon_nodes.max()) + 1.0)
+    assert box.lat_min == pytest.approx(float(lat_nodes.min()) - 1.0)
+    assert box.lat_max == pytest.approx(float(lat_nodes.max()) + 1.0)
+    import inspect
+
+    side_src = inspect.getsource(_mod._load_side)
+    assert "cmems_load_bbox(grid" in side_src
+
+
 def test_record_and_apply_share_the_cfg_source() -> None:
     """The record keys and the apply site both route through superobs_cfg_for.
 
