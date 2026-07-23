@@ -241,14 +241,39 @@
 > (33:55; non-validation tree; skips = data-gated JPL conformance +
 > gate-5 Stage-1 guard + standing data-gated legs — every skip reason
 > named).**
-> **⛔ EXECUTION PAUSED — ALL UNBLOCKED TASKS DONE; the rest WAITS on
-> the T3 VINTAGE RULING (owner):** complete = T0,1,2,6,9,11,12,13,14,
-> 16,17 (+T8 machinery/catalog leg). Blocked chain = T3→T4→T5→T7→T10→
-> T15→T18→T19→T20 + T8 series-screening leg (needs the census epoch
-> table). Owner options recorded at the T3 banner above (ratify 202411 /
-> supply DT2021 externally / HOLD). On the ruling: resume with
-> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
-> — next task = T3 under the ruled vintage.**
+> **⚖ DT-VINTAGE RULING (owner, 2026-07-22, verbatim intent) — OPTION
+> (a): RATIFY `_202411` (DT2024) as the pinned CMEMS-MY vintage.** The
+> Nov-2024 MY reprocessing replaced DT2021 upstream — the fork-a pin-5
+> migration event at first contact; the pin's own protocol applies.
+> Five recordings:
+> 1. Golden-tile comparison (anchor box × 2017 × frozen signed) = the
+>    CROSS-DT BRIDGE (dc2021a/DT2021-era vs CMEMS/_202411); divergence
+>    TABLES per the pin. CONFLATION recorded honestly: repackaging and
+>    DT-generation deltas inseparable in this one comparison. ⚖ OWNER-
+>    ELECTABLE LEDGER ROW: AVISO DT2021 (authed) as a decomposition
+>    source — elected ONLY if the measured bridge delta is material to a
+>    Stage-1 reading; no auth cost on an unmeasured need.
+> 2. PAPERS-FAITHFULNESS RE-ANCHORED: the papers-lineage claim attaches
+>    to the dc2021a-anchored signed records (DT2021-era); any future
+>    U2022/B2023 citation beside CMEMS-MY results carries the vintage
+>    caveat. Spec fork-a pin-5 text superseded-with-pointer (spec
+>    postscript 2) — never silently edited.
+> 3. Descriptor pins `_202411` exactly per dataset; any future DT change
+>    re-fires the pin-5 machinery as designed.
+> 4. STAGE-3 CONTRACT NOTE (inherited by the trend spec): vDT2024's
+>    TOPEX-A instrumental-drift correction NOT YET COMPUTED upstream
+>    (fill-valued) — the trend contract's published-budget prior for the
+>    TOPEX-A term comes from the LITERATURE, never the CMEMS variable,
+>    until upstream updates it; sits on the trend product's dominant
+>    1993–1998 systematic.
+> 5. Gate-5 constant deferral ENDORSED (validation-vs-acceptance
+>    constant class, caught pre-pin; value pins at the Stage-1 anchor
+>    run). Storage/egress ceilings SET: probe ephemeral VM disk
+>    ≤ 50 GiB, persistent cloud storage 0, cloud egress ≤ 1 GiB; WAIT
+>    semantics unchanged above.
+> **▶ EXECUTION RESUMED: T3 under the ratified vintage, through T20;
+> STOP at Gate 0 with the seal sha + full evidence axes. Zero
+> evaluation-bearing maps, zero locked opens, tally untouched.**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0

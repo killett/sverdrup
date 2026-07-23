@@ -69,13 +69,14 @@ STAGE0_SPEND_TABLE: tuple[SpendRow, ...] = (
         task_class="tier2_probe",
         tier=Tier.CLOUD_NODE,
         cost_ceiling_usd=25.0,
-        storage_gib=0.0,
-        egress_gib=0.0,
-        # storage/egress ceilings were NOT owner-registered for the probe:
-        # 0 ceiling means ANY storage/egress estimate WAITs (monied rule).
+        # Owner DT-vintage ruling 2026-07-22 item 5: ephemeral VM disk
+        # <= 50 GiB, persistent cloud storage 0, egress <= 1 GiB.
+        storage_gib=50.0,  # EPHEMERAL VM disk; persistent cloud storage = 0
+        egress_gib=1.0,
         basis=(
             "pre-registered owner default (plan header 2026-07-22); "
-            "storage/egress unregistered -> 0 ceiling, any use WAITs"
+            "storage/egress ceilings owner-set (DT-vintage ruling item 5): "
+            "ephemeral disk <=50 GiB, persistent storage 0, egress <=1 GiB"
         ),
         max_vcpu=8,
         max_ram_gib=64.0,

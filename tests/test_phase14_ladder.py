@@ -125,12 +125,14 @@ def test_wait_carries_the_standing_sentence() -> None:
     assert "executor-set spend never happens" in out.reason
 
 
-def test_probe_storage_egress_unregistered_zero_ceiling() -> None:
-    """Probe storage/egress were NOT owner-registered: ceiling 0 (any use
-    WAITs) — an invented 10/5 GiB default violates the monied rule."""
+def test_probe_storage_egress_owner_set_ceilings() -> None:
+    """Probe storage/egress = the owner-set ceilings (DT-vintage ruling
+    item 5, 2026-07-22): ephemeral VM disk 50 GiB, egress 1 GiB — the
+    basis string records persistent cloud storage stays 0."""
     row = next(r for r in STAGE0_SPEND_TABLE if r.task_class == "tier2_probe")
-    assert row.storage_gib == 0.0
-    assert row.egress_gib == 0.0
+    assert row.storage_gib == 50.0
+    assert row.egress_gib == 1.0
+    assert "persistent storage 0" in row.basis
 
 
 def test_tier1_eligible_reads_meminfo_at_call_time(tmp_path: Path) -> None:

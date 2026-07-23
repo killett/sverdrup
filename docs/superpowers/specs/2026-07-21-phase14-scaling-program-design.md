@@ -912,3 +912,33 @@ cross-lineage reading. No cross-lineage number is ever quoted without it.
 **Owner-input defaults RATIFIED as pre-registered (recorded owner-set at this
 review):** Tier-2 probe ≤ US$25 / 8 vCPU / 64 GiB / 6 h / one region; CMEMS
 storage ≤ 50 GiB, egress $0; WAIT above any ceiling, test-pinned.
+
+## 15. Postscript 2 — DT-vintage ruling (owner, 2026-07-22)
+
+**Fork-a pin 5's "DT2021 pinned" wording is SUPERSEDED-WITH-POINTER by this
+ruling — the original text above stands unedited as the historical record.**
+
+Upstream event: the Nov-2024 MY reprocessing removed DT2021 from
+`SEALEVEL_GLO_PHY_L3_MY_008_062`; only `_202411`-version datasets (DT2024
+lineage) are distributed. This is the pin-5 version-migration event at first
+contact, and the pin's own protocol applies. Owner ruling (option a):
+
+1. **`_202411` RATIFIED as the pinned CMEMS-MY vintage.** The descriptor pins
+   `_202411` exactly per dataset; any future DT change re-fires the pin-5
+   machinery (new source_id, golden-tile rerun) as designed.
+2. **Golden-tile comparison = the CROSS-DT BRIDGE** (anchor box × 2017 ×
+   frozen signed config; dc2021a/DT2021-era vs CMEMS/`_202411`); divergence
+   TABLES. Conflation recorded honestly: repackaging and DT-generation deltas
+   are inseparable in this one comparison. ⚖ Owner-electable ledger row:
+   AVISO DT2021 (authed) as a decomposition source — elected only if the
+   measured bridge delta is material to a Stage-1 reading.
+3. **Papers-faithfulness re-anchored:** the papers-lineage claim attaches to
+   the dc2021a-anchored signed records (DT2021-era); any future U2022/B2023
+   citation beside CMEMS-MY results carries the vintage caveat.
+4. **Stage-3 contract note (inherited by the trend spec):** vDT2024's TOPEX-A
+   instrumental-drift correction is not yet computed upstream (fill-valued) —
+   the trend contract's published-budget prior for the TOPEX-A term comes from
+   the literature, never the CMEMS variable, until upstream updates it.
+5. **Tier-2 probe storage/egress ceilings set:** ephemeral VM disk ≤ 50 GiB,
+   persistent cloud storage 0, cloud egress ≤ 1 GiB; WAIT semantics unchanged
+   above these.
