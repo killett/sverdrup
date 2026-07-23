@@ -71,8 +71,20 @@ def test_refuses_on_seal_mismatch(
 def test_refuses_on_missing_seal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """(4) The default verifier refuses while no seal exists (pre-Task-19)."""
+    """(4) The default verifier refuses while no seal is recorded.
+
+    Hermetic against the LIVE store (the real seal v1 exists since
+    2026-07-23 and made the original global-store read pass-through):
+    the seal module's evidence path is pointed at a store with no seal
+    node, preserving the behavior under test — a locked open before the
+    sealed set exists is definitionally unceremonied.
+    """
+    import sverdrup.validation.phase14_seal as seal_mod
+
     monkeypatch.setenv(TOUCH_ENV, "1")
+    sealless = tmp_path / "sealless_evidence.json"
+    sealless.write_text(json.dumps({"phase14": {"stage0": {}}}))
+    monkeypatch.setattr(seal_mod, "EVIDENCE", sealless)
     with pytest.raises(SealVerificationError, match="[Ss]eal"):
         with open_touch("prodA", ["e00"], _evidence(tmp_path)):
             pass
