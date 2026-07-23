@@ -342,8 +342,9 @@
 > repackaging delta; wired into probe + golden-tile CMEMS side, cfg in
 > provenance) — CMEMS raw 1-Hz was 15× the signed obs density; probe
 > model dropped 20.2→4.26 GiB peak, wall est 748 s.
-> **⏸ SESSION PAUSE (context). RESUME SEQUENCE (fresh session, in
-> order, single-writer discipline):**
+> **✅ RESUME SEQUENCE EXECUTED 2026-07-23 (fresh session; steps 1–6
+> done, results below; T20 pack = the only remaining task). Original
+> sequence kept for the trail:**
 > 1. Gauge `stations-all` pull DIED at 516/716 files (ConnectTimeout,
 >    retries exhausted) — RE-RUN `pixi run python
 >    scripts/download_gauges.py stations-all` (verify-and-skip resumes;
@@ -369,6 +370,53 @@
 >    vs Phase-12 bracket; T18 CLOUD LEG WAITING on credentials;
 >    proximity-deferral interpretation; gate-5 µ-lineage deferral.
 >    STOP after posting.**
+> **EXECUTED RESULTS (2026-07-23, all committed+pushed):**
+> 1. Gauges: stations-all DONE (214 new 0.065 GiB + 501 verified-skipped
+>    = 715, matches the script's expected count; ledger row appended).
+> 2. T15 probe RUN (after mc_error fix `61c586c`: ensemble_provenance
+>    m=1 divided by zero — sqrt(2/(m-1)); mc_error now None at m=1,
+>    refusal m<1; the same latent bug would have killed the T18 cloud
+>    solve leg). Evidence `probe_tile`: wall 383.5 s / model 747.8
+>    (ratio 0.513), peak 3344.6 MiB / model 4259.7 (ratio 0.785) —
+>    model conservative both axes; member-batch PCG exited at the
+>    500-iter cap at 1.02e-06 vs rtol 1e-06 (surfaced + recorded;
+>    wall_s = mild lower bound — pack line).
+> 3. T7 golden tile RUN after TWO fixes: `a41d92e` (superobs cfg into
+>    the record — review minor, landed BEFORE evidence mint) and
+>    `6984e26` (OOM exit 137 root cause: CMEMS side loaded the GLOBE —
+>    ~100M 1-Hz samples; now loads grid-node extent ±1° halo region,
+>    clip-then-coarsen recorded as the transform semantic). RESULT:
+>    mu_a 0.76941 (dc2021a) / mu_b 0.78187 (cmems) / mu_delta −0.012457;
+>    map rms 4.10 cm / max_abs 83.7 cm / worst-day rms 8.58 cm; j2n obs
+>    delta −1696; **tabled_for_owner TRUE** (mu leg 6×, map leg 4× —
+>    tables, never blocks). **µ-SCALE CATCH (review major, resolved by
+>    measurement):** these µ are the their_eval.score scale, NOT the
+>    phase-13 leaderboard_nrmse scale — lane0 scores 0.76953 through the
+>    same scorer (side A ≡ signed solution, 1.43 cm rms from lane0
+>    maps); `mu_scale_check` amendment recorded in the evidence node.
+>    Max-abs delta verified interior jet-band (day ~2017-09-11,
+>    39.0°N 296.4°E), not an edge artifact. AVISO DT2021 decomposition
+>    ledger row now MATERIAL (bridge delta over thresholds — ruling
+>    item 1). PROBE label stamped INSIDE both nc maps (`dbff89f`).
+> 4. T8 series leg RUN: 563 candidates → 135 screened → 39 locked /
+>    96 dev (30%/stratum), split seed 2278306912366042270, locked_split
+>    + screening_rows written, evidence gauges = series-leg-complete
+>    (stale `pending` resolved in place, dated).
+> 5. **SEAL v1 BUILT + VERIFIED:** `phase14_evaluation_seal_v1.json`,
+>    sha `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2`,
+>    evidence `phase14.stage0.seal` write-once; content = epoch-table
+>    bytes + locked/dev gauges + split seed + screening config +
+>    instrument configs + c2 era windows e05..e14 (c2∪c2n per table);
+>    verify_current_seal PASS — the T10 ceremony tripwire is armed
+>    against a real seal.
+> 6. Dual reviews: T3/T4/T5 real legs CLEAN (2 minors actioned in
+>    `a41d92e`); T15+T7 runs ACCEPT (µ-scale major resolved above;
+>    minors: PCG-cap pack line, clip-note recorded, PROBE nc stamp
+>    done, evidence-silent-skip latent hazard = pack line); T8+T19
+>    review in flight this session.
+> GOTCHA (this session): `pixi run` scripts SIGKILLed by OOM die with
+> ZERO output (buffered stdout lost) — always rerun with `python -u` +
+> RSS trace to diagnose; exit 137 + MemAvailable plunge = the signature.
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
