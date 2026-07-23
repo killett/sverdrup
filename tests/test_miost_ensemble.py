@@ -151,6 +151,24 @@ def test_provenance_m_and_mc_error(dist: MiostEnsembleDistribution) -> None:
     assert tr.params["mc_error"] == pytest.approx(np.sqrt(2.0 / (M - 1)))
 
 
+def test_provenance_single_member_probe() -> None:
+    """m=1 (probe/crossenv single-member solve) records mc_error None.
+
+    Sample variance has m-1 dof: at m=1 the MC error is UNDEFINED, not a
+    number — recording None is the honest value. Catches: the
+    ZeroDivisionError that killed the phase-14 tile probe (sqrt(2/(m-1))
+    evaluated unconditionally), and any future finite fake (e.g. 0.0,
+    which would claim perfect MC precision from one member).
+    """
+    from sverdrup.distributions.miost_ensemble import ensemble_provenance
+
+    (tr,) = ensemble_provenance(1).transformations
+    assert tr.params["m"] == 1
+    assert tr.params["mc_error"] is None
+    with pytest.raises(ValueError, match="m must be >= 1"):
+        ensemble_provenance(0)
+
+
 def test_persistence_roundtrip_exact(
     dist: MiostEnsembleDistribution, tmp_path: Path
 ) -> None:

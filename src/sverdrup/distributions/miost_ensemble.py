@@ -74,19 +74,29 @@ def variance_consistency_rtol(m: int) -> float:
 def ensemble_provenance(m: int) -> UncertaintyProvenance:
     """Provenance for m perturbed-observation members (spec 6.2).
 
+    Sample variance has m - 1 degrees of freedom, so at m = 1 (the
+    single-member probe/cross-env solves) the Monte-Carlo error is
+    UNDEFINED — recorded as ``None``, never a finite fake.
+
     Args:
-        m: Member count.
+        m: Member count (>= 1).
 
     Returns:
         Native SAMPLES with one INPUT_PERTURBATION transform carrying m and
-        the Monte-Carlo error sqrt(2 / (m - 1)).
+        the Monte-Carlo error sqrt(2 / (m - 1)) (``None`` at m = 1).
+
+    Raises:
+        ValueError: If ``m < 1`` (no members is not an ensemble).
     """
+    if m < 1:
+        raise ValueError(f"m must be >= 1, got {m}")
+    mc_error = float(np.sqrt(2.0 / (m - 1))) if m > 1 else None
     return UncertaintyProvenance(
         native_capability=UncertaintyCapability.SAMPLES,
         transformations=[
             UncertaintyTransform(
                 kind=TransformKind.INPUT_PERTURBATION,
-                params={"m": m, "mc_error": float(np.sqrt(2.0 / (m - 1)))},
+                params={"m": m, "mc_error": mc_error},
             )
         ],
     )
