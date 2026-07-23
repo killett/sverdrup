@@ -78,12 +78,45 @@ def _shape_catalog() -> dict[str, dict[str, list[str]]]:
         "en": {"dates": _dates("2002-06-01", "2012-04-08")},
         "g2": {"dates": _dates("2004-06-01", "2008-12-31")},
         "al": {"dates": _dates("2013-03-14", "2017-12-31")},
-        "j2": {"dates": _dates("2008-07-04", "2016-10-01")},
+        "j2": {"dates": _dates("2008-07-04", "2017-12-31")},
         "j3": {"dates": _dates("2016-02-17", "2017-12-31")},
         "s3a": {"dates": _dates("2016-03-01", "2017-12-31")},
         "c2": {"dates": _dates("2010-07-16", "2017-12-31")},
-        "h2a": {"dates": _dates("2011-10-01", "2016-04-30")},
+        "h2a": {"dates": _dates("2011-10-01", "2017-12-31")},
     }
+
+
+def test_partition_full_expected_epochs_pinned() -> None:
+    """The COMPLETE expected partition of the shape, hand-derived.
+
+    Every boundary is an interval endpoint (+1 day on ends) and every
+    merge direction follows the Jaccard rule — e.g. the 151-day
+    2002-01-01→2002-06-01 segment ({e2,j1,tp}) merges RIGHT into the
+    4-mission span (Jaccard 3/4 vs 2/3 left); the 181-day post-tp
+    segment merges LEFT. An inverted tie-break or off-by-one boundary
+    changes this table.
+    """
+    part = partition_epochs(build_census(_shape_catalog()))
+    expected = [
+        ("e00_1993-01-01", "1993-01-01", "1995-06-01", ["e1", "tp"]),
+        ("e01_1995-06-01", "1995-06-01", "1996-06-01", ["e1", "e2", "tp"]),
+        ("e02_1996-06-01", "1996-06-01", "2002-01-01", ["e2", "tp"]),
+        ("e03_2002-01-01", "2002-01-01", "2003-07-01", ["e2", "en", "j1", "tp"]),
+        ("e04_2003-07-01", "2003-07-01", "2009-01-01", ["en", "g2", "j1", "j2"]),
+        ("e05_2009-01-01", "2009-01-01", "2010-07-16", ["en", "j2"]),
+        ("e06_2010-07-16", "2010-07-16", "2013-03-14", ["c2", "en", "h2a", "j2"]),
+        ("e07_2013-03-14", "2013-03-14", "2016-02-17", ["al", "c2", "h2a", "j2"]),
+        (
+            "e08_2016-02-17",
+            "2016-02-17",
+            "2018-01-01",
+            ["al", "c2", "h2a", "j2", "j3", "s3a"],
+        ),
+    ]
+    got = [
+        (e.epoch_id, str(e.start), str(e.end), sorted(e.missions)) for e in part.epochs
+    ]
+    assert got == expected
 
 
 def test_partition_boundaries_and_merge_trail() -> None:

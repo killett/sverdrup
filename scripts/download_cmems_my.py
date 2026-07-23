@@ -189,6 +189,7 @@ def census() -> None:
 
     cat = catalog_from_listing(list(hrefs_by_id), list_keys)
     payload = {
+        "schema_version": 2,  # v2: per-mission 'dates' lists (Task-4 input)
         "product_id": PRODUCT_ID,
         "dt_tag": DT_TAG,
         "generated": datetime.now(UTC).date().isoformat(),
@@ -228,6 +229,14 @@ def subset(
 ) -> None:
     """A scoped missions × time pull (budget-checked, verify-and-skip)."""
     wanted = [m.strip() for m in missions.split(",") if m.strip()]
+    from sverdrup.adapters.altimetry.cmems_my import LOCKED_MISSIONS  # noqa: PLC0415
+
+    locked = [m for m in wanted if m in LOCKED_MISSIONS]
+    if locked:
+        raise typer.BadParameter(
+            f"mission(s) {locked} are in the LOCKED evaluation tier — "
+            "locked data is acquired only through the touch-ceremony path"
+        )
     hrefs = _dataset_native_hrefs()
     by_code = {}
     for ds_id, href in hrefs.items():

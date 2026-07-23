@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-# An intra-mission silence longer than this splits the ACTIVE interval —
-# shorter outages (safe-holds, maneuvers) stay inside one interval.
+# A day-sequence difference EXCEEDING this splits the ACTIVE interval
+# (diff > 90 days, i.e. 90+ silent days); shorter outages stay inside.
 MISSION_GAP_SPLIT_D = 90
 
 # Epochs shorter than this merge into a neighbor (constellation-change
@@ -78,6 +78,11 @@ def build_census(catalog: dict[str, dict[str, list[str]]]) -> CensusArtifact:
     """
     intervals: dict[str, tuple[tuple[np.datetime64, np.datetime64], ...]] = {}
     for mission, meta in sorted(catalog.items()):
+        if "dates" not in meta:
+            raise ValueError(
+                f"catalog entry {mission!r} lacks the 'dates' field — the "
+                "census snapshot predates schema v2; re-run the census leg"
+            )
         days = np.array(sorted(set(meta["dates"])), dtype="datetime64[D]")
         if days.size == 0:
             continue
