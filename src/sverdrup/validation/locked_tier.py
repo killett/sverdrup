@@ -37,19 +37,24 @@ class SealVerificationError(RuntimeError):
 
 
 def default_seal_verifier() -> None:
-    """The Task-19 verifier hook — refuses while no seal exists.
+    """The REAL verifier (Task 19): byte-verify the recorded current seal.
 
-    Task 19 replaces this with the real byte-recompute verifier; until the
-    seal is BUILT, every touch refuses here (a locked open before the seal
-    exists is definitionally unceremonied).
+    Delegates to ``phase14_seal.verify_current_seal`` — refuses while no
+    seal is recorded in evidence (a locked open before the sealed set
+    exists is definitionally unceremonied) and on any byte mismatch.
 
     Raises:
-        SealVerificationError: Always, pre-Task-19.
+        SealVerificationError: No recorded seal or verification failure.
     """
-    raise SealVerificationError(
-        "no phase-14 evaluation seal exists yet (Task 19 builds it); "
-        "locked data cannot open before the sealed set is signed"
+    from sverdrup.validation.phase14_seal import (  # noqa: PLC0415
+        SealError,
+        verify_current_seal,
     )
+
+    try:
+        verify_current_seal()
+    except SealError as exc:
+        raise SealVerificationError(str(exc)) from exc
 
 
 def read_tally(evidence_path: Path) -> dict[str, Any]:
