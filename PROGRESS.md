@@ -306,7 +306,29 @@
 > 48-test miost identity sweep GREEN post-change) + `Miost(basis_domain=…)`
 > hook + `scripts/phase14_probe.py --tile-sizing` (pinned frame
 > [292,307]×[30,45], tier1_eligible FIRST, PROBE-labeled, ratios
-> recorded never retuned). Probe RUN waits on the CMEMS subset.**
+> recorded never retuned). Probe RUN waits on the CMEMS subset.
+> **T7 MACHINERY (`221ef39`):** `scripts/phase14_golden_tile.py` — the
+> cross-DT bridge comparison (frozen signed config both sides; CMEMS
+> missions RELABELED to challenge codes h2ag→h2g so mission-keyed R
+> applies identically — recorded; both sides score the SAME challenge j3
+> track; thresholds µ 0.002 / map RMS 1 cm pre-registered; tabled flag;
+> refusals). RUN waits on subset (~80 min detached when it goes).
+> **T19 MACHINERY (`cff0d66`):** `validation/phase14_seal.py` —
+> assemble/build (WRITE-ONCE)/verify (byte recompute, tamper + stale-sha
+> refusals)/supersede (v{n+1} + {supersedes, signoff, date}; v1 still
+> verifies) + `verify_current_seal` via the evidence pointer
+> `phase14.stage0.seal`; **T10 ceremony now wired to the REAL verifier**
+> (default refuses while no seal recorded; 20 tests green). REAL seal v1
+> build waits on T5/T8 real legs.
+> **T18 MACHINERY (`1d72cde`):** `assemble_tier2_report` (two tolerances
+> SEPARATE + per-key max envelope, formula recorded; CRN mismatch =
+> STOP-for-owner) + `--tier2-report` CLI + `sky/phase14_probe.yaml`
+> (pinned resources = the owner ceilings, teardown required).
+> **⚠ T18 CLOUD LEG WAITS: NO cloud credentials on this host** (no
+> ~/.aws, ~/.config/gcloud, ~/.azure, no env) — the Tier-2 launch is
+> blocked input only the owner can provide; recorded for the Gate-0
+> pack. T8 gauge series download (stations-all, ~0.5 GiB) queued behind
+> the CMEMS pull (single-writer ledger).**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
