@@ -33,17 +33,18 @@ from sverdrup.adapters.insitu.gauges import (
     parse_uhslc_hourly,
 )
 from sverdrup.adapters.insitu.screening import (
+    RLR_MATCH_DEG,
     Epoch,
     GaugeRecord,
     screen_gauges,
     stratified_split,
+    write_locked_split,
 )
 from sverdrup.core.seeding import derive_seed
 
 app = typer.Typer(add_completion=False)
 
 EVIDENCE = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
-RLR_MATCH_DEG = 0.05
 
 
 def _real_epochs() -> tuple[Epoch, ...]:
@@ -114,15 +115,9 @@ def run() -> None:
     rows, passed = screen_gauges(gauges, epochs, None)
     survivors = [g for g in gauges if g.gauge_id in set(passed)]
     split = stratified_split(survivors)
-    LOCKED_SPLIT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LOCKED_SPLIT_PATH.write_text(
-        json.dumps(
-            {"locked": list(split["locked"]), "dev": list(split["dev"])},
-            indent=1,
-            sort_keys=True,
-        )
-        + "\n"
-    )
+    # WRITE-ONCE (T19 review finding 2): identical rebuild = no-op;
+    # drifted content refuses — the seal pins these ids.
+    write_locked_split(LOCKED_SPLIT_PATH, split)
     rows_path = GAUGES_DIR / "screening_rows.json"
     rows_path.write_text(
         json.dumps(

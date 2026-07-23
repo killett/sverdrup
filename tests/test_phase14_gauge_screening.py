@@ -228,3 +228,54 @@ def test_stratified_split_respects_strata() -> None:
     n_a = sum(1 for g in locked if g.startswith("a"))
     n_b = sum(1 for g in locked if g.startswith("b"))
     assert n_a == 3 and n_b == 3
+
+
+def test_write_locked_split_write_once(tmp_path: Path) -> None:
+    """The split file is write-once: identical rewrite OK, drift refuses.
+
+    Bug caught (T19 review finding 2): the runner unconditionally rewrote
+    locked_split.json on re-run while the seal pins its own copy — drifted
+    gauge inputs would silently diverge the LIVE refusal set from the
+    sealed set, and verify_current_seal would not catch it.
+    """
+    from sverdrup.adapters.insitu.screening import write_locked_split
+
+    path = tmp_path / "locked_split.json"
+    split = {"locked": ("uh001",), "dev": ("uh002", "uh003")}
+    write_locked_split(path, split)
+    first = path.read_bytes()
+    write_locked_split(path, split)  # identical rebuild: no-op, no raise
+    assert path.read_bytes() == first
+    drifted = {"locked": ("uh001", "uh002"), "dev": ("uh003",)}
+    with pytest.raises(RuntimeError, match="write-once"):
+        write_locked_split(path, drifted)
+    assert path.read_bytes() == first  # refusal happened BEFORE any write
+
+
+def test_screening_config_record_matches_constants() -> None:
+    """The recorded screening-config dict derives from the module constants.
+
+    Bug caught: a hand-maintained copy (the seal assembly's input) silently
+    drifting from the operative constants — the seal would pin stale
+    values while screening runs on new ones.
+    """
+    from sverdrup.adapters.insitu.gauges import MIN_HOURS_PER_DAY
+    from sverdrup.adapters.insitu.screening import (
+        EXCLUDED_BASINS,
+        LOCKED_FRACTION,
+        screening_config_record,
+    )
+
+    cfg = screening_config_record()
+    assert cfg["criteria_order"] == [
+        "rlr_datum_continuity",
+        "era_completeness",
+        "open_ocean_siting",
+        "proximity",
+        "correction_consistency",
+    ]
+    assert cfg["l_prox_km"] == L_PROX_KM
+    assert cfg["split"]["locked_fraction"] == LOCKED_FRACTION
+    assert cfg["min_valid_hours_per_day"] == MIN_HOURS_PER_DAY
+    assert cfg["excluded_basins"] == [b[0] for b in EXCLUDED_BASINS]
+    assert cfg["split"]["seed_path"] == ["insitu", "phase14-seal", "locked-split", 0]

@@ -18,7 +18,11 @@ basin × era-coverage class, 30% locked per stratum, seeded from
 
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -28,6 +32,13 @@ from sverdrup.core.seeding import derive_seed
 # phase-13 acceptance): a gauge farther than the product's resolved scale
 # from the nearest wet gridpoint cannot be compared to the map.
 L_PROX_KM = 150.0
+
+# Era-completeness rule (criterion 2): coverage per claimed epoch + floor.
+ERA_COMPLETENESS_MIN_FRAC = 0.70
+MIN_TOTAL_YEARS = 3.0
+
+# RLR datum match radius [deg] (criterion 1, recorded mechanical rule).
+RLR_MATCH_DEG = 0.05
 
 _EARTH_RADIUS_KM = 6371.0
 
@@ -141,7 +152,7 @@ def _check_era_completeness(
 ) -> tuple[bool, str]:
     """≥ 70% of days in each epoch the gauge claims + ≥ 3 years total."""
     total_years = g.days.size / 365.25
-    if total_years < 3.0:
+    if total_years < MIN_TOTAL_YEARS:
         return False, f"total {total_years:.1f} y < 3 y"
     details = []
     ok = True
@@ -152,7 +163,7 @@ def _check_era_completeness(
         n_epoch_days = int((e.end - e.start) / np.timedelta64(1, "D"))
         frac = float(claimed.sum()) / n_epoch_days
         details.append(f"{e.epoch_id}:{frac:.2f}")
-        if frac < 0.70:
+        if frac < ERA_COMPLETENESS_MIN_FRAC:
             ok = False
     return ok, "; ".join(details) or "claims no epoch"
 
@@ -266,3 +277,78 @@ def stratified_split(
         locked.extend(sorted(chosen))
         dev.extend(sorted(set(ids) - chosen))
     return {"locked": tuple(sorted(locked)), "dev": tuple(sorted(dev))}
+
+
+def serialize_locked_split(split: Mapping[str, Sequence[str]]) -> str:
+    """The canonical locked-split file text (sorted keys, 1-indent, LF)."""
+    return (
+        json.dumps(
+            {"locked": list(split["locked"]), "dev": list(split["dev"])},
+            indent=1,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+
+
+def write_locked_split(path: Path, split: Mapping[str, Sequence[str]]) -> None:
+    """Write the locked/dev split file — WRITE-ONCE (T19 review finding 2).
+
+    The seal pins its own copy of the id lists while ``load_gauge``'s
+    structural refusal reads the LIVE file: an unconditional rewrite under
+    drifted gauge inputs would silently diverge the two, and
+    ``verify_current_seal`` cannot catch it. An identical rebuild is a
+    no-op; a differing rebuild refuses BEFORE any byte is written.
+
+    Args:
+        path: The canonical split path.
+        split: ``{"locked": [...], "dev": [...]}``.
+
+    Raises:
+        RuntimeError: If ``path`` exists with different content.
+    """
+    text = serialize_locked_split(split)
+    if path.exists():
+        if path.read_text() == text:
+            return
+        raise RuntimeError(
+            f"locked split {path} exists with DIFFERENT content — the split "
+            "is write-once (the seal pins these ids; amendment goes through "
+            "seal supersession, never a silent rewrite)"
+        )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def screening_config_record() -> dict[str, Any]:
+    """The recorded screening config, derived FROM the operative constants.
+
+    Single source for the seal assembly (T19 review finding 4): a
+    hand-maintained copy could silently drift from the constants screening
+    actually runs on.
+    """
+    from sverdrup.adapters.insitu.gauges import MIN_HOURS_PER_DAY  # noqa: PLC0415
+
+    return {
+        "criteria_order": list(_CRITERIA_ORDER),
+        "min_valid_hours_per_day": MIN_HOURS_PER_DAY,
+        "era_completeness_min_frac": ERA_COMPLETENESS_MIN_FRAC,
+        "min_total_years": MIN_TOTAL_YEARS,
+        "rlr_match_deg": RLR_MATCH_DEG,
+        "l_prox_km": L_PROX_KM,
+        "proximity": (
+            "DEFERRED to consumption grid (Stage-0 recorded interpretation; "
+            "Gate-0 owner attention item)"
+        ),
+        "excluded_basins": [b[0] for b in EXCLUDED_BASINS],
+        "split": {
+            "strata": "8-box basin x era-coverage class",
+            "locked_fraction": LOCKED_FRACTION,
+            "seed_path": ["insitu", "phase14-seal", "locked-split", 0],
+        },
+        "corrections": {
+            "dac": "none-applied (rqds raw hourly)",
+            "tide": "daily-mean-of-hourly",
+            "reference_convention": "B2023 Eq.-1 (Stage-1 consumer reconciles)",
+        },
+    }
