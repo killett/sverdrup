@@ -58,6 +58,14 @@ class BasisSpec:
     l_t_days: float
     n_dir: int = N_DIR
     ladder: tuple[float, ...] = LADDER
+    # Pavement domain in the shared km plane (phase-14 tile probes pass a
+    # tile domain; the DEFAULTS reproduce the signed box byte-identically —
+    # key() appends a suffix ONLY when non-default, so every signed
+    # params_key is unchanged).
+    x0_km: float = 0.0
+    y0_km: float = 0.0
+    d_x_km: float = D_X_KM
+    d_y_km: float = D_Y_KM
 
     @property
     def dt_days(self) -> float:
@@ -71,6 +79,12 @@ class BasisSpec:
             f"ladder={','.join(f'{s:.3f}' for s in self.ladder)};beta={BETA};"
             f"W={W_DAYS};V={V_DAYS};stride={STRIDE_DAYS};halo={HALO_DEG};"
             f"lam_ref={LAM_REF};r_ref={R_REF!r}"
+            + (
+                f";dom={self.x0_km!r},{self.y0_km!r},{self.d_x_km!r},{self.d_y_km!r}"
+                if (self.x0_km, self.y0_km, self.d_x_km, self.d_y_km)
+                != (0.0, 0.0, D_X_KM, D_Y_KM)
+                else ""
+            )
         )
 
     def elements_for_window(self, start_day: float, w_days: float = W_DAYS) -> Elements:
@@ -91,10 +105,10 @@ class BasisSpec:
         for s_idx, lam in enumerate(self.ladder):
             hw = SUPPORT * lam
             step = self.alpha * lam
-            # spatial pavement: box + 1.5*lam margin each side (spec §2.1)
-            nx = int(np.ceil((D_X_KM + 2 * hw) / step))
-            ny = int(np.ceil((D_Y_KM + 2 * hw) / step))
-            x0, y0 = -hw, -hw
+            # spatial pavement: domain + 1.5*lam margin each side (spec §2.1)
+            nx = int(np.ceil((self.d_x_km + 2 * hw) / step))
+            ny = int(np.ceil((self.d_y_km + 2 * hw) / step))
+            x0, y0 = self.x0_km - hw, self.y0_km - hw
             k = 2 * np.pi / lam
             for d_idx in range(self.n_dir):
                 th = np.pi * d_idx / self.n_dir  # mod-180 (D1)
@@ -200,8 +214,8 @@ def _layouts(spec: BasisSpec, j_lo: int, j_hi: int) -> list[_ScaleLayout]:
     for lam in spec.ladder:
         hw = SUPPORT * lam
         step = spec.alpha * lam
-        nx = int(np.ceil((D_X_KM + 2 * hw) / step))
-        ny = int(np.ceil((D_Y_KM + 2 * hw) / step))
+        nx = int(np.ceil((spec.d_x_km + 2 * hw) / step))
+        ny = int(np.ceil((spec.d_y_km + 2 * hw) / step))
         out.append(_ScaleLayout(lam, hw, step, nx, ny, j_lo, j_hi, base))
         base += nx * ny * (j_hi - j_lo + 1) * spec.n_dir * 2
     return out
@@ -241,8 +255,8 @@ def _chunk_triplets(
     cols_l: list[np.ndarray] = []
     vals_l: list[np.ndarray] = []
     for lay in layouts:
-        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
-        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        ix, dx, okx = _axis_candidates(x, spec.x0_km - lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, spec.y0_km - lay.hw, lay.step, lay.hw, lay.ny)
         kt = int(np.floor(2.0 * spec.l_t_days / dt)) + 1
         jt_lo = np.floor((t - spec.l_t_days) / dt).astype(np.int64) + 1
         jt = jt_lo[:, None] + np.arange(kt)[None, :]
@@ -378,8 +392,8 @@ def build_s(
     # Spatial values are j-independent: evaluate once per spatial candidate,
     # then tile across that position's n_t temporal-slot columns.
     for lay in layouts:
-        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
-        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        ix, dx, okx = _axis_candidates(x, spec.x0_km - lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, spec.y0_km - lay.hw, lay.step, lay.hw, lay.ny)
         valid = okx[:, :, None] & oky[:, None, :]
         if not valid.any():
             continue
@@ -442,8 +456,8 @@ def build_s_spatial(
     rows_l, cols_l, vals_l = [], [], []
     base_sp = 0
     for lay in layouts:
-        ix, dx, okx = _axis_candidates(x, -lay.hw, lay.step, lay.hw, lay.nx)
-        iy, dy, oky = _axis_candidates(y, -lay.hw, lay.step, lay.hw, lay.ny)
+        ix, dx, okx = _axis_candidates(x, spec.x0_km - lay.hw, lay.step, lay.hw, lay.nx)
+        iy, dy, oky = _axis_candidates(y, spec.y0_km - lay.hw, lay.step, lay.hw, lay.ny)
         valid = okx[:, :, None] & oky[:, None, :]
         block = lay.nx * lay.ny
         if valid.any():

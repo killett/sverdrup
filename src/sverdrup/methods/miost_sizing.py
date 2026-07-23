@@ -63,6 +63,8 @@ def n_coefficients(
     lam_max: float = LAM_MAX,
     margin: bool = False,
     dt_days: float = DT_DAYS,
+    d_x_km: float = D_X_KM,
+    d_y_km: float = D_Y_KM,
 ) -> int:
     """Count basis coefficients for one configuration.
 
@@ -78,6 +80,8 @@ def n_coefficients(
         lam_max: Largest admissible wavelength [km].
         margin: Whether to extend the pavement by 1.5*lam each side.
         dt_days: Temporal pavement spacing [days].
+        d_x_km: Pavement domain width [km] (default: the signed box).
+        d_y_km: Pavement domain height [km] (default: the signed box).
 
     Returns:
         Total coefficient count N_coef.
@@ -86,8 +90,8 @@ def n_coefficients(
     total = 0
     for lam in scale_set(lam_min, lam_max):
         ext = 2.0 * SUPPORT_FACTOR * lam if margin else 0.0  # 1.5*lam each side
-        n_x = max(1, math.ceil((D_X_KM + ext) / (alpha * lam)))
-        n_y = max(1, math.ceil((D_Y_KM + ext) / (alpha * lam)))
+        n_x = max(1, math.ceil((d_x_km + ext) / (alpha * lam)))
+        n_y = max(1, math.ceil((d_y_km + ext) / (alpha * lam)))
         total += n_x * n_y * n_t * n_dir * 2
     return total
 
@@ -248,3 +252,89 @@ def peak_model(
         baseline=baseline_bytes,
         retained=retained_bytes,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase-14 tile-scale entry (0b-1). Layering note (recorded deviation from
+# the plan signature): this module stays application-free, so the entry
+# takes plane dims + node count instead of a TileFrame — the probe script
+# derives them from the frame via the shared plane transform.
+# ---------------------------------------------------------------------------
+
+# The measured wall basis: phase-13 probe leg B, ONE box window member
+# solve under the aug path (253.4 s) at the measured w0 obs count (11041,
+# the gate-4 pinned subject). wall_est scales by nnz ratio; the T15 probe
+# re-grounds the ratio (never retunes in-code — the Phase-12 precedent).
+BOX_WALL_BASIS_S = 253.4
+BOX_W0_OBS_BASIS = 11041
+
+
+def size_tile(
+    d_x_km: float,
+    d_y_km: float,
+    n_grid_nodes: int,
+    window_days: float,
+    n_windows: int,
+    m_members: int,
+    n_obs: int,
+    alpha: float,
+    n_dir: int,
+    lam_min: float,
+    lam_max: float = LAM_MAX,
+) -> dict[str, float]:
+    """Task-22 arithmetic at tile geometry, retained-store term BY NAME.
+
+    ``retained_member_store_mib = n_grid · n_windows · m · 8 B`` — the
+    Phase-12 peak-model miss (actual 3436.7 MiB vs amended 2219.3; the
+    accumulator the model forgot), carried by name per the Task-22
+    re-grounding queue entry.
+
+    Args:
+        d_x_km: Tile solve-domain width in the shared km plane.
+        d_y_km: Tile solve-domain height.
+        n_grid_nodes: Solve grid node count.
+        window_days: Solve window length [days].
+        n_windows: Windows in the plan.
+        m_members: Ensemble members retained.
+        n_obs: Observation count in one window (support-widened).
+        alpha: Element spacing fraction.
+        n_dir: Plane-wave directions.
+        lam_min: Smallest wavelength [km].
+        lam_max: Largest wavelength [km].
+
+    Returns:
+        ``{n_coef, nnz, stored_g_gib, retained_member_store_mib,
+        peak_model_mib, wall_est_s}``.
+    """
+    n_coef = n_coefficients(
+        alpha,
+        n_dir,
+        window_days,
+        lam_min,
+        lam_max,
+        margin=True,
+        d_x_km=d_x_km,
+        d_y_km=d_y_km,
+    )
+    nnz = nnz_g(n_obs, alpha, n_dir, lam_min, lam_max)
+    retained_bytes = float(n_grid_nodes) * n_windows * m_members * F64
+    peak = peak_model(
+        alpha,
+        n_dir,
+        window_days,
+        lam_min,
+        n_obs,
+        m=max(1, m_members),
+        lam_max=lam_max,
+        n_grid_nodes=n_grid_nodes,
+        retained_bytes=retained_bytes,
+    )
+    nnz_box = nnz_g(BOX_W0_OBS_BASIS, alpha, n_dir, lam_min, lam_max)
+    return {
+        "n_coef": float(n_coef),
+        "nnz": float(nnz),
+        "stored_g_gib": CSR_BYTES_PER_NNZ * nnz / 2**30,
+        "retained_member_store_mib": retained_bytes / 2**20,
+        "peak_model_mib": peak.total / 2**20,
+        "wall_est_s": BOX_WALL_BASIS_S * nnz / nnz_box,
+    }

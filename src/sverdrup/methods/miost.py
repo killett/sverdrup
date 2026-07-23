@@ -398,6 +398,7 @@ class Miost:
         rspec: RSpec | None = None,
         member_solve_checkpoint_dir: Path | None = None,
         c_tap_dir: Path | None = None,
+        basis_domain: tuple[float, float, float, float] | None = None,
     ) -> None:
         """Create the method with empty caches.
 
@@ -438,6 +439,10 @@ class Miost:
                 diagnostics; NEVER a product output — §2 rider 1). Purely
                 observational: the solve numerics, params_key, and returned
                 distribution are untouched. None = no tap.
+            basis_domain: Optional (x0_km, y0_km, d_x_km, d_y_km) pavement
+                domain override in the shared km plane (phase-14 tile
+                probes); None = the signed box, byte-identical enumeration
+                and params_key.
 
         Raises:
             ValueError: If ``members > 0`` without ``member_root``, or if both
@@ -462,6 +467,7 @@ class Miost:
         self.rspec = rspec if rspec is not None else RSpec()
         self.member_solve_checkpoint_dir = member_solve_checkpoint_dir
         self.c_tap_dir = c_tap_dir
+        self.basis_domain = basis_domain
         self._calibration: CalibrationField = (
             calibration if calibration is not None else ScalarCalibration(inflation_s)
         )
@@ -506,11 +512,27 @@ class Miost:
         )
 
     def _spec_from(self, params: ParameterProvider, grid: GridSpec) -> BasisSpec:
-        """Bind the continuous parameters into a frozen BasisSpec."""
+        """Bind the continuous parameters into a frozen BasisSpec.
+
+        ``basis_domain`` (phase-14 probe hook) overrides the pavement
+        domain (x0, y0, d_x, d_y in the shared km plane); None = the
+        signed box, byte-identical enumeration and params_key.
+        """
+        if self.basis_domain is None:
+            return BasisSpec(
+                alpha=float(params.resolve("spacing_alpha", grid)),
+                l_t_days=float(params.resolve("l_t_days", grid)),
+                n_dir=self.n_dir,
+            )
+        x0, y0, dx, dy = self.basis_domain
         return BasisSpec(
             alpha=float(params.resolve("spacing_alpha", grid)),
             l_t_days=float(params.resolve("l_t_days", grid)),
             n_dir=self.n_dir,
+            x0_km=x0,
+            y0_km=y0,
+            d_x_km=dx,
+            d_y_km=dy,
         )
 
     def _params_key(self, params: ParameterProvider, grid: GridSpec) -> str:
