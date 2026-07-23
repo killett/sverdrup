@@ -328,7 +328,46 @@
 > ~/.aws, ~/.config/gcloud, ~/.azure, no env) — the Tier-2 launch is
 > blocked input only the owner can provide; recorded for the Gate-0
 > pack. T8 gauge series download (stations-all, ~0.5 GiB) queued behind
-> the CMEMS pull (single-writer ledger).**
+> the CMEMS pull (single-writer ledger).
+> **EXECUTED SINCE (all committed+pushed):** CMEMS subset DONE (1899
+> files, 0.824 GiB ledgered); census RE-RUN schema v2 (29 missions, sha
+> 17ec736aa9cd…, evidence `cmems_census_raw_sha`); CMEMS conformance 12
+> passed on the real subset; **T4+T5 REAL LEGS DONE** — 15 epochs
+> 1992-10-13→2026-01-17, anchor row e10 holdout j3
+> signed-workhorse-by-construction, `census_sha` ea82b953… +
+> `epoch_table_draft_sha` ba1050be… in evidence, draft at
+> `data/cmems_my/epoch_table_draft.json`; **challenge-coarsen super-obs
+> step LANDED** (fork-a pin-4 transform: mean-of-COARSEN_TIME per
+> (mission, day) block, trim; daily-file chunking difference = recorded
+> repackaging delta; wired into probe + golden-tile CMEMS side, cfg in
+> provenance) — CMEMS raw 1-Hz was 15× the signed obs density; probe
+> model dropped 20.2→4.26 GiB peak, wall est 748 s.
+> **⏸ SESSION PAUSE (context). RESUME SEQUENCE (fresh session, in
+> order, single-writer discipline):**
+> 1. Wait/verify gauge `stations-all` pull done (log
+>    tasks/blpu7vj8y.output equivalent: `data/insitu/uhslc/*.nc` ~700
+>    files + manifest; re-run `pixi run python
+>    scripts/download_gauges.py stations-all` — verify-and-skip).
+> 2. `pixi run python scripts/phase14_probe.py tile-sizing` — the
+>    Tier-1 predicate REFUSED at MemAvailable 5.4 GiB (needs ≥ 8.5);
+>    retry when co-tenant pressure drops (hourly cycles); nohup+log.
+> 3. `pixi run python scripts/phase14_golden_tile.py --source-a dc2021a
+>    --source-b cmems_my` (~80 min, detached, AFTER the probe — RAM).
+> 4. `pixi run python scripts/phase14_gauge_run.py` (T8 series leg:
+>    screen+split vs the REAL epochs; writes locked_split.json +
+>    evidence phase14.stage0.gauges).
+> 5. Build REAL seal v1 (assemble_content from epoch_table_draft.json
+>    bytes + locked_split + screening config + instrument configs +
+>    c2 era windows [e05..e14 per table] + record
+>    `phase14.stage0.seal` {path, sha} in evidence — write-once).
+> 6. Dual review T3/T4-real/T5-real/T7-run/T8-series/T15-run/T19-seal.
+> 7. T20: assemble the Gate-0 pack (docs/superpowers/
+>    2026-XX-phase14-gate0-pack.md) — owner attention items FIRST:
+>    consumed pre-registered defaults + actuals; dc2021a gate-2
+>    substrate interpretation; golden-tile tabled state; probe ratios
+>    vs Phase-12 bracket; T18 CLOUD LEG WAITING on credentials;
+>    proximity-deferral interpretation; gate-5 µ-lineage deferral.
+>    STOP after posting.**
 > Plan + tracker:**
 > `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
 > (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
