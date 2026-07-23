@@ -114,6 +114,58 @@ def catalogs() -> None:
     _get(UHSLC_META_URL, DATA_DIR / "uhslc" / "meta.geojson", "uhslc-meta")
 
 
+@app.command("stations-all")
+def stations_all() -> None:
+    """The full rqds hourly roster (scoped BY the catalog's own file list).
+
+    ~715 station-segment files, ~0.1 MB each — the era-completeness
+    criterion needs every candidate's daily series; this is the recorded
+    scoped leg (ledgered as one row).
+    """
+    import re  # noqa: PLC0415
+
+    body = httpx.get(
+        UHSLC_HOURLY_URL.format(name=""), timeout=60.0, follow_redirects=True
+    ).text
+    names = sorted(set(re.findall(r'href="(h\w+\.nc)"', body)))
+    typer.echo(f"{len(names)} rqds hourly files in the catalog")
+    man = _manifest()
+    pulled = 0
+    pulled_bytes = 0
+    for name in names:
+        dest = DATA_DIR / "uhslc" / name
+        rel = f"uhslc/{name}"
+        if dest.exists() and rel in man:
+            continue
+        _fetch(UHSLC_HOURLY_URL.format(name=name), dest)
+        man[rel] = _sha256(dest)
+        pulled += 1
+        pulled_bytes += dest.stat().st_size
+        if pulled % 100 == 0:
+            MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
+            typer.echo(f"  …{pulled}")
+    MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
+    if pulled and EVIDENCE.exists():
+        from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+            atomic_write_json,
+        )
+
+        results = json.loads(EVIDENCE.read_text())
+        node = results.setdefault("phase14", {}).setdefault("stage0", {})
+        node.setdefault("storage_ledger", []).append(
+            {
+                "name": "uhslc-rqds-hourly-all",
+                "gib": round(pulled_bytes / 2**30, 6),
+                "date": datetime.now(UTC).date().isoformat(),
+            }
+        )
+        atomic_write_json(EVIDENCE, results)
+    typer.echo(
+        f"stations-all done: {pulled} new ({pulled_bytes / 2**30:.3f} GiB), "
+        f"{len(names) - pulled} verified-skipped"
+    )
+
+
 @app.command()
 def station(
     station_id: str = typer.Option(..., help="UHSLC file stem, e.g. h021"),

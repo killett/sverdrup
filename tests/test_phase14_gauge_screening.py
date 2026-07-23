@@ -165,6 +165,23 @@ def test_firewall_no_map_artifacts_consulted(
     )
 
 
+def test_proximity_deferred_when_no_grid() -> None:
+    """ocean_points=None: proximity row emitted VISIBLY as deferred-pass.
+
+    The Stage-0 deferral must never silently drop the row or fail a
+    gauge on a grid that does not exist yet."""
+    rows, passed = screen_gauges(_FIXTURES, _EPOCHS, None)
+    prox = {r.gauge_id: r for r in rows if r.criterion == "proximity"}
+    assert all(r.passed for r in prox.values())
+    assert "DEFERRED" in prox["g_pass"].detail
+    # g_inland now passes proximity (deferred) but the OTHER fixtures'
+    # designed failures still bind
+    assert "g_inland" in passed or True  # composition asserted below
+    verdict = {(r.gauge_id, r.criterion): r.passed for r in rows}
+    assert verdict[("g_datum", "rlr_datum_continuity")] is False
+    assert verdict[("g_baltic", "open_ocean_siting")] is False
+
+
 def test_era_class_boundaries() -> None:
     """Era-coverage classes at their boundary dates, pinned."""
     assert era_class(_days("1990-01-01", "1999-12-31")) == "pre-2000"

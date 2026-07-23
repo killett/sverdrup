@@ -160,20 +160,25 @@ def _check_era_completeness(
 def screen_gauges(
     gauges: list[GaugeRecord] | tuple[GaugeRecord, ...],
     epochs: tuple[Epoch, ...],
-    ocean_points: tuple[np.ndarray, np.ndarray],
+    ocean_points: tuple[np.ndarray, np.ndarray] | None,
 ) -> tuple[tuple[ScreeningRow, ...], tuple[str, ...]]:
     """Run the recorded criteria IN ORDER over every gauge.
 
     Args:
         gauges: The candidate gauge records.
         epochs: The program epochs (census-derived; synthetic in tests).
-        ocean_points: ``(lon, lat)`` arrays of the target grid's wet points.
+        ocean_points: ``(lon, lat)`` arrays of the target grid's wet points,
+            or None — the Stage-0 DEFERRAL (recorded interpretation, a
+            Gate-0 owner attention item): no program grid exists in
+            Stage 0, so criterion 4 binds AT CONSUMPTION against each
+            stage's actual product grid (the evaluator's wet-node interp
+            already self-excludes unreachable gauges); the row is emitted
+            visibly as deferred, never silently skipped.
 
     Returns:
         ``(rows, passed_ids)`` — one row per (gauge, criterion) in order,
         and the ids passing ALL criteria (input order preserved).
     """
-    ocean_lon, ocean_lat = ocean_points
     rows: list[ScreeningRow] = []
     passed_ids: list[str] = []
     for g in gauges:
@@ -194,11 +199,19 @@ def screen_gauges(
                 else "open ocean (island/offshore preference recorded)"
             ),
         )
-        d_km = float(_haversine_km(g.lon, g.lat, ocean_lon, ocean_lat).min())
-        verdicts["proximity"] = (
-            d_km <= L_PROX_KM,
-            f"nearest wet gridpoint {d_km:.0f} km (ceiling {L_PROX_KM:.0f})",
-        )
+        if ocean_points is None:
+            verdicts["proximity"] = (
+                True,
+                "DEFERRED to consumption grid (Stage-0 recorded "
+                "interpretation; Gate-0 owner attention item)",
+            )
+        else:
+            ocean_lon, ocean_lat = ocean_points
+            d_km = float(_haversine_km(g.lon, g.lat, ocean_lon, ocean_lat).min())
+            verdicts["proximity"] = (
+                d_km <= L_PROX_KM,
+                f"nearest wet gridpoint {d_km:.0f} km (ceiling {L_PROX_KM:.0f})",
+            )
         has_corr = bool(g.corrections.get("dac")) and bool(g.corrections.get("tide"))
         verdicts["correction_consistency"] = (
             has_corr,
