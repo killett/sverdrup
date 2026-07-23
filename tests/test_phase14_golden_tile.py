@@ -47,3 +47,36 @@ def test_refuses_unregistered_frame_or_period() -> None:
     )
     assert res.exit_code != 0
     assert "pre-registered" in res.output
+
+
+def test_superobs_cfg_for_sides() -> None:
+    """CMEMS side carries the pin-4 coarsen cfg; dc2021a side None.
+
+    Bug caught: the evidence record omitting the applied super-obs
+    transform (fork-a pin 4: parameterized AND recorded in provenance).
+    """
+    from sverdrup.validation.params import COARSEN_TIME
+
+    assert _mod.superobs_cfg_for("cmems_my") == {
+        "kind": "challenge-coarsen",
+        "n": COARSEN_TIME,
+    }
+    assert _mod.superobs_cfg_for("dc2021a") is None
+    with pytest.raises(ValueError, match="unknown source"):
+        _mod.superobs_cfg_for("nope")
+
+
+def test_record_and_apply_share_the_cfg_source() -> None:
+    """The record keys and the apply site both route through superobs_cfg_for.
+
+    Source pin: catches the drift bug where the applied transform and the
+    recorded provenance disagree, or the record keys are dropped.
+    """
+    import inspect
+
+    run_src = inspect.getsource(_mod.run)
+    assert '"superobs_cfg_a": superobs_cfg_for(source_a)' in run_src
+    assert '"superobs_cfg_b": superobs_cfg_for(source_b)' in run_src
+    side_src = inspect.getsource(_mod._load_side)
+    assert "superobs_cfg_for(source_id)" in side_src
+    assert "apply_superobs(obs, cfg=cfg)" in side_src

@@ -68,6 +68,22 @@ def tabled_flag(map_deltas: dict[str, float], mu_delta: float) -> bool:
     return abs(mu_delta) > TABLED_MU_DELTA or map_deltas["rms_m"] > TABLED_MAP_RMS_M
 
 
+def superobs_cfg_for(source_id: str) -> dict[str, object] | None:
+    """The super-obs cfg applied to a side — the SAME object the record keeps.
+
+    CMEMS raw 1-Hz needs the signed convention's time-coarsen (fork-a
+    pin 4: parameterized and recorded in provenance); dc2021a is already
+    at the signed density, so its cfg is None (identity).
+    """
+    from sverdrup.validation.params import COARSEN_TIME  # noqa: PLC0415
+
+    if source_id == "cmems_my":
+        return {"kind": "challenge-coarsen", "n": COARSEN_TIME}
+    if source_id == "dc2021a":
+        return None
+    raise ValueError(f"unknown source {source_id!r}")
+
+
 def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int]]:
     """(framed ObsWindow in the solver frame, descriptor sha, per-mission n)."""
     from sverdrup.adapters.altimetry import (
@@ -81,7 +97,6 @@ def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int
     from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
     from sverdrup.core.observations import DiagonalErrorModel  # noqa: PLC0415
     from sverdrup.validation.params import (  # noqa: PLC0415
-        COARSEN_TIME,
         OBS_NOISE_VARIANCE,
         baseline_config,
     )
@@ -120,12 +135,13 @@ def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int
             DiagonalErrorModel(np.full(len(raw), OBS_NOISE_VARIANCE)),
             mission=relabeled,
         )
-        # the signed convention's time-coarsen, as the recorded super-obs
-        # step (fork-a pin 4); daily-file chunking difference = part of
-        # the recorded repackaging delta
-        obs = apply_superobs(obs, cfg={"kind": "challenge-coarsen", "n": COARSEN_TIME})
     else:
         raise typer.BadParameter(f"unknown source {source_id!r}")
+    # the signed convention's time-coarsen on the CMEMS side, identity on
+    # dc2021a (fork-a pin 4); daily-file chunking difference = part of
+    # the recorded repackaging delta
+    cfg = superobs_cfg_for(source_id)
+    obs = apply_superobs(obs, cfg=cfg)
     framed = halo_obs(obs, grid, halo_deg=1.0)
     m_arr = framed.mission
     if m_arr is None:  # pragma: no cover - both adapters tag
@@ -216,6 +232,8 @@ def run(
         "descriptor_b": desc_b,
         "obs_counts_a": counts_a,
         "obs_counts_b": counts_b,
+        "superobs_cfg_a": superobs_cfg_for(source_a),
+        "superobs_cfg_b": superobs_cfg_for(source_b),
         "obs_count_deltas": {m: counts_a[m] - counts_b[m] for m in counts_a},
         "mu_a": mu_a,
         "mu_b": mu_b,

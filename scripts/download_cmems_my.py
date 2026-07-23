@@ -78,9 +78,22 @@ def check_budget(est_gib: float, already_gib: float) -> None:
         )
 
 
-def _ledgered_cmems_gib() -> float:
+def _require_evidence_store() -> None:
+    """A missing evidence store is a WAIT — unledgered spend never happens.
+
+    Budgeting against an absent ledger would read 0.0 GiB and complete a
+    pull with no ledger row; refuse before any byte moves.
+    """
     if not EVIDENCE.exists():
-        return 0.0
+        raise RuntimeError(
+            f"storage WAIT: evidence store {EVIDENCE} absent — the ledger "
+            "is unavailable, so the pull cannot be budgeted or recorded "
+            "(unledgered spend never happens)"
+        )
+
+
+def _ledgered_cmems_gib() -> float:
+    _require_evidence_store()
     node = (
         json.loads(EVIDENCE.read_text())
         .get("phase14", {})
@@ -91,9 +104,7 @@ def _ledgered_cmems_gib() -> float:
 
 
 def _ledger_append(name: str, gib: float) -> None:
-    if not EVIDENCE.exists():
-        typer.echo(f"ledger skip: evidence store {EVIDENCE} absent")
-        return
+    _require_evidence_store()
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )

@@ -139,6 +139,25 @@ def test_download_budget_wait_semantics(tmp_path: Path) -> None:
     dl.check_budget(est_gib=1.0, already_gib=45.0)  # inside: no raise
 
 
+def test_ledger_absent_store_waits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing evidence store is a WAIT, never an unledgered pull.
+
+    Bug caught: on a host without the evidence file, the budget check
+    read 0.0 ledgered GiB and the pull completed with no ledger row
+    (silent "ledger skip") — unledgered spend.
+    """
+    from tests.helpers import load_script
+
+    dl = load_script("download_cmems_my")
+    monkeypatch.setattr(dl, "EVIDENCE", tmp_path / "absent.json")
+    with pytest.raises(RuntimeError, match="WAIT"):
+        dl._ledgered_cmems_gib()
+    with pytest.raises(RuntimeError, match="WAIT"):
+        dl._ledger_append("cmems-x", 0.1)
+
+
 @pytest.mark.skipif(
     not _SUBSET_PRESENT,
     reason=f"CMEMS subset not downloaded under {CMEMS_DATA_DIR}",
