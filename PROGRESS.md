@@ -342,9 +342,24 @@
 > repackaging delta; wired into probe + golden-tile CMEMS side, cfg in
 > provenance) — CMEMS raw 1-Hz was 15× the signed obs density; probe
 > model dropped 20.2→4.26 GiB peak, wall est 748 s.
+> **⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK IS POSTED,
+> AWAITING OWNER REVIEW:** `docs/superpowers/2026-07-23-phase14-gate0-pack.md`.
+> Seal v1 sha `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2`
+> (re-derivable: `pixi run python scripts/phase14_seal_run.py check`).
+> FULL SWEEP on the final tree (`7ef555a`): 1167 passed / 22 skipped /
+> 1 xfailed, exit 0 — every skip named. T8/T19 review ACCEPT (split
+> rebuild byte-equal; minors actioned `41a40fa`); T15/T7 review ACCEPT
+> (µ-scale major resolved by measurement — mu rows are their_eval scale,
+> lane0 scores 0.76953 through the same scorer; `mu_scale_check` in the
+> node). One test made hermetic (`7ef555a`: missing-seal refusal was
+> time-dependent, flipped by the real seal's existence). T18 cloud leg
+> WAITS on credentials (owner input; pack item 1.5). Golden-tile row
+> TABLED (pack item 1.3; AVISO DT2021 decomposition now owner-electable
+> on a measured material delta). Next action: OWNER walks the pack;
+> on approval → Stage-1 plan writing (writing-plans, C0→1 contract).
+> **Session execution record below (kept for the trail):**
 > **✅ RESUME SEQUENCE EXECUTED 2026-07-23 (fresh session; steps 1–6
-> done, results below; T20 pack = the only remaining task). Original
-> sequence kept for the trail:**
+> done, results below). Original sequence kept for the trail:**
 > 1. Gauge `stations-all` pull DIED at 516/716 files (ConnectTimeout,
 >    retries exhausted) — RE-RUN `pixi run python
 >    scripts/download_gauges.py stations-all` (verify-and-skip resumes;
