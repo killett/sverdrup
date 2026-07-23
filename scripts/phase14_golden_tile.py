@@ -219,6 +219,12 @@ def _solve_and_score(framed: ObsWindow, tag: str) -> tuple[np.ndarray, float, Pa
         out_nc,
         assimilated_missions=_MAPPING_FIVE,
     )
+    # PROBE marker INSIDE the artifact — a copied file loses its directory
+    # context (review S2.4); the npz twin already carries one.
+    import netCDF4  # noqa: PLC0415
+
+    with netCDF4.Dataset(out_nc, "a") as ds:
+        ds.label = "PROBE"
     mu, _sigma, _lx = their_eval.score(out_nc, _J3_TRACK)
     return means, float(mu), out_nc
 
