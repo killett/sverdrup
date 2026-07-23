@@ -150,20 +150,71 @@ def apply_superobs(obs: ObsWindow, cfg: object | None = None) -> ObsWindow:
     unchanged when ``cfg is None`` and refuses loudly otherwise — a silent
     ignore would fake a transform that never ran.
 
+    The first landed transform (its consumer: the phase-14 tile probe +
+    golden tile) is ``{"kind": "challenge-coarsen", "n": int}`` — the
+    signed box convention (``COARSEN_TIME`` mean-of-n consecutive samples,
+    remainder trimmed) applied per (mission, source-day) block in load
+    order. Recorded difference vs the legacy whole-file coarsen: daily
+    source files chunk at day boundaries where the legacy 14-month file
+    did not — part of the recorded repackaging delta.
+
     Args:
         obs: The loaded observation window.
-        cfg: Super-obs configuration; None until the consumer stage lands.
+        cfg: Super-obs configuration; None = identity.
 
     Returns:
-        ``obs`` unchanged (cfg is None).
+        ``obs`` unchanged when ``cfg`` is None, else the transformed
+        window. The CALLER serializes ``cfg`` into its provenance record.
 
     Raises:
-        NotImplementedError: If ``cfg`` is not None — the transform does not
-            exist yet; landing it requires the provenance serialization too.
+        NotImplementedError: On an unknown transform kind.
     """
-    if cfg is not None:
+    if cfg is None:
+        return obs
+    if not (isinstance(cfg, dict) and cfg.get("kind") == "challenge-coarsen"):
         raise NotImplementedError(
-            "super-obs transform is not implemented yet; it lands with its "
-            "consumer stage, cfg serialized into provenance (fork-a pin 4)"
+            f"unknown super-obs transform {cfg!r}; only challenge-coarsen "
+            "has landed (fork-a pin 4: transforms land with their consumer)"
         )
-    return obs
+    n = int(cfg["n"])
+    c = obs.coords()
+    values = obs.values()
+    mission = obs.mission if obs.mission is not None else np.zeros(len(obs))
+    day = np.floor(c[:, 2]).astype(np.int64)
+    # consecutive (mission, day) runs in load order
+    change = np.empty(len(obs), dtype=bool)
+    change[0] = True
+    change[1:] = (mission[1:] != mission[:-1]) | (day[1:] != day[:-1])
+    block_id = np.cumsum(change) - 1
+    lons: list[np.ndarray] = []
+    lats: list[np.ndarray] = []
+    ts: list[np.ndarray] = []
+    vals: list[np.ndarray] = []
+    miss: list[np.ndarray] = []
+    for b in np.unique(block_id):
+        idx = np.nonzero(block_id == b)[0]
+        k = idx.size // n
+        if k == 0:
+            continue  # trim (boundary="trim")
+        sel = idx[: k * n]
+        for arr, out in (
+            (c[sel, 0], lons),
+            (c[sel, 1], lats),
+            (c[sel, 2], ts),
+            (values[sel], vals),
+        ):
+            out.append(arr.reshape(k, n).mean(axis=1))
+        miss.append(np.repeat(mission[sel[0]], k))
+    from sverdrup.core.observations import DiagonalErrorModel  # noqa: PLC0415
+
+    v = np.concatenate(vals) if vals else np.empty(0)
+    var = getattr(obs.error_model, "variance", None)
+    base_var = float(var.flat[0]) if var is not None and var.size else 1e-3
+    return ObsWindow.from_arrays(
+        np.concatenate(lons) if lons else np.empty(0),
+        np.concatenate(lats) if lats else np.empty(0),
+        np.concatenate(ts) if ts else np.empty(0),
+        v,
+        DiagonalErrorModel(np.full(v.size, base_var)),
+        mission=(np.concatenate(miss) if miss else None),
+    )

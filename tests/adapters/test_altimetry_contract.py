@@ -89,10 +89,56 @@ def test_apply_superobs_is_identity_without_cfg() -> None:
     assert apply_superobs(obs) is obs
 
 
-def test_apply_superobs_refuses_cfg() -> None:
-    """A cfg before the consumer stage lands must refuse, not silently ignore."""
+def test_apply_superobs_refuses_unknown_cfg() -> None:
+    """An unknown transform kind must refuse, not silently ignore."""
     with pytest.raises(NotImplementedError, match="super-obs"):
         apply_superobs(_tiny_window(), cfg={"radius_km": 25.0})
+
+
+def test_apply_superobs_challenge_coarsen_hand_values() -> None:
+    """challenge-coarsen: mean-of-n blocks per (mission, day), trim rest.
+
+    7 samples, n=5 -> ONE super-ob = mean of the first 5; samples 6-7
+    trimmed. Values/coords hand-computed; a no-trim or off-by-one block
+    boundary moves them.
+    """
+    from sverdrup.core.observations import DiagonalErrorModel
+
+    n = 7
+    obs = ObsWindow.from_arrays(
+        np.arange(n, dtype=float),
+        np.arange(n, dtype=float) * 2.0,
+        np.full(n, 3.25),
+        np.arange(n, dtype=float) * 10.0,
+        DiagonalErrorModel(np.full(n, 1e-3)),
+        mission=np.full(n, "synA"),
+    )
+    out = apply_superobs(obs, cfg={"kind": "challenge-coarsen", "n": 5})
+    assert len(out) == 1
+    c = out.coords()
+    assert c[0, 0] == pytest.approx(2.0)  # mean(0..4)
+    assert c[0, 1] == pytest.approx(4.0)
+    assert out.values()[0] == pytest.approx(20.0)
+    m = out.mission
+    assert m is not None and m[0] == "synA"
+
+
+def test_apply_superobs_coarsen_blocks_never_cross_missions() -> None:
+    """Blocks reset at mission changes — a cross-mission mean is corrupt."""
+    from sverdrup.core.observations import DiagonalErrorModel
+
+    obs = ObsWindow.from_arrays(
+        np.array([0.0, 2.0, 10.0, 12.0]),
+        np.zeros(4),
+        np.full(4, 1.5),
+        np.array([1.0, 3.0, 100.0, 102.0]),
+        DiagonalErrorModel(np.full(4, 1e-3)),
+        mission=np.array(["synA", "synA", "synB", "synB"]),
+    )
+    out = apply_superobs(obs, cfg={"kind": "challenge-coarsen", "n": 2})
+    assert len(out) == 2
+    assert out.values()[0] == pytest.approx(2.0)  # synA pair only
+    assert out.values()[1] == pytest.approx(101.0)  # synB pair only
 
 
 # ---------------------------------------------------------------------------

@@ -70,7 +70,10 @@ def tabled_flag(map_deltas: dict[str, float], mu_delta: float) -> bool:
 
 def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int]]:
     """(framed ObsWindow in the solver frame, descriptor sha, per-mission n)."""
-    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
+    from sverdrup.adapters.altimetry import (
+        BBox,  # noqa: PLC0415
+        apply_superobs,  # noqa: PLC0415
+    )
     from sverdrup.adapters.altimetry.cmems_my import (  # noqa: PLC0415
         CHALLENGE_TO_CMEMS,
         CmemsMySource,
@@ -78,6 +81,7 @@ def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int
     from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
     from sverdrup.core.observations import DiagonalErrorModel  # noqa: PLC0415
     from sverdrup.validation.params import (  # noqa: PLC0415
+        COARSEN_TIME,
         OBS_NOISE_VARIANCE,
         baseline_config,
     )
@@ -116,6 +120,10 @@ def _load_side(source_id: str) -> tuple[ObsWindow, dict[str, str], dict[str, int
             DiagonalErrorModel(np.full(len(raw), OBS_NOISE_VARIANCE)),
             mission=relabeled,
         )
+        # the signed convention's time-coarsen, as the recorded super-obs
+        # step (fork-a pin 4); daily-file chunking difference = part of
+        # the recorded repackaging delta
+        obs = apply_superobs(obs, cfg={"kind": "challenge-coarsen", "n": COARSEN_TIME})
     else:
         raise typer.BadParameter(f"unknown source {source_id!r}")
     framed = halo_obs(obs, grid, halo_deg=1.0)

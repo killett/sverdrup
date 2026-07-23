@@ -60,7 +60,7 @@ def tile_sizing(
 ) -> None:
     """The pinned Tier-0/1 tile probe: predict, check RAM, solve, record."""
     import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
-    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
+    from sverdrup.adapters.altimetry import BBox, apply_superobs  # noqa: PLC0415
     from sverdrup.adapters.altimetry.cmems_my import CmemsMySource  # noqa: PLC0415
     from sverdrup.application.ladder import tier1_eligible  # noqa: PLC0415
     from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
@@ -100,6 +100,10 @@ def tile_sizing(
         np.datetime64("2017-04-10"),
         missions=PROBE_MISSIONS,
     )
+    from sverdrup.validation.params import COARSEN_TIME  # noqa: PLC0415
+
+    superobs_cfg = {"kind": "challenge-coarsen", "n": COARSEN_TIME}
+    obs_93 = apply_superobs(obs_93, cfg=superobs_cfg)
     c = obs_93.coords()
     obs = ObsWindow.from_arrays(
         c[:, 0],
@@ -177,6 +181,7 @@ def tile_sizing(
         "n_obs": int(len(framed)),
         "n_obs_window": n_obs_est,
         "n_grid_nodes": n_nodes,
+        "superobs_cfg": superobs_cfg,
         "wall_s": wall_s,
         "peak_rss_mib": peak_mib,
         "pcg": pcg_rows,
