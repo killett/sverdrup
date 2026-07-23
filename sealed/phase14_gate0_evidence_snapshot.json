@@ -1,0 +1,213 @@
+{
+ "_snapshot": {
+  "date": "2026-07-23",
+  "immutable": "this snapshot is frozen at gate close; the live store moves on",
+  "ruling": "Gate 0 CLOSED/APPROVED 2026-07-23; off-box commit ORDERED (item 5)",
+  "source": "data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json (live store, single-writer)",
+  "what": "phase-14 Gate-0 evidence snapshot (IDs, hashes, sealed configs only)"
+ },
+ "c2_touch_tally": [
+  "touch 1: Stage-A winner acceptance (signed, 2026-07-06)",
+  "touch 2: Stage-B DEFECT-RUN (framing sliver, 2026-07-07) \u2014 spent, disclosed, no selection (s* frozen, params fixed)",
+  "touch 3: Stage-B accepted touch \u2014 PENDING fresh owner authorization"
+ ],
+ "phase14": {
+  "stage0": {
+   "census_sha": "ea82b9536f2f4e33dda86dfa72a543f3bb9ef54aaaae791d994fd581dc1d288d",
+   "cmems_census_raw_sha": "17ec736aa9cdc397cb964c97e2c1be28c40f4bf7c97f17196d158c14cabf8779",
+   "epoch_table_draft_sha": "ba1050beffc5b6fc7a72c5951853a552bbafb3a3934f5c1b093c39135e537fe0",
+   "gate2_loader_identity": {
+    "date": "2026-07-22",
+    "manifest_sha": "c688b0d83bd1f4e8e87f3e65ec615a786f277510c60bb3e36e027a30a8e280c2",
+    "pass": true,
+    "per_mission_n_obs": {
+     "alg": 80812,
+     "h2g": 71293,
+     "j2g": 14639,
+     "j2n": 22504,
+     "j3": 87460,
+     "s3a": 82014
+    }
+   },
+   "gauges": {
+    "catalog_manifest": {
+     "psmsl/rlr_monthly.zip": "ebd5e76684059f4f60fe2015f16bc8c081983235af5b1f6c38387e6143297f06",
+     "uhslc/h057a.nc": "49248b082f4338208763f7d6ad4c59bf6256244e49b3c16b2ac9bcaf1e0dc1d0",
+     "uhslc/meta.geojson": "dd254d1d190c2eac3e8a005615e2229bc4c44a6a997a95bdc49a8ba5f76f6e57"
+    },
+    "date": "2026-07-23",
+    "n_candidates": 563,
+    "n_dev": 96,
+    "n_locked": 39,
+    "n_psmsl_catalog": 1618,
+    "n_screened": 135,
+    "n_uhslc_stations": 598,
+    "parser_validated_station": "h057a",
+    "pending": "RESOLVED 2026-07-23: census epoch table landed (T4/T5 real legs); series screening + locked split completed (series-leg-complete)",
+    "proximity": "DEFERRED to consumption grid (Gate-0 attention item)",
+    "screening_rows": "data/insitu/screening_rows.json",
+    "split_seed": 2278306912366042270,
+    "split_seed_path": [
+     "insitu",
+     "phase14-seal",
+     "locked-split",
+     0
+    ],
+    "status": "series-leg-complete"
+   },
+   "golden_tile": {
+    "dc2021a_vs_cmems_my": {
+     "config": "frozen-signed (shipped_miost5 + PHASE13_WINNER_PARAMS)",
+     "date": "2026-07-23",
+     "descriptor_a": {
+      "manifest_sha": "c688b0d83bd1f4e8e87f3e65ec615a786f277510c60bb3e36e027a30a8e280c2"
+     },
+     "descriptor_b": {
+      "manifest_sha": "b58997647cfd4bda63aa9d5bf277017f5dfea53384107c396653b1d586a27d6d"
+     },
+     "frame": "signed-box",
+     "label": "PROBE",
+     "map_deltas": {
+      "max_abs_m": 0.8372482944055692,
+      "rms_m": 0.041034469767374786,
+      "worst_day_rms_m": 0.08579056643755714
+     },
+     "mu_a": 0.7694138605880073,
+     "mu_b": 0.7818709769825234,
+     "mu_delta": -0.012457116394516077,
+     "mu_scale_check": {
+      "lane0_mu_via_their_eval": 0.7695329827465144,
+      "load_region_note": "CMEMS side loaded clipped to grid-node extent +/-1 deg BEFORE challenge-coarsen (clip-then-coarsen = the probe's recorded transform semantic; commit 6984e26)",
+      "signed_leaderboard_mu": 0.8641999994291494,
+      "verdict": "scale mismatch CONFIRMED, no solver drift: mu rows are on the their_eval.score scale, NOT the phase-13 leaderboard_nrmse scale; side A == signed solution (1.43 cm rms from phase13_lane0_mean.nc; lane0 scores 0.76953 on this scale vs mu_a 0.76941). The A-vs-B delta is internally fair (identical scorer both sides). TABLED_MU_DELTA 0.002 was derived on the phase-13 pair band; tabled outcome robust (mu leg 6x, map leg 4x, independently)."
+     },
+     "note": "CROSS-DT BRIDGE (DT-vintage ruling item 1): repackaging and DT-generation deltas inseparable; AVISO DT2021 decomposition = owner-electable ledger row",
+     "obs_count_deltas": {
+      "alg": 294,
+      "h2g": 94,
+      "j2g": 68,
+      "j2n": -1696,
+      "s3a": 224
+     },
+     "obs_counts_a": {
+      "alg": 15916,
+      "h2g": 14546,
+      "j2g": 2886,
+      "j2n": 4506,
+      "s3a": 16491
+     },
+     "obs_counts_b": {
+      "alg": 15622,
+      "h2g": 14452,
+      "j2g": 2818,
+      "j2n": 6202,
+      "s3a": 16267
+     },
+     "period": "2017",
+     "superobs_cfg_a": null,
+     "superobs_cfg_b": {
+      "kind": "challenge-coarsen",
+      "n": 5
+     },
+     "tabled_for_owner": true,
+     "thresholds": {
+      "map_rms_m": 0.01,
+      "mu": 0.002
+     }
+    }
+   },
+   "n_epochs": 15,
+   "probe_tile": {
+    "date": "2026-07-23",
+    "frame_core": [
+     292.0,
+     307.0,
+     30.0,
+     45.0
+    ],
+    "label": "PROBE",
+    "measured_vs_model": {
+     "peak_ratio": 0.7851822829411081,
+     "wall_ratio": 0.5129032673686369
+    },
+    "missions": [
+     "alg",
+     "h2ag",
+     "j2g",
+     "j2n",
+     "s3a"
+    ],
+    "model": {
+     "n_coef": 288192.0,
+     "nnz": 115678112.0,
+     "peak_model_mib": 4259.65478515625,
+     "retained_member_store_mib": 0.071044921875,
+     "stored_g_gib": 1.2928036451339722,
+     "wall_est_s": 747.7835967036518
+    },
+    "n_grid_nodes": 9312,
+    "n_obs": 42407,
+    "n_obs_window": 32582,
+    "note": "model NOT retuned in-code; ratios recorded (Phase-12 precedent)",
+    "pcg": [
+     {
+      "final_rel_residual": 9.945973629635387e-07,
+      "iterations": 461,
+      "params_key_hash": "d1f56198c1fab52a",
+      "window": "w+00014.0+60"
+     },
+     {
+      "final_rel_residual": 1.0175491138461594e-06,
+      "iterations": 500,
+      "kind": "member-batch",
+      "params_key_hash": "d1f56198c1fab52a",
+      "window": "w+00014.0+60"
+     }
+    ],
+    "peak_rss_mib": 3344.60546875,
+    "superobs_cfg": {
+     "kind": "challenge-coarsen",
+     "n": 5
+    },
+    "wall_s": 383.5406500339741,
+    "window": [
+     14.0,
+     74.0
+    ]
+   },
+   "seal": {
+    "date": "2026-07-23",
+    "path": "data/2021a_ssh_mapping_ose/ours/phase14_evaluation_seal_v1.json",
+    "sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
+    "version": 1
+   },
+   "storage_ledger": [
+    {
+     "date": "2026-07-22",
+     "gib": 0.017471,
+     "name": "psmsl-rlr-catalog"
+    },
+    {
+     "date": "2026-07-22",
+     "gib": 0.000532,
+     "name": "uhslc-meta"
+    },
+    {
+     "date": "2026-07-22",
+     "gib": 9.6e-05,
+     "name": "uhslc-hourly-h057a"
+    },
+    {
+     "date": "2026-07-23",
+     "gib": 0.823749,
+     "name": "cmems-subset-alg-h2ag-j2g-j2n-s3a-j3-2016-12-01-2018-02-01"
+    },
+    {
+     "date": "2026-07-23",
+     "gib": 0.065455,
+     "name": "uhslc-rqds-hourly-all"
+    }
+   ]
+  }
+ }
+}
