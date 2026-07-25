@@ -409,9 +409,10 @@ def test_run_reaches_gated_solve_stub_when_eligible(
 # Task 2 — measured-first probe (quiet_gyre, one window, m=1)
 # ---------------------------------------------------------------------------
 
-# The pinned PROBE row schema (plan Task 2; stated here independently of the
-# implementation). Deliberately NO "scores" and NO "seal_sha": a probe row
-# carrying a µ would be an evaluation-bearing artifact.
+# The pinned PROBE row schema (plan Task 2 + owner PIN 23(c); stated here
+# independently of the implementation). Deliberately NO "scores" and NO
+# "seal_sha": a probe row carrying a µ would be an evaluation-bearing
+# artifact. "convergence" is the PIN-23(c) CONVERGED/CAPPED verdict.
 _PROBE_KEYS = {
     "label",
     "tile",
@@ -425,6 +426,7 @@ _PROBE_KEYS = {
     "wall_s",
     "peak_rss_mib",
     "pcg",
+    "convergence",
     "model",
     "measured_vs_model",
     "stop_bracket",
@@ -437,8 +439,17 @@ def _probe_measurement(
     peak_rss_mib: float = 1000.0,
     wall_est_s: float = 200.0,
     peak_model_mib: float = 4000.0,
+    maxiter: int = 500,
+    iterations: int = 12,
+    residual: float = 5.0e-7,
 ) -> dict[str, Any]:
-    """Injected fake measurement (defaults: ratios 0.5 / 0.25, both green)."""
+    """Injected fake measurement (defaults: ratios 0.5 / 0.25, both green).
+
+    Both PCG legs (member-batch + mean — the real probe's two log rows)
+    share ``iterations``/``residual``; defaults converge well under the
+    cap. ``maxiter`` mirrors the CLI pass-through so this helper can stand
+    in for ``_probe_solve`` directly.
+    """
     return {
         "frame": {"core": [255.0, 270.0, -30.0, -15.0], "overlap_deg": 2.0},
         "window": [14.0, 74.0],
@@ -447,7 +458,21 @@ def _probe_measurement(
         "n_grid_nodes": 9216,
         "wall_s": wall_s,
         "peak_rss_mib": peak_rss_mib,
-        "pcg": [{"window": "w0", "iters": 12}],
+        "pcg": [
+            {
+                "window": "w0",
+                "kind": "member-batch",
+                "iterations": iterations,
+                "final_rel_residual": residual,
+            },
+            {
+                "window": "w0",
+                "iterations": iterations,
+                "final_rel_residual": residual,
+            },
+        ],
+        "pcg_rtol": 1.0e-6,
+        "pcg_maxiter": maxiter,
         "model": {"wall_est_s": wall_est_s, "peak_model_mib": peak_model_mib},
     }
 
@@ -486,7 +511,11 @@ def test_probe_ratios_computed_measured_over_model() -> None:
     and sail through, inverting the spend-decision trigger.
     """
     row = _mod.build_probe_row(date="2026-07-25", **_probe_measurement())
-    assert row["measured_vs_model"] == {"wall_ratio": 0.5, "peak_ratio": 0.25}
+    assert row["measured_vs_model"] == {
+        "wall_ratio": 0.5,
+        "peak_ratio": 0.25,
+        "capped_measurement": False,
+    }
 
 
 @pytest.mark.parametrize(
@@ -532,7 +561,7 @@ def test_probe_cli_records_then_stops_on_tripped_bracket(
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
     monkeypatch.setattr(
-        _mod, "_probe_solve", lambda: _probe_measurement(wall_s=400.0)
+        _mod, "_probe_solve", lambda maxiter=500: _probe_measurement(wall_s=400.0)
     )  # wall ratio 2.0 — tripped
     res = runner.invoke(_mod.app, ["probe"])
     assert res.exit_code != 0
@@ -607,9 +636,9 @@ def test_probe_checks_ladder_before_any_solve(
 
     solve_calls: list[str] = []
 
-    def _spy() -> dict[str, Any]:
+    def _spy(maxiter: int = 500) -> dict[str, Any]:
         solve_calls.append("solved")
-        return _probe_measurement()
+        return _probe_measurement(maxiter=maxiter)
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
     monkeypatch.setattr(_mod, "_probe_solve", _spy)
@@ -618,3 +647,157 @@ def test_probe_checks_ladder_before_any_solve(
     assert isinstance(res.exception, RuntimeError)
     assert "ladder" in str(res.exception)
     assert solve_calls == []
+
+
+# ---------------------------------------------------------------------------
+# Owner ruling PIN 23(a)+(c) — convergence fields in-row, --maxiter option,
+# converged re-run node (phase14.stage1.probe_converged)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("iterations", "residual", "want"),
+    [
+        # rtol 1e-6, maxiter 500 (the fake's defaults). First case is the
+        # REAL T2 defect leg: exited AT the 500 cap over rtol.
+        (500, 2.84e-6, "CAPPED"),
+        (500, 1.0e-6, "CONVERGED"),  # at cap, residual EXACTLY rtol: strict >
+        (500, 9.9e-7, "CONVERGED"),  # converged exactly at the cap
+        (140, 9.0e-7, "CONVERGED"),  # ordinary converged leg under the cap
+    ],
+)
+def test_probe_row_convergence_verdict_truth_table(
+    iterations: int, residual: float, want: str
+) -> None:
+    """convergence: CAPPED iff a leg sits AT maxiter with residual > rtol.
+
+    Bug caught: the T2 defect class — a 500-cap leg at 2.84e-6 > rtol
+    presented as a true measurement; also a residual >= drift (flagging a
+    leg that stopped exactly AT rtol) or keying CAPPED on iterations alone
+    (mislabeling a run that legitimately converged at the cap).
+    """
+    row = _mod.build_probe_row(
+        date="2026-07-25",
+        **_probe_measurement(iterations=iterations, residual=residual),
+    )
+    assert row["convergence"] == want
+    assert row["measured_vs_model"]["capped_measurement"] is (want == "CAPPED")
+
+
+def test_probe_row_capped_when_any_single_leg_capped() -> None:
+    """ONE capped leg among converged legs flags the WHOLE row CAPPED.
+
+    Bug caught: computing the verdict from only the first (or last) log
+    leg — the member-batch leg's cap (the T2 member leg at 2.84e-6) would
+    be missed when the mean leg happens to converge.
+    """
+    measurement = _probe_measurement()  # both legs converged (12 iters)
+    measurement["pcg"].append(
+        {"window": "w0", "iterations": 500, "final_rel_residual": 2.84e-6}
+    )
+    row = _mod.build_probe_row(date="2026-07-25", **measurement)
+    assert row["convergence"] == "CAPPED"
+    assert row["measured_vs_model"]["capped_measurement"] is True
+
+
+def test_probe_pcg_rows_carry_rtol_and_maxiter_in_row() -> None:
+    """EVERY recorded pcg leg carries the solver's rtol and maxiter in-row.
+
+    Bug caught: the PIN-23(c) defect (was T2-review LOW) — legs recorded
+    without rtol/maxiter, so a future reader cannot tell a CAPPED leg from
+    a CONVERGED one without out-of-band solver-config archaeology.
+    """
+    row = _mod.build_probe_row(
+        date="2026-07-25", **_probe_measurement(maxiter=2000, iterations=1740)
+    )
+    assert len(row["pcg"]) == 2
+    for leg in row["pcg"]:
+        assert leg["rtol"] == 1.0e-6
+        assert leg["maxiter"] == 2000
+        assert leg["iterations"] == 1740  # measured fields survive stamping
+
+
+def test_probe_row_stamping_never_mutates_caller_pcg_legs() -> None:
+    """Stamping rtol/maxiter happens on COPIES; caller legs stay untouched.
+
+    Bug caught: in-place stamping — the real caller's leg dicts ARE the
+    module-global miost CONVERGENCE_LOG entries, so mutating them would
+    corrupt the shared diagnostic log for every later solve this process.
+    """
+    measurement = _probe_measurement()
+    legs_before = [dict(leg) for leg in measurement["pcg"]]
+    _mod.build_probe_row(date="2026-07-25", **measurement)
+    assert measurement["pcg"] == legs_before
+    assert all("maxiter" not in leg for leg in measurement["pcg"])
+
+
+def test_probe_cli_maxiter_rerun_records_at_probe_converged_preserving_history(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--maxiter 2000 flows to the solver; the row lands at probe_converged.
+
+    Bug caught: the PIN-23(a) re-run overwriting the historical T2 row at
+    phase14.stage1.probe (owner: it stays as history), or --maxiter parsed
+    but never passed through — the solver would run at the 500 default
+    while the row records 2000 ("the maxiter used must be what the row
+    records").
+    """
+    from sverdrup.application import ladder
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    t2_history = {"label": "PROBE", "sentinel": "T2-CAPPED-HISTORY"}
+    evid.write_text(json.dumps({"phase14": {"stage1": {"probe": t2_history}}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    seen: list[int] = []
+
+    def _spy(maxiter: int = 500) -> dict[str, Any]:
+        seen.append(maxiter)
+        return _probe_measurement(maxiter=maxiter, iterations=1740)
+
+    monkeypatch.setattr(_mod, "_probe_solve", _spy)
+    res = runner.invoke(_mod.app, ["probe", "--maxiter", "2000"])
+    assert res.exit_code == 0
+    assert seen == [2000]
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["probe"] == t2_history
+    rerun = stored["phase14"]["stage1"]["probe_converged"]
+    assert rerun["convergence"] == "CONVERGED"
+    assert rerun["label"] == "PROBE"
+    assert all(leg["maxiter"] == 2000 for leg in rerun["pcg"])
+
+
+def test_probe_cli_default_maxiter_is_the_production_cap_and_probe_node(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Default --maxiter == miost_solver.PCG_MAXITER; default run -> probe node.
+
+    Bug caught: the script's local default drifting from the production
+    PCG cap (rows would record a maxiter the production solver does not
+    use), or the default run being rerouted to probe_converged (history
+    and re-run swapping places).
+    """
+    from sverdrup.application import ladder
+    from sverdrup.methods.miost_solver import PCG_MAXITER
+    from sverdrup.validation import phase14_seal
+
+    assert _mod.PROBE_MAXITER_DEFAULT == PCG_MAXITER
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    seen: list[int] = []
+
+    def _spy(maxiter: int = 0) -> dict[str, Any]:
+        seen.append(maxiter)
+        return _probe_measurement(maxiter=maxiter)
+
+    monkeypatch.setattr(_mod, "_probe_solve", _spy)
+    res = runner.invoke(_mod.app, ["probe"])
+    assert res.exit_code == 0
+    assert seen == [PCG_MAXITER]
+    stored = json.loads(evid.read_text())
+    assert "probe" in stored["phase14"]["stage1"]
+    assert "probe_converged" not in stored["phase14"]["stage1"]

@@ -51,6 +51,16 @@ PROBE_M = 1
 PROBE_W_START = 14.0
 PROBE_W_DAYS = 60.0
 PROBE_STOP_THRESHOLD = 1.3
+# Production PCG iteration cap — MUST equal miost_solver.PCG_MAXITER
+# (test-pinned; stated locally so the CLI default needs no heavy import at
+# module scope). Owner PIN 23(a)+(c): the T2 probe ran BOTH legs into this
+# cap over rtol, so its wall was bounded above by 500 x per-iteration cost
+# — the bracket could only ever report "model conservative". The probe now
+# takes --maxiter, records the cap in-row, and flags CAPPED measurements.
+PROBE_MAXITER_DEFAULT = 500
+# The PIN-23(a) converged re-run node. The ORIGINAL T2 row at
+# phase14.stage1.probe stays as history — never rewritten.
+PROBE_CONVERGED_NODE = "probe_converged"
 # The frozen five-mission mapping config (j3 stays the holdout convention);
 # CMEMS-MY directory codes (h2g -> h2ag on this source).
 PROBE_MISSIONS = ("alg", "h2ag", "j2g", "j2n", "s3a")
@@ -373,7 +383,9 @@ def build_probe_row(
     n_grid_nodes: int,
     wall_s: float,
     peak_rss_mib: float,
-    pcg: object,
+    pcg: list[dict[str, Any]],
+    pcg_rtol: float,
+    pcg_maxiter: int,
     model: dict[str, float],
     date: str,
 ) -> dict[str, Any]:
@@ -385,6 +397,14 @@ def build_probe_row(
     measured/model ratios; ``stop_bracket`` trips when EITHER ratio
     STRICTLY exceeds the 1.3x honest-bracket convention.
 
+    Owner PIN 23(c): every pcg leg is stamped (on a COPY — the caller's
+    dicts are the live miost ``CONVERGENCE_LOG`` entries) with the solver's
+    ``rtol``/``maxiter``, and the row carries a ``convergence`` verdict —
+    ``"CAPPED"`` when ANY leg exited AT the cap with residual still above
+    rtol (its wall is bounded above by cap x per-iteration cost, so its
+    ratios can only under-report). ``measured_vs_model.capped_measurement``
+    mirrors the verdict so a capped ratio is labeled where it appears.
+
     Args:
         frame: Frame provenance block (core/overlap/halo/solve bbox).
         window: ``[start, end]`` in solver days (since 2017-01-01).
@@ -394,7 +414,11 @@ def build_probe_row(
         n_grid_nodes: Solve grid node count.
         wall_s: Measured wall time [s].
         peak_rss_mib: Measured peak RSS [MiB].
-        pcg: Per-window PCG convergence rows.
+        pcg: Per-window PCG convergence rows (``iterations`` and
+            ``final_rel_residual`` required per leg).
+        pcg_rtol: The solver rtol ACTUALLY used (stamped per leg).
+        pcg_maxiter: The solver iteration cap ACTUALLY used (stamped per
+            leg — never a restated constant).
         model: The ``size_tile`` output at the probe's own geometry.
         date: ISO date string (passed in — purity).
 
@@ -403,6 +427,12 @@ def build_probe_row(
     """
     wall_ratio = wall_s / model["wall_est_s"]
     peak_ratio = peak_rss_mib / model["peak_model_mib"]
+    pcg_rows = [{**leg, "rtol": pcg_rtol, "maxiter": pcg_maxiter} for leg in pcg]
+    capped = any(
+        int(leg["iterations"]) >= pcg_maxiter
+        and float(leg["final_rel_residual"]) > pcg_rtol
+        for leg in pcg_rows
+    )
     return {
         "label": "PROBE",
         "tile": PROBE_TILE,
@@ -415,9 +445,14 @@ def build_probe_row(
         "n_grid_nodes": n_grid_nodes,
         "wall_s": wall_s,
         "peak_rss_mib": peak_rss_mib,
-        "pcg": pcg,
+        "pcg": pcg_rows,
+        "convergence": "CAPPED" if capped else "CONVERGED",
         "model": model,
-        "measured_vs_model": {"wall_ratio": wall_ratio, "peak_ratio": peak_ratio},
+        "measured_vs_model": {
+            "wall_ratio": wall_ratio,
+            "peak_ratio": peak_ratio,
+            "capped_measurement": capped,
+        },
         "stop_bracket": {
             "threshold": PROBE_STOP_THRESHOLD,
             "tripped": (
@@ -428,16 +463,23 @@ def build_probe_row(
     }
 
 
-def record_probe_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
-    """Record the probe row under ``phase14.stage1.probe`` — seal-gated.
+def record_probe_row(
+    row: dict[str, Any], evidence_path: Path = EVIDENCE, node: str = "probe"
+) -> None:
+    """Record the probe row under ``phase14.stage1.<node>`` — seal-gated.
 
     Same ceremony as :func:`record_evidence_row`: the CURRENT seal is
     verified FIRST (Task-10 tripwire — nothing is written while no
     verified seal exists), then an atomic merge into the standing store.
+    The PIN-23(a) converged re-run records at
+    :data:`PROBE_CONVERGED_NODE` so the original T2 row at ``probe``
+    stays as history.
 
     Args:
         row: The probe row from :func:`build_probe_row`.
         evidence_path: The evidence store (tmp path in tests).
+        node: The stage1 store key (``"probe"`` for the historical T2
+            leg; ``"probe_converged"`` for the PIN-23(a) re-run).
 
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
@@ -451,11 +493,11 @@ def record_probe_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> Non
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
-    results.setdefault("phase14", {}).setdefault("stage1", {})["probe"] = row
+    results.setdefault("phase14", {}).setdefault("stage1", {})[node] = row
     atomic_write_json(evidence_path, results)
 
 
-def _probe_solve() -> dict[str, Any]:
+def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
     """The Task-2 measured leg: load, one-window solve, PROBE map, measure.
 
     Follows the Stage-0 tile-sizing probe pattern (`phase14_probe.py`):
@@ -466,6 +508,12 @@ def _probe_solve() -> dict[str, Any]:
     probe's OWN geometry (one window, m=1, measured in-window obs count)
     so the recorded ratios compare like with like. Constants are NOT
     retuned here (the Phase-12 precedent — ratios recorded only).
+
+    Args:
+        maxiter: PCG iteration cap passed to the solver (owner PIN 23(a):
+            the re-run raises it until the solve CONVERGES to rtol). The
+            recorded ``pcg_rtol``/``pcg_maxiter`` are read back off the
+            method so the row records what was actually used.
 
     Returns:
         Measurement kwargs for :func:`build_probe_row` (all but ``date``).
@@ -550,7 +598,10 @@ def _probe_solve() -> dict[str, Any]:
         lam_min=_SIZING_LAM_MIN_KM,
     )
 
-    method = Miost(basis_domain=(float(x0), float(y0), float(x1 - x0), float(y1 - y0)))
+    method = Miost(
+        basis_domain=(float(x0), float(y0), float(x1 - x0), float(y1 - y0)),
+        pcg_maxiter=maxiter,
+    )
     method._plan = WindowPlan(starts=(PROBE_W_START,))  # noqa: SLF001
     provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
     root = derive_seed("miost", "phase14-stage1-probe", PROBE_TILE, 0)
@@ -576,8 +627,15 @@ def _probe_solve() -> dict[str, Any]:
         "resolution_deg": RESOLUTION_DEG,
     }
     window = [PROBE_W_START, PROBE_W_START + PROBE_W_DAYS]
+    # The T2 artifact (default cap) keeps its historical name; a raised-cap
+    # re-run writes beside it — the PIN-23(a) ruling keeps T2 as history.
+    npz_name = (
+        "probe_quiet_gyre_mean.npz"
+        if maxiter == PROBE_MAXITER_DEFAULT
+        else f"probe_quiet_gyre_mean_maxiter{maxiter}.npz"
+    )
     np.savez(
-        STAGE1_DIR / "probe_quiet_gyre_mean.npz",
+        STAGE1_DIR / npz_name,
         mean=means,
         label="PROBE",
         provenance=json.dumps(
@@ -588,6 +646,8 @@ def _probe_solve() -> dict[str, Any]:
                 "window": window,
                 "m": PROBE_M,
                 "days": days,
+                "pcg_rtol": float(method.pcg_rtol),
+                "pcg_maxiter": int(method.pcg_maxiter),
             }
         ),
     )
@@ -600,19 +660,39 @@ def _probe_solve() -> dict[str, Any]:
         "wall_s": wall_s,
         "peak_rss_mib": peak_mib,
         "pcg": pcg_rows,
+        "pcg_rtol": float(method.pcg_rtol),
+        "pcg_maxiter": int(method.pcg_maxiter),
         "model": model,
     }
 
 
 @app.command()
-def probe() -> None:
+def probe(
+    maxiter: Annotated[
+        int,
+        typer.Option(
+            help=(
+                "PCG iteration cap (default = the production "
+                "miost_solver.PCG_MAXITER). A non-default cap is the "
+                "PIN-23(a) converged re-run and records under "
+                "phase14.stage1.probe_converged — the T2 row at "
+                "phase14.stage1.probe stays as history."
+            )
+        ),
+    ] = PROBE_MAXITER_DEFAULT,
+) -> None:
     """The Task-2 measured-first sizing re-check — BEFORE any full run.
 
     quiet_gyre tile (CMEMS source — the first real CMEMS-side solve at the
     production-representative 19° solve geometry), ONE 60-day window, m=1,
     single mid-window day map, PROBE-labeled artifacts. Record-then-stop:
     a tripped 1.3x bracket exits nonzero AFTER the row is recorded (never
-    a silent stop).
+    a silent stop). Rows carry rtol/maxiter per pcg leg and a
+    CONVERGED/CAPPED verdict (owner PIN 23(c)); a CAPPED measurement is
+    called out because its ratios can only under-report.
+
+    Args:
+        maxiter: PCG iteration cap passed through to the solver.
 
     Raises:
         RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
@@ -623,10 +703,19 @@ def probe() -> None:
         "preflight model: "
         + json.dumps({k: round(v, 1) for k, v in preflight_model.items()})
     )
-    measured = _probe_solve()
+    measured = _probe_solve(maxiter=maxiter)
     row = build_probe_row(date=datetime.now(UTC).date().isoformat(), **measured)
-    record_probe_row(row, evidence_path=EVIDENCE)
+    node = "probe" if maxiter == PROBE_MAXITER_DEFAULT else PROBE_CONVERGED_NODE
+    record_probe_row(row, evidence_path=EVIDENCE, node=node)
     typer.echo("measured_vs_model: " + json.dumps(row["measured_vs_model"]))
+    typer.echo(f"convergence: {row['convergence']} (node phase14.stage1.{node})")
+    if row["convergence"] == "CAPPED":
+        typer.echo(
+            "WARNING: CAPPED measurement — a PCG leg exited AT maxiter with "
+            "residual above rtol; the wall is bounded above by the cap, so "
+            "these ratios can only under-report (PIN 23(c): a capped ratio "
+            "is labeled wherever it appears)"
+        )
     if row["stop_bracket"]["tripped"]:
         typer.echo(
             "STOP: measured-vs-model bracket TRIPPED (ratio > 1.3) — the row "
