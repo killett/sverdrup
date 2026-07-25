@@ -411,6 +411,23 @@
 > NOT dispatch; T2 (probe) + T10 (σ route) finish their in-flight
 > sanctioned work only. T4 remains blocked (blockedBy includes T11).
 > AWAITING OWNER RULING on remedies for findings 1–4.
+> **✅ T2 CLOSED (2026-07-25, dual-reviewed APPROVED — machinery
+> `0972d54` + real leg):** quiet_gyre probe at the ruled
+> production-representative 19° geometry — **wall ratio 0.570 / peak
+> ratio 0.787, 1.3× STOP bracket NOT tripped** (wall 468.0 s vs model
+> 821.7; peak 3662 MiB vs model 4652); Tier-1 predicate exercised for
+> real (refusal at ~9.9 GiB free, gated launch at 11.35 GiB free);
+> constants not retuned (diff vs 249a08d empty). **⚠ PCG-CAP WATCH
+> ITEM (T2-review MEDIUM, for the Gate-1 pack + T4/T5):** BOTH legs
+> exited at the 500-iter cap over rtol 1e-06 (mean 1.62e-06,
+> member-batch 2.84e-06) — worse than Stage-0's single-leg 1.02e-06
+> graze, at the first 19° solve; wall ratios embed cap timing (true at
+> Stage 0 too — comparability holds). Assessment: negligible for
+> tile-score legs (~2e-06 ≪ physical signal); the real exposure is
+> T4's Rule-0 floor probe (a raised solver floor F risks honest
+> UNMEASURED verdicts — the maxiter+1000 floor machinery is the
+> designed answer). Future probe rows should carry rtol/maxiter
+> in-row (T2-review LOW).
 > **Prior state (T0/T1 closure), kept below:**
 > **✅ T0 + T1 GREEN AND CLOSED (2026-07-25, both dual-reviewed to
 > APPROVED):** T0 seam metrics `75ed835`+`d201d4a` (20 tests; review
