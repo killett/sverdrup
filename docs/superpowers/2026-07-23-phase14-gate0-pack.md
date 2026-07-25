@@ -72,8 +72,12 @@ blocks Stage 1. Facts the owner needs beside the table:
   (verified: day ≈ 2017-09-11, 39.0°N 296.4°E, 21+ cells from any
   edge; 0.02% of samples over 0.5 m, confined to the 36.8–41°N
   meander band; temporal edges BELOW median per-day rms).
-- **j2n obs delta −1696 (−38%)**: the largest per-mission count gap —
-  a lineage/repackaging difference, recorded not smoothed.
+- **j2n obs delta −1696** (−27.3% of the `_202411` count 6202;
+  equivalently −37.6% of the dc2021a count 4506): the largest
+  per-mission count gap — a lineage/repackaging difference, recorded
+  not smoothed. [Denominator convention pinned 2026-07-25, review
+  pin 14: count-delta percentages are quoted relative to the
+  `_202411` (side-B) count unless a denominator is named.]
 - **Transform semantic recorded**: CMEMS side clipped to grid-node
   extent ±1° BEFORE challenge-coarsen (clip-then-coarsen — the probe's
   recorded semantic and the signed convention's regional inputs;
@@ -262,7 +266,7 @@ re-solve, no maps).
 | alg | 15916 | 15622 | +294 (+1.9%) | −4.4 mm | +1.6 mm | B ends ~1 d later |
 | h2g | 14546 | 14452 | +94 (+0.6%) | −4.5 mm | +0.2 mm | B ends ~1 d later |
 | j2g | 2886 | 2818 | +68 (+2.4%) | −6.0 mm | +0.2 mm | spans equal (d191–255) |
-| j2n | 4506 | 6202 | **−1696 (−27%)** | **+21.1 mm** | −1.5 mm | **A ends day 91.5; B extends to day 136.5** |
+| j2n | 4506 | 6202 | **−1696 (−27.3% of B)** | **+21.1 mm** | −1.5 mm | **A ends day 91.5; B extends to day 136.5** |
 | s3a | 16491 | 16267 | +224 (+1.4%) | −2.0 mm | −1.6 mm | B ends ~1 d later |
 
 Overall: mean_A 0.112664 m vs mean_B 0.112301 m; std_A 0.236801 m vs
