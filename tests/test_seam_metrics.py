@@ -3,7 +3,9 @@
 Pins ``sverdrup.validation.seam_metrics`` against the PRE-REGISTERED
 rubric ``docs/validation/phase14_seam_rubric.md``: interior reference
 dispersion ``D_int``, co-located seam delta, ratio ``R``, verdict cells,
-the Rule-0 solver-floor validity gate, and NaN (land) handling. All
+the residual validity guard (the rubric's Rule-0 floor-probe
+attributability check belongs to the consumer, T4), and NaN (land)
+handling. All
 expected values are hand-computed, never derived from the implementation.
 """
 
@@ -201,7 +203,7 @@ def test_seam_verdict_non_finite_refuses() -> None:
 
 
 # ---------------------------------------------------------------------------
-# seam_read — Rule-0 validity gate + assembled reading
+# seam_read — residual validity guard + assembled reading
 # ---------------------------------------------------------------------------
 
 
@@ -265,7 +267,7 @@ def test_seam_read_pools_both_interiors() -> None:
 
 @pytest.mark.parametrize("bad_solve", ["a", "b"])
 def test_seam_read_refuses_unconverged_solve(bad_solve: str) -> None:
-    """Rule-0 gate: residual above rtol on EITHER solve refuses (ValueError).
+    """Residual guard: residual above rtol on EITHER solve refuses (ValueError).
 
     An invalid solve never produces a verdict — the reading must raise
     before any metric arithmetic.
@@ -283,6 +285,51 @@ def test_seam_read_refuses_unconverged_solve(bad_solve: str) -> None:
             _arange_4x4(),
             axis=1,
             **kwargs,
+        )
+
+
+@pytest.mark.parametrize("bad_solve", ["a", "b"])
+def test_seam_read_refuses_nan_residual(bad_solve: str) -> None:
+    """A NaN final residual (crashed/aborted solve) refuses, never verdicts.
+
+    NaN fails every ``>`` comparison, so a gate written as
+    ``if residual > rtol`` silently passes a solve that never reported a
+    valid residual at all.
+
+    Bug caught: exactly that NaN-comparison hole — a crashed solve
+    reporting NaN residual slipping through the validity gate into a
+    verdict.
+    """
+    kwargs = _valid_read_kwargs()
+    kwargs[f"final_rel_residual_{bad_solve}"] = float("nan")
+    with pytest.raises(ValueError, match="(?i)residual"):
+        seam_read(
+            np.zeros(3),
+            np.full(3, 0.5),
+            _arange_4x4(),
+            _arange_4x4(),
+            axis=1,
+            **kwargs,
+        )
+
+
+def test_seam_read_all_nan_interiors_refuse() -> None:
+    """seam_read's own pooled-interior all-NaN refusal (ValueError).
+
+    Both interiors all-NaN leave an empty pooled increment set; the
+    reading must refuse rather than divide by an empty-pool D_int.
+
+    Bug caught: a refactor dropping seam_read's pooled-size check (the
+    ratio would become NaN/undefined instead of a clear refusal).
+    """
+    with pytest.raises(ValueError, match="all-NaN"):
+        seam_read(
+            np.zeros(3),
+            np.full(3, 0.5),
+            np.full((4, 4), np.nan),
+            np.full((4, 4), np.nan),
+            axis=1,
+            **_valid_read_kwargs(),
         )
 
 

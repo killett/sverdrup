@@ -12,9 +12,11 @@ Authoritative definitions live in ``docs/validation/phase14_seam_rubric.md``
 - :func:`seam_verdict` — the pre-registered verdict cells (CLEAN /
   ELEVATED / STRUCTURAL_STOP), thresholds read from the sealed
   ``instrument_configs()["seam"]`` at CALL time (never cached at import).
-- :func:`seam_read` — the assembled reading, guarded by the Rule-0
-  solver-floor validity gate: an invalid solve (PCG final relative
-  residual above its rtol) never produces a verdict.
+- :func:`seam_read` — the assembled reading, guarded by a residual
+  validity guard: an invalid solve (PCG final relative residual not
+  known to be within its rtol) never produces a verdict. The rubric's
+  Rule-0 floor-probe attributability check (3x solver floor) is applied
+  by the consumer (T4), not here.
 
 Pure numpy metric arithmetic — no solver imports, no file I/O. NaN nodes
 (land) are excluded from every pool; an all-NaN pool refuses.
@@ -179,13 +181,15 @@ def seam_read(
     final_rel_residual_b: float,
     rtol_b: float,
 ) -> SeamRead:
-    """Assemble one seam reading, guarded by the Rule-0 validity gate.
+    """Assemble one seam reading, guarded by a residual validity guard.
 
-    Refuses BEFORE any metric arithmetic if either underlying solve's PCG
-    final relative residual exceeds its rtol — an invalid solve never
-    produces a verdict (rubric Rule 0, the Task-18 pattern inherited).
-    ``D_int`` pools the one-grid-step increments of BOTH core interiors
-    into a single RMS, per the rubric.
+    Refuses BEFORE any metric arithmetic unless each underlying solve's
+    PCG final relative residual is known to be within its rtol (a NaN
+    residual — a crashed or aborted solve — also refuses) — an invalid
+    solve never produces a verdict. The rubric's Rule-0 floor-probe
+    attributability check (RMS(delta) vs 3x solver floor) is applied by
+    the consumer (T4), not here. ``D_int`` pools the one-grid-step
+    increments of BOTH core interiors into a single RMS, per the rubric.
 
     Args:
         seam_a: Tile A values on the seam line.
@@ -202,19 +206,19 @@ def seam_read(
         The assembled :class:`SeamRead`.
 
     Raises:
-        ValueError: If either solve is invalid (residual above rtol), if
-            the seam or pooled interior is all-NaN, or if the seam fields
-            are not co-located.
+        ValueError: If either solve is invalid (residual not known to be
+            within rtol, including NaN), if the seam or pooled interior
+            is all-NaN, or if the seam fields are not co-located.
     """
     for label, residual, rtol in (
         ("A", final_rel_residual_a, rtol_a),
         ("B", final_rel_residual_b, rtol_b),
     ):
-        if residual > rtol:
+        if not residual <= rtol:  # NaN-safe: refuses unless known-converged
             raise ValueError(
-                f"Rule-0 validity gate: solve {label} PCG final relative "
-                f"residual {residual:g} exceeds rtol {rtol:g}; an invalid "
-                "solve never produces a seam verdict"
+                f"residual validity guard: solve {label} PCG final relative "
+                f"residual {residual:g} is not within rtol {rtol:g}; an "
+                "invalid solve never produces a seam verdict"
             )
     rms_delta = seam_delta(seam_a, seam_b)
     pooled = np.concatenate(
