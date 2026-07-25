@@ -131,7 +131,7 @@ above). If an endorsed box turns out data-empty at load, STOP and surface.)
 - [ ] `interior_increment_rms(field, axis)` = pooled one-grid-step increment RMS along the axis PERPENDICULAR to the seam, interior points only (both cells inside one tile's core) — hand-value pinned on a 4×4 array
 - [ ] `seam_delta(field_a, field_b, seam_nodes)` = RMS of co-located differences on the seam line — hand-value pinned
 - [ ] `seam_verdict(r)` maps R to the three cells with EXACT boundary semantics (≤1.0 CLEAN, ≤2.5 ELEVATED, else STRUCTURAL_STOP); thresholds read from `instrument_configs()["seam"]` (keys `clean_max`/`elevated_max`) AT CALL TIME — pinned BEHAVIOURALLY via sentinel-config monkeypatch (0.3/0.5 → 0.4 is ELEVATED), never a source-string scan (the T11 vacuous-pin lesson)
-- [ ] Rule-0 solver-floor validity gate inherited: `seam_read(...)` REFUSES (ValueError) when the underlying solves' PCG final residuals exceed rtol — an invalid solve never produces a verdict
+- [ ] Solve-validity residual guard (renamed per review pin 21 — NOT the rubric's Rule 0, which is T4's floor-probe attributability rule): `seam_read(...)` REFUSES (ValueError) when the underlying solves' PCG final residuals exceed rtol — an invalid solve never produces a verdict [LANDED as d201d4a's wording]
 - [ ] NaN handling: NaN nodes (land) excluded from both pools; all-NaN seam refuses
 
 **Verify:** `pixi run pytest tests/test_seam_metrics.py -q` → all pass, no skips
@@ -219,7 +219,7 @@ def test_nan_exclusion_and_all_nan_refusal() -> None:
 `elevated_max` at 1.0 / 2.5 — SEAM_CLEAN_MAX/SEAM_ELEVATED_MAX.)
 
 - [ ] **Step 2:** run → confirm FAIL (module absent)
-- [ ] **Step 3:** implement `seam_metrics.py` — pure numpy, docstrings citing the rubric doc + Rule-0; `seam_read` takes the two per-tile PCG residual maxima and rtol, refuses before computing
+- [ ] **Step 3:** implement `seam_metrics.py` — pure numpy, docstrings citing the rubric doc; `seam_read` takes the two per-tile PCG residual maxima and rtol, refuses before computing (the solve-validity guard — never called Rule 0)
 - [ ] **Step 4:** run → PASS; `pixi run pre-commit run --files …`
 - [ ] **Step 5:** commit `feat: stage1 seam metrics per sealed rubric (D_int/delta/verdict)`
 
@@ -319,6 +319,7 @@ node-count convention, and the frame convention IS the spend decision.
 - [ ] **Check 5 (score-level):** `score_tile` on the anchor maps reproduces signed (µ, σ, λx) — AND the gate-5 constants (deferred at T14/Gate-0) PIN NOW into `phase14.stage1.gate5` from this run; the skip-guarded test goes live and passes
 - [ ] Evidence block `phase14.stage1.anchor_gate` = five sub-blocks each pass/fail + artifact shas; ANY fail → the script exits nonzero and the plan STOPS (no downstream task starts)
 - [ ] Zero touches: locked tally byte-identical before/after (asserted in the script)
+- [ ] **Member-std persistence (review pin 19):** the anchor run persists MEMBER-STD maps alongside the mean fields (the σ field kind the sealed rubric's second verdict route consumes at T4); the driver's std-map write is the T1 FOLLOW-ON — its commit message names it as such (T1 is closed; the ledger stays clean)
 
 **Verify:** `pixi run python scripts/phase14_anchor_gate.py` → "five gates GREEN" + evidence block; `pixi run pytest tests/test_phase14_gate5_score_identity.py -q` → 1 passed (no longer skipped)
 
@@ -345,6 +346,8 @@ node-count convention, and the frame convention IS the spend decision.
 - [ ] Blended field via `assemble` (partition-of-unity machinery, zero-overlap refusal active); NaN never poisons
 - [ ] ORACLE read: `seam_delta` between blended and seamless-anchor fields on the seam band + `interior_increment_rms` pooled from both tile interiors; R and verdict cell recorded; residual validity gate enforced (`seam_read`)
 - [ ] **Rubric Rule-0 floor-probe attributability (T0-review pin — the sealed rubric's ACTUAL Rule 0, assigned nowhere else):** one deeper-tolerance re-solve (maxiter +1000) for the pair roster establishes floor F; the verdict is attributable ONLY if RMS(delta) > 3×F — below that the number is still recorded and the pair row is marked **UNMEASURED (solver floor)**, never CLEAN (the rubric is one-sided: small R is the success cell, so an unattributable CLEAN is exactly the claim the rubric forbids); floor F, the 3×F check, and the marking all in the evidence row, test-pinned on the marking logic
+- [ ] **Floor probe sized + reused (review pin 20):** (a) the floor re-solve is pinned at **m=1, the ONE seam window** (the floor is a solver-convergence property of the linear system, not an ensemble property — m adds RHS columns to the same operator and cannot change the convergence floor; anyone claiming m=100 is needed must say why in the row); (b) Tier-1 arithmetic for the extra leg stated in the evidence row BEFORE it runs (size_tile at the pair geometry, m=1, maxiter+1000 — wall scales ~linearly in iterations, RAM unchanged; if `tier1_eligible` refuses → a WAIT row is recorded and the pair is marked UNMEASURED-pending-owner, never silently skipped); (c) the floor machinery REUSES `scripts/diag_miost_seam_dispersion.py`'s Task-18-lineage construction by import — the plan's standing reuse formula, never reimplemented
+- [ ] **σ-route persistence (review pin 19):** this task's runs persist MEMBER-STD maps alongside the mean fields (the field the R_seam_sigma verdict consumes); both verdict routes (mean R_seam + σ R_seam_sigma via T10's machinery) recorded per pair, PER FIELD KIND — the evidence row carries {r_seam, verdict, r_seam_sigma, verdict_sigma} + both floor checks
 - [ ] Evidence `phase14.stage1.seam` = {R, verdict, D_int, delta, per-tile pcg maxima, oracle_note: "no published precedent — gap-register (T11)"}; verdict NEVER blocks the plan mechanically — STRUCTURAL_STOP surfaces to the owner (it is Gate-1's item, but work on OTHER tiles may continue: they don't consume seams)
 - [ ] **Geometry caveat recorded (review pin 13):** the evidence row carries `geometry: "10x5 halves inside the anchor footprint — NOT D1 production geometry (15x15)"` + the explicit non-transfer sentence: the verdict is not a production-geometry seam reading, and the feasibility-frontier watch item (worst-seam grew with TILE COUNT, PROGRESS 2026-07-01) sits on the far side of that gap — discipline 7 applied to a positive result; test-pinned strings
 - [ ] Zero touches; maps labeled STAGE1-EVIDENCE
@@ -459,7 +462,7 @@ is ruled (they share T2's gate transitively).
 - Modify: `PROGRESS.md` (STOP block), `.tasks.json`
 
 **Acceptance Criteria:**
-- [ ] Pack contains, owner-items first: (1) anchor five-gate block (with cross-host slot pending-T18 explicit); (2) seam verdict + ORACLE numbers (with the 10×5 non-production-geometry sentence); (3) six transfer readings (numbers + bridge caveats); (4) kernel decision pack (decision cell empty); (5) revisit verdict rows; (6) OSSE priced section (decision cell empty); (7) **six-mission-refresh election presentation** — presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly onward; (8) spend actuals vs Tier-0/1 ($0 expected; any WAIT rows); (9) discipline attestation: zero locked opens, tally byte-identical, ±66° respected, seal `check` PASS
+- [ ] Pack contains, owner-items first: (1) anchor five-gate block (with cross-host slot pending-T18 explicit); (2) seam verdict + ORACLE numbers (with the 10×5 non-production-geometry sentence); (3) six transfer readings (numbers + bridge caveats); (4) kernel decision pack (decision cell empty); (5) revisit verdict rows; (6) OSSE priced section (decision cell empty); (7) **six-mission-refresh election presentation** — presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly onward; (8) spend actuals vs Tier-0/1 ($0 expected; any WAIT rows); (9) discipline attestation: zero locked opens, tally byte-identical, ±66° respected under the ruled convention, seal `check` PASS; (10) the T11 sealed-instrument coverage table. **Pack vocabulary (review pin 21): "Rule 0" names ONLY the floor-probe attributability rule; the T0 residual check is always "the solve-validity guard"**
 - [ ] **Withholding STRUCTURAL at the pack (review pin 17 — the free prose lives HERE, not in the rows):** the transfer-reading section is ASSEMBLED from recorded row fields only — the assembler has no free-text parameter for that section; and the absence check runs over the RENDERED pack file (if the attribution readout has not ruled: "suggests", "consistent with", "attributable", "implies" absent from the transfer-reading section; script-checked before posting, output captured in the close evidence)
 - [ ] Full sweep on the final tree recorded in the pack (with stall watch; every skip named)
 - [ ] All Stage-1 real legs dual-reviewed before the pack posts (the Stage-0 pattern: reviews may batch, but the pack cites each verdict)
@@ -474,9 +477,56 @@ is ruled (they share T2's gate transitively).
 
 ---
 
+### Task 10: σ-route seam metrics (review pin 19 — the Rule-0 gap's sibling)
+
+**Goal:** The sealed rubric's SECOND verdict-bearing ratio: R_seam_sigma = RMS(sigma_delta)/D_int_sigma on member-std maps, cells applied per adjacent pair PER FIELD KIND — added to `seam_metrics.py` as a new task (T0 is closed and dual-reviewed; the ledger stays clean).
+
+**Files:**
+- Modify: `src/sverdrup/validation/seam_metrics.py`
+- Modify: `tests/test_seam_metrics.py`
+
+**Acceptance Criteria:**
+- [ ] `SeamRead` gains the σ pair: {r_seam_sigma, verdict_sigma} beside {r_seam, verdict} — a per-field-kind verdict structure; the mean-only construction REFUSES (a read with one route missing cannot silently pass as complete)
+- [ ] σ metrics reuse the SAME pure functions (interior_increment_rms / seam_delta applied to member-std fields) — no parallel σ implementations; hand-value tests as at T0 (distinct hand values from the mean route so a route-swap bug is caught)
+- [ ] Verdict cells from the SAME sealed thresholds (`instrument_configs()["seam"]` at call time) applied independently per field kind — sentinel-config behavioural pin covers BOTH routes
+- [ ] Solve-validity guard applies to both routes (one invalid solve invalidates both)
+- [ ] All T0 tests still green unchanged (additive change; any T0 test edit is a STOP-and-surface)
+
+**Verify:** `pixi run pytest tests/test_seam_metrics.py -q` → all pass, no skips
+
+**Steps:** TDD (red on the σ-pair construction + hand values → implement → green → pre-commit → commit `feat: stage1 seam metrics sigma route (per-field-kind verdicts, rubric second ratio)` → push).
+
+```json:metadata
+{"files": ["src/sverdrup/validation/seam_metrics.py", "tests/test_seam_metrics.py"], "verifyCommand": "pixi run pytest tests/test_seam_metrics.py -q", "acceptanceCriteria": ["SeamRead carries both field-kind verdicts; mean-only refuses", "sigma route reuses the same pure functions with distinct hand values", "sentinel pin covers both routes", "T0 tests untouched and green"]}
+```
+
+---
+
+### Task 11: Sealed-instrument coverage table (review pin 22 — hard precondition on T4)
+
+**Goal:** One exhaustive walk of the sealed instruments: every normative clause of `docs/validation/phase14_seam_rubric.md` AND every instrument family in `instrument_configs()` (groundtrack, spectral fidelity, seam, T9 sealed nulls) mapped to the task AC that discharges it — or to an explicit "not consumed in Stage 1, deferred to <stage>" cell. Both directions: every clause finds a task; every task's rubric claims find a clause. Two rubric requirements (Rule 0, the σ field kind) reached shipped-and-approved unassigned — this table is the method fix.
+
+**Files:**
+- Create: `docs/superpowers/2026-XX-phase14-stage1-instrument-coverage.md` (posted into the Gate-1 pack at T9)
+
+**Acceptance Criteria:**
+- [ ] Every normative clause of the seam rubric doc has a row: clause → task+AC | deferred-to-<stage> (with the deferral justified from the spec)
+- [ ] Every family in `instrument_configs()` has rows covering each of its config keys' consumption
+- [ ] Reverse direction: every rubric/instrument claim made by any task AC in this plan points back to a clause — orphan claims are findings
+- [ ] Any UNASSIGNED clause found → **STOP immediately and surface to the owner** (the standing stop condition); zero findings → the table IS the evidence, posted in the Gate-1 pack
+- [ ] Table cites the two known catches (Rule 0 → T4, σ route → T10) as worked rows
+
+**Verify:** table file exists; a `rg`-based spot-check that every task number cited in the table exists in the plan
+
+```json:metadata
+{"files": ["docs/superpowers/2026-XX-phase14-stage1-instrument-coverage.md"], "verifyCommand": "rg -c 'T[0-9]+' docs/superpowers/2026-XX-phase14-stage1-instrument-coverage.md", "acceptanceCriteria": ["every rubric clause mapped or explicitly deferred", "every instrument family covered", "reverse direction walked", "STOP on any unassigned clause"]}
+```
+
+---
+
 ## Execution notes (for the executor)
 
-- **Order:** T0 ∥ T1 (file-disjoint) → T2 (probe; ⚖ gated on pin 2) → T3 (anchor gate — HARD BARRIER) → T4 → T5 → {T6, T7, T8} → T9. **T4/T5/T7 are SERIALIZED on the shared `phase14_stage1_run.py` + its test file (review pin 4)** — no interleaving; evidence writes single-writer; solves sequential (RAM).
+- **Order:** T0 ∥ T1 (DONE) → elections landed → T2 (probe) → T3 (anchor gate — HARD BARRIER; **owner STOP at its completion** — the five-gate block is the owner's walk) → T4 → T5 → {T6, T7, T8} → T9. **T10 (σ route) runs parallel to T2/T3 (file-disjoint from the driver chain; blockedBy [0] — shared files with the closed T0, ordering invariant held). T11 (coverage table) before T4; T4 blockedBy [0,3,10,11].** T4/T5/T7 remain SERIALIZED on the shared `phase14_stage1_run.py` + test file; evidence writes single-writer; solves sequential (RAM). STOP immediately if T11 surfaces an unassigned clause.
 - **Every long run:** nohup + `python -u` + log + completion AND stall watchers (the 10-hour-stall lesson + the OOM-silent-death gotcha, both in PROGRESS/memory).
 - **Dual review per task** (owner's standing rider); no source edits during the final sweep.
 - **The seal is read-only context:** `seal_run check` must PASS unchanged at T9. Any epoch/gauge/config drift discovered mid-stage is a STOP-for-owner, not a reseal.
