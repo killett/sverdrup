@@ -393,10 +393,21 @@
 > sets T2's sizing bracket AND the SO ±66 halo headroom:
 > prod-repr breach at halo > 2.0°, isolated > 4.0°);
 > (pin 12) equatorial box keep −4…11°N vs shift −2…13°N.
-> T0 (seam metrics) ∥ T1 (run driver, lands WITH the pin-2/12 refusal
-> mechanisms) dispatched 2026-07-25. NEXT ACTION: T0/T1 green + dual
-> reviews → STOP for owner review + the two elections. Zero
-> evaluation-bearing maps beyond T0/T1's sanction (they produce none),
+> **✅ T0 + T1 GREEN AND CLOSED (2026-07-25, both dual-reviewed to
+> APPROVED):** T0 seam metrics `75ed835`+`d201d4a` (20 tests; review
+> caught a NaN-residual gate hole — fixed; AND the plan gap that the
+> rubric's ACTUAL Rule 0 — 3×F floor-probe attributability +
+> UNMEASURED marking — was assigned to no task: now a T4 AC,
+> `be936a2`). T1 run driver `f9cfec4`+`2c4caa9` (22 tests; anchor
+> frame CONSUMED from anchor_frame(), seam frames + solve bboxes
+> pinned, pin-2/pin-12 refusals live and booby-trap-tested, 16-key
+> evidence schema + verbatim bridge caveat pinned, seal tripwire
+> first, ladder-before-load proven; review fixes: self-referential
+> purity test, canonical N_DIR import, cos-lat n_obs comment,
+> plan-verbatim job strings). T5 gained the pin-12
+> programmatic-path-gate note. **⛔ STOPPED at the T2 gate — the two
+> owner elections (pin 2 frame convention, pin 12 equatorial box) are
+> the only unblockers. Zero evaluation-bearing maps (none produced),
 > zero locked opens, tally untouched.**
 > **(pre-ruling record below, kept for the trail)**
 > ⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK WAS POSTED:

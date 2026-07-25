@@ -375,6 +375,7 @@ is ruled (they share T2's gate transitively).
 - [ ] **Kuroshio:** land-mask path assertions — dropped-land handling in framing/scoring exercised; `n_scored_points` honest; any all-land core refusal surfaced not swallowed
 - [ ] No interpretation prose anywhere — numbers + caveat only (owner rider; enforced by the structural pin above, not by intent)
 - [ ] Each run detached + stall-watched; RAM predicate before each; zero touches throughout
+- [ ] **Pin-12 gate breadth (T1-review note):** when this task wires the real diverse legs, the equatorial election gate must also cover the programmatic path (`record_evidence_row` for tile "equatorial" refuses while `box_election_pending`), not only the CLI `run` entry — test-pinned
 
 **Verify:** four evidence rows present + `pixi run python scripts/phase14_seal_run.py check` still PASS (seal untouched) + tally byte-identical
 
