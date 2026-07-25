@@ -245,7 +245,12 @@ def test_build_evidence_row_pure_and_unaliased() -> None:
     b = _mod.build_evidence_row(**_row_kwargs("seam_n"))
     assert a == b
     a["reference_row"]["label"] = "TAMPERED"
-    assert _mod.build_evidence_row(**_row_kwargs("seam_n")) == b
+    # Independent expectation, NOT a fresh-vs-b comparison: under the
+    # shared-dict bug b would be tampered too and tampered-vs-tampered
+    # would still compare equal.
+    fresh = _mod.build_evidence_row(**_row_kwargs("seam_n"))
+    assert fresh["reference_row"] == _PINNED_REFERENCE_ROW
+    assert b["reference_row"] == _PINNED_REFERENCE_ROW
 
 
 def test_record_refuses_when_seal_unverified(

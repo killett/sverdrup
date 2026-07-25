@@ -41,9 +41,10 @@ app = typer.Typer(add_completion=False)
 EVIDENCE = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 RESOLUTION_DEG = 0.2
 
-# Probe-pinned sizing inputs (plan Task 15 probe leg): frozen-config
-# direction count and smallest wavelength used by the Task-22 arithmetic.
-_SIZING_N_DIR = 8
+# Probe-pinned smallest wavelength for the Task-22 sizing arithmetic
+# (plan Task 15 probe leg; no canonical constant exists for it). The
+# direction count is NOT restated here — preflight imports the frozen
+# config's canonical N_DIR from miost_basis.
 _SIZING_LAM_MIN_KM = 80.0
 
 # The Stage-1 tile roster (owner-endorsed; boxes are NOT re-litigated here).
@@ -69,7 +70,7 @@ TILES: dict[str, dict[str, Any]] = {
         "core": (200.0, 215.0, -4.0, 11.0),
         "source": "cmems_my",
         "box_election_pending": True,  # owner pin 12 — run refuses
-        "job": "in-band core crossing the 10N component edge",
+        "job": "in-band core crossing the 10N component edge (fork-b pin 4)",
     },
     "southern": {
         "core": (215.0, 230.0, -62.0, -47.0),
@@ -77,7 +78,7 @@ TILES: dict[str, dict[str, Any]] = {
         "job": (
             "high-latitude honesty instrument (~54.5S center; "
             "obs southern edge = solve_bbox.lat_min - halo; "
-            "+/-66 headroom set by the frame convention)"
+            "+/-66 headroom set by the pin-2 convention)"
         ),
     },
     "quiet_gyre": {
@@ -183,6 +184,7 @@ def preflight(tile: str, m: int) -> dict[str, float]:
     from sverdrup.application import ladder  # noqa: PLC0415
     from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
     from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_basis import N_DIR  # noqa: PLC0415
     from sverdrup.methods.miost_sizing import (  # noqa: PLC0415
         BOX_LAT,
         BOX_LON,
@@ -202,6 +204,11 @@ def preflight(tile: str, m: int) -> dict[str, float]:
     d_y_km = (solve.lat_max - solve.lat_min) * KM_PER_DEG
     box_area_deg2 = (BOX_LON[1] - BOX_LON[0]) * (BOX_LAT[1] - BOX_LAT[0])
     tile_area_deg2 = (solve.lon_max - solve.lon_min) * (solve.lat_max - solve.lat_min)
+    # Deg^2-area scaling UNDERSTATES high-latitude obs density: meridian
+    # convergence packs ground tracks by ~1/cos(lat) (~35-70% more obs per
+    # deg^2 at the southern tile than this estimate assumes). Acceptable
+    # only because Task 2's measured-first probe re-grounds the estimate
+    # BEFORE any high-latitude preflight goes live.
     n_obs_est = int(BOX_W0_OBS_BASIS * tile_area_deg2 / box_area_deg2)
     plan = WindowPlan()
     model = size_tile(
@@ -213,7 +220,7 @@ def preflight(tile: str, m: int) -> dict[str, float]:
         m_members=m,
         n_obs=n_obs_est,
         alpha=float(PHASE13_WINNER_PARAMS["spacing_alpha"]),
-        n_dir=_SIZING_N_DIR,
+        n_dir=N_DIR,
         lam_min=_SIZING_LAM_MIN_KM,
     )
     if not ladder.tier1_eligible(model["peak_model_mib"]):
