@@ -490,7 +490,7 @@ is ruled (they share T2's gate transitively).
 - [ ] σ metrics reuse the SAME pure functions (interior_increment_rms / seam_delta applied to member-std fields) — no parallel σ implementations; hand-value tests as at T0 (distinct hand values from the mean route so a route-swap bug is caught)
 - [ ] Verdict cells from the SAME sealed thresholds (`instrument_configs()["seam"]` at call time) applied independently per field kind — sentinel-config behavioural pin covers BOTH routes
 - [ ] Solve-validity guard applies to both routes (one invalid solve invalidates both)
-- [ ] All T0 tests still green unchanged (additive change; any T0 test edit is a STOP-and-surface)
+- [ ] All T0 test ASSERTIONS, hand values, and docstrings unchanged and green (the dual-reviewed sealed content). AMENDED after the T10 BLOCKED escalation (coordinator ruling, recorded): a signature-widening change cannot leave call sites byte-identical — the MECHANICAL edit of existing `seam_read` call sites to supply σ arguments (distinct fixture values, mirroring the mean-side fixtures) is AUTHORIZED; any edit to an assertion, expected value, match pattern, or docstring remains a STOP-and-surface. σ-missing refusal must fire AFTER the residual guard and BEFORE metric arithmetic so the existing refusal tests' match patterns stay valid
 
 **Verify:** `pixi run pytest tests/test_seam_metrics.py -q` → all pass, no skips
 
