@@ -393,6 +393,25 @@
 > sets T2's sizing bracket AND the SO ±66 halo headroom:
 > prod-repr breach at halo > 2.0°, isolated > 4.0°);
 > (pin 12) equatorial box keep −4…11°N vs shift −2…13°N.
+> **⛔ STAGE HALTED BY THE T11 STOP CONDITION (2026-07-25): the
+> sealed-instrument coverage table found a THIRD unassigned normative
+> clause.** Table: `docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`
+> (`5fe405d`; 24 rubric clauses + 15 config keys, both directions).
+> FINDINGS: (1) CRITICAL — the rubric's PRIMARY pair read (R-04+R-09+
+> R-22: delta = field_A − field_B at overlap points, each tile's OWN
+> solve, BEFORE blending — "the blend hides exactly what this
+> measures") is assigned to NO task; T4 pins only the ORACLE read.
+> (2) HIGH — ORACLE denominator diverges: R-19 requires D_int from the
+> SEAMLESS solve; T4 pins the pooled-pair-interiors denominator.
+> (3) MEDIUM — recording schema unpinned vs the rubric's
+> `phase14.<stage>.seam_rows` row shape {pair, era, field_kind,
+> rms_delta, d_int, r_seam, verdict} + resolution-in-row.
+> (4) LOW-MED — GroundTrack standing-row breadth ambiguous (owner
+> sentence needed before T5). Per the owner's stop condition, T3 does
+> NOT dispatch; T2 (probe) + T10 (σ route) finish their in-flight
+> sanctioned work only. T4 remains blocked (blockedBy includes T11).
+> AWAITING OWNER RULING on remedies for findings 1–4.
+> **Prior state (T0/T1 closure), kept below:**
 > **✅ T0 + T1 GREEN AND CLOSED (2026-07-25, both dual-reviewed to
 > APPROVED):** T0 seam metrics `75ed835`+`d201d4a` (20 tests; review
 > caught a NaN-residual gate hole — fixed; AND the plan gap that the
