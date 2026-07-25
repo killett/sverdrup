@@ -5,10 +5,10 @@ load (the Stage-0 pin-4 source map — per-tile source is REGISTRY
 provenance, never a CLI option), frozen signed config, evidence row under
 ``phase14.stage1.tiles.<tile>`` quoting the seal sha.
 
-THIS module ships the CI-testable core only: registry + frames, refusals
-(unknown tile, pending owner elections, Tier-1 ladder, unverified seal),
-and pure evidence-row assembly. The real load/solve/score legs are
-separately gated Stage-1 tasks (2 probe / 3 anchor gate / 4 seam pair /
+THIS module ships the CI-testable core plus the Task-2 measured-first
+``probe`` command (quiet_gyre, ONE 60-day window, m=1, PROBE-labeled,
+record-then-stop 1.3x bracket). The remaining real load/solve/score legs
+are separately gated Stage-1 tasks (3 anchor gate / 4 seam pair /
 5 diverse tiles) and land behind :func:`_solve_leg`.
 
 Standing refusals wired here:
@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import math
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -39,7 +40,23 @@ if TYPE_CHECKING:
 app = typer.Typer(add_completion=False)
 
 EVIDENCE = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
+STAGE1_DIR = Path("data/2021a_ssh_mapping_ose/ours/phase14_stage1")
 RESOLUTION_DEG = 0.2
+
+# Task 2 — the measured-first sizing probe (plan Task 2, gated on the pin-2
+# ruling which landed 2026-07-25). Window start/length follow the Stage-0
+# probe convention: 2017-01-15 in days-since-2017-01-01, one 60-day window.
+PROBE_TILE = "quiet_gyre"
+PROBE_M = 1
+PROBE_W_START = 14.0
+PROBE_W_DAYS = 60.0
+PROBE_STOP_THRESHOLD = 1.3
+# The frozen five-mission mapping config (j3 stays the holdout convention);
+# CMEMS-MY directory codes (h2g -> h2ag on this source).
+PROBE_MISSIONS = ("alg", "h2ag", "j2g", "j2n", "s3a")
+# CMEMS-MY obs times are days since 1993-01-01; the solver frame is days
+# since 2017-01-01 (the Stage-0 probe's rebase constant).
+_DAYS_1993_TO_2017 = 8766.0
 
 # Probe-pinned smallest wavelength for the Task-22 sizing arithmetic
 # (plan Task 15 probe leg; no canonical constant exists for it). The
@@ -347,6 +364,282 @@ def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     atomic_write_json(evidence_path, results)
 
 
+def build_probe_row(
+    *,
+    frame: dict[str, Any],
+    window: list[float],
+    superobs_cfg: dict[str, Any] | None,
+    n_obs: int,
+    n_grid_nodes: int,
+    wall_s: float,
+    peak_rss_mib: float,
+    pcg: object,
+    model: dict[str, float],
+    date: str,
+) -> dict[str, Any]:
+    """Assemble the Task-2 probe evidence row — PURE, schema pinned.
+
+    The probe is a SIZING measurement, never an evaluation: there is NO
+    scores block (a probe row with a µ would be an evaluation-bearing
+    artifact) and ``m`` is pinned to 1. ``measured_vs_model`` carries the
+    measured/model ratios; ``stop_bracket`` trips when EITHER ratio
+    STRICTLY exceeds the 1.3x honest-bracket convention.
+
+    Args:
+        frame: Frame provenance block (core/overlap/halo/solve bbox).
+        window: ``[start, end]`` in solver days (since 2017-01-01).
+        superobs_cfg: The applied super-obs cfg (cmems side).
+        n_obs: In-window (support-widened) observation count — the same
+            count fed to the sizing model.
+        n_grid_nodes: Solve grid node count.
+        wall_s: Measured wall time [s].
+        peak_rss_mib: Measured peak RSS [MiB].
+        pcg: Per-window PCG convergence rows.
+        model: The ``size_tile`` output at the probe's own geometry.
+        date: ISO date string (passed in — purity).
+
+    Returns:
+        The probe row (exactly the pinned key set).
+    """
+    wall_ratio = wall_s / model["wall_est_s"]
+    peak_ratio = peak_rss_mib / model["peak_model_mib"]
+    return {
+        "label": "PROBE",
+        "tile": PROBE_TILE,
+        "source": str(TILES[PROBE_TILE]["source"]),
+        "frame": frame,
+        "window": window,
+        "m": PROBE_M,
+        "superobs_cfg": superobs_cfg,
+        "n_obs": n_obs,
+        "n_grid_nodes": n_grid_nodes,
+        "wall_s": wall_s,
+        "peak_rss_mib": peak_rss_mib,
+        "pcg": pcg,
+        "model": model,
+        "measured_vs_model": {"wall_ratio": wall_ratio, "peak_ratio": peak_ratio},
+        "stop_bracket": {
+            "threshold": PROBE_STOP_THRESHOLD,
+            "tripped": (
+                wall_ratio > PROBE_STOP_THRESHOLD or peak_ratio > PROBE_STOP_THRESHOLD
+            ),
+        },
+        "date": date,
+    }
+
+
+def record_probe_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
+    """Record the probe row under ``phase14.stage1.probe`` — seal-gated.
+
+    Same ceremony as :func:`record_evidence_row`: the CURRENT seal is
+    verified FIRST (Task-10 tripwire — nothing is written while no
+    verified seal exists), then an atomic merge into the standing store.
+
+    Args:
+        row: The probe row from :func:`build_probe_row`.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    results.setdefault("phase14", {}).setdefault("stage1", {})["probe"] = row
+    atomic_write_json(evidence_path, results)
+
+
+def _probe_solve() -> dict[str, Any]:
+    """The Task-2 measured leg: load, one-window solve, PROBE map, measure.
+
+    Follows the Stage-0 tile-sizing probe pattern (`phase14_probe.py`):
+    CMEMS load clipped to the frame's obs bbox, challenge-coarsen
+    super-obs, ObsWindow rebuild into the solver frame, ``Miost`` with the
+    solve bbox as km-plane basis domain, single-window plan, m=1 merged
+    members, one mid-window mean day. The sizing model is computed at the
+    probe's OWN geometry (one window, m=1, measured in-window obs count)
+    so the recorded ratios compare like with like. Constants are NOT
+    retuned here (the Phase-12 precedent — ratios recorded only).
+
+    Returns:
+        Measurement kwargs for :func:`build_probe_row` (all but ``date``).
+    """
+    import resource  # noqa: PLC0415
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.adapters.altimetry import apply_superobs  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.cmems_my import CmemsMySource  # noqa: PLC0415
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        frame_grid,
+        frame_obs,
+    )
+    from sverdrup.core.observations import (  # noqa: PLC0415
+        DiagonalErrorModel,
+        ObsWindow,
+    )
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.core.seeding import derive_seed  # noqa: PLC0415
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        mean_fields,
+        merged_members,
+    )
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS, Miost  # noqa: PLC0415
+    from sverdrup.methods.miost_basis import N_DIR, lonlat_to_km  # noqa: PLC0415
+    from sverdrup.methods.miost_sizing import size_tile  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+    from sverdrup.validation.params import (  # noqa: PLC0415
+        COARSEN_TIME,
+        OBS_NOISE_VARIANCE,
+    )
+
+    frame = registry_frame(PROBE_TILE)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    n_nodes = int(grid.x.size * grid.y.size)
+
+    src = CmemsMySource()
+    obs_93 = src.load(
+        frame.obs_bbox(resolution_deg=RESOLUTION_DEG),
+        np.datetime64("2016-12-20"),
+        np.datetime64("2017-04-10"),
+        missions=PROBE_MISSIONS,
+    )
+    superobs_cfg: dict[str, Any] = {"kind": "challenge-coarsen", "n": COARSEN_TIME}
+    obs_93 = apply_superobs(obs_93, cfg=superobs_cfg)
+    c = obs_93.coords()
+    obs = ObsWindow.from_arrays(
+        c[:, 0],
+        c[:, 1],
+        c[:, 2] - _DAYS_1993_TO_2017,  # -> days since 2017-01-01 (solver frame)
+        obs_93.values(),
+        DiagonalErrorModel(np.full(len(obs_93), OBS_NOISE_VARIANCE)),
+        mission=obs_93.mission,
+    )
+    framed = frame_obs(obs, frame, resolution_deg=RESOLUTION_DEG)
+
+    solve = frame.solve_bbox
+    xs, ys = lonlat_to_km(
+        np.array([solve.lon_min, solve.lon_max]),
+        np.array([solve.lat_min, solve.lat_max]),
+    )
+    x0, y0 = float(xs[0]), float(ys[0])
+    x1, y1 = float(xs[1]), float(ys[1])
+    t = framed.coords()[:, 2]
+    # One window's support span (the Stage-0 probe's mask convention).
+    in_window = (t >= PROBE_W_START - 12.0) & (t <= PROBE_W_START + 72.0)
+    n_obs_window = int(in_window.sum())
+
+    model = size_tile(
+        d_x_km=float(x1 - x0),
+        d_y_km=float(y1 - y0),
+        n_grid_nodes=n_nodes,
+        window_days=PROBE_W_DAYS,
+        n_windows=1,
+        m_members=PROBE_M,
+        n_obs=n_obs_window,
+        alpha=float(PHASE13_WINNER_PARAMS["spacing_alpha"]),
+        n_dir=N_DIR,
+        lam_min=_SIZING_LAM_MIN_KM,
+    )
+
+    method = Miost(basis_domain=(float(x0), float(y0), float(x1 - x0), float(y1 - y0)))
+    method._plan = WindowPlan(starts=(PROBE_W_START,))  # noqa: SLF001
+    provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
+    root = derive_seed("miost", "phase14-stage1-probe", PROBE_TILE, 0)
+    log_start = len(miost_mod.CONVERGENCE_LOG)
+    t_wall = time.monotonic()
+    spec, etas_a, _anoms, starts = merged_members(
+        method, framed, grid, provider, PROBE_M, root
+    )
+    days = [PROBE_W_START + PROBE_W_DAYS / 2.0]
+    means = mean_fields(spec, starts, etas_a, grid, method._plan, days)  # noqa: SLF001
+    wall_s = time.monotonic() - t_wall
+    peak_mib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+    pcg_rows = list(miost_mod.CONVERGENCE_LOG[log_start:])
+
+    STAGE1_DIR.mkdir(parents=True, exist_ok=True)
+    frame_block: dict[str, Any] = {
+        "core": list(TILES[PROBE_TILE]["core"]),
+        "overlap_deg": frame.overlap_deg,
+        "halo_deg": frame.halo_deg,
+        "missing_neighbors": sorted(frame.missing_neighbors),
+        "solve_bbox": [solve.lon_min, solve.lon_max, solve.lat_min, solve.lat_max],
+        "convention": DIVERSE_FRAME_CONVENTION,
+        "resolution_deg": RESOLUTION_DEG,
+    }
+    window = [PROBE_W_START, PROBE_W_START + PROBE_W_DAYS]
+    np.savez(
+        STAGE1_DIR / "probe_quiet_gyre_mean.npz",
+        mean=means,
+        label="PROBE",
+        provenance=json.dumps(
+            {
+                "tile": PROBE_TILE,
+                "frame": frame_block,
+                "missions": list(PROBE_MISSIONS),
+                "window": window,
+                "m": PROBE_M,
+                "days": days,
+            }
+        ),
+    )
+    return {
+        "frame": frame_block,
+        "window": window,
+        "superobs_cfg": superobs_cfg,
+        "n_obs": n_obs_window,
+        "n_grid_nodes": n_nodes,
+        "wall_s": wall_s,
+        "peak_rss_mib": peak_mib,
+        "pcg": pcg_rows,
+        "model": model,
+    }
+
+
+@app.command()
+def probe() -> None:
+    """The Task-2 measured-first sizing re-check — BEFORE any full run.
+
+    quiet_gyre tile (CMEMS source — the first real CMEMS-side solve at the
+    production-representative 19° solve geometry), ONE 60-day window, m=1,
+    single mid-window day map, PROBE-labeled artifacts. Record-then-stop:
+    a tripped 1.3x bracket exits nonzero AFTER the row is recorded (never
+    a silent stop).
+
+    Raises:
+        RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
+        typer.Exit: Nonzero when the STOP bracket trips.
+    """
+    preflight_model = preflight(PROBE_TILE, PROBE_M)
+    typer.echo(
+        "preflight model: "
+        + json.dumps({k: round(v, 1) for k, v in preflight_model.items()})
+    )
+    measured = _probe_solve()
+    row = build_probe_row(date=datetime.now(UTC).date().isoformat(), **measured)
+    record_probe_row(row, evidence_path=EVIDENCE)
+    typer.echo("measured_vs_model: " + json.dumps(row["measured_vs_model"]))
+    if row["stop_bracket"]["tripped"]:
+        typer.echo(
+            "STOP: measured-vs-model bracket TRIPPED (ratio > 1.3) — the row "
+            "IS recorded; the owner decides before any full runs (a mis-sized "
+            "model at 6 tiles is a spend decision)"
+        )
+        raise typer.Exit(code=1)
+    typer.echo(
+        f"PROBE {PROBE_TILE} done: wall {row['wall_s']:.1f} s, "
+        f"peak {row['peak_rss_mib']:.0f} MiB"
+    )
+
+
 def _solve_leg(tile: str, m: int, days_stride: int) -> None:
     """The real load/solve/score/record leg — OWNED BY LATER GATED TASKS.
 
@@ -356,15 +649,16 @@ def _solve_leg(tile: str, m: int, days_stride: int) -> None:
         days_stride: Output-day stride.
 
     Raises:
-        NotImplementedError: Always — Stage-1 Task 2 (measured-first
-            probe), Task 3 (anchor identity gate), Task 4 (seam-pair run),
-            and Task 5 (diverse-tile runs) own the real legs.
+        NotImplementedError: Always — Stage-1 Task 3 (anchor identity
+            gate), Task 4 (seam-pair run), and Task 5 (diverse-tile runs)
+            own the real legs. (Task 2's measured-first probe LANDED as
+            the separate ``probe`` command.)
     """
     raise NotImplementedError(
         f"tile {tile!r} (m={m}, days_stride={days_stride}): the real solve "
-        "legs are separately gated — Stage-1 Task 2 (measured-first probe), "
-        "Task 3 (anchor identity gate), Task 4 (seam-pair run), Task 5 "
-        "(diverse-tile runs). This driver ships the CI-testable core only."
+        "legs are separately gated — Stage-1 Task 3 (anchor identity gate), "
+        "Task 4 (seam-pair run), Task 5 (diverse-tile runs); Task 2's "
+        "measured-first probe landed as the `probe` command."
     )
 
 

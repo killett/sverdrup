@@ -197,7 +197,7 @@ def test_run_refuses_unknown_tile() -> None:
     Bug caught: a typo'd tile name silently sizing (and later solving) an
     unplanned box instead of refusing loudly.
     """
-    res = runner.invoke(_mod.app, ["nope"])
+    res = runner.invoke(_mod.app, ["run", "nope"])
     assert res.exit_code != 0
     assert "unknown tile" in res.output
 
@@ -211,7 +211,7 @@ def test_run_has_no_source_option() -> None:
     """
     params = inspect.signature(_mod.run).parameters
     assert not any("source" in name for name in params)
-    res = runner.invoke(_mod.app, ["anchor", "--source", "cmems_my"])
+    res = runner.invoke(_mod.app, ["run", "anchor", "--source", "cmems_my"])
     assert res.exit_code != 0
 
 
@@ -403,3 +403,218 @@ def test_run_reaches_gated_solve_stub_when_eligible(
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
     with pytest.raises(NotImplementedError, match="Task"):
         _mod.run("seam_n")
+
+
+# ---------------------------------------------------------------------------
+# Task 2 — measured-first probe (quiet_gyre, one window, m=1)
+# ---------------------------------------------------------------------------
+
+# The pinned PROBE row schema (plan Task 2; stated here independently of the
+# implementation). Deliberately NO "scores" and NO "seal_sha": a probe row
+# carrying a µ would be an evaluation-bearing artifact.
+_PROBE_KEYS = {
+    "label",
+    "tile",
+    "source",
+    "frame",
+    "window",
+    "m",
+    "superobs_cfg",
+    "n_obs",
+    "n_grid_nodes",
+    "wall_s",
+    "peak_rss_mib",
+    "pcg",
+    "model",
+    "measured_vs_model",
+    "stop_bracket",
+    "date",
+}
+
+
+def _probe_measurement(
+    wall_s: float = 100.0,
+    peak_rss_mib: float = 1000.0,
+    wall_est_s: float = 200.0,
+    peak_model_mib: float = 4000.0,
+) -> dict[str, Any]:
+    """Injected fake measurement (defaults: ratios 0.5 / 0.25, both green)."""
+    return {
+        "frame": {"core": [255.0, 270.0, -30.0, -15.0], "overlap_deg": 2.0},
+        "window": [14.0, 74.0],
+        "superobs_cfg": {"kind": "challenge-coarsen", "n": 5},
+        "n_obs": 3000,
+        "n_grid_nodes": 9216,
+        "wall_s": wall_s,
+        "peak_rss_mib": peak_rss_mib,
+        "pcg": [{"window": "w0", "iters": 12}],
+        "model": {"wall_est_s": wall_est_s, "peak_model_mib": peak_model_mib},
+    }
+
+
+def test_probe_row_schema_exactly_pinned() -> None:
+    """build_probe_row output keys == the pinned probe set, nothing else.
+
+    Bug caught: a scores/µ block sneaking into the probe row (making an
+    evaluation-bearing artifact out of a sizing probe), or a provenance
+    key (superobs_cfg, model, stop_bracket, ...) silently dropped.
+    """
+    row = _mod.build_probe_row(date="2026-07-25", **_probe_measurement())
+    assert set(row) == _PROBE_KEYS
+
+
+def test_probe_row_pins_m1_label_and_registry_source() -> None:
+    """Probe row: m == 1 pinned, PROBE label, quiet_gyre tile, cmems_my source.
+
+    Bug caught: the probe running (or reporting) the m=100 production
+    default; a STAGE1-EVIDENCE mislabel presenting the probe as a scored
+    tile run; source drifting from the registry's Stage-0 pin-4 map.
+    """
+    row = _mod.build_probe_row(date="2026-07-25", **_probe_measurement())
+    assert row["m"] == 1
+    assert row["label"] == "PROBE"
+    assert row["tile"] == "quiet_gyre"
+    assert row["source"] == "cmems_my"
+    assert row["date"] == "2026-07-25"
+
+
+def test_probe_ratios_computed_measured_over_model() -> None:
+    """measured_vs_model = measured/model, hand-computed: 100/200, 1000/4000.
+
+    Bug caught: an inverted ratio (model/measured) — a FAST run would then
+    read 2.0 and trip the STOP bracket while a 3x-over run would read 0.33
+    and sail through, inverting the spend-decision trigger.
+    """
+    row = _mod.build_probe_row(date="2026-07-25", **_probe_measurement())
+    assert row["measured_vs_model"] == {"wall_ratio": 0.5, "peak_ratio": 0.25}
+
+
+@pytest.mark.parametrize(
+    ("wall_s", "peak_rss_mib", "want_tripped"),
+    [
+        # model bases: wall_est_s=200, peak_model_mib=4000 (fake above)
+        (280.0, 1000.0, True),  # wall 1.4 > 1.3, peak 0.25 — EITHER trips
+        (100.0, 5600.0, True),  # wall 0.5, peak 1.4 > 1.3 — EITHER trips
+        (100.0, 1000.0, False),  # both under
+        (260.0, 5200.0, False),  # both exactly 1.3 — strict >, not >=
+    ],
+)
+def test_probe_stop_bracket_trips_on_either_ratio(
+    wall_s: float, peak_rss_mib: float, want_tripped: bool
+) -> None:
+    """stop_bracket: threshold 1.3, tripped iff EITHER ratio > 1.3 (strict).
+
+    Bug caught: an AND instead of OR (a peak-only blowout undetected — the
+    exit-137 class at 6 tiles), or a >= drift tripping exactly-at-bracket
+    runs the 1.3x honest-bracket convention accepts.
+    """
+    row = _mod.build_probe_row(
+        date="2026-07-25",
+        **_probe_measurement(wall_s=wall_s, peak_rss_mib=peak_rss_mib),
+    )
+    assert row["stop_bracket"] == {"threshold": 1.3, "tripped": want_tripped}
+
+
+def test_probe_cli_records_then_stops_on_tripped_bracket(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A tripped bracket exits nonzero AFTER the row is recorded.
+
+    Bug caught: stop-before-record (a silent STOP — the mis-sized-model
+    evidence lost exactly when the owner needs it), or a tripped bracket
+    exiting 0 and letting the 6-tile full runs launch on a bad model.
+    """
+    from sverdrup.application import ladder
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(
+        _mod, "_probe_solve", lambda: _probe_measurement(wall_s=400.0)
+    )  # wall ratio 2.0 — tripped
+    res = runner.invoke(_mod.app, ["probe"])
+    assert res.exit_code != 0
+    stored = json.loads(evid.read_text())
+    probe = stored["phase14"]["stage1"]["probe"]
+    assert probe["stop_bracket"] == {"threshold": 1.3, "tripped": True}
+    assert probe["measured_vs_model"]["wall_ratio"] == 2.0
+
+
+def test_probe_cli_green_bracket_records_and_exits_zero(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Under-bracket probe exits 0 with the row recorded at stage1.probe.
+
+    Bug caught: the probe exiting nonzero unconditionally (blocking the
+    stage on a healthy model), recording at the wrong evidence node, or
+    clobbering the standing store (the P0-2 class).
+    """
+    from sverdrup.application import ladder
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(_mod, "_probe_solve", _probe_measurement)
+    res = runner.invoke(_mod.app, ["probe"])
+    assert res.exit_code == 0
+    stored = json.loads(evid.read_text())
+    assert stored["phase13"] == {"kept": True}
+    probe = stored["phase14"]["stage1"]["probe"]
+    assert probe["label"] == "PROBE"
+    assert probe["stop_bracket"] == {"threshold": 1.3, "tripped": False}
+
+
+def test_probe_record_seal_tripwire_fires_before_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """record_probe_row verifies the seal FIRST; on SealError nothing lands.
+
+    Bug caught: probe evidence written into an unsealed context — the
+    Task-10 ceremony tripwire skipped on the NEW record path (the tiles
+    path being guarded does not guard this one).
+    """
+    from sverdrup.application import ladder
+    from sverdrup.validation import phase14_seal
+
+    def _raise() -> None:
+        raise phase14_seal.SealError("SENTINEL-NO-SEAL")
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _raise)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(_mod, "_probe_solve", _probe_measurement)
+    res = runner.invoke(_mod.app, ["probe"])
+    assert res.exit_code != 0
+    assert isinstance(res.exception, phase14_seal.SealError)
+    assert not evid.exists()
+
+
+def test_probe_checks_ladder_before_any_solve(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An ineligible probe dies at the Tier-1 ladder; the solve never runs.
+
+    Bug caught: loading CMEMS obs (or solving) before the RAM predicate —
+    the OOM/silent-death class the fork-g pin-4 ordering exists to prevent.
+    """
+    from sverdrup.application import ladder
+
+    solve_calls: list[str] = []
+
+    def _spy() -> dict[str, Any]:
+        solve_calls.append("solved")
+        return _probe_measurement()
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
+    monkeypatch.setattr(_mod, "_probe_solve", _spy)
+    res = runner.invoke(_mod.app, ["probe"])
+    assert res.exit_code != 0
+    assert isinstance(res.exception, RuntimeError)
+    assert "ladder" in str(res.exception)
+    assert solve_calls == []
