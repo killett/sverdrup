@@ -16,7 +16,12 @@ Authoritative definitions live in ``docs/validation/phase14_seam_rubric.md``
   validity guard: an invalid solve (PCG final relative residual not
   known to be within its rtol) never produces a verdict. The rubric's
   Rule-0 floor-probe attributability check (3x solver floor) is applied
-  by the consumer (T4), not here.
+  by the consumer (T4), not here. One call produces BOTH verdict routes
+  of the rubric's per-FIELD-KIND requirement: the mean route (``R_seam``
+  on mean maps) and the σ route (``R_seam_sigma = RMS(sigma_delta) /
+  D_int_sigma`` on member-std maps), the same pure metric functions
+  applied to each field kind, verdict cells applied independently per
+  field kind.
 
 Pure numpy metric arithmetic — no solver imports, no file I/O. NaN nodes
 (land) are excluded from every pool; an all-NaN pool refuses.
@@ -156,17 +161,69 @@ def seam_verdict(r: float) -> str:
 class SeamRead:
     """One assembled seam reading (the rubric's recorded row core).
 
+    Carries BOTH field-kind routes; every field is required, so a read
+    missing one route cannot be constructed (a mean-only construction
+    refuses with ``TypeError``).
+
     Attributes:
-        rms_delta: Co-located seam disagreement RMS.
-        d_int: Pooled interior reference dispersion (both tiles).
-        r_seam: ``rms_delta / d_int`` — the verdict-bearing ratio.
+        rms_delta: Co-located seam disagreement RMS (mean maps).
+        d_int: Pooled interior reference dispersion (both tiles, mean maps).
+        r_seam: ``rms_delta / d_int`` — the mean-route verdict-bearing ratio.
         verdict: Pre-registered cell for ``r_seam``.
+        rms_sigma_delta: Co-located seam disagreement RMS (member-std maps).
+        d_int_sigma: Pooled interior reference dispersion (member-std maps).
+        r_seam_sigma: ``rms_sigma_delta / d_int_sigma`` — the σ-route
+            verdict-bearing ratio (the rubric's second ratio).
+        verdict_sigma: Pre-registered cell for ``r_seam_sigma``, applied
+            independently of the mean route.
     """
 
     rms_delta: float
     d_int: float
     r_seam: float
     verdict: str
+    rms_sigma_delta: float
+    d_int_sigma: float
+    r_seam_sigma: float
+    verdict_sigma: str
+
+
+def _pooled_interior_rms(
+    interior_a: ArrayLike,
+    interior_b: ArrayLike,
+    axis: int,
+    *,
+    kind: str,
+) -> float:
+    """Pooled interior reference dispersion for one field kind.
+
+    Pools the one-grid-step increments of BOTH core interiors into a
+    single RMS, per the rubric — the SAME construction serves the mean
+    route (``D_int``) and the σ route (``D_int_sigma``).
+
+    Args:
+        interior_a: Tile A core-interior field.
+        interior_b: Tile B core-interior field.
+        axis: Axis perpendicular to the shared boundary.
+        kind: Pool label for the refusal message (``"interior"`` for the
+            mean route, ``"sigma interior"`` for the σ route).
+
+    Returns:
+        Pooled one-grid-step increment RMS across both interiors.
+
+    Raises:
+        ValueError: If the pooled increment set is empty (all-NaN
+            interiors for this field kind).
+    """
+    pooled = np.concatenate(
+        [
+            _finite_increments(interior_a, axis),
+            _finite_increments(interior_b, axis),
+        ]
+    )
+    if pooled.size == 0:
+        raise ValueError(f"all-NaN {kind}: no finite one-grid-step increments to pool")
+    return _rms(pooled)
 
 
 def seam_read(
@@ -176,6 +233,10 @@ def seam_read(
     interior_b: ArrayLike,
     axis: int,
     *,
+    sigma_seam_a: ArrayLike,
+    sigma_seam_b: ArrayLike,
+    sigma_interior_a: ArrayLike,
+    sigma_interior_b: ArrayLike,
     final_rel_residual_a: float,
     rtol_a: float,
     final_rel_residual_b: float,
@@ -186,29 +247,41 @@ def seam_read(
     Refuses BEFORE any metric arithmetic unless each underlying solve's
     PCG final relative residual is known to be within its rtol (a NaN
     residual — a crashed or aborted solve — also refuses) — an invalid
-    solve never produces a verdict. The rubric's Rule-0 floor-probe
-    attributability check (RMS(delta) vs 3x solver floor) is applied by
-    the consumer (T4), not here. ``D_int`` pools the one-grid-step
-    increments of BOTH core interiors into a single RMS, per the rubric.
+    solve never produces a verdict on EITHER route. The rubric's Rule-0
+    floor-probe attributability check (RMS(delta) vs 3x solver floor) is
+    applied by the consumer (T4), not here. One call produces BOTH
+    field-kind routes: the mean route from the mean-map inputs and the σ
+    route from the member-std inputs, via the same pure metric
+    functions; the σ inputs are REQUIRED (no defaults) so a σ verdict
+    can never be fabricated from mean maps. ``D_int`` (and
+    ``D_int_sigma``) each pool the one-grid-step increments of BOTH core
+    interiors of their field kind into a single RMS, per the rubric.
+    Verdict cells are applied independently per field kind, from the
+    sealed thresholds read at call time.
 
     Args:
-        seam_a: Tile A values on the seam line.
-        seam_b: Tile B values on the co-located seam nodes.
-        interior_a: Tile A core-interior field.
-        interior_b: Tile B core-interior field.
+        seam_a: Tile A mean-map values on the seam line.
+        seam_b: Tile B mean-map values on the co-located seam nodes.
+        interior_a: Tile A core-interior mean-map field.
+        interior_b: Tile B core-interior mean-map field.
         axis: Axis perpendicular to the shared boundary.
+        sigma_seam_a: Tile A member-std values on the seam line.
+        sigma_seam_b: Tile B member-std values on the co-located seam nodes.
+        sigma_interior_a: Tile A core-interior member-std field.
+        sigma_interior_b: Tile B core-interior member-std field.
         final_rel_residual_a: Tile A solve's PCG final relative residual.
         rtol_a: Tile A solve's PCG relative-residual tolerance.
         final_rel_residual_b: Tile B solve's PCG final relative residual.
         rtol_b: Tile B solve's PCG relative-residual tolerance.
 
     Returns:
-        The assembled :class:`SeamRead`.
+        The assembled :class:`SeamRead` carrying both routes.
 
     Raises:
         ValueError: If either solve is invalid (residual not known to be
-            within rtol, including NaN), if the seam or pooled interior
-            is all-NaN, or if the seam fields are not co-located.
+            within rtol, including NaN), if a seam or pooled interior of
+            either field kind is all-NaN, or if the seam fields of either
+            field kind are not co-located.
     """
     for label, residual, rtol in (
         ("A", final_rel_residual_a, rtol_a),
@@ -221,19 +294,20 @@ def seam_read(
                 "invalid solve never produces a seam verdict"
             )
     rms_delta = seam_delta(seam_a, seam_b)
-    pooled = np.concatenate(
-        [
-            _finite_increments(interior_a, axis),
-            _finite_increments(interior_b, axis),
-        ]
-    )
-    if pooled.size == 0:
-        raise ValueError("all-NaN interior: no finite one-grid-step increments to pool")
-    d_int = _rms(pooled)
+    d_int = _pooled_interior_rms(interior_a, interior_b, axis, kind="interior")
     r_seam = rms_delta / d_int
+    rms_sigma_delta = seam_delta(sigma_seam_a, sigma_seam_b)
+    d_int_sigma = _pooled_interior_rms(
+        sigma_interior_a, sigma_interior_b, axis, kind="sigma interior"
+    )
+    r_seam_sigma = rms_sigma_delta / d_int_sigma
     return SeamRead(
         rms_delta=rms_delta,
         d_int=d_int,
         r_seam=r_seam,
         verdict=seam_verdict(r_seam),
+        rms_sigma_delta=rms_sigma_delta,
+        d_int_sigma=d_int_sigma,
+        r_seam_sigma=r_seam_sigma,
+        verdict_sigma=seam_verdict(r_seam_sigma),
     )
