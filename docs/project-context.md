@@ -152,6 +152,7 @@ Sparse early epochs are transferred, not fit (`fit_substrate_fraction` 0.667 on 
 8. Bridge caveat on every cross-lineage reading until the source-delta attribution readout lands.
 9. Spend outside the authorized tier WAITS for the owner.
 10. Tolerances are stated before the numbers arrive and never loosened to manufacture a pass.
+11. Every quantitative gate names, at design time, the measurement condition under which it could fail. A gate discharged by a measurement that could not have tripped it is not discharged — it is unrun. Record the condition beside the threshold. *(Ruling pin 24, 2026-07-25; instances: the Stage-0 T11 vacuous pin, the T0 source-scan pin, the T2 1.3× bracket run against iteration-capped solves.)*
 
 ## 8. Repo map and house rules *(repo-verified — `CLAUDE.md`)*
 

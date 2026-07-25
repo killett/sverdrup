@@ -42,8 +42,12 @@ typer, pixi). No new dependencies.
   zero locked opens; tally untouched; ±66° not exceeded (Stage 1 caps at the
   SO tile, D4).
 
-**⚖ OWNER ELECTIONS PENDING (plan-review pins 2 and 12 — HELD, not the
-executor's to decide; the affected tasks REFUSE to run until ruled):**
+**✅ OWNER ELECTIONS RULED 2026-07-25 (landed `e2c6b1e`): pin 2 =
+PRODUCTION-REPRESENTATIVE (empty missing_neighbors, 2° extension; accepted
+cost 1.59× nodes; SO ±66 headroom = halo ≤ 2.0°, inherited by the Gate-1
+kernel decision); pin 12 = KEEP −4…11°N (in-band coverage primary; shifting
+north moves the equator/TIW band toward the core edge where blend effects
+are worst). Original election text kept for the trail:**
 - **Pin 2 — missing_neighbors convention for the four diverse tiles.**
   Isolated (all four sides missing) = 76×77 nodes; production-representative
   (2° overlap extension, no sides flagged missing) = 96×97 — a 1.59× node
@@ -344,11 +348,14 @@ node-count convention, and the frame convention IS the spend decision.
 - [ ] Registry frames used verbatim (pin 3 frozensets: north {W,E,N}, south {W,E,S}); solve bboxes test-pinned ([295,305]×[36,43] / [295,305]×[33,40])
 - [ ] Both tiles dc2021a source, frozen config, m=100, same roots convention as the anchor run — the ORACLE compares like against like
 - [ ] Blended field via `assemble` (partition-of-unity machinery, zero-overlap refusal active); NaN never poisons
-- [ ] ORACLE read: `seam_delta` between blended and seamless-anchor fields on the seam band + `interior_increment_rms` pooled from both tile interiors; R and verdict cell recorded; residual validity gate enforced (`seam_read`)
-- [ ] **Rubric Rule-0 floor-probe attributability (T0-review pin — the sealed rubric's ACTUAL Rule 0, assigned nowhere else):** one deeper-tolerance re-solve (maxiter +1000) for the pair roster establishes floor F; the verdict is attributable ONLY if RMS(delta) > 3×F — below that the number is still recorded and the pair row is marked **UNMEASURED (solver floor)**, never CLEAN (the rubric is one-sided: small R is the success cell, so an unattributable CLEAN is exactly the claim the rubric forbids); floor F, the 3×F check, and the marking all in the evidence row, test-pinned on the marking logic
+- [ ] **PRIMARY PAIR READ (coverage Finding 1, owner-adopted — the pre-registered verdict route):** R_seam on `delta(x) = field_A(x) − field_B(x)` at overlap points, each tile's OWN solve, BEFORE blending (the blend hides exactly what this measures). **Evaluation domain, owner-ruled: the 2·overlap strip centred on the shared core boundary** — for the ruled frames lat 36–40 × lon 295–305, covered by both tiles' own solves (seam_n solves to 36, seam_s to 40). One name, one definition ("the 2·overlap strip"), test-pinned; "seam line"/"seam band" RETIRED from this AC and from the T0 module docstrings (small wording follow-on commit, no behavior change). BOTH field kinds ride this route (mean + σ via the T10 machinery unchanged)
+- [ ] **ORACLE read (secondary — the blend-works question, stays):** `seam_delta` between the blended field and the seamless-anchor truth on the 2·overlap strip; residual validity guard enforced (`seam_read`)
+- [ ] **TWO D_int DENOMINATORS, pinned adjacent (coverage Finding 2, owner-adopted — they are DIFFERENT by design, do not "fix" the inconsistency):** PAIR read D_int = pooled core interiors of both tiles (rubric R-06/R-07); ORACLE read D_int = the SEAMLESS solve's interior (R-19). A future reader who unifies them silently breaks the flagship comparison — the why-they-differ comment lives beside both pins
+- [ ] **Rubric Rule-0 floor-probe attributability — ATTACHES TO THE PAIR READ FIRST (owner ruling, Finding 1c: the rubric's floor rule is written for the pair):** a deeper-tolerance re-solve for the pair roster establishes floor F; the pair verdict is attributable ONLY if RMS(delta) > 3×F — below that the number is still recorded and the pair row is marked **UNMEASURED (solver floor)**, never CLEAN. The ORACLE carries its OWN floor check, recorded separately, NEVER shared. **Pin 23: F is only a floor if the deeper solve CONVERGED — the deeper solve must REACH rtol and the row RECORDS that it did (rtol, maxiter, final residual, iterations, CONVERGED flag); if it cannot converge, that is a STOP-for-owner, not an UNMEASURED verdict** (F between two truncation points is not a floor and 3×F has no meaning)
+- [ ] **Pin 23 convergence precondition:** the seam-tile solves themselves must CONVERGE to rtol (a capped seam tile yields no verdict by design — `seam_read` refuses); if either seam frame exits at the iteration cap, STOP IMMEDIATELY AND SEPARATELY to the owner before any further spend
 - [ ] **Floor probe sized + reused (review pin 20):** (a) the floor re-solve is pinned at **m=1, the ONE seam window** (the floor is a solver-convergence property of the linear system, not an ensemble property — m adds RHS columns to the same operator and cannot change the convergence floor; anyone claiming m=100 is needed must say why in the row); (b) Tier-1 arithmetic for the extra leg stated in the evidence row BEFORE it runs (size_tile at the pair geometry, m=1, maxiter+1000 — wall scales ~linearly in iterations, RAM unchanged; if `tier1_eligible` refuses → a WAIT row is recorded and the pair is marked UNMEASURED-pending-owner, never silently skipped); (c) the floor machinery REUSES `scripts/diag_miost_seam_dispersion.py`'s Task-18-lineage construction by import — the plan's standing reuse formula, never reimplemented
 - [ ] **σ-route persistence (review pin 19):** this task's runs persist MEMBER-STD maps alongside the mean fields (the field the R_seam_sigma verdict consumes); both verdict routes (mean R_seam + σ R_seam_sigma via T10's machinery) recorded per pair, PER FIELD KIND — the evidence row carries {r_seam, verdict, r_seam_sigma, verdict_sigma} + both floor checks
-- [ ] Evidence `phase14.stage1.seam` = {R, verdict, D_int, delta, per-tile pcg maxima, oracle_note: "no published precedent — gap-register (T11)"}; verdict NEVER blocks the plan mechanically — STRUCTURAL_STOP surfaces to the owner (it is Gate-1's item, but work on OTHER tiles may continue: they don't consume seams)
+- [ ] **Recording (coverage Finding 3, owner-adopted IN FULL incl. namespace):** rows go to `phase14.stage1.seam_rows`, rubric row shape `{pair, era, field_kind, rms_delta, d_int, r_seam, verdict}` + resolution in-row — era degenerate and resolution single in Stage 1 is a ROW COUNT, not a schema excuse (the keys cost nothing now, a migration at Stage 2). ORACLE rows recorded beside with their own floor fields + oracle_note: "no published precedent — gap-register (T11)". Verdicts NEVER block the plan mechanically — STRUCTURAL_STOP surfaces to the owner (Gate-1's item; work on OTHER tiles may continue: they don't consume seams)
 - [ ] **Geometry caveat recorded (review pin 13):** the evidence row carries `geometry: "10x5 halves inside the anchor footprint — NOT D1 production geometry (15x15)"` + the explicit non-transfer sentence: the verdict is not a production-geometry seam reading, and the feasibility-frontier watch item (worst-seam grew with TILE COUNT, PROGRESS 2026-07-01) sits on the far side of that gap — discipline 7 applied to a positive result; test-pinned strings
 - [ ] Zero touches; maps labeled STAGE1-EVIDENCE
 
@@ -372,6 +379,7 @@ is ruled (they share T2's gate transitively).
 
 **Acceptance Criteria:**
 - [ ] Four runs recorded under `phase14.stage1.tiles.{equatorial,southern,quiet_gyre,kuroshio}` — each: µ/λx/coverage/χ² j3-validation rows + raw-σ + LABELED scalar-s* reference row + bridge_caveat verbatim + seal sha
+- [ ] **GroundTrack wiring (coverage Finding 4, owner-ruled FROM THE SPEC — zero new surfaces):** every tile×era has its applicability evaluated through the EXISTING `Registry.applicable` + `report_rows` machinery (Phase-11; GroundTrack is the reference-free family's founding member, the 0.410→0.331 lineage); each tile×era yields either a standing row or a RECORDED ABSENCE — absence means absence and is recorded as such (fork F). NO new GroundTrack producers; test pins the wiring path, not new surfaces
 - [ ] **Interpretation withholding is STRUCTURAL (review pin 8):** `build_evidence_row` output keys test-pinned as EXACTLY the schema set — no free-prose field exists to interpret in; THIS is the control (review pin 17). The four-word row-serialization blocklist ("suggests"/"consistent with"/"attributable"/"implies") stays as a decorative tripwire, not the control; the pack-level absence check lives in T9 where the free prose actually lives
 - [ ] **Equatorial persistence (1-6):** beyond the pack row, persist maps + evidence pack + FROZEN fold/eval frame to `phase14_stage1/equatorial_lane0/` — the future wave-increment comparison substrate; a `lane0_manifest.json` with per-file shas; recorded under the frozen-config policy sentence (fork-b pin 2 verbatim in the manifest)
 - [ ] **Southern Ocean:** additionally records measured anisotropy inputs for Task 6 (per-direction spectral/track diagnostics the kernel pack consumes — reuse `GroundTrack`/`SpectralFidelity` instrument families from T11 configs, per-tile×era parameterization)
@@ -524,9 +532,30 @@ is ruled (they share T2's gate transitively).
 
 ---
 
+### Task 12: C1→2 contract coverage table (review pin 25 — precondition on T9)
+
+**Goal:** The T11 method applied once more, then it is routine: a both-directions walk over the C1→2 contract items (spec §3.2) — every contract deliverable mapped to the task AC that produces it, and every Stage-1 AC's contract claim mapped back to a contract line. Same table shape as T11, same STOP condition on an unassigned item. The T11 scope note is the map of what this table covers that T11 did not.
+
+**Files:**
+- Create: `docs/superpowers/2026-XX-phase14-stage1-c1to2-coverage.md` (posted in the Gate-1 pack BESIDE the instrument table)
+
+**Acceptance Criteria:**
+- [ ] Forward: every C1→2 deliverable (tiling machinery + measured seam behavior oracle+rubric verdicts; high-latitude kernel decision + arithmetic; per-tile frozen-config transfer readings incl. labeled reference rows + j3-side coverage/χ²; equatorial lane-0 baseline under frozen fold/eval frame; land-mask path exercised; Gate-1 shipped-config election outcome with scope) → the task AC that produces it
+- [ ] Reverse: every Stage-1 AC claiming a contract item → the contract line it discharges; orphans are findings
+- [ ] Any UNASSIGNED contract item → STOP immediately and surface (the T11 stop condition)
+- [ ] Posted in the Gate-1 pack beside the instrument table
+
+**Verify:** table exists; every cited task exists in the plan
+
+```json:metadata
+{"files": ["docs/superpowers/2026-XX-phase14-stage1-c1to2-coverage.md"], "verifyCommand": "rg -c 'T[0-9]+' docs/superpowers/2026-XX-phase14-stage1-c1to2-coverage.md", "acceptanceCriteria": ["every C1->2 deliverable mapped to a producing AC", "reverse walk complete, orphans are findings", "STOP on unassigned item", "posted beside the instrument table"]}
+```
+
+---
+
 ## Execution notes (for the executor)
 
-- **Order:** T0 ∥ T1 (DONE) → elections landed → T2 (probe) → T3 (anchor gate — HARD BARRIER; **owner STOP at its completion** — the five-gate block is the owner's walk) → T4 → T5 → {T6, T7, T8} → T9. **T10 (σ route) runs parallel to T2/T3 (file-disjoint from the driver chain; blockedBy [0] — shared files with the closed T0, ordering invariant held). T11 (coverage table) before T4; T4 blockedBy [0,3,10,11].** T4/T5/T7 remain SERIALIZED on the shared `phase14_stage1_run.py` + test file; evidence writes single-writer; solves sequential (RAM). STOP immediately if T11 surfaces an unassigned clause.
+- **Order:** T0 ∥ T1 ∥ T2 ∥ T10 ∥ T11 (DONE) → T3 (anchor gate — HARD BARRIER; **owner STOP at its completion, walked TOGETHER with the pin-23 converged probe ratio**) ∥ pin-23(a) converged probe re-run (different subject; its evidence write lands BEFORE T3's real leg starts — single-writer) → T4 → T5 → {T6, T7, T8} → T12 (C1→2 contract coverage table — precondition on T9) → T9. **STOP IMMEDIATELY AND SEPARATELY if the converged ratio trips 1.3× or if anchor/seam frames exit iteration-capped.** **T10 (σ route) runs parallel to T2/T3 (file-disjoint from the driver chain; blockedBy [0] — shared files with the closed T0, ordering invariant held). T11 (coverage table) before T4; T4 blockedBy [0,3,10,11].** T4/T5/T7 remain SERIALIZED on the shared `phase14_stage1_run.py` + test file; evidence writes single-writer; solves sequential (RAM). STOP immediately if T11 surfaces an unassigned clause.
 - **Every long run:** nohup + `python -u` + log + completion AND stall watchers (the 10-hour-stall lesson + the OOM-silent-death gotcha, both in PROGRESS/memory).
 - **Dual review per task** (owner's standing rider); no source edits during the final sweep.
 - **The seal is read-only context:** `seal_run check` must PASS unchanged at T9. Any epoch/gauge/config drift discovered mid-stage is a STOP-for-owner, not a reseal.
