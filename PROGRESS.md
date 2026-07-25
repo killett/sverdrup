@@ -4058,6 +4058,14 @@ above confirm them**, so the spec stops lagging the decision.
 
 ## Deferred items / open questions
 
+- **seam_metrics zero-dispersion refusal (T10 review LOW, 2026-07-25):** a
+  constant interior gives `d_int == 0.0` → bare ZeroDivisionError instead of
+  a named refusal, on BOTH routes (pre-existing from T0's sealed mean route;
+  the σ route mirrors it deliberately — fixing under T10 would have touched
+  sealed semantics). Fix as its own small task when seam code next opens:
+  named refusal ("zero-dispersion interior — R undefined"), both routes,
+  test-pinned.
+
 - ~~**Phase-10 = lat-varying METHOD parameters (invariant-12) — deferred TO Phase 10,
   owner-committed.**~~ **RETIRED 2026-07-15:** executed as Phase 10 and closed with the
   pre-registered NEGATIVE result (measured, not shipped) — see the Phase-10 close banner
