@@ -42,6 +42,24 @@ typer, pixi). No new dependencies.
   zero locked opens; tally untouched; ±66° not exceeded (Stage 1 caps at the
   SO tile, D4).
 
+**⚖ OWNER ELECTIONS PENDING (plan-review pins 2 and 12 — HELD, not the
+executor's to decide; the affected tasks REFUSE to run until ruled):**
+- **Pin 2 — missing_neighbors convention for the four diverse tiles.**
+  Isolated (all four sides missing) = 76×77 nodes; production-representative
+  (2° overlap extension, no sides flagged missing) = 96×97 — a 1.59× node
+  ratio that swamps T2's 1.3× STOP bracket if unstated, and on a stage where
+  any Tier-2 need WAITs, the frame convention IS the spend decision. Owner's
+  noted reading (not yet a ruling): production-representative — D1's 15/2
+  default is what Stage 2G flies; the transfer measurement should be of
+  production geometry. DECISION CELL EMPTY. **T2 (probe) and T5 refuse to
+  dispatch until this is ruled and test-pinned in the registry.**
+- **Pin 12 — equatorial box.** Proposed −4…11°N leaves 1° of core (5 grid
+  rows at 0.2°) above the 10°N component edge — satisfies fork-b pin 4's
+  letter, thin for "taper boundary becomes measurable". Options: keep
+  (maximum in-band coverage; equator + TIW band well inside the core) or
+  shift to −2…13°N (3° out-of-band; equator at the core edge). DECISION
+  CELL EMPTY. **The equatorial run in T5 refuses until ruled.**
+
 ---
 
 ## File structure
@@ -59,19 +77,29 @@ typer, pixi). No new dependencies.
 Tile registry (in `phase14_stage1_run.py`, exact frames):
 
 ```python
-# D3 roster — core boxes [lon_min, lon_max, lat_min, lat_max], 15x15 default
-# (anchor = the signed 10x10 box as a degenerate single tile, D3.1)
+# D3 roster. ANCHOR IS NEVER RECONSTRUCTED: the registry CONSUMES the
+# existing anchor_frame() (src/sverdrup/application/spatial_tiles.py:146
+# — signed 10x10 core, overlap 0.0, all four sides missing, operative
+# halo), the gate-5 substrate the skip-guarded identity test already
+# scores against. Others: 15x15 cores (D1); frames built per the
+# OWNER-RULED missing_neighbors convention (pin 2 — REFUSES until ruled).
 TILES = {
-    "anchor":     {"core": (295.0, 305.0, 33.0, 43.0), "source": "dc2021a",
+    "anchor":     {"frame": "anchor_frame()", "source": "dc2021a",
                    "job": "identity gate (degenerate single tile)"},
-    "seam_ns":    {"core": None,  # derived: anchor split at 38.0N, task T2
-                   "source": "dc2021a", "job": "seam ORACLE vs seamless truth"},
+    "seam_n":     {"core": (295.0, 305.0, 38.0, 43.0), "source": "dc2021a",
+                   "missing_neighbors": frozenset({"W", "E", "N"}),
+                   "job": "seam ORACLE north half (seam at 38.0N)"},
+    "seam_s":     {"core": (295.0, 305.0, 33.0, 38.0), "source": "dc2021a",
+                   "missing_neighbors": frozenset({"W", "E", "S"}),
+                   "job": "seam ORACLE south half (seam at 38.0N)"},
     "equatorial": {"core": (200.0, 215.0, -4.0, 11.0), "source": "cmems_my",
-                   "job": "in-band core, meridional extent crossing the 10N "
-                          "component edge (fork-b pin 4: taper boundary "
-                          "measurable when the increment lands)"},
+                   "job": "in-band core crossing the 10N component edge "
+                          "(fork-b pin 4) — BOX UNDER OWNER ELECTION "
+                          "(pin 12); run REFUSES until ruled"},
     "southern":   {"core": (215.0, 230.0, -62.0, -47.0), "source": "cmems_my",
-                   "job": "high-latitude honesty instrument (~55S center)"},
+                   "job": "high-latitude honesty instrument (~54.5S center; "
+                          "obs frame reaches -65.0S at halo 1.0 - 1.0 deg "
+                          "margin to the +/-66 cap)"},
     "quiet_gyre": {"core": (255.0, 270.0, -30.0, -15.0), "source": "cmems_my",
                    "job": "low-signal regime (SE Pacific subtropics)"},
     "kuroshio":   {"core": (132.0, 147.0, 28.0, 43.0), "source": "cmems_my",
@@ -79,12 +107,10 @@ TILES = {
 }
 ```
 
-(Boxes are the planner's concrete proposal satisfying each tile's named job:
-equatorial spans −4…11°N — core mostly in-band with the 10°N wave-component
-edge INSIDE the core per D3/fork-b pin 4; southern centers ~54.5°S below the
-±66° cap; kuroshio spans the jet + Japanese archipelago for the land path.
-The executor does not re-litigate these; if a box turns out data-empty at
-load, STOP and surface.)
+(Owner review 2026-07-25: southern/quiet_gyre/kuroshio boxes + the 38.0°N
+seam split ENDORSED — the executor does not re-litigate them; equatorial
+box + diverse-tile frame convention are HELD owner elections (pins 2/12
+above). If an endorsed box turns out data-empty at load, STOP and surface.)
 
 ---
 
@@ -99,7 +125,7 @@ load, STOP and surface.)
 **Acceptance Criteria:**
 - [ ] `interior_increment_rms(field, axis)` = pooled one-grid-step increment RMS along the axis PERPENDICULAR to the seam, interior points only (both cells inside one tile's core) — hand-value pinned on a 4×4 array
 - [ ] `seam_delta(field_a, field_b, seam_nodes)` = RMS of co-located differences on the seam line — hand-value pinned
-- [ ] `seam_verdict(r)` maps R to the three cells with EXACT boundary semantics (≤1.0 CLEAN, ≤2.5 ELEVATED, else STRUCTURAL_STOP); thresholds read from `instrument_configs()["seam"]`, test asserts the module has NO numeric literal for them
+- [ ] `seam_verdict(r)` maps R to the three cells with EXACT boundary semantics (≤1.0 CLEAN, ≤2.5 ELEVATED, else STRUCTURAL_STOP); thresholds read from `instrument_configs()["seam"]` (keys `clean_max`/`elevated_max`) AT CALL TIME — pinned BEHAVIOURALLY via sentinel-config monkeypatch (0.3/0.5 → 0.4 is ELEVATED), never a source-string scan (the T11 vacuous-pin lesson)
 - [ ] Rule-0 solver-floor validity gate inherited: `seam_read(...)` REFUSES (ValueError) when the underlying solves' PCG final residuals exceed rtol — an invalid solve never produces a verdict
 - [ ] NaN handling: NaN nodes (land) excluded from both pools; all-NaN seam refuses
 
@@ -123,11 +149,13 @@ from sverdrup.validation.seam_metrics import (
 
 
 def test_interior_increment_rms_hand_value() -> None:
-    """4x4 ramp: increments along axis 0 are all 1.0 -> RMS 1.0.
+    """4x4 arange ramp: axis-0 increments are all 4.0, axis-1 all 1.0.
 
-    Bug caught: pooling across the seam (mixing tiles) or wrong axis.
+    Bug caught: wrong-axis pooling (a seam-perpendicular D_int computed
+    along the seam-parallel axis would read 1.0 where 4.0 is true) or
+    off-by-one dropping the interior edge rows.
     """
-    f = np.arange(16, dtype=float).reshape(4, 4)  # rows differ by 4
+    f = np.arange(16, dtype=float).reshape(4, 4)  # rows differ by 4, cols by 1
     assert interior_increment_rms(f, axis=0) == pytest.approx(4.0)
     assert interior_increment_rms(f, axis=1) == pytest.approx(1.0)
 
@@ -140,16 +168,38 @@ def test_seam_delta_hand_value() -> None:
 
 
 def test_verdict_cells_exact_boundaries() -> None:
-    cfg = instrument_configs()["seam"]
+    """Boundary semantics: <=1.0 CLEAN, <=2.5 ELEVATED, else STOP.
+
+    Bug caught: strict-vs-inclusive boundary flip at either threshold.
+    """
     assert seam_verdict(1.0) == "CLEAN"          # boundary inclusive
     assert seam_verdict(1.0000001) == "ELEVATED"
     assert seam_verdict(2.5) == "ELEVATED"
     assert seam_verdict(2.5000001) == "STRUCTURAL_STOP"
-    # thresholds come from the sealed config, not re-typed literals
-    import inspect
+
+
+def test_verdict_thresholds_read_from_sealed_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """BEHAVIOURAL pin: sentinel thresholds change the verdict.
+
+    Bug caught: re-typed literal thresholds in seam_metrics — a module
+    ignoring instrument_configs would still say CLEAN at 0.4 under the
+    sentinel. (Replaces a string no-literal scan: the Stage-0 T11
+    vacuous-pin lesson — source scans trip on unrelated literals and
+    pass vacuously on reformatted ones. Requires seam_verdict to read
+    the config AT CALL TIME, which is also the sealed-config contract.)
+    """
     import sverdrup.validation.seam_metrics as sm
-    src = inspect.getsource(sm)
-    assert str(cfg["clean_max"]) not in src.replace("clean_max", "")
+
+    def sentinel_configs() -> dict:
+        cfg = instrument_configs()
+        cfg["seam"] = dict(cfg["seam"], clean_max=0.3, elevated_max=0.5)
+        return cfg
+
+    monkeypatch.setattr(sm, "instrument_configs", sentinel_configs)
+    assert sm.seam_verdict(0.4) == "ELEVATED"
+    assert sm.seam_verdict(0.6) == "STRUCTURAL_STOP"
 
 
 def test_nan_exclusion_and_all_nan_refusal() -> None:
@@ -160,9 +210,8 @@ def test_nan_exclusion_and_all_nan_refusal() -> None:
         seam_delta(np.array([np.nan]), np.array([np.nan]))
 ```
 
-(Adjust the exact `instrument_configs()["seam"]` key names to the T11 module —
-read `phase14_instruments.py` first; the test must consume whatever the sealed
-names are.)
+(Key names CONFIRMED against `phase14_instruments.py`: `clean_max` /
+`elevated_max` at 1.0 / 2.5 — SEAM_CLEAN_MAX/SEAM_ELEVATED_MAX.)
 
 - [ ] **Step 2:** run → confirm FAIL (module absent)
 - [ ] **Step 3:** implement `seam_metrics.py` — pure numpy, docstrings citing the rubric doc + Rule-0; `seam_read` takes the two per-tile PCG residual maxima and rtol, refuses before computing
@@ -180,10 +229,13 @@ names are.)
 - Test: `tests/test_phase14_stage1_run.py`
 
 **Acceptance Criteria:**
-- [ ] Registry carries the six tiles above with per-tile `source`; CLI refuses an unknown tile and refuses `--source` override (source map is pinned, not an option)
+- [ ] Registry carries the tiles above with per-tile `source`; CLI refuses an unknown tile and refuses `--source` override (source map is pinned, not an option)
+- [ ] **Anchor frame CONSUMED, never reconstructed (review pin 1):** the registry's anchor entry resolves to the existing `anchor_frame()` — test-pins `frame_grid(registry_frame("anchor"), 0.2)` node arrays `==` `frame_grid(anchor_frame(), 0.2)` (the gate-5 substrate; a reconstructed TileFrame(core, 2.0, halo) would yield 71×72 nodes vs the signed 51×52)
+- [ ] **Seam frames pinned (review pin 3):** `seam_n` missing_neighbors == `frozenset({"W","E","N"})`, `seam_s` == `frozenset({"W","E","S"})`; resulting solve bboxes test-pinned ([295,305]×[36,43] north / [295,305]×[33,40] south at 2° overlap toward the seam only)
+- [ ] **Diverse-tile frame convention REFUSES until owner-ruled (⚖ pin 2):** building a frame for equatorial/southern/quiet_gyre/kuroshio raises RuntimeError naming the pending election while the convention constant is `None`; the ruled value lands as ONE registry constant + test-pin, never per-call-site
 - [ ] Tier-1 predicate (`tier1_eligible(size_tile(...)["peak_model_mib"])`) runs BEFORE any load/solve; refusal exits nonzero naming the ladder (fork-g pin 4)
 - [ ] Evidence row contains: `seal_sha` (read from `phase14.stage0.seal`, REFUSES if absent/unverifiable via `verify_current_seal()`), tile, source, frame, window plan, m, superobs cfg (cmems side only), n_obs, wall/peak, pcg rows, and the scores block per policy (b): j3-validation µ/λx/coverage/χ² + `reference_row: {"kind": "raw-sigma + scalar-s* transfer", "label": "REFERENCE-ONLY, NOT CALIBRATED"}` for non-anchor tiles
-- [ ] Cross-lineage tiles (source=cmems_my) get `bridge_caveat` verbatim: "cross-lineage reading; golden-tile bridge delta applies (mu_delta −0.012457 their_eval-scale, map rms 4.10 cm); interpretation WAITS on the owner attribution readout" — test-pinned string
+- [ ] Cross-lineage tiles (source=cmems_my) get `bridge_caveat` verbatim (review pin 7 — the delta carries ITS OWN provenance and disclaims transfer): "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu −0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout" — test-pinned string
 - [ ] Maps written under `phase14_stage1/` carry internal `label` attr: `"STAGE1-EVIDENCE"` (sanctioned by plan approval; the golden-tile PROBE lesson)
 - [ ] CI tests run WITHOUT data: registry shape, refusals, evidence-row assembly with injected fakes; solve legs are data-gated skips with named reasons
 
@@ -222,7 +274,12 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 
 **Files:**
 - Modify: `scripts/phase14_stage1_run.py` (add `probe` command: one window, m=1, `label="PROBE"` map, evidence under `phase14.stage1.probe`)
-- Test: extend `tests/test_phase14_stage1_run.py` (probe row shape; PROBE label pin)
+- Modify: `tests/test_phase14_stage1_run.py` (probe row shape; PROBE label pin)
+
+**⚖ GATED ON PIN 2:** this task DOES NOT DISPATCH until the owner rules the
+diverse-tile missing_neighbors convention — the probe's measured-vs-model
+ratio against the 1.3× STOP bracket is meaningless under an unstated 1.59×
+node-count convention, and the frame convention IS the spend decision.
 
 **Acceptance Criteria:**
 - [ ] Probe runs quiet_gyre (CMEMS source — also the first real CMEMS-side solve at 15° geometry), ONE 60-day window, m=1, single mid-window day map, PROBE-labeled npz+evidence (never scored)
@@ -274,15 +331,16 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 **Goal:** Two standard tiles splitting the anchor footprint across the jet (seam at 38°N), blended via `assemble`; seam dispersion scored against the seamless anchor truth (Task 3's maps) under the sealed rubric — rubric before numbers.
 
 **Files:**
-- Modify: `scripts/phase14_stage1_run.py` (add `seam-pair` command: derives the two frames by splitting the anchor core at 38.0°N with the standard 2° overlap; runs both tiles; `assemble`; seam read via `seam_metrics`)
-- Test: extend `tests/test_phase14_stage1_run.py` (frame-derivation pins: two cores, seam line, overlap band; oracle-read wiring with fake fields)
+- Modify: `scripts/phase14_stage1_run.py` (add `seam-pair` command: runs the registry's `seam_n`/`seam_s` tiles; `assemble`; seam read via `seam_metrics`)
+- Modify: `tests/test_phase14_stage1_run.py` (frame pins: the two registry frames' missing_neighbors frozensets + solve bboxes; oracle-read wiring with fake fields)
 
 **Acceptance Criteria:**
-- [ ] Frame derivation test-pinned: north core (295,305,38,43), south core (295,305,33,38), overlap per `solve_bbox` extension toward the neighbor only (existing TileFrame semantics)
+- [ ] Registry frames used verbatim (pin 3 frozensets: north {W,E,N}, south {W,E,S}); solve bboxes test-pinned ([295,305]×[36,43] / [295,305]×[33,40])
 - [ ] Both tiles dc2021a source, frozen config, m=100, same roots convention as the anchor run — the ORACLE compares like against like
 - [ ] Blended field via `assemble` (partition-of-unity machinery, zero-overlap refusal active); NaN never poisons
 - [ ] ORACLE read: `seam_delta` between blended and seamless-anchor fields on the seam band + `interior_increment_rms` pooled from both tile interiors; R and verdict cell recorded; Rule-0 residual gate enforced
 - [ ] Evidence `phase14.stage1.seam` = {R, verdict, D_int, delta, per-tile pcg maxima, oracle_note: "no published precedent — gap-register (T11)"}; verdict NEVER blocks the plan mechanically — STRUCTURAL_STOP surfaces to the owner (it is Gate-1's item, but work on OTHER tiles may continue: they don't consume seams)
+- [ ] **Geometry caveat recorded (review pin 13):** the evidence row carries `geometry: "10x5 halves inside the anchor footprint — NOT D1 production geometry (15x15)"` + the explicit non-transfer sentence: the verdict is not a production-geometry seam reading, and the feasibility-frontier watch item (worst-seam grew with TILE COUNT, PROGRESS 2026-07-01) sits on the far side of that gap — discipline 7 applied to a positive result; test-pinned strings
 - [ ] Zero touches; maps labeled STAGE1-EVIDENCE
 
 **Verify:** `pixi run python scripts/phase14_stage1_run.py seam-pair` → verdict printed + evidence; CI: `pixi run pytest tests/test_phase14_stage1_run.py -q`
@@ -297,14 +355,19 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 
 **Files:**
 - Modify: `scripts/phase14_stage1_run.py` (only if gaps surface; the `run` command from Task 1 should already do these)
-- Test: extend data-gated legs
+- Modify: `tests/test_phase14_stage1_run.py` (data-gated legs + the absence pin below)
+
+**⚖ PARTIALLY GATED:** the equatorial run REFUSES until the owner rules
+pin 12 (box election); the other three tiles run once pin 2's convention
+is ruled (they share T2's gate transitively).
 
 **Acceptance Criteria:**
 - [ ] Four runs recorded under `phase14.stage1.tiles.{equatorial,southern,quiet_gyre,kuroshio}` — each: µ/λx/coverage/χ² j3-validation rows + raw-σ + LABELED scalar-s* reference row + bridge_caveat verbatim + seal sha
+- [ ] **Interpretation withholding is STRUCTURAL (review pin 8, the T7 absence-pin shape):** `build_evidence_row` output keys test-pinned as EXACTLY the schema set (no free-prose field exists to interpret in); plus a row-serialization absence pin — the strings "suggests", "consistent with", "attributable", "implies" appear NOWHERE in any tile row (test iterates the recorded rows)
 - [ ] **Equatorial persistence (1-6):** beyond the pack row, persist maps + evidence pack + FROZEN fold/eval frame to `phase14_stage1/equatorial_lane0/` — the future wave-increment comparison substrate; a `lane0_manifest.json` with per-file shas; recorded under the frozen-config policy sentence (fork-b pin 2 verbatim in the manifest)
 - [ ] **Southern Ocean:** additionally records measured anisotropy inputs for Task 6 (per-direction spectral/track diagnostics the kernel pack consumes — reuse `GroundTrack`/`SpectralFidelity` instrument families from T11 configs, per-tile×era parameterization)
 - [ ] **Kuroshio:** land-mask path assertions — dropped-land handling in framing/scoring exercised; `n_scored_points` honest; any all-land core refusal surfaced not swallowed
-- [ ] No interpretation prose anywhere — numbers + caveat only (owner rider)
+- [ ] No interpretation prose anywhere — numbers + caveat only (owner rider; enforced by the structural pin above, not by intent)
 - [ ] Each run detached + stall-watched; RAM predicate before each; zero touches throughout
 
 **Verify:** four evidence rows present + `pixi run python scripts/phase14_seal_run.py check` still PASS (seal untouched) + tally byte-identical
@@ -325,6 +388,7 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 - [ ] f-range table: |f| at 38°N (box) vs 55°S vs the global range — the "~13% in-box cos-φ anisotropy becomes ~2–3× poleward" sentence made numeric (cos-φ ratios hand-value-pinned in tests)
 - [ ] SO measured anisotropy from Task 5's diagnostics, presented next to the arithmetic
 - [ ] Three options each with: what changes, what stays identical (anchor identity preserved — any option must keep gate-1 semantics at the box), halo auto-follow consequence (fork-d pin 4: halo derives from the operative kernel scale — each option's halo stated), implementation cost class
+- [ ] **±66 breach column (review pin 10):** per option, the operative halo AND the resulting SO obs southern edge (edge = −(62 + 2 + halo)°; today −65.0 at halo 1.0); any option with halo > 2.0° is FLAGGED "±66 BREACH — owner ruling required" — arithmetic test-pinned so a Gate-1 kernel election can never move the frame past the cap silently
 - [ ] Explicit sentence: "the box-scale negative (Phase 10) is NOT cited as transferring" — test-pinned
 - [ ] Output = a markdown pack section + evidence block `phase14.stage1.kernel_pack`; DECISION CELL EMPTY (owner decides at Gate 1)
 
@@ -345,11 +409,12 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 - Lanes run on the four diverse tiles only (anchor is the identity subject, seam-pair is the seam subject — adding lanes there measures nothing new and spends).
 
 **Files:**
-- Modify: `scripts/phase14_stage1_run.py` (add `revisit` command: lane runner reusing the phase13 lane machinery via import — `rg "lane" scripts/phase13_lane_run.py` for the entry points; NEVER copied)
-- Test: extend (lane-config pins: per-tile, band names, tier guard)
+- Modify: `scripts/phase14_stage1_run.py` (add `revisit` command; lane RUNNER machinery may be imported from the phase-13 runner, but lanes/bands come from phase-10 — see the AC below; NEVER copied)
+- Modify: `tests/test_phase14_stage1_run.py` (lane-config pins: per-tile, band VALUES, tier guard)
 
 **Acceptance Criteria:**
-- [ ] Lane config test-pinned: 4 tiles × lanes {lane-0 frozen, + the Phase-10 lane set}, bands = Phase-10 names verbatim, per-tile independent
+- [ ] **Band provenance pinned (review pin 9 — live confound):** lanes and dims from `sverdrup.validation.phase10_lanes` (`LANES` / `BOXES` / `ALL_DIMS`) and the PHASE-10 band protocol — NOT `phase13_lanes` and NOT the phase-13 band protocol (`phase13_band_artifact.json`), which the phase-13 runner pulls by default; the test pins the band VALUES (the `BOXES` numeric tuples) against `phase10_lanes.BOXES`, never "names verbatim" — a band change arriving through an import is exactly the confound the sub-design forbids
+- [ ] Lane config test-pinned: 4 tiles × lanes {lane-0 frozen, + the phase-10 `LANES` set}, per-tile independent
 - [ ] Evidence `phase14.stage1.revisit.<tile>` rows: per-lane per-band deltas vs lane-0, report-only, promotion sentence (fork-f pin 6) verbatim in each row
 - [ ] Tier guard: any lane predicted over Tier-1 → recorded WAIT row, not run
 - [ ] Zero touches; the box-scale negative never cited (string absent, test-pinned)
@@ -362,7 +427,7 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 
 ### Task 8: OSSE run decision (1-7) — priced, presented, DECIDED BY OWNER at Gate 1
 
-**Goal:** Price the OSSE option from Stage-0/1 measured numbers and present fork-f pin 5's strongest value case; NO run in this plan unless the owner elects it at Gate 1.
+**Goal:** Price the OSSE option from Stage-0/1 measured numbers and present fork-f pin 5's strongest value case; NO run in this plan unless the owner elects it at Gate 1. (Review pin 6: blocked on Task 5 — it prices from Task 5 actuals and must never dispatch while the anchor barrier is red.)
 
 **Files:**
 - Modify: the Gate-1 pack (Task 9) carries the priced section; no code
@@ -403,7 +468,7 @@ def run(tile: str, m: int = 100, days_stride: int = 1) -> None:
 
 ## Execution notes (for the executor)
 
-- **Order:** T0 → T1 → T2 (probe) → T3 (anchor gate — HARD BARRIER) → T4…T8 → T9. After T3 is green, T4 and T5 may interleave (different subjects) but evidence writes stay single-writer and solves run sequentially (RAM).
+- **Order:** T0 ∥ T1 (file-disjoint) → T2 (probe; ⚖ gated on pin 2) → T3 (anchor gate — HARD BARRIER) → T4 → T5 → {T6, T7, T8} → T9. **T4/T5/T7 are SERIALIZED on the shared `phase14_stage1_run.py` + its test file (review pin 4)** — no interleaving; evidence writes single-writer; solves sequential (RAM).
 - **Every long run:** nohup + `python -u` + log + completion AND stall watchers (the 10-hour-stall lesson + the OOM-silent-death gotcha, both in PROGRESS/memory).
 - **Dual review per task** (owner's standing rider); no source edits during the final sweep.
 - **The seal is read-only context:** `seal_run check` must PASS unchanged at T9. Any epoch/gauge/config drift discovered mid-stage is a STOP-for-owner, not a reseal.
