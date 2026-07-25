@@ -13,11 +13,11 @@ separately gated Stage-1 tasks (2 probe / 3 anchor gate / 4 seam pair /
 
 Standing refusals wired here:
 
-- **Diverse-frame convention (plan pin 2):** the ``missing_neighbors``
-  convention for the four diverse tiles is an OWNER ELECTION PENDING;
-  while :data:`DIVERSE_FRAME_CONVENTION` is ``None`` their frames REFUSE.
-- **Equatorial box (owner pin 12):** the box election is pending; ``run``
-  refuses BEFORE any frame/load work.
+- **Diverse-frame convention (plan pin 2, RULED 2026-07-25):**
+  production-representative — see :data:`DIVERSE_FRAME_CONVENTION`. The
+  refusal MECHANISM stays: while the constant is ``None`` (unruled) the
+  four diverse frames REFUSE. (Pin 12, the equatorial box, was ruled the
+  same day: box KEPT — the ``run`` refusal is gone.)
 - **Tier-1 ladder (fork-g pin 4):** :func:`preflight` sizes the tile and
   checks ``tier1_eligible`` BEFORE any load — never launch over headroom.
 - **Seal tripwire (Task 10):** :func:`record_evidence_row` verifies the
@@ -69,7 +69,9 @@ TILES: dict[str, dict[str, Any]] = {
     "equatorial": {
         "core": (200.0, 215.0, -4.0, 11.0),
         "source": "cmems_my",
-        "box_election_pending": True,  # owner pin 12 — run refuses
+        # Pin 12 — owner-ruled 2026-07-25: box KEPT. "in-band coverage is
+        # the primary job; shifting north moves the equator/TIW band toward
+        # the core edge where blend effects are worst".
         "job": "in-band core crossing the 10N component edge (fork-b pin 4)",
     },
     "southern": {
@@ -93,12 +95,15 @@ TILES: dict[str, dict[str, Any]] = {
     },
 }
 
-# OWNER ELECTION PENDING (plan pin 2): the missing_neighbors convention for
-# the four diverse tiles (equatorial/southern/quiet_gyre/kuroshio) is not
-# ruled. While None, building their frames REFUSES.
-DIVERSE_FRAME_CONVENTION: str | None = (
-    None  # ruled: "isolated" | "production-representative"
-)
+# Plan pin 2 — OWNER-RULED 2026-07-25: PRODUCTION-REPRESENTATIVE. The four
+# diverse tiles (equatorial/southern/quiet_gyre/kuroshio) build with the
+# 2-degree overlap extension on ALL sides (missing_neighbors empty — every
+# side has a notional neighbor). Ruling rationale, recorded verbatim:
+# "owner-ruled 2026-07-25: the probe re-grounds sizing for Stage 2/2G,
+# which flies this geometry; accepted cost 1.59x nodes; SO +/-66 headroom
+# tightens to halo <= 2.0 deg (Gate-1 kernel decision inherits)".
+# The refusal mechanism stays: while None, building their frames REFUSES.
+DIVERSE_FRAME_CONVENTION: str | None = "production-representative"
 
 # Review pin 7 — VERBATIM on every cmems_my row: the golden-tile bridge
 # delta carries its own provenance and disclaims transfer to other tiles.
@@ -151,10 +156,15 @@ def registry_frame(tile: str) -> TileFrame:
                 "building this frame REFUSES until the owner rules "
                 '"isolated" vs "production-representative"'
             )
-        raise NotImplementedError(
-            "ruled diverse-frame convention wiring lands with the "
-            "diverse-tile run legs (Stage-1 Task 5)"
-        )
+        if DIVERSE_FRAME_CONVENTION != "production-representative":
+            raise RuntimeError(
+                f"unrecognized DIVERSE_FRAME_CONVENTION "
+                f"{DIVERSE_FRAME_CONVENTION!r} — the 2026-07-25 ruling is "
+                '"production-representative"'
+            )
+        # Ruled pin 2: all sides have notional neighbors — the solve bbox
+        # extends by the overlap on every side.
+        missing = frozenset()
     return TileFrame(
         core=BBox(*spec["core"]),
         overlap_deg=OVERLAP_DEG,
@@ -377,18 +387,10 @@ def run(
 
     Raises:
         typer.BadParameter: Unknown tile.
-        RuntimeError: Pending owner election (equatorial box, pin 12) or
-            Tier-1 ladder refusal.
+        RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
     """
     if tile not in TILES:
         raise typer.BadParameter(f"unknown tile {tile!r}; known: {sorted(TILES)}")
-    # BEFORE any frame/load work (owner pin 12): the equatorial box
-    # election is pending — nothing may be sized, loaded, or recorded.
-    if TILES[tile].get("box_election_pending"):
-        raise RuntimeError(
-            f"tile {tile!r}: box election PENDING (owner pin 12) — the run "
-            "REFUSES before any frame/load work until the owner rules the box"
-        )
     model = preflight(tile, m)
     typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
     _solve_leg(tile, m, days_stride)

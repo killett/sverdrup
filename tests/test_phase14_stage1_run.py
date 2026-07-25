@@ -127,16 +127,68 @@ def test_seam_frames_pinned_sides_and_solve_bboxes() -> None:
     assert s.halo_deg == operative_halo_deg()
 
 
-@pytest.mark.parametrize("tile", _DIVERSE)
-def test_diverse_frames_refuse_while_election_pending(tile: str) -> None:
-    """Diverse-tile frames REFUSE while DIVERSE_FRAME_CONVENTION is None.
+def test_pin2_ruling_pinned_production_representative() -> None:
+    """DIVERSE_FRAME_CONVENTION carries the ruled value (ONE constant).
 
-    Bug caught: silently defaulting missing_neighbors would build the four
-    diverse frames under a convention the owner never ruled (plan pin 2).
+    Bug caught: a drive-by revert to None (or a flip to "isolated") would
+    silently re-gate or reshape the four diverse frames after the
+    2026-07-25 owner ruling.
     """
-    assert _mod.DIVERSE_FRAME_CONVENTION is None  # the unruled state pinned
+    assert _mod.DIVERSE_FRAME_CONVENTION == "production-representative"
+
+
+@pytest.mark.parametrize("tile", _DIVERSE)
+def test_diverse_frames_build_production_representative(tile: str) -> None:
+    """Diverse frames build with EMPTY missing_neighbors (ruled pin 2).
+
+    Bug caught: an "isolated" (all-sides-missing) frame would clip the
+    solve bbox to the bare core, voiding the Stage-2/2G-representative
+    geometry (and its accepted 1.59x node cost) the ruling bought.
+    """
+    from sverdrup.application.spatial_tiles import operative_halo_deg
+
+    frame = _mod.registry_frame(tile)
+    assert frame.missing_neighbors == frozenset()
+    assert frame.overlap_deg == 2.0
+    assert frame.halo_deg == operative_halo_deg()
+
+
+def test_southern_solve_bbox_and_node_count_pinned() -> None:
+    """Southern solve bbox = core extended 2 deg ALL sides; 96x97 nodes.
+
+    Bug caught: a one-side-only (or missing) extension — e.g. lat_min
+    staying -62.0 — would drop the blend margin whose southern obs edge
+    (solve lat_min - halo = -65.0) the +/-66 headroom pin protects.
+    Expected bbox computed by hand (core +/- 2); node counts measured
+    independently with np.arange before pinning (the lat axis carries the
+    fp-overshoot extra node, the recorded 43.2N-quirk behavior).
+    """
+    from sverdrup.application.spatial_tiles import frame_grid
+
+    frame = _mod.registry_frame("southern")
+    s = frame.solve_bbox
+    assert (s.lon_min, s.lon_max, s.lat_min, s.lat_max) == (
+        213.0,
+        232.0,
+        -64.0,
+        -45.0,
+    )
+    grid = frame_grid(frame, 0.2)
+    assert (grid.x.size, grid.y.size) == (96, 97)
+
+
+def test_pin2_refusal_mechanism_survives_unruled_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With the constant forced back to None the refusal still fires.
+
+    Bug caught: landing the ruling by DELETING the refusal branch instead
+    of setting the constant — a future un-ruling (or a new pending
+    convention) would then build frames silently.
+    """
+    monkeypatch.setattr(_mod, "DIVERSE_FRAME_CONVENTION", None)
     with pytest.raises(RuntimeError, match="(?i)owner election"):
-        _mod.registry_frame(tile)
+        _mod.registry_frame("southern")
 
 
 def test_run_refuses_unknown_tile() -> None:
@@ -163,22 +215,20 @@ def test_run_has_no_source_option() -> None:
     assert res.exit_code != 0
 
 
-def test_run_equatorial_refuses_on_pin12_before_any_frame_work(
+def test_run_equatorial_reaches_gated_stub_after_pin12_ruling(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """run("equatorial") refuses on pin 12 BEFORE any frame/preflight work.
+    """Equatorial run no longer refuses pin 12; it dies at the solve stub.
 
-    Bug caught: sizing or loading the unelected equatorial box first would
-    do (and record) work under a box the owner may re-rule; the booby-trapped
-    frame/preflight hooks prove the refusal fires first.
+    Bug caught: a stale box_election_pending flag (or leftover refusal)
+    still blocking the KEPT box after the 2026-07-25 ruling; the stub's
+    NotImplementedError (with the seal verifier untouched) also proves no
+    solve or evidence write sneaks in behind the ruling.
     """
+    from sverdrup.application import ladder
 
-    def _boom(*args: object, **kwargs: object) -> object:
-        raise AssertionError("frame/load work ran before the pin-12 check")
-
-    monkeypatch.setattr(_mod, "registry_frame", _boom)
-    monkeypatch.setattr(_mod, "preflight", _boom)
-    with pytest.raises(RuntimeError, match="pin 12"):
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    with pytest.raises(NotImplementedError, match="Task"):
         _mod.run("equatorial")
 
 
