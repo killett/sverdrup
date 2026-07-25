@@ -51,8 +51,13 @@ executor's to decide; the affected tasks REFUSE to run until ruled):**
   any Tier-2 need WAITs, the frame convention IS the spend decision. Owner's
   noted reading (not yet a ruling): production-representative — D1's 15/2
   default is what Stage 2G flies; the transfer measurement should be of
-  production geometry. DECISION CELL EMPTY. **T2 (probe) and T5 refuse to
-  dispatch until this is ruled and test-pinned in the registry.**
+  production geometry. **Consequence in view for the ruling (pin 16): the
+  convention sets the SO tile's ±66 halo headroom for the Gate-1 kernel
+  decision — production-representative puts the obs southern edge at
+  −(64 + halo)° (breach at halo > 2.0°); isolated at −(62 + halo)°
+  (breach at halo > 4.0°).** DECISION CELL EMPTY. **T2 (probe) and T5
+  refuse to dispatch until this is ruled and test-pinned in the
+  registry.**
 - **Pin 12 — equatorial box.** Proposed −4…11°N leaves 1° of core (5 grid
   rows at 0.2°) above the 10°N component edge — satisfies fork-b pin 4's
   letter, thin for "taper boundary becomes measurable". Options: keep
@@ -98,8 +103,8 @@ TILES = {
                           "(pin 12); run REFUSES until ruled"},
     "southern":   {"core": (215.0, 230.0, -62.0, -47.0), "source": "cmems_my",
                    "job": "high-latitude honesty instrument (~54.5S center; "
-                          "obs frame reaches -65.0S at halo 1.0 - 1.0 deg "
-                          "margin to the +/-66 cap)"},
+                          "obs southern edge = solve_bbox.lat_min - halo; "
+                          "+/-66 headroom set by the pin-2 convention)"},
     "quiet_gyre": {"core": (255.0, 270.0, -30.0, -15.0), "source": "cmems_my",
                    "job": "low-signal regime (SE Pacific subtropics)"},
     "kuroshio":   {"core": (132.0, 147.0, 28.0, 43.0), "source": "cmems_my",
@@ -363,7 +368,7 @@ is ruled (they share T2's gate transitively).
 
 **Acceptance Criteria:**
 - [ ] Four runs recorded under `phase14.stage1.tiles.{equatorial,southern,quiet_gyre,kuroshio}` — each: µ/λx/coverage/χ² j3-validation rows + raw-σ + LABELED scalar-s* reference row + bridge_caveat verbatim + seal sha
-- [ ] **Interpretation withholding is STRUCTURAL (review pin 8, the T7 absence-pin shape):** `build_evidence_row` output keys test-pinned as EXACTLY the schema set (no free-prose field exists to interpret in); plus a row-serialization absence pin — the strings "suggests", "consistent with", "attributable", "implies" appear NOWHERE in any tile row (test iterates the recorded rows)
+- [ ] **Interpretation withholding is STRUCTURAL (review pin 8):** `build_evidence_row` output keys test-pinned as EXACTLY the schema set — no free-prose field exists to interpret in; THIS is the control (review pin 17). The four-word row-serialization blocklist ("suggests"/"consistent with"/"attributable"/"implies") stays as a decorative tripwire, not the control; the pack-level absence check lives in T9 where the free prose actually lives
 - [ ] **Equatorial persistence (1-6):** beyond the pack row, persist maps + evidence pack + FROZEN fold/eval frame to `phase14_stage1/equatorial_lane0/` — the future wave-increment comparison substrate; a `lane0_manifest.json` with per-file shas; recorded under the frozen-config policy sentence (fork-b pin 2 verbatim in the manifest)
 - [ ] **Southern Ocean:** additionally records measured anisotropy inputs for Task 6 (per-direction spectral/track diagnostics the kernel pack consumes — reuse `GroundTrack`/`SpectralFidelity` instrument families from T11 configs, per-tile×era parameterization)
 - [ ] **Kuroshio:** land-mask path assertions — dropped-land handling in framing/scoring exercised; `n_scored_points` honest; any all-land core refusal surfaced not swallowed
@@ -388,7 +393,7 @@ is ruled (they share T2's gate transitively).
 - [ ] f-range table: |f| at 38°N (box) vs 55°S vs the global range — the "~13% in-box cos-φ anisotropy becomes ~2–3× poleward" sentence made numeric (cos-φ ratios hand-value-pinned in tests)
 - [ ] SO measured anisotropy from Task 5's diagnostics, presented next to the arithmetic
 - [ ] Three options each with: what changes, what stays identical (anchor identity preserved — any option must keep gate-1 semantics at the box), halo auto-follow consequence (fork-d pin 4: halo derives from the operative kernel scale — each option's halo stated), implementation cost class
-- [ ] **±66 breach column (review pin 10):** per option, the operative halo AND the resulting SO obs southern edge (edge = −(62 + 2 + halo)°; today −65.0 at halo 1.0); any option with halo > 2.0° is FLAGGED "±66 BREACH — owner ruling required" — arithmetic test-pinned so a Gate-1 kernel election can never move the frame past the cap silently
+- [ ] **±66 breach column (review pins 10+16 — derives from the RULED frame, never a typed constant):** per option, the operative halo AND the resulting SO obs southern edge, computed as `edge = southern_frame.solve_bbox.lat_min − halo` READ OFF the registry frame under the owner-ruled pin-2 convention; the breach threshold is COMPUTED (`halo_breach = 66 + solve_bbox.lat_min`), not typed — production-representative gives edge = −(64 + halo), breach at halo > 2.0; isolated gives edge = −(62 + halo), breach at halo > 4.0; either ruling yields correct pinned arithmetic with no constant edited to make a test pass; any breaching option FLAGGED "±66 BREACH — owner ruling required"
 - [ ] Explicit sentence: "the box-scale negative (Phase 10) is NOT cited as transferring" — test-pinned
 - [ ] Output = a markdown pack section + evidence block `phase14.stage1.kernel_pack`; DECISION CELL EMPTY (owner decides at Gate 1)
 
@@ -452,7 +457,8 @@ is ruled (they share T2's gate transitively).
 - Modify: `PROGRESS.md` (STOP block), `.tasks.json`
 
 **Acceptance Criteria:**
-- [ ] Pack contains, owner-items first: (1) anchor five-gate block (with cross-host slot pending-T18 explicit); (2) seam verdict + ORACLE numbers; (3) six transfer readings (numbers + bridge caveats, NO cross-lineage interpretation if the attribution readout hasn't ruled); (4) kernel decision pack (decision cell empty); (5) revisit verdict rows; (6) OSSE priced section (decision cell empty); (7) **six-mission-refresh election presentation** — presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly onward; (8) spend actuals vs Tier-0/1 ($0 expected; any WAIT rows); (9) discipline attestation: zero locked opens, tally byte-identical, ±66° respected, seal `check` PASS
+- [ ] Pack contains, owner-items first: (1) anchor five-gate block (with cross-host slot pending-T18 explicit); (2) seam verdict + ORACLE numbers (with the 10×5 non-production-geometry sentence); (3) six transfer readings (numbers + bridge caveats); (4) kernel decision pack (decision cell empty); (5) revisit verdict rows; (6) OSSE priced section (decision cell empty); (7) **six-mission-refresh election presentation** — presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly onward; (8) spend actuals vs Tier-0/1 ($0 expected; any WAIT rows); (9) discipline attestation: zero locked opens, tally byte-identical, ±66° respected, seal `check` PASS
+- [ ] **Withholding STRUCTURAL at the pack (review pin 17 — the free prose lives HERE, not in the rows):** the transfer-reading section is ASSEMBLED from recorded row fields only — the assembler has no free-text parameter for that section; and the absence check runs over the RENDERED pack file (if the attribution readout has not ruled: "suggests", "consistent with", "attributable", "implies" absent from the transfer-reading section; script-checked before posting, output captured in the close evidence)
 - [ ] Full sweep on the final tree recorded in the pack (with stall watch; every skip named)
 - [ ] All Stage-1 real legs dual-reviewed before the pack posts (the Stage-0 pattern: reviews may batch, but the pack cites each verdict)
 - [ ] PROGRESS.md STOP block + next-action; everything committed + pushed

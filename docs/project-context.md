@@ -38,18 +38,10 @@ Per-task **Goal / Files / AC / Verify** sections plus metadata, in a co-located 
 
 ## 3. Where things stand right now
 
-*(repo-verified 2026-07-24; HEAD `e1941e0`)*
-
-- **Current phase:** Phase 14 — the scaling program. Spec: `docs/superpowers/specs/2026-07-21-phase14-scaling-program-design.md` (`f25042c`, 883 lines), reviewed and approved. Contains: five stages (0 / 1 / 2 / 2G / 3), contract chain C0→1 / C1→2 / C2→2G / C2G→3, all seven fork rulings + both batch approvals pinned verbatim (§4), Stage-0/1 detail (§5/§6), deferred-thread ledger with ⚖ election markers (§9), five anchor identity gates (§10), verbatim sentence set (§11), full pin-coverage map (§13).
-- **GATE 0: CLOSED / APPROVED.** Seal v1 signed as the program's founding artifact; Gate-0 evidence pack at `4df92b8`.
-- **✅ The off-box order is DONE** *(repo-verified)*: `sealed/phase14_evaluation_seal_v1.json` and `sealed/phase14_gate0_evidence_snapshot.json` are committed (landed with `3264524`), tracked outside the `data/` ignore. The file's `seal_sha` field reads `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2` — matching the `a17ea419…b725c5d2` quoted in every pack. Note the seal sha is a canonical hash **over the `content` payload**, not over the file bytes (the file's own sha256 differs); re-derivation must hash the payload the same way. Seal code: `scripts/phase14_seal_run.py`.
-- **⏳ PENDING GATE — Stage-1 plan review.** `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md` (+ `.tasks.json`) at `3264524`; PROGRESS `e1941e0` records *"Stage-1 plan paused for owner file review; deps fixed (T0/T1 parallel pair)."* The walk is the plan against the C0→1 contract (measured sizing ratios, tolerances, tile-frame outputs), spec §5/§6, the Gate-0 rulings below, and the §2.2 standard. The "deps fixed (T0/T1 parallel pair)" note is itself a claim to verify in `.tasks.json` — a same-file parallel pair is exactly the serialization hazard.
-- **Gate-0 attribution addendum (ordered, parallel):** from data already on the box — per-mission n_obs deltas between sources, per-mission along-track variance/RMS deltas, reference-surface/mean-epoch consistency check; appended to the Gate-0 pack.
-- **Data-source election (AVISO/CMEMS DT2021): condition met, decision deferred.** The loader is dual-source by ruling — CMEMS public-evidence lineage / JPL adapter (conformance-gated), plus a synthetic third adapter in CI. The golden-tile TABLED row recorded a material cross-source delta (~6.2×; 0.76953 also in that row). Ruling: **attribution before election** — *"an unattributed 6.2× buys the wrong decomposition."* Until the readout lands, every cross-lineage Stage-1 reading carries the **bridge caveat** explicitly, and the plan's interpretation language waits. *(Reading: the incumbent lineage is the 2021a-OSE `dc_obs` set in §5.1, which covers only 2016-12→2018-01 over the GS box — which is why Stages 2/2G need a different source and why this election exists.)*
-- **T18 cloud leg (cross-host determinism identity gate): open by design.** Gate 0 closed *with* it open, restructured as a ladder-enforced precondition on **first Tier-2 production use** (the WAIT machinery refuses until it runs). Waits only on owner-supplied cloud credentials; the m=1 crash that would have killed it is fixed. C0→1 ships same-host tolerances + CRN-EQUAL now; the cross-host slot is marked pending-T18. SkyPilot config exists at `sky/phase14_probe.yaml` *(repo-verified)*.
-- **Probe ratios accepted:** sizing model conservative (0.513 RAM / 0.785 wall), PCG-cap caveat on wall recorded; Stage 1 stays measured-first (task 1-0) regardless.
-- **Deferrals signed, readings pinned:** (a) the gate-5 µ constant pins at the Stage-1 anchor run (validation-vs-acceptance lineage class); (b) **PROXIMITY is a scoring-time filter, never a membership change** — locked/dev membership is sealed and immutable; a locked gauge failing proximity is never scoreable but never leaves the set. The seal records this as `proximity: "DEFERRED to consumption grid (Stage-0 recorded interpretation; Gate-0 owner attention item)"` *(repo-verified)*.
-- **Standing posture:** zero evaluation-bearing maps until the Stage-1 plan is approved; zero locked-instrument opens; tally untouched.
+**Current state: the PROGRESS.md banner (ground truth) + the current phase
+spec.** This section deliberately holds no state — it duplicated the
+PROGRESS.md banner and drifted; the advisor reads that banner every boot
+(revision protocol: §10; ordered by ruling pin 15, 2026-07-25).
 
 ## 4. Program architecture (Phase-14 spec)
 
@@ -176,8 +168,21 @@ House rules that bind any code work: **git is the source of truth, not the conve
 
 ## 10. How advisory sessions run (owner's chosen workflow)
 
-- This document lives at `docs/project-context.md`. Commit and push every revision so Claude Code and the advisory chats share one record.
-- New advisory chats are **plain claude.ai conversations — not in a Project**.
-- Each new chat opens with the owner's saved **boot prompt** (resume the advisor role → read this document → clone the repo, read the PROGRESS banner + every file named in the report → verify origin has the commits → walk before ruling → honor §7), with Claude Code's relayed report pasted directly beneath it in the same message. **Address the owner as Dr. Twinklebrane.**
-- After each gate closure or major ruling, the advisory chat updates §3 (and anything else that moved) and hands back the revision to commit.
-- Full-fidelity backstop: the claude.ai data export (Settings → Privacy → Export data). Export links are single-use — download the ZIP immediately; it can be uploaded into any chat for programmatic search.
+- This document lives at `docs/project-context.md` and is **read FROM THE
+  CLONE, never uploaded/attached**. The advisory boot sequence is:
+  clone → read `docs/project-context.md` → read the PROGRESS.md banner
+  (ground truth for current state) → read the files named in the relayed
+  report → verify origin has the commits → walk before ruling → honor §7.
+- New advisory chats are **plain claude.ai conversations — not in a
+  Project**. Each opens with the owner's saved **boot prompt** (resume the
+  advisor role → the boot sequence above), with Claude Code's relayed
+  report pasted directly beneath it in the same message. **Address the
+  owner as Dr. Twinklebrane.**
+- **Revision protocol (ruling pin 15, 2026-07-25 — the owner never
+  hand-carries a revision):** changes to this document arrive as numbered
+  pins in advisory rulings; Claude Code folds them and commits alongside
+  the PROGRESS update; the advisor verifies the document against the tree
+  on each walk. Maintenance of this file belongs to Claude Code.
+- Full-fidelity backstop: the claude.ai data export (Settings → Privacy →
+  Export data). Export links are single-use — download the ZIP
+  immediately; it can be uploaded into any chat for programmatic search.

@@ -378,16 +378,26 @@
 >    owner-side off-box copy is OWNER-NAMED when made — record the
 >    name here; until then re-derivation (verify-and-skip downloads +
 >    byte-equal rebuilds, reviewer-verified) is the recovery path.
-> **STAGE-1 PLAN WRITTEN (`3264524`), ⏸ PAUSED FOR OWNER PLAN REVIEW
-> (2026-07-23):** `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`
-> (+ `.tasks.json`, 10 tasks, all pending — execution NOT started).
-> Owner elected subagent-driven execution, then paused to review the
-> plan file. In-plan sub-decisions awaiting that review: Phase-10
-> revisit = per-tile lanes (fork-d pin-6 resolution); OSSE priced-only
-> (decision cell empty); tile boxes proposed (equatorial crosses 10°N
-> edge per D3). NEXT ACTION: owner plan ruling, then
-> subagent-driven-development from T0 (zero evaluation-bearing maps
-> until approval; zero locked opens; tally untouched).**
+> **STAGE-1 PLAN: APPROVED FOR PARTIAL DISPATCH (owner rulings
+> 2026-07-25).** Plan `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`
+> (+ `.tasks.json`). Review round 1: 14 pins — 1,3–11,13,14 folded
+> (`b4c7caa`, `4608504`); round 2: APPROVED T0 ∥ T1 dispatch + pins
+> 15–18 folded (this commit: §3/§10 of docs/project-context.md now
+> Claude-Code-maintained, read-from-clone, revisions arrive as ruling
+> pins; ±66 arithmetic derives from the ruled frame convention, never
+> typed; pack-level absence pin moved to T9 where the free prose
+> lives; this banner). **⚖ TWO OWNER ELECTIONS OUTSTANDING — decision
+> cells EMPTY, T2 onward DOES NOT DISPATCH until ruled:**
+> (pin 2) diverse-tile missing_neighbors convention
+> (isolated 76×77 vs production-representative 96×97 nodes, 1.59×;
+> sets T2's sizing bracket AND the SO ±66 halo headroom:
+> prod-repr breach at halo > 2.0°, isolated > 4.0°);
+> (pin 12) equatorial box keep −4…11°N vs shift −2…13°N.
+> T0 (seam metrics) ∥ T1 (run driver, lands WITH the pin-2/12 refusal
+> mechanisms) dispatched 2026-07-25. NEXT ACTION: T0/T1 green + dual
+> reviews → STOP for owner review + the two elections. Zero
+> evaluation-bearing maps beyond T0/T1's sanction (they produce none),
+> zero locked opens, tally untouched.**
 > **(pre-ruling record below, kept for the trail)**
 > ⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK WAS POSTED:
 > `docs/superpowers/2026-07-23-phase14-gate0-pack.md`.
