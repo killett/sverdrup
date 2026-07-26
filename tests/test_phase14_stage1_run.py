@@ -34,6 +34,7 @@ _PINNED_KEYS = {
     "wall_s",
     "peak_rss_mib",
     "pcg",
+    "convergence",
     "scores",
     "reference_row",
     "bridge_caveat",
@@ -58,8 +59,19 @@ _PINNED_REFERENCE_ROW = {
 _DIVERSE = ("equatorial", "southern", "quiet_gyre", "kuroshio")
 
 
-def _row_kwargs(tile: str) -> dict[str, Any]:
-    """Injected fakes for one evidence row (values arbitrary but distinct)."""
+def _row_kwargs(
+    tile: str,
+    *,
+    iterations: int = 443,
+    residual: float = 9.94e-7,
+    maxiter: int = 1200,
+) -> dict[str, Any]:
+    """Injected fakes for one evidence row (values arbitrary but distinct).
+
+    The two pcg legs mirror the real per-window CONVERGENCE_LOG shape (the
+    mean leg plus the ``kind="member-batch"`` leg); the defaults are the
+    anchor gate's measured w-00018.0 member leg, comfortably converged.
+    """
     return {
         "seal_sha": "cafe" * 16,
         "tile": tile,
@@ -70,7 +82,21 @@ def _row_kwargs(tile: str) -> dict[str, Any]:
         "n_obs": 12345,
         "wall_s": 1.5,
         "peak_rss_mib": 100.25,
-        "pcg": [{"window": "w0", "iters": 10}],
+        "pcg": [
+            {
+                "window": "w-00018.0+60",
+                "iterations": iterations,
+                "final_rel_residual": residual,
+            },
+            {
+                "window": "w-00018.0+60",
+                "kind": "member-batch",
+                "iterations": iterations,
+                "final_rel_residual": residual,
+            },
+        ],
+        "pcg_rtol": 1.0e-6,
+        "pcg_maxiter": maxiter,
         "scores": {"mu": 0.9},
         "date": "2026-07-25",
     }
@@ -801,3 +827,280 @@ def test_probe_cli_default_maxiter_is_the_production_cap_and_probe_node(
     stored = json.loads(evid.read_text())
     assert "probe" in stored["phase14"]["stage1"]
     assert "probe_converged" not in stored["phase14"]["stage1"]
+
+
+# ---------------------------------------------------------------------------
+# Owner ruling PIN 26(a)+(b) — the PRODUCTION path carries maxiter and its
+# own convergence verdict; the Stage-1 cap is set FROM MEASUREMENT
+# ---------------------------------------------------------------------------
+
+# The PIN-23(a) converged 19-degree probe, read off
+# phase14.stage1.probe_converged (NOT restated from the implementation):
+# mean leg 524 iters, member-batch leg 554 iters, both ~9.9e-07 at rtol
+# 1e-06. 554 is the measured worst leg and the sole basis of the cap.
+_MEASURED_WORST_ITERS_19DEG = 554
+
+
+def test_stage1_production_cap_is_at_least_twice_the_measured_worst_leg() -> None:
+    """STAGE1_PCG_MAXITER >= 2 x 554, the owner's measured-margin rule.
+
+    Bug caught: the T5 defect the pin exists to close — a production cap at
+    (or near) the 500 library default, under which EVERY 19-degree leg
+    would cap un-converged. 554 is the measured worst leg of the converged
+    19-degree probe; anything below 1108 fails the owner's ">= 2x measured"
+    ruling, and anything at/below 554 caps outright.
+    """
+    assert _mod.STAGE1_PCG_MAXITER >= 2 * _MEASURED_WORST_ITERS_19DEG
+
+
+def test_stage1_cap_comment_carries_derivation_and_wall_consequence() -> None:
+    """The constant's comment states 554, the 2x floor, and the s/iter cost.
+
+    Bug caught: an unexplained magic number — the owner's ruling is that
+    the cap is derived FROM MEASUREMENT with the wall consequence stated in
+    the same breath, so a cap whose derivation lives only in a commit
+    message cannot be audited or re-derived when the geometry changes.
+    """
+    src = Path(str(_mod.__file__)).read_text()
+    head, _, tail = src.partition("STAGE1_PCG_MAXITER")
+    comment = head[-2500:] + tail[:400]
+    assert "554" in comment
+    assert str(2 * _MEASURED_WORST_ITERS_19DEG) in comment
+    assert "0.56" in comment  # 603.1 s / 1078 iters, the measured s/iter
+    assert "member-batch" in comment  # PIN 26(d): the margin-setting leg
+
+
+def test_library_pcg_maxiter_default_left_untouched() -> None:
+    """The library default stays 500 — the driver passes an EXPLICIT cap.
+
+    Bug caught: "fixing" the cap by raising miost_solver.PCG_MAXITER, which
+    silently changes solver behavior under every signed-identity path (the
+    anchor gate re-solves at the SIGNED cap read from the member store) —
+    the owner ruled that unproven change out of scope for pin 26.
+    """
+    from sverdrup.methods.miost_solver import PCG_MAXITER
+
+    assert PCG_MAXITER == 500
+    assert _mod.STAGE1_PCG_MAXITER != PCG_MAXITER
+
+
+@pytest.mark.parametrize(
+    ("iterations", "residual", "maxiter", "want_capped"),
+    [
+        (500, 2.84e-6, 500, True),  # the real T2 defect leg
+        (500, 1.0e-6, 500, False),  # at the cap, residual EXACTLY rtol
+        (554, 9.95e-7, 2000, False),  # the converged 19-deg member leg
+        (2000, 1.1e-6, 2000, True),  # capped even at the raised cap
+    ],
+)
+def test_classify_pcg_legs_truth_table(
+    iterations: int, residual: float, maxiter: int, want_capped: bool
+) -> None:
+    """capped iff a leg sits AT/above the cap with residual STRICTLY > rtol.
+
+    Bug caught: keying the verdict on iterations alone (mislabeling a leg
+    that legitimately converged at the cap) or a >= residual drift
+    (flagging a leg that stopped exactly at rtol). Cases are the measured
+    T2/converged-probe legs, classified by hand against rtol 1e-6.
+    """
+    legs = [{"window": "w0", "iterations": iterations, "final_rel_residual": residual}]
+    rows, capped = _mod.classify_pcg_legs(legs, rtol=1.0e-6, maxiter=maxiter)
+    assert capped is want_capped
+    assert rows == [{**legs[0], "rtol": 1.0e-6, "maxiter": maxiter}]
+
+
+def test_classify_pcg_legs_flags_a_row_on_any_one_capped_leg() -> None:
+    """ONE capped leg among converged legs caps the WHOLE row.
+
+    Bug caught: computing the verdict from only the first (or last) leg —
+    the member-batch leg is the worst-converging leg in every measurement
+    taken (554 vs 524 at 19 deg; 396-459 vs 342-422 at the anchor), so a
+    first-leg-only verdict would systematically miss the leg that caps.
+    """
+    legs = [
+        {"window": "w0", "iterations": 300, "final_rel_residual": 9.0e-7},
+        {
+            "window": "w0",
+            "kind": "member-batch",
+            "iterations": 500,
+            "final_rel_residual": 2.84e-6,
+        },
+        {"window": "w1", "iterations": 310, "final_rel_residual": 9.1e-7},
+    ]
+    rows, capped = _mod.classify_pcg_legs(legs, rtol=1.0e-6, maxiter=500)
+    assert capped is True
+    assert len(rows) == 3
+
+
+def test_classify_pcg_legs_stamps_copies_never_the_caller_legs() -> None:
+    """Stamping happens on COPIES; the caller's leg dicts stay untouched.
+
+    Bug caught: in-place stamping — the real caller's legs ARE the
+    module-global miost CONVERGENCE_LOG entries, so mutating them corrupts
+    the shared diagnostic log for every later solve in the process.
+    """
+    legs = [{"window": "w0", "iterations": 12, "final_rel_residual": 5.0e-7}]
+    before = [dict(leg) for leg in legs]
+    _mod.classify_pcg_legs(legs, rtol=1.0e-6, maxiter=1200)
+    assert legs == before
+
+
+def test_both_row_builders_route_through_the_one_classifier(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """probe AND tile rows are BUILT from classify_pcg_legs' return value.
+
+    Bug caught: the pin-26 defect class — a second, duplicated copy of the
+    classification logic on the production path, free to drift from the
+    probe's (which is exactly how a capped measurement closed a task). A
+    duplicated implementation ignores this stub and fails on the sentinel.
+    """
+    seen: list[tuple[int, float, int]] = []
+
+    def _fake(
+        pcg: Any, *, rtol: float, maxiter: int
+    ) -> tuple[list[dict[str, Any]], bool]:
+        seen.append((len(list(pcg)), rtol, maxiter))
+        return ([{"SENTINEL": "classified"}], True)
+
+    monkeypatch.setattr(_mod, "classify_pcg_legs", _fake)
+    probe = _mod.build_probe_row(date="2026-07-25", **_probe_measurement())
+    tile = _mod.build_evidence_row(**_row_kwargs("anchor"))
+    assert probe["pcg"] == [{"SENTINEL": "classified"}]
+    assert probe["convergence"] == "CAPPED"
+    assert probe["measured_vs_model"]["capped_measurement"] is True
+    assert tile["pcg"] == [{"SENTINEL": "classified"}]
+    assert tile["convergence"] == "CAPPED"
+    assert seen == [(2, 1.0e-6, 500), (2, 1.0e-6, 1200)]
+
+
+@pytest.mark.parametrize(
+    ("iterations", "residual", "maxiter", "want"),
+    [
+        (1200, 1.3e-6, 1200, "CAPPED"),  # a T5 leg capped at the Stage-1 cap
+        (554, 9.95e-7, 1200, "CONVERGED"),  # the measured 19-deg worst leg
+        (500, 2.84e-6, 500, "CAPPED"),  # the T2 defect leg, on the tile path
+    ],
+)
+def test_evidence_row_carries_its_own_convergence_verdict(
+    iterations: int, residual: float, maxiter: int, want: str
+) -> None:
+    """A tile evidence row reports CONVERGED/CAPPED for its own solve legs.
+
+    Bug caught: THE pin-26 gap — a production row that cannot report its
+    own convergence, so a capped T5 leg (every 19-degree leg at the 500
+    default) closes a task while looking exactly like a converged one.
+    """
+    row = _mod.build_evidence_row(
+        **_row_kwargs(
+            "seam_n", iterations=iterations, residual=residual, maxiter=maxiter
+        )
+    )
+    assert row["convergence"] == want
+
+
+def test_evidence_row_mirrors_capped_measurement_into_the_scores_block() -> None:
+    """capped_measurement rides ALONGSIDE the numbers it qualifies.
+
+    Bug caught: a capped verdict recorded only at row top level while the
+    scores block (the part a rubric/ratio reader consumes) looks clean —
+    the "labeled wherever it appears" rule the probe's measured_vs_model
+    already follows, unenforced on the production path.
+    """
+    capped = _mod.build_evidence_row(
+        **_row_kwargs("seam_n", iterations=1200, residual=1.3e-6, maxiter=1200)
+    )
+    clean = _mod.build_evidence_row(**_row_kwargs("seam_n"))
+    assert capped["scores"]["capped_measurement"] is True
+    assert clean["scores"]["capped_measurement"] is False
+    assert clean["scores"]["mu"] == 0.9  # the caller's numbers survive
+
+
+def test_evidence_row_pcg_legs_carry_rtol_maxiter_iterations_residual() -> None:
+    """EVERY tile pcg leg records rtol + maxiter + iterations + residual.
+
+    Bug caught: legs recorded without the cap they ran under, so a reader
+    cannot tell a CAPPED leg from a CONVERGED one without out-of-band
+    solver-config archaeology (the PIN-23(c) defect, on the tile path).
+    """
+    row = _mod.build_evidence_row(
+        **_row_kwargs("anchor", iterations=1108, residual=9.9e-7, maxiter=1200)
+    )
+    assert len(row["pcg"]) == 2
+    for leg in row["pcg"]:
+        assert leg["rtol"] == 1.0e-6
+        assert leg["maxiter"] == 1200
+        assert leg["iterations"] == 1108
+        assert leg["final_rel_residual"] == 9.9e-7
+
+
+def test_evidence_row_never_mutates_caller_pcg_or_scores() -> None:
+    """Building a row leaves the caller's pcg legs and scores dict untouched.
+
+    Bug caught: in-place stamping of the live CONVERGENCE_LOG legs, or an
+    in-place capped_measurement write into a scores dict the caller also
+    hands to the scorer/rubric path.
+    """
+    kwargs = _row_kwargs("kuroshio")
+    legs_before = [dict(leg) for leg in kwargs["pcg"]]
+    _mod.build_evidence_row(**kwargs)
+    assert kwargs["pcg"] == legs_before
+    assert all("maxiter" not in leg for leg in kwargs["pcg"])
+    assert kwargs["scores"] == {"mu": 0.9}
+
+
+def test_run_default_maxiter_is_the_stage1_production_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A default `run` hands _solve_leg the measured Stage-1 cap, not 500.
+
+    Bug caught: the pin-26 finding itself — the production path defaulting
+    to the library PCG_MAXITER (500), under which every 19-degree T5 leg
+    caps un-converged.
+    """
+    from sverdrup.application import ladder
+
+    seen: list[int] = []
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(
+        _mod,
+        "_solve_leg",
+        lambda tile, m, days_stride, maxiter: seen.append(maxiter),
+    )
+    res = runner.invoke(_mod.app, ["run", "seam_n"])
+    assert res.exit_code == 0, res.output
+    assert seen == [_mod.STAGE1_PCG_MAXITER]
+
+
+def test_run_maxiter_option_flows_through_to_the_solve_leg(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """--maxiter 777 reaches _solve_leg unchanged.
+
+    Bug caught: --maxiter parsed but never passed through (the PIN-23(a)
+    defect class) — the solve would run at one cap while the row records
+    another, and "the maxiter used must be what the row records".
+    """
+    from sverdrup.application import ladder
+
+    seen: list[int] = []
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(
+        _mod,
+        "_solve_leg",
+        lambda tile, m, days_stride, maxiter: seen.append(maxiter),
+    )
+    res = runner.invoke(_mod.app, ["run", "seam_n", "--maxiter", "777"])
+    assert res.exit_code == 0, res.output
+    assert seen == [777]
+
+
+def test_solve_leg_stub_reports_the_cap_it_was_handed() -> None:
+    """The gated stub still names the tile, m, stride AND the maxiter.
+
+    Bug caught: a maxiter accepted at the signature but dropped on the
+    floor inside the leg — the stub's message is the only place the
+    threaded value is observable until T4/T5 land the real legs.
+    """
+    with pytest.raises(NotImplementedError, match="1200"):
+        _mod._solve_leg("seam_n", m=3, days_stride=1, maxiter=1200)

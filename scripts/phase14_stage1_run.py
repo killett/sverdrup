@@ -35,6 +35,8 @@ from typing import TYPE_CHECKING, Annotated, Any
 import typer
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from sverdrup.application.spatial_tiles import TileFrame
 
 app = typer.Typer(add_completion=False)
@@ -64,6 +66,39 @@ PROBE_CONVERGED_NODE = "probe_converged"
 # The frozen five-mission mapping config (j3 stays the holdout convention);
 # CMEMS-MY directory codes (h2g -> h2ag on this source).
 PROBE_MISSIONS = ("alg", "h2ag", "j2g", "j2n", "s3a")
+
+# ---------------------------------------------------------------------------
+# Owner PIN 26(b) — the Stage-1 PRODUCTION PCG cap, SET FROM MEASUREMENT.
+#
+# Derivation (all numbers measured, none assumed):
+#   * The converged 19-degree probe (phase14.stage1.probe_converged, run at
+#     maxiter 2000) needed 524 iterations on the mean leg and 554 on the
+#     MEMBER-BATCH leg. 554 is the measured worst leg.
+#   * Owner rule: the production cap is >= 2x the measured requirement, so
+#     the floor is 1108. Chosen: 1200 (the next round number above it).
+#   * The library default PCG_MAXITER = 500 is DELIBERATELY left alone: the
+#     signed-identity paths re-solve at the SIGNED cap and their behavior
+#     is not re-proven here. The driver passing an explicit cap is the safe
+#     form (pin 26(b)).
+#
+# Wall consequence, stated in the same breath (per-iteration cost from the
+# same converged probe: 603.1 s / 1078 iterations = 0.56 s/iter at the 19-
+# degree solve geometry, m=1):
+#   * IF a leg ever ran all the way to this cap it would cost
+#     1200 x 0.56 s = 672 s ~ 11.2 min; a window is two legs (mean +
+#     member-batch), so ~22.4 min/window, and a full T5 (4 tiles x 9
+#     windows) that capped EVERYWHERE would cost ~13.4 h.
+#   * At the MEASURED iteration counts the same T5 costs ~6.0 h (36 windows
+#     x 1078 iters x 0.56 s) — the cap buys ~2x headroom, it does not spend
+#     it. A cap is a ceiling on the bad case, not a bill.
+#   * Both wall figures are FLOORS: 0.56 s/iter was measured at m=1, and the
+#     production member-batch leg solves m=100 right-hand sides per blocked
+#     iteration.
+#
+# PIN 26(d): the MEMBER-BATCH leg is the worst-converging leg in every
+# measurement taken (probe 554 vs 524; anchor 396-459 vs 342-422) and T10's
+# sigma field kind is built on it — margins are set by that leg.
+STAGE1_PCG_MAXITER = 1200
 # CMEMS-MY obs times are days since 1993-01-01; the solver frame is days
 # since 2017-01-01 (the Stage-0 probe's rebase constant).
 _DAYS_1993_TO_2017 = 8766.0
@@ -269,6 +304,41 @@ def preflight(tile: str, m: int) -> dict[str, float]:
     return model
 
 
+def classify_pcg_legs(
+    pcg: Iterable[dict[str, Any]], *, rtol: float, maxiter: int
+) -> tuple[list[dict[str, Any]], bool]:
+    """Stamp rtol/maxiter onto COPIES of the legs; say whether the row capped.
+
+    The ONE convergence classifier for this driver (owner PIN 26(a)): the
+    probe path, the seam-probe path and the production tile path all route
+    through it, so a capped leg is classified identically wherever it is
+    measured. A leg is CAPPED when it exited AT (or above) the iteration
+    cap with its final relative residual STRICTLY above rtol — a leg that
+    reaches the cap but meets rtol converged, it was not capped.
+
+    Stamping is done on copies because the real callers pass the live
+    ``miost.CONVERGENCE_LOG`` entries; mutating those would corrupt the
+    shared diagnostic log for every later solve in the process.
+
+    Args:
+        pcg: Per-leg convergence rows (``iterations`` and
+            ``final_rel_residual`` required per leg).
+        rtol: The solver rtol ACTUALLY used.
+        maxiter: The solver iteration cap ACTUALLY used.
+
+    Returns:
+        ``(stamped_rows, capped)``. An empty leg list is ``([], False)``:
+        it makes no cap claim (callers that require legs check for them —
+        see :func:`seam_probe`).
+    """
+    rows = [{**leg, "rtol": rtol, "maxiter": maxiter} for leg in pcg]
+    capped = any(
+        int(leg["iterations"]) >= maxiter and float(leg["final_rel_residual"]) > rtol
+        for leg in rows
+    )
+    return rows, capped
+
+
 def build_evidence_row(
     *,
     seal_sha: str,
@@ -280,7 +350,9 @@ def build_evidence_row(
     n_obs: int,
     wall_s: float,
     peak_rss_mib: float,
-    pcg: object,
+    pcg: Iterable[dict[str, Any]],
+    pcg_rtol: float,
+    pcg_maxiter: int,
     scores: dict[str, Any],
     date: str,
 ) -> dict[str, Any]:
@@ -293,6 +365,13 @@ def build_evidence_row(
     free-prose field exists. Fresh containers every call — callers may
     mutate their row without corrupting the next one.
 
+    Owner PIN 26(a): the PRODUCTION row carries the same convergence shape
+    the probe row carries — every pcg leg stamped with the rtol/cap it
+    actually ran under, a ``convergence`` verdict, and
+    ``scores.capped_measurement`` mirroring it so a capped measurement is
+    labeled where its numbers are read. Both paths route through
+    :func:`classify_pcg_legs` — one classifier, never two.
+
     Args:
         seal_sha: The verified evaluation-seal sha the row quotes.
         tile: Registry tile name.
@@ -303,7 +382,11 @@ def build_evidence_row(
         n_obs: Framed observation count.
         wall_s: Measured wall time [s].
         peak_rss_mib: Measured peak RSS [MiB].
-        pcg: Per-window PCG convergence rows.
+        pcg: Per-window PCG convergence rows (``iterations`` and
+            ``final_rel_residual`` required per leg).
+        pcg_rtol: The solver rtol ACTUALLY used (stamped per leg).
+        pcg_maxiter: The solver iteration cap ACTUALLY used (stamped per
+            leg — never a restated constant).
         scores: The per-tile scores block.
         date: ISO date string (passed in — purity).
 
@@ -317,6 +400,7 @@ def build_evidence_row(
     if spec is None:
         raise KeyError(f"unknown tile {tile!r}; known: {sorted(TILES)}")
     source = str(spec["source"])
+    pcg_rows, capped = classify_pcg_legs(pcg, rtol=pcg_rtol, maxiter=pcg_maxiter)
     reference_row = (
         None
         if tile == "anchor"
@@ -336,8 +420,9 @@ def build_evidence_row(
         "n_obs": n_obs,
         "wall_s": wall_s,
         "peak_rss_mib": peak_rss_mib,
-        "pcg": pcg,
-        "scores": scores,
+        "pcg": pcg_rows,
+        "convergence": "CAPPED" if capped else "CONVERGED",
+        "scores": {**scores, "capped_measurement": capped},
         "reference_row": reference_row,
         "bridge_caveat": BRIDGE_CAVEAT if source == "cmems_my" else None,
         "label": "STAGE1-EVIDENCE",
@@ -404,6 +489,8 @@ def build_probe_row(
     rtol (its wall is bounded above by cap x per-iteration cost, so its
     ratios can only under-report). ``measured_vs_model.capped_measurement``
     mirrors the verdict so a capped ratio is labeled where it appears.
+    The stamping and the verdict come from :func:`classify_pcg_legs` — the
+    SAME classifier the production tile rows use (owner PIN 26(a)).
 
     Args:
         frame: Frame provenance block (core/overlap/halo/solve bbox).
@@ -427,12 +514,7 @@ def build_probe_row(
     """
     wall_ratio = wall_s / model["wall_est_s"]
     peak_ratio = peak_rss_mib / model["peak_model_mib"]
-    pcg_rows = [{**leg, "rtol": pcg_rtol, "maxiter": pcg_maxiter} for leg in pcg]
-    capped = any(
-        int(leg["iterations"]) >= pcg_maxiter
-        and float(leg["final_rel_residual"]) > pcg_rtol
-        for leg in pcg_rows
-    )
+    pcg_rows, capped = classify_pcg_legs(pcg, rtol=pcg_rtol, maxiter=pcg_maxiter)
     return {
         "label": "PROBE",
         "tile": PROBE_TILE,
@@ -729,13 +811,16 @@ def probe(
     )
 
 
-def _solve_leg(tile: str, m: int, days_stride: int) -> None:
+def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     """The real load/solve/score/record leg — OWNED BY LATER GATED TASKS.
 
     Args:
         tile: Registry tile name.
         m: Ensemble members.
         days_stride: Output-day stride.
+        maxiter: PCG iteration cap handed to the solver and recorded, per
+            leg, in the tile evidence row (owner PIN 26(a): the cap a
+            production row ran under is part of the row).
 
     Raises:
         NotImplementedError: Always — Stage-1 Task 3 (anchor identity
@@ -744,10 +829,10 @@ def _solve_leg(tile: str, m: int, days_stride: int) -> None:
             the separate ``probe`` command.)
     """
     raise NotImplementedError(
-        f"tile {tile!r} (m={m}, days_stride={days_stride}): the real solve "
-        "legs are separately gated — Stage-1 Task 3 (anchor identity gate), "
-        "Task 4 (seam-pair run), Task 5 (diverse-tile runs); Task 2's "
-        "measured-first probe landed as the `probe` command."
+        f"tile {tile!r} (m={m}, days_stride={days_stride}, maxiter={maxiter}): "
+        "the real solve legs are separately gated — Stage-1 Task 3 (anchor "
+        "identity gate), Task 4 (seam-pair run), Task 5 (diverse-tile runs); "
+        "Task 2's measured-first probe landed as the `probe` command."
     )
 
 
@@ -756,6 +841,17 @@ def run(
     tile: Annotated[str, typer.Argument(help="Registry tile name")],
     m: Annotated[int, typer.Option(help="Ensemble members retained")] = 100,
     days_stride: Annotated[int, typer.Option(help="Output-day stride")] = 1,
+    maxiter: Annotated[
+        int,
+        typer.Option(
+            help=(
+                "PCG iteration cap for this run (default: the measured "
+                "Stage-1 cap STAGE1_PCG_MAXITER = 2x the converged "
+                "19-degree probe's worst leg). The library default 500 "
+                "caps every 19-degree leg un-converged — owner PIN 26(b)."
+            )
+        ),
+    ] = STAGE1_PCG_MAXITER,
 ) -> None:
     """One Stage-1 tile run: registry frame, pinned source, frozen config.
 
@@ -767,6 +863,8 @@ def run(
         tile: Registry tile name.
         m: Ensemble members retained.
         days_stride: Output-day stride.
+        maxiter: PCG iteration cap, threaded to the solve leg and recorded
+            per pcg leg in the tile evidence row.
 
     Raises:
         typer.BadParameter: Unknown tile.
@@ -776,7 +874,7 @@ def run(
         raise typer.BadParameter(f"unknown tile {tile!r}; known: {sorted(TILES)}")
     model = preflight(tile, m)
     typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
-    _solve_leg(tile, m, days_stride)
+    _solve_leg(tile, m, days_stride, maxiter)
 
 
 if __name__ == "__main__":
