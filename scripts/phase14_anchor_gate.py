@@ -1,6 +1,13 @@
 """Phase-14 Stage-1 ANCHOR IDENTITY GATE (Task 3) — the stage's HARD BARRIER.
 
-SPEC §10, all five checks; NOTHING downstream runs until this is green:
+SPEC §10; NOTHING downstream runs until this is green. The gate is NOT
+"five green": per the owner ruling of 2026-07-26, SPEC §10 check 3 is
+SPLIT into a surface-identity check that passes on its own terms and the
+era no-op, which is UNRUNNABLE at Stage 1 and therefore DEFERRED. What the
+block records is :data:`ACCOUNTING`: TWO checks run and passed, TWO cited
+and pre-ratified at Gate 0, ONE proxy-passed with the specified check
+deferred. A deferred check is neither a pass nor a fail — it never counts
+toward green.
 
 1. **Tiling identity (runs now):** the anchor tile through the generalized
    tiling path (``anchor_frame()`` → ``frame_grid`` → ``frame_obs`` →
@@ -16,9 +23,16 @@ SPEC §10, all five checks; NOTHING downstream runs until this is green:
    ``phase14.stage0.gate2_loader_identity`` (pass) + the golden-tile
    TABLED row (the lineage-sensitivity half). The block cites both nodes,
    runs nothing.
-3. **Era-machinery no-op (runs now, recorded reading):** see
-   :data:`CHECK3_READING` — the shipped calibration surface vs the signed
-   s(x) artifact, asserted ``==`` (an identity, not a tolerance).
+3. **SPLIT (owner ruling 2026-07-26).** ``surface_identity`` **(runs now,
+   PASS ON ITS OWN TERMS):** the shipped calibration surface vs the signed
+   s(x) artifact, descriptor byte-equal AND values asserted ``==`` (an
+   identity, not a tolerance) — it proves no drift in the shipped
+   calibration surface, and claims nothing else. ``era_noop`` **(DEFERRED):**
+   the specified §10 check 3 has no Stage-1 instantiation (no era-keyed
+   calibration code exists), so it is recorded ``status: "deferred"``,
+   ``pass: null``, deferred to the stage that introduces era-keyed code and
+   re-entering that stage's coverage walk (the T11 deferral discipline).
+   The superseded proxy-pass recording rides inside it, verbatim.
 4. **Cross-env (cited + pending slot):** T17 same-host CRN manifests
    (recomputed EQUAL) cited; cross-host slot recorded ``pending-T18`` per
    the Gate-0 ruling — GREEN with the slot EXPLICITLY pending, never
@@ -35,7 +49,10 @@ Zero touches: the locked tally (legacy ``c2_touch_tally`` + the phase-14
 ``locked_n`` ledger) is snapshotted before the run and asserted
 byte-identical after every write.
 
-Root provenance: see :data:`ROOT_NOTE` (recorded deviation for the owner
+Root provenance: see :data:`ROOT_NOTE` and :func:`root_conditionality`
+(pin 30 — the member route proves reproduction UNDER the acceptance root,
+never root-independence; variance inherits that conditionality; the mean
+and Γ routes are root-independent). Recorded deviation for the owner
 walk — the four-route reference store pins the phase-13 acceptance root).
 """
 
@@ -44,6 +61,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -100,16 +118,67 @@ _GAMMA_CHUNK = 100  # the recorded OOM lesson: never one whole-grid evaluate
 REQUIRED_CHECKS = (
     "tiling_identity",
     "loader_identity",
-    "era_noop",
     "cross_env",
     "score_identity",
+    "surface_identity",
+    "era_noop",
 )
-_STATUSES = ("pass", "fail", "cited")
+_STATUSES = ("pass", "fail", "cited", "deferred")
+# A deferral must name where it goes and where it comes back (T11).
+_DEFERRAL_KEYS = ("deferred_to", "reappears_in")
+# Checks the owner ruled UNRUNNABLE here: recordable as deferred (or, if a
+# future stage runs them, as a fail) but NEVER as a pass — the whole point
+# of the 2026-07-26 split is that a proxy cannot masquerade as the
+# specified check.
+NEVER_PASS_HERE = ("era_noop",)
 
 EXIT_FAIL = 1
 EXIT_PIN23 = 3
 
-CHECK3_READING = (
+SURFACE_IDENTITY_NAME = "shipped calibration surface identity (PASS ON ITS OWN TERMS)"
+SURFACE_IDENTITY_PROVES = (
+    "no drift in the shipped calibration surface through the generalized "
+    "tiling path vs the signed s(x) record (phase13_field_miost.json) — "
+    "exact, never a tolerance"
+)
+
+ERA_NOOP_NAME = "era-machinery no-op (SPEC §10 check 3)"
+ERA_NOOP_DEFERRED_TO = (
+    "the stage that introduces era-keyed code (Stage 2 per spec §3.1 fork E)"
+)
+ERA_NOOP_WHY = (
+    "UNRUNNABLE at Stage 1: no era-keyed calibration instantiation exists "
+    "(fork-e pin 1's density-factor covariate exists as design, not code). "
+    "A proxy recorded as PASS becomes 'check 3 passed' three documents "
+    "downstream — owner ruling 2026-07-26"
+)
+ERA_NOOP_REAPPEARS_IN = (
+    "the introducing stage's own coverage walk (the T11 deferral "
+    "discipline, established for exactly this situation)"
+)
+ERA_NOOP_SPEC_CITATION = "spec §10 check 3; fork-e pin 1 (density factor ≡ 1 at n_eff₀)"
+
+# What the block states about itself, so a Stage-2 reader counts the checks
+# the way the owner ruled them rather than reading a bare pass=True as
+# "five green".
+ACCOUNTING: dict[str, Any] = {
+    "ruling": "owner 2026-07-26 — the gate is NOT 'five green'",
+    "run_and_passed": ["tiling_identity", "score_identity"],
+    "cited_and_pre_ratified_at_gate0": ["loader_identity", "cross_env"],
+    "proxy_passed_specified_check_deferred": [
+        "surface_identity (pass) / era_noop (deferred)"
+    ],
+    "statement": (
+        "TWO checks run and passed (1, 5), TWO cited and pre-ratified at "
+        "Gate 0 (2, 4), ONE proxy-passed with the specified check deferred "
+        "(3). This accounting survives careful reading in Stage 2; 'five "
+        "green' does not."
+    ),
+}
+
+# The reading check 3 carried BEFORE the split — preserved (never deleted)
+# inside the deferred block so the superseded claim stays auditable.
+SUPERSEDED_CHECK3_READING = (
     "RECORDED READING (flagged for the owner walk): the era-keyed "
     "calibration machinery has no Stage-1 instantiation yet (fork-e pin 1's "
     "density-factor covariate exists as design, not code). Check 3 is "
@@ -247,14 +316,53 @@ def _validate_checks(checks: dict[str, dict[str, Any]]) -> None:
     for name, c in checks.items():
         status = c.get("status")
         ok = c.get("pass")
-        if status not in _STATUSES or not isinstance(ok, bool):
+        if status not in _STATUSES:
             raise ValueError(
-                f"check {name!r}: status must be one of {_STATUSES} and "
-                f"'pass' a bool; got status={status!r} pass={ok!r}"
+                f"check {name!r}: status must be one of {_STATUSES}; got {status!r}"
+            )
+        if status == "deferred":
+            _validate_deferred(name, c)
+            continue
+        if not isinstance(ok, bool):
+            raise ValueError(
+                f"check {name!r}: a non-deferred check must record 'pass' as "
+                f"a bool (a verdict); got status={status!r} pass={ok!r}"
             )
         if (status == "fail" and ok) or (status == "pass" and not ok):
             raise ValueError(
                 f"check {name!r}: inconsistent status={status!r} vs pass={ok!r}"
+            )
+        if name in NEVER_PASS_HERE and ok:
+            raise ValueError(
+                f"check {name!r}: refused — the owner ruling of 2026-07-26 "
+                "forbids recording it as a pass at this stage (it is "
+                "UNRUNNABLE here; a proxy must never masquerade as the "
+                "specified check). Record status='deferred', pass=None."
+            )
+
+
+def _validate_deferred(name: str, c: dict[str, Any]) -> None:
+    """Refuse a deferral that is not a real deferral (T11 discipline).
+
+    Args:
+        name: The check key.
+        c: The sub-block.
+
+    Raises:
+        ValueError: The block records a verdict anyway, or does not name
+            the stage it defers to and the walk it reappears in — a bare
+            "deferred" is how a check gets dropped instead of moved.
+    """
+    if c.get("pass") is not None:
+        raise ValueError(
+            f"check {name!r}: a deferred check is neither a pass nor a fail "
+            f"— 'pass' must be None; got {c.get('pass')!r}"
+        )
+    for key in _DEFERRAL_KEYS:
+        if not str(c.get(key) or "").strip():
+            raise ValueError(
+                f"check {name!r}: deferral must record {key!r} — a deferred "
+                "check that names no destination is a dropped check"
             )
 
 
@@ -268,10 +376,11 @@ def build_gate_block(
     artifacts: dict[str, Any],
     meta: dict[str, Any],
 ) -> dict[str, Any]:
-    """Assemble the five-check evidence block — PURE, fail-any-fail.
+    """Assemble the evidence block — PURE, fail-any-fail, deferred-is-neither.
 
     Args:
-        checks: Exactly the five §10 sub-blocks (:data:`REQUIRED_CHECKS`).
+        checks: Exactly the :data:`REQUIRED_CHECKS` sub-blocks (the §10
+            checks with check 3 split per the 2026-07-26 ruling).
         pcg_rows: Per-window PCG convergence rows from the real leg.
         pcg_rtol: Solver rtol actually used.
         pcg_maxiter: Solver iteration cap actually used.
@@ -281,7 +390,10 @@ def build_gate_block(
 
     Returns:
         The ``phase14.stage1.anchor_gate`` block; ``pass`` is True only if
-        ALL five checks pass AND no PCG leg tripped pin 23.
+        EVERY check carrying a verdict passes, at least one does, every
+        remaining check is EXPLICITLY deferred, and no PCG leg tripped pin
+        23. A deferred check is neither a pass nor a fail: it never
+        contributes green, and it never turns the gate red either.
 
     Raises:
         ValueError: Missing/unknown check keys or an inconsistent
@@ -290,7 +402,8 @@ def build_gate_block(
     _validate_checks(checks)
     capped = capped_pcg_legs(pcg_rows, rtol=pcg_rtol, maxiter=pcg_maxiter)
     tripped = bool(capped)
-    all_pass = all(bool(c["pass"]) for c in checks.values()) and not tripped
+    verdicts = [c for c in checks.values() if c.get("status") != "deferred"]
+    all_pass = bool(verdicts) and all(bool(c["pass"]) for c in verdicts) and not tripped
     return {
         "label": "ANCHOR-IDENTITY-GATE",
         "pass": all_pass,
@@ -312,6 +425,7 @@ def build_gate_block(
         "tally_guard": tally_guard,
         "artifacts": artifacts,
         **meta,
+        "accounting": deepcopy(ACCOUNTING),
     }
 
 
@@ -330,17 +444,56 @@ def gate_exit_code(block: dict[str, Any]) -> int:
     return 0 if block["pass"] else EXIT_FAIL
 
 
-def check3_era_noop(
+def root_conditionality(root_int: int) -> dict[str, str]:
+    """PIN 30: what each of the four routes is — and is not — conditional on.
+
+    The member route reproduces the signed member draws, which exist only
+    under one root, so it proves reproduction UNDER THAT ROOT and never
+    root-independence. Variance is computed from the same draws and
+    inherits that conditionality; the mean and Γ routes are
+    root-independent.
+
+    Args:
+        root_int: The member root the run actually used.
+
+    Returns:
+        The ``root_conditionality`` sub-block of check 1.
+    """
+    return {
+        "ruling": "owner pin 30, 2026-07-26",
+        "member_route": (
+            f"CONDITIONAL on shipped_miost5().member_root ({root_int}) — the "
+            "route proves REPRODUCTION UNDER THAT ROOT (the reference "
+            "members were drawn with it), never root-independence"
+        ),
+        "mean_and_gamma_routes": "root-independent",
+        "variance_route": (
+            "computed from the same member draws — inherits the member "
+            "route's root conditionality"
+        ),
+        "plan_text_was_wrong": (
+            "the plan named derive_seed('miost','stage-b-winner','members',0) "
+            "= 4836134738817689931; the reference store forces the phase-13 "
+            "acceptance root; plan text corrected 2026-07-26"
+        ),
+    }
+
+
+def check_surface_identity(
     cal: PolyCalibration,
     signed: dict[str, Any],
     lon: np.ndarray,
     lat: np.ndarray,
 ) -> dict[str, Any]:
-    """Check 3: shipped calibration surface ≡ signed s(x) — EXACTLY (``==``).
+    """Shipped calibration surface ≡ signed s(x) — EXACTLY (``==``).
 
     Descriptor (``cal.key()``) byte-equal to the artifact's ``cal_key`` AND
     ``log_s``/``sqrt_s`` surface values exactly equal on the probe points.
-    Never a tolerance (spec §10 gate 3: an identity, not a hope).
+    Never a tolerance (an identity, not a hope).
+
+    This is the RUN half of the 2026-07-26 check-3 split, and it claims
+    exactly what it proves: no drift in the shipped calibration surface.
+    It is NOT the era no-op — see :func:`build_era_noop_deferred`.
 
     Args:
         cal: The calibration surface the generalized-path product carries.
@@ -350,7 +503,7 @@ def check3_era_noop(
         lat: Probe latitudes [deg north].
 
     Returns:
-        The check-3 sub-block (status/pass + the recorded reading).
+        The ``surface_identity`` sub-block.
     """
     from sverdrup.distributions.calibration import (  # noqa: PLC0415
         PolyCalibration as _Poly,
@@ -369,13 +522,71 @@ def check3_era_noop(
     return {
         "status": "pass" if ok else "fail",
         "pass": ok,
+        "name": SURFACE_IDENTITY_NAME,
         "cal_key": cal.key(),
         "signed_cal_key": signed_key,
         "cal_key_equal": key_equal,
         "surface_exact_equal": surface_exact,
         "n_points": int(lo.size),
         "equality": "exact (==), by construction — never a tolerance",
-        "reading": CHECK3_READING,
+        "what_it_proves": SURFACE_IDENTITY_PROVES,
+    }
+
+
+def superseded_check3_recording(
+    surface: dict[str, Any], artifact: dict[str, Any]
+) -> dict[str, Any]:
+    """The pre-split check-3 recording, rebuilt from the same computation.
+
+    Preserved (never deleted) inside the deferred ``era_noop`` block so the
+    superseded claim — the proxy recorded as a PASS of check 3 — stays
+    auditable next to the ruling that superseded it.
+
+    Args:
+        surface: The block from :func:`check_surface_identity`.
+        artifact: The signed s(x) artifact pointer (``path`` + ``sha256``).
+
+    Returns:
+        The superseded sub-block, in its original key shape and wording.
+    """
+    return {
+        "status": surface["status"],
+        "pass": surface["pass"],
+        "cal_key": surface["cal_key"],
+        "signed_cal_key": surface["signed_cal_key"],
+        "cal_key_equal": surface["cal_key_equal"],
+        "surface_exact_equal": surface["surface_exact_equal"],
+        "n_points": surface["n_points"],
+        "equality": surface["equality"],
+        "reading": SUPERSEDED_CHECK3_READING,
+        "artifact": artifact,
+    }
+
+
+def build_era_noop_deferred(*, superseded: dict[str, Any]) -> dict[str, Any]:
+    """SPEC §10 check 3 as the owner ruled it: DEFERRED, never proxy-passed.
+
+    No era-keyed calibration instantiation exists at Stage 1, so the
+    specified check is unrunnable here. It is recorded with no verdict
+    (``pass: None``), named to the stage that introduces era-keyed code,
+    and re-entered into that stage's coverage walk.
+
+    Args:
+        superseded: The prior recording from
+            :func:`superseded_check3_recording` — preserved verbatim.
+
+    Returns:
+        The deferred ``era_noop`` sub-block.
+    """
+    return {
+        "status": "deferred",
+        "pass": None,
+        "name": ERA_NOOP_NAME,
+        "deferred_to": ERA_NOOP_DEFERRED_TO,
+        "why": ERA_NOOP_WHY,
+        "reappears_in": ERA_NOOP_REAPPEARS_IN,
+        "spec_citation": ERA_NOOP_SPEC_CITATION,
+        "superseded_recording": superseded,
     }
 
 
@@ -513,7 +724,7 @@ def record_gate5(constants: dict[str, Any], evidence_path: Path = EVIDENCE) -> N
 
 
 def record_anchor_gate(block: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
-    """Record the five-check block at ``phase14.stage1.anchor_gate``.
+    """Record the gate block at ``phase14.stage1.anchor_gate``.
 
     Deliberately NOT write-once: a re-walk after a RED records the latest
     gate reading; the write-once pin lives in :func:`record_gate5`.
@@ -1056,6 +1267,7 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                     "resumed_from_own_store": resumed,
                     "solve_wall_s": solve_wall_s,
                 },
+                "root_conditionality": root_conditionality(root),
             }
 
             # ---- persist the anchor maps (+ member-std: the T1 follow-on)
@@ -1138,18 +1350,29 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 "gate5": gate5_status,
             }
 
-        # ---- check 3 (recorded reading; exact equality) -----------------
+        # ---- check 3 SPLIT (owner ruling 2026-07-26) ---------------------
+        # The surface identity RUNS and passes on its own terms; the era
+        # no-op is UNRUNNABLE here and is recorded DEFERRED, carrying the
+        # superseded proxy-pass recording.
         cal = cast(
             "PolyCalibration",
             shipped._calibration,  # noqa: SLF001 - the shipped s(x) surface
         )
         signed_field = json.loads(SIGNED_FIELD_JSON.read_text())
-        check3 = check3_era_noop(cal, signed_field, grid.x, grid.y)
-        check3["artifact"] = {
-            "path": str(SIGNED_FIELD_JSON),
-            "sha256": sha256_file(SIGNED_FIELD_JSON),
-        }
-        _echo(f"check 3 era no-op: {check3['pass']}")
+        surface = check_surface_identity(cal, signed_field, grid.x, grid.y)
+        era_noop = build_era_noop_deferred(
+            superseded=superseded_check3_recording(
+                surface,
+                artifact={
+                    "path": str(SIGNED_FIELD_JSON),
+                    "sha256": sha256_file(SIGNED_FIELD_JSON),
+                },
+            )
+        )
+        _echo(
+            f"surface identity: {surface['pass']}; "
+            f"era no-op (SPEC §10 check 3): {era_noop['status']}"
+        )
 
         # ---- checks 2 and 4 (citations) ---------------------------------
         stage0 = store["phase14"]["stage0"]
@@ -1191,9 +1414,10 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
             checks={
                 "tiling_identity": check1,
                 "loader_identity": check2,
-                "era_noop": check3,
                 "cross_env": check4,
                 "score_identity": check5,
+                "surface_identity": surface,
+                "era_noop": era_noop,
             },
             pcg_rows=pcg_rows,
             pcg_rtol=float(method.pcg_rtol),
@@ -1236,7 +1460,12 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 "separate from the normal gate walk."
             )
         elif code == 0:
-            _echo("five gates GREEN")
+            _echo(
+                "GATE GREEN — TWO checks run and passed (tiling, score), TWO "
+                "cited and pre-ratified at Gate 0 (loader, cross-env), ONE "
+                "proxy-passed (surface identity) with the specified check "
+                "(era no-op, SPEC §10 check 3) DEFERRED. Not 'five green'."
+            )
         else:
             _echo("GATE RED — the stage STOPS here (block recorded)")
         return code
@@ -1266,7 +1495,10 @@ def sizing() -> None:
 
 @app.command()
 def run() -> None:
-    """Run the ANCHOR IDENTITY GATE (checks 1/3/5 + citations 2/4).
+    """Run the ANCHOR IDENTITY GATE (checks 1/5 + surface identity, cites 2/4).
+
+    The era no-op (SPEC §10 check 3) is recorded DEFERRED, never run and
+    never proxy-passed (owner ruling 2026-07-26).
 
     Raises:
         typer.Exit: Nonzero on ANY failing check (the stage stops) and

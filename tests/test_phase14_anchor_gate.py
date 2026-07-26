@@ -1,19 +1,22 @@
 """Anchor identity gate unit tests (phase-14 Stage-1 Task 3) — CI-local.
 
-Covers the CI-testable machinery ONLY: five-check block assembly
-(fail-any-fail), the locked-tally guard, check-3 exact-equality semantics,
+Covers the CI-testable machinery ONLY: the six-key block assembly
+(fail-any-fail, with DEFERRED neither pass nor fail), the locked-tally
+guard, the surface-identity exact-equality semantics, the era-no-op
+deferral, the accounting buckets, the pin-30 root-conditionality claims,
 pin-23 capped-leg detection, the gate-5 write-once pin, and the check-2/4
 citation builders. The heavy anchor solve legs are data-gated skips with
 named reasons.
 
 Every test names the concrete bug it would catch (test-design discipline);
-expected values come from the plan/spec wording, never from executing the
-implementation.
+expected values come from the plan/spec/ruling wording, never from
+executing the implementation.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -25,15 +28,20 @@ from tests.helpers import load_script
 
 _mod = load_script("phase14_anchor_gate")
 
-# The five §10 check keys, restated from the plan (NOT read off the module —
-# a drift between plan and module must fail here, not be mirrored).
-_FIVE = (
+# The recorded check keys after the owner's 2026-07-26 check-3 SPLIT,
+# restated from the ruling (NOT read off the module — a drift between the
+# ruling and the module must fail here, not be mirrored).
+_CHECK_KEYS = (
     "tiling_identity",
     "loader_identity",
-    "era_noop",
     "cross_env",
     "score_identity",
+    "surface_identity",
+    "era_noop",
 )
+# The keys that carry a verdict at Stage 1 (era_noop is DEFERRED — it is
+# neither a pass nor a fail here).
+_VERDICT_KEYS = tuple(k for k in _CHECK_KEYS if k != "era_noop")
 
 _SIGNED_FIELD: dict[str, Any] = {
     "calibration": {
@@ -64,14 +72,27 @@ def _signed_field_for(cal: PolyCalibration) -> dict[str, Any]:
     return {"calibration": cal.to_json(), "cal_key": cal.key()}
 
 
+def _deferred_stub(**over: Any) -> dict[str, Any]:
+    """A minimally well-formed deferred sub-block (T11 deferral discipline)."""
+    block: dict[str, Any] = {
+        "status": "deferred",
+        "pass": None,
+        "deferred_to": "the stage that introduces era-keyed code",
+        "reappears_in": "that stage's own coverage walk",
+    }
+    block.update(over)
+    return block
+
+
 def _passing_checks() -> dict[str, dict[str, Any]]:
-    """Five green sub-blocks (statuses per the plan: 1/3/5 run, 2/4 cite)."""
+    """The green Stage-1 shape: 1/5 run, 2/4 cite, surface passes, era defers."""
     return {
         "tiling_identity": {"status": "pass", "pass": True},
         "loader_identity": {"status": "cited", "pass": True},
-        "era_noop": {"status": "pass", "pass": True},
         "cross_env": {"status": "cited", "pass": True},
         "score_identity": {"status": "pass", "pass": True},
+        "surface_identity": {"status": "pass", "pass": True},
+        "era_noop": _deferred_stub(),
     }
 
 
@@ -90,11 +111,11 @@ def _block(checks: dict[str, dict[str, Any]], **kw: Any) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Gate-block assembly: five keys, fail-any-fail
+# Gate-block assembly: six keys, fail-any-fail, deferred is neither
 # ---------------------------------------------------------------------------
 
 
-def test_gate_block_requires_all_five_checks() -> None:
+def test_gate_block_requires_all_six_checks() -> None:
     # Bug caught: a refactor drops one §10 check (e.g. cross_env) and the
     # gate assembles four sub-blocks and reports GREEN anyway.
     checks = _passing_checks()
@@ -114,8 +135,10 @@ def test_gate_block_rejects_unknown_check_key() -> None:
 
 def test_gate_block_fail_any_fail() -> None:
     # Bug caught: any()-style aggregation (or a cited status counted as an
-    # unconditional pass) lets one RED check ride into a GREEN gate.
-    for key in _FIVE:
+    # unconditional pass) lets one RED check ride into a GREEN gate. Covers
+    # the post-split key set, era_noop included: a check flipped to fail
+    # must still fail the gate.
+    for key in _CHECK_KEYS:
         checks = _passing_checks()
         checks[key] = {"status": "fail", "pass": False}
         block = _block(checks)
@@ -123,23 +146,105 @@ def test_gate_block_fail_any_fail() -> None:
         assert _mod.gate_exit_code(block) != 0
 
 
-def test_gate_block_all_green() -> None:
-    # Bug caught: cited statuses (checks 2/4) wrongly treated as failures —
-    # the gate could NEVER go green and downstream would stall forever.
+def test_gate_block_green_with_era_noop_deferred() -> None:
+    # Bug caught: a DEFERRED sub-block (pass=None) is aggregated with
+    # bool(None) and the gate can NEVER go green — or the cited statuses
+    # (2/4) are treated as failures. Green = the run checks green AND the
+    # deferred one explicitly deferred.
     block = _block(_passing_checks())
     assert block["pass"] is True
     assert _mod.gate_exit_code(block) == 0
-    assert set(block["checks"]) == set(_FIVE)
+    assert tuple(block["checks"]) == _CHECK_KEYS
     assert block["label"] == "ANCHOR-IDENTITY-GATE"
+    assert block["checks"]["era_noop"]["status"] == "deferred"
+    assert block["checks"]["era_noop"]["pass"] is None
+
+
+def test_deferred_check_is_never_counted_as_a_pass() -> None:
+    # Bug caught: "deferred" aggregated as green (e.g. status != "fail"
+    # counted as a pass) — a gate where NOTHING ran would report GREEN and
+    # the deferral would read as "check passed" downstream.
+    checks = {k: _deferred_stub() for k in _CHECK_KEYS}
+    block = _block(checks)
+    assert block["pass"] is False
+    assert _mod.gate_exit_code(block) != 0
+
+
+def test_deferred_check_must_name_where_it_reappears() -> None:
+    # Bug caught: a bare {"status": "deferred"} is accepted, so a check can
+    # be dropped from the walk forever — the T11 deferral discipline
+    # requires naming the stage it defers to and the walk it reappears in.
+    for missing in ("deferred_to", "reappears_in"):
+        checks = _passing_checks()
+        bad = _deferred_stub()
+        del bad[missing]
+        checks["era_noop"] = bad
+        with pytest.raises(ValueError, match=missing):
+            _block(checks)
+
+
+def test_era_noop_cannot_be_recorded_as_a_pass() -> None:
+    # Bug caught (the ruling's whole point): the surface-identity proxy is
+    # re-attached to the era_noop key as a PASS, and "check 3 passed" ships
+    # three documents downstream on evidence that was never run.
+    for bad in ({"status": "pass", "pass": True}, {"status": "cited", "pass": True}):
+        checks = _passing_checks()
+        checks["era_noop"] = bad
+        with pytest.raises(ValueError, match="era_noop"):
+            _block(checks)
 
 
 def test_gate_block_rejects_inconsistent_status() -> None:
     # Bug caught: a sub-block claims status "fail" while pass=True (or an
     # unknown status) and the aggregate reads only one of the two fields.
     checks = _passing_checks()
-    checks["era_noop"] = {"status": "fail", "pass": True}
-    with pytest.raises(ValueError, match="era_noop"):
+    checks["surface_identity"] = {"status": "fail", "pass": True}
+    with pytest.raises(ValueError, match="surface_identity"):
         _block(checks)
+
+
+def test_gate_block_rejects_non_deferred_null_verdict() -> None:
+    # Bug caught: pass=None smuggled into a RUN check, where the aggregate
+    # would neither pass nor fail it — a verdict-less check riding along.
+    checks = _passing_checks()
+    checks["score_identity"] = {"status": "pass", "pass": None}
+    with pytest.raises(ValueError, match="score_identity"):
+        _block(checks)
+
+
+# ---------------------------------------------------------------------------
+# The accounting block: the gate is NOT "five green"
+# ---------------------------------------------------------------------------
+
+
+def test_accounting_states_the_three_buckets() -> None:
+    # Bug caught: the block records a bare pass=True and a reader in Stage 2
+    # counts the checks as "five green" — the ruling requires the recorded
+    # accounting to name what actually ran, what was cited, and what was
+    # proxy-passed with the specified check deferred.
+    acc = _block(_passing_checks())["accounting"]
+    assert acc["run_and_passed"] == ["tiling_identity", "score_identity"]
+    assert acc["cited_and_pre_ratified_at_gate0"] == ["loader_identity", "cross_env"]
+    assert acc["proxy_passed_specified_check_deferred"] == [
+        "surface_identity (pass) / era_noop (deferred)"
+    ]
+    assert "2026-07-26" in acc["ruling"]
+    assert "five green" in acc["ruling"] or "five green" in acc["statement"]
+    assert "TWO checks run and passed" in acc["statement"]
+    assert "TWO cited and pre-ratified at Gate 0" in acc["statement"]
+    assert "ONE proxy-passed with the specified check deferred" in acc["statement"]
+    assert "'five green' does not" in acc["statement"]
+
+
+def test_accounting_buckets_cover_every_recorded_check() -> None:
+    # Bug caught: a check is added (or renamed) and the accounting silently
+    # stops describing the block it sits in — the three buckets must
+    # partition exactly the recorded key set.
+    acc = _block(_passing_checks())["accounting"]
+    named = set(acc["run_and_passed"]) | set(acc["cited_and_pre_ratified_at_gate0"])
+    for entry in acc["proxy_passed_specified_check_deferred"]:
+        named |= {part.split(" ")[0] for part in entry.split(" / ")}
+    assert named == set(_CHECK_KEYS)
 
 
 # ---------------------------------------------------------------------------
@@ -196,18 +301,19 @@ def test_tally_guard_ignores_unrelated_evidence_writes(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Check 3: era-machinery no-op — EXACT equality, never a tolerance
+# The check-3 SPLIT: surface identity passes on its own terms (EXACT
+# equality, never a tolerance); the era no-op is DEFERRED
 # ---------------------------------------------------------------------------
 
 _LON = np.linspace(295.0, 305.0, 5)
 _LAT = np.linspace(33.0, 43.0, 5)
 
 
-def test_check3_exact_identity_passes() -> None:
+def test_surface_identity_exact_identity_passes() -> None:
     # Bug caught: the check compares against the wrong artifact node (or
     # never evaluates the surface) so the true identity reads as a fail.
     cal = _cal()
-    block = _mod.check3_era_noop(cal, _signed_field_for(cal), _LON, _LAT)
+    block = _mod.check_surface_identity(cal, _signed_field_for(cal), _LON, _LAT)
     assert block["pass"] is True
     assert block["status"] == "pass"
     assert block["cal_key_equal"] is True
@@ -215,7 +321,21 @@ def test_check3_exact_identity_passes() -> None:
     assert block["n_points"] == _LON.size * _LAT.size
 
 
-def test_check3_rejects_last_ulp_coeff_perturbation() -> None:
+def test_surface_identity_claims_only_its_own_terms() -> None:
+    # Bug caught: the surface check is recorded under the era-no-op claim
+    # again — it must name itself and say what it actually proves (no drift
+    # in the SHIPPED CALIBRATION SURFACE), never "era no-op" / "check 3".
+    cal = _cal()
+    block = _mod.check_surface_identity(cal, _signed_field_for(cal), _LON, _LAT)
+    claim = f"{block['name']} {block['what_it_proves']}".lower()
+    assert "shipped calibration surface" in claim
+    assert re.search(r"\bera\b|era-", claim) is None, claim
+    assert "no-op" not in claim
+    assert "check 3" not in claim
+    assert block["equality"] == "exact (==), by construction — never a tolerance"
+
+
+def test_surface_identity_rejects_last_ulp_coeff_perturbation() -> None:
     # Bug caught: someone softens the == to allclose; a 1e-13 coefficient
     # drift would pass any reasonable tolerance but violates the spec's
     # "EXACTLY, BY CONSTRUCTION — an identity, not a tolerance".
@@ -223,22 +343,104 @@ def test_check3_rejects_last_ulp_coeff_perturbation() -> None:
     coeffs = list(_SIGNED_FIELD["calibration"]["coeffs"])
     coeffs[0] += 1e-13
     drifted = _cal(coeffs=coeffs)
-    block = _mod.check3_era_noop(drifted, _signed_field_for(cal), _LON, _LAT)
+    block = _mod.check_surface_identity(drifted, _signed_field_for(cal), _LON, _LAT)
     assert block["pass"] is False
     assert block["status"] == "fail"
 
 
-def test_check3_rejects_descriptor_mismatch_with_equal_values() -> None:
+def test_surface_identity_rejects_descriptor_mismatch_with_equal_values() -> None:
     # Bug caught: the check compares surface VALUES only — a fit_id
     # (provenance) drift with numerically identical values would pass and
     # the gate would cite the wrong fit lineage as the signed s(x).
     cal = _cal()
     relabeled = _cal(fit_id="L-BFGS-B;gtol=1e-07")
-    block = _mod.check3_era_noop(relabeled, _signed_field_for(cal), _LON, _LAT)
+    block = _mod.check_surface_identity(relabeled, _signed_field_for(cal), _LON, _LAT)
     assert block["pass"] is False
     assert block["cal_key_equal"] is False
     # values ARE equal — only the descriptor differs (isolates the bug)
     assert block["surface_exact_equal"] is True
+
+
+def _superseded() -> dict[str, Any]:
+    cal = _cal()
+    surface = _mod.check_surface_identity(cal, _signed_field_for(cal), _LON, _LAT)
+    return _mod.superseded_check3_recording(
+        surface, artifact={"path": "phase13_field_miost.json", "sha256": "ab"}
+    )
+
+
+def test_era_noop_block_is_deferred_and_verdict_less() -> None:
+    # Bug caught: the deferral is recorded with pass=False (reads as a
+    # FAILED check downstream) or pass=True (the proxy masquerading again).
+    # SPEC §10 check 3 is UNRUNNABLE at Stage 1 — neither pass nor fail.
+    block = _mod.build_era_noop_deferred(superseded=_superseded())
+    assert block["status"] == "deferred"
+    assert block["pass"] is None
+    assert "SPEC §10 check 3" in block["name"]
+    assert "spec §10 check 3" in block["spec_citation"]
+
+
+def test_era_noop_deferral_names_the_stage_and_the_walk() -> None:
+    # Bug caught: the deferral names no destination, so nothing forces the
+    # check to reappear — a deferred check silently becomes a dropped one.
+    block = _mod.build_era_noop_deferred(superseded=_superseded())
+    assert "era-keyed" in block["deferred_to"]
+    assert "Stage 2" in block["deferred_to"]
+    assert "fork E" in block["deferred_to"]
+    assert "coverage walk" in block["reappears_in"]
+    assert "T11" in block["reappears_in"]
+    assert "UNRUNNABLE at Stage 1" in block["why"]
+    assert "three documents downstream" in block["why"]
+
+
+def test_era_noop_preserves_the_superseded_recording_verbatim() -> None:
+    # Bug caught: the split DELETES the prior (proxy-pass) recording, so the
+    # amended evidence loses what was previously claimed and the ruling
+    # becomes unauditable.
+    prior = _superseded()
+    block = _mod.build_era_noop_deferred(superseded=prior)
+    assert block["superseded_recording"] == prior
+    assert prior["status"] == "pass"
+    assert prior["pass"] is True
+    assert prior["cal_key_equal"] is True
+    assert prior["artifact"]["sha256"] == "ab"
+    assert "RECORDED READING" in prior["reading"]
+
+
+# ---------------------------------------------------------------------------
+# Pin 30: what the four routes are conditional ON
+# ---------------------------------------------------------------------------
+
+_ACCEPTANCE_ROOT = 7742201642112487637
+
+
+def test_root_conditionality_claims_are_route_specific() -> None:
+    # Bug caught: the member route is recorded as proving root-INDEPENDENCE
+    # (it proves reproduction UNDER shipped_miost5().member_root only), or
+    # the variance route is called root-independent when it is computed from
+    # the same member draws and inherits their conditionality.
+    rc = _mod.root_conditionality(_ACCEPTANCE_ROOT)
+    assert rc["ruling"] == "owner pin 30, 2026-07-26"
+    assert rc["member_route"] == (
+        "CONDITIONAL on shipped_miost5().member_root (7742201642112487637) — "
+        "the route proves REPRODUCTION UNDER THAT ROOT (the reference members "
+        "were drawn with it), never root-independence"
+    )
+    assert rc["mean_and_gamma_routes"] == "root-independent"
+    assert rc["variance_route"] == (
+        "computed from the same member draws — inherits the member route's "
+        "root conditionality"
+    )
+    assert "4836134738817689931" in rc["plan_text_was_wrong"]
+
+
+def test_root_conditionality_carries_the_root_actually_used() -> None:
+    # Bug caught: the recorded conditionality hardcodes the acceptance root
+    # while the run used another one — the claim would name a root the
+    # members were not drawn with.
+    rc = _mod.root_conditionality(123456789)
+    assert "123456789" in rc["member_route"]
+    assert str(_ACCEPTANCE_ROOT) not in rc["member_route"]
 
 
 # ---------------------------------------------------------------------------
@@ -388,9 +590,45 @@ def test_anchor_gate_block_recorded_after_real_leg() -> None:
     # would otherwise never re-read the recorded evidence.
     d = json.loads(_EVIDENCE.read_text())
     block = d["phase14"]["stage1"]["anchor_gate"]
-    assert set(block["checks"]) == set(_FIVE)
+    assert tuple(block["checks"]) == _CHECK_KEYS
     assert block["pass"] is True
     assert block["pin23"]["tripped"] is False
     gate5 = d["phase14"]["stage1"]["gate5"]
     for key in ("mu", "sigma", "lambda_x"):
         assert isinstance(gate5[key], float)
+
+
+@pytest.mark.skipif(
+    not _EVIDENCE.exists(),
+    reason=f"evidence store absent: {_EVIDENCE}",
+)
+def test_recorded_split_matches_what_a_rerun_would_build() -> None:
+    # Bug caught: a re-run REVERTS the owner's amended shape — it re-records
+    # a passing era_noop, drops the accounting or the pin-30 conditionality,
+    # or emits different key names than the ruled block the owner walked.
+    d = json.loads(_EVIDENCE.read_text())
+    block = d["phase14"]["stage1"]["anchor_gate"]
+    recorded = block["checks"]
+    assert recorded["era_noop"]["status"] == "deferred"
+    assert recorded["era_noop"]["pass"] is None
+    assert recorded["surface_identity"]["status"] == "pass"
+
+    cal = _cal()
+    built_surface = _mod.check_surface_identity(cal, _signed_field_for(cal), _LON, _LAT)
+    built_era = _mod.build_era_noop_deferred(superseded=_superseded())
+    assert set(built_surface) == set(recorded["surface_identity"])
+    assert set(built_era) == set(recorded["era_noop"])
+    assert set(built_era["superseded_recording"]) == set(
+        recorded["era_noop"]["superseded_recording"]
+    )
+    # Wording, not just shape: the deferral prose the owner ruled.
+    for key in ("name", "deferred_to", "why", "reappears_in", "spec_citation"):
+        assert built_era[key] == recorded["era_noop"][key], key
+    for key in ("name", "equality", "what_it_proves"):
+        assert built_surface[key] == recorded["surface_identity"][key], key
+
+    assert _block(_passing_checks())["accounting"] == block["accounting"]
+    assert (
+        _mod.root_conditionality(block["root_int"])
+        == recorded["tiling_identity"]["root_conditionality"]
+    )
