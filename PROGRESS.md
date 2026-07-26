@@ -469,6 +469,37 @@
 > (554 vs 524 probe; 396–459 vs 342–422 anchor) and T10's σ field kind
 > rides it — margins are set by that leg, (e) the anchor's 459/500 is
 > **92% of budget — 8% headroom, not "clean"**.
+> **✅ PIN 26 COMPLETE (`c07f260` + `08ac9ee`, 75 tests, pre-commit
+> --all-files clean):** (a) ONE classifier `classify_pcg_legs` stamps
+> rtol/maxiter and the CAPPED verdict onto probe, tile AND seam rows —
+> a duplicated inline copy on either path fails a test; tile rows now
+> carry per-leg rtol/maxiter/iterations/residual + `convergence` +
+> `scores.capped_measurement`. (b) **`STAGE1_PCG_MAXITER = 1200`**,
+> derived: measured worst leg 554 → owner floor ≥1108 → 1200; wall
+> consequence stated in the same breath at the measured 0.56 s/iter
+> (m=1, 19°): a leg run to cap 672 s, a window ≈22 min, a fully-capping
+> T5 ≈13.4 h vs ≈6.0 h at measured iteration counts — **both floors**
+> (0.56 s/iter was measured at m=1; production member-batch solves 100
+> RHS per blocked iteration). Library default `PCG_MAXITER` LEFT at 500
+> and test-pinned there: the anchor gate re-solves at the SIGNED cap
+> read from the member store, so raising the library default would
+> change solver behaviour under the signed-identity paths without
+> evidence — the driver's explicit cap is the safe form.
+> **(c) SEAM FRAMES MEASURED — CONVERGED, no STOP:** `seam_n`, first
+> production window, m=1, maxiter 2000 → mean **365 iters** @ 8.69e-07,
+> member-batch **407 iters** @ 9.34e-07 (18%/20% of cap; 34% of the new
+> 1200 cap — and 81% of the old 500 default, i.e. 19% headroom, which
+> is why this was measured rather than assumed). Wall 85.4 s, peak
+> 1,429 MiB. Recorded `phase14.stage1.seam_convergence_probe`.
+> **`seam_s` NOT measured** — reported as unmeasured, not covered
+> (mirrored geometry, same node count, band 33–40N). Frame is 51×37 =
+> **1,887** nodes (the fp-overshoot extra lat node), not 1,836.
+> (d) MEMBER-BATCH is the worst-converging leg in EVERY measurement
+> (probe 554>524; anchor 396–459 > 342–422 across all 9 windows; seam
+> 407>365) and T10's σ field kind rides it — margins are set by that
+> leg (in the constant's comment + test-asserted). (e) The anchor's
+> **459/500 = 91.8% of budget, 8% headroom** — named as the margin it
+> is; at 1200 the same leg sits at 38%.
 > **PIN 27 (in flight):** T5 priced as a BRACKET from BOTH measured
 > anchors (anchor 22,352 s / 2,652 nodes / 9 windows / m=100; converged
 > probe ~603 s / 9,312 nodes / 1 window / m=1), each end labeled with
