@@ -436,6 +436,40 @@
 > before T4 dispatches.**
 > **(pre-T3 halt banner below, kept for the trail — resolved by the
 > dec16b2 rulings fold, pins 23–25)**
+> **⛔ STOPPED FOR THE OWNER WALK AT T3'S COMPLETION (2026-07-26) — the
+> anchor identity gate is the stage's foundation; the owner walks the
+> five-check block + the pin-23 converged ratio TOGETHER (owner stop
+> condition).** T3 CLOSED, dual-reviewed **APPROVED-FOR-WALK**
+> (`f201c09`/`b71dc7f`/`efd515a`/`3dc25d1`):
+> **FIVE GATES GREEN** — (1) tiling identity four routes: member
+> sha-equal 9/9 windows, mean BIT-IDENTICAL (max|Δ|=0), Γ 1.44e-15
+> (rtol 1e-12), variance BIT-IDENTICAL — all vs the phase-13 signed
+> acceptance artifacts, reviewer-reverified; (2) loader identity CITED
+> (stage0 gate2 + golden-tile TABLED); (3) era no-op PASS as a
+> surface-identity proxy (shipped s(x) ≡ phase13_field_miost.json
+> EXACT, 2652 nodes — no era code exists yet; OWNER RATIFY the reading);
+> (4) cross-env CITED, cross-host slot pending-T18 EXPLICIT; (5) score
+> identity PASS + **GATE-5 CONSTANTS PINNED write-once** (µ
+> 0.7694588601958132 / σ 0.2848175434425789 / λx 174.52106004917525 /
+> n 46780; the flipped test pins MACHINERY identity per the Gate-0
+> deviation — OWNER RATIFY). PIN 23 CLEAN: all 18 legs converged under
+> cap (max 459 iters, worst residual 9.9997e-07). Member-std maps
+> persisted (T1 follow-on). Tally byte-identical, seal check passes,
+> zero touches. **PIN-23(a) CONVERGED PROBE RATIO (the sizing claim
+> that authorizes the stage): wall ratio 0.734** (converged 524/554
+> iters at maxiter 2000, residuals ~9.9e-07; up from the truncated
+> 0.570 exactly as the pin predicted), peak 0.787, 1.3× bracket NOT
+> tripped, capped_measurement=false. Deviations for the walk: plan
+> named the wrong root (stage-b-winner) — leg correctly ran the
+> phase-13 acceptance root 7742201642112487637 forced by the reference
+> store (serves intent); wall ~6.2 h vs the plan's 40-90 min estimate
+> (T11 precedent 24,780 s was the true prior); two dead launches
+> (harness pgroup kill → setsid; Γ compare-phase OOM → chunked +
+> own-store resume) — both hardened, mid-run changes SCRIPT-ONLY and
+> proven library-safe by bit-identical outcome. NEXT ACTION: owner
+> walks T3 + ratifies the two readings; then T4 (blockedBy [0,3,10,11],
+> all met). Zero locked opens, tally untouched, seal read-only.
+> **Prior halt (T11 findings, now RULED — kept for the trail):**
 > **⛔ STAGE HALTED BY THE T11 STOP CONDITION (2026-07-25): the
 > sealed-instrument coverage table found a THIRD unassigned normative
 > clause.** Table: `docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`
