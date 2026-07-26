@@ -500,7 +500,59 @@
 > leg (in the constant's comment + test-asserted). (e) The anchor's
 > **459/500 = 91.8% of budget, 8% headroom** — named as the margin it
 > is; at 1200 the same leg sits at 38%.
-> **PIN 27 (in flight):** T5 priced as a BRACKET from BOTH measured
+> **⛔⛔ PIN 27 COMPLETE — T5 CROSSES TIER-2 ON TWO INDEPENDENT AXES:
+> WAIT FOR THE OWNER, no diverse-tile run may start** (`65908d1`,
+> `docs/superpowers/2026-07-26-phase14-stage1-t5-price-bracket.md`).
+> **RAM fails first and is BINDING:** T5's model peak 4,715.6 MiB needs
+> MemAvailable ≥ 9,431 MiB; `tier1_eligible` evaluates **False** at
+> live 5,261 MiB. The model peak is **m-insensitive by construction**
+> (m=1→m=100 moves it 1.4%: assembly-dominated, neither triplets nor
+> CSR depend on m) — and the ONLY m=100 measurement in existence, the
+> anchor, came in at **2.128× its model** (3,512.2 vs 1,650.8). Honest
+> expected T5 peak **6.6–10.0 GiB** against a box that has never shown
+> more than 11,900 MiB available. **WALL crosses every ceiling that
+> exists:** `authorize("tier2_probe", …, 23.78 h)` → Wait (23.78 > 6.0
+> h) — that is the LOW end, over by 4.0×; the high end by 15.7×. Stage
+> 1 has no pre-registered Tier-2 row.
+> **THE BRACKET** (work unit U = iterations × RHS columns × nnz;
+> anchor rate 1.4404e-9 s/U at m=100, three m=1 rates 3.45–4.40e-9):
+> LOW **23.78 h/tile = 95.1 h (3.96 d) for 4** (linear-in-nnz + the
+> anchor's m=100 batching gain carries unchanged to a 3.24×-larger
+> system; low iteration counts); MID 69.10 h/tile = 11.5 d (batching
+> gain does NOT carry — the 19° RHS block is 220 MiB vs the anchor's
+> 88); HIGH **94.16 h/tile = 376.7 h (15.7 d)** (MID + the pin-28
+> ×1.14 noise excursion). **The 4.0× width is ONE unmeasured quantity:
+> whether m=100 batching survives at 19°.** The collapsing measurement
+> (1 window, m=100, 19°) costs 2.6–10.5 h — and fails the same RAM
+> predicate, so it too WAITS.
+> **TWO MACHINERY GAPS SURFACED:** (i) `size_tile.wall_est_s` carries
+> NO n_windows and NO m factor — it prices one window at m=1 and
+> cannot price T5 (naive ×9 is off by ~2 orders); (ii)
+> `stage0_default` returns AUTHORIZED for a 15.7-day box run because
+> `max_wall_h` is unpopulated — **absence of a ceiling is not
+> authorization** (a governance hole in the ladder itself).
+> **✅ PIN 28 COMPLETE — cause NAMED, and the bracket fails pin 24 on
+> the wall leg.** All four candidates FALSIFIED with evidence (no
+> anchor overlap: converged probe 23:48–23:59Z, anchor launched
+> 00:02Z and its gate script did not yet exist; no maxiter
+> preallocation: peaks 40 KiB apart; output paths 160 B apart;
+> checkpointing never on the probe path and landed 01:04Z). Sharpened
+> bound: 78 extra iterations buy ≤36.5 s under any fixed overhead;
+> observed 135.1 s — the two runs had different THROUGHPUT. One cheap
+> discriminating measurement (300 s fixed-work SpMV on this Intel N95):
+> **1.70× slowdown WITHIN one run**, bucket CV 16.9%, cumulative-average
+> at 78%-of-run vs full = 1.0590. **CAUSE: non-stationary host
+> throughput** — +5.9 pp deterministic longer-is-slower ramp, residual
+> **12.9% uncontrolled variance**, corroborated by the **1.276× spread
+> across the three m=1 runs already in the store**. **VERDICT: the 1.3×
+> STOP bracket is INSIDE its own noise floor on the wall leg** (1.276×
+> observed spread = 98% of the 1.30× threshold). It has never
+> false-tripped only because readings sat at 0.513/0.570/0.734 — luck
+> of operating point, not design. Recommended replacements: gate on the
+> DETERMINISTIC work unit U (bit-reproducible, zero host noise); record
+> wall as ×[0.87, 1.15]; if wall must gate, widen to ≥1.7× or require
+> min-of-3. **KEEP the peak leg at 1.3× — peak RSS repeats to 0.001%.**
+> **(superseded in-flight note):** PIN 27 (in flight): T5 priced as a BRACKET from BOTH measured
 > anchors (anchor 22,352 s / 2,652 nodes / 9 windows / m=100; converged
 > probe ~603 s / 9,312 nodes / 1 window / m=1), each end labeled with
 > its scaling assumption, against the Tier-1 ceiling — **a Tier-2
