@@ -2086,3 +2086,40 @@ def test_seam_pair_cli_stops_immediately_when_a_seam_solve_caps(
     stored = json.loads(evid.read_text())
     assert stored["phase14"]["stage1"]["seam_pair"]["convergence"] == "CAPPED"
     assert stored["phase14"]["stage1"].get("seam_rows", []) == []
+
+
+def test_seam_pair_cli_stops_when_the_floor_probe_does_not_converge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A non-converged floor probe is RECORDED, then STOPPED on (pin 23).
+
+    Bug caught: losing the probe rows to an uncaught refusal — the owner
+    is asked to rule on a non-converging deeper solve and needs exactly
+    those numbers; and the stop must not be dressed up as an UNMEASURED
+    verdict.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(
+        _mod,
+        "_seam_pair_real_leg",
+        lambda **kw: {
+            "rows": [],
+            "block": {
+                "label": "SEAM-PAIR",
+                "floor_probe": {"status": "NOT_CONVERGED"},
+            },
+            "stop": "FLOOR_NOT_CONVERGED",
+        },
+    )
+    res = runner.invoke(_mod.app, ["seam-pair"])
+    assert res.exit_code == 2
+    assert "did NOT" in res.output
+    stored = json.loads(evid.read_text())
+    block = stored["phase14"]["stage1"]["seam_pair"]
+    assert block["floor_probe"]["status"] == "NOT_CONVERGED"
+    assert stored["phase14"]["stage1"].get("seam_rows", []) == []

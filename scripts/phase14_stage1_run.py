@@ -2458,6 +2458,8 @@ def _seam_pair_real_leg(
             anchor_maxiter=int(anchor_block["pcg"]["maxiter"]),
         )
         block["floor_probe"] = floor_block
+        if floor_block.get("status") == "NOT_CONVERGED":
+            return {"rows": [], "block": block, "stop": "FLOOR_NOT_CONVERGED"}
         gc.collect()
         rows = _seam_compare_phase(
             tiles=tiles,
@@ -2526,6 +2528,22 @@ def _seam_floor_phase(
         }
         return floors, {"status": "WAIT", "plan": floor_plan}
 
+    if SEAM_FLOOR_STORE.exists():
+        # Crash resume: the probes are the second-most expensive thing this
+        # leg buys (one deeper m=100 window solve per probed geometry); a
+        # compare-phase death must not cost them either.
+        _seam_echo(f"floor probes: RESUME from {SEAM_FLOOR_STORE}")
+        with np.load(SEAM_FLOOR_STORE, allow_pickle=False) as z:
+            recorded = json.loads(str(z["summary"][()]))
+        floors = {
+            "f_pair": recorded["f_pair"],
+            "f_oracle": recorded["f_oracle"],
+            "pair_probe": recorded["pair_probe"],
+            "oracle_probe": recorded["oracle_probe"],
+            "strip_shape": tuple(recorded["strip_shape"]),
+        }
+        return floors, recorded
+
     probes = {
         tile: _floor_probe_tile(
             tile, m=m, store=SEAM_MEMBER_STORE[tile], method_prod_maxiter=maxiter
@@ -2573,6 +2591,17 @@ def _seam_floor_phase(
         "ORACLE's OWN probe: the blended pair AND the seamless anchor "
         "re-solved deeper (never the pair's floor)",
     )
+    if not (pair_probe["converged"] and oracle_probe["converged"]):
+        # PIN 23: F between two truncation points is not a floor. RECORD the
+        # probe rows (the owner needs exactly these numbers), claim no
+        # verdict, and STOP — never an UNMEASURED row.
+        return {}, {
+            "status": "NOT_CONVERGED",
+            "plan": floor_plan,
+            "pair_probe": pair_probe,
+            "oracle_probe": oracle_probe,
+            "per_tile": {t: p["probe"] for t, p in probes.items()},
+        }
     f_pair = {
         kind: max(
             float(np.nanmax(np.abs(probes[t][f"shift_{kind}"])))
@@ -2601,6 +2630,7 @@ def _seam_floor_phase(
         "f_oracle": f_oracle,
         "pair_probe": pair_probe,
         "oracle_probe": oracle_probe,
+        "strip_shape": [int(lat_m.sum()), int(lon_m.sum())],
         "per_tile": {
             t: {
                 "probe": p["probe"],
@@ -2845,6 +2875,15 @@ def seam_pair(
             "STOP (owner PIN 23): a seam solve exited CAPPED over rtol — the "
             "block IS recorded and NO verdict is claimed; seam_read refuses "
             "on residual > rtol, so no reading exists to report."
+        )
+        raise typer.Exit(code=2)
+    if result["stop"] == "FLOOR_NOT_CONVERGED":
+        typer.echo(
+            "STOP (owner PIN 23): the deeper-tolerance floor probe did NOT "
+            "converge — the probe rows ARE recorded and NO verdict is "
+            "claimed. F between two truncation points is not a floor and "
+            "3xF has no meaning; this is an owner STOP, never an UNMEASURED "
+            "verdict."
         )
         raise typer.Exit(code=2)
     stops = [r for r in result["rows"] if r["verdict"] == "STRUCTURAL_STOP"]
