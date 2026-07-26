@@ -393,6 +393,49 @@
 > sets T2's sizing bracket AND the SO ±66 halo headroom:
 > prod-repr breach at halo > 2.0°, isolated > 4.0°);
 > (pin 12) equatorial box keep −4…11°N vs shift −2…13°N.
+> **✅ T3 CLOSED — ANCHOR IDENTITY GATE: FIVE GATES GREEN (2026-07-26;
+> machinery `f201c09`+`b71dc7f`+`efd515a`, real leg recorded).** Evidence
+> `phase14.stage1.anchor_gate` (pass=true) + gate-5 constants PINNED
+> write-once at `phase14.stage1.gate5`: µ 0.7694588601958132 /
+> σ 0.2848175434425789 / λx 174.52106004917525 km / n 46,780
+> (compute_stats lineage on the j3 track, per the Gate-0 deferral;
+> `tests/test_phase14_gate5_score_identity.py` now LIVE and passing).
+> CHECK 1 (four routes vs the phase-13 acceptance artifacts): member
+> eta+anom SHA-EQUAL 9/9 windows vs phase13_winner_members.npz; mean
+> maps BIT-IDENTICAL (365 d) vs phase13_winner_mean.nc; variance
+> BIT-IDENTICAL vs phase13_winner_var.nc; Γ-route day-0 max|Δ| 1.44e-15
+> (last-ulp, the recorded S-vs-Γ summation-order behavior). Substrate
+> identities asserted PRE-solve: grid nodes ==, BasisSpec (km
+> basis_domain) ==, obs table byte-equal n=54,345 (dc2021a five-mission
+> vs legacy 6-file→split→halo). CHECK 2 cited (gate2 pass, manifest
+> c688b0d8… + golden-tile TABLED row). CHECK 3 = the RECORDED FALLBACK
+> READING (no era-keyed calibration instantiation exists yet): shipped
+> s(x) ≡ phase13_field_miost.json EXACTLY (cal_key byte-equal + surface
+> values == on 2652 nodes) — flagged for the owner walk. CHECK 4 cited:
+> T17 CRN manifests recomputed EQUAL; cross-host slot EXPLICIT
+> `pending-T18`. **PIN 23 CLEAN: all 18 pcg legs CONVERGED under the
+> 500 cap (mean 342–422 iters, member-batch 396–459; worst residual
+> 1.000e-06 ≤ rtol 1e-06) — no capped anchor leg** (contrast: the T2
+> probe's 19° legs were capped; the anchor box converges). Zero
+> touches: locked tally byte-identical (in-block). Artifacts:
+> anchor_signed_maps.nc (6955afb8…) + MEMBER-STD maps
+> anchor_member_std_maps.nc (694f2a40…; the T1-follow-on σ field kind
+> T4 consumes) + the leg's own member store (crash-resume substrate,
+> never a reference). **ROOT DEVIATION RECORDED for the owner walk:**
+> plan text names the stage-b-winner root, but the signed member store
+> pins the phase-13 acceptance root 7742201642112487637
+> (= shipped_miost5().member_root); the run used the latter — the
+> four-route reference set forces it; mean/Γ routes root-independent.
+> Wall 22,352 s (~6.2 h; the plan's 40–90 min estimate superseded by
+> the T11 precedent 24,780 s), peak RSS 3512 MiB. Ops trail: launch 1
+> killed by a harness process-group kill (hardened: setsid + own-store
+> resume); launch 2 OOM'd in the from_etas whole-grid dense evaluate
+> (the recorded phase-13 OOM class; fixed: 1×1-grid construction +
+> chunked mean_at). **T3 was the HARD BARRIER: owner walks the
+> five-check block TOGETHER with the pin-23(a) converged-probe ratio
+> before T4 dispatches.**
+> **(pre-T3 halt banner below, kept for the trail — resolved by the
+> dec16b2 rulings fold, pins 23–25)**
 > **⛔ STAGE HALTED BY THE T11 STOP CONDITION (2026-07-25): the
 > sealed-instrument coverage table found a THIRD unassigned normative
 > clause.** Table: `docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`

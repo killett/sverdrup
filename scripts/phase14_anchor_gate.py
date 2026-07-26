@@ -1217,9 +1217,15 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 "date": datetime.now(UTC).date().isoformat(),
             },
         )
-        record_anchor_gate(block, evidence_path=evidence_path)
+        # Zero-touch assert BEFORE the block records (covers every prior
+        # write: gate-5 pin, maps); the verified flag then rides INSIDE the
+        # recorded block. The block write itself cannot touch tally keys,
+        # and the post-record assert below refuses loudly if that ever
+        # stops being true.
         assert_tally_unchanged(tally_before, evidence_path)
         block["tally_guard"]["byte_identical"] = True
+        record_anchor_gate(block, evidence_path=evidence_path)
+        assert_tally_unchanged(tally_before, evidence_path)
 
         code = gate_exit_code(block)
         _echo(json.dumps(block, indent=1, default=str))
