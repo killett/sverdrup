@@ -2123,3 +2123,41 @@ def test_seam_pair_cli_stops_when_the_floor_probe_does_not_converge(
     block = stored["phase14"]["stage1"]["seam_pair"]
     assert block["floor_probe"]["status"] == "NOT_CONVERGED"
     assert stored["phase14"]["stage1"].get("seam_rows", []) == []
+
+
+def test_blend_on_the_strip_is_a_partition_of_unity_and_nan_safe() -> None:
+    """The ORACLE's blended field: weights sum to 1, crossfade centred on 38N.
+
+    Bug caught: (a) a blend that does not renormalize would dent the
+    field across the strip, and the oracle would then measure the dent
+    instead of the tiling; (b) the two tiles swapped in the assemble call
+    would pull each tile's solution across the seam — at 36N (deep inside
+    seam_s's core) the blended value must be seam_s's, not seam_n's;
+    (c) a NaN outside a tile's support poisoning the sum. Expected values
+    are geometric, not computed from the blend code: constant 1 blends to
+    1 everywhere; a 0/1 pair reads 1 at 36N, 0.5 at the 38N boundary (by
+    symmetry of the linear ramps) and 0 at 40N.
+    """
+    from sverdrup.application.spatial_tiles import assemble, frame_grid
+
+    frames = [_mod.registry_frame(t) for t in _mod.SEAM_PAIR_TILES]
+    grid = frame_grid(frames[0], _mod.RESOLUTION_DEG)
+    lat_m, lon_m = _mod.strip_mask(grid, _mod.seam_strip_bbox())
+    lon2d, lat2d = np.meshgrid(grid.x[lon_m], grid.y[lat_m])
+    lon, lat = lon2d.ravel(), lat2d.ravel()
+
+    unity = assemble(frames, [np.ones(lon.size), np.ones(lon.size)], lon, lat)
+    assert np.allclose(unity, 1.0)
+
+    south_only = assemble(frames, [np.zeros(lon.size), np.ones(lon.size)], lon, lat)
+    at = {round(float(v), 1): south_only[lat == v] for v in np.unique(lat)}
+    keys = sorted(at)
+    assert at[keys[0]] == pytest.approx(1.0)  # 36N: seam_s alone
+    assert at[keys[-1]] == pytest.approx(0.0)  # 40N: seam_n alone
+    mid = at[round(0.5 * (keys[0] + keys[-1]), 1)]
+    assert mid == pytest.approx(0.5)  # 38N: the shared core boundary
+
+    poisoned = np.ones(lon.size)
+    poisoned[lat == np.unique(lat)[0]] = np.nan  # NaN where seam_n has no weight
+    blended = assemble(frames, [poisoned, np.ones(lon.size)], lon, lat)
+    assert np.isfinite(blended[lat == np.unique(lat)[0]]).all()
