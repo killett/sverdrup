@@ -436,6 +436,58 @@
 > before T4 dispatches.**
 > **(pre-T3 halt banner below, kept for the trail — resolved by the
 > dec16b2 rulings fold, pins 23–25)**
+> **✅ T3 RATIFIED (owner 2026-07-26) — WITH THE ACCOUNTING CORRECTED;
+> ⛔ T4 DOES NOT DISPATCH: PIN 26 (production-path convergence) IS THE
+> LIVE BLOCKER, and the next STOP is BEFORE T5 with the price bracket +
+> production-path convergence evidence together.**
+> RATIFIED: check 1 (four-route identity — "a genuine proof"), check 5
+> machinery reading + gate-5 pinning, the root deviation (correct AND
+> NECESSARY — the reference set forces `shipped_miost5().member_root`),
+> the mid-run hardening (script-only, falsifiable bit-identical check
+> that passed), and pin 23(a) ("this is what discharging a gate looks
+> like").
+> **RULED — THE GATE IS NOT "FIVE GREEN".** Check 3 is SPLIT (landed in
+> the evidence block + plan): **surface identity = PASS ON ITS OWN
+> TERMS** (cal_key byte-equal + values `==` on 2652 nodes; proves no
+> drift in the shipped calibration surface); **era no-op = DEFERRED**
+> to the stage introducing era-keyed code, reappearing in that stage's
+> coverage walk (T11 deferral discipline) — a proxy recorded as PASS
+> becomes "check 3 passed" three documents downstream. **The honest
+> accounting, used in the Gate-1 pack: TWO checks run and passed (1, 5),
+> TWO cited and pre-ratified at Gate 0 (2, 4), ONE proxy-passed with
+> the specified check deferred (3).**
+> **PIN 26 (blocks T4/T5):** the maxiter fix reached `probe` only —
+> `PCG_MAXITER = 500` is still the default and `run`/`_solve_leg` carry
+> no maxiter, so every T5 leg (4 tiles × 9 windows at 19°, where the
+> converged probe needed 524/554 iters) would cap un-converged and
+> could not report that it capped. In flight: (a) convergence fields in
+> the production row, (b) cap set FROM measurement (≥2× the measured
+> 19° requirement, wall consequence stated), (c) seam-frame convergence
+> MEASURED before T4 (`seam_read` refuses on residual > rtol — an
+> unmeasured cap costs the whole T4 spend after the fact), (d) recorded:
+> the MEMBER-BATCH leg is the worst-converging leg in every measurement
+> (554 vs 524 probe; 396–459 vs 342–422 anchor) and T10's σ field kind
+> rides it — margins are set by that leg, (e) the anchor's 459/500 is
+> **92% of budget — 8% headroom, not "clean"**.
+> **PIN 27 (in flight):** T5 priced as a BRACKET from BOTH measured
+> anchors (anchor 22,352 s / 2,652 nodes / 9 windows / m=100; converged
+> probe ~603 s / 9,312 nodes / 1 window / m=1), each end labeled with
+> its scaling assumption, against the Tier-1 ceiling — **a Tier-2
+> crossing is a WAIT to the owner before any diverse-tile run**.
+> **PIN 28 (in flight):** reconcile the ~20% (wall grew 1.289× against
+> 1.078× in iterations) — "a gate whose noise approaches its threshold
+> is not a gate"; if the noise floor approaches 1.3×, the bracket needs
+> replacing.
+> **PIN 29 (landed):** three µ values on the their_eval scale — 0.76953
+> (signed lane0), 0.76941 (golden-tile side A), **0.7694588601958132
+> (gate-5, now canonical frozen)** — agree to four figures, differ by
+> up to 1.2e-4 because they are different SCOPES; scope recorded beside
+> the pin (pin-14 treatment).
+> **PIN 30 (landed):** plan root text corrected; member-route identity
+> recorded as CONDITIONAL on `shipped_miost5().member_root` (proves
+> reproduction under that root, never root-independence); mean and Γ
+> routes root-independent; variance inherits the member conditionality.
+> **(prior walk-request block, kept for the trail):**
 > **⛔ STOPPED FOR THE OWNER WALK AT T3'S COMPLETION (2026-07-26) — the
 > anchor identity gate is the stage's foundation; the owner walks the
 > five-check block + the pin-23 converged ratio TOGETHER (owner stop
