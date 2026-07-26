@@ -7,7 +7,10 @@ provenance, never a CLI option), frozen signed config, evidence row under
 
 THIS module ships the CI-testable core plus the Task-2 measured-first
 ``probe`` command (quiet_gyre, ONE 60-day window, m=1, PROBE-labeled,
-record-then-stop 1.3x bracket). The remaining real load/solve/score legs
+record-then-stop 1.3x bracket) and the owner PIN-26(c) ``seam-probe``
+command (seam_n, ONE production window, m=1, cap 2000 — a convergence
+measurement on the frames T4 solves, taken BEFORE T4 is spent, because
+``seam_read`` REFUSES on residual > rtol). The remaining real load/solve/score legs
 are separately gated Stage-1 tasks (3 anchor gate / 4 seam pair /
 5 diverse tiles) and land behind :func:`_solve_leg`.
 
@@ -66,6 +69,8 @@ PROBE_CONVERGED_NODE = "probe_converged"
 # The frozen five-mission mapping config (j3 stays the holdout convention);
 # CMEMS-MY directory codes (h2g -> h2ag on this source).
 PROBE_MISSIONS = ("alg", "h2ag", "j2g", "j2n", "s3a")
+# The same five missions on the dc2021a challenge source (its own codes).
+DC_MAPPING_FIVE = ("alg", "h2g", "j2g", "j2n", "s3a")
 
 # ---------------------------------------------------------------------------
 # Owner PIN 26(b) — the Stage-1 PRODUCTION PCG cap, SET FROM MEASUREMENT.
@@ -99,6 +104,23 @@ PROBE_MISSIONS = ("alg", "h2ag", "j2g", "j2n", "s3a")
 # measurement taken (probe 554 vs 524; anchor 396-459 vs 342-422) and T10's
 # sigma field kind is built on it — margins are set by that leg.
 STAGE1_PCG_MAXITER = 1200
+
+# Owner PIN 26(c) — the SEAM-FRAME convergence probe. The seam frames are
+# SMALLER than the anchor (51x37 = 1887 solve-grid nodes vs 51x52 = 2652)
+# and very likely converge cheaply, but ``seam_read`` REFUSES on residual >
+# rtol, so an unmeasured cap costs the whole T4 spend AFTER the fact. ONE
+# seam frame, m=1, ONE window, cap raised to 2000 so the probe can report a
+# requirement instead of a cap. PROBE-labeled, no scores.
+SEAM_PROBE_TILE = "seam_n"
+SEAM_PROBE_M = 1
+SEAM_PROBE_MAXITER = 2000
+SEAM_PROBE_NODE = "seam_convergence_probe"
+# The first PRODUCTION window (WindowPlan default k=0) — the probe measures
+# a window T4 actually solves, never a probe-only placement.
+SEAM_PROBE_W_INDEX = 0
+# Launch gate (the anchor gate's convention): MemAvailable >= 2 x predicted
+# peak, measured at call time — never a constant.
+SEAM_RAM_GATE_FACTOR = 2.0
 # CMEMS-MY obs times are days since 1993-01-01; the solver frame is days
 # since 2017-01-01 (the Stage-0 probe's rebase constant).
 _DAYS_1993_TO_2017 = 8766.0
@@ -807,6 +829,374 @@ def probe(
         raise typer.Exit(code=1)
     typer.echo(
         f"PROBE {PROBE_TILE} done: wall {row['wall_s']:.1f} s, "
+        f"peak {row['peak_rss_mib']:.0f} MiB"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Owner PIN 26(c) — the seam-frame convergence probe (measure the frames T4
+# will actually solve, BEFORE spending T4)
+# ---------------------------------------------------------------------------
+
+
+def _mem_available_mib() -> float:
+    """MemAvailable read AT CALL TIME (the co-tenant box's headroom moves)."""
+    for line in Path("/proc/meminfo").read_text().splitlines():
+        if line.startswith("MemAvailable:"):
+            return float(line.split()[1]) / 1024.0
+    raise RuntimeError("MemAvailable not found in /proc/meminfo")  # pragma: no cover
+
+
+def seam_ram_gate(*, peak_model_mib: float, mem_available_mib: float) -> dict[str, Any]:
+    """The launch gate: MemAvailable >= 2 x predicted peak (the anchor rule).
+
+    Args:
+        peak_model_mib: ``size_tile``'s predicted peak RSS [MiB].
+        mem_available_mib: Measured MemAvailable [MiB].
+
+    Returns:
+        The recorded gate block (``passed`` False = never launch).
+    """
+    threshold = SEAM_RAM_GATE_FACTOR * peak_model_mib
+    return {
+        "mem_available_mib": mem_available_mib,
+        "threshold_mib": threshold,
+        "passed": mem_available_mib >= threshold,
+    }
+
+
+def seam_probe_size_model(n_obs: int) -> dict[str, float]:
+    """Task-22 sizing arithmetic at the SEAM geometry, m=1, ONE window.
+
+    Args:
+        n_obs: In-window observation count (estimated before the load,
+            measured after it).
+
+    Returns:
+        The ``size_tile`` model dict at the probe's own geometry.
+    """
+    from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_basis import N_DIR  # noqa: PLC0415
+    from sverdrup.methods.miost_sizing import KM_PER_DEG, size_tile  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    frame = registry_frame(SEAM_PROBE_TILE)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    solve = frame.solve_bbox
+    mid_lat = 0.5 * (solve.lat_min + solve.lat_max)
+    d_x_km = (
+        (solve.lon_max - solve.lon_min) * KM_PER_DEG * math.cos(math.radians(mid_lat))
+    )
+    d_y_km = (solve.lat_max - solve.lat_min) * KM_PER_DEG
+    return size_tile(
+        d_x_km=d_x_km,
+        d_y_km=d_y_km,
+        n_grid_nodes=int(grid.x.size * grid.y.size),
+        window_days=WindowPlan().w_days,
+        n_windows=1,
+        m_members=SEAM_PROBE_M,
+        n_obs=n_obs,
+        alpha=float(PHASE13_WINNER_PARAMS["spacing_alpha"]),
+        n_dir=N_DIR,
+        lam_min=_SIZING_LAM_MIN_KM,
+    )
+
+
+def _seam_obs_estimate() -> int:
+    """Pre-load in-window obs estimate: the signed box basis by area ratio."""
+    from sverdrup.methods.miost_sizing import (  # noqa: PLC0415
+        BOX_LAT,
+        BOX_LON,
+        BOX_W0_OBS_BASIS,
+    )
+
+    solve = registry_frame(SEAM_PROBE_TILE).solve_bbox
+    box_area = (BOX_LON[1] - BOX_LON[0]) * (BOX_LAT[1] - BOX_LAT[0])
+    tile_area = (solve.lon_max - solve.lon_min) * (solve.lat_max - solve.lat_min)
+    return int(BOX_W0_OBS_BASIS * tile_area / box_area)
+
+
+def build_seam_probe_row(
+    *,
+    tile: str,
+    frame: dict[str, Any],
+    window: list[float],
+    superobs_cfg: dict[str, Any] | None,
+    n_obs: int,
+    n_grid_nodes: int,
+    wall_s: float,
+    peak_rss_mib: float,
+    pcg: Iterable[dict[str, Any]],
+    pcg_rtol: float,
+    pcg_maxiter: int,
+    config: dict[str, Any],
+    model: dict[str, float],
+    ram_gate: dict[str, Any],
+    date: str,
+) -> dict[str, Any]:
+    """Assemble the PIN-26(c) seam convergence-probe row — PURE, schema pinned.
+
+    A CONVERGENCE measurement, never an evaluation: NO scores block, NO
+    seal_sha, ``m`` pinned to 1. The verdict comes from the SAME
+    :func:`classify_pcg_legs` the probe and production rows use.
+
+    Args:
+        tile: The seam tile probed (registry name).
+        frame: Frame provenance block (core/overlap/halo/solve bbox).
+        window: ``[start, end]`` in solver days.
+        superobs_cfg: Applied super-obs cfg (None on the dc2021a path).
+        n_obs: Measured in-window (support-widened) observation count.
+        n_grid_nodes: Solve grid node count.
+        wall_s: Measured wall time [s].
+        peak_rss_mib: Measured peak RSS [MiB].
+        pcg: Per-leg PCG convergence rows (mean + member-batch).
+        pcg_rtol: The solver rtol ACTUALLY used.
+        pcg_maxiter: The solver iteration cap ACTUALLY used.
+        config: Solver-configuration provenance (missions, rspec).
+        model: The ``size_tile`` output at the probe's own geometry.
+        ram_gate: The launch-gate record from :func:`seam_ram_gate`.
+        date: ISO date string (passed in — purity).
+
+    Returns:
+        The seam-probe row (exactly the pinned key set).
+
+    Raises:
+        KeyError: Unknown tile name.
+    """
+    spec = TILES.get(tile)
+    if spec is None:
+        raise KeyError(f"unknown tile {tile!r}; known: {sorted(TILES)}")
+    pcg_rows, capped = classify_pcg_legs(pcg, rtol=pcg_rtol, maxiter=pcg_maxiter)
+    return {
+        "label": "PROBE",
+        "tile": tile,
+        "source": str(spec["source"]),
+        "frame": frame,
+        "window": window,
+        "m": SEAM_PROBE_M,
+        "superobs_cfg": superobs_cfg,
+        "n_obs": n_obs,
+        "n_grid_nodes": n_grid_nodes,
+        "wall_s": wall_s,
+        "peak_rss_mib": peak_rss_mib,
+        "pcg": pcg_rows,
+        "convergence": "CAPPED" if capped else "CONVERGED",
+        "config": config,
+        "model": model,
+        "ram_gate": ram_gate,
+        "date": date,
+    }
+
+
+def _seam_probe_solve(maxiter: int) -> dict[str, Any]:
+    """The PIN-26(c) measured leg: dc2021a load, ONE window, m=1, measure.
+
+    Mirrors the anchor gate's production dc2021a substrate (five mapping
+    missions, phase-13 winner params, structured RSpec) at the seam frame
+    and the FIRST production window, so the iteration counts transfer to
+    what T4 will actually run. No maps are scored and none are written as
+    products: this leg exists to report iterations + final residual.
+
+    Args:
+        maxiter: PCG iteration cap (raised so the probe reports a
+            REQUIREMENT rather than a cap).
+
+    Returns:
+        Measurement kwargs for :func:`build_seam_probe_row` (all but
+        ``date`` and ``ram_gate``).
+    """
+    import resource  # noqa: PLC0415
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.contract import BBox  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        frame_grid,
+        frame_obs,
+    )
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.core.seeding import derive_seed  # noqa: PLC0415
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        mean_fields,
+        merged_members,
+    )
+    from sverdrup.methods.miost import (  # noqa: PLC0415
+        PHASE13_DELTAS,
+        PHASE13_WINNER_PARAMS,
+        Miost,
+    )
+    from sverdrup.methods.miost_basis import lonlat_to_km  # noqa: PLC0415
+    from sverdrup.methods.miost_rspec import RSpec  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    def _echo(msg: str) -> None:
+        print(f"[seam-probe] {msg}", flush=True)
+
+    frame = registry_frame(SEAM_PROBE_TILE)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    n_nodes = int(grid.x.size * grid.y.size)
+    _echo(f"frame {SEAM_PROBE_TILE}: {grid.x.size}x{grid.y.size} = {n_nodes} nodes")
+
+    obs = Dc2021aSource().load(
+        BBox(0.0, 360.0, -90.0, 90.0),
+        np.datetime64("2016-11-01"),
+        np.datetime64("2018-03-01"),
+        missions=DC_MAPPING_FIVE,
+    )
+    framed = frame_obs(obs, frame, RESOLUTION_DEG)
+    del obs
+    _echo(f"framed obs: {len(framed.values())}")
+
+    window = WindowPlan().windows[SEAM_PROBE_W_INDEX]
+    t = framed.coords()[:, 2]
+    in_window = (t >= window.start_day - 12.0) & (t <= window.end_day + 12.0)
+    n_obs_window = int(in_window.sum())
+    model = seam_probe_size_model(n_obs_window)
+    _echo(f"window {window.id}: n_obs {n_obs_window}, model " + json.dumps(model))
+
+    solve = frame.solve_bbox
+    xs, ys = lonlat_to_km(
+        np.array([solve.lon_min, solve.lon_max]),
+        np.array([solve.lat_min, solve.lat_max]),
+    )
+    x0, y0 = float(xs[0]), float(ys[0])
+    method = Miost(
+        basis_domain=(x0, y0, float(xs[1]) - x0, float(ys[1]) - y0),
+        pcg_maxiter=maxiter,
+        rspec=RSpec(deltas=dict(PHASE13_DELTAS)),
+    )
+    method._plan = WindowPlan(starts=(window.start_day,))  # noqa: SLF001
+    provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
+    root = derive_seed("miost", "phase14-stage1-seam-probe", SEAM_PROBE_TILE, 0)
+    log_start = len(miost_mod.CONVERGENCE_LOG)
+    t_wall = time.monotonic()
+    spec, etas_a, _anoms, starts = merged_members(
+        method, framed, grid, provider, SEAM_PROBE_M, root
+    )
+    mean_fields(
+        spec,
+        starts,
+        etas_a,
+        grid,
+        method._plan,  # noqa: SLF001
+        [window.start_day + window.w_days / 2.0],
+    )
+    wall_s = time.monotonic() - t_wall
+    peak_mib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+    pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
+    _echo(f"wall {wall_s:.1f} s, peak {peak_mib:.0f} MiB, legs " + json.dumps(pcg_rows))
+
+    return {
+        "tile": SEAM_PROBE_TILE,
+        "frame": {
+            "core": list(TILES[SEAM_PROBE_TILE]["core"]),
+            "overlap_deg": frame.overlap_deg,
+            "halo_deg": frame.halo_deg,
+            "missing_neighbors": sorted(frame.missing_neighbors),
+            "solve_bbox": [solve.lon_min, solve.lon_max, solve.lat_min, solve.lat_max],
+            "resolution_deg": RESOLUTION_DEG,
+        },
+        "window": [window.start_day, window.end_day],
+        "superobs_cfg": None,
+        "n_obs": n_obs_window,
+        "n_grid_nodes": n_nodes,
+        "wall_s": wall_s,
+        "peak_rss_mib": peak_mib,
+        "pcg": pcg_rows,
+        "pcg_rtol": float(method.pcg_rtol),
+        "pcg_maxiter": int(method.pcg_maxiter),
+        "config": {
+            "missions": list(DC_MAPPING_FIVE),
+            "rspec": "phase13-deltas (the winner/anchor-gate dc2021a config)",
+        },
+        "model": model,
+    }
+
+
+@app.command()
+def seam_probe(
+    maxiter: Annotated[
+        int,
+        typer.Option(
+            help=(
+                "PCG iteration cap for the seam probe (default 2000 — high "
+                "enough that the probe reports a REQUIREMENT, not a cap)."
+            )
+        ),
+    ] = SEAM_PROBE_MAXITER,
+) -> None:
+    """The PIN-26(c) seam-frame convergence probe — BEFORE any T4 spend.
+
+    ONE seam frame (``seam_n``, dc2021a), m=1, ONE production window, cap
+    raised to 2000. Records iterations + final residual for BOTH legs
+    (mean and member-batch) under ``phase14.stage1.seam_convergence_probe``
+    — PROBE-labeled, no scores. RAM-gated on MemAvailable >= 2x the
+    predicted peak, and a CAPPED leg is recorded and then exits nonzero:
+    ``seam_read`` REFUSES on residual > rtol, so an unmeasured cap would
+    cost the whole T4 spend after the fact.
+
+    Args:
+        maxiter: PCG iteration cap passed through to the solver.
+
+    Raises:
+        typer.Exit: Nonzero on a failed RAM gate (nothing runs), on a
+            missing solve leg, and on a CAPPED measurement (recorded
+            first — an immediate owner surface).
+    """
+    model_pre = seam_probe_size_model(_seam_obs_estimate())
+    gate = seam_ram_gate(
+        peak_model_mib=float(model_pre["peak_model_mib"]),
+        mem_available_mib=_mem_available_mib(),
+    )
+    typer.echo("ram_gate: " + json.dumps(gate))
+    if not gate["passed"]:
+        typer.echo(
+            f"REFUSED: MemAvailable {gate['mem_available_mib']:.0f} MiB < "
+            f"{SEAM_RAM_GATE_FACTOR:.0f} x predicted peak "
+            f"{model_pre['peak_model_mib']:.0f} MiB — the probe WAITS; "
+            "never launch over headroom (fork-g pin 4)"
+        )
+        raise typer.Exit(code=1)
+    measured = _seam_probe_solve(maxiter)
+    row = build_seam_probe_row(
+        date=datetime.now(UTC).date().isoformat(), ram_gate=gate, **measured
+    )
+    record_probe_row(row, evidence_path=EVIDENCE, node=SEAM_PROBE_NODE)
+    typer.echo(
+        f"convergence: {row['convergence']} "
+        f"(node phase14.stage1.{SEAM_PROBE_NODE}); legs "
+        + json.dumps(
+            [
+                {
+                    "kind": leg.get("kind", "mean"),
+                    "iterations": leg["iterations"],
+                    "final_rel_residual": leg["final_rel_residual"],
+                }
+                for leg in row["pcg"]
+            ]
+        )
+    )
+    if len(row["pcg"]) < 2:
+        typer.echo(
+            "STOP: fewer than the two expected PCG legs (mean + "
+            "member-batch) were recorded — a row that cannot show both "
+            "legs is not a convergence measurement"
+        )
+        raise typer.Exit(code=1)
+    if row["convergence"] == "CAPPED":
+        typer.echo(
+            f"STOP: a seam leg CAPPED at maxiter {maxiter} over rtol — this "
+            "is an IMMEDIATE owner surface (the row IS recorded). T4 must "
+            "not launch: seam_read REFUSES on residual > rtol, so every "
+            "seam solve would be spent and then rejected."
+        )
+        raise typer.Exit(code=1)
+    typer.echo(
+        f"SEAM PROBE {SEAM_PROBE_TILE} done: wall {row['wall_s']:.1f} s, "
         f"peak {row['peak_rss_mib']:.0f} MiB"
     )
 

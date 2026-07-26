@@ -1104,3 +1104,291 @@ def test_solve_leg_stub_reports_the_cap_it_was_handed() -> None:
     """
     with pytest.raises(NotImplementedError, match="1200"):
         _mod._solve_leg("seam_n", m=3, days_stride=1, maxiter=1200)
+
+
+# ---------------------------------------------------------------------------
+# Owner ruling PIN 26(c) — the seam-frame convergence probe (measure the
+# frames T4 will actually solve, BEFORE spending T4)
+# ---------------------------------------------------------------------------
+
+# Pinned seam-probe row schema. As with the sizing probe: NO scores, NO
+# seal_sha — a probe row carrying a µ would be evaluation-bearing.
+_SEAM_KEYS = {
+    "label",
+    "tile",
+    "source",
+    "frame",
+    "window",
+    "m",
+    "superobs_cfg",
+    "n_obs",
+    "n_grid_nodes",
+    "wall_s",
+    "peak_rss_mib",
+    "pcg",
+    "convergence",
+    "config",
+    "model",
+    "ram_gate",
+    "date",
+}
+
+
+def _seam_measurement(
+    iterations: int = 210,
+    residual: float = 9.4e-7,
+    maxiter: int = 2000,
+) -> dict[str, Any]:
+    """Injected fake seam measurement (defaults: both legs converged)."""
+    return {
+        "tile": "seam_n",
+        "frame": {
+            "core": [295.0, 305.0, 38.0, 43.0],
+            "solve_bbox": [295.0, 305.0, 36.0, 43.0],
+        },
+        "window": [-18.0, 42.0],
+        "superobs_cfg": None,
+        "n_obs": 4200,
+        "n_grid_nodes": 1887,
+        "wall_s": 61.5,
+        "peak_rss_mib": 900.0,
+        "pcg": [
+            {
+                "window": "w-00018.0+60",
+                "iterations": iterations,
+                "final_rel_residual": residual,
+            },
+            {
+                "window": "w-00018.0+60",
+                "kind": "member-batch",
+                "iterations": iterations + 30,
+                "final_rel_residual": residual,
+            },
+        ],
+        "pcg_rtol": 1.0e-6,
+        "pcg_maxiter": maxiter,
+        "config": {"missions": ["alg"], "rspec": "phase13-deltas"},
+        "model": {"wall_est_s": 90.0, "peak_model_mib": 1000.0},
+    }
+
+
+_RAM_GATE_OK = {
+    "mem_available_mib": 8000.0,
+    "threshold_mib": 2000.0,
+    "passed": True,
+}
+
+
+def test_seam_probe_row_schema_exactly_pinned() -> None:
+    """build_seam_probe_row keys == the pinned seam-probe set, nothing else.
+
+    Bug caught: a scores/µ block making an evaluation-bearing artifact out
+    of a convergence probe, or the ram_gate / model provenance silently
+    dropped so the recorded numbers cannot be re-grounded.
+    """
+    row = _mod.build_seam_probe_row(
+        date="2026-07-26", ram_gate=_RAM_GATE_OK, **_seam_measurement()
+    )
+    assert set(row) == _SEAM_KEYS
+    assert row["ram_gate"] == _RAM_GATE_OK
+
+
+def test_seam_probe_row_pins_probe_label_m1_and_dc2021a_source() -> None:
+    """Seam probe row: PROBE label, m == 1, registry dc2021a source.
+
+    Bug caught: a STAGE1-EVIDENCE mislabel presenting a scoreless probe as
+    a scored tile run, an m=100 production run billed as a cheap probe, or
+    the source drifting off the registry's Stage-0 pin-4 map (the seam
+    frames are dc2021a, NOT cmems_my — a cmems seam probe would measure
+    the wrong obs density entirely).
+    """
+    row = _mod.build_seam_probe_row(
+        date="2026-07-26", ram_gate=_RAM_GATE_OK, **_seam_measurement()
+    )
+    assert row["label"] == "PROBE"
+    assert row["m"] == 1
+    assert row["tile"] == "seam_n"
+    assert row["source"] == "dc2021a"
+    assert row["date"] == "2026-07-26"
+
+
+@pytest.mark.parametrize(
+    ("iterations", "residual", "want"),
+    [
+        (1970, 1.4e-6, "CAPPED"),  # member leg lands at 2000 over rtol
+        (210, 9.4e-7, "CONVERGED"),
+    ],
+)
+def test_seam_probe_row_convergence_verdict(
+    iterations: int, residual: float, want: str
+) -> None:
+    """The seam row reports CAPPED when a leg hits the probe cap over rtol.
+
+    Bug caught: a seam probe that cannot say it capped — the whole point of
+    running it before T4 is that seam_read REFUSES on residual > rtol, so
+    an unreported cap costs the entire T4 spend after the fact. (The
+    member-batch leg carries +30 iters in the fake: at 1970 it is the leg
+    that reaches 2000, exactly as in every measurement to date.)
+    """
+    row = _mod.build_seam_probe_row(
+        date="2026-07-26",
+        ram_gate=_RAM_GATE_OK,
+        **_seam_measurement(iterations=iterations, residual=residual),
+    )
+    assert row["convergence"] == want
+
+
+def test_seam_probe_row_pcg_legs_carry_rtol_and_maxiter() -> None:
+    """Both seam legs record the rtol/cap they ran under.
+
+    Bug caught: legs recorded bare, so a future reader of the seam evidence
+    cannot tell whether 210 iterations was a converged solve or a cap.
+    """
+    row = _mod.build_seam_probe_row(
+        date="2026-07-26", ram_gate=_RAM_GATE_OK, **_seam_measurement()
+    )
+    assert len(row["pcg"]) == 2
+    for leg in row["pcg"]:
+        assert leg["rtol"] == 1.0e-6
+        assert leg["maxiter"] == 2000
+    assert [leg["iterations"] for leg in row["pcg"]] == [210, 240]
+
+
+def test_seam_ram_gate_admits_at_exactly_twice_the_predicted_peak() -> None:
+    """RAM gate: pass iff MemAvailable >= 2 x predicted peak (>=, not >).
+
+    Bug caught: a strict > drift refusing a launch that exactly meets the
+    2x convention, or an inverted comparison admitting a launch with LESS
+    headroom than the predicted peak (the exit-137 class). Boundary values
+    hand-computed: 2 x 1000 = 2000.
+    """
+    exact = _mod.seam_ram_gate(peak_model_mib=1000.0, mem_available_mib=2000.0)
+    assert exact == {
+        "mem_available_mib": 2000.0,
+        "threshold_mib": 2000.0,
+        "passed": True,
+    }
+    short = _mod.seam_ram_gate(peak_model_mib=1000.0, mem_available_mib=1999.0)
+    assert short["passed"] is False
+
+
+def test_seam_probe_cli_refuses_launch_when_ram_gate_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failing RAM gate refuses BEFORE the solve; nothing is loaded.
+
+    Bug caught: launching the seam solve over headroom — the OOM/silent
+    kill class the fork-g pin-4 ordering exists to prevent; the refusal
+    must fire before any obs load, not after.
+    """
+    solved: list[int] = []
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 100.0)
+    monkeypatch.setattr(
+        _mod, "_seam_probe_solve", lambda maxiter: solved.append(maxiter)
+    )
+    res = runner.invoke(_mod.app, ["seam-probe"])
+    assert res.exit_code != 0
+    assert solved == []
+    assert "MemAvailable" in res.output
+
+
+def test_seam_probe_cli_records_at_the_pinned_node_and_exits_zero(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A converged seam probe lands at phase14.stage1.seam_convergence_probe.
+
+    Bug caught: recording at the wrong node (T4's gate reads this exact
+    key), or clobbering the standing evidence store (the P0-2 class).
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(
+        _mod, "_seam_probe_solve", lambda maxiter: _seam_measurement(maxiter=maxiter)
+    )
+    res = runner.invoke(_mod.app, ["seam-probe"])
+    assert res.exit_code == 0, res.output
+    stored = json.loads(evid.read_text())
+    assert stored["phase13"] == {"kept": True}
+    row = stored["phase14"]["stage1"]["seam_convergence_probe"]
+    assert row["convergence"] == "CONVERGED"
+    assert row["label"] == "PROBE"
+    assert all(leg["maxiter"] == 2000 for leg in row["pcg"])
+
+
+def test_seam_probe_cli_records_then_stops_when_a_leg_caps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A capped seam leg is RECORDED, then exits nonzero (owner surface).
+
+    Bug caught: stop-before-record (the evidence lost exactly when the
+    owner needs it) or a capped seam probe exiting 0 and letting T4 launch
+    against frames whose solves cannot meet the rtol seam_read demands.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(
+        _mod,
+        "_seam_probe_solve",
+        lambda maxiter: _seam_measurement(iterations=1970, residual=1.4e-6),
+    )
+    res = runner.invoke(_mod.app, ["seam-probe"])
+    assert res.exit_code != 0
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["seam_convergence_probe"]["convergence"] == (
+        "CAPPED"
+    )
+    assert "STOP" in res.output
+
+
+def test_seam_probe_cli_default_maxiter_is_2000(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The seam probe defaults to the owner's 2000 headroom cap.
+
+    Bug caught: probing at the Stage-1 production cap (or the 500 library
+    default) — a probe that caps tells you nothing except that it capped,
+    which is exactly the measurement failure pin 26 was raised about.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    monkeypatch.setattr(_mod, "EVIDENCE", tmp_path / "evidence.json")
+    seen: list[int] = []
+
+    def _spy(maxiter: int) -> dict[str, Any]:
+        seen.append(maxiter)
+        return _seam_measurement(maxiter=maxiter)
+
+    monkeypatch.setattr(_mod, "_seam_probe_solve", _spy)
+    res = runner.invoke(_mod.app, ["seam-probe"])
+    assert res.exit_code == 0, res.output
+    assert seen == [2000]
+    assert _mod.SEAM_PROBE_MAXITER == 2000
+
+
+def test_seam_probe_geometry_is_the_registry_seam_frame() -> None:
+    """The probe measures the frame T4 solves: seam_n, 51 x 37 nodes.
+
+    Bug caught: probing a different (e.g. anchor-sized or core-only) box —
+    the convergence number would not transfer to T4 at all. Node counts
+    measured independently with the frame grid before pinning: the solve
+    bbox [295,305]x[36,43] at 0.2 deg gives 51 lon nodes and 37 lat nodes
+    (36 by arithmetic + the recorded fp-overshoot extra node), 1887 total —
+    well under the anchor's 51x52 = 2652.
+    """
+    from sverdrup.application.spatial_tiles import frame_grid
+
+    assert _mod.SEAM_PROBE_TILE == "seam_n"
+    grid = frame_grid(_mod.registry_frame(_mod.SEAM_PROBE_TILE), _mod.RESOLUTION_DEG)
+    assert (grid.x.size, grid.y.size) == (51, 37)
+    assert grid.x.size * grid.y.size < 2652
