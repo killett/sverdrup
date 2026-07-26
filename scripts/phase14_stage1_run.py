@@ -39,8 +39,15 @@ import typer
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from types import ModuleType
 
+    import numpy as np
+    from numpy.typing import ArrayLike, NDArray
+
+    from sverdrup.adapters.altimetry.contract import BBox
     from sverdrup.application.spatial_tiles import TileFrame
+    from sverdrup.core.grid import GridSpec
+    from sverdrup.validation.seam_metrics import SeamRead
 
 app = typer.Typer(add_completion=False)
 
@@ -1199,6 +1206,1658 @@ def seam_probe(
         f"SEAM PROBE {SEAM_PROBE_TILE} done: wall {row['wall_s']:.1f} s, "
         f"peak {row['peak_rss_mib']:.0f} MiB"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — the seam pair: PRIMARY PAIR READ + the secondary ORACLE READ
+#
+# TWO reads, not one. They answer DIFFERENT questions and are recorded
+# side by side:
+#
+#   * PRIMARY (the rubric's pre-registered verdict route): R_seam on
+#     ``delta(x) = field_A(x) - field_B(x)`` at overlap points, EACH
+#     TILE'S OWN SOLVE, BEFORE blending — the blend hides exactly what
+#     this measures.
+#   * ORACLE (secondary, keeps its own question — "does the blend
+#     work?"): the BLENDED field against the seamless-anchor truth
+#     (Task 3's maps, consumed — the anchor is never re-solved here).
+#
+# Both ride the ONE evaluation domain: the 2·overlap strip centred on
+# the shared core boundary (owner ruling). Both ride BOTH field kinds
+# (mean + σ) through the unchanged T10 machinery.
+# ---------------------------------------------------------------------------
+
+SEAM_PAIR_TILES = ("seam_n", "seam_s")
+SEAM_PAIR_NAME = "seam_n|seam_s"
+SEAM_PAIR_M = 100
+# Era is DEGENERATE at Stage 1 (2017 only) and resolution is single —
+# that is a ROW COUNT, not a schema excuse: both keys ride every row so
+# Stage 2 is a row addition, not a migration.
+SEAM_ERA = "2017"
+SEAM_N_DAYS = 365
+# The seam at 38.0N is a line of constant LATITUDE, so the axis
+# perpendicular to it is latitude — always -2 in the (time, lat, lon)
+# map convention this driver writes and reads.
+SEAM_PERP_AXIS = -2
+# The rubric's interior trim: "every node >= overlap-width from any core
+# boundary", applied at the tiling's overlap constant to EVERY interior
+# (the two tiles' and the seamless anchor's). Uniform on purpose: the
+# pair and oracle denominators must differ ONLY in WHICH solve's
+# interior they pool, never in how "interior" is defined. (The anchor
+# frame's own overlap is 0.0 — trimming at its own width would pool the
+# outermost solve-domain rows, where the basis is least constrained,
+# into the flagship denominator.)
+INTERIOR_TRIM_DEG = 2.0
+SEAM_STRIP_NAME = "the 2·overlap strip"
+# The solver's shipped relative tolerance (Miost default). Stated here so
+# the floor probe's "deeper" claim is checkable without a heavy import;
+# the recorded rows always carry the rtol the solve ACTUALLY ran under.
+SEAM_PRODUCTION_RTOL = 1.0e-6
+SEAM_PAIR_NODE = "seam_pair"
+SEAM_ROWS_NODE = "seam_rows"
+ROUTE_PAIR = "pair"
+ROUTE_ORACLE = "oracle"
+FIELD_KIND_MEAN = "mean"
+FIELD_KIND_SIGMA = "sigma"
+
+# Artifact names (persisted BEFORE the compare phase — the anchor-gate
+# lesson: a compare-phase death must never cost the solves).
+SEAM_MEAN_MAPS = {t: STAGE1_DIR / f"{t}_signed_maps.nc" for t in SEAM_PAIR_TILES}
+SEAM_STD_MAPS = {t: STAGE1_DIR / f"{t}_member_std_maps.nc" for t in SEAM_PAIR_TILES}
+SEAM_MEMBER_STORE = {t: STAGE1_DIR / f"{t}_member_store.npz" for t in SEAM_PAIR_TILES}
+SEAM_FLOOR_STORE = STAGE1_DIR / "seam_floor_probe.npz"
+# The seamless truth — Task 3's OUTPUT, read-only (never re-solved).
+ANCHOR_MEAN_MAPS = STAGE1_DIR / "anchor_signed_maps.nc"
+ANCHOR_STD_MAPS = STAGE1_DIR / "anchor_member_std_maps.nc"
+ANCHOR_MEMBER_STORE = STAGE1_DIR / "anchor_gate_member_store.npz"
+
+# ---- Rule 0: the floor probe (rubric) + owner PIN 23 ----------------------
+FLOOR_FACTOR = 3.0
+# Deeper on BOTH axes. The rubric's construction says "maxiter +1000";
+# on its own that is inert HERE, because the production seam solve
+# CONVERGES at ~407 iterations against a 1200 cap — more headroom would
+# return the identical answer and F would come out exactly 0, licensing
+# every verdict vacuously. So the probe also tightens rtol by three
+# decades; the +1000 is what buys the iterations that tightening costs.
+FLOOR_RTOL = 1.0e-9
+FLOOR_MAXITER = STAGE1_PCG_MAXITER + 1000
+FLOOR_W_INDEX = 0
+FLOOR_M = SEAM_PAIR_M
+FLOOR_M_JUSTIFICATION = (
+    "m=100, NOT pin 20(a)'s m=1 — stated here because the pin requires "
+    "it: the σ field kind has no floor at m=1 (member-std is taken about "
+    "the sample mean with the (m-1) denominator, undefined for a single "
+    "member), and the sealed rubric carries a floor per VERDICT-BEARING "
+    "ROUTE, of which σ is one. Solving the probe at the production m "
+    "against the production run's OWN window-0 coefficients (same root, "
+    "same window, same m — ONLY the tolerance differs) is also the "
+    "cheapest way to obtain the σ floor: it adds one deeper window solve "
+    "per tile and re-uses the production solve as the reference. Pin "
+    "20(a)'s physics claim is untouched: m adds RHS columns to the same "
+    "operator and cannot change the convergence floor."
+)
+UNMEASURED_SOLVER_FLOOR = "UNMEASURED (solver floor)"
+UNMEASURED_PENDING_OWNER = "UNMEASURED (pending owner — floor-probe WAIT)"
+
+# ---- TWO D_int DENOMINATORS — DIFFERENT BY DESIGN, PINNED ADJACENT -------
+# WHY THEY DIFFER (do NOT "fix" this inconsistency): the two reads answer
+# different questions, so they normalize against different fields. The
+# PAIR read asks "do the two tile solves agree where they overlap?" and
+# the rubric (R-06/R-07) anchors that against the TILES' own field
+# variability — pooled core interiors of BOTH tiles. The ORACLE read asks
+# "does the blended product match the seamless truth?" and the rubric
+# (R-19) anchors that against the SEAMLESS solve's own variability, the
+# only field the oracle claims to reproduce. A future reader who unifies
+# them silently breaks the flagship comparison: the oracle ratio would
+# start being scaled by the very tiles it is supposed to audit.
+PAIR_D_INT_SOURCE = (
+    "pooled core interiors of both seam tiles (rubric R-06/R-07) — the "
+    "PAIR read's denominator"
+)
+ORACLE_D_INT_SOURCE = (
+    "the seamless anchor solve's core interior (rubric R-19) — the "
+    "ORACLE read's denominator"
+)
+
+# ---- review pin 13: the geometry caveat, verbatim, on every row ----------
+SEAM_GEOMETRY = (
+    "10x5 halves inside the anchor footprint — NOT D1 production geometry (15x15)"
+)
+SEAM_NON_TRANSFER_NOTE = (
+    "this verdict is not a production-geometry seam reading: it is taken "
+    "on 10x5 halves inside the anchor footprint, and the "
+    "feasibility-frontier watch item (worst-seam grew with TILE COUNT, "
+    "PROGRESS 2026-07-01) sits on the far side of that gap — discipline "
+    "7 applied to a positive result"
+)
+ORACLE_NOTE = "no published precedent — gap-register (T11)"
+
+
+def seam_strip_bbox() -> BBox:
+    """The ONE evaluation domain: the 2·overlap strip (owner ruling).
+
+    DERIVED from the two registry frames — the shared core boundary and
+    the tiling overlap — never typed, so a frame edit cannot silently
+    desync the domain from the geometry it is supposed to describe.
+
+    Returns:
+        The strip bbox (shared lon span x boundary +/- overlap).
+
+    Raises:
+        RuntimeError: If the pair does not share a core boundary or the
+            two frames disagree on the overlap width.
+    """
+    from sverdrup.adapters.altimetry.contract import BBox  # noqa: PLC0415
+
+    north = registry_frame("seam_n")
+    south = registry_frame("seam_s")
+    if north.core.lat_min != south.core.lat_max:
+        raise RuntimeError(
+            f"seam pair does not share a core boundary: seam_n core starts "
+            f"at {north.core.lat_min} but seam_s core ends at "
+            f"{south.core.lat_max}"
+        )
+    if north.overlap_deg != south.overlap_deg:
+        raise RuntimeError(
+            f"seam pair overlap mismatch: {north.overlap_deg} vs "
+            f"{south.overlap_deg} — the strip width is 2 x overlap and "
+            "cannot be defined from two different overlaps"
+        )
+    boundary = float(north.core.lat_min)
+    half = float(north.overlap_deg)
+    return BBox(
+        max(north.core.lon_min, south.core.lon_min),
+        min(north.core.lon_max, south.core.lon_max),
+        boundary - half,
+        boundary + half,
+    )
+
+
+def strip_mask(grid: GridSpec, bbox: BBox) -> tuple[NDArray[np.bool_], ...]:
+    """Node masks (lat, lon) selecting a bbox on a frame grid.
+
+    Args:
+        grid: The tile's solve grid.
+        bbox: The region to select.
+
+    Returns:
+        ``(lat_mask, lon_mask)`` boolean masks into ``grid.y`` / ``grid.x``.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    tol = 1.0e-6  # grid nodes carry fp accumulation (43.2000000000001)
+    lat = (np.asarray(grid.y) >= bbox.lat_min - tol) & (
+        np.asarray(grid.y) <= bbox.lat_max + tol
+    )
+    lon = (np.asarray(grid.x) >= bbox.lon_min - tol) & (
+        np.asarray(grid.x) <= bbox.lon_max + tol
+    )
+    return np.asarray(lat), np.asarray(lon)
+
+
+def core_interior_mask(
+    frame: TileFrame, grid: GridSpec, trim_deg: float = INTERIOR_TRIM_DEG
+) -> tuple[NDArray[np.bool_], ...]:
+    """The rubric's core interior: every node >= trim from any core boundary.
+
+    Args:
+        frame: The tile frame.
+        grid: The tile's solve grid.
+        trim_deg: Trim width (see :data:`INTERIOR_TRIM_DEG`).
+
+    Returns:
+        ``(lat_mask, lon_mask)`` selecting the core interior.
+
+    Raises:
+        ValueError: If the trim leaves no interior node (a frame too small
+            to carry the rubric's denominator must refuse, never silently
+            pool the seam itself).
+    """
+    from sverdrup.adapters.altimetry.contract import BBox  # noqa: PLC0415
+
+    core = frame.core
+    inner = BBox(
+        core.lon_min + trim_deg,
+        core.lon_max - trim_deg,
+        core.lat_min + trim_deg,
+        core.lat_max - trim_deg,
+    )
+    lat, lon = strip_mask(grid, inner)
+    if not lat.any() or not lon.any():
+        raise ValueError(
+            f"core interior empty after trimming {trim_deg} deg from core "
+            f"{core} — D_int cannot be pooled on this frame"
+        )
+    return lat, lon
+
+
+def pair_read(
+    *,
+    mean_a: ArrayLike,
+    mean_b: ArrayLike,
+    sigma_a: ArrayLike,
+    sigma_b: ArrayLike,
+    interior_mean_a: ArrayLike,
+    interior_mean_b: ArrayLike,
+    interior_sigma_a: ArrayLike,
+    interior_sigma_b: ArrayLike,
+    residual_a: float,
+    rtol_a: float,
+    residual_b: float,
+    rtol_b: float,
+    axis: int = SEAM_PERP_AXIS,
+) -> SeamRead:
+    """The PRIMARY read: each tile's OWN solve on the strip, before blending.
+
+    D_INT PIN (PAIR) — the pooled core interiors of BOTH tiles
+    (:data:`PAIR_D_INT_SOURCE`, rubric R-06/R-07). Read the
+    why-they-differ comment beside :data:`ORACLE_D_INT_SOURCE` before
+    changing either.
+
+    Args:
+        mean_a: Tile A mean map on the 2·overlap strip.
+        mean_b: Tile B mean map on the same strip nodes.
+        sigma_a: Tile A member-std map on the strip.
+        sigma_b: Tile B member-std map on the strip.
+        interior_mean_a: Tile A core-interior mean field.
+        interior_mean_b: Tile B core-interior mean field.
+        interior_sigma_a: Tile A core-interior member-std field.
+        interior_sigma_b: Tile B core-interior member-std field.
+        residual_a: Tile A worst PCG final relative residual.
+        rtol_a: Tile A solver rtol.
+        residual_b: Tile B worst PCG final relative residual.
+        rtol_b: Tile B solver rtol.
+        axis: Axis perpendicular to the seam.
+
+    Returns:
+        The assembled :class:`SeamRead` (both field kinds).
+    """
+    from sverdrup.validation.seam_metrics import seam_read  # noqa: PLC0415
+
+    return seam_read(
+        mean_a,
+        mean_b,
+        interior_mean_a,
+        interior_mean_b,
+        axis,
+        sigma_seam_a=sigma_a,
+        sigma_seam_b=sigma_b,
+        sigma_interior_a=interior_sigma_a,
+        sigma_interior_b=interior_sigma_b,
+        final_rel_residual_a=residual_a,
+        rtol_a=rtol_a,
+        final_rel_residual_b=residual_b,
+        rtol_b=rtol_b,
+    )
+
+
+def oracle_read(
+    *,
+    blended_mean: ArrayLike,
+    seamless_mean: ArrayLike,
+    blended_sigma: ArrayLike,
+    seamless_sigma: ArrayLike,
+    seamless_interior_mean: ArrayLike,
+    seamless_interior_sigma: ArrayLike,
+    residual_blend: float,
+    rtol_blend: float,
+    residual_seamless: float,
+    rtol_seamless: float,
+    axis: int = SEAM_PERP_AXIS,
+) -> SeamRead:
+    """The SECONDARY read: the blended field vs the seamless-anchor truth.
+
+    D_INT PIN (ORACLE) — the SEAMLESS solve's interior ALONE
+    (:data:`ORACLE_D_INT_SOURCE`, rubric R-19), which is why the seamless
+    interior is passed on BOTH sides of the T10 pooling call: pooling a
+    set with itself is the identity on RMS, so ``D_int`` comes out
+    exactly the seamless solve's own interior dispersion, through the
+    unmodified metric module. The tiles' interiors are deliberately NOT
+    in this denominator — see the why-they-differ comment beside
+    :data:`PAIR_D_INT_SOURCE`.
+
+    Args:
+        blended_mean: Partition-of-unity blend of the pair on the strip.
+        seamless_mean: Seamless-anchor mean truth on the same strip nodes.
+        blended_sigma: Blended member-std field on the strip.
+        seamless_sigma: Seamless-anchor member-std truth on the strip.
+        seamless_interior_mean: Seamless core-interior mean field.
+        seamless_interior_sigma: Seamless core-interior member-std field.
+        residual_blend: Worst PCG residual across the blended pair.
+        rtol_blend: The pair's solver rtol.
+        residual_seamless: The seamless solve's worst PCG residual.
+        rtol_seamless: The seamless solve's solver rtol.
+        axis: Axis perpendicular to the seam.
+
+    Returns:
+        The assembled :class:`SeamRead` (both field kinds).
+    """
+    from sverdrup.validation.seam_metrics import seam_read  # noqa: PLC0415
+
+    return seam_read(
+        blended_mean,
+        seamless_mean,
+        seamless_interior_mean,
+        seamless_interior_mean,
+        axis,
+        sigma_seam_a=blended_sigma,
+        sigma_seam_b=seamless_sigma,
+        sigma_interior_a=seamless_interior_sigma,
+        sigma_interior_b=seamless_interior_sigma,
+        final_rel_residual_a=residual_blend,
+        rtol_a=rtol_blend,
+        final_rel_residual_b=residual_seamless,
+        rtol_b=rtol_seamless,
+    )
+
+
+_FLOOR_PROBE_REQUIRED = (
+    "rtol",
+    "maxiter",
+    "iterations",
+    "final_rel_residual",
+    "converged",
+)
+
+
+def floor_attributability(
+    *, rms_delta: float, floor_f: float, probe: dict[str, Any]
+) -> dict[str, Any]:
+    """Rubric Rule 0 + owner PIN 23: is this reading above the solver floor?
+
+    The verdict is attributable ONLY if ``RMS(delta) > 3 x F``. At or
+    below that the number is still recorded and the row is marked
+    UNMEASURED (solver floor) — never CLEAN.
+
+    PIN 23: ``F`` is a floor only if the deeper solve CONVERGED. A gap
+    between two TRUNCATION points is not a floor and ``3 x F`` has no
+    meaning, so a non-converged probe is a STOP for the owner, never an
+    UNMEASURED verdict.
+
+    Args:
+        rms_delta: The measured co-located disagreement RMS.
+        floor_f: The measured floor F (max|field shift| on the strip).
+        probe: The deeper solve's recorded convergence evidence (rtol,
+            maxiter, iterations, final_rel_residual, converged).
+
+    Returns:
+        The attributability block recorded on the row.
+
+    Raises:
+        ValueError: If the probe omits any of pin 23's five fields.
+        RuntimeError: If the deeper solve did not converge.
+    """
+    for key in _FLOOR_PROBE_REQUIRED:
+        if key not in probe:
+            raise ValueError(
+                f"floor probe must record {key!r} (owner PIN 23: the row "
+                "records rtol, maxiter, iterations, final residual and the "
+                "CONVERGED flag — a bare F is unverifiable)"
+            )
+    if not probe["converged"]:
+        raise RuntimeError(
+            "STOP for the owner (PIN 23): the deeper-tolerance solve did "
+            f"NOT converge (rtol {probe['rtol']!r}, maxiter "
+            f"{probe['maxiter']!r}, final residual "
+            f"{probe['final_rel_residual']!r}) — F between two truncation "
+            "points is not a floor and 3xF has no meaning; this is a STOP, "
+            "NOT an UNMEASURED verdict"
+        )
+    threshold = FLOOR_FACTOR * float(floor_f)
+    return {
+        "f_m": float(floor_f),
+        "factor": FLOOR_FACTOR,
+        "threshold_m": threshold,
+        "attributable": bool(rms_delta > threshold),
+        "probe": dict(probe),
+    }
+
+
+def floor_wait_block(*, reason: str) -> dict[str, Any]:
+    """A WAIT floor block: the probe was refused, the verdict is withheld.
+
+    Pin 20(b): when the ladder refuses the extra leg, a WAIT row is
+    RECORDED and the pair is marked UNMEASURED-pending-owner — never
+    silently skipped, and never reported as if it had been floored.
+
+    Args:
+        reason: Why the probe did not run.
+
+    Returns:
+        The WAIT block.
+    """
+    return {
+        "status": "WAIT",
+        "reason": reason,
+        "f_m": None,
+        "factor": FLOOR_FACTOR,
+        "threshold_m": None,
+        "attributable": False,
+        "probe": None,
+    }
+
+
+def build_seam_row(
+    *,
+    route: str,
+    field_kind: str,
+    rms_delta: float,
+    d_int: float,
+    r_seam: float,
+    rubric_cell: str,
+    floor: dict[str, Any],
+    seal_sha: str,
+    date: str,
+) -> dict[str, Any]:
+    """Assemble one rubric seam row — a PURE function, schema pinned.
+
+    The row carries the rubric's shape ``{pair, era, field_kind,
+    rms_delta, d_int, r_seam, verdict}`` plus the resolution, the
+    denominator it used, its own floor block, and the review-pin-13
+    geometry caveat. There is deliberately NO free-prose field.
+
+    Args:
+        route: ``"pair"`` (primary) or ``"oracle"`` (secondary).
+        field_kind: ``"mean"`` or ``"sigma"``.
+        rms_delta: Co-located disagreement RMS for this field kind.
+        d_int: The route's interior reference dispersion.
+        r_seam: ``rms_delta / d_int``.
+        rubric_cell: The sealed-threshold cell for ``r_seam`` (computed
+            by the metric module at call time — never re-derived here).
+        floor: An attributability block or a WAIT block.
+        seal_sha: The verified evaluation-seal sha the row quotes.
+        date: ISO date string (passed in — purity).
+
+    Returns:
+        The seam row (exactly the pinned key set).
+
+    Raises:
+        ValueError: Unknown route.
+    """
+    if route == ROUTE_PAIR:
+        d_int_source = PAIR_D_INT_SOURCE
+        oracle_note = None
+    elif route == ROUTE_ORACLE:
+        d_int_source = ORACLE_D_INT_SOURCE
+        oracle_note = ORACLE_NOTE
+    else:
+        raise ValueError(
+            f"unknown seam read route {route!r}; known: {[ROUTE_PAIR, ROUTE_ORACLE]}"
+        )
+    if floor.get("status") == "WAIT":
+        verdict = UNMEASURED_PENDING_OWNER
+    elif not floor["attributable"]:
+        verdict = UNMEASURED_SOLVER_FLOOR
+    else:
+        verdict = rubric_cell
+    strip = seam_strip_bbox()
+    return {
+        "route": route,
+        "pair": SEAM_PAIR_NAME,
+        "era": SEAM_ERA,
+        "field_kind": field_kind,
+        "resolution_deg": RESOLUTION_DEG,
+        "domain": {
+            "name": SEAM_STRIP_NAME,
+            "bbox": [strip.lon_min, strip.lon_max, strip.lat_min, strip.lat_max],
+            "boundary_lat": 0.5 * (strip.lat_min + strip.lat_max),
+            "overlap_deg": 0.5 * (strip.lat_max - strip.lat_min),
+        },
+        "rms_delta": rms_delta,
+        "d_int": d_int,
+        "d_int_source": d_int_source,
+        "r_seam": r_seam,
+        "rubric_cell": rubric_cell,
+        "verdict": verdict,
+        "attributable": bool(floor.get("attributable", False)),
+        "floor": floor,
+        "geometry": SEAM_GEOMETRY,
+        "non_transfer_note": SEAM_NON_TRANSFER_NOTE,
+        "oracle_note": oracle_note,
+        "seal_sha": seal_sha,
+        "label": "STAGE1-EVIDENCE",
+        "date": date,
+    }
+
+
+def seam_rows_from_read(
+    *,
+    route: str,
+    read: SeamRead,
+    floor_mean: dict[str, Any],
+    floor_sigma: dict[str, Any],
+    seal_sha: str,
+    date: str,
+) -> list[dict[str, Any]]:
+    """Both field-kind rows of one read — mean first, σ second.
+
+    Args:
+        route: ``"pair"`` or ``"oracle"``.
+        read: The assembled :class:`SeamRead`.
+        floor_mean: The mean route's floor block.
+        floor_sigma: The σ route's floor block (its OWN floor — the two
+            field kinds are different quantities in different units).
+        seal_sha: The verified seal sha.
+        date: ISO date string.
+
+    Returns:
+        Two rows, one per field kind.
+    """
+    return [
+        build_seam_row(
+            route=route,
+            field_kind=FIELD_KIND_MEAN,
+            rms_delta=read.rms_delta,
+            d_int=read.d_int,
+            r_seam=read.r_seam,
+            rubric_cell=read.verdict,
+            floor=floor_mean,
+            seal_sha=seal_sha,
+            date=date,
+        ),
+        build_seam_row(
+            route=route,
+            field_kind=FIELD_KIND_SIGMA,
+            rms_delta=read.rms_sigma_delta,
+            d_int=read.d_int_sigma,
+            r_seam=read.r_seam_sigma,
+            rubric_cell=read.verdict_sigma,
+            floor=floor_sigma,
+            seal_sha=seal_sha,
+            date=date,
+        ),
+    ]
+
+
+def record_seam_rows(
+    rows: list[dict[str, Any]], evidence_path: Path = EVIDENCE
+) -> None:
+    """Record the rubric rows under ``phase14.stage1.seam_rows`` — seal-gated.
+
+    Args:
+        rows: Rows from :func:`seam_rows_from_read`.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    node[SEAM_ROWS_NODE] = rows
+    atomic_write_json(evidence_path, results)
+
+
+def record_seam_block(block: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
+    """Record the run block under ``phase14.stage1.seam_pair`` — seal-gated.
+
+    Args:
+        block: The seam-pair run provenance block.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    node[SEAM_PAIR_NODE] = block
+    atomic_write_json(evidence_path, results)
+
+
+def _obs_estimate(tile: str) -> int:
+    """Pre-load in-window obs estimate for a tile: box basis by area ratio."""
+    from sverdrup.methods.miost_sizing import (  # noqa: PLC0415
+        BOX_LAT,
+        BOX_LON,
+        BOX_W0_OBS_BASIS,
+    )
+
+    solve = registry_frame(tile).solve_bbox
+    box_area = (BOX_LON[1] - BOX_LON[0]) * (BOX_LAT[1] - BOX_LAT[0])
+    tile_area = (solve.lon_max - solve.lon_min) * (solve.lat_max - solve.lat_min)
+    return int(BOX_W0_OBS_BASIS * tile_area / box_area)
+
+
+def tile_size_model(tile: str, *, m: int, n_windows: int) -> dict[str, float]:
+    """Task-22 sizing arithmetic at any registry tile's geometry.
+
+    Args:
+        tile: Registry tile name.
+        m: Ensemble members.
+        n_windows: Windows solved.
+
+    Returns:
+        The ``size_tile`` model dict.
+    """
+    from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_basis import N_DIR  # noqa: PLC0415
+    from sverdrup.methods.miost_sizing import KM_PER_DEG, size_tile  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    frame = registry_frame(tile)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    solve = frame.solve_bbox
+    mid_lat = 0.5 * (solve.lat_min + solve.lat_max)
+    return size_tile(
+        d_x_km=(solve.lon_max - solve.lon_min)
+        * KM_PER_DEG
+        * math.cos(math.radians(mid_lat)),
+        d_y_km=(solve.lat_max - solve.lat_min) * KM_PER_DEG,
+        n_grid_nodes=int(grid.x.size * grid.y.size),
+        window_days=WindowPlan().w_days,
+        n_windows=n_windows,
+        m_members=m,
+        n_obs=_obs_estimate(tile),
+        alpha=float(PHASE13_WINNER_PARAMS["spacing_alpha"]),
+        n_dir=N_DIR,
+        lam_min=_SIZING_LAM_MIN_KM,
+    )
+
+
+def floor_probe_plan(*, m: int = FLOOR_M) -> dict[str, Any]:
+    """The Tier-1 arithmetic for the floor legs — STATED BEFORE THEY RUN.
+
+    Pin 20(b): the extra leg is sized (``size_tile`` at each probed
+    geometry, ONE window) and laddered before it is spent; a ladder
+    refusal becomes a WAIT row, never a silent skip.
+
+    Args:
+        m: Members solved by the probe (see
+            :data:`FLOOR_M_JUSTIFICATION`).
+
+    Returns:
+        The recorded plan block.
+    """
+    from sverdrup.application import ladder  # noqa: PLC0415
+
+    probed = (*SEAM_PAIR_TILES, "anchor")
+    models = {t: tile_size_model(t, m=m, n_windows=1) for t in probed}
+    peak = max(float(mo["peak_model_mib"]) for mo in models.values())
+    return {
+        "construction": (
+            "Task-18 lineage (scripts/diag_miost_seam_dispersion.py), "
+            "imported — never reimplemented"
+        ),
+        "m": m,
+        "m_justification": FLOOR_M_JUSTIFICATION,
+        "window_index": FLOOR_W_INDEX,
+        "n_windows": 1,
+        "rtol": FLOOR_RTOL,
+        "maxiter": FLOOR_MAXITER,
+        "production_rtol": SEAM_PRODUCTION_RTOL,
+        "production_maxiter": STAGE1_PCG_MAXITER,
+        "probed_tiles": list(probed),
+        "models": models,
+        "peak_model_mib": peak,
+        "tier1_eligible": bool(ladder.tier1_eligible(peak)),
+        "wall_note": (
+            "wall scales ~linearly in iterations at fixed geometry and m; "
+            "RAM is unchanged by the deeper tolerance (the operator and "
+            "the RHS block are identical — only the stopping test moves)"
+        ),
+    }
+
+
+def _diag_lineage() -> ModuleType:
+    """The Task-18 seam-dispersion diagnostic, imported (never reimplemented).
+
+    Plan pin 20(c): the floor machinery REUSES this script's
+    Task-18-lineage construction BY IMPORT — the standing reuse formula.
+
+    Returns:
+        The executed ``scripts/diag_miost_seam_dispersion`` module.
+    """
+    import importlib.util  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    name = "diag_miost_seam_dispersion"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    path = Path(__file__).with_name(f"{name}.py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:  # pragma: no cover - loader exists
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _lineage_std_fields() -> Any:  # noqa: ANN401 - the lineage's own callable
+    """The Task-18 lineage's member-std evaluator (sparse S-path)."""
+    return _diag_lineage().std_fields
+
+
+def _lineage_mean_fields() -> Any:  # noqa: ANN401 - the lineage's own callable
+    """The Task-18 lineage's mean-field evaluator (sparse S-path)."""
+    from sverdrup.distributions.miost_ensemble import mean_fields  # noqa: PLC0415
+
+    return getattr(_diag_lineage(), "mean_fields", mean_fields)
+
+
+def _lineage_exclusive_days() -> Any:  # noqa: ANN401 - the lineage's own callable
+    """The Task-18 lineage's exclusive-day helper (one solve per window)."""
+    return _diag_lineage().exclusive_days
+
+
+def _anchor_gate_module() -> ModuleType:
+    """The Task-3 anchor gate, imported read-only (constants + tally guard)."""
+    import importlib.util  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    name = "phase14_anchor_gate"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    path = Path(__file__).with_name(f"{name}.py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:  # pragma: no cover - loader exists
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _seam_echo(msg: str) -> None:
+    """Flushed heartbeat line (the detached-log/stall-watcher convention)."""
+    print(f"[seam-pair] {datetime.now(UTC).isoformat()} {msg}", flush=True)
+
+
+def _seam_framed_obs(tile: str) -> tuple[TileFrame, GridSpec, Any]:  # noqa: ANN401
+    """Frame, grid and framed dc2021a obs for one seam tile."""
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.adapters.altimetry.contract import BBox  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.dc2021a import Dc2021aSource  # noqa: PLC0415
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        frame_grid,
+        frame_obs,
+    )
+
+    frame = registry_frame(tile)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    obs = Dc2021aSource().load(
+        BBox(0.0, 360.0, -90.0, 90.0),
+        np.datetime64("2016-11-01"),
+        np.datetime64("2018-03-01"),
+        missions=DC_MAPPING_FIVE,
+    )
+    framed = frame_obs(obs, frame, RESOLUTION_DEG)
+    del obs
+    return frame, grid, framed
+
+
+def _seam_miost(
+    frame: TileFrame,
+    *,
+    starts: tuple[float, ...] | None,
+    maxiter: int,
+    rtol: float | None = None,
+    ckpt_dir: Path | None = None,
+) -> Any:  # noqa: ANN401 - the Miost method object
+    """The frozen signed config at a seam frame (basis domain = solve bbox)."""
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.methods.miost import (  # noqa: PLC0415
+        PHASE13_DELTAS,
+        Miost,
+    )
+    from sverdrup.methods.miost_basis import lonlat_to_km  # noqa: PLC0415
+    from sverdrup.methods.miost_rspec import RSpec  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    solve = frame.solve_bbox
+    xs, ys = lonlat_to_km(
+        np.array([solve.lon_min, solve.lon_max]),
+        np.array([solve.lat_min, solve.lat_max]),
+    )
+    x0, y0 = float(xs[0]), float(ys[0])
+    plan = WindowPlan() if starts is None else WindowPlan(starts=starts)
+    kwargs: dict[str, Any] = {
+        "plan": plan,
+        "basis_domain": (x0, y0, float(xs[1]) - x0, float(ys[1]) - y0),
+        "pcg_maxiter": maxiter,
+        "rspec": RSpec(deltas=dict(PHASE13_DELTAS)),
+    }
+    if rtol is not None:
+        kwargs["pcg_rtol"] = rtol
+    if ckpt_dir is not None:
+        kwargs["member_solve_checkpoint_dir"] = ckpt_dir
+    return Miost(**kwargs)
+
+
+def _store_payload(
+    etas_a: dict[str, Any],
+    anoms: dict[str, Any],
+    starts: dict[str, float],
+    pcg_rows: list[dict[str, Any]],
+    wall_s: float,
+    label: str,
+) -> dict[str, Any]:
+    """Npz payload for a leg's own member store (crash-resume substrate)."""
+    import numpy as np  # noqa: PLC0415
+
+    payload: dict[str, Any] = {
+        "window_ids": np.array(sorted(anoms)),
+        "pcg_rows": json.dumps(pcg_rows),
+        "solve_wall_s": wall_s,
+        "label": label,
+    }
+    for w in anoms:
+        payload[f"eta_{w}"] = etas_a[w]
+        payload[f"anom_{w}"] = anoms[w]
+        payload[f"start_{w}"] = starts[w]
+    return payload
+
+
+def _load_window_coefficients(store: Path, window_id: str) -> dict[str, Any]:
+    """One window's coefficients from a persisted member store (lazy npz read)."""
+    import numpy as np  # noqa: PLC0415
+
+    with np.load(store, allow_pickle=False) as z:
+        return {
+            "eta": np.asarray(z[f"eta_{window_id}"]),
+            "anom": np.asarray(z[f"anom_{window_id}"]),
+            "start": float(z[f"start_{window_id}"]),
+        }
+
+
+def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, Any]:
+    """Solve one seam tile (m members, full production plan) and PERSIST it.
+
+    Crash-durable at two levels — member-batch PCG checkpoints inside the
+    window solve, and this leg's own member store afterwards, so a
+    compare-phase death never costs the solves (the anchor-gate lesson).
+    The mean and MEMBER-STD maps are written BEFORE any compare runs.
+
+    Args:
+        tile: ``seam_n`` or ``seam_s``.
+        m: Ensemble members.
+        maxiter: PCG iteration cap.
+        root: CRN root (the anchor run's convention — the ORACLE compares
+            like against like).
+
+    Returns:
+        The tile's solve provenance block.
+    """
+    import resource  # noqa: PLC0415
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        merged_members,
+    )
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+    from sverdrup.validation.input_adapter import load_mdt_grid  # noqa: PLC0415
+    from sverdrup.validation.output_adapter import write_map  # noqa: PLC0415
+
+    gate = _anchor_gate_module()
+    t_leg = time.monotonic()
+    frame, grid, framed = _seam_framed_obs(tile)
+    n_obs = int(len(framed.values()))
+    _seam_echo(f"{tile}: framed obs {n_obs}, grid {grid.x.size}x{grid.y.size}")
+
+    plan = WindowPlan()
+    provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
+    ckpt = STAGE1_DIR / f"{tile}_pcg_ckpt"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    method = _seam_miost(frame, starts=None, maxiter=maxiter, ckpt_dir=ckpt)
+
+    store = SEAM_MEMBER_STORE[tile]
+    resumed = store.exists()
+    if resumed:
+        _seam_echo(f"{tile}: RESUME from own member store {store}")
+        with np.load(store, allow_pickle=False) as z:
+            wids = [str(w) for w in np.asarray(z["window_ids"])]
+            etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
+            anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+            starts = {w: float(z[f"start_{w}"]) for w in wids}
+            pcg_rows = json.loads(str(z["pcg_rows"][()]))
+            solve_wall_s = float(z["solve_wall_s"])
+        spec = method._spec_from(provider, grid)  # noqa: SLF001
+    else:
+        t_solve = time.monotonic()
+        log_start = len(miost_mod.CONVERGENCE_LOG)
+        spec, etas_a, anoms, starts = merged_members(
+            method,
+            framed,
+            grid,
+            provider,
+            m,
+            root,
+            on_window=lambda wid, day: _seam_echo(
+                f"{tile}: window {wid} solved (day {day:.0f}); "
+                f"{time.monotonic() - t_leg:.0f}s"
+            ),
+        )
+        pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
+        solve_wall_s = time.monotonic() - t_solve
+        STAGE1_DIR.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            store,
+            **_store_payload(
+                etas_a,
+                anoms,
+                starts,
+                pcg_rows,
+                solve_wall_s,
+                f"SEAM-PAIR leg member store ({tile}); crash-resume "
+                "substrate, never a reference",
+            ),
+        )
+        _seam_echo(f"{tile}: member store persisted -> {store}")
+
+    stamped, capped = classify_pcg_legs(
+        pcg_rows, rtol=float(method.pcg_rtol), maxiter=int(method.pcg_maxiter)
+    )
+    days = [float(d) for d in range(SEAM_N_DAYS)]
+    if not SEAM_MEAN_MAPS[tile].exists() or not SEAM_STD_MAPS[tile].exists():
+        means = _lineage_mean_fields()(spec, starts, etas_a, grid, plan, days)
+        stds = _lineage_std_fields()(spec, starts, anoms, grid, plan, days)
+        mdt = np.asarray(load_mdt_grid([Path(p) for p in gate.MAPPING_SIX], grid))
+        mean_stack = np.stack([mn.reshape(grid.shape) for mn in means]) + mdt[None]
+        std_stack = np.stack([sd.reshape(grid.shape) for sd in stds])
+        assimilated = tuple(sorted({str(s) for s in np.asarray(framed.mission)}))
+        epoch = np.datetime64("2017-01-01")
+        times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
+        write_map(
+            times,
+            grid.y,
+            grid.x,
+            mean_stack,
+            SEAM_MEAN_MAPS[tile],
+            assimilated_missions=assimilated,
+        )
+        write_map(
+            times,
+            grid.y,
+            grid.x,
+            std_stack,
+            SEAM_STD_MAPS[tile],
+            assimilated_missions=assimilated,
+        )
+        for p in (SEAM_MEAN_MAPS[tile], SEAM_STD_MAPS[tile]):
+            gate._attach_label(p, "STAGE1-EVIDENCE")  # noqa: SLF001
+        del means, stds, mean_stack, std_stack
+        _seam_echo(f"{tile}: maps written (mean + member-std)")
+    solve = frame.solve_bbox
+    return {
+        "tile": tile,
+        "source": str(TILES[tile]["source"]),
+        "n_obs": n_obs,
+        "m": m,
+        "root_int": root,
+        "resumed_from_own_store": resumed,
+        "frame": {
+            "core": list(TILES[tile]["core"]),
+            "overlap_deg": frame.overlap_deg,
+            "halo_deg": frame.halo_deg,
+            "missing_neighbors": sorted(frame.missing_neighbors),
+            "solve_bbox": [solve.lon_min, solve.lon_max, solve.lat_min, solve.lat_max],
+            "resolution_deg": RESOLUTION_DEG,
+        },
+        "window_plan": {
+            "starts": list(plan.starts),
+            "w_days": plan.w_days,
+            "n_windows": len(plan.windows),
+        },
+        "pcg": stamped,
+        "pcg_rtol": float(method.pcg_rtol),
+        "pcg_maxiter": int(method.pcg_maxiter),
+        "convergence": "CAPPED" if capped else "CONVERGED",
+        "worst_residual": max(float(leg["final_rel_residual"]) for leg in stamped),
+        "solve_wall_s": solve_wall_s,
+        "leg_wall_s": time.monotonic() - t_leg,
+        "peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
+        "maps": {
+            "mean": str(SEAM_MEAN_MAPS[tile]),
+            "member_std": str(SEAM_STD_MAPS[tile]),
+        },
+        "member_store": str(store),
+    }
+
+
+def _floor_probe_tile(
+    tile: str, *, m: int, store: Path, method_prod_maxiter: int
+) -> dict[str, Any]:
+    """Deeper-tolerance re-solve of ONE window; returns the strip shift fields.
+
+    The reference is that tile's OWN production window-0 coefficients —
+    same root, same window, same m, ONLY the tolerance differs — so the
+    measured shift is a solver-convergence property and nothing else.
+    The evaluation rides the Task-18 lineage's sparse S-path helpers by
+    import (:func:`_diag_lineage`), never a local reimplementation.
+
+    Args:
+        tile: Registry tile name (a seam tile or ``anchor``).
+        m: Members (see :data:`FLOOR_M_JUSTIFICATION`).
+        store: The production member store to read the reference from.
+        method_prod_maxiter: The cap the production solve ran under
+            (recorded; the deeper solve raises it by 1000).
+
+    Returns:
+        Shift fields on the strip plus the deeper solve's convergence row.
+    """
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        merged_members,
+    )
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    t0 = time.monotonic()
+    window = WindowPlan().windows[FLOOR_W_INDEX]
+    day = float(_lineage_exclusive_days()(WindowPlan())[window.id])
+    if tile == "anchor":
+        gate = _anchor_gate_module()
+        frame, grid, framed = gate._load_generalized_obs()  # noqa: SLF001
+    else:
+        frame, grid, framed = _seam_framed_obs(tile)
+    provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
+    deep = _seam_miost(
+        frame,
+        starts=(window.start_day,),
+        maxiter=FLOOR_MAXITER,
+        rtol=FLOOR_RTOL,
+    )
+    _seam_echo(
+        f"floor probe {tile}: window {window.id}, m={m}, rtol {FLOOR_RTOL:g}, "
+        f"maxiter {FLOOR_MAXITER} (production cap {method_prod_maxiter})"
+    )
+    log_start = len(miost_mod.CONVERGENCE_LOG)
+    root = int(_shipped_member_root())
+    spec, etas_deep, anoms_deep, starts_deep = merged_members(
+        deep, framed, grid, provider, m, root
+    )
+    legs = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
+    stamped, capped = classify_pcg_legs(
+        legs, rtol=float(deep.pcg_rtol), maxiter=int(deep.pcg_maxiter)
+    )
+    ref = _load_window_coefficients(store, window.id)
+    plan_one = WindowPlan(starts=(window.start_day,))
+    starts_ref = {window.id: ref["start"]}
+
+    def _fields(eta: Any, anom: Any, starts: dict[str, float]) -> tuple[Any, Any]:  # noqa: ANN401
+        mean = _lineage_mean_fields()(
+            spec, starts, {window.id: eta}, grid, plan_one, [day]
+        )[0]
+        std = _lineage_std_fields()(
+            spec, starts, {window.id: anom}, grid, plan_one, [day]
+        )[0]
+        return mean.reshape(grid.shape), std.reshape(grid.shape)
+
+    mean_deep, std_deep = _fields(
+        etas_deep[window.id], anoms_deep[window.id], starts_deep
+    )
+    del etas_deep, anoms_deep
+    mean_ref, std_ref = _fields(ref["eta"], ref["anom"], starts_ref)
+    lat_m, lon_m = strip_mask(grid, seam_strip_bbox())
+    sel = np.ix_(lat_m, lon_m)
+    shift_mean = np.asarray(mean_deep[sel] - mean_ref[sel])
+    shift_sigma = np.asarray(std_deep[sel] - std_ref[sel])
+    worst = max(stamped, key=lambda leg: float(leg["final_rel_residual"]))
+    _seam_echo(
+        f"floor probe {tile}: {'CAPPED' if capped else 'CONVERGED'} in "
+        f"{worst['iterations']} iters @ {worst['final_rel_residual']:.3e}; "
+        f"max|mean shift| {np.abs(shift_mean).max():.3e} m, "
+        f"max|sigma shift| {np.abs(shift_sigma).max():.3e} m "
+        f"({time.monotonic() - t0:.0f}s)"
+    )
+    return {
+        "tile": tile,
+        "shift_mean": shift_mean,
+        "shift_sigma": shift_sigma,
+        "probe": {
+            "rtol": float(deep.pcg_rtol),
+            "maxiter": int(deep.pcg_maxiter),
+            "iterations": int(worst["iterations"]),
+            "final_rel_residual": float(worst["final_rel_residual"]),
+            "converged": not capped,
+            "m": m,
+            "window": window.id,
+            "production_maxiter": method_prod_maxiter,
+            "legs": stamped,
+            "wall_s": time.monotonic() - t0,
+        },
+    }
+
+
+def _shipped_member_root() -> int:
+    """The signed acceptance CRN root (the anchor run's roots convention)."""
+    from sverdrup.methods.miost import shipped_miost5  # noqa: PLC0415
+
+    root = shipped_miost5().member_root
+    if root is None:  # pragma: no cover - the shipped config pins it
+        raise RuntimeError("shipped_miost5().member_root is None — no CRN root")
+    return int(root)
+
+
+def _seam_pair_real_leg(
+    *,
+    m: int,
+    maxiter: int,
+    floor_plan: dict[str, Any],
+    evidence_path: Path,
+) -> dict[str, Any]:
+    """Solve the pair, probe the floors, take BOTH reads, assemble the rows.
+
+    Order is deliberate: both tiles are solved and their mean + member-std
+    maps PERSISTED before anything is compared; a capped solve stops
+    immediately (``seam_read`` refuses on residual > rtol, so a verdict
+    could not be produced anyway); the floor probes run next; the compare
+    phase reads the persisted maps, so it can be re-run without re-solving.
+
+    Args:
+        m: Ensemble members per tile.
+        maxiter: Production PCG cap.
+        floor_plan: The pre-stated floor-probe plan (Tier-1 arithmetic).
+        evidence_path: The evidence store (tally guard + seal sha).
+
+    Returns:
+        ``{"rows": [...], "block": {...}, "stop": None | "PIN23"}``.
+    """
+    import gc  # noqa: PLC0415
+    import resource  # noqa: PLC0415
+    import threading  # noqa: PLC0415
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    gate = _anchor_gate_module()
+    t_wall = time.monotonic()
+    store = json.loads(evidence_path.read_text())
+    seal_sha = str(store["phase14"]["stage0"]["seal"]["sha"])
+    tally_before = gate.snapshot_locked_tally(evidence_path)
+    anchor_block = store["phase14"]["stage1"]["anchor_gate"]
+    if not anchor_block.get("pass"):
+        raise RuntimeError(
+            "REFUSED: the anchor identity gate is not green — T4 consumes "
+            "its maps as the seamless truth and does not run before it"
+        )
+    root = _shipped_member_root()
+    date = datetime.now(UTC).date().isoformat()
+
+    stop_beat = threading.Event()
+
+    def _beat() -> None:
+        while not stop_beat.wait(300.0):
+            _seam_echo(
+                f"heartbeat peak_rss="
+                f"{resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0:.0f}"
+                f"MiB mem_avail={_mem_available_mib():.0f}MiB"
+            )
+
+    threading.Thread(target=_beat, daemon=True).start()
+    try:
+        tiles = {}
+        for tile in SEAM_PAIR_TILES:
+            tiles[tile] = _seam_tile_leg(tile, m=m, maxiter=maxiter, root=root)
+            gc.collect()
+        block: dict[str, Any] = {
+            "label": "SEAM-PAIR",
+            "seal_sha": seal_sha,
+            "pair": SEAM_PAIR_NAME,
+            "era": SEAM_ERA,
+            "m": m,
+            "root_int": root,
+            "roots_convention": (
+                "shipped_miost5().member_root — the anchor run's root, on "
+                "BOTH tiles: identity-keyed CRN so the ORACLE compares like "
+                "against like"
+            ),
+            "tiles": tiles,
+            "floor_plan": floor_plan,
+            "geometry": SEAM_GEOMETRY,
+            "non_transfer_note": SEAM_NON_TRANSFER_NOTE,
+            "seamless_truth": {
+                "mean": str(ANCHOR_MEAN_MAPS),
+                "member_std": str(ANCHOR_STD_MAPS),
+                "source": "phase14.stage1.anchor_gate (Task 3) — CONSUMED",
+            },
+            "tally_guard": {"before": tally_before},
+            "date": date,
+        }
+        capped = [t for t, p in tiles.items() if p["convergence"] == "CAPPED"]
+        if capped:
+            block["convergence"] = "CAPPED"
+            block["capped_tiles"] = capped
+            return {"rows": [], "block": block, "stop": "PIN23"}
+        block["convergence"] = "CONVERGED"
+
+        floors, floor_block = _seam_floor_phase(
+            floor_plan=floor_plan,
+            m=int(floor_plan["m"]),
+            maxiter=maxiter,
+            anchor_maxiter=int(anchor_block["pcg"]["maxiter"]),
+        )
+        block["floor_probe"] = floor_block
+        gc.collect()
+        rows = _seam_compare_phase(
+            tiles=tiles,
+            floors=floors,
+            anchor_block=anchor_block,
+            seal_sha=seal_sha,
+            date=date,
+        )
+        block["wall_s"] = time.monotonic() - t_wall
+        block["peak_rss_mib"] = (
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+        )
+        block["mem_available_mib"] = _mem_available_mib()
+        block["rows_recorded_at"] = f"phase14.stage1.{SEAM_ROWS_NODE}"
+        block["n_strip_nodes"] = int(np.prod(floors["strip_shape"]))
+        return {"rows": rows, "block": block, "stop": None}
+    finally:
+        stop_beat.set()
+
+
+def _seam_floor_phase(
+    *, floor_plan: dict[str, Any], m: int, maxiter: int, anchor_maxiter: int
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Run (or WAIT on) the floor probes and reduce them to the four floors.
+
+    PAIR floor: max|field shift| over the strip across BOTH tiles (the
+    rubric's construction, run once per pair roster). ORACLE floor: its
+    OWN — the max over the strip of the BLENDED shift and the SEAMLESS
+    solve's own shift, because those are the two fields the oracle
+    compares. The two floors are never shared: the oracle's includes a
+    deeper re-solve of the seamless anchor that the pair's does not.
+
+    Args:
+        floor_plan: The pre-stated plan (carries the ladder verdict).
+        m: Members for the probe.
+        maxiter: The production cap the seam probes are deeper than.
+        anchor_maxiter: The SIGNED cap the seamless anchor solve ran
+            under (recorded on the Task-3 block — never restated).
+
+    Returns:
+        ``(floors, recorded_block)``.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        assemble,
+        frame_grid,
+    )
+
+    if not floor_plan["tier1_eligible"]:
+        wait = floor_wait_block(
+            reason=(
+                "tier1_eligible refused the floor leg at predicted peak "
+                f"{floor_plan['peak_model_mib']:.0f} MiB — the pair is "
+                "UNMEASURED pending the owner, never silently skipped"
+            )
+        )
+        grid = frame_grid(registry_frame("seam_n"), RESOLUTION_DEG)
+        lat_m, lon_m = strip_mask(grid, seam_strip_bbox())
+        floors = {
+            "pair_mean": wait,
+            "pair_sigma": wait,
+            "oracle_mean": wait,
+            "oracle_sigma": wait,
+            "strip_shape": (int(lat_m.sum()), int(lon_m.sum())),
+        }
+        return floors, {"status": "WAIT", "plan": floor_plan}
+
+    probes = {
+        tile: _floor_probe_tile(
+            tile, m=m, store=SEAM_MEMBER_STORE[tile], method_prod_maxiter=maxiter
+        )
+        for tile in SEAM_PAIR_TILES
+    }
+    probes["anchor"] = _floor_probe_tile(
+        "anchor",
+        m=m,
+        store=ANCHOR_MEMBER_STORE,
+        method_prod_maxiter=anchor_maxiter,
+    )
+
+    # The blended shift: the same partition-of-unity machinery the ORACLE's
+    # blended field rides, applied to the two tiles' shift fields.
+    grid_n = frame_grid(registry_frame("seam_n"), RESOLUTION_DEG)
+    lat_m, lon_m = strip_mask(grid_n, seam_strip_bbox())
+    lon2d, lat2d = np.meshgrid(grid_n.x[lon_m], grid_n.y[lat_m])
+    frames = [registry_frame(t) for t in SEAM_PAIR_TILES]
+    blended = {
+        kind: assemble(
+            frames,
+            [probes[t][f"shift_{kind}"].ravel() for t in SEAM_PAIR_TILES],
+            lon2d.ravel(),
+            lat2d.ravel(),
+        )
+        for kind in ("mean", "sigma")
+    }
+
+    def _worst_probe(tiles: tuple[str, ...], scope: str) -> dict[str, Any]:
+        rows = [probes[t]["probe"] for t in tiles]
+        worst = max(rows, key=lambda r: float(r["final_rel_residual"]))
+        return {
+            **worst,
+            "converged": all(bool(r["converged"]) for r in rows),
+            "scope": scope,
+            "tiles": list(tiles),
+        }
+
+    pair_probe = _worst_probe(
+        SEAM_PAIR_TILES, "PAIR roster (seam_n + seam_s) re-solved deeper"
+    )
+    oracle_probe = _worst_probe(
+        (*SEAM_PAIR_TILES, "anchor"),
+        "ORACLE's OWN probe: the blended pair AND the seamless anchor "
+        "re-solved deeper (never the pair's floor)",
+    )
+    f_pair = {
+        kind: max(
+            float(np.nanmax(np.abs(probes[t][f"shift_{kind}"])))
+            for t in SEAM_PAIR_TILES
+        )
+        for kind in ("mean", "sigma")
+    }
+    f_oracle = {
+        kind: max(
+            float(np.nanmax(np.abs(blended[kind]))),
+            float(np.nanmax(np.abs(probes["anchor"][f"shift_{kind}"]))),
+        )
+        for kind in ("mean", "sigma")
+    }
+    floors = {
+        "f_pair": f_pair,
+        "f_oracle": f_oracle,
+        "pair_probe": pair_probe,
+        "oracle_probe": oracle_probe,
+        "strip_shape": (int(lat_m.sum()), int(lon_m.sum())),
+    }
+    recorded = {
+        "status": "RUN",
+        "plan": floor_plan,
+        "f_pair": f_pair,
+        "f_oracle": f_oracle,
+        "pair_probe": pair_probe,
+        "oracle_probe": oracle_probe,
+        "per_tile": {
+            t: {
+                "probe": p["probe"],
+                "max_abs_shift_mean_m": float(np.nanmax(np.abs(p["shift_mean"]))),
+                "max_abs_shift_sigma_m": float(np.nanmax(np.abs(p["shift_sigma"]))),
+            }
+            for t, p in probes.items()
+        },
+        "blended_max_abs_shift": {
+            k: float(np.nanmax(np.abs(v))) for k, v in blended.items()
+        },
+    }
+    np.savez(
+        SEAM_FLOOR_STORE,
+        **{
+            f"shift_{k}_{t}": p[f"shift_{k}"]
+            for t, p in probes.items()
+            for k in ("mean", "sigma")
+        },
+        summary=json.dumps(recorded),
+    )
+    return floors, recorded
+
+
+def _strip_fields(path: Path, tile: str) -> Any:  # noqa: ANN401 - ndarray
+    """The (time, lat, lon) map on the 2·overlap strip of a tile's grid."""
+    import numpy as np  # noqa: PLC0415
+    import xarray as xr  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
+
+    grid = frame_grid(registry_frame(tile), RESOLUTION_DEG)
+    lat_m, lon_m = strip_mask(grid, seam_strip_bbox())
+    with xr.open_dataset(path) as ds:
+        values = np.asarray(ds["ssh"].values)
+    return values[:, lat_m, :][:, :, lon_m]
+
+
+def _interior_fields(path: Path, tile: str) -> Any:  # noqa: ANN401 - ndarray
+    """The (time, lat, lon) map on a tile's rubric core interior."""
+    import numpy as np  # noqa: PLC0415
+    import xarray as xr  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
+
+    frame = registry_frame(tile)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    lat_m, lon_m = core_interior_mask(frame, grid)
+    with xr.open_dataset(path) as ds:
+        values = np.asarray(ds["ssh"].values)
+    return values[:, lat_m, :][:, :, lon_m]
+
+
+def _seam_compare_phase(
+    *,
+    tiles: dict[str, Any],
+    floors: dict[str, Any],
+    anchor_block: dict[str, Any],
+    seal_sha: str,
+    date: str,
+) -> list[dict[str, Any]]:
+    """Both reads on the persisted maps; four rubric rows out.
+
+    Args:
+        tiles: Per-tile solve provenance (residuals, rtol).
+        floors: The floor phase's output.
+        anchor_block: The Task-3 gate block (the seamless side's solver
+            validity comes from ITS recorded pcg rows).
+        seal_sha: The verified seal sha.
+        date: ISO date string.
+
+    Returns:
+        Four rows: {pair, oracle} x {mean, sigma}.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        assemble,
+        frame_grid,
+    )
+
+    north, south = SEAM_PAIR_TILES
+    mean = {t: _strip_fields(SEAM_MEAN_MAPS[t], t) for t in SEAM_PAIR_TILES}
+    sigma = {t: _strip_fields(SEAM_STD_MAPS[t], t) for t in SEAM_PAIR_TILES}
+    int_mean = {t: _interior_fields(SEAM_MEAN_MAPS[t], t) for t in SEAM_PAIR_TILES}
+    int_sigma = {t: _interior_fields(SEAM_STD_MAPS[t], t) for t in SEAM_PAIR_TILES}
+    read_pair = pair_read(
+        mean_a=mean[north],
+        mean_b=mean[south],
+        sigma_a=sigma[north],
+        sigma_b=sigma[south],
+        interior_mean_a=int_mean[north],
+        interior_mean_b=int_mean[south],
+        interior_sigma_a=int_sigma[north],
+        interior_sigma_b=int_sigma[south],
+        residual_a=float(tiles[north]["worst_residual"]),
+        rtol_a=float(tiles[north]["pcg_rtol"]),
+        residual_b=float(tiles[south]["worst_residual"]),
+        rtol_b=float(tiles[south]["pcg_rtol"]),
+    )
+    _seam_echo(
+        f"PAIR read: R_seam {read_pair.r_seam:.4f} ({read_pair.verdict}), "
+        f"R_seam_sigma {read_pair.r_seam_sigma:.4f} ({read_pair.verdict_sigma})"
+    )
+
+    grid_n = frame_grid(registry_frame(north), RESOLUTION_DEG)
+    lat_m, lon_m = strip_mask(grid_n, seam_strip_bbox())
+    lon2d, lat2d = np.meshgrid(grid_n.x[lon_m], grid_n.y[lat_m])
+    frames = [registry_frame(t) for t in SEAM_PAIR_TILES]
+    shape = lon2d.shape
+
+    def _blend(fields: dict[str, Any]) -> Any:  # noqa: ANN401 - ndarray
+        return np.stack(
+            [
+                assemble(
+                    frames,
+                    [fields[t][d].ravel() for t in SEAM_PAIR_TILES],
+                    lon2d.ravel(),
+                    lat2d.ravel(),
+                ).reshape(shape)
+                for d in range(fields[north].shape[0])
+            ]
+        )
+
+    blended_mean = _blend(mean)
+    blended_sigma = _blend(sigma)
+    seamless_mean = _strip_fields(ANCHOR_MEAN_MAPS, "anchor")
+    seamless_sigma = _strip_fields(ANCHOR_STD_MAPS, "anchor")
+    anchor_pcg = anchor_block["pcg"]
+    read_oracle = oracle_read(
+        blended_mean=blended_mean,
+        seamless_mean=seamless_mean,
+        blended_sigma=blended_sigma,
+        seamless_sigma=seamless_sigma,
+        seamless_interior_mean=_interior_fields(ANCHOR_MEAN_MAPS, "anchor"),
+        seamless_interior_sigma=_interior_fields(ANCHOR_STD_MAPS, "anchor"),
+        residual_blend=max(float(tiles[t]["worst_residual"]) for t in SEAM_PAIR_TILES),
+        rtol_blend=max(float(tiles[t]["pcg_rtol"]) for t in SEAM_PAIR_TILES),
+        residual_seamless=max(
+            float(r["final_rel_residual"]) for r in anchor_pcg["rows"]
+        ),
+        rtol_seamless=float(anchor_pcg["rtol"]),
+    )
+    _seam_echo(
+        f"ORACLE read: R_seam {read_oracle.r_seam:.4f} ({read_oracle.verdict}), "
+        f"R_seam_sigma {read_oracle.r_seam_sigma:.4f} "
+        f"({read_oracle.verdict_sigma})"
+    )
+
+    def _floor_for(route: str, kind: str, rms: float) -> dict[str, Any]:
+        if "f_pair" not in floors:  # the WAIT path
+            wait: dict[str, Any] = floors[f"{route}_{kind}"]
+            return wait
+        key = "f_pair" if route == ROUTE_PAIR else "f_oracle"
+        probe = floors["pair_probe" if route == ROUTE_PAIR else "oracle_probe"]
+        return floor_attributability(
+            rms_delta=rms, floor_f=floors[key][kind], probe=probe
+        )
+
+    return seam_rows_from_read(
+        route=ROUTE_PAIR,
+        read=read_pair,
+        floor_mean=_floor_for(ROUTE_PAIR, "mean", read_pair.rms_delta),
+        floor_sigma=_floor_for(ROUTE_PAIR, "sigma", read_pair.rms_sigma_delta),
+        seal_sha=seal_sha,
+        date=date,
+    ) + seam_rows_from_read(
+        route=ROUTE_ORACLE,
+        read=read_oracle,
+        floor_mean=_floor_for(ROUTE_ORACLE, "mean", read_oracle.rms_delta),
+        floor_sigma=_floor_for(ROUTE_ORACLE, "sigma", read_oracle.rms_sigma_delta),
+        seal_sha=seal_sha,
+        date=date,
+    )
+
+
+@app.command()
+def seam_pair(
+    m: Annotated[int, typer.Option(help="Ensemble members per tile")] = SEAM_PAIR_M,
+    maxiter: Annotated[
+        int, typer.Option(help="Production PCG cap (owner PIN 26(b))")
+    ] = STAGE1_PCG_MAXITER,
+) -> None:
+    """Task 4: the seam pair, the PRIMARY PAIR READ and the ORACLE READ.
+
+    Runs ``seam_n`` and ``seam_s`` at the frozen signed config (m=100,
+    full 9-window production plan, dc2021a, the anchor run's CRN root),
+    persists each tile's mean AND member-std maps, probes the solver
+    floor (deeper tolerance, pin 23's convergence precondition enforced),
+    then takes BOTH reads on the 2·overlap strip and records four rubric
+    rows under ``phase14.stage1.seam_rows``.
+
+    Verdicts never block mechanically: a STRUCTURAL_STOP is recorded and
+    surfaced to the owner (work on other tiles may continue — they do not
+    consume seams).
+
+    Args:
+        m: Ensemble members per tile.
+        maxiter: Production PCG iteration cap.
+
+    Raises:
+        RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
+        typer.Exit: Nonzero on a failed RAM gate, on a capped seam solve
+            (pin 23), and on a STRUCTURAL_STOP verdict.
+    """
+    models = {t: preflight(t, m) for t in SEAM_PAIR_TILES}
+    peak = max(float(mo["peak_model_mib"]) for mo in models.values())
+    gate = seam_ram_gate(peak_model_mib=peak, mem_available_mib=_mem_available_mib())
+    typer.echo("ram_gate: " + json.dumps(gate))
+    if not gate["passed"]:
+        typer.echo(
+            f"REFUSED: MemAvailable {gate['mem_available_mib']:.0f} MiB < "
+            f"{SEAM_RAM_GATE_FACTOR:.0f} x predicted peak {peak:.0f} MiB — "
+            "the seam pair WAITS; never launch over headroom (fork-g pin 4)"
+        )
+        raise typer.Exit(code=1)
+    plan = floor_probe_plan()
+    typer.echo(
+        "floor_probe_plan (STATED BEFORE IT RUNS): "
+        + json.dumps({k: plan[k] for k in ("m", "rtol", "maxiter", "n_windows")})
+        + f" peak_model_mib={plan['peak_model_mib']:.0f} "
+        f"tier1_eligible={plan['tier1_eligible']}"
+    )
+    result = _seam_pair_real_leg(
+        m=m, maxiter=maxiter, floor_plan=plan, evidence_path=EVIDENCE
+    )
+    record_seam_block(result["block"], evidence_path=EVIDENCE)
+    if result["rows"]:
+        record_seam_rows(result["rows"], evidence_path=EVIDENCE)
+    before = result["block"].get("tally_guard", {}).get("before")
+    if before:
+        _anchor_gate_module().assert_tally_unchanged(before, EVIDENCE)
+    for row in result["rows"]:
+        typer.echo(
+            f"{row['route']}/{row['field_kind']}: rms_delta="
+            f"{row['rms_delta']:.6g} d_int={row['d_int']:.6g} "
+            f"R={row['r_seam']:.4f} cell={row['rubric_cell']} "
+            f"verdict={row['verdict']}"
+        )
+    if result["stop"] == "PIN23":
+        typer.echo(
+            "STOP (owner PIN 23): a seam solve exited CAPPED over rtol — the "
+            "block IS recorded and NO verdict is claimed; seam_read refuses "
+            "on residual > rtol, so no reading exists to report."
+        )
+        raise typer.Exit(code=2)
+    stops = [r for r in result["rows"] if r["verdict"] == "STRUCTURAL_STOP"]
+    if stops:
+        typer.echo(
+            "STRUCTURAL_STOP surfaced to the owner "
+            f"({', '.join(f'{r["route"]}/{r["field_kind"]}' for r in stops)}): "
+            "the rows ARE recorded; this verdict does NOT block the plan "
+            "mechanically — work on other tiles may continue (they do not "
+            "consume seams). Gate 1 owns the decision."
+        )
+        raise typer.Exit(code=3)
+    typer.echo("seam pair done: rows at phase14.stage1.seam_rows")
 
 
 def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:

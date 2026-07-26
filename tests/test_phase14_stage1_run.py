@@ -1392,3 +1392,697 @@ def test_seam_probe_geometry_is_the_registry_seam_frame() -> None:
     grid = frame_grid(_mod.registry_frame(_mod.SEAM_PROBE_TILE), _mod.RESOLUTION_DEG)
     assert (grid.x.size, grid.y.size) == (51, 37)
     assert grid.x.size * grid.y.size < 2652
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — seam pair: the PRIMARY PAIR READ + the secondary ORACLE READ
+# (owner-ruled two-route shape; the rubric's Rule-0 floor attaches to the
+# PAIR first, the ORACLE carries its OWN floor, never shared)
+# ---------------------------------------------------------------------------
+
+
+# Hand-built fields whose one-grid-step LATITUDE increments are exactly the
+# given step. Built independently of the module under test (a plain outer
+# product), so every D_int expectation below is a hand value.
+def _interior(step: float, rows: int = 3, cols: int = 3) -> np.ndarray:
+    """Field with constant one-step latitude increments (axis -2)."""
+    return np.outer(np.arange(rows, dtype=float) * step, np.ones(cols))
+
+
+# rms_delta hand values: constant seams differing by 0.02 m (mean) and
+# 0.003 m (sigma) — DISTINCT per field kind so a route swap is caught.
+_SEAM_A = np.full(3, 0.05)
+_SEAM_B = np.full(3, 0.03)
+_SIG_A = np.full(3, 0.011)
+_SIG_B = np.full(3, 0.008)
+
+# Pooled-interior hand values (both tiles pooled, equal node counts):
+#   mean : sqrt((6*2^2 + 6*4^2)/12) = sqrt(10)  = 3.1622776601683795
+#   sigma: sqrt((6*1^2 + 6*3^2)/12) = sqrt(5)   = 2.23606797749979
+_D_INT_PAIR_MEAN = 10.0**0.5
+_D_INT_PAIR_SIGMA = 5.0**0.5
+# The SEAMLESS solve's own interior (never pooled with the tiles').
+_D_INT_ORACLE_MEAN = 4.0
+_D_INT_ORACLE_SIGMA = 3.0
+
+
+def _pair_read_kwargs(**over: Any) -> dict[str, Any]:
+    """Injected fakes for the PAIR read (both tiles' own solves)."""
+    kw: dict[str, Any] = {
+        "mean_a": _SEAM_A,
+        "mean_b": _SEAM_B,
+        "sigma_a": _SIG_A,
+        "sigma_b": _SIG_B,
+        "interior_mean_a": _interior(2.0),
+        "interior_mean_b": _interior(4.0),
+        "interior_sigma_a": _interior(1.0),
+        "interior_sigma_b": _interior(3.0),
+        "residual_a": 9.3e-7,
+        "rtol_a": 1.0e-6,
+        "residual_b": 9.5e-7,
+        "rtol_b": 1.0e-6,
+    }
+    kw.update(over)
+    return kw
+
+
+def _oracle_read_kwargs(**over: Any) -> dict[str, Any]:
+    """Injected fakes for the ORACLE read (blend vs seamless truth)."""
+    kw: dict[str, Any] = {
+        "blended_mean": _SEAM_A,
+        "seamless_mean": _SEAM_B,
+        "blended_sigma": _SIG_A,
+        "seamless_sigma": _SIG_B,
+        "seamless_interior_mean": _interior(4.0),
+        "seamless_interior_sigma": _interior(3.0),
+        "residual_blend": 9.5e-7,
+        "rtol_blend": 1.0e-6,
+        "residual_seamless": 9.9e-7,
+        "rtol_seamless": 1.0e-6,
+    }
+    kw.update(over)
+    return kw
+
+
+def _floor_probe(converged: bool = True) -> dict[str, Any]:
+    """A recorded deeper-tolerance probe block (pin 23's five fields)."""
+    return {
+        "rtol": 1.0e-9,
+        "maxiter": 2200,
+        "iterations": 611,
+        "final_rel_residual": 9.1e-10,
+        "converged": converged,
+        "m": 100,
+        "window": "w-00018.0+60",
+        "scope": "seam pair roster (seam_n + seam_s), deeper tolerance",
+    }
+
+
+def _floor(f: float = 0.005, converged: bool = True) -> dict[str, Any]:
+    """An attributability block at floor F (default: 3F = 0.015 < 0.02)."""
+    return _mod.floor_attributability(
+        rms_delta=0.02, floor_f=f, probe=_floor_probe(converged)
+    )
+
+
+def _row(**over: Any) -> dict[str, Any]:
+    """One assembled seam row with injected numbers."""
+    kw: dict[str, Any] = {
+        "route": "pair",
+        "field_kind": "mean",
+        "rms_delta": 0.02,
+        "d_int": _D_INT_PAIR_MEAN,
+        "r_seam": 0.02 / _D_INT_PAIR_MEAN,
+        "rubric_cell": "CLEAN",
+        "floor": _floor(),
+        "seal_sha": "cafe" * 16,
+        "date": "2026-07-26",
+    }
+    kw.update(over)
+    return _mod.build_seam_row(**kw)
+
+
+# --- the ONE evaluation domain: "the 2·overlap strip" ----------------------
+
+
+def test_seam_strip_is_two_overlap_wide_centred_on_the_shared_core_boundary() -> None:
+    """The strip is DERIVED from the two registry frames, not typed.
+
+    Bug caught: a hand-typed strip constant that silently desyncs when a
+    seam frame moves, or a HALF-width strip (one overlap instead of two) —
+    either reads a different region than the rubric's "2·overlap strip
+    centred on the shared core boundary". Hand values from the registry:
+    the shared core boundary is 38.0N, overlap 2.0 deg, so the strip is
+    lat 36-40 across the shared lon span 295-305.
+    """
+    strip = _mod.seam_strip_bbox()
+    assert (strip.lon_min, strip.lon_max) == (295.0, 305.0)
+    assert (strip.lat_min, strip.lat_max) == (36.0, 40.0)
+    # 2 x overlap wide, centred on the boundary — stated independently.
+    assert strip.lat_max - strip.lat_min == 2 * 2.0
+    assert 0.5 * (strip.lat_min + strip.lat_max) == 38.0
+
+
+def test_seam_strip_lies_inside_both_tiles_own_solves() -> None:
+    """Both tiles SOLVE the whole strip — the pair read needs both.
+
+    Bug caught: a strip reaching past seam_n's southern solve edge (36.0N)
+    or seam_s's northern edge (40.0N), where one tile has no solution at
+    all — delta(x) would then be taken against extrapolated or NaN values
+    and the whole PRIMARY route would be measuring nothing.
+    """
+    strip = _mod.seam_strip_bbox()
+    for tile in _mod.SEAM_PAIR_TILES:
+        solve = _mod.registry_frame(tile).solve_bbox
+        assert solve.lat_min <= strip.lat_min
+        assert solve.lat_max >= strip.lat_max
+        assert solve.lon_min <= strip.lon_min
+        assert solve.lon_max >= strip.lon_max
+
+
+def test_strip_nodes_are_co_located_across_both_tiles_and_the_anchor() -> None:
+    """The selected strip nodes are the SAME points on all three grids.
+
+    Bug caught: off-by-one index slicing (a shifted difference would
+    manufacture a seam signal out of the field's own gradient) or a
+    resolution/lattice mismatch between the tile grids and the seamless
+    anchor grid, which would silently make the ORACLE compare unlike
+    points. Independently: all three frames share the 0.2 deg lattice
+    anchored at 295.0/33.0, so the strip must select identical values.
+    """
+    from sverdrup.application.spatial_tiles import frame_grid
+
+    picks = []
+    for tile in (*_mod.SEAM_PAIR_TILES, "anchor"):
+        grid = frame_grid(_mod.registry_frame(tile), _mod.RESOLUTION_DEG)
+        lat_m, lon_m = _mod.strip_mask(grid, _mod.seam_strip_bbox())
+        picks.append((grid.y[lat_m], grid.x[lon_m]))
+    for lats, lons in picks[1:]:
+        assert np.allclose(lats, picks[0][0])
+        assert np.allclose(lons, picks[0][1])
+    # 36.0..40.0 at 0.2 deg = 21 rows; 295..305 = 51 columns (hand count).
+    assert picks[0][0].size == 21
+    assert picks[0][1].size == 51
+
+
+def test_core_interior_trims_the_overlap_width_from_every_core_boundary() -> None:
+    """Interiors are the rubric's "every node >= overlap-width from any core
+    boundary" — hand-checked bounds.
+
+    Bug caught: an untrimmed interior reaching the seam itself, so D_int
+    would be contaminated by the very cross-tile disagreement it is there
+    to normalize (R_seam would then be self-referential and always small).
+    seam_n core is lat 38-43 / lon 295-305; trimming 2.0 deg leaves lat
+    40-41 and lon 297-303.
+    """
+    from sverdrup.application.spatial_tiles import frame_grid
+
+    grid = frame_grid(_mod.registry_frame("seam_n"), _mod.RESOLUTION_DEG)
+    lat_m, lon_m = _mod.core_interior_mask(_mod.registry_frame("seam_n"), grid)
+    lats, lons = grid.y[lat_m], grid.x[lon_m]
+    assert lats.min() >= 40.0 - 1e-9
+    assert lats.max() <= 41.0 + 1e-9
+    assert lons.min() >= 297.0 - 1e-9
+    assert lons.max() <= 303.0 + 1e-9
+    assert lats.size == 6  # 40.0..41.0 at 0.2 deg
+    assert lons.size == 31  # 297.0..303.0 at 0.2 deg
+
+
+def test_seam_perpendicular_axis_is_latitude_in_the_map_convention() -> None:
+    """D_int pools along LATITUDE (the seam at 38N runs east-west).
+
+    Bug caught: pooling along the seam-PARALLEL axis. On this fixture the
+    latitude increments are 4.0 and the longitude increments 1.0, so a
+    wrong-axis D_int reads 1.0 where 4.0 is true — a 4x wrong denominator
+    on every verdict. Axis -2 is pinned because maps are (time, lat, lon).
+    """
+    from sverdrup.validation.seam_metrics import interior_increment_rms
+
+    stack = np.stack([np.arange(16.0).reshape(4, 4) * 4.0] * 2)  # rows differ by 16
+    field = np.stack([np.outer(np.arange(4.0) * 4.0, np.ones(4)) + np.arange(4.0)] * 2)
+    assert _mod.SEAM_PERP_AXIS == -2
+    assert interior_increment_rms(field, _mod.SEAM_PERP_AXIS) == pytest.approx(4.0)
+    assert interior_increment_rms(field, -1) == pytest.approx(1.0)
+    assert stack.ndim == 3  # the (time, lat, lon) shape the real leg passes
+
+
+# --- the TWO D_int denominators (different by design) ---------------------
+
+
+def test_pair_read_pools_both_tile_interiors_per_rubric_r06_r07() -> None:
+    """PAIR D_int = pooled core interiors of BOTH tiles.
+
+    Bug caught: normalizing by ONE tile's interior. Hand value:
+    sqrt((6*2^2 + 6*4^2)/12) = sqrt(10) = 3.16228, which is neither
+    2.0 nor 4.0 — a single-tile denominator cannot produce it.
+    """
+    read = _mod.pair_read(**_pair_read_kwargs())
+    assert read.d_int == pytest.approx(_D_INT_PAIR_MEAN)
+    assert read.d_int_sigma == pytest.approx(_D_INT_PAIR_SIGMA)
+    assert read.rms_delta == pytest.approx(0.02)
+    assert read.rms_sigma_delta == pytest.approx(0.003)
+    assert read.r_seam == pytest.approx(0.02 / _D_INT_PAIR_MEAN)
+    assert read.r_seam_sigma == pytest.approx(0.003 / _D_INT_PAIR_SIGMA)
+
+
+def test_oracle_read_d_int_is_the_seamless_interior_alone_per_rubric_r19() -> None:
+    """ORACLE D_int = the SEAMLESS solve's interior, never the tiles'.
+
+    Bug caught: a future reader "fixing the inconsistency" by pooling the
+    two tile interiors into the ORACLE denominator — the flagship
+    blend-vs-truth ratio would silently change scale. Hand value: the
+    seamless interior's own increments are 4.0, so D_int is exactly 4.0
+    (pooling a set with itself is the identity on RMS).
+    """
+    read = _mod.oracle_read(**_oracle_read_kwargs())
+    assert read.d_int == pytest.approx(_D_INT_ORACLE_MEAN)
+    assert read.d_int_sigma == pytest.approx(_D_INT_ORACLE_SIGMA)
+    assert read.r_seam == pytest.approx(0.005)
+    assert read.r_seam_sigma == pytest.approx(0.001)
+
+
+def test_the_two_denominators_differ_on_the_same_seam_fields() -> None:
+    """Same seam fields, DIFFERENT denominators — the invariant, behaviourally.
+
+    Bug caught: unifying the two denominators (either direction). With
+    identical seam inputs the pair ratio is 0.02/sqrt(10) and the oracle
+    ratio 0.02/4 — if either read adopted the other's interior these two
+    numbers would collide.
+    """
+    pair = _mod.pair_read(**_pair_read_kwargs())
+    oracle = _mod.oracle_read(**_oracle_read_kwargs())
+    assert pair.d_int != pytest.approx(oracle.d_int)
+    assert _mod.PAIR_D_INT_SOURCE != _mod.ORACLE_D_INT_SOURCE
+    assert "both" in _mod.PAIR_D_INT_SOURCE
+    assert "seamless" in _mod.ORACLE_D_INT_SOURCE
+
+
+def test_rows_record_which_denominator_they_used() -> None:
+    """Each row names its own D_int source verbatim.
+
+    Bug caught: rows that record the number but not which interior it came
+    from — the pair/oracle comparison becomes unreadable a stage later,
+    which is exactly how the inconsistency gets "fixed" by mistake.
+    """
+    assert _row(route="pair")["d_int_source"] == _mod.PAIR_D_INT_SOURCE
+    assert _row(route="oracle")["d_int_source"] == _mod.ORACLE_D_INT_SOURCE
+    with pytest.raises(ValueError, match="route"):
+        _row(route="blend")
+
+
+# --- Rule 0: floor-probe attributability (pin 23) -------------------------
+
+
+@pytest.mark.parametrize(
+    ("floor_f", "want_attributable", "want_verdict"),
+    [
+        (0.005, True, "CLEAN"),  # 3F = 0.015 < 0.02
+        (0.02 / 3.0, False, "UNMEASURED (solver floor)"),  # 3F == 0.02 exactly
+        (0.01, False, "UNMEASURED (solver floor)"),  # 3F = 0.03 > 0.02
+    ],
+)
+def test_attributability_needs_rms_strictly_above_three_times_the_floor(
+    floor_f: float, want_attributable: bool, want_verdict: str
+) -> None:
+    """RMS(delta) must EXCEED 3xF; equality is not attributable.
+
+    Bug caught: a >= comparison admitting a verdict exactly at the floor
+    bound, where the measured disagreement is indistinguishable from
+    solver noise. Boundary hand-computed: 3 x (0.02/3) = 0.02 == RMS.
+    """
+    row = _row(floor=_floor(f=floor_f))
+    assert row["attributable"] is want_attributable
+    assert row["verdict"] == want_verdict
+    assert row["floor"]["threshold_m"] == pytest.approx(3.0 * floor_f)
+
+
+def test_unmeasured_row_is_never_clean_but_still_records_the_number() -> None:
+    """Below the floor: the number is recorded, the verdict is UNMEASURED.
+
+    Bug caught: recording a floor-failing pair as CLEAN — the precise
+    failure Rule 0 exists to prevent (a solver-noise-sized disagreement
+    presented as "no seam artifact"). The raw rubric cell is kept beside
+    it so nothing is hidden.
+    """
+    row = _row(floor=_floor(f=0.01))
+    assert row["verdict"] == "UNMEASURED (solver floor)"
+    assert row["verdict"] != "CLEAN"
+    assert row["rubric_cell"] == "CLEAN"
+    assert row["rms_delta"] == pytest.approx(0.02)
+    assert row["r_seam"] == pytest.approx(0.02 / _D_INT_PAIR_MEAN)
+
+
+def test_floor_refuses_outright_when_the_deeper_solve_did_not_converge() -> None:
+    """Pin 23: a non-converged deeper solve is a STOP, not an UNMEASURED row.
+
+    Bug caught: treating the gap between two TRUNCATION points as a floor —
+    3xF then has no meaning, and the pair would be quietly filed as
+    "unmeasured" instead of surfaced to the owner.
+    """
+    with pytest.raises(RuntimeError, match="STOP"):
+        _mod.floor_attributability(
+            rms_delta=0.02, floor_f=0.005, probe=_floor_probe(converged=False)
+        )
+
+
+@pytest.mark.parametrize(
+    "missing", ["rtol", "maxiter", "iterations", "final_rel_residual", "converged"]
+)
+def test_floor_probe_must_record_all_five_convergence_fields(missing: str) -> None:
+    """Pin 23's recording clause: F without its convergence evidence refuses.
+
+    Bug caught: a floor recorded as a bare number — a later reader cannot
+    tell whether it came from a converged solve, and the 3xF gate becomes
+    unverifiable.
+    """
+    probe = _floor_probe()
+    probe.pop(missing)
+    with pytest.raises(ValueError, match=missing):
+        _mod.floor_attributability(rms_delta=0.02, floor_f=0.005, probe=probe)
+
+
+def test_floor_block_carries_the_probe_evidence_into_the_row() -> None:
+    """The row carries rtol/maxiter/iterations/residual/CONVERGED.
+
+    Bug caught: the attributability decision recorded without the evidence
+    that licenses it (pin 23 requires the row to RECORD that the deeper
+    solve reached rtol).
+    """
+    probe = _row()["floor"]["probe"]
+    assert probe["converged"] is True
+    assert probe["rtol"] == 1.0e-9
+    assert probe["maxiter"] == 2200
+    assert probe["iterations"] == 611
+    assert probe["final_rel_residual"] == 9.1e-10
+
+
+def test_oracle_floor_is_its_own_and_never_the_pairs() -> None:
+    """The ORACLE's floor block is separate from the PAIR's.
+
+    Bug caught: reusing the pair's floor for the oracle — the oracle's
+    seamless side would never be probed at all, so its attributability
+    claim would rest on a measurement of two different solves.
+    """
+    pair = _row(route="pair", floor=_floor(f=0.005))
+    oracle_probe = dict(_floor_probe(), scope="ORACLE: blend + seamless anchor")
+    oracle = _row(
+        route="oracle",
+        floor=_mod.floor_attributability(
+            rms_delta=0.02, floor_f=0.001, probe=oracle_probe
+        ),
+    )
+    assert pair["floor"]["f_m"] == 0.005
+    assert oracle["floor"]["f_m"] == 0.001
+    assert oracle["floor"]["probe"]["scope"] != pair["floor"]["probe"]["scope"]
+
+
+def test_tier1_wait_marks_the_pair_unmeasured_pending_owner_not_skipped() -> None:
+    """A refused floor leg records a WAIT and withholds the verdict.
+
+    Bug caught: silently skipping the floor probe when the ladder refuses
+    it and then reporting CLEAN anyway — an unfloored verdict presented as
+    a floored one.
+    """
+    row = _row(floor=_mod.floor_wait_block(reason="tier1_eligible refused"))
+    assert row["verdict"] == "UNMEASURED (pending owner — floor-probe WAIT)"
+    assert row["floor"]["status"] == "WAIT"
+    assert row["attributable"] is False
+    assert row["rms_delta"] == pytest.approx(0.02)
+
+
+# --- row schema, namespace, caveats ---------------------------------------
+
+_SEAM_ROW_KEYS = {
+    "route",
+    "pair",
+    "era",
+    "field_kind",
+    "resolution_deg",
+    "domain",
+    "rms_delta",
+    "d_int",
+    "d_int_source",
+    "r_seam",
+    "rubric_cell",
+    "verdict",
+    "attributable",
+    "floor",
+    "geometry",
+    "non_transfer_note",
+    "oracle_note",
+    "seal_sha",
+    "label",
+    "date",
+}
+
+
+def test_seam_row_schema_exactly_pinned() -> None:
+    """The row key set is EXACTLY the schema — no free-prose field exists.
+
+    Bug caught: an "interpretation"/"notes" field appearing on a row whose
+    whole point is numbers-plus-caveat (review pin 8's structural control).
+    """
+    assert set(_row()) == _SEAM_ROW_KEYS
+
+
+def test_row_carries_the_rubric_row_shape_with_era_and_resolution() -> None:
+    """{pair, era, field_kind, rms_delta, d_int, r_seam, verdict} + resolution.
+
+    Bug caught: dropping `era` (or `resolution_deg`) because Stage 1 has
+    exactly one of each — a ROW COUNT is not a schema excuse, and the keys
+    cost nothing now against a migration at Stage 2.
+    """
+    row = _row()
+    for key in ("pair", "era", "field_kind", "rms_delta", "d_int", "r_seam"):
+        assert key in row
+    assert row["pair"] == "seam_n|seam_s"
+    assert row["era"] == "2017"
+    assert row["resolution_deg"] == 0.2
+    assert row["field_kind"] == "mean"
+    assert row["domain"]["name"] == "the 2·overlap strip"
+    assert row["domain"]["bbox"] == [295.0, 305.0, 36.0, 40.0]
+
+
+def test_geometry_caveat_and_non_transfer_sentence_are_pinned_verbatim() -> None:
+    """Review pin 13: the geometry caveat rides every row, verbatim.
+
+    Bug caught: a positive seam verdict read three documents later as a
+    production-geometry result. The strings are stated here independently
+    of the module, so any drift fails.
+    """
+    row = _row()
+    assert row["geometry"] == (
+        "10x5 halves inside the anchor footprint — NOT D1 production geometry (15x15)"
+    )
+    note = row["non_transfer_note"]
+    assert "not a production-geometry seam reading" in note
+    assert "TILE COUNT" in note
+    assert "feasibility-frontier" in note
+
+
+def test_oracle_rows_carry_the_gap_register_note_and_pair_rows_do_not() -> None:
+    """oracle_note on the ORACLE route only.
+
+    Bug caught: dropping the no-published-precedent disclaimer from the
+    oracle (it is our own clause, T11 gap-register), or pasting it onto
+    the pair route where it is simply false — the pair read IS the
+    pre-registered rubric route.
+    """
+    assert _row(route="oracle")["oracle_note"] == (
+        "no published precedent — gap-register (T11)"
+    )
+    assert _row(route="pair")["oracle_note"] is None
+
+
+def test_seam_rows_from_read_cover_both_routes_and_both_field_kinds() -> None:
+    """Four rows: {pair, oracle} x {mean, sigma}.
+
+    Bug caught: the sigma route silently dropped — a mean-only seam
+    reading would pass as a complete one, which is exactly the T10 gap
+    the rubric's second ratio exists to close.
+    """
+    rows = _mod.seam_rows_from_read(
+        route="pair",
+        read=_mod.pair_read(**_pair_read_kwargs()),
+        floor_mean=_floor(),
+        floor_sigma=_floor(f=0.0005),
+        seal_sha="cafe" * 16,
+        date="2026-07-26",
+    ) + _mod.seam_rows_from_read(
+        route="oracle",
+        read=_mod.oracle_read(**_oracle_read_kwargs()),
+        floor_mean=_floor(f=0.001),
+        floor_sigma=_floor(f=0.0002),
+        seal_sha="cafe" * 16,
+        date="2026-07-26",
+    )
+    assert [(r["route"], r["field_kind"]) for r in rows] == [
+        ("pair", "mean"),
+        ("pair", "sigma"),
+        ("oracle", "mean"),
+        ("oracle", "sigma"),
+    ]
+    # The sigma rows carry the SIGMA numbers, not the mean ones.
+    assert rows[1]["rms_delta"] == pytest.approx(0.003)
+    assert rows[1]["d_int"] == pytest.approx(_D_INT_PAIR_SIGMA)
+    assert rows[3]["d_int"] == pytest.approx(_D_INT_ORACLE_SIGMA)
+
+
+def test_record_seam_rows_writes_the_rubric_namespace_and_merges(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rows land at phase14.stage1.seam_rows; the store is merged, not clobbered.
+
+    Bug caught: recording under a private key (the rubric names this
+    namespace, and the Gate-1 pack reads it) or overwriting the standing
+    evidence store (the P0-2 class).
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase14": {"stage1": {"probe": {"kept": True}}}}))
+    _mod.record_seam_rows([_row()], evidence_path=evid)
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["probe"] == {"kept": True}
+    assert len(stored["phase14"]["stage1"]["seam_rows"]) == 1
+    assert stored["phase14"]["stage1"]["seam_rows"][0]["pair"] == "seam_n|seam_s"
+
+
+def test_record_seam_rows_is_seal_gated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No verified seal -> nothing is written (the Task-10 tripwire).
+
+    Bug caught: a seam row written into the evidence store while the
+    evaluation seal cannot be verified — an unsealed evaluation-bearing
+    artifact.
+    """
+    from sverdrup.validation import phase14_seal
+
+    def _boom() -> None:
+        raise phase14_seal.SealError("no seal")
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _boom)
+    evid = tmp_path / "evidence.json"
+    with pytest.raises(phase14_seal.SealError):
+        _mod.record_seam_rows([_row()], evidence_path=evid)
+    assert not evid.exists()
+
+
+# --- the floor probe's own sizing + lineage reuse --------------------------
+
+
+def test_floor_probe_plan_states_the_tier1_arithmetic_before_it_runs() -> None:
+    """Pin 20(b): the extra leg is sized and laddered BEFORE it is spent.
+
+    Bug caught: an unpriced extra solve launched over headroom (the
+    exit-137 class), or a floor leg whose cost never appears in the
+    evidence at all.
+    """
+    plan = _mod.floor_probe_plan()
+    assert plan["m"] == _mod.SEAM_PAIR_M  # see the m-justification below
+    assert plan["window_index"] == 0
+    assert plan["n_windows"] == 1
+    assert plan["maxiter"] == _mod.STAGE1_PCG_MAXITER + 1000
+    assert plan["rtol"] < 1.0e-6  # DEEPER tolerance, not just more iterations
+    assert set(plan["models"]) == set(_mod.SEAM_PAIR_TILES) | {"anchor"}
+    for model in plan["models"].values():
+        assert model["peak_model_mib"] > 0.0
+    assert isinstance(plan["tier1_eligible"], bool)
+    assert "m=100" in plan["m_justification"]
+
+
+def test_floor_probe_deeper_solve_is_deeper_on_both_axes() -> None:
+    """The probe raises the cap AND tightens rtol.
+
+    Bug caught: re-solving at the SAME rtol with maxiter+1000. The
+    production seam solve converges at ~407 iterations against a 1200 cap,
+    so more iterations alone changes nothing — F would come out exactly 0
+    and 3xF would license every verdict vacuously.
+    """
+    plan = _mod.floor_probe_plan()
+    assert plan["maxiter"] > _mod.STAGE1_PCG_MAXITER
+    assert plan["rtol"] < _mod.SEAM_PRODUCTION_RTOL
+
+
+def test_floor_machinery_reuses_the_task18_lineage_by_import(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The floor path calls the Task-18 diagnostic's own std/mean helpers.
+
+    Bug caught: a reimplemented member-std evaluation drifting from the
+    Task-18-lineage construction the rubric's Rule 0 is defined against.
+    Behavioural (never a source scan): a sentinel installed on the
+    diagnostic module is what the driver picks up.
+    """
+    lineage = _mod._diag_lineage()
+    sentinel = object()
+    monkeypatch.setattr(lineage, "std_fields", sentinel)
+    assert _mod._lineage_std_fields() is sentinel
+    monkeypatch.setattr(lineage, "exclusive_days", sentinel)
+    assert _mod._lineage_exclusive_days() is sentinel
+
+
+# --- the CLI: gates, stops, and never blocking mechanically ---------------
+
+
+def test_seam_pair_cli_refuses_launch_when_the_ram_gate_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MemAvailable < 2x predicted peak -> nothing is solved.
+
+    Bug caught: launching two m=100 legs over headroom — the silent-OOM
+    class that already cost this stage one anchor launch.
+    """
+    ran: list[Any] = []
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 10.0)
+    monkeypatch.setattr(_mod, "_seam_pair_real_leg", lambda **kw: ran.append(kw))
+    res = runner.invoke(_mod.app, ["seam-pair"])
+    assert res.exit_code != 0
+    assert ran == []
+    assert "MemAvailable" in res.output
+
+
+def test_seam_pair_cli_records_rows_then_surfaces_structural_stop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """STRUCTURAL_STOP is RECORDED first, then surfaced to the owner.
+
+    Bug caught: stopping before the write (the evidence lost exactly when
+    the owner needs it), or a mechanical block — other tiles do not
+    consume seams and must be able to continue.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    stop_row = _row(rubric_cell="STRUCTURAL_STOP", floor=_floor(f=0.001))
+    monkeypatch.setattr(
+        _mod,
+        "_seam_pair_real_leg",
+        lambda **kw: {
+            "rows": [stop_row],
+            "block": {"label": "SEAM-PAIR"},
+            "stop": None,
+        },
+    )
+    res = runner.invoke(_mod.app, ["seam-pair"])
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["seam_rows"][0]["verdict"] == "STRUCTURAL_STOP"
+    assert res.exit_code != 0
+    assert "STRUCTURAL_STOP" in res.output
+    assert "other tiles" in res.output.lower()
+
+
+def test_seam_pair_cli_stops_immediately_when_a_seam_solve_caps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A capped seam solve stops BEFORE any verdict is claimed (pin 23).
+
+    Bug caught: computing and recording a verdict on a solve seam_read
+    would refuse anyway — the whole T4 spend reported as a reading.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(
+        _mod,
+        "_seam_pair_real_leg",
+        lambda **kw: {
+            "rows": [],
+            "block": {"label": "SEAM-PAIR", "convergence": "CAPPED"},
+            "stop": "PIN23",
+        },
+    )
+    res = runner.invoke(_mod.app, ["seam-pair"])
+    assert res.exit_code != 0
+    assert "CAPPED" in res.output
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["seam_pair"]["convergence"] == "CAPPED"
+    assert stored["phase14"]["stage1"].get("seam_rows", []) == []
