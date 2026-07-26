@@ -66,6 +66,8 @@ OURS = Path("data/2021a_ssh_mapping_ose/ours")
 STAGE1_DIR = OURS / "phase14_stage1"
 ANCHOR_SIGNED_MAPS = STAGE1_DIR / "anchor_signed_maps.nc"
 ANCHOR_MEMBER_STD = STAGE1_DIR / "anchor_member_std_maps.nc"
+# This leg's own solve output (crash-resume substrate — never a reference).
+OWN_STORE = STAGE1_DIR / "anchor_gate_member_store.npz"
 
 # The signed reference records (phase-13 acceptance, T11 winner ensemble;
 # evidence node phase13.miost.members names all three).
@@ -93,7 +95,7 @@ M_MEMBERS = 100
 ROUTE_RTOL = 1e-12
 N_DAYS = 365
 GAMMA_DAY = 0.0  # the Phase-13 T3 Γ-route precedent (day 0, one window)
-_GAMMA_CHUNK = 200  # the recorded OOM lesson: never one whole-grid evaluate
+_GAMMA_CHUNK = 100  # the recorded OOM lesson: never one whole-grid evaluate
 
 REQUIRED_CHECKS = (
     "tiling_identity",
@@ -860,22 +862,58 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
             check5 = _fail_check("not run — check-1 substrate identity failed")
         else:
             # ---- the m=100 full-2017 anchor solve (the seven-hour leg) --
+            # Crash-durable at the LEG level: the solve output (etas/anoms/
+            # starts + the pcg rows) persists to this leg's OWN store right
+            # after the solves, and a re-run resumes from it (the phase-13
+            # T3 leg-cache pattern after this host's oom_kill events;
+            # clearing the store forces a full recompute — the gate
+            # re-validation path).
             days = [float(d) for d in range(N_DAYS)]
-            log_start = len(miost_mod.CONVERGENCE_LOG)
-            spec, etas_a, anoms, starts = merged_members(
-                method,
-                framed,
-                grid,
-                provider,
-                M_MEMBERS,
-                root,
-                on_window=lambda wid, day: _echo(
-                    f"window {wid} solved (day {day:.0f}); "
-                    f"{time.monotonic() - t_wall:.0f}s"
-                ),
-            )
-            pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
-            _echo(f"solves done: {len(pcg_rows)} pcg rows")
+            resumed = OWN_STORE.exists()
+            if resumed:
+                _echo(f"RESUME: loading this leg's own member store {OWN_STORE}")
+                with np.load(OWN_STORE, allow_pickle=False) as z:
+                    wids = [str(w) for w in np.asarray(z["window_ids"])]
+                    etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
+                    anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+                    starts = {w: float(z[f"start_{w}"]) for w in wids}
+                    pcg_rows = json.loads(str(z["pcg_rows"][()]))
+                    solve_wall_s = float(z["solve_wall_s"])
+                spec = method._spec_from(provider, grid)  # noqa: SLF001
+            else:
+                t_solve0 = time.monotonic()
+                log_start = len(miost_mod.CONVERGENCE_LOG)
+                spec, etas_a, anoms, starts = merged_members(
+                    method,
+                    framed,
+                    grid,
+                    provider,
+                    M_MEMBERS,
+                    root,
+                    on_window=lambda wid, day: _echo(
+                        f"window {wid} solved (day {day:.0f}); "
+                        f"{time.monotonic() - t_wall:.0f}s"
+                    ),
+                )
+                pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
+                solve_wall_s = time.monotonic() - t_solve0
+                STAGE1_DIR.mkdir(parents=True, exist_ok=True)
+                payload: dict[str, Any] = {
+                    "window_ids": np.array(sorted(anoms)),
+                    "pcg_rows": json.dumps(pcg_rows),
+                    "solve_wall_s": solve_wall_s,
+                    "label": (
+                        "ANCHOR-GATE-LEG member store (this leg's own solve "
+                        "output; crash-resume substrate, never a reference)"
+                    ),
+                }
+                for w in anoms:
+                    payload[f"eta_{w}"] = etas_a[w]
+                    payload[f"anom_{w}"] = anoms[w]
+                    payload[f"start_{w}"] = starts[w]
+                np.savez(OWN_STORE, **payload)
+                _echo(f"member store persisted: {OWN_STORE}")
+            _echo(f"solves done: {len(pcg_rows)} pcg rows (resumed={resumed})")
 
             # ---- route 1: member coefficient arrays sha-equal ----------
             member_windows: dict[str, Any] = {}
@@ -906,10 +944,16 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
             # ---- routes 2/4 substrate: blended day fields ---------------
             means = mean_fields(spec, starts, etas_a, grid, plan, days)
             stds = std_fields(spec, starts, anoms, grid, plan, days)
+            # anoms (~1.4 GB) is done after std_fields — free it before the
+            # compare/Γ phase (the compare-phase OOM lesson from launch 2).
+            del anoms
+            gc.collect()
             mdt = np.asarray(load_mdt_grid([Path(p) for p in MAPPING_SIX], grid))
             mean_stack = np.stack([mn.reshape(grid.shape) for mn in means]) + mdt[None]
             std_stack = np.stack([sd.reshape(grid.shape) for sd in stds])
             var_stack = std_stack**2
+            del stds
+            gc.collect()
 
             with xr.open_dataset(WINNER_MEAN) as ds:
                 ref_mean = np.asarray(ds["ssh"].values)
@@ -929,11 +973,23 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 np.allclose(var_stack, ref_var, rtol=ROUTE_RTOL, atol=1e-18)
             )
             _echo(f"route variance: {var_ok} (bit={var_bit}, max|d|={var_max:.3e})")
+            del var_stack, ref_var
+            gc.collect()
 
             # ---- route 3: Γ-path day 0 (chunked mean_at) ----------------
+            # from_etas evaluates its construction grid's mean via ONE
+            # whole-grid mean_at — a dense (n_pts, n_elem) ~4 GB evaluate,
+            # the exact recorded Phase-13 OOM (it killed launch 2 of this
+            # leg). Build on a 1x1 grid; the REAL grid points go through
+            # chunked mean_at below (transient capped at ~150 MB).
+            from sverdrup.core.grid import GridSpec as _GridSpec  # noqa: PLC0415
+
             wid0 = plan.windows[0].id
+            tiny = _GridSpec.lonlat(
+                np.asarray([float(grid.x[0])]), np.asarray([float(grid.y[0])])
+            )
             dist = MiostPointDistribution.from_etas(
-                grid,
+                tiny,
                 GAMMA_DAY,
                 spec,
                 {wid0: etas_a[wid0]},
@@ -941,7 +997,9 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 w_days=plan.w_days,
             )
             lon2d, lat2d = np.meshgrid(grid.x, grid.y)
-            pts = np.column_stack([lon2d.ravel(), lat2d.ravel(), np.zeros(lon2d.size)])
+            pts = np.column_stack(
+                [lon2d.ravel(), lat2d.ravel(), np.full(lon2d.size, GAMMA_DAY)]
+            )
             gamma_vals = np.concatenate(
                 [
                     np.asarray(dist.mean_at(pts[i : i + _GAMMA_CHUNK]))
@@ -992,6 +1050,11 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                     "root_int": root,
                     "m": M_MEMBERS,
                     "root_note": ROOT_NOTE,
+                },
+                "own_member_store": {
+                    "path": str(OWN_STORE),
+                    "resumed_from_own_store": resumed,
+                    "solve_wall_s": solve_wall_s,
                 },
             }
 
