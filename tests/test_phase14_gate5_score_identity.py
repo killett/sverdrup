@@ -15,7 +15,11 @@ identity now, and the compute_stats-lineage value constants are pinned AT
 the Stage-1 anchor run (recorded into ``phase14.stage1.gate5`` evidence
 when this test first runs unskipped). Owner ratifies at Gate 0.
 
-SKIP-GUARDED: the anchor-run artifacts exist only in Stage 1.
+LIVE AT STAGE-1 T3 (anchor identity gate): the anchor run writes
+``phase14_stage1/anchor_signed_maps.nc`` and pins the gate-5 constants into
+``phase14.stage1.gate5`` (write-once). The guard below keys on that
+artifact, so this gate runs live wherever the anchor-run data ships and
+skips (named) on data-less CI checkouts.
 """
 
 from __future__ import annotations
