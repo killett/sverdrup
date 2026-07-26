@@ -816,7 +816,19 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
         rspec = RSpec(deltas=dict(PHASE13_DELTAS))
         basis = _basis_domain_km(frame)
         plan = WindowPlan()
-        method = Miost(plan=plan, pcg_maxiter=maxiter, rspec=rspec, basis_domain=basis)
+        # Crash-durable member-batch PCG checkpoints (bit-identical resume
+        # after a kill — the documented MiostSolver contract; the phase-13
+        # T3 external legs ran the same way). A harness-level process-group
+        # kill took the first launch of this leg down mid-window.
+        ckpt_dir = STAGE1_DIR / "anchor_gate_pcg_ckpt"
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        method = Miost(
+            plan=plan,
+            pcg_maxiter=maxiter,
+            rspec=rspec,
+            basis_domain=basis,
+            member_solve_checkpoint_dir=ckpt_dir,
+        )
         spec_gen = method._spec_from(provider, grid)  # noqa: SLF001
         spec_sig = Miost(plan=plan, pcg_maxiter=maxiter, rspec=rspec)._spec_from(  # noqa: SLF001
             provider, grid
