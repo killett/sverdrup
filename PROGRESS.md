@@ -570,6 +570,97 @@
 > recorded as CONDITIONAL on `shipped_miost5().member_root` (proves
 > reproduction under that root, never root-independence); mean and Γ
 > routes root-independent; variance inherits the member conditionality.
+> **✅ T4 COMPLETE — SEAM PAIR + PRIMARY PAIR READ + ORACLE (2026-07-27;
+> machinery `46a5bc9`+`e54e414`+`a86fb6c`, real leg recorded).** Rows at
+> `phase14.stage1.seam_rows` (4 = {pair, oracle} × {mean, σ}), run block
+> at `phase14.stage1.seam_pair`, every row seal-sha-quoted
+> (a17ea419…b725c5d2). **NO STRUCTURAL_STOP.**
+> **THE ROWS** (era 2017, resolution 0.2°, domain "the 2·overlap strip"
+> lat 36–40 × lon 295–305, all four attributable):
+> PAIR/mean rms_delta 0.0071561 m, D_int 0.0864911 m, **R_seam 0.0827
+> CLEAN**; PAIR/σ rms_delta 0.0036065 m, D_int 0.0032655 m,
+> **R_seam_sigma 1.1044 ELEVATED**; ORACLE/mean rms_delta 0.0092674 m,
+> D_int 0.0944661 m, **R 0.0981 CLEAN**; ORACLE/σ rms_delta 0.0020921 m,
+> D_int 0.0032248 m, **R 0.6488 CLEAN**.
+> **★ THE FINDING: the σ route is ELEVATED where the mean route is
+> CLEAN** (1.1044 vs 0.0827 — a 13× ratio gap on the SAME solves). A
+> mean-only seam reading would have reported "no seam artifact" here.
+> This is exactly the gap T10's second ratio was added to close, and it
+> is the first Stage-1 number that would have been MISSED without it.
+> Mechanism, stated without interpretation beyond the arithmetic: the
+> two routes' denominators differ by 26× (0.0865 m mean vs 0.00327 m σ)
+> while their numerators differ by only 2× — member-std is a far
+> smoother field than the mean, so the same absolute cross-tile
+> disagreement is a much larger fraction of σ's own seam-scale
+> variation. ELEVATED is report-only per the rubric: RECORDED, carried
+> to the consuming gate, the pair is NOT rerun or tuned on this signal
+> (skill-selection firewall analog).
+> **TWO D_int DENOMINATORS behaved as designed** (they are different by
+> construction, never to be unified): PAIR pooled both tiles' core
+> interiors (0.0864911 mean / 0.0032655 σ, rubric R-06/R-07); ORACLE
+> used the SEAMLESS anchor solve's interior alone (0.0944661 /
+> 0.0032248, R-19). Both recorded in-row as `d_int_source`.
+> **RULE 0 / PIN 23 DISCHARGED ON MEASUREMENT, not assumption.** All
+> three deeper-tolerance probes (rtol 1e-9, cap 2200 = production
+> 1200+1000, m=100, window w-00018.0+60) **CONVERGED**: seam_n 635 iters
+> @ 9.717e-10, seam_s 629 @ 9.930e-10, anchor 678 @ 9.616e-10 (29–31%
+> of cap). Floors: **F_pair 1.637e-06 m (mean) / 9.539e-08 m (σ)**;
+> **F_oracle 1.375e-06 / 8.279e-08** — its OWN, never shared: the
+> oracle's probe re-solves the SEAMLESS ANCHOR too (the pair's does
+> not), and its mean floor is dominated by the blended shift 1.375e-06
+> rather than the anchor's 1.108e-06. Every RMS clears 3×F by ≥3 orders
+> (smallest margin: PAIR/σ 0.0036 vs 2.86e-07 = 12,600×), so all four
+> rows are attributable and none is UNMEASURED.
+> **DEVIATION RECORDED (pin 20(a) invited it): the floor probe ran m=100,
+> not m=1.** Reason in-row and in the constant: the σ field kind has NO
+> floor at m=1 — member-std is taken about the sample mean with the
+> (m-1) denominator, undefined for one member — and σ is a
+> verdict-bearing route the rubric requires a floor for. Running at the
+> production m against the production solve's OWN window-0 coefficients
+> (same root, same window, same m; ONLY the tolerance differs) is also
+> the CHEAPEST way to get the σ floor: it adds one deeper window solve
+> per geometry and reuses the production solve as reference. Pin 20(a)'s
+> physics claim is untouched (m adds RHS columns to the same operator).
+> **A SECOND DEVIATION, deliberate: "deeper tolerance" is deeper on BOTH
+> axes (rtol 1e-9 AND maxiter+1000), not the rubric's "+1000" alone.**
+> The rubric's construction is inert here: the production seam solve
+> CONVERGES at ~407 iterations against a 1200 cap, so extra headroom
+> alone returns the identical answer, F would be exactly 0, and 3×F
+> would license every verdict vacuously. Tightening rtol is what makes
+> it a floor; the +1000 buys the iterations the tightening costs (635
+> observed vs 407 production).
+> **CONVERGENCE, both tiles, all 36 legs CONVERGED under the 1200 cap
+> at rtol 1e-6:** seam_n worst residual 9.996e-07, seam_s 9.980e-07 —
+> note both sit at ~99.9% of rtol, converged but with no residual
+> margin to spare; the member-batch leg remains the worst-converging
+> leg (pin 26(d) holds at the seam geometry too).
+> **WALL/PEAK:** total leg **55,201.7 s (15.3 h)**, peak RSS **2,573.5
+> MiB** (vs the T3 anchor's 3,512 MiB — strictly smaller on the binding
+> Tier-1 axis). Splits: seam_n solve 19,666 s / seam_s 22,154 s
+> (n_obs 40,897 / 41,298), floor probes 3,746 + 3,765 + 5,725 s,
+> compare phase <2 s off the persisted maps. **Per-window pace ranged
+> 1,656–3,480 s for the SAME geometry (2.1× spread within one run) —
+> fresh corroboration of pin 28's non-stationary-host finding, and a
+> reminder that any wall-based bracket at this scale is inside its own
+> noise.**
+> **GEOMETRY CAVEAT rides every row (review pin 13):** "10x5 halves
+> inside the anchor footprint — NOT D1 production geometry (15x15)" +
+> the non-transfer sentence naming the feasibility-frontier watch item
+> (worst-seam grew with TILE COUNT, PROGRESS 2026-07-01) as sitting on
+> the far side of that gap. **This is discipline 7 applied to a
+> positive result: three CLEAN cells and one ELEVATED at a 2-tile,
+> 10×5 geometry say NOTHING about D1's 15×15 many-tile seams.**
+> Artifacts: seam_{n,s}_signed_maps.nc + seam_{n,s}_member_std_maps.nc
+> (365×37×51, all finite, STAGE1-EVIDENCE labeled, five mapping
+> missions — j3 held out), both member stores (crash-resume substrate),
+> seam_floor_probe.npz (shift fields + summary). Zero touches: locked
+> tally byte-identical (asserted in-run), `seal_run check` PASS
+> unchanged. Ops: setsid-detached + `python -u` + log + stall/exit
+> watchers; the pair phase persists maps BEFORE the compare phase and
+> the floor phase resumes from its own store — so neither a
+> compare-phase death nor a probe-phase death can cost the solves.
+> **NEXT: the owner's call on the ELEVATED σ cell** (report-only by
+> rubric, carried to Gate 1); T5 remains WAITing on pin 27.
 > **(prior walk-request block, kept for the trail):**
 > **⛔ STOPPED FOR THE OWNER WALK AT T3'S COMPLETION (2026-07-26) — the
 > anchor identity gate is the stage's foundation; the owner walks the
