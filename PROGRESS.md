@@ -500,6 +500,77 @@
 > leg (in the constant's comment + test-asserted). (e) The anchor's
 > **459/500 = 91.8% of budget, 8% headroom** — named as the margin it
 > is; at 1200 the same leg sits at 38%.
+> **⛔ T4 COMPLETE (`46a5bc9`/`e54e414`/`a86fb6c`/`35e8eef`, 15.3 h,
+> peak 2,573 MiB — SMALLER than the ratified T3 anchor leg on the
+> binding axis) — MACHINERY APPROVED, HEADLINE INTERPRETATION
+> REJECTED BY REVIEW. TWO OWNER ITEMS BELOW.**
+> **THE FOUR RUBRIC ROWS** (`phase14.stage1.seam_rows`; pair
+> `seam_n|seam_s`, era 2017, 0.2°, the 2·overlap strip lat 36–40 ×
+> lon 295–305; ALL FOUR reproduced BIT-EXACTLY by the reviewer from
+> the raw artifacts, strip geometry re-derived from the rubric text
+> alone):
+> | route | field | rms_delta | d_int | R | cell |
+> |---|---|---|---|---|---|
+> | pair | mean | 0.007156 | 0.086491 | 0.0827 | CLEAN |
+> | pair | sigma | 0.003607 | 0.003265 | **1.1044** | **ELEVATED** |
+> | oracle | mean | 0.009267 | 0.094466 | 0.0981 | CLEAN |
+> | oracle | sigma | 0.002092 | 0.003225 | 0.6488 | CLEAN |
+> All four ATTRIBUTABLE (margins 1457× / 12,600× / 2247× / 8424×
+> over 3×F). Pin 23 fully discharged: 36 production legs converged
+> (max 434/427 iters vs cap 1200), three floor probes converged
+> (635/629/678 @ ~9.6–9.9e-10 vs rtol 1e-9, 29–31% of cap).
+> **⚠ OWNER ITEM 1 — THE σ ELEVATED IS (almost certainly) MONTE-CARLO
+> NOISE, AND IT EXPOSES A CRN DEFECT WITH SCOPE BEYOND T4.** Review
+> found four independent lines: (1) magnitude matches the ensemble
+> sampling floor `σ/√(m−1)` = 0.003706 m to **2.7%** (observed
+> 0.003607); (2) ONE-SIDED — `RMS(σ_s − σ_anchor)` = 0.000253 m but
+> `RMS(σ_n − σ_anchor)` = 0.003599 m; (3) NO seam localisation (flat
+> ±7% across the strip, where the mean route is correctly V-shaped:
+> 0.0099 at edges → 0.0043 at the boundary); (4) **MECHANISM traced in
+> code:** `miost_crn.coef_noise` keys perturbations on pavement-lattice
+> indices `(ix, iy)` measured from `BasisSpec.(x0_km, y0_km)`, and the
+> driver sets `basis_domain` from EACH TILE'S OWN `solve_bbox` corner —
+> seam_s and the anchor share lat 33.0 (identical CRN draws) while
+> seam_n starts at lat 36.0 (334 km offset → independent draws). The
+> module's own docstring guarantee ("never of array position") holds
+> across WINDOWS but **breaks across TILES with different solve
+> origins** — i.e. nearly every D1 production tile. The pipeline's own
+> recorded `mc_error = sqrt(2/(m−1))` constant predicts the entire
+> reading (0.1005 × 0.036873 = 0.003706 m). **Consequence:** the σ
+> route has a SECOND floor five orders above Rule 0's solver floor —
+> the ENSEMBLE floor — which the rubric does not carry; under it
+> 3×F_ens = 0.0111 m > 0.0036 m and the row reads **UNMEASURED
+> (ensemble floor)**, not ELEVATED. Bounded true tiling effect on σ:
+> R ≈ 0.08–0.12 (CLEAN, same order as the mean route). **NOTHING was
+> tuned on this signal** (firewall); the decisive half-split
+> confirmation (m=100 → two halves of 50; predicted RMS ≈ 0.0053 m)
+> and a direct CRN origin demonstration are IN FLIGHT.
+> **⚠ OWNER ITEM 2 — RULE 0'S TEXT IS DEFECTIVE FOR CONVERGED SOLVES
+> (reviewer ENDORSES the implementer's deviation).** The rubric's
+> literal "+1000 maxiter" floor construction is INERT here: PCG is
+> deterministic and Stage-1 solves are tolerance-limited (434/427 vs
+> cap 1200), so extra headroom returns the IDENTICAL iterate →
+> **F = 0 exactly, 3×F = 0, and Rule 0 licenses every verdict
+> vacuously — including a genuinely broken seam.** The text was
+> inherited from Task-18, where solves were truncation-limited
+> (cap-bound), and the regime changed without the text changing.
+> **Proposed amendment (owner's to ratify):** the floor probe must
+> tighten the STOPPING TOLERANCE by a stated number of decades, with
+> maxiter headroom sized so the tighter tolerance is actually reached;
+> "+1000 iterations" alone is a floor ONLY when the reference solve
+> exited AT the cap. T4 ran rtol 1e-9 (+3 decades) + maxiter 2200.
+> **Other review findings:** deviations (a) m=100 floor probe [SOUND —
+> σ has no floor at m=1, cost declared and sized], (c) uniform 2.0°
+> interior trim [SOUND — reviewer swept trim 0.0–2.4°, NO verdict
+> flips anywhere], (d) full scope [OK] all upheld; ORACLE blends σ
+> LINEARLY through `assemble` (exact only under perfectly correlated
+> members — which per item 1 does not hold), recorded; the pair floor
+> summary's `legs` array reports only the worst probe (per-tile detail
+> intact under `floor_probe.per_tile`); row `date` is the leg's start
+> date. One AC miss being fixed now: "seam line" wording not retired
+> from the T0 module docstrings. Final tree: **1345 passed / 21
+> skipped / 1 xfailed**, pre-commit --all-files clean, seal check
+> PASS, tally byte-identical, zero locked opens.
 > **⛔⛔ PIN 27 COMPLETE — T5 CROSSES TIER-2 ON TWO INDEPENDENT AXES:
 > WAIT FOR THE OWNER, no diverse-tile run may start** (`65908d1`,
 > `docs/superpowers/2026-07-26-phase14-stage1-t5-price-bracket.md`).
