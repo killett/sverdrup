@@ -8,7 +8,7 @@ Authoritative definitions live in ``docs/validation/phase14_seam_rubric.md``
   perpendicular to the seam, interior nodes only (the caller passes the
   already-trimmed core-interior field).
 - :func:`seam_delta` — ``RMS(delta)``: co-located mean-map disagreement on
-  the seam line (separation zero — two solves, one point).
+  the 2·overlap strip (separation zero — two solves, one point).
 - :func:`seam_verdict` — the pre-registered verdict cells (CLEAN /
   ELEVATED / STRUCTURAL_STOP), thresholds read from the sealed
   ``instrument_configs()["seam"]`` at CALL time (never cached at import).
@@ -103,7 +103,7 @@ def seam_delta(field_a: ArrayLike, field_b: ArrayLike) -> float:
     NaN in either field is excluded from the pool.
 
     Args:
-        field_a: Tile A values on the seam line.
+        field_a: Tile A values on the 2·overlap strip.
         field_b: Tile B values on the same (co-located) seam nodes.
 
     Returns:
@@ -260,12 +260,12 @@ def seam_read(
     sealed thresholds read at call time.
 
     Args:
-        seam_a: Tile A mean-map values on the seam line.
+        seam_a: Tile A mean-map values on the 2·overlap strip.
         seam_b: Tile B mean-map values on the co-located seam nodes.
         interior_a: Tile A core-interior mean-map field.
         interior_b: Tile B core-interior mean-map field.
         axis: Axis perpendicular to the shared boundary.
-        sigma_seam_a: Tile A member-std values on the seam line.
+        sigma_seam_a: Tile A member-std values on the 2·overlap strip.
         sigma_seam_b: Tile B member-std values on the co-located seam nodes.
         sigma_interior_a: Tile A core-interior member-std field.
         sigma_interior_b: Tile B core-interior member-std field.

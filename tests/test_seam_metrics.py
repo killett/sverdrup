@@ -84,7 +84,7 @@ def test_interior_increment_rms_all_nan_refuses() -> None:
 
 
 # ---------------------------------------------------------------------------
-# seam_delta — co-located RMS difference on the seam line
+# seam_delta — co-located RMS difference on the 2·overlap strip
 # ---------------------------------------------------------------------------
 
 
