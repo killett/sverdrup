@@ -4351,6 +4351,31 @@ above confirm them**, so the spec stops lagging the decision.
 
 ## Gotchas
 
+- **The σ route's floor is the ENSEMBLE, not the solver — CRN is keyed to the basis
+  ORIGIN, not to the ocean (2026-07-27, `phase14.stage1.seam_sigma_diagnosis`).**
+  T4's PAIR/σ `R_seam_sigma = 1.1044` (ELEVATED) beside PAIR/mean `0.0827` (CLEAN) is
+  ensemble Monte-Carlo noise, not a seam artifact — CONFIRMED on four lines, the
+  decisive one being a within-tile 50/50 member half-split (no seam crossed at all)
+  that disagrees **more** than the two tiles do: seam_n 0.005182 m, seam_s 0.005289 m
+  against the predicted `σ/√(50−1)` ≈ 0.00527 m, vs the cross-tile 0.003607 m ≈
+  `σ/√(99)` = 0.003708 m. **Mechanism (the part to remember):** `miost_crn.coef_noise`
+  keys the perturbation on pavement-lattice `(ix, iy)` measured from
+  `BasisSpec.(x0_km, y0_km)`, and every tile sets `basis_domain` from its OWN
+  `solve_bbox` lower-left corner. So two tiles whose solve boxes start at different
+  corners draw INDEPENDENT coefficient perturbations for the same physical element
+  (seam_n vs seam_s: 334 km offset, not a multiple of any rung's lattice step — the
+  two pavements share *zero* element centres), while two boxes sharing a corner draw
+  the IDENTICAL ones (seam_s and the seamless anchor both start at lat 33 → their σ
+  fields agree to 0.00025 m, 14× closer than seam_n's). Consequences: (a) any σ
+  comparison between differently-origined solves carries a `σ/√(m−1)` floor —
+  at m=100 that floor is comparable to `D_int_sigma`, so **`R_seam_sigma` at m=100 has
+  little resolving power and a σ-route reading near 1 means "at the noise floor", not
+  "seam"**; (b) an anchor-vs-tile σ agreement can be spuriously *good* purely from a
+  shared origin — never read it as validation; (c) the mean route is unaffected (it
+  localises correctly: a V with its minimum at the shared core boundary, 81% spread
+  across the strip, vs the σ route's flat ±7%). Diagnosis only — nothing was tuned and
+  the sealed rubric row stands as recorded; reproduce with
+  `pixi run python scripts/phase14_sigma_diagnosis.py`.
 - **mypy runs `mypy .` (whole tree, tests included)** via the pre-commit hook — test files
   must be type-clean too (e.g. assert `x is not None` before using an `Optional`). numpy ops
   often infer `Any`; wrap returns in `np.asarray(...)` to satisfy `no-any-return`. scipy/dask/
