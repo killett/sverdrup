@@ -545,6 +545,41 @@
 > tuned on this signal** (firewall); the decisive half-split
 > confirmation (m=100 → two halves of 50; predicted RMS ≈ 0.0053 m)
 > and a direct CRN origin demonstration are IN FLIGHT.
+> **✅ ITEM 1 CONFIRMED BY MEASUREMENT (`420c40f`,
+> `phase14.stage1.seam_sigma_diagnosis`, label DIAGNOSIS — recorded
+> BESIDE `seam_rows`, never inside; the block carries no
+> verdict/cell/score key anywhere in its tree, test-pinned
+> recursively).** THE DISCRIMINATOR: **within ONE tile — where there
+> is no seam at all — two disjoint 50-member halves disagree MORE
+> than the two tiles do**: seam_n **0.005182 m**, seam_s **0.005289 m**
+> against the predicted σ/√49 = 0.005272/0.005270 (obs/pred 0.983 and
+> 1.004), i.e. **1.44–1.47× the cross-tile 0.003607** — matching the
+> expected √(99/49) = 1.421 on both tiles. The full-m replay of each
+> store reproduces the persisted member-std maps BIT-EXACTLY (max|diff|
+> = 0.0), so the halves ride the identical evaluation path. **The
+> ELEVATED cell does not survive as a real signal.**
+> MECHANISM DEMONSTRATED (not asserted), with a positive control:
+> production specs are seam_n `y0_km = 333.96`, seam_s and anchor both
+> `y0_km = 0.0`. (A) one identity row draws the IDENTICAL number under
+> both origins while naming an element **333.96 km apart in physical
+> space** — CRN is pinned to the lattice index, not to the ocean;
+> (B) seam_n and seam_s share **ZERO** element centres (333.96 mod the
+> finest rung's 85.254 km = 78.199 km — the lattice is re-PLACED, not
+> merely re-indexed); (C) POSITIVE CONTROL: seam_s vs anchor share
+> (x0,y0) → **148,352 coincident element centres, draws bit-identical**
+> — which is exactly why σ_s nearly vanishes against the anchor while
+> σ_n sits at the MC floor. Reproducible:
+> `pixi run python scripts/phase14_sigma_diagnosis.py` (~4 min,
+> `--no-record` dry-runs). Zero solves, zero production behaviour
+> changed, nothing tuned on the signal.
+> **⚠ OWNER ITEM 1b (the live consequence, recorded under
+> `not_established` — NOT a finding of this diagnosis):** at m=100 the
+> ensemble floor σ/√99 = 0.0037 m is COMPARABLE TO `D_int_sigma` =
+> 0.0033 m, so **R_seam_sigma at m=100 has little resolving power** —
+> a σ reading near 1 means "at the noise floor", not "seam". The σ
+> seam instrument as currently specified cannot resolve what it was
+> built to measure at production m. No threshold or tuning applied;
+> the owner's call.
 > **⚠ OWNER ITEM 2 — RULE 0'S TEXT IS DEFECTIVE FOR CONVERGED SOLVES
 > (reviewer ENDORSES the implementer's deviation).** The rubric's
 > literal "+1000 maxiter" floor construction is INERT here: PCG is
