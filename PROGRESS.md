@@ -572,6 +572,70 @@
 > `pixi run python scripts/phase14_sigma_diagnosis.py` (~4 min,
 > `--no-record` dry-runs). Zero solves, zero production behaviour
 > changed, nothing tuned on the signal.
+> **✅ ADVERSARIAL DUAL REVIEW OF THE DIAGNOSIS (briefed to BREAK it,
+> not confirm it): DIAGNOSIS CONFIRMED, high confidence — it got
+> stronger under attack.** Every named attack line closed with
+> measurement: (i) **√2 convention** re-derived AND simulated
+> (N=200k): empirical RMS(s₁−s₂) matches σ/√(n−1) to **0.4%** at both
+> n=50 and n=100; the σ/√(2(m−1)) alternative is off by 1.41×;
+> production `std_fields` uses `ddof=1`, the convention the floor
+> assumes — no slip. (ii) **Split-axis gaming REFUTED empirically**:
+> `coef_noise` derives its stream from `blake2b(root|member|elem)`, so
+> the member index enters through a cryptographic hash — member–member
+> correlations ~0 at every lag, and contiguous / even-odd / random
+> 50-50 splits give obs/pred **0.9947 / 0.9921 / 0.9891**. (iii) **No
+> separate half path exists** — `sigma_full`, `sigma_1`, `sigma_2` are
+> three calls to the SAME `std_fields` differing only in the anomaly
+> dict; divergent ddof/masking structurally impossible. (iv)
+> **One-sidedness alternative REFUTED quantitatively**: σ_s agrees
+> with the anchor **14.7× closer than the MC floor permits** for
+> independent ensembles — data-richness cannot beat a Monte-Carlo
+> floor; σ levels agree within 0.2%, so there is no level asymmetry
+> for geometry to exploit. (v) **Mechanism on REAL production specs**,
+> not a toy: 0 coincident centres (n↔s) vs 148,352 (s↔anchor), both
+> reproduced; nearest lattice miss 7.06 km ≈ 7 million × the 1 mm
+> centre-key quantum. **QUADRATURE BOUND (the strongest line):** the
+> observed 0.003607 is BELOW the predicted floor 0.003708 — there is
+> no room in quadrature for a seam artifact at all; even allowing the
+> floor to be 5% wrong, any hidden artifact contributes at most
+> **R = 0.24, deep inside CLEAN**. Reproducibility PASS (~4 min
+> `--no-record`, every headline number regenerated, `recomputed_t4_reads`
+> bit-for-bit). `seam_rows` verified UNTOUCHED against an independent
+> pre-diagnosis git record (`35e8eef`). Production behaviour unchanged
+> (`420c40f` touches no `src/` at all; `b208676` is 5 docstring lines,
+> zero code-bearing tokens).
+> **⚠⚠ OWNER ITEM 1c — NEW, FROM THE REVIEW, AND SHARPER THAN 1b: THE
+> σ ROUTE HAS NO CLEAN REGION AT m=100 ON THIS GEOMETRY.** MC floor
+> 0.0037083 ÷ `D_int_sigma` 0.0032655 = **1.136**, against sealed
+> `clean_max = 1.0`. A PERFECTLY SEAMLESS solve would read ELEVATED
+> here — the instrument structurally cannot return CLEAN at production
+> m, and the observed 1.1044 sits BELOW the zero-artifact expectation.
+> The diagnosis block's "comparable to D_int_sigma" wording
+> UNDERSTATES this; the floor EXCEEDS the denominator.
+> **⚠⚠ OWNER ITEM 1d — NEW: THE ORACLE/σ CLEAN CELL IS CONTAMINATED IN
+> THE FLATTERING DIRECTION.** The same CRN defect predicts the
+> untouched ORACLE/σ number: since σ_s ≈ σ_anchor (shared origin) and
+> σ_n is independent, blend − anchor ≈ w_n(σ_n − σ_anchor) → predicted
+> RMS **0.002078** vs recorded **0.002092** — agreement to **0.7%**, a
+> fifth independent corroboration the diagnosis never claimed. So
+> **ORACLE/σ R = 0.6488 CLEAN is an artifact of the shared origin, not
+> evidence of a good seam** — a verdict-bearing CLEAN cell resting on
+> the same defect. **Reviewer's reading, recorded: nothing here
+> justifies retiring the σ instrument — the defect is in the CRN
+> ORIGIN BINDING, not in the σ route's concept; fix the keying (or
+> raise m), don't weaken the instrument.**
+> **Review minors (actionable, not blocking):** the banned-key test
+> asserts against a STUB block rather than walking the real assembled
+> tree (would not catch `r_seam_sigma`-shaped keys — MEDIUM test
+> strength, LOW risk since no `verdict` key exists); the commit
+> message's "no verdict-, cell- or score-shaped key anywhere" is
+> slightly overclaimed (`recomputed_t4_reads.r_seam{,_sigma}` are bare
+> verdict-bearing names holding sealed-row values); split-axis
+> irrelevance and the `ddof=1` coupling are unpinned (both verified
+> empirically by the reviewer, neither test-pinned). Confirmation-bias
+> note recorded honestly: the MC hypothesis predated the script, but
+> the half-split was a PRE-REGISTERED falsifiable prediction that
+> could have come out the other way.
 > **⚠ OWNER ITEM 1b (the live consequence, recorded under
 > `not_established` — NOT a finding of this diagnosis):** at m=100 the
 > ensemble floor σ/√99 = 0.0037 m is COMPARABLE TO `D_int_sigma` =
