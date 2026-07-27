@@ -609,3 +609,100 @@ def test_seam_read_all_nan_sigma_seam_refuses() -> None:
             sigma_interior_b=2.0 * _arange_4x4(),
             **_valid_read_kwargs(),
         )
+
+
+# ---------------------------------------------------------------------------
+# Rule 0.b — the ENSEMBLE floor (rubric v2, owner ruling 2026-07-27 pin 32)
+# ---------------------------------------------------------------------------
+
+
+def test_ensemble_floor_hand_value_at_exact_square_root() -> None:
+    """``F_ens = sigma / sqrt(m - 1)``, on numbers with an exact root.
+
+    m=101 makes sqrt(m-1) exactly 10, so the expected value is hand
+    arithmetic: 0.36 / 10 = 0.036. No implementation is mirrored.
+
+    Bug caught: the wrong denominator. sqrt(m) would give 0.03582 and
+    sqrt(2(m-1)) would give 0.02546 — the second is the textbook
+    relative-standard-error form and is the likely mis-derivation. Either
+    moves the sigma-route attributability threshold by ~1.4x, which is
+    the difference between the T4 pair/sigma row reading UNMEASURED (the
+    owner's ruling) and reading ELEVATED (the defect).
+    """
+    assert seam_metrics.ensemble_floor(0.36, 101) == pytest.approx(0.036, rel=1e-12)
+
+
+def test_ensemble_floor_at_m_two_is_the_sigma_level() -> None:
+    """Boundary: at m=2, sqrt(m-1) = 1, so F_ens is sigma itself.
+
+    Bug caught: an off-by-one in the denominator (sqrt(m) instead of
+    sqrt(m-1)) is invisible at large m in a loose assertion but shows up
+    exactly here — sqrt(2) = 1.414 vs 1.
+    """
+    assert seam_metrics.ensemble_floor(0.5, 2) == pytest.approx(0.5, rel=1e-12)
+
+
+def test_ensemble_floor_reproduces_the_recorded_t4_floor() -> None:
+    """The recorded T4 numbers reproduce the diagnosis's recorded floor.
+
+    Independent source: the recorded seam sigma diagnosis block
+    (``predicted_mc_floor_sigma_over_sqrt_m_minus_1_m = 0.0037082779``)
+    at the two recorded per-tile sigma levels and m=100. The diagnosis
+    took the ARITHMETIC MEAN of the two levels; the rubric pins the
+    POOLED RMS (the variance of the difference of two estimates is
+    (sa^2 + sb^2)/(2(m-1))), and on these numbers the two agree to 4e-8
+    relative because the levels agree to 0.03% — so the ruling's
+    measurement is reproduced either way, and the rubric's construction
+    is the defensible one.
+
+    Bug caught: any change to this arithmetic that breaks agreement with
+    the measurement the owner's ruling was decided on — the 1.136 x
+    D_int_sigma statement in the rubric would stop being reproducible
+    from the code.
+    """
+    level = seam_metrics.sigma_level_rms([0.036902215746459265], [0.036891583699065804])
+    f_ens = seam_metrics.ensemble_floor(level, 100)
+    assert f_ens == pytest.approx(0.0037082779872093232, rel=1e-12)
+    assert f_ens == pytest.approx(0.0037082779487203486, rel=1e-7)
+    # the rubric's plainly-stated reason: the floor is 1.136 x D_int_sigma
+    assert f_ens / 0.003265498166677423 == pytest.approx(1.1356, abs=5e-5)
+
+
+def test_ensemble_floor_refuses_below_two_members() -> None:
+    """m < 2 has no member-std, so it has no ensemble floor: refuse.
+
+    Bug caught: returning inf (or dividing by zero) at m=1 instead of
+    refusing. An inf floor silently makes EVERY sigma verdict
+    unattributable; a zero-denominator crash inside a production run
+    loses the solves. The rubric says member-std is undefined at m=1 —
+    the refusal is the honest answer.
+    """
+    with pytest.raises(ValueError, match="m >= 2"):
+        seam_metrics.ensemble_floor(0.5, 1)
+
+
+def test_sigma_level_rms_pools_values_not_field_rms_values() -> None:
+    """The sigma level pools the two fields' VALUES into one RMS.
+
+    Hand value: finite pool [3, 4, 0] -> sqrt((9 + 16 + 0)/3) =
+    sqrt(25/3) = 2.8867513459481287. NaN entries (land) are dropped.
+
+    Bug caught: averaging the two fields' separate RMS values instead of
+    pooling the values — that would give (3.5355 + 0)/2 = 1.7678 here,
+    a 39% error in F_ens that biases every sigma-route verdict — or
+    letting a NaN (land) node poison the pool and return nan, which
+    would make the floor block refuse on any tile with a coastline.
+    """
+    level = seam_metrics.sigma_level_rms([3.0, 4.0], [0.0, np.nan])
+    assert level == pytest.approx(math.sqrt(25.0 / 3.0), rel=1e-12)
+
+
+def test_sigma_level_rms_refuses_all_nan_pool() -> None:
+    """An all-NaN sigma pool has no level and must refuse.
+
+    Bug caught: an all-land strip returning 0.0, which would make F_ens
+    exactly 0 and license every sigma verdict vacuously — the same
+    failure mode PIN 23 closed on the solver floor.
+    """
+    with pytest.raises(ValueError, match="all-NaN"):
+        seam_metrics.sigma_level_rms([np.nan], [np.nan])

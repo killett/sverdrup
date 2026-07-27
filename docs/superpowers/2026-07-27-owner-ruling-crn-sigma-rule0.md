@@ -269,3 +269,273 @@ completion **and** stall watchers, and expect the co-tenant RAM cycle to gate th
   single 300 s benchmark; identical-geometry windows ranged 1,656–3,480 s inside one
   run; `seam_s` ran ~30% slower than `seam_n` at identical geometry. Wall-based gates
   need ≥1.7× margins or a deterministic work unit (pin 28).
+
+---
+
+## PART 3 — FOLLOW-UP RULING (verbatim), pins 36–39
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-27, after T13's first
+implementation attempt.** Recorded here, in the same document as pins 31–35,
+because the T13 seal signoff cites this path for pins 36–38 and the adversarial
+review correctly found that citation unsupported while these pins lived only in
+session prose. Pin 36 supersedes pin 32's `3×` constant.
+
+> T13 — DO NOT COMMIT. One defect, mine, must be fixed inside this seal version.
+>
+> 36. THE 3× FACTOR IN PIN 32 IS WRONG — the amended σ instrument has no reachable
+>     CLEAN or ELEVATED cell.
+>     Re-derived from the recorded numbers: attributability needs RMS > 3×F_ens =
+>     0.0111248 m, hence R_seam_sigma > 3.407, against sealed clean_max 1.0 /
+>     elevated_max 2.5. Every attributable σ verdict is therefore STRUCTURAL_STOP, and
+>     the only other outcome is UNMEASURED. CLEAN is reachable only when
+>     F_ens/D_int_sigma < 1/3 (m ≈ 1150 at this geometry). Pin 33's pathology, authored
+>     by pin 32.
+>     (a) The 3× does not transfer. The solver floor bounds a DETERMINISTIC quantity, where
+>         3× is a margin. F_ens is the EXPECTATION of a sampling statistic whose null
+>         distribution is tightly concentrated — your own half-split measured obs/pred at
+>         0.983 and 1.004. A 3× threshold discards any true artifact below ~2.8× the
+>         floor.
+>     (b) DERIVE the factor, do not pick one. Reuse the reviewer's N=200k harness — it
+>         already validated σ/√(m−1) to 0.4% — to characterise the null distribution of
+>         RMS(sigma_delta)/F_ens directly, including the spatial correlation that sets
+>         N_eff. Set the factor from that distribution at a stated confidence, with
+>         explicit margin for the asymptotic σ²/(2(m−1)) approximation. Record the
+>         derivation in the rubric beside the constant; a sealed constant with no
+>         derivation is how this happened.
+>     (c) STATE THE REACHABILITY CONDITION IN THE RUBRIC as a standing property:
+>         CLEAN reachable iff factor × F_ens < clean_max × D_int_sigma. Any future
+>         threshold or floor change is checked against it before sealing. This is pin 33
+>         made mechanical for this instrument.
+>     (d) HOLD THE SEAL AT ONE VERSION. Do not ship v2 and patch to v3 — pin 35 charges a
+>         coverage re-walk per version, and a sealed record containing a rule known to be
+>         unusable is worse than a delayed one. The suite re-run is the cheaper loss.
+>     (e) Everything else in T13 stands as reported and is endorsed: the F-by-accuracy-
+>         target construction, FLOOR_RTOL = production_rtol × 1e-3 with target and achieved
+>         residual on every block, the RuntimeError naming pin 34, the conformance table,
+>         the one-correction-only guard, and the chained mirroring of both versions.
+>
+> 37. ORACLE/σ → UNMEASURED: RATIFIED, and the extension was correct. Pin 32 was written
+>     over σ-route verdicts; I named only the pair cell. Applying the rule against a
+>     PASSING cell unprompted is finding (1d)'s discipline operating without being told,
+>     and it is substantively right — that CLEAN was already shown contaminated by the
+>     shared-origin mechanism (0.002078 predicted vs 0.002092 recorded).
+>     (a) CONSEQUENCE TO RECORD PLAINLY: Stage 1 has NO attributable σ-route seam verdict.
+>         The σ seam question is UNANSWERED, not answered clean. Two mean CLEAN cells are
+>         the only standing verdicts.
+>     (b) FIREWALL THE BOUND. The diagnosis-derived R ≈ 0.08-0.12 is a bound under the
+>         not_established firewall, NOT a verdict. It must not appear adjacent to the
+>         UNMEASURED rows in the Gate-1 pack in any form that lets a reader take it as
+>         one. Label it, separate it, and state that no rubric verdict supports it. This
+>         is the likeliest laundering path in the whole stage.
+>     (c) The C1→2 contract carries the σ seam question forward OPEN. Stage 2/2G planning
+>         may not assume σ seams are clean.
+>
+> 38. σ-LEVEL POOLING: RATIFIED. Var(σ_a − σ_b) = (σ_a² + σ_b²)/(2(m−1)), so the quadratic
+>     mean is correct and the arithmetic mean is not. Record WHY it matters despite the
+>     4e-8 agreement: the two constructions coincide when σ_a ≈ σ_b — the null — and
+>     diverge as the levels separate, which is the signal regime. Pin the RMS form and
+>     note that the T4 diagnosis used the arithmetic mean, so its 1.1356 is reproduced but
+>     its construction is superseded.
+>
+> 39. DISPATCH BOTH REVIEWERS BEFORE T14 — and before the T13 commit. Named surfaces:
+>     - The attributability factor (pin 36) and the reachability condition — the reviewer
+>       should attempt to construct a measurement that returns CLEAN, and report if none
+>       exists.
+>     - Whether the ensemble floor belongs on RMS or on the ratio, and whether applying it
+>       to the ORACLE route is coherent given the ORACLE compares blend against a seamless
+>       solve rather than two ensembles (its noise structure is not the pair route's, and
+>       pin 32 assumed it was — attack that).
+>     - Seal-chain integrity: v1→v2 provenance, both versions mirrored, prior sha
+>       preserved, the one-correction-only guard's failure mode on a second correction.
+>     - Whether FLOOR_RTOL = production_rtol × 1e-3 is attainable across ALL geometries in
+>       the roster, not just the three probed, and what happens at the 19° tiles.
+>     - Verdict as CONFIRMED / OVERTURNED / UNDER-EVIDENCED with the settling measurement
+>       named, as before.
+>
+> SEQUENCE: kill the pending commit; derive the factor (36b); fold 36-38; then both
+> reviews; then commit T13 as ONE sealed version; then T14.
+>
+> STOP CONDITION: STOP after the T13 commit with the derivation, the reviewers' verdicts,
+> and the reachability statement together. T14 does not start before that. If the derived
+> factor still leaves no reachable CLEAN cell at m=100, that is a finding, not a failure —
+> bring it to me rather than adjusting a sealed threshold to make room.
+
+### Outcome of pin 39's reviews (recorded 2026-07-27)
+
+Both reviews came back and **OVERTURNED the central deliverable**; see
+`docs/superpowers/2026-07-27-t13-adversarial-reviews.md`. The amendment was NOT
+committed and the sealed record was rolled back to ONE version (v1), applying
+pin 36(d)'s own principle to the corrected work: a sealed record containing a
+rule known to be defective is worse than a delayed one.
+
+---
+
+## PART 4 — RESTRUCTURING RULING (verbatim), pins 40–47
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-27, after the pin-39 reviews.**
+Pin 45 DEFERS the entire rubric amendment past T14/T15; pin 40 creates the
+executor namespace (see `docs/validation/pin-registry.md`); pin 41 makes landing
+a ruling a precondition of citing it, which is why PART 3 and PART 4 land in the
+same commit as the work that cites them.
+
+> T13 RESTRUCTURED. The rubric amendment DEFERS PAST T14/T15 — one seal, against the
+> configuration that will actually exist. Pins 40-47.
+>
+> VERIFIED: origin 1e8e4ef, nothing committed since. Ruling doc contains PART 1 + PART 2
+> only; no PART 3. Reviewer 2's provenance finding CONFIRMED on the tree.
+>
+> 40. PIN NAMESPACE — owner-numbered only. A pin number asserts owner authorship; nothing
+>     else may enter the sequence. Executor decisions get their own namespace (E-1, E-2,
+>     …), are marked UNRATIFIED on sight, and become pins only when I rule them, at which
+>     point they are renumbered into my series BY ME, not by the citing document.
+>     (a) AUDIT NOW: enumerate every pin citation anywhere in the tree — docs, code,
+>         commit messages, evidence keys, seal signoffs — and reconcile against the two
+>         rulings I have actually issued (31-35, 36-39). Report anything else. Any
+>         executor-authored item found in my series is renumbered to E-n and its citation
+>         corrected.
+>     (b) The withdrawn v2 signoff is inside that audit scope even though it is rolled
+>         back — a rolled-back artifact still teaches a future reader the wrong convention.
+>
+> 41. NO PIN IS CITABLE UNTIL IT IS ON ORIGIN. Citations reference the commit sha that
+>     contains the pin text, not a document name. A signoff that cites an unlanded ruling
+>     fails the seal check by construction. This closes the hole that let my own words be
+>     cited before they existed — and note it is the addendum's A2 rule generalized: A2
+>     landed the ruling that existed at the time, with nothing making it standing.
+>     Standing now: every ruling lands verbatim, on origin, before any work cites it.
+>
+> 42. MAKE PIN 33 MECHANICAL — it has failed five times as prose. Every quantitative gate
+>     carries, as a REQUIRED SCHEMA FIELD beside its threshold: the probability (or the
+>     explicit condition) of each verdict outcome under the null, and under a stated
+>     alternative the gate is meant to detect. If any outcome has probability ≈ 0 or ≈ 1
+>     under both, the gate is not a gate and CANNOT BE SEALED — the seal check refuses it.
+>     Instances to date: T11 vacuous pin; T0 source scan; the 1.3× bracket; pin 32's 3×
+>     (no reachable CLEAN); the ±4 sd acceptance at P(reject) ≈ 1.3e-4 (could not fail).
+>     Prose caught none of them at authorship time. A schema key will.
+>
+> 43. Q1 — RUN THE SETTLING MEASUREMENT. Do not seal 1.14 on a two-sample basis with a
+>     known-broken estimator; that is the pattern that has now failed twice in one task.
+>     The replay is cheap, needs no solves, and is non-parametric in N_eff — it settles the
+>     defect without needing the mechanism you cannot yet reproduce. Two strengthenings:
+>     (a) CAVEAT TO CARRY: ~200 partitions of the SAME 100 members share draws, so the
+>         between-partition spread measures combinatorial variability, not ensemble-to-
+>         ensemble variability, and will UNDERSTATE the true null spread. The derived
+>         factor carries margin for that, and the caveat is recorded beside it.
+>     (b) RUN AT MORE THAN ONE SPLIT SIZE (50/50 and 25/25). The factor should be
+>         m-invariant because the ratio's distribution is governed by N_eff, not m — but
+>         that is an assumption, it will be sealed, and it will be applied at m values not
+>         yet chosen. Test it rather than inherit it.
+>     Run it now: N_eff is a property of the field's spatial correlation and is unaffected
+>     by the CRN pairing T14 introduces, so this result survives T14.
+>
+> 44. Q2 — YES to a per-route oracle floor, but SEAL THE CONSTRUCTION, NOT THE NUMBER.
+>     Reviewer 1 is right that the blend-vs-seamless comparison has its own noise
+>     structure and that ignoring the partition-of-unity weights overstates the floor
+>     1.711×; reproducing the recorded oracle reading to 0.76% is strong corroboration,
+>     and −92.7 sd below its own floor is proof of a broken model, not a pass. But 0.5845
+>     is √(mean w²) for THIS pair's overlap and weight profile. Seal
+>     F_oracle = √(mean w²) × σ_pooled/√(m−1) with the weights read from the actual blend
+>     at evaluation time — the same discipline as the ±66 edge deriving from the frame
+>     rather than being typed. Record the falsification-and-repair (−92.7 sd → 0.76%) as
+>     the justification.
+>
+> 45. Q3 — THE PREMISE PROBLEM DECIDES THE SEQUENCE. Rule 0.b is derived for INDEPENDENT σ
+>     estimates; T14 pairs the CRN BY DESIGN; T15 measures the alignment distribution that
+>     would parameterize any CRN-conditional form. Sealing now means sealing against a
+>     configuration we are about to replace, and pin 36(d) allows one version.
+>     RULING: DEFER THE ENTIRE RUBRIC AMENDMENT — 0.a and 0.b together — to ONE sealed
+>     version authored after T14 and T15, against the configuration that will exist.
+>     (a) Rule 0.a defers safely: its defect is in the TEXT, and the implementation already
+>         conforms (FLOOR_RTOL, achieved residual recorded, RuntimeError on non-attainment,
+>         three probes at 1e-9). Keep enforcing the behaviour; seal the words later.
+>     (b) THE σ ROWS DO NOT NEED A SEAL. Decouple them. The committed, dual-reviewed,
+>         CONFIRMED diagnosis already establishes that BOTH σ cells are artifacts of the
+>         shared basis origin. Mark both NOT_ESTABLISHED citing the diagnosis, under the
+>         firewall that already exists. This is what was actually urgent, and it never
+>         required amending a sealed instrument. Restoring rows we know are artifacts was
+>         the correct consequence of the rollback; leaving them that way is not.
+>     (c) The deferred amendment must be CRN-STATE-CONDITIONAL by construction so one
+>         version survives T14 — the floor parameterized by the measured pairing, reducing
+>         to the independent case in the unpaired limit. Do not derive that now; derive it
+>         when T15 has measured what parameterizes it. Candidate worth evaluating: build
+>         the null by splitting members while PRESERVING whatever pairing exists, so the
+>         measured spread reflects the true correlation structure whatever it is.
+>     (d) Enter the deferred seal as its own task blocked behind T15, with pin 42's
+>         reachability and probability fields as acceptance criteria.
+>
+> 46. CODE AND SEAL MOVE TOGETHER. `seal_run` currently fails by construction because the
+>     code carries an amendment the seal does not — the tripwire working, and it must not
+>     be silenced. With 45 ruled, the Rule 0.b code comes out alongside the seal rollback.
+>     Whatever the tripwire says requires a seal change moves to the deferred task with it.
+>     Report which pieces fall on which side rather than assuming the line.
+>
+> 47. THE GUARD DEFECTS, fixed independent of any seal: the one-correction guard is
+>     defeatable by deleting the per-row correction key (demonstrated live), and the
+>     write-once correction reason has stale 3×F_ens baked in. A write-once surface
+>     defeated by deleting its own witness is not write-once. Fix, and test-pin the
+>     deletion attack specifically — a demonstrated exploit with no regression test is an
+>     invitation.
+>
+> STANDING, from this round: pin 39's named attack surfaces produced three of reviewer 1's
+> four findings. Reviews of sealed-instrument work carry a NAMED SURFACE LIST as a
+> required input, authored by the requester, never improvised by the reviewer.
+>
+> SEQUENCE:
+> 1. Pin 45(b) — mark both σ rows NOT_ESTABLISHED by diagnosis. No seal touched.
+> 2. Pins 46, 47, 40(a), 41. Clean ruff/mypy, full suite to completion, seal_run green.
+>    Commit, PUSH. This is the T13 that lands.
+> 3. Pin 43's settling measurement — result recorded, not sealed.
+> 4. THEN T14.
+>
+> STOP CONDITION: STOP after step 2 with the pin-40 audit result — I need to know what
+> else was numbered in my series before anything downstream cites anything. STOP again
+> before T14 with the settling measurement in hand. Nothing seals until after T15.
+
+---
+
+## PART 5 — ADDENDUM (verbatim), pins 48–50
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-27, immediately before the T13
+push.** Pin 48 replaces pin 41's landing-sha requirement with a check that has no
+bootstrap problem.
+
+> ADDENDUM — one change, then push, then the owner clears. No new work.
+>
+> 48. PIN 41 SIMPLIFIED — the bootstrap wrinkle is removed, not managed. Replace the
+>     landing-sha requirement with: a pin is citable when its verbatim text is present in
+>     the ruling doc at HEAD as of the citing commit. That is mechanically checkable
+>     without self-reference and catches the actual failure (citing a pin that does not
+>     exist). Delete the two "this commit" placeholder rows; no follow-up sha-filling
+>     commit is needed. Pins 36-47 become citable the moment PART 3 and PART 4 land.
+>
+> 49. `ensemble_floor` / `sigma_level_rms` land on the non-seal side correctly, but nothing
+>     licenses them for verdicts until T17 seals Rule 0.b. Give both a docstring stating
+>     they are NOT verdict-bearing until then, and confirm no verdict path imports them.
+>     The Rule-0.b row wiring is on the seal side, so this should already hold — say so
+>     explicitly rather than leaving it inferred.
+>
+> 50. The nine UNRATIFIED E-items come to me on the next walk. Until I rule them they are
+>     cited as unratified or not cited at all. Do not let an unratified E-item acquire
+>     authority by being referenced in a commit message or a signoff.
+>
+> BEFORE THE OWNER CLEARS:
+> 1. Fold 48-50.
+> 2. Suite to completion, pre-commit, ruff/mypy clean, seal_run green at v1.
+> 3. Commit, PUSH, and VERIFY origin has it — the tree is the only thing that survives.
+> 4. Banner: state where T13 stopped, that pin 43's measurement is the next action and has
+>    NOT run, that T14 has not started, and that T17 is blocked behind T15. Write it for a
+>    reader with no memory of this session.
+> 5. Report the origin sha, then stop.
+>
+> STOP CONDITION: stop at the push. Pin 43's measurement is the fresh session's first
+> action, not this one's — it is a measurement whose result I have to see, and a dying
+> context is the wrong place to produce a number that will be sealed against later.
+
+### Pin 49 — verified, not inferred (recorded here because the pin asks for it)
+
+The only importers of `ensemble_floor` / `sigma_level_rms` are
+`scripts/phase14_sigma_diagnosis.py` (the establishing diagnosis),
+`scripts/phase14_ensemble_floor_factor.py` (the deferred derivation harness) and
+their two test files. **`scripts/phase14_stage1_run.py` — the verdict path —
+imports neither**, because the Rule-0.b row wiring left with the seal side under
+pin 46. Both functions carry the not-verdict-bearing statement in their
+docstrings and in the module docstring.

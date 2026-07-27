@@ -121,12 +121,17 @@ def mc_floor(sigma_level: float, m: int) -> float:
     Returns:
         Predicted ``RMS`` of the difference of the two σ fields [m].
 
+    Since the rubric v2 amendment (owner ruling 2026-07-27, pin 32) this
+    quantity IS the rubric's ensemble floor ``F_ens``, so this diagnosis
+    helper delegates to the sealed implementation rather than carrying a
+    second copy of the arithmetic.
+
     Raises:
         ValueError: If ``m`` is below 2 (a single member has no σ).
     """
-    if m < 2:
-        raise ValueError(f"member-std needs m >= 2, got {m}")
-    return float(sigma_level) / float(np.sqrt(m - 1))
+    from sverdrup.validation.seam_metrics import ensemble_floor  # noqa: PLC0415
+
+    return ensemble_floor(sigma_level, m)
 
 
 def member_halves(

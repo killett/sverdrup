@@ -1,10 +1,98 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — HALTED 2026-07-27, AWAITING NOTHING FROM THE OWNER
+> # ⛔ START HERE — T13 LANDED 2026-07-27 (no seal). NEXT: pin 43, THEN T14.
 >
-> **You are resuming Phase 14, Stage 1 (spatial-at-2017). The stage is HALTED
-> mid-execution. An owner ruling has been received and recorded but NOT yet
-> implemented. Read this block, then the ruling doc, then the plan.**
+> **You are resuming Phase 14, Stage 1 (spatial-at-2017). T13 is committed. It
+> deliberately does NOT include a rubric amendment: the owner DEFERRED the whole
+> amendment (Rule 0.a text AND Rule 0.b) to ONE sealed version authored after T14
+> and T15, against the CRN-paired configuration that will then exist — entered as
+> T17, blocked behind T15. The sealed record is at v1 and `seal_run check` is
+> GREEN. Read this block, then the ruling doc, then the plan.**
+>
+> **READ FIRST, IN ORDER:**
+> - `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` — the owner
+>   ruling. PART 1 = pins 31-35, PART 3 = pins 36-39, PART 4 = pins 40-47,
+>   PART 5 = pins 48-50. PART 2 is labelled session notes, NOT owner-ruled.
+> - `docs/validation/pin-registry.md` — **owner pins vs the executor E-series.**
+>   A pin number asserts OWNER authorship (pin 40); executor decisions are E-n and
+>   UNRATIFIED until the owner rules them. A pin is citable when its verbatim text
+>   is present in the ruling doc at HEAD as of the citing commit (pins 41 + 48).
+>   **Nine E-items are UNRATIFIED and go to the owner on the next walk (pin 50):
+>   until then they are cited as unratified or not at all, and none may acquire
+>   authority through a commit message, a signoff or an acceptance criterion.**
+> - `docs/superpowers/2026-07-27-t13-adversarial-reviews.md` — the pin-39 reviews
+>   that overturned the first attempt. Still live reading: most of its defect list
+>   is now carried by T17, not fixed.
+>
+> **WHAT T13 LANDED (all of it seal-free):**
+> - **The σ rows are WITHHELD, not verdicted (pin 45b).** Both σ cells now read
+>   `NOT_ESTABLISHED (ensemble MC artifact — see diagnosis)`, citing the committed,
+>   dual-reviewed, CONFIRMED diagnosis, under the firewall that already existed.
+>   Prior verdicts (pair ELEVATED, oracle CLEAN) preserved; every measured number
+>   untouched. **This never needed a seal — that was the whole error of the first
+>   two attempts.** Recorded at `phase14.stage1.sigma_rows_not_established`.
+> - **Rule 0.a BEHAVIOUR stays enforced while its words wait (pin 45a):**
+>   `FLOOR_RTOL = production_rtol x 1e-3` derived from a pinned decade count, the
+>   accuracy target and achieved residual on every floor block, and a RuntimeError
+>   on non-attainment.
+> - **The guard defect is fixed and the exploit is test-pinned (pin 47):** the
+>   one-shot guard now keys on the row's VERDICT, not on its own annotation block,
+>   so deleting the witness no longer lets a second marking overwrite the prior
+>   verdict. The demonstrated deletion attack has a regression test.
+> - **The derivation harness** (`ensemble_floor_null.py`,
+>   `phase14_ensemble_floor_factor.py`) and the `supersede` machinery land as
+>   machinery only — they change no sealed content.
+> - **`verify_current_seal(evidence_path)`** now honours the caller's store.
+>
+> **WHAT MOVED TO T17 (pin 46's line, reported not assumed).** SEAL SIDE, removed
+> from this commit: every amendment key in `instrument_configs()` (the seal
+> re-derives from it, so an unsealed key is a permanent tripwire failure); the
+> rubric v2 prose, now `docs/validation/DRAFT-phase14_seam_rubric_v2.md`
+> (UNSEALED); `ensemble_floor_block` and the `UNMEASURED (ensemble floor)` label;
+> the Rule-0.b row wiring, the σ-row correction path and the `amend-seam-rows`
+> command. NON-SEAL SIDE, landed: everything in the list above, plus
+> `ensemble_floor` / `sigma_level_rms` (pure arithmetic the diagnosis already
+> delegates to) and the `blend_strip` extraction.
+>
+> **PIN-40(a) AUDIT RESULT — the STOP condition of this step.** Swept every pin
+> citation in docs, code, tests, the plan, the tracker and the evidence keys.
+> **Numbers 1-30:** all carry their sub-namespace qualifier (fork-b, batch-1,
+> review pin, owner PIN) and match owner-issued text. **Numbers 31-39:** every
+> citation attributes genuinely owner-authored content; NO executor decision was
+> found numbered in the owner's series. **ONE VIOLATION, in the withdrawn
+> artifact (pin 40b):** the superseded seal v2 signoff asserted pins 36-38 were
+> "recorded verbatim" at a document that then held only 31-35 — the pins existed
+> in session prose alone. Both v2 files were deleted with the rollback, so the
+> text survives nowhere in the tree; it is recorded in the registry and at
+> `phase14.stage1.rubric_v2_amendment_withdrawn` so the wrong convention cannot be
+> learned from it. **What the audit found MISSING, not misnumbered:** executor
+> decisions were never marked as such at all — now enumerated as **E-1..E-15**,
+> two of them already ratified into the owner series (E-1 → pin 38, E-2 → pin 37)
+> and four OVERTURNED (E-3 the 1.07 factor, E-6 the N_eff estimator, E-7 the
+> ±4 sd acceptance, plus E-9 withdrawn with the amendment).
+>
+> **⛔ WHERE T13 STOPPED, AND WHAT HAS NOT HAPPENED.** T13 stopped AT THE PUSH, by
+> owner instruction. **Pin 43's settling measurement HAS NOT RUN** — it is the
+> fresh session's FIRST action, deliberately not this one's, because its number
+> will be sealed against later and a dying context is the wrong place to produce
+> it. **T14 HAS NOT STARTED** (it comes after pin 43's measurement, not before).
+> **T17 — the deferred rubric amendment, the only thing that spends the seal — is
+> BLOCKED BEHIND T15.** Nothing is sealed; the record is at v1 and green.
+>
+> **⛔ NEXT ACTION IS PIN 43, NOT T14.** Run the settling measurement: ~200
+> disjoint random member partitions per tile replayed from the persisted member
+> stores (NO solves), at TWO split sizes (50/50 and 25/25) to test the assumed
+> m-invariance rather than inherit it, carrying the caveat that partitions of the
+> same 100 members share draws and therefore UNDERSTATE the true null spread.
+> Result RECORDED, NOT SEALED. **The owner STOPS again before T14 with that
+> measurement in hand.** Nothing seals until after T15.
+>
+> **WHY THE FIRST TWO ATTEMPTS FAILED, for whoever reads this next:** both sealed
+> a rule against a configuration about to be replaced, and both put an executor's
+> number inside the owner's pin series. The second also shipped a gate that could
+> not fail (`±4 sd` on two samples) inside the amendment that cites pin 33 —
+> which is why pin 42 now demands per-outcome probabilities as a SEALED SCHEMA
+> FIELD, and why `seal_run` must refuse a gate that cannot reach both verdicts.
 >
 > **THE RULING (read it in full before touching anything):**
 > `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` — recorded
@@ -29,14 +117,20 @@
 > accuracy target rather than iteration budget**.
 >
 > **THE FOUR NEW TASKS (in the tracker with real edges — do not work from prose):**
-> - **T13** — rubric amendment (pins 32, 34) + correct the T4 pair/σ cell to
->   UNMEASURED (ensemble floor). blockedBy [0, 10]. **READY.**
+> - **T13** — the seal-free part: σ rows WITHHELD, Rule-0.a behaviour, guard fix,
+>   pin-40 audit, rulings landed. blockedBy [0, 10]. **✅ COMPLETE 2026-07-27.**
+>   The amendment itself is **T17**, blocked behind T15.
 > - **T14** — global lattice origin (pin 31a). **The check-1 re-run IS its
 >   acceptance, treated as a GATE, not a regression test.** blockedBy [1,2,3,4,13].
+>   **NOT STARTED. Comes after pin 43's settling measurement, not before. T14 pairs
+>   the CRN, which is exactly why the rubric amendment waits for it (pin 45).**
 > - **T15** — alignment-residual survey across the D1 roster (31b) + the
 >   product-consequence and superseded-σ recordings (31c/d). blockedBy [14].
 > - **T16** — pin 33 (two-sided gate discipline), pin 35 (coverage re-walk into
 >   T12), process minors. blockedBy [15].
+> - **T17** — **the DEFERRED rubric amendment: ONE sealed version, CRN-state-
+>   conditional, with pin 42's per-outcome probability fields and pin 44's oracle
+>   floor CONSTRUCTION as acceptance criteria.** blockedBy [15].
 > - **T12** (C1→2 contract coverage walk) is also READY and absorbs the
 >   amended-rubric re-walk per pin 35.
 >
@@ -56,16 +150,124 @@
 > WAIT — but the WAIT is the owner's to lift, and **the CRN fix does not relieve
 > it**. Both must clear.
 >
-> **STAGE BOARD:** T0, T1, T2, T3, T4, T10, T11 COMPLETE (all dual-reviewed).
-> T12, T13 ready. T14→T15→T16 chained. T5 blocked (above); T6, T7, T8 behind T5;
+> **STAGE BOARD:** T0, T1, T2, T3, T4, T10, T11, **T13** COMPLETE. T12 ready.
+> pin 43 (settling measurement) is the next action; then T14 → T15 → {T16, T17}. T5 blocked (above); T6, T7, T8 behind T5;
 > T9 (Gate-1 pack, userGate) behind everything.
 >
 > **STANDING DISCIPLINE, UNCHANGED:** zero locked opens; tally byte-identical;
-> seal read-only EXCEPT the recorded rubric amendment (T13); no evaluation-bearing
+> **the seal's one sanctioned change is UNSPENT — the record is at v1 and
+> `check` is green.** T17 spends it, once, after T15. No evaluation-bearing
 > map outside an approved plan task; every long run `setsid`-detached with
 > completion AND stall watchers; nothing tuned on a seam signal.
 >
 > **Everything below this block is the historical record, newest first.**
+
+> **▶ T13 — TWO WITHDRAWN ATTEMPTS, THEN A SEAL-FREE LANDING (2026-07-27).**
+> The record below describes the WITHDRAWN attempts (rubric v2 sealed locally
+> twice, factor 3× then 1.07, both deleted before any commit). It is kept because
+> the mechanics are reusable and T17 will reuse them — but **nothing in it is
+> sealed, and its central constant was overturned.** What actually landed is in
+> the banner. Reviews: `docs/superpowers/2026-07-27-t13-adversarial-reviews.md`.
+>
+> **The instrument.** `docs/validation/phase14_seam_rubric.md` is now VERSION 2
+> and Rule 0 has two floors: **0.a** the solver floor, redefined by ACCURACY
+> TARGET (three decades below the production rtol is the pre-registered
+> construction; `maxiter` merely sized to reach it; the achieved residual
+> recorded beside the target; non-attainment is a STOP, never a looser `F`), and
+> **0.b** the ENSEMBLE floor for σ-route verdicts only
+> (`F_ens = σ/√(m−1)`, attributable iff `RMS(sigma_delta) > 1.07×F_ens` — the
+> factor DERIVED per pin 36, see the banner — else
+> **UNMEASURED (ensemble floor)**), plus the standing **reachability condition**
+> `factor × F_ens < clean_max × D_int_σ` that every future threshold/factor/floor
+> change is checked against BEFORE sealing (pin 36c, pin 33 made mechanical for
+> this instrument; test-pinned with the current status and the m ≥ 148 figure).
+> v1 is preserved VERBATIM at
+> `docs/validation/phase14_seam_rubric_v1.md` with a supersession header —
+> never silently edited. The reason clause is stated plainly in the doc: at
+> m=100 on the T4 geometry the MC floor is **1.136 × D_int_sigma** against a
+> sealed `clean_max` of 1.0, so a perfectly seamless solve reads ELEVATED; the σ
+> route was a gate that could not PASS.
+> **σ-level pooling (RATIFIED as pin 38):** the σ level entering `F_ens` is the
+> POOLED RMS (quadratic mean) of the two σ fields being differenced, because
+> `Var(σ_a − σ_b) = (σa² + σb²)/(2(m−1))`. The T4 diagnosis used the arithmetic
+> MEAN, so its `1.1356` reproduces under either form but its CONSTRUCTION is
+> superseded. **Why it matters despite agreeing to 4e-8 here:** the two forms
+> coincide when `σ_a ≈ σ_b` — the null — and diverge as the levels separate,
+> which is the signal regime. A construction validated only on the null is not
+> validated where it has to work.
+>
+> **The seal moved, then moved back.** (Mechanics verified by reviewer 2; the
+> seal produced was withdrawn, and both local v2 files were deleted.) Pins 32/34 are sealed
+> constants (`instrument_configs()["seam"]` gains `rubric_version: 2`,
+> `ensemble_floor`, `ensemble_floor_factor: 3.0`,
+> `floor_decades_below_production_rtol: 3`) — otherwise
+> `phase14_seal_run.py check`, which re-derives from LIVE artifacts, would have
+> reverted the amendment at the next re-seal. **A new `supersede` command** does
+> it: current seal must verify first, content re-assembled from live artifacts,
+> refuses without an owner signoff, refuses when content is unchanged (no
+> version inflation), writes `…_v2.json` (v1 file byte-untouched — write-once
+> holds), and moves the evidence pointer WITH a `supersedes` chain so Gate 0's
+> quotation of v1 stays resolvable. `check` now admits the supersession envelope
+> (`supersedes`/`signoff`/`date`) while still re-deriving everything else — it
+> FAILS on artifact drift, test-pinned in both directions.
+> `a17ea419…b725c5d2` → `44f36cfd…78160afc` (WITHDRAWN, deleted, never
+> committed; the tracked mirror was removed with it).
+>
+> **The correction (`amend-seam-rows`, NO solves).** σ levels measured from the
+> PERSISTED member-std maps on the same strip with the same blend; `m=100` from
+> the recorded block. Results:
+>
+> | route/σ | RMS(σΔ) | 1.07×F_ens applied | F_ens/D_int_σ | verdict it produced (now WITHDRAWN) |
+> |---|---|---|---|---|
+> | pair | 0.00360653 | 0.00396786 | 1.1356 | ELEVATED → UNMEASURED (ensemble floor) |
+> | oracle | 0.00209213 | 0.00395934 | 1.1475 | CLEAN → UNMEASURED (ensemble floor) |
+>
+> (Reviewer 1: the oracle threshold is wrong for that route — the weight-corrected
+> floor is `0.5845 × σ/√(m−1)`, giving 0.002314; the verdict is unchanged but the
+> recorded number is not the right one. Both σ verdicts read UNMEASURED under
+> every corrected factor either reviewer proposes.)
+>
+> The oracle/σ move is the consequence the ruling did not name (banner). Every
+> measured number, and the pre-registered `rubric_cell`, stand exactly as
+> recorded; each corrected row carries a `correction` block with
+> `prior_verdict`, `prior_seal_sha`, the ruling pointer and the rubric versions
+> — a verdict is never silently overwritten, and a row takes at most ONE
+> correction (re-running refuses, so `prior_verdict` cannot be overwritten with
+> an already-corrected value). Mean rows gained only the `ensemble_floor: null`
+> schema key, guarded by a refusal if a mean verdict would move.
+> **Pin 34's own record:** the executed T4 probes ALREADY conformed —
+> rtol 1e-9, converged, 635 / 629 / 678 iterations (seam_n / seam_s / anchor),
+> achieved residuals 9.72e-10 / 9.93e-10 / 9.62e-10, all ≤ the 1e-9 target —
+> so **the four T4 verdicts stand UNRECOMPUTED under pin 34**: it corrected
+> defective TEXT, not a defective implementation. Recorded at
+> `phase14.stage1.rubric_v2_amendment` with the conformance table.
+>
+> **Code + pins.** `seam_metrics` gained `ensemble_floor`, `sigma_level_rms`,
+> `ensemble_floor_block` (factor read from the SEALED config at CALL time, never
+> cached), and `UNMEASURED_ENSEMBLE_FLOOR`; the diagnosis script's `mc_floor`
+> now DELEGATES to it (one implementation of the arithmetic). Verdict precedence
+> is ONE function (`seam_verdict_from_floors`) shared by fresh rows and
+> corrections: WAIT → solver floor → ensemble floor → rubric cell, both blocks
+> always recorded so failing both gates hides neither. σ rows REFUSE without
+> their Rule-0.b block; mean rows REFUSE with one; a block records the reading
+> it judged, so pairing it to the wrong row refuses.
+>
+> **Deferred, deliberately:** the R-01..R-24 coverage re-walk against the v2
+> text (pin 35) is T12's, not T13's; the two-sided discipline wording (pin 33)
+> and the process minors are T16's.
+>
+> **Defects to fix before T13 is re-sealed** (full list with severities in the
+> reviews doc; these are the ones that touch the permanent record): the derived
+> factor's basis (owner item 1); the oracle floor value (owner item 2); Rule
+> 0.b's CRN-state premise (owner item 3); the `±4 sd on 2 samples` acceptance
+> criterion, which must become a real test; the one-correction guard, defeatable
+> by deleting the per-row `correction` key (add the `seal_sha` check); the stale
+> `3 x F_ens` string baked into the correction reason; `min_m_for_clean` treating
+> `D_int_sigma` as m-invariant when it is 42% MC noise; the unreachable mean-row
+> guard and the unreachable pin-34 STOP (which would also lose the evidence
+> block); `verify_current_seal()` ignoring `--evidence-path`; `check` never
+> resolving the superseded node; zero test coverage on `amend_seam_rows`; and
+> `ruff format` + `mypy` (1 error) not clean.
 
 > **▶ PHASE 14 — SCALING PROGRAM DESIGN COMMITTED 2026-07-22 (`f25042c`),
 > ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.** Spec:

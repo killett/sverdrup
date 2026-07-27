@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from tests.helpers import load_script
@@ -106,3 +107,150 @@ def test_build_refuses_existing_seal(tmp_path: Path) -> None:
     assert runner.invoke(_mod.app, _args(p, "build")).exit_code == 0
     res = runner.invoke(_mod.app, _args(p, "build"))
     assert res.exit_code != 0
+
+
+# ---- supersession: the sanctioned amendment path (fork-f pin 2) -----------
+# Exercised for real by the rubric v2 amendment (owner ruling 2026-07-27,
+# pins 32 + 34), which changes the SEALED instrument configs.
+
+_SIGNOFF = (
+    "owner ruling 2026-07-27 pins 32+34 (rubric v2: ensemble floor + F by "
+    "accuracy target) — docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md"
+)
+
+
+def _supersede_args(p: dict[str, Path], signoff: str) -> list[str]:
+    return [
+        "supersede",
+        "--signoff",
+        signoff,
+        "--epoch-table",
+        str(p["epoch_table"]),
+        "--locked-split",
+        str(p["locked_split"]),
+        "--evidence-path",
+        str(p["evidence"]),
+    ]
+
+
+def _built(tmp_path: Path) -> dict[str, Path]:
+    p = _fixtures(tmp_path)
+    p["evidence"].write_text(json.dumps({"phase14": {"stage0": {}}}))
+    assert runner.invoke(_mod.app, _args(p, "build")).exit_code == 0
+    return p
+
+
+def _amend_the_sealed_instrument(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stand in for the rubric-v2 change to the SEALED instrument configs.
+
+    The amendment's real input is ``instrument_configs()`` — the only
+    substantive change a rubric amendment makes to seal content — so the
+    test changes exactly that and leaves every other artifact alone.
+    """
+    monkeypatch.setattr(
+        _mod,
+        "serialize_instrument_configs",
+        lambda: b'{"seam":{"rubric_version":2}}',
+    )
+
+
+def test_supersede_writes_v2_chains_to_v1_and_moves_the_pointer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A new version file, a recorded chain, and v1 left byte-untouched.
+
+    Bug caught: an amendment that overwrites the pointer without recording
+    what it superseded. Gate 0's evidence quotes seal v1 by sha; if the
+    pointer moves with no chain, that quotation becomes unresolvable and
+    the founding artifact's history is gone. Also catches an amendment
+    that mutates the v1 FILE (the write-once property the whole seal
+    design rests on).
+    """
+    p = _built(tmp_path)
+    v1_bytes = p["seal"].read_bytes()
+    v1_sha = json.loads(v1_bytes)["seal_sha"]
+    _amend_the_sealed_instrument(monkeypatch)
+
+    res = runner.invoke(_mod.app, _supersede_args(p, _SIGNOFF))
+    assert res.exit_code == 0, res.output
+
+    v2_path = tmp_path / "seal_v2.json"
+    assert v2_path.exists()
+    v2 = json.loads(v2_path.read_text())
+    assert v2["content"]["supersedes"] == v1_sha
+    assert v2["content"]["signoff"] == _SIGNOFF
+    assert p["seal"].read_bytes() == v1_bytes  # write-once honoured
+
+    node = json.loads(p["evidence"].read_text())["phase14"]["stage0"]["seal"]
+    assert node["version"] == 2
+    assert node["sha"] == v2["seal_sha"]
+    assert node["path"] == str(v2_path)
+    assert node["supersedes"]["version"] == 1
+    assert node["supersedes"]["sha"] == v1_sha
+    assert node["supersedes"]["path"] == str(p["seal"])
+
+
+def test_supersede_refuses_without_an_owner_signoff(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No signoff, no new seal — and no pointer move either.
+
+    Bug caught: an unratified edit to a PRE-REGISTERED instrument slipping
+    through as a new sealed version. The rubric's own deviation clause
+    requires an explicit owner decision; this is the mechanical enforcement
+    of it, and a partial failure (seal written, pointer moved, signoff
+    missing) would be worse than either outcome.
+    """
+    p = _built(tmp_path)
+    _amend_the_sealed_instrument(monkeypatch)
+    before = p["evidence"].read_bytes()
+    res = runner.invoke(_mod.app, _supersede_args(p, "   "))
+    assert res.exit_code != 0
+    assert not (tmp_path / "seal_v2.json").exists()
+    assert p["evidence"].read_bytes() == before
+
+
+def test_supersede_refuses_when_content_is_unchanged(tmp_path: Path) -> None:
+    """A supersession with nothing to amend is refused.
+
+    Bug caught: version inflation — a v2 identical in substance to v1,
+    which would make "which version verdicted this row" unanswerable while
+    looking like a real amendment.
+    """
+    p = _built(tmp_path)
+    res = runner.invoke(_mod.app, _supersede_args(p, _SIGNOFF))
+    assert res.exit_code != 0
+    assert "unchanged" in res.output.lower()
+    assert not (tmp_path / "seal_v2.json").exists()
+
+
+def test_check_still_re_derives_after_supersession(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """check PASSES against v2 and still FAILS on live-artifact drift.
+
+    The superseded content carries an envelope (supersedes/signoff/date)
+    that no live artifact produces, so check must re-derive the
+    substantive fields and admit the envelope — without going blind to
+    drift, which is the whole point of `check`.
+
+    Bug caught (both directions): check hard-failing forever after any
+    amendment — which would strand T5's verify step and invite someone to
+    delete the check — or check being loosened into a self-comparison that
+    passes even when the epoch table changed underneath the seal.
+    """
+    p = _built(tmp_path)
+    _amend_the_sealed_instrument(monkeypatch)
+    assert runner.invoke(_mod.app, _supersede_args(p, _SIGNOFF)).exit_code == 0
+
+    ok = runner.invoke(_mod.app, _args(p, "check"))
+    # the pointer now names v2; check reads the path from the pointer
+    assert ok.exit_code == 0, ok.output
+    assert "PASS" in ok.output
+
+    drift = json.loads(p["locked_split"].read_text())
+    drift["dev"].append("uh999")
+    p["locked_split"].write_text(json.dumps(drift))
+    bad = runner.invoke(_mod.app, _args(p, "check"))
+    assert bad.exit_code != 0
+    assert "FAIL" in bad.output

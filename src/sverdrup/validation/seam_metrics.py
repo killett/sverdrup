@@ -23,6 +23,11 @@ Authoritative definitions live in ``docs/validation/phase14_seam_rubric.md``
   applied to each field kind, verdict cells applied independently per
   field kind.
 
+:func:`ensemble_floor` and :func:`sigma_level_rms` are **DIAGNOSTIC, NOT
+VERDICT-BEARING** (owner pin 49): the rubric amendment that would license
+them is deferred to one sealed version after T14/T15 (owner pin 45), and no
+verdict path imports them.
+
 Pure numpy metric arithmetic — no solver imports, no file I/O. NaN nodes
 (land) are excluded from every pool; an all-NaN pool refuses.
 """
@@ -155,6 +160,80 @@ def seam_verdict(r: float) -> str:
     if r <= elevated_max:
         return VERDICT_ELEVATED
     return VERDICT_STRUCTURAL_STOP
+
+
+def ensemble_floor(sigma_level: float, m: int) -> float:
+    """Ensemble Monte-Carlo floor ``F_ens`` of a σ difference.
+
+    **NOT VERDICT-BEARING (owner pin 49).** Nothing licenses this quantity
+    for a verdict until T17 seals Rule 0.b: the owner DEFERRED the entire
+    rubric amendment (Rule 0.a's text and Rule 0.b together) to ONE sealed
+    version authored after T14 and T15, against the CRN-paired
+    configuration that will then exist. Until then this is DIAGNOSTIC
+    arithmetic only — the establishing diagnosis and the deferred
+    derivation both use it, and no verdict path imports it (the Rule-0.b
+    row wiring left with the seal side under pin 46).
+
+    ``F_ens = sigma / sqrt(m - 1)``. A sample standard deviation from
+    ``m`` members has relative standard error ``1/sqrt(2(m-1))``; the
+    DIFFERENCE of two independent such estimates therefore has standard
+    deviation ``sqrt(2) * sigma/sqrt(2(m-1))`` = ``sigma/sqrt(m-1)``.
+    This is ensemble noise present in a perfectly seamless solve — not a
+    property of the tiling.
+
+    Args:
+        sigma_level: The σ field's own RMS level over the evaluation
+            domain, pooled across the two σ fields being differenced.
+        m: Members behind each of the two σ estimates.
+
+    Returns:
+        The ensemble floor in the σ field's units.
+
+    Raises:
+        ValueError: If ``m`` is below 2 — member-std is taken about the
+            sample mean with the ``(m-1)`` denominator and is undefined
+            for a single member, so there is no floor to report.
+    """
+    if m < 2:
+        raise ValueError(f"member-std needs m >= 2, got {m}")
+    return float(sigma_level) / float(np.sqrt(m - 1))
+
+
+def sigma_level_rms(sigma_a: ArrayLike, sigma_b: ArrayLike) -> float:
+    """The pooled σ level entering ``F_ens`` (quadratic mean, owner pin 38).
+
+    **NOT VERDICT-BEARING (owner pin 49)** — same status as
+    :func:`ensemble_floor`: diagnostic arithmetic until T17 seals Rule 0.b.
+
+    Pools the VALUES of both σ fields into one RMS — not the mean of
+    their two separate RMS values — because ``F_ens`` is the noise floor
+    of the difference of the two estimates, whose scale is set by the
+    common σ level of the fields being differenced. NaN (land) nodes are
+    dropped.
+
+    Args:
+        sigma_a: First σ field over the evaluation domain.
+        sigma_b: Second σ field over the same domain (shapes need not
+            match; only the pooled finite values are used).
+
+    Returns:
+        Pooled RMS σ level.
+
+    Raises:
+        ValueError: If the pooled set has no finite value (all-NaN) — a
+            zero level would make ``F_ens`` zero and license every σ
+            verdict vacuously.
+    """
+    pooled = np.concatenate(
+        [
+            np.asarray(sigma_a, dtype=np.float64).ravel(),
+            np.asarray(sigma_b, dtype=np.float64).ravel(),
+        ]
+    )
+    finite = pooled[np.isfinite(pooled)]
+    if finite.size == 0:
+        raise ValueError("all-NaN σ pool: no finite value to take a σ level from")
+    return _rms(finite)
 
 
 @dataclass(frozen=True)

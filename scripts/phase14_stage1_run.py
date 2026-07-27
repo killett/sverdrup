@@ -1271,7 +1271,7 @@ ANCHOR_MEAN_MAPS = STAGE1_DIR / "anchor_signed_maps.nc"
 ANCHOR_STD_MAPS = STAGE1_DIR / "anchor_member_std_maps.nc"
 ANCHOR_MEMBER_STORE = STAGE1_DIR / "anchor_gate_member_store.npz"
 
-# ---- Rule 0: the floor probe (rubric) + owner PIN 23 ----------------------
+# ---- Rule 0.a: the solver floor probe (rubric) + owner PIN 23 -------------
 FLOOR_FACTOR = 3.0
 # Deeper on BOTH axes. The rubric's construction says "maxiter +1000";
 # on its own that is inert HERE, because the production seam solve
@@ -1279,7 +1279,17 @@ FLOOR_FACTOR = 3.0
 # return the identical answer and F would come out exactly 0, licensing
 # every verdict vacuously. So the probe also tightens rtol by three
 # decades; the +1000 is what buys the iterations that tightening costs.
-FLOOR_RTOL = 1.0e-9
+#
+# RUBRIC v2 / OWNER PIN 34: F is defined by the ACCURACY the probe
+# REACHES, not by the iteration budget it is handed. The decade count is
+# the pre-registered quantity (sealed in instrument_configs), the target
+# rtol is DERIVED from it, and maxiter is merely sized to reach the
+# target. A probe that does not attain the target is a STOP — never a
+# fallback to a looser F.
+# (Stated as a literal to keep this module's import light — a test pins it
+# equal to the sealed `SEAM_FLOOR_DECADES`, so drift fails.)
+FLOOR_DECADES = 3
+FLOOR_RTOL = SEAM_PRODUCTION_RTOL * 10.0**-FLOOR_DECADES
 FLOOR_MAXITER = STAGE1_PCG_MAXITER + 1000
 FLOOR_W_INDEX = 0
 FLOOR_M = SEAM_PAIR_M
@@ -1563,7 +1573,7 @@ _FLOOR_PROBE_REQUIRED = (
 def floor_attributability(
     *, rms_delta: float, floor_f: float, probe: dict[str, Any]
 ) -> dict[str, Any]:
-    """Rubric Rule 0 + owner PIN 23: is this reading above the solver floor?
+    """Rubric Rule 0.a + owner PINs 23/34: above the solver floor?
 
     The verdict is attributable ONLY if ``RMS(delta) > 3 x F``. At or
     below that the number is still recorded and the row is marked
@@ -1573,6 +1583,12 @@ def floor_attributability(
     between two TRUNCATION points is not a floor and ``3 x F`` has no
     meaning, so a non-converged probe is a STOP for the owner, never an
     UNMEASURED verdict.
+
+    PIN 34 (rubric v2): ``F`` is defined by the ACCURACY TARGET — the
+    probe must reach ``FLOOR_DECADES`` decades below the production rtol.
+    The target and the ACHIEVED residual are both recorded, and a probe
+    whose achieved residual misses the target is a STOP: never a fallback
+    to a looser F.
 
     Args:
         rms_delta: The measured co-located disagreement RMS.
@@ -1585,7 +1601,8 @@ def floor_attributability(
 
     Raises:
         ValueError: If the probe omits any of pin 23's five fields.
-        RuntimeError: If the deeper solve did not converge.
+        RuntimeError: If the deeper solve did not converge, or if it did
+            not attain the pre-registered accuracy target (pin 34).
     """
     for key in _FLOOR_PROBE_REQUIRED:
         if key not in probe:
@@ -1603,12 +1620,28 @@ def floor_attributability(
             "points is not a floor and 3xF has no meaning; this is a STOP, "
             "NOT an UNMEASURED verdict"
         )
+    achieved = float(probe["final_rel_residual"])
+    if not achieved <= FLOOR_RTOL:  # NaN-safe
+        raise RuntimeError(
+            "STOP for the owner (PIN 34): the floor probe did not attain its "
+            f"accuracy target — achieved relative residual {achieved:g} against "
+            f"the pre-registered target {FLOOR_RTOL:g} ({FLOOR_DECADES} decades "
+            f"below the production rtol {SEAM_PRODUCTION_RTOL:g}). F is defined "
+            "by accuracy reached, so non-attainment is a STOP, NEVER a fallback "
+            "to a looser F"
+        )
     threshold = FLOOR_FACTOR * float(floor_f)
     return {
         "f_m": float(floor_f),
         "factor": FLOOR_FACTOR,
         "threshold_m": threshold,
         "attributable": bool(rms_delta > threshold),
+        # PIN 34: the accuracy target beside what was actually achieved —
+        # the pairing is what makes the floor checkable from the row.
+        "production_rtol": SEAM_PRODUCTION_RTOL,
+        "decades_below_production_rtol": FLOOR_DECADES,
+        "target_rtol": FLOOR_RTOL,
+        "achieved_rel_residual": achieved,
         "probe": dict(probe),
     }
 
@@ -1637,6 +1670,113 @@ def floor_wait_block(*, reason: str) -> dict[str, Any]:
     }
 
 
+NOT_ESTABLISHED = "NOT_ESTABLISHED (ensemble MC artifact — see diagnosis)"
+NOT_ESTABLISHED_FIREWALL = (
+    "the committed, dual-reviewed and CONFIRMED diagnosis establishes this "
+    "sigma reading as ensemble Monte-Carlo noise arising from the per-tile CRN "
+    "basis origin, NOT as a seam artifact. The row is therefore withheld under "
+    "the standing not-established firewall: no rubric verdict supports any "
+    "reading of it, in either direction, and the diagnosis-derived bound must "
+    "not be presented adjacent to it as though it were one (owner pin 37b). "
+    "No sealed instrument was amended to record this — the rubric amendment is "
+    "DEFERRED to one sealed version after T14/T15 (owner pin 45)"
+)
+#: Verdict strings that are WITHHOLDINGS, not readings. A row already
+#: carrying one of these cannot be marked not-established: there is no
+#: reading to withhold, and relabelling it would assert something the
+#: diagnosis does not say.
+_WITHHELD_PREFIXES = ("UNMEASURED", "NOT_ESTABLISHED")
+
+
+def mark_not_established(
+    *, row: dict[str, Any], diagnosis_ref: str, date: str
+) -> dict[str, Any]:
+    """Withhold ONE recorded σ row under the not-established firewall.
+
+    Owner pin 45(b): the σ rows do not need a seal. The diagnosis already
+    establishes both σ cells as artifacts of the shared basis origin, so
+    they are marked under the firewall that already exists — no sealed
+    instrument is touched, and the MEASUREMENT is untouched (only the
+    verdict is withheld, with the prior value preserved).
+
+    **Owner pin 47 — the guard keys on the VERDICT, not on its own
+    witness.** The predecessor guard refused when the annotation block was
+    present, so deleting that block (what a manual reset does) let a second
+    marking overwrite ``prior_verdict`` with the already-marked value. The
+    verdict cannot be deleted without destroying the row, so it is the
+    honest witness.
+
+    Args:
+        row: The recorded σ row.
+        diagnosis_ref: Evidence path of the establishing diagnosis.
+        date: ISO date string (passed in — purity).
+
+    Returns:
+        The withheld row.
+
+    Raises:
+        ValueError: If the row is not a σ row, if it already carries a
+            marking, or if its verdict is already a withholding rather than
+            a pre-registered rubric cell.
+    """
+    if row["field_kind"] != FIELD_KIND_SIGMA:
+        raise ValueError(
+            f"only sigma rows are withheld by this diagnosis; got field_kind "
+            f"{row['field_kind']!r} — the two mean-route CLEAN verdicts stand"
+        )
+    verdict = str(row["verdict"])
+    if verdict.startswith(_WITHHELD_PREFIXES):
+        raise ValueError(
+            f"row verdict is already a withholding ({verdict!r}), not a "
+            "reading: there is nothing to withhold, and this refusal also "
+            "closes the deletion attack (owner pin 47) — the guard keys on "
+            "the verdict, which cannot be deleted, not on the annotation "
+            "block, which can"
+        )
+    if row.get("not_established") is not None:
+        raise ValueError("row is already marked not-established")
+    withheld = dict(row)
+    withheld["verdict"] = NOT_ESTABLISHED
+    withheld["attributable"] = False
+    withheld["not_established"] = {
+        "prior_verdict": verdict,
+        "prior_attributable": row["attributable"],
+        "diagnosis": diagnosis_ref,
+        "firewall": NOT_ESTABLISHED_FIREWALL,
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "45(b)",
+        "measurement_unchanged": (
+            "rms_delta, d_int, r_seam and the pre-registered rubric_cell stand "
+            "exactly as recorded under seal v1"
+        ),
+        "date": date,
+    }
+    return withheld
+
+
+def seam_verdict_from_floors(*, rubric_cell: str, floor: dict[str, Any]) -> str:
+    """Apply Rule 0's solver floor to a rubric cell — the ONE precedence.
+
+    A floor-probe WAIT withholds first; then the SOLVER floor (Rule 0.a).
+    The ensemble floor (Rule 0.b) is NOT here: the owner DEFERRED the whole
+    rubric amendment to one sealed version authored after T14/T15, against
+    the CRN-paired configuration that will then exist, so no code verdicts
+    on an unsealed rule.
+
+    Args:
+        rubric_cell: The sealed-threshold cell for the ratio.
+        floor: Solver-floor attributability block, or a WAIT block.
+
+    Returns:
+        The verdict string.
+    """
+    if floor.get("status") == "WAIT":
+        return UNMEASURED_PENDING_OWNER
+    if not floor["attributable"]:
+        return UNMEASURED_SOLVER_FLOOR
+    return rubric_cell
+
+
 def build_seam_row(
     *,
     route: str,
@@ -1653,7 +1793,7 @@ def build_seam_row(
 
     The row carries the rubric's shape ``{pair, era, field_kind,
     rms_delta, d_int, r_seam, verdict}`` plus the resolution, the
-    denominator it used, its own floor block, and the review-pin-13
+    denominator it used, its own floor blocks, and the review-pin-13
     geometry caveat. There is deliberately NO free-prose field.
 
     Args:
@@ -1664,7 +1804,7 @@ def build_seam_row(
         r_seam: ``rms_delta / d_int``.
         rubric_cell: The sealed-threshold cell for ``r_seam`` (computed
             by the metric module at call time — never re-derived here).
-        floor: An attributability block or a WAIT block.
+        floor: A solver-floor attributability block or a WAIT block.
         seal_sha: The verified evaluation-seal sha the row quotes.
         date: ISO date string (passed in — purity).
 
@@ -1684,12 +1824,7 @@ def build_seam_row(
         raise ValueError(
             f"unknown seam read route {route!r}; known: {[ROUTE_PAIR, ROUTE_ORACLE]}"
         )
-    if floor.get("status") == "WAIT":
-        verdict = UNMEASURED_PENDING_OWNER
-    elif not floor["attributable"]:
-        verdict = UNMEASURED_SOLVER_FLOOR
-    else:
-        verdict = rubric_cell
+    verdict = seam_verdict_from_floors(rubric_cell=rubric_cell, floor=floor)
     strip = seam_strip_bbox()
     return {
         "route": route,
@@ -2684,6 +2819,46 @@ def _interior_fields(path: Path, tile: str) -> Any:  # noqa: ANN401 - ndarray
     return values[:, lat_m, :][:, :, lon_m]
 
 
+def blend_strip(fields: dict[str, Any]) -> Any:  # noqa: ANN401 - ndarray
+    """Blend the two seam tiles' per-day strip fields into the product field.
+
+    The ORACLE route's own input: the tiling's partition-of-unity blend
+    (``spatial_tiles.assemble``) applied day by day on the 2·overlap
+    strip, exactly as the product would assemble it.
+
+    Args:
+        fields: ``tile -> (time, lat, lon)`` strip values for both seam
+            tiles (same day count and strip shape).
+
+    Returns:
+        The blended ``(time, lat, lon)`` strip field.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        assemble,
+        frame_grid,
+    )
+
+    north = SEAM_PAIR_TILES[0]
+    grid_n = frame_grid(registry_frame(north), RESOLUTION_DEG)
+    lat_m, lon_m = strip_mask(grid_n, seam_strip_bbox())
+    lon2d, lat2d = np.meshgrid(grid_n.x[lon_m], grid_n.y[lat_m])
+    frames = [registry_frame(t) for t in SEAM_PAIR_TILES]
+    shape = lon2d.shape
+    return np.stack(
+        [
+            assemble(
+                frames,
+                [fields[t][d].ravel() for t in SEAM_PAIR_TILES],
+                lon2d.ravel(),
+                lat2d.ravel(),
+            ).reshape(shape)
+            for d in range(fields[north].shape[0])
+        ]
+    )
+
+
 def _seam_compare_phase(
     *,
     tiles: dict[str, Any],
@@ -2705,13 +2880,6 @@ def _seam_compare_phase(
     Returns:
         Four rows: {pair, oracle} x {mean, sigma}.
     """
-    import numpy as np  # noqa: PLC0415
-
-    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
-        assemble,
-        frame_grid,
-    )
-
     north, south = SEAM_PAIR_TILES
     mean = {t: _strip_fields(SEAM_MEAN_MAPS[t], t) for t in SEAM_PAIR_TILES}
     sigma = {t: _strip_fields(SEAM_STD_MAPS[t], t) for t in SEAM_PAIR_TILES}
@@ -2736,27 +2904,8 @@ def _seam_compare_phase(
         f"R_seam_sigma {read_pair.r_seam_sigma:.4f} ({read_pair.verdict_sigma})"
     )
 
-    grid_n = frame_grid(registry_frame(north), RESOLUTION_DEG)
-    lat_m, lon_m = strip_mask(grid_n, seam_strip_bbox())
-    lon2d, lat2d = np.meshgrid(grid_n.x[lon_m], grid_n.y[lat_m])
-    frames = [registry_frame(t) for t in SEAM_PAIR_TILES]
-    shape = lon2d.shape
-
-    def _blend(fields: dict[str, Any]) -> Any:  # noqa: ANN401 - ndarray
-        return np.stack(
-            [
-                assemble(
-                    frames,
-                    [fields[t][d].ravel() for t in SEAM_PAIR_TILES],
-                    lon2d.ravel(),
-                    lat2d.ravel(),
-                ).reshape(shape)
-                for d in range(fields[north].shape[0])
-            ]
-        )
-
-    blended_mean = _blend(mean)
-    blended_sigma = _blend(sigma)
+    blended_mean = blend_strip(mean)
+    blended_sigma = blend_strip(sigma)
     seamless_mean = _strip_fields(ANCHOR_MEAN_MAPS, "anchor")
     seamless_sigma = _strip_fields(ANCHOR_STD_MAPS, "anchor")
     anchor_pcg = anchor_block["pcg"]
@@ -2922,6 +3071,92 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         "identity gate), Task 4 (seam-pair run), Task 5 (diverse-tile runs); "
         "Task 2's measured-first probe landed as the `probe` command."
     )
+
+
+SIGMA_DIAGNOSIS_NODE = "seam_sigma_diagnosis"
+NOT_ESTABLISHED_NODE = "sigma_rows_not_established"
+
+
+@app.command()
+def withhold_sigma_rows(
+    evidence_path: Annotated[Path, typer.Option("--evidence-path")] = EVIDENCE,
+) -> None:
+    """Withhold both σ rows under the not-established firewall (pin 45b).
+
+    NO SEAL IS TOUCHED and no solve runs. The establishing diagnosis is
+    already committed, dual-reviewed and CONFIRMED; this records its
+    consequence on the rows it is about. The rubric amendment that would
+    have produced a verdict-bearing label is DEFERRED to one sealed version
+    after T14/T15 (owner pin 45).
+
+    Raises:
+        typer.BadParameter: If the rows, the diagnosis or the seal pointer
+            are missing, or if the rows are already withheld.
+    """
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal(evidence_path)
+    results = json.loads(evidence_path.read_text())
+    stage1 = results.get("phase14", {}).get("stage1", {})
+    rows = stage1.get(SEAM_ROWS_NODE)
+    if not rows:
+        raise typer.BadParameter(f"no phase14.stage1.{SEAM_ROWS_NODE} to withhold")
+    if SIGMA_DIAGNOSIS_NODE not in stage1:
+        raise typer.BadParameter(
+            f"no phase14.stage1.{SIGMA_DIAGNOSIS_NODE}: the withholding cites "
+            "the diagnosis as its establishing evidence and refuses without it"
+        )
+    if stage1.get(NOT_ESTABLISHED_NODE):
+        raise typer.BadParameter(
+            f"phase14.stage1.{NOT_ESTABLISHED_NODE} already recorded"
+        )
+    date = datetime.now(UTC).date().isoformat()
+    ref = f"phase14.stage1.{SIGMA_DIAGNOSIS_NODE}"
+    out: list[dict[str, Any]] = []
+    withheld: list[dict[str, Any]] = []
+    for row in rows:
+        if row["field_kind"] != FIELD_KIND_SIGMA:
+            out.append(row)
+            continue
+        marked = mark_not_established(row=row, diagnosis_ref=ref, date=date)
+        out.append(marked)
+        withheld.append(
+            {
+                "route": marked["route"],
+                "prior_verdict": marked["not_established"]["prior_verdict"],
+                "verdict": marked["verdict"],
+                "r_seam_sigma": marked["r_seam"],
+            }
+        )
+    stage1[SEAM_ROWS_NODE] = out
+    stage1[NOT_ESTABLISHED_NODE] = {
+        "label": "WITHHELD — NOT A VERDICT",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "45(b)",
+        "diagnosis": ref,
+        "withheld": withheld,
+        "consequence": (
+            "Stage 1 has NO attributable sigma-route seam verdict. The sigma "
+            "seam question is UNANSWERED, not answered clean; the two "
+            "mean-route CLEAN cells are the stage's only standing seam "
+            "verdicts, and the C1->2 contract carries the sigma question "
+            "forward OPEN (owner pins 37a, 37c)"
+        ),
+        "seal_untouched": (
+            "no sealed instrument was amended: the rubric amendment is "
+            "DEFERRED to one sealed version authored after T14 and T15, "
+            "against the CRN-paired configuration that will then exist"
+        ),
+        "no_solves_run": True,
+        "date": date,
+    }
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+
+    atomic_write_json(evidence_path, results)
+    for w in withheld:
+        typer.echo(f"{w['route']}/sigma: {w['prior_verdict']} -> {w['verdict']}")
 
 
 @app.command()

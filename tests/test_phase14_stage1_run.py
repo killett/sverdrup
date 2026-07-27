@@ -1874,6 +1874,67 @@ def test_oracle_rows_carry_the_gap_register_note_and_pair_rows_do_not() -> None:
     assert _row(route="pair")["oracle_note"] is None
 
 
+# --- pin 34: F defined by ACCURACY TARGET, not iteration budget ------------
+
+
+def test_floor_probe_rtol_is_the_pre_registered_accuracy_target() -> None:
+    """FLOOR_RTOL is production rtol / 10^decades, with decades pinned at 3.
+
+    Hand values from the ruling: three decades below a production 1e-6 is
+    1e-9 — the construction the executed T4 probes ran under and which
+    pin 34 pre-registers.
+
+    Bug caught: someone loosening the probe tolerance (the tempting fix
+    when a probe is slow to converge) — F would then be measured against
+    a looser accuracy target and would silently become a smaller floor,
+    licensing verdicts the rubric does not license. Pin 34: non-attainment
+    is a STOP, never a fallback to a looser F.
+    """
+    assert _mod.FLOOR_DECADES == 3
+    assert _mod.SEAM_PRODUCTION_RTOL == 1.0e-6
+    assert _mod.FLOOR_RTOL == pytest.approx(1.0e-9, rel=1e-12)
+    assert _mod.FLOOR_RTOL == pytest.approx(
+        _mod.SEAM_PRODUCTION_RTOL * 10.0**-_mod.FLOOR_DECADES, rel=1e-12
+    )
+
+
+def test_floor_block_records_the_accuracy_target_and_what_was_achieved() -> None:
+    """The block states the target AND the residual actually reached.
+
+    Bug caught: a row recording only F. Pin 34 requires the achieved
+    residual beside the stated target, because that pairing is the only
+    way a later reader can check the probe met its accuracy target rather
+    than merely reporting a converged flag.
+    """
+    block = _mod.floor_attributability(
+        rms_delta=0.02, floor_f=0.005, probe=_floor_probe()
+    )
+    assert block["decades_below_production_rtol"] == 3
+    assert block["production_rtol"] == 1.0e-6
+    assert block["target_rtol"] == pytest.approx(1.0e-9, rel=1e-12)
+    assert block["achieved_rel_residual"] == 9.1e-10
+    assert block["f_m"] == 0.005
+    assert block["threshold_m"] == pytest.approx(0.015, rel=1e-12)
+
+
+def test_floor_attributability_refuses_a_probe_that_missed_its_target() -> None:
+    """A probe whose achieved residual misses the target is a STOP.
+
+    The probe here reports converged=True but its final relative residual
+    (5e-8) is above the pre-registered 1e-9 target — i.e. it converged
+    against a LOOSER tolerance than the rubric pre-registers.
+
+    Bug caught: accepting such a probe as F. That is precisely the
+    "fallback to a looser F" pin 34 forbids: the floor would be measured
+    at an accuracy the rubric does not sanction, and every verdict above
+    it would inherit the error while looking fully floored.
+    """
+    probe = _floor_probe()
+    probe["final_rel_residual"] = 5.0e-8
+    with pytest.raises(RuntimeError, match="accuracy target"):
+        _mod.floor_attributability(rms_delta=0.02, floor_f=0.005, probe=probe)
+
+
 def test_seam_rows_from_read_cover_both_routes_and_both_field_kinds() -> None:
     """Four rows: {pair, oracle} x {mean, sigma}.
 
@@ -2161,3 +2222,127 @@ def test_blend_on_the_strip_is_a_partition_of_unity_and_nan_safe() -> None:
     poisoned[lat == np.unique(lat)[0]] = np.nan  # NaN where seam_n has no weight
     blended = assemble(frames, [poisoned, np.ones(lon.size)], lon, lat)
     assert np.isfinite(blended[lat == np.unique(lat)[0]]).all()
+
+
+# --- owner pin 45(b): mark a σ row NOT_ESTABLISHED by diagnosis ------------
+# No seal is touched: the diagnosis is committed, dual-reviewed and CONFIRMED,
+# and the firewall label already exists. Owner pin 47: the one-shot guard must
+# survive deletion of its own witness.
+
+_DIAGNOSIS_REF = "phase14.stage1.seam_sigma_diagnosis"
+
+
+def _sigma_row_as_recorded(verdict: str = "ELEVATED") -> dict[str, Any]:
+    """A σ row exactly as recorded under seal v1 (verbatim numbers)."""
+    return {
+        "route": "pair",
+        "field_kind": "sigma",
+        "rms_delta": 0.0036065320446369846,
+        "d_int": 0.003265498166677423,
+        "r_seam": 1.1044354829041465,
+        "rubric_cell": verdict,
+        "verdict": verdict,
+        "attributable": True,
+        "floor": {"attributable": True, "f_m": 9.539364309585352e-08},
+        "seal_sha": "a17ea419" + "0" * 56,
+    }
+
+
+def test_not_established_marking_replaces_the_verdict_and_keeps_the_numbers() -> None:
+    """The σ cell reads NOT_ESTABLISHED, citing the diagnosis; numbers stand.
+
+    Owner pin 45(b): the committed, dual-reviewed, CONFIRMED diagnosis already
+    establishes that this σ reading is an artifact of the shared basis origin,
+    so the cell is marked under the EXISTING not-established firewall — no
+    sealed instrument is amended to do it.
+
+    Bug caught: a marking that rewrites the measurement (rms_delta, d_int,
+    r_seam) or erases the pre-registered rubric_cell. The reading is the only
+    record of this configuration and must survive its own re-labelling.
+    """
+    row = _mod.mark_not_established(
+        row=_sigma_row_as_recorded(),
+        diagnosis_ref=_DIAGNOSIS_REF,
+        date="2026-07-27",
+    )
+    assert row["verdict"] == "NOT_ESTABLISHED (ensemble MC artifact — see diagnosis)"
+    assert row["attributable"] is False
+    assert row["rubric_cell"] == "ELEVATED"
+    assert row["rms_delta"] == 0.0036065320446369846
+    assert row["d_int"] == 0.003265498166677423
+    assert row["r_seam"] == 1.1044354829041465
+    block = row["not_established"]
+    assert block["prior_verdict"] == "ELEVATED"
+    assert block["diagnosis"] == _DIAGNOSIS_REF
+    assert block["date"] == "2026-07-27"
+    assert "no rubric verdict supports" in block["firewall"]
+
+
+def test_not_established_marking_refuses_a_row_already_marked() -> None:
+    """One marking per row — the ordinary double-run refusal.
+
+    Bug caught: a re-run overwriting `prior_verdict` with the already-marked
+    label, erasing the ELEVATED reading the diagnosis is about.
+    """
+    once = _mod.mark_not_established(
+        row=_sigma_row_as_recorded(), diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
+    )
+    with pytest.raises(ValueError, match="already"):
+        _mod.mark_not_established(
+            row=once, diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-28"
+        )
+
+
+def test_not_established_guard_survives_deletion_of_its_own_witness() -> None:
+    """OWNER PIN 47, the demonstrated exploit: delete the block, retry, refuse.
+
+    The predecessor guard keyed on the presence of the annotation block, so
+    deleting that block — exactly what a manual reset does — let a second
+    marking through and overwrote `prior_verdict` with the already-marked
+    value. This guard keys on the VERDICT, which is the thing being
+    protected and cannot be deleted without destroying the row.
+
+    Bug caught: the regression of that exploit. A write-once surface
+    defeated by deleting its own witness is not write-once, and a
+    demonstrated exploit with no regression test is an invitation.
+    """
+    marked = _mod.mark_not_established(
+        row=_sigma_row_as_recorded(), diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
+    )
+    stripped = {k: v for k, v in marked.items() if k != "not_established"}
+    assert "not_established" not in stripped
+    assert stripped["verdict"].startswith("NOT_ESTABLISHED")
+    with pytest.raises(ValueError, match="verdict is already"):
+        _mod.mark_not_established(
+            row=stripped, diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-28"
+        )
+
+
+def test_not_established_marking_refuses_a_non_rubric_prior_verdict() -> None:
+    """The prior verdict must be one of the pre-registered cells.
+
+    Bug caught: marking a row whose verdict is already an UNMEASURED_* or
+    pending-owner label — those are withholdings, not readings, and
+    relabelling them as a diagnosis-established artifact would assert
+    something the diagnosis does not say.
+    """
+    withheld = _sigma_row_as_recorded()
+    withheld["verdict"] = _mod.UNMEASURED_SOLVER_FLOOR
+    with pytest.raises(ValueError, match="verdict is already"):
+        _mod.mark_not_established(
+            row=withheld, diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
+        )
+
+
+def test_not_established_marking_refuses_a_mean_row() -> None:
+    """Only the σ route is marked — the diagnosis is about σ only.
+
+    Bug caught: sweeping all four rows through the marking, which would
+    retract the two mean CLEAN verdicts. They are the stage's only standing
+    seam verdicts and the diagnosis says nothing against them.
+    """
+    mean_row = _sigma_row_as_recorded("CLEAN") | {"field_kind": "mean"}
+    with pytest.raises(ValueError, match="sigma"):
+        _mod.mark_not_established(
+            row=mean_row, diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
+        )

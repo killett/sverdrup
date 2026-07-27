@@ -18,6 +18,11 @@ from sverdrup.validation.phase14_seal import seal_sha
 SEALED_SEAL = Path("sealed/phase14_evaluation_seal_v1.json")
 SNAPSHOT = Path("sealed/phase14_gate0_evidence_snapshot.json")
 CANONICAL = Path("data/2021a_ssh_mapping_ose/ours/phase14_evaluation_seal_v1.json")
+# Rubric v2 amendment (owner ruling 2026-07-27, pins 32 + 34). The Gate-0
+# snapshot still quotes v1 by sha — that is history, and it must stay
+# resolvable, which is why BOTH versions are tracked.
+SEALED_SEAL_V2 = Path("sealed/phase14_evaluation_seal_v2.json")
+CANONICAL_V2 = Path("data/2021a_ssh_mapping_ose/ours/phase14_evaluation_seal_v2.json")
 
 
 def test_tracked_seal_self_verifies() -> None:
@@ -48,3 +53,44 @@ def test_snapshot_pointer_matches_tracked_seal() -> None:
 def test_tracked_seal_byte_identical_to_canonical() -> None:
     """Tracked copy == the canonical data/ seal, byte for byte."""
     assert SEALED_SEAL.read_bytes() == CANONICAL.read_bytes()
+
+
+@pytest.mark.skipif(
+    not SEALED_SEAL_V2.exists(),
+    reason=(
+        "no v2 seal tracked: T13's amendment is PREPARED but WITHDRAWN pending "
+        "the owner ruling (see PROGRESS.md). This test activates the moment the "
+        "corrected v2 is sealed — the artifact's presence IS the condition."
+    ),
+)
+def test_tracked_seal_v2_self_verifies_and_chains_to_v1() -> None:
+    """v2 verifies from its own bytes AND names the v1 sha it supersedes.
+
+    Bug caught: an amended seal committed without its chain — the Gate-0
+    snapshot quotes v1 by sha, and with no `supersedes` link a reader
+    cannot tell whether v2 replaced v1 or was minted independently
+    (which is how a rubric amendment turns into an unauditable rewrite).
+    Also catches a hand-edited v2 copy: one flipped content byte breaks
+    the recompute.
+    """
+    v1 = json.loads(SEALED_SEAL.read_text())
+    v2 = json.loads(SEALED_SEAL_V2.read_text())
+    assert seal_sha(v2["content"]) == v2["seal_sha"]
+    assert v2["content"]["supersedes"] == v1["seal_sha"]
+    assert v2["seal_sha"] != v1["seal_sha"]
+    # the amendment is an owner decision, recorded IN the sealed content
+    assert "2026-07-27" in v2["content"]["signoff"]
+    assert v2["content"]["instruments"]["seam"]["rubric_version"] == 2
+
+
+@pytest.mark.skipif(
+    not CANONICAL_V2.exists(),
+    reason=f"live store not on this host: {CANONICAL_V2}",
+)
+def test_tracked_seal_v2_byte_identical_to_canonical() -> None:
+    """Tracked v2 copy == the canonical data/ v2 seal, byte for byte.
+
+    Bug caught: the amendment landing in the live store only, leaving the
+    public auditability mirror one version behind.
+    """
+    assert SEALED_SEAL_V2.read_bytes() == CANONICAL_V2.read_bytes()

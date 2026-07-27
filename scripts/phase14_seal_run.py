@@ -28,6 +28,7 @@ from sverdrup.validation.phase14_seal import (
     assemble_content,
     build_seal,
     seal_sha,
+    supersede_seal,
     verify_seal,
 )
 
@@ -90,6 +91,13 @@ def build(
     typer.echo(f"seal built: {seal_path} sha {sha}")
 
 
+# The supersession envelope: fields `supersede_seal` adds to an AMENDED
+# content that no live artifact produces. `check` re-derives the
+# substantive fields and admits these three verbatim from the sealed file
+# — it must not go blind to artifact drift to accommodate them.
+_ENVELOPE_KEYS = ("supersedes", "signoff", "date")
+
+
 @app.command()
 def check(
     epoch_table: _EpochTableOpt = EPOCH_TABLE_PATH,
@@ -98,8 +106,13 @@ def check(
     evidence_path: _EvidencePathOpt = EVIDENCE,
 ) -> None:
     """Re-derive the sha from the LIVE artifacts; FAIL on any drift."""
-    derived = seal_sha(_assemble(epoch_table, locked_split))
     recorded = json.loads(evidence_path.read_text())["phase14"]["stage0"]["seal"]
+    content = _assemble(epoch_table, locked_split)
+    sealed_path = Path(recorded["path"])
+    if sealed_path.exists():
+        sealed = json.loads(sealed_path.read_text()).get("content", {})
+        content.update({k: sealed[k] for k in _ENVELOPE_KEYS if k in sealed})
+    derived = seal_sha(content)
     failures = []
     if derived != recorded["sha"]:
         failures.append(
@@ -114,6 +127,61 @@ def check(
             typer.echo(f"FAIL: {f}")
         raise typer.Exit(code=1)
     typer.echo(f"PASS: seal {recorded['path']} sha {recorded['sha']} re-derived")
+
+
+@app.command()
+def supersede(
+    signoff: Annotated[
+        str,
+        typer.Option(
+            "--signoff",
+            help="The owner decision that authorizes the amendment (required)",
+        ),
+    ],
+    epoch_table: _EpochTableOpt = EPOCH_TABLE_PATH,
+    locked_split: _LockedSplitOpt = LOCKED_SPLIT,
+    evidence_path: _EvidencePathOpt = EVIDENCE,
+) -> None:
+    """Amend the seal: a NEW version file + the pointer, chain recorded.
+
+    The sanctioned amendment path (fork-f pin 2). The CURRENT seal must
+    verify against its recorded pointer first, the new content is
+    re-assembled from the LIVE artifacts, and the pointer moves while
+    recording what it superseded — Gate 0's evidence quotes v1 by sha, and
+    that quotation must stay resolvable.
+    """
+    results = json.loads(evidence_path.read_text())
+    node = results["phase14"]["stage0"].get("seal")
+    if not node:
+        raise typer.BadParameter(
+            "no phase14.stage0.seal recorded — there is nothing to supersede "
+            "(build the seal first)"
+        )
+    old_path = Path(node["path"])
+    verify_seal(old_path, node["sha"])  # refuse to amend an unverified seal
+    content = _assemble(epoch_table, locked_split)
+    if seal_sha(content) == node["sha"]:
+        raise typer.BadParameter(
+            "the live artifacts re-assemble to the RECORDED sha — the sealed "
+            "content is unchanged, so there is nothing to amend (a v2 identical "
+            "in substance to v1 makes 'which version verdicted this row' "
+            "unanswerable)"
+        )
+    new_path, sha = supersede_seal(old_path, content, signoff)
+    results["phase14"]["stage0"]["seal"] = {
+        "path": str(new_path),
+        "sha": sha,
+        "version": int(node["version"]) + 1,
+        "date": datetime.now(UTC).date().isoformat(),
+        "signoff": signoff,
+        "supersedes": dict(node),
+    }
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+
+    atomic_write_json(evidence_path, results)
+    typer.echo(f"seal superseded: {new_path} sha {sha} (supersedes {node['sha']})")
 
 
 if __name__ == "__main__":

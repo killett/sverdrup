@@ -164,24 +164,28 @@ def supersede_seal(
     return new_path, sha
 
 
-def verify_current_seal() -> None:
+def verify_current_seal(evidence_path: Path | None = None) -> None:
     """The Task-10 ceremony tripwire: verify the CURRENT seal via evidence.
 
     Reads the recorded ``phase14.stage0.seal`` pointer (path + sha) from
-    the standing evidence JSON and byte-verifies it. Refuses while no seal
-    is recorded — a locked open before the sealed set exists is
-    definitionally unceremonied.
+    the evidence JSON and byte-verifies it. Refuses while no seal is
+    recorded — a locked open before the sealed set exists is definitionally
+    unceremonied.
+
+    Args:
+        evidence_path: Evidence store to read the pointer from; defaults to
+            the standing :data:`EVIDENCE`. Callers that operate on an
+            isolated store MUST pass it — verifying a scratch store against
+            the production pointer proves nothing about either.
 
     Raises:
         SealError: No recorded seal, or verification failure.
     """
-    if not EVIDENCE.exists():
+    store = EVIDENCE if evidence_path is None else evidence_path
+    if not store.exists():
         raise SealError("no evidence store — no seal recorded")
     node = (
-        json.loads(EVIDENCE.read_text())
-        .get("phase14", {})
-        .get("stage0", {})
-        .get("seal")
+        json.loads(store.read_text()).get("phase14", {}).get("stage0", {}).get("seal")
     )
     if not node:
         raise SealError(
