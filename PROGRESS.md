@@ -1,5 +1,72 @@
 # Sverdrup — Progress notebook
 
+> # ⛔ START HERE — HALTED 2026-07-27, AWAITING NOTHING FROM THE OWNER
+>
+> **You are resuming Phase 14, Stage 1 (spatial-at-2017). The stage is HALTED
+> mid-execution. An owner ruling has been received and recorded but NOT yet
+> implemented. Read this block, then the ruling doc, then the plan.**
+>
+> **THE RULING (read it in full before touching anything):**
+> `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` — recorded
+> VERBATIM by owner instruction, because pin 31(a)'s identity constraint is the
+> reasoning behind the highest-risk change in the stage and a one-line
+> acceptance criterion would lose it. Part 2 of that doc is labelled
+> **session notes, NOT owner-ruled** — unratified pointers (candidate call
+> sites, lattice arithmetic, cost estimates, open questions); verify before
+> relying on any of it.
+>
+> **WHAT THE RULING SAYS, IN ONE PARAGRAPH.** T4's seam σ route read ELEVATED.
+> Investigation (dual-reviewed, then adversarially re-reviewed under a brief to
+> BREAK it) proved that reading is ensemble Monte-Carlo noise, not a seam
+> artifact, caused by a real defect: the CRN pavement lattice is keyed to EACH
+> TILE'S OWN solve-box origin, so tiles at different origins draw independent
+> random numbers and lose the pairing that common random numbers exist to
+> provide. The owner ruled: **fix the lattice, not the ensemble** — pin the
+> pavement to a GLOBAL origin (do NOT raise m, do NOT change the σ denominator,
+> do NOT retire the instrument). Two further amendments: the sealed rubric gains
+> an **ensemble floor** for σ verdicts (`F_ens = σ/√(m−1)`, 3×F_ens
+> attributability, else UNMEASURED), and Rule 0's floor probe is redefined **by
+> accuracy target rather than iteration budget**.
+>
+> **THE FOUR NEW TASKS (in the tracker with real edges — do not work from prose):**
+> - **T13** — rubric amendment (pins 32, 34) + correct the T4 pair/σ cell to
+>   UNMEASURED (ensemble floor). blockedBy [0, 10]. **READY.**
+> - **T14** — global lattice origin (pin 31a). **The check-1 re-run IS its
+>   acceptance, treated as a GATE, not a regression test.** blockedBy [1,2,3,4,13].
+> - **T15** — alignment-residual survey across the D1 roster (31b) + the
+>   product-consequence and superseded-σ recordings (31c/d). blockedBy [14].
+> - **T16** — pin 33 (two-sided gate discipline), pin 35 (coverage re-walk into
+>   T12), process minors. blockedBy [15].
+> - **T12** (C1→2 contract coverage walk) is also READY and absorbs the
+>   amended-rubric re-walk per pin 35.
+>
+> **⛔ THE OWNER'S STOP CONDITION: STOP after T14** with the check-1 re-run and
+> the alignment survey together. **STOP IMMEDIATELY if check 1 degrades by ANY
+> margin** — the identity chain and the write-once gate-5 pins are downstream of
+> it. If the global origin cannot reproduce the anchor lattice exactly, the
+> change DOES NOT LAND, and the owner wants that result either way.
+>
+> **⛔⛔ T5 IS BLOCKED AND MUST NOT BE DISPATCHED.** It is the stage's largest
+> spend and it CROSSES TIER-2 on two independent axes (RAM binding: needs 9,431
+> MiB available, `tier1_eligible` False; wall: 95.1 h–15.7 d for four tiles
+> against a 6 h Tier-2 probe ceiling, and Stage 1 has NO pre-registered Tier-2
+> row). Priced at
+> `docs/superpowers/2026-07-26-phase14-stage1-t5-price-bracket.md`. The block is
+> now MECHANICAL (`blockedBy [3, 4, 14]`) and its task description opens with the
+> WAIT — but the WAIT is the owner's to lift, and **the CRN fix does not relieve
+> it**. Both must clear.
+>
+> **STAGE BOARD:** T0, T1, T2, T3, T4, T10, T11 COMPLETE (all dual-reviewed).
+> T12, T13 ready. T14→T15→T16 chained. T5 blocked (above); T6, T7, T8 behind T5;
+> T9 (Gate-1 pack, userGate) behind everything.
+>
+> **STANDING DISCIPLINE, UNCHANGED:** zero locked opens; tally byte-identical;
+> seal read-only EXCEPT the recorded rubric amendment (T13); no evaluation-bearing
+> map outside an approved plan task; every long run `setsid`-detached with
+> completion AND stall watchers; nothing tuned on a seam signal.
+>
+> **Everything below this block is the historical record, newest first.**
+
 > **▶ PHASE 14 — SCALING PROGRAM DESIGN COMMITTED 2026-07-22 (`f25042c`),
 > ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.** Spec:
 > `docs/superpowers/specs/2026-07-21-phase14-scaling-program-design.md`
