@@ -1,6 +1,89 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — T13 LANDED 2026-07-27 (no seal). NEXT: pin 43, THEN T14.
+> # ⛔ START HERE — PIN 43 MEASURED 2026-07-27 (no seal). NEXT: OWNER STOP, THEN T14.
+>
+> **⛔ PIN 43'S SETTLING MEASUREMENT HAS RUN. RECORDED, NOT SEALED.** Full
+> write-up: `docs/superpowers/2026-07-27-phase14-pin43-settling-measurement.md`;
+> evidence node `phase14.stage1.ensemble_settling_measurement`. 200 disjoint
+> member partitions per tile per split size, both seam tiles, 50/50 and 25/25,
+> seed 20260727, **no solves**, ~22 min. The replay's identity with the
+> production evaluator is CHECKED at exact zero, not asserted: full-m σ from the
+> captured per-member fields reproduces BOTH the lineage `std_fields` and the map
+> T4 persisted at **0.0** on both tiles, and the ordered `[0:50]`/`[50:100]` split
+> reproduces the committed T4 half-split readings to 2.2e-16 / 0.0.
+>
+> **THE FIVE RESULTS, IN THE ORDER THEY MATTER:**
+> 1. **The null is tight:** pooled over both tiles, T has mean **0.99755** (50/50)
+>    and **0.99397** (25/25), **sd ≈ 0.006**; no draw out of 400 at 50/50 exceeded
+>    **1.016**.
+> 2. **m-invariance is REJECTED — but the departure has a closed form.** The two
+>    split sizes differ by **+5.7 / +5.8 naive SE** on the two tiles, same sign and
+>    size. It is NOT an N_eff effect: it is the exact-vs-asymptotic gap,
+>    `E[T] = √(2(m−1)(1−c4(m)²))`, which predicts 0.994672 / 0.997420 against
+>    measured 0.99397 / 0.99755. **T17 can correct it exactly instead of by
+>    margin.** Pin 43(b) asked; the answer is "no, and here is the formula".
+> 3. **The factor settles near 1.02–1.03** — already above every realized null
+>    draw. The withdrawn **1.07** (E-3) is ~11 sd above the null mean; pin 32's
+>    carried-over **3.0** is ~320 sd above it. **Pin 43(a)'s caveat travels with
+>    this: 200 partitions of the SAME 100 members share draws, so the spread is
+>    COMBINATORIAL and UNDERSTATES the truth.** And n=200 supports q95–q99 only —
+>    **a 0.999 quantile is NOT estimable from this sample.**
+> 4. **⛔ A SMALL FACTOR DOES NOT RESTORE A REACHABLE CLEAN CELL — the finding that
+>    outlives the factor.** `F_ens/D_int_σ = 1.1356` at m=100, so pin 36(c)'s
+>    condition `factor × F_ens < clean_max × D_int_σ` fails for **EVERY factor
+>    ≥ 1.00** (min m for CLEAN: 129 at factor 1.00, 137 at 1.03, 148 at 1.07,
+>    1151 at 3.0). Deriving the factor was necessary and is now done; **it is not
+>    sufficient.** The remedy must come from `m`, from the σ denominator, or from
+>    retiring the route — and pin 31 already ruled out the first two. **This is an
+>    owner decision, not an executor one.**
+> 5. **T4's cross-tile reading sits BELOW the measured null:** `T_cross = 0.97256`
+>    at m=100 against an extrapolated null centre of 0.99873, sd ≈ 0.006 — about
+>    **4.2 sd BELOW**. No excess whatever over pure ensemble MC noise, which
+>    corroborates the committed diagnosis from a direction it did not use. It also
+>    hints the independence premise is ALREADY violated in the recorded cross-tile
+>    pair (within-tile partitions land ON the independent prediction). **Flagged,
+>    not resolved** — pin 45(c)'s problem from the other side; T15/T17 owns it.
+>
+> **⛔ NEXT ACTION IS THE OWNER'S CLEARANCE, NOT T14.** Pin 43 is MEASURED and
+> **NOT SEALED. NO FACTOR IS ADOPTED. T14 IS BLOCKED pending an owner ruling.
+> T17 is behind T15.** Nothing seals until after T15. The seal is untouched and
+> `seal_run check` is GREEN at v1.
+>
+> **PINS 51-55 RULED AND FOLDED (ruling doc PART 6, verbatim):**
+> - **51 — T13 tracker corrected.** Status flipped to `completed`, criteria
+>   REPLACED by what actually landed, and the withdrawn criteria pointed at T17.
+>   (It had sat `in_progress` with acceptance criteria describing the withdrawn
+>   amendment; flipping it green against those would have been the false green
+>   pin 40 exists to catch, so it went to the owner rather than being self-applied.)
+> - **52 — ⛔ T14 IS BLOCKED MECHANICALLY.** Flipping T13 made T14's other
+>   blockers all green — the T5 trap one task later, on the stage's highest-risk
+>   change, landing as the session clears. **New userGate task id 18** now blocks
+>   T14 (`blockedBy [1,2,3,4,13,18]`) and is released ONLY by an owner ruling that
+>   names T14. T14's description opens with the STOP. **A fresh session following
+>   the resume protocol hits a wall, not a green light.**
+> - **53 — PIN 31'S m-REJECTION IS SUPERSEDED, reopened not reversed.** It rested
+>   on ~512 members, from a 2× margin over the un-derived 3× factor pin 36
+>   overturned; the settled requirement is **m ≥ 137**. **PRICED, NOT CHOSEN** at
+>   `docs/superpowers/2026-07-27-phase14-m137-price.md`. The pricing found **~512
+>   was exactly the RAM knee** — the model's phase-max only starts tracking m at
+>   m ≈ 512 — so m=137 sits at 27% of it: **+0.5% RAM, ×1.37 wall, which is
+>   SMALLER than this box's own ×1.70 measured drift. m=137 is not the binding
+>   constraint on either axis and does not change T5's blocked status.** The
+>   remedy is NOT decided: T14 collapses `F_ens` by design, so it belongs to T17.
+> - **54 — the closed form is ENDORSED for exact use in T17**,
+>   `E[T] = √(2(m−1)(1−c4²))`, implemented as `ensemble_settling.expected_t` and
+>   **test-pinned at the m actually used** (published-c4 table with tolerance
+>   propagated from its own 4-decimal precision — the amplification is ~47× at
+>   m=25 — plus an independent Monte-Carlo check using no Gamma function, plus the
+>   two measured means). **BINDING: n=200 supports q95–q99 ONLY. q999 is NOT
+>   estimable from this sample and NO THRESHOLD MAY RELY ON A QUANTILE THE
+>   MEASUREMENT CANNOT REACH.** Recorded at
+>   `phase14.stage1.ensemble_settling_measurement.pin_54_condition`.
+> - **55 — result 5 SHARPENS pin 45(c).** Rule 0.b's conditional form must be
+>   parameterized by **MEASURED correlation** between the two σ fields, not by a
+>   binary paired/unpaired state — **there may be no clean unpaired limit to
+>   reduce to.** Added to T15's acceptance criteria as a named question: measure
+>   the correlation, do not infer it from lattice geometry alone.
 >
 > **You are resuming Phase 14, Stage 1 (spatial-at-2017). T13 is committed. It
 > deliberately does NOT include a rubric amendment: the owner DEFERRED the whole
@@ -79,13 +162,14 @@
 > **T17 — the deferred rubric amendment, the only thing that spends the seal — is
 > BLOCKED BEHIND T15.** Nothing is sealed; the record is at v1 and green.
 >
-> **⛔ NEXT ACTION IS PIN 43, NOT T14.** Run the settling measurement: ~200
-> disjoint random member partitions per tile replayed from the persisted member
-> stores (NO solves), at TWO split sizes (50/50 and 25/25) to test the assumed
-> m-invariance rather than inherit it, carrying the caveat that partitions of the
-> same 100 members share draws and therefore UNDERSTATE the true null spread.
-> Result RECORDED, NOT SEALED. **The owner STOPS again before T14 with that
-> measurement in hand.** Nothing seals until after T15.
+> **✅ PIN 43 IS DONE (2026-07-27) — see the top of this banner for its five
+> results.** It ran exactly as ruled: ~200 disjoint random member partitions per
+> tile replayed from the persisted member stores (NO solves), at TWO split sizes
+> (50/50 and 25/25) to test the assumed m-invariance rather than inherit it,
+> carrying the caveat that partitions of the same 100 members share draws and
+> therefore UNDERSTATE the true null spread. Result RECORDED, NOT SEALED.
+> **The owner STOPS here, before T14, with that measurement in hand.** Nothing
+> seals until after T15.
 >
 > **WHY THE FIRST TWO ATTEMPTS FAILED, for whoever reads this next:** both sealed
 > a rule against a configuration about to be replaced, and both put an executor's
@@ -151,7 +235,9 @@
 > it**. Both must clear.
 >
 > **STAGE BOARD:** T0, T1, T2, T3, T4, T10, T11, **T13** COMPLETE. T12 ready.
-> pin 43 (settling measurement) is the next action; then T14 → T15 → {T16, T17}. T5 blocked (above); T6, T7, T8 behind T5;
+> **pin 43 MEASURED, NOT SEALED — owner clearance is the next action. T14 is
+> BLOCKED behind the new userGate task 18 (pin 52) and only an owner ruling opens
+> it**; then T14 → T15 → {T16, T17}. T5 blocked (above); T6, T7, T8 behind T5;
 > T9 (Gate-1 pack, userGate) behind everything.
 >
 > **STANDING DISCIPLINE, UNCHANGED:** zero locked opens; tally byte-identical;

@@ -12,10 +12,16 @@ reasoning behind the highest-risk change in the stage. A fresh session
 implementing that from a one-line AC, without the reason, is how the identity
 chain and the write-once gate-5 pins get broken by someone being locally sensible.
 
-Tracker tasks created from this ruling: **T13** (rubric amendment), **T14** (global
-lattice origin; check-1 re-run is its acceptance), **T15** (alignment-residual
-survey + recordings), **T16** (pins 33/35 + process minors). **T5 is now
-mechanically blocked** on T14 in addition to its standing Tier-2 WAIT.
+Tracker tasks created from this ruling: **T13** (landed seal-free — see PART 4 pin
+45 for the restructure), **T14** (global lattice origin; check-1 re-run is its
+acceptance), **T15** (alignment-residual survey + recordings), **T16** (pins 33/35 +
+process minors), **T17** (the DEFERRED rubric amendment, behind T15 — pin 45d), and
+**task 18** (the userGate that blocks T14 — pin 52). **T5 is mechanically blocked**
+on T14 in addition to its standing Tier-2 WAIT.
+
+Later parts amend earlier ones; read the whole document before citing any pin.
+**PART 6 (pins 51–55) SUPERSEDES pin 31's "do NOT raise m"** — see the pin-53
+section at the foot.
 
 ---
 
@@ -539,3 +545,79 @@ their two test files. **`scripts/phase14_stage1_run.py` — the verdict path —
 imports neither**, because the Rule-0.b row wiring left with the seal side under
 pin 46. Both functions carry the not-verdict-bearing statement in their
 docstrings and in the module docstring.
+
+---
+
+## PART 6 — POST-MEASUREMENT RULING (verbatim), pins 51–55
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-27, after pin 43's settling
+measurement was run and reported.** Pin 51 approves the T13 tracker correction;
+pin 52 blocks T14 mechanically in the same commit; pin 53 SUPERSEDES pin 31's
+m-rejection (reopened, not reversed) and orders m=137 PRICED, not chosen; pin 54
+endorses the closed form with a test-pin condition; pin 55 sharpens pin 45(c) into
+a named question for T15.
+
+> APPROVED with one addition. Fold, push, then the owner clears.
+>
+> 51. T13 TRACKER EDIT — APPROVED AS PROPOSED. Marking completed against withdrawn
+>     criteria would be a false green and pin 40 is exactly that accounting. Apply the
+>     status flip, the replaced criteria, and the line pointing the withdrawn criteria at
+>     T17. Leaving it in_progress rather than papering it was the right call.
+> 52. ⛔ AND IN THE SAME COMMIT — BLOCK T14 MECHANICALLY. Flipping T13 makes T14
+>     dispatchable (blockedBy [1,2,3,4,13], all met). This is the T5 trap one task later,
+>     on the stage's highest-risk change, landing precisely as the session clears. Add an
+>     explicit blocker — a gate task, or T14 blockedBy an owner-ruling item that does not
+>     exist yet — and open T14's description with the STOP and why. A fresh session
+>     following the resume protocol must hit a wall, not a green light.
+> 53. PIN 31'S m-REJECTION IS SUPERSEDED — reopened, not reversed. I rejected raising m on
+>     ~512 members, derived from a 2× margin I imposed plus the un-derived 3× factor.
+>     At the settled factor the requirement is m ≥ 137 (129 at 1.00, 148 at 1.07),
+>     independently re-derived. Record the correction in the ruling doc against pin 31 so
+>     the tree carries the supersession, not just this thread.
+>     DO NOT DECIDE THE REMEDY NOW. T14 collapses F_ens by design — the very quantity the
+>     m question turns on. The decision belongs after T14/T15 with Rule 0.b, where it
+>     already sits. What is needed before then: price m=137 against the Tier-2 ceiling
+>     that already holds T5 at m=100, since RAM scales with m and the option may be
+>     blocked in practice however cheap it looks in principle. Price it; don't choose.
+> 54. CLOSED FORM ENDORSED, with the standing condition. E[T] = √(2(m−1)(1−c4²))
+>     reproduces both split sizes exactly on independent re-derivation. T17 uses it
+>     exactly rather than by margin. Because it will be sealed and applied at m values not
+>     measured here, test-pin it at the m actually used, and record that n=200 supports
+>     q95-q99 only — q999 is not estimable from this sample and no threshold may rely on
+>     a quantile the measurement cannot reach.
+> 55. RESULT 5 SHARPENS PIN 45(c). If T_cross sits ~4.2 sd below the null while within-tile
+>     partitions land on it, the independence premise may already be violated pre-T14.
+>     Rule 0.b's conditional form must therefore be parameterized by MEASURED correlation
+>     between the two σ fields, not by a binary paired/unpaired state — there may be no
+>     clean unpaired limit to reduce to. Carry this into T15's alignment survey as a named
+>     question: measure the correlation, do not infer it from lattice geometry alone.
+>
+> BEFORE THE OWNER CLEARS: fold 51-55; suite to completion; pre-commit, ruff/mypy clean,
+> seal_run green at v1; commit; PUSH; verify origin; banner states that pin 43 is measured
+> and NOT sealed, no factor adopted, T14 blocked pending owner ruling, T17 behind T15.
+> Report the origin sha and stop.
+>
+> STOP CONDITION: the push. T14 does not start. No factor is adopted. Nothing seals.
+
+### Pin 53 — the supersession, recorded against pin 31
+
+**Pin 31 (PART 1) ruled: "do NOT raise m".** Pin 53 SUPERSEDES that clause and
+REOPENS the question. It does not reverse it — no remedy is chosen here.
+
+- The rejection rested on **~512 members**, from a 2× owner margin over the
+  **un-derived 3× factor** that pin 36 later overturned.
+- The settled factor puts the requirement at **m ≥ 137** (129 at factor 1.00,
+  137 at 1.03, 148 at 1.07) — see
+  `docs/superpowers/2026-07-27-phase14-pin43-settling-measurement.md` §4 and
+  `phase14.stage1.ensemble_settling_measurement`.
+- **The remedy is NOT decided now.** T14 collapses `F_ens` by design — the very
+  quantity the m question turns on — so the decision belongs after T14/T15, with
+  Rule 0.b, in T17 where it already sits.
+- What pin 53 requires BEFORE then: **m=137 PRICED against the Tier-2 ceiling**
+  that already holds T5 at m=100. Priced at
+  `docs/superpowers/2026-07-27-phase14-m137-price.md`.
+
+Every other clause of pin 31 stands unchanged: the global-origin fix (31a), the
+alignment survey (31b), the product-consequence and superseded-σ recordings
+(31c/d), and the standing "do NOT change the σ denominator, do NOT retire the
+instrument".
