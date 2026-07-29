@@ -279,3 +279,90 @@ this document are mirrored as constants in
 `sverdrup/validation/phase14_instruments.py`; a unit test pins doc↔code
 equality on the numbers (the machine-readable comment near the top is the
 parsed source).
+
+---
+
+## ⛔ RULE 0.b IS DERIVED FOR CORRELATED ESTIMATES (owner pin 69)
+
+**This is structural, not a correction applied afterwards. Do not "simplify" it back
+to an independent floor.**
+
+> RULE 0.b IS DERIVED FOR CORRELATED ESTIMATES — the premise problem is structural.
+> The rubric evaluates the pair route at overlap points; measurement shows Jaccard
+> 1.0000 there. So the independence premise contradicts the rubric's own evaluation
+> domain for ANY tiling, not merely this one. T17 does not derive an independent floor
+> and correct it; it derives the floor with ρ as a measured input.
+> — owner pin 69, `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` PART 12
+
+**Why the premise fails by construction.** The pair route is evaluated on the
+2·overlap strip — the region where two tiles overlap *by definition*. Both tiles
+therefore solve that region, and both solve it from the observations lying in it.
+Measured for the recorded pair (`phase14.stage1.seam_shared_observation_channel`):
+the two tiles' observation sets on the strip are **identical** — 14,876 each,
+Jaccard **1.0000**. That is a property of what an overlap strip *is*, not of this
+particular geometry, so **no tiling makes the two σ estimates independent there.**
+
+**The mechanism, measured** (`phase14.stage1.seam_crn_channel_mechanism`):
+observation perturbations are CRN-keyed on *observation* identity and element
+perturbations on *element* identity, at a shared root. Identical observations
+therefore receive **identical ε′ realisations** while the element draws stay
+independent. Confirmed empirically: matched-member field correlation across the two
+tiles is **+0.2523 ± 0.0151** against **−0.0026 ± 0.0164** for mismatched members —
+a separation of 155 sd. The pair is *already partly paired* before T14 touches
+anything.
+
+**What T17 must therefore do.** Derive `F_ens` with ρ as a **measured input**:
+
+    F_ens = σ_pooled · √(2(1−ρ)) / √(2(m−1))  →  reduces to σ_pooled/√(m−1) at ρ = 0
+
+with ρ estimated per pair from the matched-member field correlation, `ρ ≈ r²`
+(model check: r = 0.2523 predicts ρ = 0.0637 against 0.0517 implied by the recorded
+`T_cross`, with no fitted parameter). The independent form is the **ρ = 0 limit**,
+which the rubric's own evaluation domain never realises — it is a special case to
+reduce to, never the default to assume.
+
+**Do not replace this with a paired/unpaired binary** (pin 45c, 68c): the recorded
+pair has **zero coincident element centres** — geometry predicting independence —
+and a **measurably non-zero ρ**. A binary cannot express that state.
+
+---
+
+## §7 AMENDMENT — VALIDATED RANGE, not only reachable verdicts (owner pin 78)
+
+**Third instance of one family, so the check is generalised rather than patched.**
+
+> The 3× factor could not pass; the ±4 sd acceptance could not fail; this sweep could
+> not disagree where disagreement matters. Pin 42 asks for reachability of each
+> VERDICT; extend it: a validation must also state the range of the parameter over
+> which it is validated, and whether the application range lies inside it.
+> Extrapolation beyond the validated span is declared at the point of use or the gate
+> refuses.
+> — owner pin 78, `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` PART 14
+
+**The §7 clause, as amended.** Every quantitative gate names, at design time, the
+measurement conditions under which it could fail AND under which it could pass (pin
+33). **In addition, every validation states:**
+
+1. `validated_range` — the span of the parameter over which the validation was
+   actually performed;
+2. `application_range` — the span over which the validated claim is used;
+3. `extrapolation_declared` — required whenever (2) is not contained in (1).
+
+**A validation that states no `validated_range` is refused. Silence is not
+compliance** — an unstated span is precisely what all three prior instances looked
+like at authorship time.
+
+**MECHANICAL, not prose** (pin 42's lesson, applied to its own successor):
+implemented as `sverdrup.validation.gate_schema.validate_gate_schema` and wired into
+`phase14_seal_run.py check`'s refusal set. It keys on a self-declared `kind` of
+`gate` or `validation`, so existing recorded content — and the unspent seal — is
+untouched. Demonstrated live: injecting a block validated over `[0, 0.2523]` and
+applied over `[0, 0.9]` with no declaration made `seal_run check` FAIL naming the
+path; the store was then restored and the seal re-derived green.
+
+**Worked example, and it is this document's own model.** `ρ = r²` is validated over
+`[0, 0.2523]` and destined for `r ≈ 0.9`, where a 23% ρ error costs **7.166×** in the
+floor. It is recorded at `phase14.stage1.rho_model_range_limitation` **with the
+extrapolation declared**, and it may not parameterize `F_ens` on that basis — either
+high-r points exist (task 21's price, owner-ruled) or the floor is parameterized by
+**measured ρ per pair** (pin 77c, pre-registered).

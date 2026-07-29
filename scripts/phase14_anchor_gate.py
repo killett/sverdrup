@@ -1228,24 +1228,72 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
             check1 = {
                 "status": "pass" if check1_pass else "fail",
                 "pass": check1_pass,
+                # Owner pin 62: pin 42's required schema field, discharged
+                # EXACTLY here rather than probabilistically. This is the
+                # gate guarding the highest-risk change in the stage.
+                "pin42": {
+                    "ruling": (
+                        "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md"
+                    ),
+                    "pin": "62 — check-1's pin-42 fields",
+                    "kind": "exact, not probabilistic",
+                    "pass_condition": (
+                        "the lattice is unmoved: under pin 31(a) the global "
+                        "origin is congruent to the anchor's own (x0_km, "
+                        "y0_km) modulo the rung spacing, so element centres "
+                        "are unchanged BY CONSTRUCTION, member draws are "
+                        "unchanged, and all four routes are bit-identical"
+                    ),
+                    "fail_condition": (
+                        "the lattice MOVES — and only then. Element "
+                        "identities change, CRN draws change, and member "
+                        "sha-equality against phase13_winner_members.npz "
+                        "breaks on the affected windows"
+                    ),
+                    "both_outcomes_reachable": True,
+                    "why_not_probabilistic": (
+                        "the routes are bit-identical comparisons; rtol "
+                        f"{ROUTE_RTOL} is a guard, not the criterion. There "
+                        "is no null and no alternative to state"
+                    ),
+                    "self_witnessing": (
+                        "each reference route records reference_sha256 inline "
+                        "(pin 58d), so the record shows WHAT was compared "
+                        "against, not merely that it matched"
+                    ),
+                },
                 "grid_identical": grid_identical,
                 "basis_spec_identical": spec_identical,
                 "basis_domain_km": list(basis),
                 "obs_identity": obs_route,
                 "routes": {
                     "member_sha": {"pass": member_ok, "windows": member_windows},
+                    # Owner pin 58(d): a route that records only the
+                    # comparison OUTCOME witnesses nothing about the
+                    # artifact it compared against — substituting that
+                    # artifact later would simply re-pass. These three
+                    # routes now record the reference sha inline.
                     "mean_vs_acceptance": {
                         "pass": mean_ok,
                         "bit_identical": mean_bit,
                         "max_abs_diff_m": mean_max,
                         "rtol": ROUTE_RTOL,
                         "reference": str(WINNER_MEAN),
+                        "reference_sha256": sha256_file(WINNER_MEAN),
                     },
                     "gamma_route": {
                         "pass": gamma_ok,
                         "day": GAMMA_DAY,
                         "max_abs_diff_m": gamma_max,
                         "rtol": ROUTE_RTOL,
+                        "reference": str(WINNER_MEAN),
+                        "reference_sha256": sha256_file(WINNER_MEAN),
+                        "reference_note": (
+                            "the Gamma route compares against the same "
+                            "acceptance mean map as mean_vs_acceptance "
+                            "(ref_mean[0]); it previously recorded neither "
+                            "the path nor a sha"
+                        ),
                     },
                     "variance": {
                         "pass": var_ok,
@@ -1253,6 +1301,7 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                         "max_abs_diff_m2": var_max,
                         "rtol": ROUTE_RTOL,
                         "reference": str(WINNER_VAR),
+                        "reference_sha256": sha256_file(WINNER_VAR),
                     },
                 },
                 "reference_store": {

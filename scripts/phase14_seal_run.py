@@ -98,6 +98,33 @@ def build(
 _ENVELOPE_KEYS = ("supersedes", "signoff", "date")
 
 
+def _schema_refusals(results: dict[str, object]) -> list[str]:
+    """Walk the evidence for gate/validation blocks and collect refusals.
+
+    Args:
+        results: The parsed evidence store.
+
+    Returns:
+        One message per violation, each naming the offending path.
+    """
+    from sverdrup.validation.gate_schema import validate_gate_schema  # noqa: PLC0415
+
+    found: list[str] = []
+
+    def walk(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            for msg in validate_gate_schema(node):
+                found.append(f"{path}: {msg}")
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+
+    walk(results, "evidence")
+    return found
+
+
 @app.command()
 def check(
     epoch_table: _EpochTableOpt = EPOCH_TABLE_PATH,
@@ -122,6 +149,11 @@ def check(
         verify_seal(Path(recorded["path"]), recorded["sha"])
     except Exception as e:  # noqa: BLE001 - report, then exit nonzero
         failures.append(f"seal file verification: {e}")
+    # Owner pins 42 + 78: refuse a gate whose failing verdict cannot occur,
+    # and refuse a validation applied outside the span it was validated
+    # over unless the extrapolation is DECLARED at the point of use. Keys
+    # on self-declared `kind`, so existing recorded content is untouched.
+    failures.extend(_schema_refusals(json.loads(evidence_path.read_text())))
     if failures:
         for f in failures:
             typer.echo(f"FAIL: {f}")

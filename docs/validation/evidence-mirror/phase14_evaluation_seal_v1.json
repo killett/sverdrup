@@ -1,0 +1,569 @@
+{
+  "content": {
+    "c2_era_windows": [
+      "e05_2009-02-10",
+      "e06_2010-10-26",
+      "e07_2012-04-09",
+      "e08_2014-04-12",
+      "e09_2016-03-16",
+      "e10_2017-05-18",
+      "e11_2018-11-27",
+      "e12_2020-08-01",
+      "e13_2022-04-25",
+      "e14_2023-07-21"
+    ],
+    "descriptor_schema_version": 1,
+    "dev_gauges": [
+      "uh002",
+      "uh004",
+      "uh009",
+      "uh012",
+      "uh018",
+      "uh023",
+      "uh025",
+      "uh027",
+      "uh036",
+      "uh038",
+      "uh040",
+      "uh050",
+      "uh051",
+      "uh055",
+      "uh057",
+      "uh058",
+      "uh059",
+      "uh060",
+      "uh068",
+      "uh069",
+      "uh070",
+      "uh083",
+      "uh088",
+      "uh096",
+      "uh132",
+      "uh165",
+      "uh166",
+      "uh167",
+      "uh168",
+      "uh175",
+      "uh176",
+      "uh190",
+      "uh208",
+      "uh215",
+      "uh230",
+      "uh241",
+      "uh242",
+      "uh245",
+      "uh252",
+      "uh253",
+      "uh260",
+      "uh261",
+      "uh279",
+      "uh280",
+      "uh287",
+      "uh288",
+      "uh304",
+      "uh305",
+      "uh317",
+      "uh321",
+      "uh327",
+      "uh330",
+      "uh331",
+      "uh332",
+      "uh333",
+      "uh335",
+      "uh337",
+      "uh338",
+      "uh344",
+      "uh358",
+      "uh396",
+      "uh397",
+      "uh401",
+      "uh551",
+      "uh555",
+      "uh556",
+      "uh559",
+      "uh560",
+      "uh567",
+      "uh571",
+      "uh576",
+      "uh578",
+      "uh592",
+      "uh626",
+      "uh671",
+      "uh673",
+      "uh675",
+      "uh705",
+      "uh707",
+      "uh709",
+      "uh712",
+      "uh740",
+      "uh741",
+      "uh742",
+      "uh744",
+      "uh746",
+      "uh750",
+      "uh752",
+      "uh757",
+      "uh760",
+      "uh765",
+      "uh770",
+      "uh773",
+      "uh775",
+      "uh782",
+      "uh784"
+    ],
+    "epoch_table": [
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "1995-05-15",
+        "epoch_id": "e00_1992-10-13",
+        "fit_or_transferred": "transferred",
+        "fit_substrate_fraction": 0.6666666666666666,
+        "holdout": "e1",
+        "locked_instruments": [
+          "gauges"
+        ],
+        "mask_66": true,
+        "missions": [
+          "e1",
+          "e1g",
+          "tp"
+        ],
+        "role": "validate-only",
+        "sibling_less": false,
+        "start": "1992-10-13"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2000-01-07",
+        "epoch_id": "e01_1995-05-15",
+        "fit_or_transferred": "transferred",
+        "fit_substrate_fraction": 0.6666666666666666,
+        "holdout": "e1",
+        "locked_instruments": [
+          "gauges"
+        ],
+        "mask_66": true,
+        "missions": [
+          "e1",
+          "e2",
+          "tp"
+        ],
+        "role": "validate-only",
+        "sibling_less": false,
+        "start": "1995-05-15"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2002-05-15",
+        "epoch_id": "e02_2000-01-07",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.75,
+        "holdout": "e2",
+        "locked_instruments": [
+          "gauges"
+        ],
+        "mask_66": true,
+        "missions": [
+          "e2",
+          "g2",
+          "j1",
+          "tp"
+        ],
+        "role": "fit+validate",
+        "sibling_less": true,
+        "start": "2000-01-07"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2005-10-04",
+        "epoch_id": "e03_2002-05-15",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.75,
+        "holdout": "en",
+        "locked_instruments": [
+          "gauges"
+        ],
+        "mask_66": true,
+        "missions": [
+          "en",
+          "g2",
+          "j1",
+          "tpn"
+        ],
+        "role": "fit+validate",
+        "sibling_less": true,
+        "start": "2002-05-15"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2009-02-10",
+        "epoch_id": "e04_2005-10-04",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.75,
+        "holdout": "en",
+        "locked_instruments": [
+          "gauges"
+        ],
+        "mask_66": true,
+        "missions": [
+          "en",
+          "g2",
+          "j1",
+          "j2"
+        ],
+        "role": "fit+validate",
+        "sibling_less": true,
+        "start": "2005-10-04"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2010-10-26",
+        "epoch_id": "e05_2009-02-10",
+        "fit_or_transferred": "transferred",
+        "fit_substrate_fraction": 0.6666666666666666,
+        "holdout": "en",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": true,
+        "missions": [
+          "c2",
+          "en",
+          "j1n",
+          "j2"
+        ],
+        "role": "validate-only",
+        "sibling_less": true,
+        "start": "2009-02-10"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2012-04-09",
+        "epoch_id": "e06_2010-10-26",
+        "fit_or_transferred": "transferred",
+        "fit_substrate_fraction": 0.6666666666666666,
+        "holdout": "enn",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": true,
+        "missions": [
+          "c2",
+          "enn",
+          "j1n",
+          "j2"
+        ],
+        "role": "validate-only",
+        "sibling_less": true,
+        "start": "2010-10-26"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2014-04-12",
+        "epoch_id": "e07_2012-04-09",
+        "fit_or_transferred": "transferred",
+        "fit_substrate_fraction": 0.6666666666666666,
+        "holdout": "al",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": true,
+        "missions": [
+          "al",
+          "c2",
+          "j1g",
+          "j2"
+        ],
+        "role": "validate-only",
+        "sibling_less": true,
+        "start": "2012-04-09"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2016-03-16",
+        "epoch_id": "e08_2014-04-12",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.75,
+        "holdout": "al",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": true,
+        "missions": [
+          "al",
+          "alg",
+          "c2",
+          "h2a",
+          "j2"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2014-04-12"
+      },
+      {
+        "criterion": "non-climate-line+min-geometry-distortion",
+        "end": "2017-05-18",
+        "epoch_id": "e09_2016-03-16",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.8333333333333334,
+        "holdout": "s3a",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2",
+          "h2ag",
+          "j2",
+          "j2n",
+          "j3",
+          "s3a"
+        ],
+        "role": "fit+validate",
+        "sibling_less": true,
+        "start": "2016-03-16"
+      },
+      {
+        "criterion": "signed-workhorse-by-construction",
+        "end": "2018-11-27",
+        "epoch_id": "e10_2017-05-18",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.8,
+        "holdout": "j3",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2",
+          "h2ag",
+          "j2g",
+          "j3",
+          "s3a"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2017-05-18"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2020-08-01",
+        "epoch_id": "e11_2018-11-27",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.8333333333333334,
+        "holdout": "h2b",
+        "locked_instruments": [
+          "gauges",
+          "c2"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2",
+          "h2ag",
+          "h2b",
+          "j3",
+          "s3a",
+          "s3b"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2018-11-27"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2022-04-25",
+        "epoch_id": "e12_2020-08-01",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.8333333333333334,
+        "holdout": "s3a",
+        "locked_instruments": [
+          "gauges",
+          "c2n"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2n",
+          "h2b",
+          "j3",
+          "s3a",
+          "s3b",
+          "s6a_lr"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2020-08-01"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2023-07-21",
+        "epoch_id": "e13_2022-04-25",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.8571428571428571,
+        "holdout": "s3a",
+        "locked_instruments": [
+          "gauges",
+          "c2n"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2n",
+          "h2b",
+          "j3n",
+          "s3a",
+          "s3b",
+          "s6a_lr",
+          "swonc"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2022-04-25"
+      },
+      {
+        "criterion": "non-climate-line+sibling-assimilated+min-geometry-distortion",
+        "end": "2026-01-17",
+        "epoch_id": "e14_2023-07-21",
+        "fit_or_transferred": "fit",
+        "fit_substrate_fraction": 0.875,
+        "holdout": "s3a",
+        "locked_instruments": [
+          "gauges",
+          "c2n"
+        ],
+        "mask_66": false,
+        "missions": [
+          "alg",
+          "c2n",
+          "h2b",
+          "j3g",
+          "j3n",
+          "s3a",
+          "s3b",
+          "s6a_lr",
+          "swon"
+        ],
+        "role": "fit+validate",
+        "sibling_less": false,
+        "start": "2023-07-21"
+      }
+    ],
+    "instruments": {
+      "groundtrack": {
+        "constellation_aware": true,
+        "geometry_artifact_keyed": true,
+        "per_era": true,
+        "per_tile": true
+      },
+      "insitu_nulls": {
+        "climo_smooth_days": 15,
+        "persist_lag_days": 1
+      },
+      "schema_version": 1,
+      "seam": {
+        "clean_max": 1.0,
+        "elevated_max": 2.5,
+        "metric": "cross-seam dispersion ratio vs interior reference",
+        "oracle": "seam-pair blend vs seamless signed truth",
+        "rubric_doc": "docs/validation/phase14_seam_rubric.md"
+      },
+      "spectral_fidelity": {
+        "band": "tile-extent",
+        "convention": "box-generalized",
+        "per_tile": true
+      }
+    },
+    "locked_gauges": [
+      "uh005",
+      "uh026",
+      "uh041",
+      "uh061",
+      "uh064",
+      "uh065",
+      "uh129",
+      "uh169",
+      "uh171",
+      "uh205",
+      "uh206",
+      "uh213",
+      "uh218",
+      "uh229",
+      "uh264",
+      "uh308",
+      "uh319",
+      "uh334",
+      "uh336",
+      "uh342",
+      "uh343",
+      "uh394",
+      "uh399",
+      "uh402",
+      "uh550",
+      "uh558",
+      "uh564",
+      "uh569",
+      "uh570",
+      "uh575",
+      "uh670",
+      "uh676",
+      "uh715",
+      "uh743",
+      "uh747",
+      "uh759",
+      "uh762",
+      "uh772",
+      "uh834"
+    ],
+    "schema_version": 1,
+    "screening": {
+      "corrections": {
+        "dac": "none-applied (rqds raw hourly)",
+        "reference_convention": "B2023 Eq.-1 (Stage-1 consumer reconciles)",
+        "tide": "daily-mean-of-hourly"
+      },
+      "criteria_order": [
+        "rlr_datum_continuity",
+        "era_completeness",
+        "open_ocean_siting",
+        "proximity",
+        "correction_consistency"
+      ],
+      "era_completeness_min_frac": 0.7,
+      "excluded_basins": [
+        "baltic",
+        "black_sea",
+        "mediterranean_w",
+        "mediterranean_e",
+        "hudson_bay",
+        "persian_gulf",
+        "red_sea"
+      ],
+      "l_prox_km": 150.0,
+      "min_total_years": 3.0,
+      "min_valid_hours_per_day": 12,
+      "proximity": "DEFERRED to consumption grid (Stage-0 recorded interpretation; Gate-0 owner attention item)",
+      "rlr_match_deg": 0.05,
+      "split": {
+        "locked_fraction": 0.3,
+        "seed_path": [
+          "insitu",
+          "phase14-seal",
+          "locked-split",
+          0
+        ],
+        "strata": "8-box basin x era-coverage class"
+      }
+    },
+    "split_seed": 2278306912366042270
+  },
+  "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2"
+}

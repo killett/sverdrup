@@ -621,3 +621,498 @@ Every other clause of pin 31 stands unchanged: the global-origin fix (31a), the
 alignment survey (31b), the product-consequence and superseded-σ recordings
 (31c/d), and the standing "do NOT change the σ denominator, do NOT retire the
 instrument".
+
+---
+
+## PART 7 — EVIDENCE-WITNESS RULING (verbatim), pins 56–57
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28**, at the start of the session
+that folds pin 56. Pin 56 makes the provenance-bearing evidence externally visible;
+pin 57 records the m=137 pricing against pin 53 and leaves the deferral unchanged.
+
+> FRESH SESSION — FIRST ACTIONS. Ruling lands verbatim before anything cites it (41/48).
+>
+> 56. MIRROR THE PROVENANCE-BEARING EVIDENCE INTO THE TREE. The evidence store is
+>     gitignored and absent from a fresh clone, so every write-once surface in Stage 1 —
+>     gate-5 constants, seal-chain records, the locked-instrument tally, correction and
+>     withdrawal records, and now the settling measurement with its pin_53/pin_54 blocks —
+>     exists on one machine and has never been externally visible.
+>     (a) The issue is WITNESS, not backup. Write-once enforced by a file only its author
+>         can see is a convention; nothing can demonstrate it was not rewritten. That is
+>         the one guarantee this program cannot hold on trust.
+>     (b) Mirror the provenance-bearing subset into version control — small, append-only,
+>         the nodes whose value is tamper-evidence. Bulk data and derived artifacts stay
+>         ignored; do not un-ignore the store wholesale.
+>     (c) Prose in a write-up is not a substitute. A number in a document is re-typeable;
+>         that is the difference the mirror closes. Keep the write-ups as they are — they
+>         have been carrying this stage — but stop them being the only record.
+>     (d) Report which nodes fall inside the mirror and which stay out, as with pin 46.
+>         Do not assume the line; I want to see where you drew it.
+> 57. m=137 PRICING NOTED, DEFERRAL UNCHANGED. That ~512 was the RAM knee and m=137 sits
+>     at 27% of it (+0.5% RAM, ×1.37 wall, inside the box's own ×1.70 drift) makes the
+>     option live rather than nominal. Record it against pin 53. The decision still
+>     belongs after T14/T15 with Rule 0.b — T14 collapses F_ens, which is the quantity the
+>     choice turns on.
+>
+> SEQUENCE: land 56-57 verbatim; fold 56; then T18 comes to me — it is the userGate that
+> blocks T14, and T14 is the anchor-identity risk, so it does not open without my walk.
+>
+> STOP CONDITION: unchanged. T14 not started. No factor adopted. Nothing sealed.
+
+### Pin 57 — recorded against pin 53
+
+Pin 53 reopened the m question and ordered m=137 PRICED, not chosen. The pricing
+(`docs/superpowers/2026-07-27-phase14-m137-price.md`) returned:
+
+- **~512 is exactly the RAM knee.** The sizing model's phase-max only begins
+  tracking `m` at m ≈ 512 (9.0893 MiB per member against a 4650.1 MiB m-free
+  assembly phase), so the original rejection was priced precisely where memory
+  starts to bite — it was not an arbitrary figure.
+- **m=137 sits at 27% of the knee:** +23.4 MiB predicted peak (+0.5%), wall bound
+  ×1.37 — **smaller than the ×1.70 throughput drift pin 28 measured inside a single
+  run on this host.** It is not the binding constraint on either axis and does not
+  change T5's blocked status.
+
+**Pin 57's disposition: this makes the option LIVE RATHER THAN NOMINAL.** The
+deferral is UNCHANGED — the decision belongs after T14/T15 with Rule 0.b, because
+T14 collapses `F_ens`, the quantity the choice turns on.
+
+---
+
+## PART 8 — MIRROR-BOUNDARY CORRECTION (verbatim), pins 58–59
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28**, after the pin-56 mirror was
+reported. Pin 58 CORRECTS pin 56's boundary — the test is CITATION, not stage — and
+supersedes the three exclusions the executor had flagged as judgement calls. Pin 59
+makes the demonstrated tamper defence a regression test.
+
+> 58. PIN 56'S BOUNDARY CORRECTED — citation, not stage. A node is IN if a standing claim
+>     cites it, wherever it lives. The nine-node list plus the seal is ratified as far as
+>     it goes; three additions:
+>     (a) phase14.stage0 gate records — IN. Anchor-gate checks 2 and 4 are discharged by
+>         CITATION to stage-0 gate2 and the golden-tile row, so two of five checks in the
+>         identity chain rest on evidence that is currently unwitnessed. This is not a
+>         wider ruling than 56; it is 56 with my own mis-drawn boundary removed.
+>     (b) phase14.stage1.seam_pair — IN. The m=137 pricing quotes its wall and RSS, that
+>         pricing is a standing claim recorded against pin 53, and it feeds T17.
+>     (c) phase8-phase13 — NOT wholesale. Enumerate the nodes carrying standing Stage-1
+>         claims and include exactly those; report the list as with 56(d).
+>     (d) CHECK THE ARTIFACT SHAS. The anchor gate's sha-equality against the phase-13
+>         acceptance artifacts witnesses those artifacts only if their shas were recorded,
+>         not merely the comparison outcome. If only the outcome was recorded, a later
+>         substitution of the compared artifact would re-pass. Confirm which; if the shas
+>         are absent, capture them — that closes the loop far more cheaply than mirroring
+>         a prior phase.
+> 59. TEST-PIN THE TAMPER DEMONSTRATION. Editing gate5.mu made check fail naming the node
+>     and made sync refuse — demonstrated, not asserted, which is the right standard. Make
+>     it a regression test, per the pin-47 precedent: a demonstrated defence with no test
+>     is a one-time observation, and this one guards every write-once claim in the stage.
+>     Cover both gates and the byte-identical restore.
+>
+> SEQUENCE: land 58-59 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN T18 comes to me — it is the userGate blocking T14, and T14 is the anchor-identity
+> risk, so it opens on my walk and not before.
+>
+> STOP CONDITION: unchanged. T14 not started. No factor adopted. Nothing sealed.
+
+### Pin 58 — supersession note against pin 56(d)
+
+Pin 56(d) asked where the line was drawn and the executor reported three exclusions
+as flagged judgement calls: `phase14.stage0`, `phase14.stage1.seam_pair`, and
+phases 8–13. **Pin 58 overturns the first two outright and narrows the third**, and
+replaces the boundary test itself:
+
+- **OLD (pin 56, as executed):** in if the node is a Stage-1 write-once surface.
+- **NEW (pin 58):** **in if a standing claim CITES it, wherever it lives.**
+
+The reason is load-bearing and is recorded here rather than summarized: **two of the
+five anchor-gate checks are discharged by CITATION** to stage-0 evidence, so under
+the old boundary the identity chain that T14 threatens rested, in part, on records
+that were never witnessed.
+
+---
+
+## PART 9 — PROSPECTIVE-GUARANTEE RULING (verbatim), pins 60–63
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28**, after the pin-58 boundary
+correction landed. Pin 60 makes the mirror's guarantee explicit and prospective;
+pin 61 routes 58(d)'s finding into the Gate-1 pack; pin 62 discharges pin 42 for
+T14's check-1 acceptance EXACTLY rather than probabilistically; pin 63 ratifies the
+58(c) enumeration and the pin-59 test plan as reported.
+
+> 60. THE MIRROR'S GUARANTEE IS PROSPECTIVE — state it once, at the top of the mirror.
+>     All 22 nodes were witnessed on 2026-07-28; every record written before that date is
+>     closed against FUTURE alteration and cannot speak to the interval between its
+>     writing and its mirroring. The per-node caveat on the three artifact shas is correct
+>     and belongs there too, but the property is general and a reader will otherwise take
+>     "witnessed" to mean "proven unaltered since creation."
+>     (a) ONE PLACE LEFT TO CLOSE THE INTERVAL: if phase-13's own gate records sha'd its
+>         acceptance artifacts at the time, reconcile the 2026-07-28 capture against them
+>         and the interval closes for those three. Check; if nothing is there, record that
+>         the check was made and came back empty — a searched-and-absent is worth more
+>         than an unexamined caveat.
+> 61. 58(d)'s RESULT GOES IN THE GATE-1 PACK, not only the fix log. Three of four check-1
+>     routes — mean_vs_acceptance, variance, and gamma_route — would have re-passed
+>     against a substituted reference; gamma_route recorded neither path nor sha. Check 1
+>     is this stage's foundation and checks 2 and 4 are cited on top of it. Record the gap,
+>     the two fixes, and the capture caveat together. A reader who learns this from a
+>     remediation commit learns it in the wrong order.
+> 62. T14's CHECK-1 ACCEPTANCE NEEDS ITS PIN-42 FIELDS, and it has a clean answer: under
+>     pin 31(a) the global lattice origin must reproduce the anchor's lattice exactly, so
+>     check 1 fails if and only if the lattice moves. State that as the reachability
+>     condition — both outcomes reachable, the failing one precisely characterised. It is
+>     the first gate in the stage where pin 42 can be discharged exactly rather than
+>     probabilistically, and it is the gate guarding the highest-risk change.
+>     The inline reference_sha256 write is what makes that re-run self-witnessing. Good.
+> 63. 58(c) ENUMERATION AND PIN 59's PLAN — both ratified as reported. Land the seven
+>     gates as specified.
+>
+> SEQUENCE: land 60-63 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN T18 to me.
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed.
+
+---
+
+## PART 10 — AMENDMENT-INDEX RULING (verbatim), pins 64–66
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 64 adds a forward-pointer
+index so witnessed-but-amended nodes stay reachable from the node itself; pin 65
+moves the forward-only-witness caveat from the artifact onto the CLAIMS that rest on
+it; pin 66 specifies what T18's pack must contain, before it is built.
+
+> 64. APPEND-ONLY NEEDS FORWARD POINTERS. The new-node choice was right — the shas were
+>     unchanged, so a supersede would have misstated the event, and tripping the
+>     append-only gate was the gate working. But a witnessed node whose claim is later
+>     amended must be reachable FROM that node, or the store accumulates entries that are
+>     individually accurate and collectively stale.
+>     (a) Add an amendment index to the mirror manifest — append-only itself — mapping
+>         node → the nodes that later amend or reconcile its claims. Reading path: manifest
+>         first, always.
+>     (b) Do NOT edit the witnessed node to add the pointer. The index exists precisely so
+>         that stays true.
+>     (c) State the convention once in the mirror README beside pin 60's prospective-
+>         guarantee heading: a node's caveats are current as of its own writing; the index
+>         is what tells you whether they still stand.
+> 65. CAVEATS ATTACH TO CLAIMS, NOT ONLY TO ARTIFACTS. phase13_lane0_mean.nc's interval
+>     stays open, and the claim resting on it is the Gate-0 pack's "signed lane0 maps score
+>     0.76953" — one of the three µ values pin 29 requires disambiguating. Readers meet
+>     that number in the pack. Carry the forward-only witness statement into the pin-29
+>     scope note itself, not only into the artifact's mirror entry. Same for any other
+>     standing claim whose supporting artifact is witnessed forward-only; enumerate them
+>     rather than assuming this is the only one.
+> 66. WHAT T18 MUST CONTAIN — named now so it is built once rather than retrofitted.
+>     (a) The construction: how the global lattice origin is chosen, and why it reproduces
+>         the anchor's lattice EXACTLY BY CONSTRUCTION rather than by subsequent check.
+>         Pin 31(a) asked for identity preserved by design; I want to see the design.
+>     (b) ACCEPTANCE IS TWO-SIDED AND CHECK 1 IS ONLY HALF. Check 1 passing means the
+>         anchor's lattice did not move. The POINT of T14 is that other tiles' lattices DO
+>         move, into global alignment. Nothing currently accepts that half. T14 needs a
+>         second acceptance demonstrating the intended change actually occurred — a
+>         measured rise in coincident element centres between adjacent tiles, against the
+>         pre-T14 baseline. Necessary and sufficient, stated separately.
+>     (c) Blast radius: which frames, tiles and stored artifacts change, and which are
+>         provably untouched.
+>     (d) The failure path: if check 1 fails, what state the tree is in and how it returns.
+>         T14 sits under the gate-5 constants and the identity chain; a half-applied
+>         lattice change is the worst outcome available and must be impossible, not merely
+>         unlikely.
+>     (e) Confirmation that pin 58(a)'s pre-T14 witnessing is complete — the identity chain
+>         must be witnessed BEFORE the change that puts it at risk, and the mirror now
+>         does that. Say so explicitly in the pack.
+>     (f) What T14 supersedes downstream: pin 31(d) already rules the Stage-1 σ rows
+>         superseded by the CRN change. List everything else that inherits that status.
+>
+> SEQUENCE: land 64-66 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN T18, built to 66, comes to me.
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed.
+
+---
+
+## PART 11 — WITNESS-CLASS AND SECOND-CHANNEL RULING (verbatim), pins 67–68
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 67 refuses to flatten
+three epistemic states into one "no sha" label; pin 68 names a SECOND correlation
+channel — shared observations — that CRN pairing cannot address, and orders it
+measured before T14 runs.
+
+> 67. FOURTH WITNESS CLASS — split "no sha" by whether anything constrains the artifact.
+>     (a) CONSTRAINED BY REPRODUCTION: artifacts whose content is pinned by a previously
+>         COMMITTED result that a later run reproduced. Pin 43's member stores qualify —
+>         the replay reproduced the T4 half-split readings (2.2e-16 / 0.0) that were in the
+>         tree before it ran, and only those stores could have produced them. Record the
+>         constraining result and its commit alongside each. Weaker than a sha, far
+>         stronger than nothing, and it is what keeps the factor derivation standing.
+>     (b) VERIFIED BY RE-DERIVATION: the seal file re-derives from instrument_configs()
+>         and check is green, so its integrity rests on reproducibility, not on a digest.
+>         Record it as such rather than as an artifact missing a sha.
+>     (c) UNCONSTRAINED: whatever remains after (a) and (b). That is the class that should
+>         alarm a reader, and it is smaller than ten. Report the final split.
+>     (d) The forward-only capture stands for all of them regardless; 60's guarantee is
+>         unchanged. This is about not flattening three different epistemic states into one
+>         label — the same reason NOT_ESTABLISHED and CLEAN are different cells.
+>
+> 68. ⛔ ZERO COINCIDENCE, MEASURABLE CORRELATION — a second channel, and pin 45(c) needs it.
+>     seam_n/seam_s share 0 coincident element centres, so their CRN draws are independent
+>     by construction, yet result 5 puts T_cross ~4.2 sd BELOW the independence null. CRN
+>     cannot explain that. Their obs regions overlap across lat 35-41 — 6°, 67% of each
+>     tile's obs extent — and the evaluation strip at 36-40 lies entirely within it, so both
+>     tiles solve the strip from substantially shared observations and their σ sampling
+>     errors correlate through the data rather than through the draws.
+>     (a) MEASURE IT, do not assume it: the shared-observation fraction on the strip for the
+>         recorded pair, and whether it accounts for the 4.2 sd. If it does, Rule 0.b's
+>         independence premise was never correct for the pair route on any lattice.
+>     (b) CONSEQUENCE FOR T14: pairing the CRN addresses one channel. If a second exists,
+>         T14 does not by itself restore the σ instrument, and the post-T14 expectation
+>         should be stated BEFORE T14 runs so the result cannot be read as success or
+>         failure after the fact.
+>     (c) CONSEQUENCE FOR 45(c): this is the strongest evidence yet that the floor must be
+>         parameterized by MEASURED correlation rather than by lattice geometry — here the
+>         geometry predicts independence and the measurement refuses it.
+>     (d) Add to T18 under 66(b): the coincidence baseline is necessary for the second
+>         acceptance but is not sufficient to predict σ behaviour, and the pack should say
+>         so rather than let a coincidence rise stand in for an instrument repair.
+>
+> SEQUENCE: land 67-68 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN T18 built to 66 + 68(d).
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed.
+
+---
+
+## PART 12 — PREMISE AND MECHANISM RULING (verbatim), pins 69–72
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 69 makes Rule 0.b's
+correlated-estimate derivation structural rather than a correction; pin 70 orders the
+MECHANISM behind ρ named, not just the number; pin 71 authorises the DT re-score
+narrowly as its own task before T14; pin 72 ratifies the prior round.
+
+> 69. RULE 0.b IS DERIVED FOR CORRELATED ESTIMATES — the premise problem is structural.
+>     The rubric evaluates the pair route at overlap points; measurement shows Jaccard
+>     1.0000 there. So the independence premise contradicts the rubric's own evaluation
+>     domain for ANY tiling, not merely this one. T17 does not derive an independent floor
+>     and correct it; it derives the floor with ρ as a measured input. Record this against
+>     Rule 0.b as the reason, so a future reader does not "simplify" it back.
+> 70. NAME THE MECHANISM BEHIND ρ = 5.17%. Identical data with independent draws should
+>     give ρ ≈ 0; it does not. Check first whether observation perturbations are CRN-keyed
+>     on observation identity rather than on element — identical obs sets would then mean
+>     identical noise realisations and explain the figure directly. Whatever the answer:
+>     (a) It determines how ρ scales with overlap width and obs density, which is the
+>         parameterisation 45(c) requires. A measured ρ for one pair is a number; a
+>         mechanism is a model.
+>     (b) It sharpens 68(b): if a pairing channel already exists, T14 stacks a second one,
+>         and the predicted fall in T_cross has a magnitude, not just a direction.
+>     (c) Record it before T14 either way, alongside the pre-registration.
+> 71. DT SCORING TRACK — RE-SCORE AUTHORISED, narrowly, as its own task before T14.
+>     Declining to run it inside a witness sweep was correct; leaving gate-5's write-once
+>     constants resting on an unconstrained input is not. Constraints:
+>     (a) READ-ONLY against existing artifacts. Writes exactly one witness node. The
+>         gate-5 node, the tally and the seal are untouched — assert this, do not intend it.
+>     (b) A MISMATCH IS A STOP, not a correction. If the re-score does not reproduce the
+>         pinned constants, nothing is adjusted and it comes to me. The value of this task
+>         is entirely in its ability to fail.
+>     (c) Before T14, per 58(a)'s logic: gate-5 sits on the substrate T14 disturbs, and
+>         witnessing after the disturbance proves less.
+>     (d) Carries pin 42's fields: both outcomes reachable, the failing one characterised.
+> 72. RATIFIED as reported: the 7/1/2 split, the array-level witness on the anchor member
+>     store, 68(b)'s pre-registration and falsifier, and the amendment-index ordering fix.
+>     A gate refusing its own author on first use is the outcome that was wanted.
+>
+> SEQUENCE: land 69-72 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN pin 71's re-score, then T18 built to 66 + 68(d).
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed. Pin 71
+> stops immediately on any mismatch.
+
+---
+
+## PART 13 — MODEL-VALIDATION RULING (verbatim), pins 73–76
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 73 refuses to let
+`ρ = r²` parameterize the floor on a single low-r datum; pin 74 orders the 23%
+residual named rather than absorbed; pin 75 corrects the reported separation's
+construction; pin 76 ratifies the prior round.
+
+> 73. VALIDATE THE ρ MODEL ACROSS r BEFORE IT PARAMETERIZES THE FLOOR.
+>     ρ = r² is validated at r = 0.25, where √(1−ρ) is flat, and is destined for r ≈ 0.9,
+>     where it is not. Re-derived: the 23% ρ error costs 1.01× in the floor at r = 0.25,
+>     1.13× at r = 0.70, and 7.17× at r = 0.90. The agreement to −0.63% on T_cross is not
+>     evidence the model is good; it is evidence T_cross cannot see the error.
+>     (a) SWEEP IT with pin 43's exact replay — paired fraction of the obs draws from 0 to
+>         1, r and ρ measured at each step, ρ = r² tested across the range. Pure arithmetic
+>         over the stored acc, no solves, the same construction that collapsed 21 h to
+>         22 min.
+>     (b) The sweep must precede T14. T14 produces the high-r datum the model is meant to
+>         PREDICT; a model calibrated on that datum has predicted nothing.
+>     (c) If ρ = r² fails at high r, the floor is parameterized by the measured curve, not
+>         by the closed form. That is an acceptable outcome and should be pre-registered as
+>         one so it is not read as failure.
+> 74. NAME THE 23% RESIDUAL, do not absorb it. ρ ≈ r² is the right form for correlated
+>     Gaussian ensembles, so a 23% coefficient gap is higher-order terms, non-Gaussianity,
+>     or a third channel. The 73(a) sweep distinguishes them — a third channel shows as
+>     curvature, the others as a stable offset. Record which before Rule 0.b consumes it.
+> 75. STATE THE SEPARATION'S CONSTRUCTION. 155.6 sd does not reproduce from the quoted
+>     ±0.01511 / ±0.01638 treated as standard errors; it does reproduce if those are sample
+>     sds and the separation uses standard errors over the member and pair counts. The
+>     finding is unambiguous either way — even the most conservative reading is >11 sd —
+>     but the number will be cited, so record N and the SE construction beside it.
+> 76. RATIFIED: the mechanism identification, the member-aligned test design, 69's fold
+>     with the independent form surviving only as a limit, 70(b)'s magnitude prediction and
+>     falsifier, and task 19 with T14 now behind it.
+>
+> SEQUENCE: land 73-76 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN pin 73's sweep, then task 19's re-score, then T18 built to 66 + 68(d).
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed. Pin 73's
+> sweep result comes to me before T14 opens — it now bears on what T18 must predict.
+
+---
+
+## PART 14 — VALIDATION-RANGE RULING (verbatim), pins 77–79
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 77 finds that task 20's
+pre-registered sweep CANNOT reach the r range the model is destined for, and names the
+structural cause; pin 78 generalises the reachability discipline from VERDICTS to
+VALIDATION RANGES after a third instance of the same family; pin 79 ratifies.
+
+> 77. THE SWEEP'S RANGE IS THE REQUIREMENT — as pre-registered it cannot meet it.
+>     B'_k = α·B_k + √(1−α²)·B_perm(k) with B_perm independent of tile A gives
+>     corr(A_k, B'_k) = α·r0, so r spans [0, 0.2523]. A 23% ρ error costs 1.01× in the
+>     floor there and 7.17× at r ≈ 0.9. Validating across [0, 0.2523] is pin 73's own
+>     failure mode wearing a sweep.
+>     THE CAUSE IS STRUCTURAL: acc is post-solve, so the replay reweights members but
+>     cannot re-pair ELEMENT draws — and the element channel, which currently contributes
+>     nothing to r, is the one T14 pairs and the one that carries r toward 0.9.
+>     (a) KEEP THE CHEAP SWEEP, narrow its claim. Over [0, 0.2523] it tests ρ = r² as a
+>         statistical identity and runs 74's curvature-versus-offset discriminator. Record
+>         it as validating the FORM, explicitly not the coefficient at applied r.
+>     (b) HIGH-r POINTS REQUIRE SOLVES. At least two, at partial element pairing — which
+>         is also what T15's alignment survey says the production grid will actually
+>         contain, so these are not throwaway diagnostics. Price them against Tier-1 and
+>         bring the price to me; do not launch on this ruling.
+>     (c) IF HIGH-r VALIDATION IS UNAFFORDABLE, that is a finding and it decides Rule 0.b's
+>         form: the floor is parameterized by MEASURED ρ per pair, never by ρ = r²
+>         extrapolated from low-r calibration. Pre-register that branch now so the
+>         affordability answer cannot quietly select the convenient form.
+>     (d) Whatever is run, state the reachable r range beside the result. A sweep that
+>         reports agreement without reporting its span invites exactly the reading we have
+>         twice now had to unwind.
+> 78. GENERALISE THE CHECK, because this is the third time. The 3× factor could not pass;
+>     the ±4 sd acceptance could not fail; this sweep could not disagree where disagreement
+>     matters. Pin 42 asks for reachability of each VERDICT; extend it: a validation must
+>     also state the range of the parameter over which it is validated, and whether the
+>     application range lies inside it. Extrapolation beyond the validated span is declared
+>     at the point of use or the gate refuses. Add to §7 and to seal_run's refusal set.
+> 79. RATIFIED: pin 75's correction and its handling, the cost-arithmetic reproduction, the
+>     73(c)/74 pre-registration, task 20, and T14 behind it.
+>
+> SEQUENCE: land 77-79 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN the narrowed sweep; the high-r price to me; task 19's re-score; T18.
+>
+> STOP CONDITION: unchanged, plus: no high-r solve launches without my ruling on its price.
+> T14 not started, no factor adopted, nothing sealed.
+
+---
+
+## PART 15 — CLOSURE-MAP RULING (verbatim), pins 80–82
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28.** Pin 80 makes T14's dependency
+on task 21 explicit rather than accidental; pin 81 turns pin 78's rule on the artifact
+that motivated it; **pin 82 HALTS the creation of new hardening tasks** until a
+closure map is in front of the owner, and asks for a specific alternative to be
+priced.
+
+> 80. T14 BEHIND 21, EXPLICITLY. T18 is currently an accidental backstop; state the
+>     dependency. If 21's price leads to high-r points, T14 goes behind those too —
+>     pin 73(b) holds: T14 produces the datum the model is meant to predict, so anything
+>     validating that model must precede it.
+> 81. PIN 78 APPLIES TO T18's PACK. Its 70(b) magnitude prediction uses ρ = r², validated
+>     over [0, 0.2523], applied at r ≈ 0.9. The pack declares that extrapolation at the
+>     point of use or seal_run refuses it. The rule's second subject is the artifact that
+>     motivated the rule.
+> 82. CLOSURE MAP — bring me this before any further hardening task is created.
+>     Open work is now 5 deliverable against 9 hardening, and no deliverable task has moved
+>     since T4. The findings justified themselves; the trajectory needs a stated endpoint.
+>     (a) What must be TRUE for Stage 1 to close — the minimum set, task by task, from here
+>         to the Gate-1 pack.
+>     (b) Which open threads are REQUIRED for the C1→2 contract, and which are honestly
+>         deferrable to Stage 2 with a recorded deferral. Rule 0.b, the ρ model, the high-r
+>         validation and T5's Tier-2 crossing each get an explicit answer.
+>     (c) Total remaining spend against Tier-1, including T5, which has been WAITing since
+>         before this chain began and has not been revisited since pin 57 priced m=137 at
+>         +0.5% RAM and ×1.37 wall.
+>     (d) THE OPTION I WANT COSTED ALONGSIDE: declare the σ route NOT ESTABLISHED for
+>         Stage 1 and move Rule 0.b, the ρ model and high-r validation wholesale to Stage 2.
+>         The mean route's two CLEAN verdicts stand; the σ question is recorded open with
+>         the mechanism, the correlation channels and the reachability finding all already
+>         documented — which is a real deliverable, not a gap. If that path closes Stage 1
+>         materially sooner, it is probably the right one, and I would rather see it priced
+>         than arrive at it by exhaustion.
+>     (e) No new hardening task is created until (a)-(d) are in front of me. Findings still
+>         get recorded; they do not automatically become tasks.
+>
+> SEQUENCE: land 80-82 verbatim; fold; suite, pre-commit, commit, PUSH, verify origin.
+> THEN the closure map, before anything else.
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed, no high-r
+> solve without my ruling.
+
+### PART 15 addendum — pin 82 CLARIFIED (verbatim). **Explicitly NOT a new pin.**
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-28**, after the executor reported the
+dependency-graph finding. The owner verified that finding independently on origin
+`38aa56c` and sharpened the map's central question. It is recorded verbatim because it
+changes what the map must answer, and because pin 82(e) binds the owner too — this
+creates no task.
+
+> STRUCTURAL CLAIM VERIFIED independently on origin (38aa56c): T5←14 is the ONLY edge from
+> the σ chain into the deliverable path. T6, T7, T8, T9, T12 carry none. T9 is
+> blockedBy [3,4,5,6,7,8,10,11,12] — all closed or on the deliverable path itself. T5's own
+> text: 3 mentions of per-tile, 0 of cross-tile, 0 of shared, 0 of seam.
+>
+> 82 CLARIFIED — the map's central question, sharpened. Not a new pin.
+>
+> The question is NOT "does the C1→2 contract need σ output." That conflates two different
+> deferrals hiding under one edge:
+>   - The σ MEASUREMENT — seam route, Rule 0.b, the ρ model. Deferrable if nothing
+>     downstream reads a σ seam verdict, and the graph says nothing does.
+>   - The FIX — T14 is the CRN origin correction, not an instrument. Deferring it means
+>     Stage 1 executes on per-tile lattice origins, carrying the manufactured σ gradient at
+>     tile boundaries that pin 31(c) describes.
+> These separate if and only if no Stage-1 deliverable depends on CROSS-TILE σ behaviour.
+> Within a tile the CRN guarantee holds; the defect appears at seams and in assembly.
+>
+> REQUIRED IN THE MAP:
+> (a) Enumerate every Stage-1 output and mark each per-tile or cross-tile. Check
+>     specifically: T5's χ², the raw-σ + scalar-s* reference rows, T6's SO diagnostics, and
+>     T8's pricing inputs. Those are the σ-bearing quantities most likely to carry a
+>     cross-tile component nobody labelled as one.
+> (b) If all per-tile: dropping T5←14 costs the deliverables nothing, and the CRN defect
+>     becomes a documented open item inherited by Stage 2G, where the seams are actually
+>     assembled. Price that branch against the alternative.
+> (c) If ANY output is cross-tile: name it. T14 then stays ahead of T5 regardless of what
+>     happens to the σ measurement, and (d) of pin 82 is off the table.
+> (d) Either way the CRN record travels forward COMPLETE — mechanism, both correlation
+>     channels, the reachability finding, pin 31(b)'s latitude non-uniformity, the ρ model
+>     and its validated span. A deferral is not a gap if the successor inherits everything
+>     needed to act on it.
+> (e) Note in the map that the insulation, if it holds, is a property of the fork-d pin-6
+>     sub-design — per-tile lanes chosen over a shared cross-tile field at plan review, for
+>     an unrelated reason, long before any of this surfaced. That distinction matters: a
+>     pre-registered design decision protecting the deliverable path is a different thing
+>     from a convenient reading of the dependency graph, and only the first is evidence.
+>
+> No new pins from me. 82(e) binds me too.
+>
+> SEQUENCE: suite → pre-commit → commit → push → verify origin → report sha. Then the
+> closure map, before anything else.
+>
+> STOP CONDITION: unchanged. T14 not started, no factor adopted, nothing sealed, no high-r
+> solve without my ruling.
+
+**THE DISTINCTION THAT GOVERNS THE MAP, restated so it cannot be lost:** the σ
+MEASUREMENT and the CRN FIX are two different deferrals hiding under the single edge
+`T5←14`. They separate **if and only if** no Stage-1 deliverable depends on CROSS-TILE
+σ behaviour. Within a tile the CRN guarantee holds; the defect appears at seams and in
+assembly.
