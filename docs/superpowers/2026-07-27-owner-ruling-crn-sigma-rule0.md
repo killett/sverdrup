@@ -1116,3 +1116,30 @@ MEASUREMENT and the CRN FIX are two different deferrals hiding under the single 
 `T5←14`. They separate **if and only if** no Stage-1 deliverable depends on CROSS-TILE
 σ behaviour. Within a tile the CRN guarantee holds; the defect appears at seams and in
 assembly.
+
+---
+
+## PART 16 — WORKFLOW-ORDER RULING (verbatim), pin 83
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-29.** Pin 83 fixes a structural
+defect in the standing gate sequence: pre-commit REWRITES files, so
+suite → pre-commit → commit always produced gate evidence from a pre-format tree.
+
+> 83. RUN FORMATTERS BEFORE THE SUITE, NOT AFTER. The standing sequence is
+>     suite → pre-commit → commit, but pre-commit rewrites files, so the gate evidence is
+>     structurally always from a pre-format tree. Reorder: ruff-format and any other
+>     rewriting hook run FIRST, then the suite, then commit with no further edits.
+>     (a) Make it mechanical rather than remembered: record the tree hash at suite start
+>         and assert it is unchanged at commit. A mismatch names the changed paths and
+>         refuses, the way the mirror gates do.
+>     (b) This round's disclosure stands as recorded and needs no re-run. Whitespace in two
+>         test files, both re-run green, and the qualification is in the commit message
+>         where a reader will find it.
+>     (c) The reason this is worth a pin at all: you killed a 70-minute suite this round on
+>         exactly this principle, correctly, and then met a smaller instance of it four
+>         steps later. The principle was sound and the workflow defeated it.
+
+**Folded WITHOUT creating a tracker task**, per pin 82(e)'s halt: this is tooling and a
+sequence change, not a hardening task. The new order is
+**format → stamp → suite → verify → commit**, enforced by
+`scripts/phase14_gate_suite.py`.

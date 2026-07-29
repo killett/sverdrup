@@ -7,6 +7,12 @@
 > provenance mirror against its own digests AND against the live evidence store
 > (pin 56). A drift report is a STOP, not something to re-sync away.
 >
+> **⛔ THE GATE SEQUENCE IS `format → stamp → suite → verify → commit` (pin 83).**
+> Use `pixi run python scripts/phase14_gate_suite.py run` — it formats FIRST, then
+> stamps, then runs the suite, then re-verifies. Immediately before committing run
+> `… phase14_gate_suite.py verify`. **Never run a formatter after the suite:** the
+> old order made every gate result evidence from a tree that no longer existed.
+>
 > **⛔ PIN 43'S SETTLING MEASUREMENT HAS RUN. RECORDED, NOT SEALED.** Full
 > write-up: `docs/superpowers/2026-07-27-phase14-pin43-settling-measurement.md`;
 > evidence node `phase14.stage1.ensemble_settling_measurement`. 200 disjoint
@@ -48,6 +54,24 @@
 >    hints the independence premise is ALREADY violated in the recorded cross-tile
 >    pair (within-tile partitions land ON the independent prediction). **Flagged,
 >    not resolved** — pin 45(c)'s problem from the other side; T15/T17 owns it.
+>
+> **✅ PIN 83 RULED AND FOLDED 2026-07-29 (ruling doc PART 16, verbatim).**
+> - **⛔ THE GATE SEQUENCE IS REORDERED: `format → stamp → suite → verify → commit`.**
+>   The old order (`suite → pre-commit → commit`) produced gate evidence from a
+>   pre-format tree **structurally and every time**, because pre-commit REWRITES files.
+>   Pin 83(c) names why it earned a pin: a 70-minute suite was killed on exactly this
+>   principle earlier the same day, correctly — **and the workflow defeated the
+>   principle four steps later anyway.**
+> - **(83a) MECHANICAL, NOT REMEMBERED:** `scripts/phase14_gate_suite.py` runs the
+>   rewriting hooks FIRST, stamps a SHA-256 per covered file (419 files:
+>   `src/`, `scripts/`, `tests/`, `pyproject.toml`), runs the suite, and re-verifies.
+>   **`verify` refuses at commit time naming the changed paths**, the way the mirror
+>   gates do. Content-only digests — no mtime, no size shortcut, so an equal-length
+>   reformat is still caught. **Demonstrated live:** appending one line made `verify`
+>   FAIL naming `tests/test_gate_stamp.py`; reverted, green again. 5 tests, red-then-green.
+> - **(83b)** last round's disclosure stands as recorded; no re-run was needed.
+> - **Folded WITHOUT creating a tracker task, per pin 82(e)'s halt** — this is tooling
+>   and a sequence change, not a hardening task.
 >
 > **✅ PINS 80-82 RULED AND FOLDED 2026-07-28 (ruling doc PART 15, verbatim).**
 > - **⛔ PIN 82 CLARIFIED BY THE OWNER (PART 15 addendum, verbatim; NOT a new pin).**
