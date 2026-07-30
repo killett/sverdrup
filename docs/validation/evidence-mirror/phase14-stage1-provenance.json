@@ -27,6 +27,7 @@
     "phase14.stage1.seam_crn_mechanism_separation_construction": "pin 75. Records N and the SE construction beside the cited separation, and supersedes the 155.6 figure with 167.6 — the number will be cited, so its construction is witnessed with it",
     "phase14.stage1.rho_model_range_limitation": "pin 77. The sweep's REACHABLE span [0, 0.2523] against the applied r ~ 0.9, the structural cause, and 77(c)'s pre-registered branch. It declares its own extrapolation, so it is the first block to pass pin 78's refusal on disclosure rather than on silence",
     "phase14.stage1.rho_model_validation_preregistration": "pins 73/74. The sweep's design, its must-precede-T14 condition and 73(c)'s acceptable-failure outcome. A pre-registration witnessed only after the fact is not a pre-registration",
+    "phase14.stage1.crn_production_defect_deferred": "pin 87. The CRN defect recorded as a PRODUCTION defect with a product consequence, deferred to Stage 2 by pin 84 and NOT closed. Stage 2G cannot close while it stands — a deferral that can be quietly edited is how a known defect becomes a forgotten one",
     "phase14.stage1.seam_crn_channel_mechanism": "pin 70. The MECHANISM behind rho, named and measured: obs perturbations are CRN-keyed on observation identity at a shared root, so identical strip observations get identical eps' draws. Carries the sharpened T14 prediction with a MAGNITUDE, which must be witnessed before T14 to be a pre-registration at all",
     "phase14.stage1.seam_shared_observation_channel": "pin 68(a). The measured second correlation channel — identical observation sets on the evaluation strip — and the PRE-REGISTERED T14 expectation, which must be witnessed BEFORE T14 runs or it is not a pre-registration",
     "phase14.stage1.artifact_witness_inventory": "pin 65's enumeration. Classifies every data/ artifact cited under phase14 as witnessed-at-creation, forward-only, or previously unwitnessed-and-captured-here. It is the map of what the mirror's guarantee reaches, so it is witnessed like the rest",
@@ -142,7 +143,7 @@
       }
     ]
   },
-  "generated_utc": "2026-07-29T05:37:36.687687+00:00",
+  "generated_utc": "2026-07-30T06:03:05.819301+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -1209,6 +1210,35 @@
           }
         ],
         "captured_utc": "2026-07-29T03:43:11.816480+00:00"
+      }
+    },
+    "phase14.stage1.crn_production_defect_deferred": {
+      "digest_sha256": "76a0e9fbc5b48743e4091abcabf605f9fbe236cdebf96453b67d7fa0f6c824ca",
+      "value": {
+        "label": "PRODUCTION DEFECT — DEFERRED, NAMED AND COSTED",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "87 — the CRN defect is a PRODUCTION defect, recorded as one",
+        "status": "OPEN. Deferred to Stage 2 by pin 84 (Branch B). NOT closed, NOT descoped.",
+        "the_defect_in_the_owners_words": "Pin 31(c)'s manufactured sigma gradient at tile boundaries is a property of the SHIPPED SYSTEM, not of an instrument. Deferring T14 defers a KNOWN DEFECT WITH A PRODUCT CONSEQUENCE — not 'deferred instrument work'.",
+        "product_consequence": "Under per-tile CRN origins the blend mixes one CRN-correlated and one CRN-independent tile, so ensemble noise is SUPPRESSED on one side of the overlap and FULL on the other: a manufactured gradient in the delivered uncertainty field. A consumer reading that field sees structure that is an artifact of which tile solved where.",
+        "stage_2g_cannot_close_while_it_stands": true,
+        "why_deferral_is_honest_not_merely_faster": "The defect travels forward NAMED and COSTED, and the only Stage-1 surface it touches is the ONE adjacency in the registry (seam_n/seam_s) — which T4 already measured and reported. An overlap test across all 15 tile pairs finds no other adjacency; the four diverse tiles are pairwise disjoint.",
+        "scope_in_stage_1": {
+          "adjacent_tile_pairs_in_the_registry": 1,
+          "which": "seam_n / seam_s — the seam subject itself",
+          "already_measured_by": "T4 (phase14.stage1.seam_rows)",
+          "diverse_tiles_pairwise_disjoint": true
+        },
+        "carried_forward_to_stage_2": [
+          "T14 global lattice origin (pin 31a) with its check-1 acceptance and pin 62's pin-42 fields",
+          "T15 alignment-residual survey (31b) incl. pin 55's measured-correlation question",
+          "T16 pin 33/35 discipline + pin 78's validated-range clause",
+          "T17 the deferred rubric amendment incl. pin 69's correlated-estimate derivation",
+          "T18 the owner gate on T14",
+          "T19 DT re-score, T20 the narrowed rho sweep, T21 the high-r price",
+          "pin 68(b)'s falsifier and pin 73(c)'s pre-registered branch, intact"
+        ],
+        "date": "2026-07-30"
       }
     },
     "phase14.stage1.ensemble_settling_measurement": {

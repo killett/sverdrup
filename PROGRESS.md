@@ -1,34 +1,48 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — CLOSURE MAP DELIVERED. OWNER DECISION PENDING (pin 82).
->
-> **`docs/superpowers/2026-07-29-phase14-stage1-closure-map.md`** — read it before
-> anything else. Headline: **the σ MEASUREMENT and the CRN FIX do separate.** Of the
-> six registry tiles, an overlap test over all 15 pairs finds **exactly one adjacency:
-> `seam_n`/`seam_s`**, the seam subject itself — the four diverse tiles are pairwise
-> disjoint, so **every T5/T6/T7/T8 output is per-tile** (χ², raw-σ, scalar-s\*, SO
-> diagnostics, OSSE pricing inputs — all checked individually). The insulation is
-> **pre-registered**, not convenient: T7's fork-d pin-6 sub-design locked "per-tile
-> lanes, NOT a shared cross-tile field" at plan review for a statistical-confound
-> reason, long before the CRN defect surfaced. **One cross-tile deliverable exists and
-> is NAMED** — T12's contract line "measured seam behavior oracle+rubric verdicts" —
-> **and T4 already produced it** (mean CLEAN ×2, σ NOT_ESTABLISHED ×2), so it does not
-> require T14. **The owner decides** whether that discharges the contract line; if not,
-> pin 82(d) is off the table. **Critical path is T5 → {T6,T7,T8} → T9, with T12 READY
-> NOW; T9 is `blockedBy [3,4,5,6,7,8,10,11,12]` — no T14–T21.** T5's Tier-2 crossing is
-> the binding constraint in BOTH branches and is owner-held independently.
-> **Pin 82(e)'s halt stays in force until the owner rules.**
+> # ⛔ START HERE — BRANCH B RULED. ONE BLOCKER LEFT: T5's TIER-2 CEILING (task 22).
 >
 > **ON RESUME, RUN THIS FIRST:**
-> `pixi run python scripts/phase14_evidence_mirror.py check` — it verifies the
-> provenance mirror against its own digests AND against the live evidence store
-> (pin 56). A drift report is a STOP, not something to re-sync away.
+> `pixi run python scripts/phase14_evidence_mirror.py check` (pin 56), then use
+> `pixi run python scripts/phase14_gate_suite.py run` for any gate work — the sequence
+> is **format → stamp → suite → verify → commit** (pin 83). **Never run a formatter
+> after the suite.**
 >
-> **⛔ THE GATE SEQUENCE IS `format → stamp → suite → verify → commit` (pin 83).**
-> Use `pixi run python scripts/phase14_gate_suite.py run` — it formats FIRST, then
-> stamps, then runs the suite, then re-verifies. Immediately before committing run
-> `… phase14_gate_suite.py verify`. **Never run a formatter after the suite:** the
-> old order made every gate result evidence from a tree that no longer existed.
+> **✅ PINS 84-88 RULED AND FOLDED 2026-07-29 (ruling doc PART 17, verbatim).**
+> **BRANCH B IS ADOPTED.** "Measured seam behaviour — oracle+rubric verdicts"
+> **DISCHARGES** on two attributable CLEAN mean verdicts plus two σ cells
+> NOT_ESTABLISHED with the mechanism documented: *"the rubric was pre-registered with a
+> withholding cell so that 'looked and could not attribute' is a result; this is that
+> cell used as designed, not a blank."*
+> - **84 — T14 REMOVED from T5's blockers.** Remaining path: **T5 → {T6,T7,T8} → T9**,
+>   with **T12 READY NOW**.
+> - **⛔ 85 — T5's TIER-2 BLOCK REINSTALLED IN THE SAME EDIT** as userGate **task 22**.
+>   T5 is `blockedBy [3,4,22]` and **was never ready in between** — the replacement
+>   blocker was created BEFORE the old one was removed. **Fourth instance of that
+>   pattern.** Task 22 opens with the figures: wall **23.8–94.2 h/tile, 95–377 h for
+>   four** against a **6.0 h** `tier2_probe` ceiling (over by **4.0× at the LOW end**);
+>   RAM needs **MemAvailable ≥ 9431 MiB** against 5261 live (`tier1_eligible` **False**).
+> - **86 — THE DISCHARGE IS ON REPORTING, NOT ON ANSWERING.** T12 now carries the σ
+>   question as OPEN with the inheritance package NAMED (mechanism, both channels
+>   quantified, reachability + m requirement, pin 31(b)'s latitude non-uniformity, and
+>   the ρ model with its validated span declared), and **pin 37(c) becomes a CONTRACT
+>   LINE: Stage 2/2G MAY NOT ASSUME σ SEAMS ARE CLEAN.**
+> - **87 — ⛔ THE CRN DEFECT IS A PRODUCTION DEFECT**, recorded in those words at
+>   `phase14.stage1.crn_production_defect_deferred`: the manufactured σ gradient at tile
+>   boundaries is **a property of the shipped system, not of an instrument**, and
+>   **Stage 2G CANNOT CLOSE while it stands.** Deferral is honest because the defect
+>   travels forward named and costed, and the only Stage-1 surface it touches is the
+>   single registry adjacency, which T4 already measured.
+> - **86(c) — T14–T21 MOVE TO STAGE 2 INTACT**, subjects prefixed `[STAGE 2]`, pins and
+>   pre-registrations preserved including **68(b)'s falsifier** and **73(c)'s branch**.
+> - **88 — pin 82(e)'s halt LIFTS for the deliverable path (T5–T9) only; it STAYS in
+>   force for the σ chain, which is now Stage 2's.**
+>
+> **⛔ NEXT: T5's TIER-2 CEILING COMES TO THE OWNER as its own decision (task 22).**
+> It is the last thing standing between here and the stage's output, and it was
+> owner-held before any of this began. **T5 DOES NOT DISPATCH on the Branch-B ruling.**
+>
+> **Closure map:** `docs/superpowers/2026-07-29-phase14-stage1-closure-map.md`.
 >
 > **⛔ PIN 43'S SETTLING MEASUREMENT HAS RUN. RECORDED, NOT SEALED.** Full
 > write-up: `docs/superpowers/2026-07-27-phase14-pin43-settling-measurement.md`;

@@ -1,8 +1,36 @@
 # Stage-1 closure map (owner pin 82, and its clarification)
 
-**Status: DELIVERED FOR OWNER DECISION. Nothing here changes state.** No task was
-created, no factor adopted, nothing sealed, T14 not started — pin 82(e)'s halt is in
-force and this document is what lifts it.
+> ## ✅ RULED 2026-07-29 — **BRANCH B**, owner pins 84–88 (ruling doc PART 17)
+>
+> **The recommendation cell below is FILLED by that ruling.** "Measured seam
+> behaviour — oracle+rubric verdicts" **DISCHARGES** on two attributable CLEAN mean
+> verdicts plus two σ cells NOT_ESTABLISHED with the mechanism documented — *"the
+> rubric was pre-registered with a withholding cell so that 'looked and could not
+> attribute' is a result; this is that cell used as designed, not a blank."*
+>
+> - **T14 removed from T5's blockers** (pin 84). Remaining path: **T5 → {T6,T7,T8} →
+>   T9**, with T12 ready.
+> - **⛔ T5's Tier-2 block REINSTALLED IN THE SAME EDIT** as a userGate, **task 22**
+>   (pin 85) — T5 is `blockedBy [3,4,22]` and was never ready in between. Fourth
+>   instance of that pattern; this time the replacement blocker was created *before*
+>   the old one was removed.
+> - **T14–T21 move to Stage 2 intact** (86c) — not deleted, not descoped, pins and
+>   pre-registrations preserved including 68(b)'s falsifier and 73(c)'s branch.
+> - **The CRN defect is recorded as a PRODUCTION DEFECT** (87), at
+>   `phase14.stage1.crn_production_defect_deferred`. **Stage 2G cannot close while it
+>   stands.**
+> - **Pin 82(e)'s halt LIFTS for the deliverable path only** (T5–T9) and **stays in
+>   force for the σ chain**, which is now Stage 2's.
+>
+> **The last thing standing between here and the stage's output is T5's Tier-2
+> ceiling — owner-held before any of this began, and now the sole content of task 22.**
+
+**Status: RULED — Branch B adopted (pins 84–88).** The body below is preserved AS
+DELIVERED, so the reasoning the ruling acted on stays readable; the ruling's effects
+are in the block above. **One task was created — task 22, the Tier-2 userGate,
+mandated by pin 85 in the same edit that freed T5 from T14.** No factor adopted,
+nothing sealed, T14 not started. Pin 82(e)'s halt has lifted for the deliverable path
+(T5–T9) and remains in force for the σ chain.
 
 Pin 82 asked for a stated endpoint after observing that open work stood at **5
 deliverable against 9 hardening, with no deliverable task moved since T4**. The
@@ -118,7 +146,7 @@ Minimum set, task by task, to the Gate-1 pack. **T9 is `blockedBy [3,4,5,6,7,8,1
 
 | # | must be true | task | state |
 |---|---|---|---|
-| 1 | four diverse-tile transfer readings recorded | T5 | **blocked**: Tier-2 crossing (owner-held) + T14 edge |
+| 1 | four diverse-tile transfer readings recorded | T5 | **blocked on task 22 ONLY** — the Tier-2 crossing (owner-held). The T14 edge was removed by pin 84 |
 | 2 | high-latitude kernel decision pack assembled | T6 | behind T5 |
 | 3 | phase-10 revisit lanes run per-tile, report-only | T7 | behind T5 |
 | 4 | OSSE priced from T5 actuals, decision cell empty | T8 | behind T5 |
@@ -126,8 +154,10 @@ Minimum set, task by task, to the Gate-1 pack. **T9 is `blockedBy [3,4,5,6,7,8,1
 | 6 | Gate-1 pack assembled, owner walk | T9 | behind 1–5 |
 
 **The critical path is T5 → {T6, T7, T8} → T9, with T12 parallel and already ready.**
-Everything else open — T14, T15, T16, T17, T18, T19, T20, T21 — sits off this path
-except through the single edge `T5←14`.
+Everything else open — T14, T15, T16, T17, T18, T19, T20, T21 — sat off this path
+except through the single edge `T5←14`. **Pin 84 cut that edge and pin 86(c) moved
+those eight tasks to Stage 2 intact**, so the only blocker on the critical path is now
+**task 22**, the Tier-2 ceiling.
 
 ---
 
@@ -202,15 +232,18 @@ either way and is owner-held independently.
 
 Three things are the owner's, and this document deliberately stops at each:
 
-1. **Whether "measured seam behaviour" is discharged by CLEAN mean verdicts plus a
-   documented NOT_ESTABLISHED σ** (§3). That is the load-bearing judgement in Branch B.
-   If the answer is no, Branch B is off the table and T14 stays ahead of T5 regardless
-   of the σ measurement — clarification (c)'s condition.
+1. ~~**Whether "measured seam behaviour" is discharged…**~~ **ANSWERED: YES** (pin 84).
+   The withholding cell was pre-registered precisely so that "looked and could not
+   attribute" is a result rather than a blank, and **the discharge is on REPORTING, not
+   on ANSWERING** (pin 86) — the σ question is recorded OPEN with a named inheritance
+   package, and pin 37(c) becomes a CONTRACT LINE: **Stage 2/2G may not assume σ seams
+   are clean.**
 2. **T5's Tier-2 crossing**, WAITing since before this chain began and unchanged by
    pin 57's m=137 pricing (+0.5% RAM, ×1.37 wall — both inside the host's own ×1.70
    drift).
-3. **Which branch to take.** The owner asked for Branch B priced rather than arrived at
-   by exhaustion; §5 prices it. The recommendation cell is deliberately empty.
+3. ~~**Which branch to take.**~~ **RULED: Branch B** (pin 84). The recommendation cell
+   is no longer empty — it is filled by pins 84–88, recorded at the head of this
+   document. What remains owner-held is item 2 above, and only that.
 
 **Pin 82(e)'s halt stays in force until the owner rules.** No new hardening task has
 been created, and findings recorded during this map — the disjointness of the diverse

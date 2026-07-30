@@ -142,6 +142,12 @@ MIRRORED: dict[str, str] = {
         "73(c)'s acceptable-failure outcome. A pre-registration witnessed "
         "only after the fact is not a pre-registration"
     ),
+    "phase14.stage1.crn_production_defect_deferred": (
+        "pin 87. The CRN defect recorded as a PRODUCTION defect with a product "
+        "consequence, deferred to Stage 2 by pin 84 and NOT closed. Stage 2G "
+        "cannot close while it stands — a deferral that can be quietly edited "
+        "is how a known defect becomes a forgotten one"
+    ),
     "phase14.stage1.seam_crn_channel_mechanism": (
         "pin 70. The MECHANISM behind rho, named and measured: obs "
         "perturbations are CRN-keyed on observation identity at a shared "

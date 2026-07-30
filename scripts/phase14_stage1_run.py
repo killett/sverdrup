@@ -608,7 +608,11 @@ def record_probe_row(
     atomic_write_json(evidence_path, results)
 
 
-def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
+def _probe_solve(
+    maxiter: int = PROBE_MAXITER_DEFAULT,
+    tile: str = PROBE_TILE,
+    m: int = PROBE_M,
+) -> dict[str, Any]:
     """The Task-2 measured leg: load, one-window solve, PROBE map, measure.
 
     Follows the Stage-0 tile-sizing probe pattern (`phase14_probe.py`):
@@ -625,6 +629,12 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
             the re-run raises it until the solve CONVERGES to rtol). The
             recorded ``pcg_rtol``/``pcg_maxiter`` are read back off the
             method so the row records what was actually used.
+        tile: Registry tile to probe. DEFAULTS to the T2 subject, so the
+            Task-2 row is byte-for-byte the same call it always was.
+        m: Members to solve. DEFAULTS to the T2 value. Owner pin 89 runs
+            this at m=100 on ``kuroshio`` to MEASURE the axis the Tier-2
+            ceiling decision actually turns on — the T2 defaults are
+            untouched by that.
 
     Returns:
         Measurement kwargs for :func:`build_probe_row` (all but ``date``).
@@ -660,7 +670,7 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
         OBS_NOISE_VARIANCE,
     )
 
-    frame = registry_frame(PROBE_TILE)
+    frame = registry_frame(tile)
     grid = frame_grid(frame, RESOLUTION_DEG)
     n_nodes = int(grid.x.size * grid.y.size)
 
@@ -702,7 +712,7 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
         n_grid_nodes=n_nodes,
         window_days=PROBE_W_DAYS,
         n_windows=1,
-        m_members=PROBE_M,
+        m_members=m,
         n_obs=n_obs_window,
         alpha=float(PHASE13_WINNER_PARAMS["spacing_alpha"]),
         n_dir=N_DIR,
@@ -715,11 +725,11 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
     )
     method._plan = WindowPlan(starts=(PROBE_W_START,))  # noqa: SLF001
     provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
-    root = derive_seed("miost", "phase14-stage1-probe", PROBE_TILE, 0)
+    root = derive_seed("miost", "phase14-stage1-probe", tile, 0)
     log_start = len(miost_mod.CONVERGENCE_LOG)
     t_wall = time.monotonic()
     spec, etas_a, _anoms, starts = merged_members(
-        method, framed, grid, provider, PROBE_M, root
+        method, framed, grid, provider, m, root
     )
     days = [PROBE_W_START + PROBE_W_DAYS / 2.0]
     means = mean_fields(spec, starts, etas_a, grid, method._plan, days)  # noqa: SLF001
@@ -729,7 +739,7 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
 
     STAGE1_DIR.mkdir(parents=True, exist_ok=True)
     frame_block: dict[str, Any] = {
-        "core": list(TILES[PROBE_TILE]["core"]),
+        "core": list(TILES[tile]["core"]),
         "overlap_deg": frame.overlap_deg,
         "halo_deg": frame.halo_deg,
         "missing_neighbors": sorted(frame.missing_neighbors),
@@ -740,22 +750,23 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
     window = [PROBE_W_START, PROBE_W_START + PROBE_W_DAYS]
     # The T2 artifact (default cap) keeps its historical name; a raised-cap
     # re-run writes beside it — the PIN-23(a) ruling keeps T2 as history.
-    npz_name = (
-        "probe_quiet_gyre_mean.npz"
-        if maxiter == PROBE_MAXITER_DEFAULT
-        else f"probe_quiet_gyre_mean_maxiter{maxiter}.npz"
-    )
+    if tile != PROBE_TILE or m != PROBE_M:
+        npz_name = f"probe_{tile}_m{m}_mean.npz"
+    elif maxiter == PROBE_MAXITER_DEFAULT:
+        npz_name = "probe_quiet_gyre_mean.npz"
+    else:
+        npz_name = f"probe_quiet_gyre_mean_maxiter{maxiter}.npz"
     np.savez(
         STAGE1_DIR / npz_name,
         mean=means,
         label="PROBE",
         provenance=json.dumps(
             {
-                "tile": PROBE_TILE,
+                "tile": tile,
                 "frame": frame_block,
                 "missions": list(PROBE_MISSIONS),
                 "window": window,
-                "m": PROBE_M,
+                "m": m,
                 "days": days,
                 "pcg_rtol": float(method.pcg_rtol),
                 "pcg_maxiter": int(method.pcg_maxiter),
@@ -763,6 +774,8 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
         ),
     )
     return {
+        "tile": tile,
+        "m": m,
         "frame": frame_block,
         "window": window,
         "superobs_cfg": superobs_cfg,
@@ -775,6 +788,134 @@ def _probe_solve(maxiter: int = PROBE_MAXITER_DEFAULT) -> dict[str, Any]:
         "pcg_maxiter": int(method.pcg_maxiter),
         "model": model,
     }
+
+
+@app.command()
+def tier2_probe(
+    tile: Annotated[str, typer.Option(help="Diverse tile to probe")] = "kuroshio",
+    m: Annotated[int, typer.Option(help="Members to solve")] = 100,
+    maxiter: Annotated[int, typer.Option(help="PCG cap")] = PROBE_MAXITER_DEFAULT,
+) -> None:
+    """Owner pin 89: MEASURE the axis the Tier-2 ceiling decision turns on.
+
+    Task 22 was to arrive with a 4x bracket (23.8-94.2 h/tile) whose spread
+    is an unmeasured scaling exponent, not an observation. This runs ONE
+    window of ONE diverse tile at the production ``m`` through T2's
+    existing machinery and reports per-window wall, PEAK RAM and iteration
+    counts with the CONVERGED/CAPPED flag.
+
+    **PROBE, not evaluation-bearing execution** (pin 89e): the row carries
+    the PROBE label, no ``STAGE1-EVIDENCE`` artifact is attached, and the
+    locked-instrument tally is untouched. It runs on the ruling.
+
+    RAM is the binding axis and has only ever been MODELLED here — the
+    >=9,431 MiB figure is a model output, and pin 57 already found the
+    model's phase-max does not track ``m`` until ~512 members. So the
+    Tier-1 predicate is deliberately NOT used as a launch gate: gating the
+    measurement on the model would beg the question the probe exists to
+    answer. A live-headroom guard is applied instead.
+
+    Args:
+        tile: Registry tile (pin 89b: kuroshio, the plan's own ordering —
+            riskiest path, fail fast).
+        m: Members to solve.
+        maxiter: PCG iteration cap.
+
+    Raises:
+        RuntimeError: If live headroom is too small to attempt safely.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+    model = tile_size_model(tile, m=m, n_windows=1)
+    avail = _mem_available_mib()
+    typer.echo(
+        f"tile={tile} m={m}  model peak {model['peak_model_mib']:.0f} MiB  "
+        f"live MemAvailable {avail:.0f} MiB"
+    )
+    if avail < 3000.0:
+        raise RuntimeError(
+            f"live headroom {avail:.0f} MiB is too small to attempt this "
+            "probe safely — wait for the co-tenant cycle"
+        )
+
+    measured = _probe_solve(maxiter=maxiter, tile=tile, m=m)
+    pcg_rows, capped = classify_pcg_legs(
+        measured["pcg"],
+        rtol=measured["pcg_rtol"],
+        maxiter=measured["pcg_maxiter"],
+    )
+    wall = measured["wall_s"]
+    peak = measured["peak_rss_mib"]
+    n_windows = len(WindowPlan().windows)
+    row: dict[str, Any] = {
+        "label": "PROBE",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "89 — task 22 arrives with a measurement, not a 4x bracket",
+        "not_evidence_bearing": (
+            "PROBE label; no STAGE1-EVIDENCE artifact attached; locked "
+            "instrument tally untouched (pin 89e)"
+        ),
+        "tile": tile,
+        "m": m,
+        "source": str(TILES[tile]["source"]),
+        "frame": measured["frame"],
+        "window": measured["window"],
+        "superobs_cfg": measured["superobs_cfg"],
+        "n_obs": measured["n_obs"],
+        "n_grid_nodes": measured["n_grid_nodes"],
+        "measured_one_window": {
+            "wall_s": wall,
+            "wall_h": wall / 3600.0,
+            "peak_rss_mib": peak,
+            "convergence": "CAPPED" if capped else "CONVERGED",
+            "pcg": pcg_rows,
+        },
+        "model_at_probe_geometry": model,
+        "measured_vs_model": {
+            "peak_ratio": peak / model["peak_model_mib"],
+            "note": (
+                "peak_ratio is the number the ceiling decision turns on; "
+                "the model has never been validated at this m on this tile"
+            ),
+        },
+        "rederived_bracket_pin_89d": {
+            "n_windows_production": n_windows,
+            "per_tile_wall_h_if_linear_in_windows": wall / 3600.0 * n_windows,
+            "four_tile_wall_h_if_linear_in_windows": wall / 3600.0 * n_windows * 4,
+            "prior_bracket_per_tile_h": [23.8, 94.2],
+            "prior_bracket_four_tiles_h": [95.0, 377.0],
+            "tier2_probe_ceiling_h": 6.0,
+            "caveat": (
+                "one window measured; windows are not identical in cost and "
+                "this host's throughput is non-stationary at x1.70 within a "
+                "single run (pin 28). The residual span is stated, not "
+                "hidden — see residual_span_note"
+            ),
+            "residual_span_note": (
+                "scaling ACROSS windows is now the only unmeasured factor in "
+                "the per-tile figure; the nodes-exponent question that "
+                "produced the 4x spread is answered by this measurement"
+            ),
+        },
+        "date": datetime.now(UTC).date().isoformat(),
+    }
+    results = json.loads(EVIDENCE.read_text())
+    results["phase14"]["stage1"][f"tier2_probe_{tile}_m{m}"] = row
+    atomic_write_json(EVIDENCE, results)
+    typer.echo(
+        f"MEASURED one window: wall {wall / 3600.0:.2f} h, peak RSS "
+        f"{peak:.0f} MiB, {row['measured_one_window']['convergence']}"
+    )
+    typer.echo(
+        f"re-derived per-tile (x{n_windows} windows): "
+        f"{wall / 3600.0 * n_windows:.1f} h; four tiles: "
+        f"{wall / 3600.0 * n_windows * 4:.1f} h "
+        f"(prior bracket 95-377 h, ceiling 6.0 h)"
+    )
+    typer.echo(f"recorded: phase14.stage1.tier2_probe_{tile}_m{m}")
 
 
 @app.command()

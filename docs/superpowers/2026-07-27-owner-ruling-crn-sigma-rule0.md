@@ -1143,3 +1143,85 @@ suite → pre-commit → commit always produced gate evidence from a pre-format 
 sequence change, not a hardening task. The new order is
 **format → stamp → suite → verify → commit**, enforced by
 `scripts/phase14_gate_suite.py`.
+
+---
+
+## PART 17 — BRANCH B RULING (verbatim), pins 84–88
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-29.** Pin 84 rules Branch B and
+frees T5 from the σ chain; **pin 85 requires T5's Tier-2 block be reinstalled IN THE
+SAME EDIT**, because removing T14 would otherwise leave T5 ready against an unresolved
+owner ceiling — the fourth instance of that pattern; pins 86–87 fix how the discharge
+and the defect are worded; pin 88 lifts pin 82(e)'s halt for the deliverable path only.
+
+> 84. BRANCH B RULED. "Measured seam behaviour — oracle+rubric verdicts" DISCHARGES on two
+>     attributable CLEAN mean verdicts plus two σ cells NOT_ESTABLISHED with the mechanism
+>     documented. The rubric was pre-registered with a withholding cell so that "looked and
+>     could not attribute" is a result; this is that cell used as designed, not a blank.
+>     Remove T14 from T5's blockers. T5 → {T6,T7,T8} → T9 is the remaining path.
+> 85. ⛔ AND IN THE SAME EDIT — REINSTALL T5's TIER-2 BLOCK. T5's WAIT is currently
+>     mechanical ONLY through T14 (blockedBy [3,4,14] → T14 → T18). Removing 14 removes the
+>     entire chain and T5 goes ready with an unresolved owner ceiling decision. Fourth
+>     instance of this pattern. Create a userGate task for the Tier-2 crossing and put T5
+>     behind it, description opening with the ceiling and the figure it crossed. Do this in
+>     the same commit as 84, not after.
+> 86. THE DISCHARGE IS ON REPORTING, NOT ON ANSWERING — write it that way.
+>     (a) The C1→2 contract records the σ seam question OPEN, with the inheritance package
+>         named explicitly: mechanism (obs_noise on observation identity, coef_noise on
+>         element identity, shared root), both channels quantified (ρ = 5.17%, r = 0.2523,
+>         ρ ≈ r² with its 23% residual), the reachability condition and its m requirement,
+>         pin 31(b)'s latitude non-uniformity, and the ρ model with its validated span
+>         declared per pin 78.
+>     (b) Reaffirm pin 37(c) as a CONTRACT LINE rather than a note: Stage 2/2G may not
+>         assume σ seams are clean.
+>     (c) T14-T21 are not deleted. They move to Stage 2 with their pins, tasks and
+>         pre-registrations intact, including 68(b)'s falsifier and 73(c)'s branch.
+> 87. THE CRN DEFECT IS A PRODUCTION DEFECT, recorded as one. Pin 31(c)'s manufactured σ
+>     gradient at tile boundaries is a property of the shipped system, not of an
+>     instrument. Deferring T14 defers a known defect with a product consequence, and the
+>     record must say that in those words — not "deferred instrument work." Stage 2G cannot
+>     close while it stands. It is also the reason Branch B is honest rather than merely
+>     faster: the defect travels forward named and costed, and the only Stage-1 surface it
+>     touches is the one adjacency, which T4 already measured and reported.
+> 88. RECOMMENDATION CELL: filled with 84-87 by this ruling. Pin 82(e)'s halt LIFTS for the
+>     deliverable path only — T5 through T9 — and stays in force for the σ chain, which is
+>     now Stage 2's.
+>
+> SEQUENCE: land 84-88 verbatim; apply 84 and 85 together; fold 86, 87; commit, PUSH.
+> THEN T5's Tier-2 ceiling comes to me as its own decision — it is the last thing standing
+> between here and the stage's output, and it was owner-held before any of this began.
+>
+> STOP CONDITION: T5 does not dispatch on this ruling. Nothing sealed. No σ-chain task runs.
+
+---
+
+## PART 18 — TIER-2 PROBE RULING (verbatim), pin 89
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-29.** Pin 89 refuses to bring a
+4× bracket to a ceiling decision and orders the binding number MEASURED. **It runs on
+this ruling** — it is a PROBE, not evaluation-bearing execution.
+
+> 89. TASK 22 ARRIVES WITH A MEASUREMENT, NOT A 4× BRACKET.
+>     23.8-94.2 h/tile spans a factor of four, and the spread is an unmeasured scaling
+>     exponent, not an observation. From the two existing anchors: linear gives 21.8 h/tile
+>     (87 h for four), nodes^1.25 gives 29.8, nodes^1.5 gives 40.9. Your low end is the
+>     linear point; the high end needs an exponent nothing measured supports.
+>     (a) RUN ONE WINDOW OF ONE DIVERSE TILE AT m=100, labelled PROBE, through T2's existing
+>         machinery. ~2.4 h by the linear estimate. Report per-window wall, peak RAM, and
+>         iteration counts with the CONVERGED/CAPPED flag.
+>     (b) Kuroshio, per the plan's own ordering — riskiest path, fail fast.
+>     (c) RAM IS THE BINDING AXIS AND IS CURRENTLY MODELLED, NOT MEASURED. The ≥9,431 MiB
+>         against 5,261 live is a model figure. Peak RAM from this probe is the number the
+>         ceiling decision actually turns on, and pin 57 already showed the model's phase-max
+>         behaves unexpectedly around m — it only begins tracking m near 512.
+>     (d) Re-derive the bracket from the probe, state the residual span, and bring THAT to
+>         me. If the probe lands near linear, the four-tile figure is ~87 h against a 6.0 h
+>         ceiling and the decision is a clean Tier-2 grant question. If it lands high, that
+>         is worth knowing before I authorise anything.
+>     (e) This is a probe, not evaluation-bearing execution: PROBE label, no
+>         STAGE1-EVIDENCE row, tally untouched. It runs on this ruling.
+>     Precedent for why: pin 23's ratio moved 0.570 → 0.734 the moment it was measured, and
+>     the m=137 pricing found the RAM knee at ~512. Neither was visible from the model.
+>
+> STOP CONDITION: T5 does not dispatch. The probe runs; the ceiling decision waits for its
+> number. Nothing sealed, no σ-chain task runs.
