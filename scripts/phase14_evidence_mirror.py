@@ -142,6 +142,11 @@ MIRRORED: dict[str, str] = {
         "73(c)'s acceptable-failure outcome. A pre-registration witnessed "
         "only after the fact is not a pre-registration"
     ),
+    "phase14.stage1.tier2_probe_kuroshio_m100": (
+        "pin 89. The MEASURED Tier-2 probe that retires the 4x bracket: one "
+        "window, kuroshio, m=100, CONVERGED. It is the number the ceiling "
+        "decision turns on, so it is witnessed before that decision is taken"
+    ),
     "phase14.stage1.crn_production_defect_deferred": (
         "pin 87. The CRN defect recorded as a PRODUCTION defect with a product "
         "consequence, deferred to Stage 2 by pin 84 and NOT closed. Stage 2G "

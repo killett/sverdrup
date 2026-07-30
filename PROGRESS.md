@@ -1,6 +1,31 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — BRANCH B RULED. ONE BLOCKER LEFT: T5's TIER-2 CEILING (task 22).
+> # ⛔ START HERE — TIER-2 PROBE MEASURED. CEILING DECISION IS THE OWNER'S (task 22).
+>
+> **✅ PIN 89's PROBE RAN 2026-07-30 — kuroshio, m=100, one window, PROBE, CONVERGED.**
+> `phase14.stage1.tier2_probe_kuroshio_m100`. **The 4× bracket is retired.**
+> - **wall 3.440 h for ONE window** → **31.0 h per tile** (×9) → **123.8 h (5.2 d) for
+>   four**. Prior bracket was 23.8–94.2 h/tile; the measurement lands in its lower
+>   third at an **implied exponent ≈1.28 — NOT linear.** The owner's linear anchor
+>   (21.8 h/tile, 87 h) was optimistic by **1.42×**, and the high end did need an
+>   exponent nothing supported.
+> - **peak RSS 4365 MiB against a model 5154 — the model OVER-predicts by 18%.**
+> - **CONVERGED at 441/486 iterations against a 500 cap**, so the wall is a true
+>   measurement, not cap-bounded. (Note: the member batch used 486 of 500 — a tighter
+>   production rtol would need a raised cap.)
+> - **⛔ THE BINDING AXIS IS WALL, NOT RAM — the reverse of what the model implied.**
+>   The ≥9431 MiB figure was a MODEL number; at the measured peak the 2× launch rule
+>   needs **~8730 MiB**, and **11,248 MiB was observed live during the probe itself**.
+>   RAM is achievable at the top of the co-tenant cycle. **Wall is the crossing: 31.0 h
+>   per tile against a 6.0 h ceiling, over by 5.2×.**
+> - **Residual span is now ~×1.3, not ×4.** One window measured; summing nine averages
+>   most window-to-window variation, with the host's ×1.70 drift on top.
+> - kuroshio was the riskiest path by the plan's own ordering: it **CONVERGED and the
+>   land-mask path did not fail** — a second result worth having before anyfour-tile
+>   authorisation.
+>
+> **⛔ NEXT: THE TIER-2 CEILING DECISION IS THE OWNER'S (task 22).** T5 does not
+> dispatch. Task 22 now opens with the measurement, not the bracket.
 >
 > **ON RESUME, RUN THIS FIRST:**
 > `pixi run python scripts/phase14_evidence_mirror.py check` (pin 56), then use

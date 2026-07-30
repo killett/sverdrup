@@ -27,6 +27,7 @@
     "phase14.stage1.seam_crn_mechanism_separation_construction": "pin 75. Records N and the SE construction beside the cited separation, and supersedes the 155.6 figure with 167.6 — the number will be cited, so its construction is witnessed with it",
     "phase14.stage1.rho_model_range_limitation": "pin 77. The sweep's REACHABLE span [0, 0.2523] against the applied r ~ 0.9, the structural cause, and 77(c)'s pre-registered branch. It declares its own extrapolation, so it is the first block to pass pin 78's refusal on disclosure rather than on silence",
     "phase14.stage1.rho_model_validation_preregistration": "pins 73/74. The sweep's design, its must-precede-T14 condition and 73(c)'s acceptable-failure outcome. A pre-registration witnessed only after the fact is not a pre-registration",
+    "phase14.stage1.tier2_probe_kuroshio_m100": "pin 89. The MEASURED Tier-2 probe that retires the 4x bracket: one window, kuroshio, m=100, CONVERGED. It is the number the ceiling decision turns on, so it is witnessed before that decision is taken",
     "phase14.stage1.crn_production_defect_deferred": "pin 87. The CRN defect recorded as a PRODUCTION defect with a product consequence, deferred to Stage 2 by pin 84 and NOT closed. Stage 2G cannot close while it stands — a deferral that can be quietly edited is how a known defect becomes a forgotten one",
     "phase14.stage1.seam_crn_channel_mechanism": "pin 70. The MECHANISM behind rho, named and measured: obs perturbations are CRN-keyed on observation identity at a shared root, so identical strip observations get identical eps' draws. Carries the sharpened T14 prediction with a MAGNITUDE, which must be witnessed before T14 to be a pre-registration at all",
     "phase14.stage1.seam_shared_observation_channel": "pin 68(a). The measured second correlation channel — identical observation sets on the evaluation strip — and the PRE-REGISTERED T14 expectation, which must be witnessed BEFORE T14 runs or it is not a pre-registration",
@@ -143,7 +144,7 @@
       }
     ]
   },
-  "generated_utc": "2026-07-30T06:03:05.819301+00:00",
+  "generated_utc": "2026-07-30T10:47:13.982646+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -4005,6 +4006,147 @@
         "seal_untouched": "no sealed instrument was amended: the rubric amendment is DEFERRED to one sealed version authored after T14 and T15, against the CRN-paired configuration that will then exist",
         "no_solves_run": true,
         "date": "2026-07-27"
+      }
+    },
+    "phase14.stage1.tier2_probe_kuroshio_m100": {
+      "digest_sha256": "9f77c754168815c0d9b7f797be30501ebcca191c7d6e004cfc3c0c15f5f08fe1",
+      "value": {
+        "label": "PROBE",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "89 — task 22 arrives with a measurement, not a 4x bracket",
+        "not_evidence_bearing": "PROBE label; no STAGE1-EVIDENCE artifact attached; locked instrument tally untouched (pin 89e)",
+        "tile": "kuroshio",
+        "m": 100,
+        "source": "cmems_my",
+        "frame": {
+          "core": [
+            132.0,
+            147.0,
+            28.0,
+            43.0
+          ],
+          "overlap_deg": 2.0,
+          "halo_deg": 1.0,
+          "missing_neighbors": [],
+          "solve_bbox": [
+            130.0,
+            149.0,
+            26.0,
+            45.0
+          ],
+          "convention": "production-representative",
+          "resolution_deg": 0.2
+        },
+        "window": [
+          14.0,
+          74.0
+        ],
+        "superobs_cfg": {
+          "kind": "challenge-coarsen",
+          "n": 5
+        },
+        "n_obs": 29243,
+        "n_grid_nodes": 9312,
+        "measured_one_window": {
+          "wall_s": 12383.582640044973,
+          "wall_h": 3.4398840666791592,
+          "peak_rss_mib": 4364.52734375,
+          "convergence": "CONVERGED",
+          "pcg": [
+            {
+              "window": "w+00014.0+60",
+              "iterations": 441,
+              "final_rel_residual": 9.633444101695526e-07,
+              "params_key_hash": "3b851d0a09d542a8",
+              "rtol": 1e-06,
+              "maxiter": 500
+            },
+            {
+              "window": "w+00014.0+60",
+              "kind": "member-batch",
+              "iterations": 486,
+              "final_rel_residual": 9.70403266551082e-07,
+              "params_key_hash": "3b851d0a09d542a8",
+              "rtol": 1e-06,
+              "maxiter": 500
+            }
+          ]
+        },
+        "model_at_probe_geometry": {
+          "n_coef": 297600.0,
+          "nnz": 141510595.0,
+          "stored_g_gib": 1.5815041400492191,
+          "retained_member_store_mib": 7.1044921875,
+          "peak_model_mib": 5154.020244598389,
+          "wall_est_s": 914.7737620473422
+        },
+        "measured_vs_model": {
+          "peak_ratio": 0.8468199845206646,
+          "note": "peak_ratio is the number the ceiling decision turns on; the model has never been validated at this m on this tile"
+        },
+        "rederived_bracket_pin_89d": {
+          "n_windows_production": 9,
+          "per_tile_wall_h_if_linear_in_windows": 30.958956600112433,
+          "four_tile_wall_h_if_linear_in_windows": 123.83582640044973,
+          "prior_bracket_per_tile_h": [
+            23.8,
+            94.2
+          ],
+          "prior_bracket_four_tiles_h": [
+            95.0,
+            377.0
+          ],
+          "tier2_probe_ceiling_h": 6.0,
+          "caveat": "one window measured; windows are not identical in cost and this host's throughput is non-stationary at x1.70 within a single run (pin 28). The residual span is stated, not hidden — see residual_span_note",
+          "residual_span_note": "scaling ACROSS windows is now the only unmeasured factor in the per-tile figure; the nodes-exponent question that produced the 4x spread is answered by this measurement"
+        },
+        "date": "2026-07-30",
+        "derived_pin_89d": {
+          "headline": "The 4x bracket is retired. Measured, CONVERGED: 3.440 h for ONE window at m=100 on kuroshio. Per tile (x9 windows) 31.0 h; four tiles 123.8 h. The binding axis is WALL, not RAM — the reverse of what the model implied.",
+          "wall": {
+            "one_window_h": 3.4398840666791592,
+            "per_tile_h": 30.958956600112433,
+            "four_tiles_h": 123.83582640044973,
+            "four_tiles_days": 5.159826100018739,
+            "prior_bracket_four_tiles_h": [
+              95.0,
+              377.0
+            ],
+            "where_it_lands": "inside the prior bracket, in its lower third",
+            "owner_anchors_per_tile_h": {
+              "linear": 21.8,
+              "nodes^1.25": 29.8,
+              "nodes^1.5": 40.9
+            },
+            "measured_per_tile_h": 30.958956600112433,
+            "implied_exponent": 1.28,
+            "verdict_on_the_anchors": "NOT linear. The linear point (21.8 h/tile, 87 h for four) was optimistic by 1.42x. The measurement sits between nodes^1.25 and nodes^1.5, nearest nodes^1.25 — implied exponent ~1.28. The owner's suspicion that the high end needed an unsupported exponent is confirmed; so was the suspicion that the low end was the linear point and not a measurement.",
+            "vs_ceiling": {
+              "tier2_probe_ceiling_h": 6.0,
+              "per_tile_over_by": 5.159826100018739,
+              "note": "over by 5.2x per tile — was 4.0x at the prior bracket's LOW end"
+            }
+          },
+          "ram_the_finding_that_moved": {
+            "measured_peak_rss_mib": 4364.52734375,
+            "model_peak_mib": 5154.020244598389,
+            "measured_over_model": 0.8468199845206646,
+            "direction": "model OVER-predicts by 18% here",
+            "why_it_matters": "the >=9431 MiB Tier-1 requirement was a MODEL figure (2 x 4715.6). Measured peak is 4365 MiB, so the 2x launch rule needs ~8730 MiB — and live headroom was observed at 11,248 MiB on this box during this very run. RAM is achievable at the top of the co-tenant cycle. It is NOT the binding axis, which is what pin 89(c) suspected.",
+            "caveat": "one window; the 9-window production run adds only the retained member store (~7 MiB per window at this geometry), so the peak should not move materially. The model's direction is not stable across legs — it UNDER-predicted 2.13x on the anchor and 1.83x on the seam pair — so this 0.847 is a measurement of THIS configuration, not a correction factor."
+          },
+          "convergence": {
+            "verdict": "CONVERGED",
+            "mean_leg_iterations": 441,
+            "member_batch_iterations": 486,
+            "cap": 500,
+            "both_final_rel_residual_below_rtol": true,
+            "why_it_matters": "CONVERGED, not CAPPED, at 441/486 against a 500 cap — so the wall is a true measurement, not a figure bounded above by the iteration cap. A CAPPED probe could only under-report. Note the member batch used 486 of 500: a production run at a tighter rtol would need a raised cap."
+          },
+          "residual_span_stated_pin_89d": "ONE window was measured. The per-tile figure assumes the other eight cost the same; the anchor run's identical-geometry windows ranged 1,656-3,480 s (2.1x), though summing nine averages much of that out. The host's measured x1.70 throughput non-stationarity (pin 28) applies on top. So 31.0 h/tile is a central estimate with a residual span of roughly x1.3 either way — NOT the x4 the bracket carried before this probe.",
+          "kuroshio_specific": "kuroshio was chosen per the plan's own ordering as the riskiest path. It CONVERGED and the land-mask path did not fail — a second result worth having before any four-tile authorisation.",
+          "date": "2026-07-30"
+        }
       }
     }
   }
