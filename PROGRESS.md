@@ -1,6 +1,23 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — NEXT ACTION IS THE CLOSURE MAP (pin 82). NO NEW HARDENING TASKS.
+> # ⛔ START HERE — CLOSURE MAP DELIVERED. OWNER DECISION PENDING (pin 82).
+>
+> **`docs/superpowers/2026-07-29-phase14-stage1-closure-map.md`** — read it before
+> anything else. Headline: **the σ MEASUREMENT and the CRN FIX do separate.** Of the
+> six registry tiles, an overlap test over all 15 pairs finds **exactly one adjacency:
+> `seam_n`/`seam_s`**, the seam subject itself — the four diverse tiles are pairwise
+> disjoint, so **every T5/T6/T7/T8 output is per-tile** (χ², raw-σ, scalar-s\*, SO
+> diagnostics, OSSE pricing inputs — all checked individually). The insulation is
+> **pre-registered**, not convenient: T7's fork-d pin-6 sub-design locked "per-tile
+> lanes, NOT a shared cross-tile field" at plan review for a statistical-confound
+> reason, long before the CRN defect surfaced. **One cross-tile deliverable exists and
+> is NAMED** — T12's contract line "measured seam behavior oracle+rubric verdicts" —
+> **and T4 already produced it** (mean CLEAN ×2, σ NOT_ESTABLISHED ×2), so it does not
+> require T14. **The owner decides** whether that discharges the contract line; if not,
+> pin 82(d) is off the table. **Critical path is T5 → {T6,T7,T8} → T9, with T12 READY
+> NOW; T9 is `blockedBy [3,4,5,6,7,8,10,11,12]` — no T14–T21.** T5's Tier-2 crossing is
+> the binding constraint in BOTH branches and is owner-held independently.
+> **Pin 82(e)'s halt stays in force until the owner rules.**
 >
 > **ON RESUME, RUN THIS FIRST:**
 > `pixi run python scripts/phase14_evidence_mirror.py check` — it verifies the
