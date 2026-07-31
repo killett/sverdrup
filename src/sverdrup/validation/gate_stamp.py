@@ -18,10 +18,10 @@ sequence.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
-__all__ = ["changed_paths", "file_digests"]
+__all__ = ["changed_paths", "file_digests", "stamp_blockers"]
 
 
 def file_digests(root: Path, paths: Iterable[str]) -> dict[str, str]:
@@ -71,3 +71,41 @@ def changed_paths(before: dict[str, str], after: dict[str, str]) -> list[str]:
     return sorted(
         {p for p in before.keys() | after.keys() if before.get(p) != after.get(p)}
     )
+
+
+def stamp_blockers(stamp: Mapping[str, object]) -> list[str]:
+    """Reasons the stamp cannot license a commit, beyond tree drift.
+
+    A green ``verify`` has to mean TWO things: the tree is unchanged, and
+    a suite actually finished on it. The first version recorded only when
+    the suite STARTED, so ``verify`` returned green beside a suite still
+    at 5% — the tree was genuinely unchanged, and the check was genuinely
+    silent about the thing that mattered.
+
+    That is the defect shape pin 83 was written to close, reappearing
+    inside pin 83's own tooling: a check that looks authoritative but
+    cannot distinguish the failure it appears to cover.
+
+    Args:
+        stamp: The parsed stamp document. A ``Mapping`` rather than a
+            ``dict`` so callers may pass any concretely-typed stamp — ``dict``
+            is invariant in its value type and would reject them.
+
+    Returns:
+        Human-readable blockers; empty means the suite half is satisfied.
+    """
+    suite = stamp.get("suite")
+    if not isinstance(suite, dict) or not suite.get("completed"):
+        return [
+            "the stamp records no completed suite — `run` writes this only "
+            "when the suite finishes, so a green tree here would attest "
+            "nothing about whether tests passed. Re-run the gate sequence."
+        ]
+    code = suite.get("exit_code")
+    if code != 0:
+        return [
+            f"the stamp records a suite that FAILED (exit {code}). "
+            "Tree-unchanged and suite-passed are different claims; the "
+            "gate requires both."
+        ]
+    return []

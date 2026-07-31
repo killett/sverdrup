@@ -18,7 +18,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sverdrup.validation.gate_stamp import changed_paths, file_digests
+from sverdrup.validation.gate_stamp import (
+    changed_paths,
+    file_digests,
+    stamp_blockers,
+)
 
 
 def _write(root: Path, name: str, body: str) -> None:
@@ -100,3 +104,48 @@ def test_added_and_removed_files_are_reported(tmp_path: Path) -> None:
     after = {"a.py": "d1", "new.py": "d3"}
 
     assert changed_paths(before, after) == ["gone.py", "new.py"]
+
+
+# ---- stamp_blockers: a green verify must mean a suite FINISHED -------------
+
+
+def test_verify_refuses_when_no_suite_completion_is_recorded() -> None:
+    """A stamp with no recorded completion cannot license a commit.
+
+    This is the hole that was hit live: `verify` returned green while the
+    suite was still at 5%, because the stamp only ever recorded when the
+    suite STARTED. Catches a gate that looks authoritative next to a run
+    that never finished.
+    """
+    stamp = {"digests": {}, "stamped_utc": "2026-07-30T00:00:00+00:00"}
+
+    blockers = stamp_blockers(stamp)
+
+    assert len(blockers) == 1
+    assert "no completed suite" in blockers[0]
+
+
+def test_verify_refuses_a_recorded_suite_failure() -> None:
+    """A stamp recording a FAILED suite refuses too.
+
+    Catches committing on a red run whose tree merely happens to be
+    unchanged — tree-unchanged and suite-passed are different claims and
+    the gate must require both.
+    """
+    stamp = {"digests": {}, "suite": {"completed": True, "exit_code": 1}}
+
+    blockers = stamp_blockers(stamp)
+
+    assert len(blockers) == 1
+    assert "exit 1" in blockers[0]
+
+
+def test_verify_accepts_a_clean_completion() -> None:
+    """A recorded clean completion produces no blockers.
+
+    Catches a rule so strict nothing can satisfy it — the failure mode
+    that gets gates disabled rather than fixed.
+    """
+    stamp = {"digests": {}, "suite": {"completed": True, "exit_code": 0}}
+
+    assert stamp_blockers(stamp) == []

@@ -1,6 +1,57 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — TIER-2 PROBE MEASURED. CEILING DECISION IS THE OWNER'S (task 22).
+> # ⛔ START HERE — T5 IS AUTHORISED AND READY. RUN IT. (Tier-2 cleared 2026-07-30.)
+>
+> **ON RESUME, IN THIS ORDER:**
+> 1. `pixi run python scripts/phase14_evidence_mirror.py check` — provenance mirror
+>    vs its own digests AND the live store (pin 56). Drift is a STOP, not a re-sync.
+> 2. Read T5's description in the tracker. **Its operating procedure IS the
+>    authorisation's shape, not advice.**
+> 3. Gate work uses `pixi run python scripts/phase14_gate_suite.py run` —
+>    **format → stamp → suite → verify → commit** (pin 83). Never format after the
+>    suite. `verify` refuses unless the stamp records a COMPLETED suite as well as an
+>    unchanged tree.
+>
+> **✅ THE TIER-2 CEILING IS CLEARED (owner ruling 2026-07-30, ruling doc PART 19).**
+> Task 22 is CLOSED. **T5 is READY and authorised — the next session RUNS IT.** The
+> operating plan is **E-16: executor-authored, OWNER-ADOPTED** — filed as E-16 and NOT
+> pinned, because a pin number asserts owner authorship (pin 40); renumbering is the
+> owner's.
+>
+> **⛔⛔ READY ≠ RUNNABLE. `READY = [5, 12, 18, 19, 20]` — but ONLY T5 AND T12 ARE
+> STAGE-1 WORK.** T18, T19, T20 are prefixed **`[STAGE 2]`** and are the σ chain:
+> **pin 88's halt STAYS IN FORCE for them.** They show ready because their blockers
+> cleared, NOT because they may run. **Do not start them.**
+>
+> **HOW TO RUN T5 (the authorised shape — full text in the task):**
+> - **Ceiling is PER LEG: ~40 h per tile, NOT 124 h for the stage.** A leg over 40 h
+>   **STOPS and reports.** Basis: 31.0 h/tile measured (3.440 h × 9 windows) + ×1.3
+>   residual.
+> - **Launch gate per leg: `MemAvailable ≥ ~8730 MiB`** = 2 × the MEASURED 4365 MiB
+>   peak, not the model's 5154. Headroom cycles ~4 → ~11.2 GiB — **start at the top of
+>   the cycle.**
+> - **Order: kuroshio → southern → equatorial → quiet_gyre. Commit per tile.**
+>   Kuroshio is both the riskiest path and the de-risked one (pin 89's probe converged
+>   on it, land-mask intact).
+> - **⛔ RE-ASSESS AFTER LEG 1 BEFORE LEG 2.** 31.0 h is ONE window × 9; leg 1 is the
+>   test of that extrapolation. High → stop after ~31 h, not after 5 days.
+> - **RAISE THE PCG CAP** — the probe used 486 of 500; a capped leg can only
+>   under-report.
+> - `setsid`-detached, checkpointed, completion AND stall watchers. **Watch the PID
+>   captured at launch** — `pgrep` returned a wrapper instead of the real process twice
+>   this session, and both times a watcher reported completion early.
+>
+> **NOT AUTHORISED:** trimming tiles to fit Tier-1.
+>
+> **STANDING, UNCHANGED:** nothing sealed (seal at v1, the one sanctioned change still
+> UNSPENT); no σ factor adopted; the σ chain (T14–T21) is **Stage 2's**, moved intact
+> with pins and pre-registrations including 68(b)'s falsifier and 73(c)'s branch; the
+> **CRN production defect** is recorded as such at
+> `phase14.stage1.crn_production_defect_deferred` and **Stage 2G cannot close while it
+> stands.**
+>
+> **After T5: T6, T7, T8 → T9 (Gate-1 pack). T12 is ready in parallel.** That is the
+> whole remaining path to closing Stage 1.
 >
 > **✅ PIN 89's PROBE RAN 2026-07-30 — kuroshio, m=100, one window, PROBE, CONVERGED.**
 > `phase14.stage1.tier2_probe_kuroshio_m100`. **The 4× bracket is retired.**
@@ -31,7 +82,10 @@
 > `pixi run python scripts/phase14_evidence_mirror.py check` (pin 56), then use
 > `pixi run python scripts/phase14_gate_suite.py run` for any gate work — the sequence
 > is **format → stamp → suite → verify → commit** (pin 83). **Never run a formatter
-> after the suite.**
+> after the suite.** `verify` now refuses unless the stamp records a **COMPLETED**
+> suite as well as an unchanged tree: a green tree alone once returned PASS beside a
+> suite still at 5%, which is pin 83's own defect shape reappearing inside pin 83's
+> tooling. Tree-unchanged and suite-passed are different claims; the gate requires both.
 >
 > **✅ PINS 84-88 RULED AND FOLDED 2026-07-29 (ruling doc PART 17, verbatim).**
 > **BRANCH B IS ADOPTED.** "Measured seam behaviour — oracle+rubric verdicts"

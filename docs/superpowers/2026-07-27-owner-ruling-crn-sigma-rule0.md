@@ -1225,3 +1225,56 @@ this ruling** — it is a PROBE, not evaluation-bearing execution.
 >
 > STOP CONDITION: T5 does not dispatch. The probe runs; the ceiling decision waits for its
 > number. Nothing sealed, no σ-chain task runs.
+
+---
+
+## PART 19 — TIER-2 CEILING CLEARED (verbatim), 2026-07-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-07-30.** This clears **task 22**, the
+userGate that has been the sole blocker on T5 and therefore on the whole remaining
+deliverable path.
+
+> what should i do?
+
+*(the executor's five-point recommendation followed — reproduced below as E-16, and
+NOT numbered into the owner's series)*
+
+> do all of it. but in next session. get ready to clear, then start that after resume
+
+### What "all of it" is — recorded as **E-16, EXECUTOR-AUTHORED, OWNER-ADOPTED**
+
+**Pin 40 governs how this is recorded.** The operating plan below was authored by the
+executor, not by the owner. The owner ADOPTED it in full ("do all of it"), which
+authorises the work — but adoption does not make the text owner-authored, and **a pin
+number asserts owner authorship**. It is therefore filed as **E-16** and stays E-16
+until the owner renumbers it into his own series, **by him, not by this document**
+(pin 40). Cite it as adopted, never as a pin.
+
+1. **A Stage-1 Tier-2 row with `max_wall_h ≈ 40 PER TILE`** — 31.0 h measured plus the
+   ×1.3 residual span. **Not 124 h for the stage.** T5 is already structured as four
+   INDEPENDENT per-tile legs with per-tile commits (its own Steps: kuroshio first —
+   "riskiest path, fail fast" — then southern, equatorial, quiet gyre). A leg exceeding
+   40 h STOPS and reports rather than running on.
+2. **Launch gate per leg: `MemAvailable ≥ 2 × 4365 MiB` (~8.7 GiB)** — twice the
+   MEASURED peak, not the model's 5154. Headroom on this box cycles ~4 → ~11.2 GiB, so
+   legs start at the top of the cycle. This is the existing `seam_ram_gate` rule,
+   unchanged.
+3. **Kuroshio FIRST**, per the plan's own ordering, and now the de-risked one: pin 89's
+   probe converged on it with the land-mask path intact.
+4. **⛔ RE-ASSESS AFTER LEG 1.** The 31.0 h figure is one measured window × 9. **The
+   first production leg is the test of that extrapolation.** Near 31 h → the remaining
+   three are predictable. High → that is known after ~31 h instead of after 5 days.
+5. **Raise the PCG cap for production.** The probe's member batch used **486 of 500**;
+   a tighter production rtol will hit that cap, and **a capped leg can only
+   under-report**.
+
+**Explicitly NOT adopted:** trimming tiles to fit Tier-1. The four are pre-registered
+for regime diversity, southern feeds T6, and T7's lanes run on all four — trimming
+weakens the transfer claim rather than the bill.
+
+### Sequencing instruction, verbatim: **"in next session"**
+
+The owner authorised the work and deferred its START. **T5 does not dispatch in the
+session that received this ruling.** Task 22 is cleared so the next session finds T5
+READY with the operating procedure in its description — that is the intent, not an
+accident of blocker removal.
