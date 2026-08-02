@@ -2431,3 +2431,97 @@ def test_criterion8_discharge_record_contract() -> None:
     assert "refus" in rec["dead_half"].lower()
     assert rec["live_half_deferred_to"] == "_solve_leg (T5b)"
     assert "record_evidence_row" in rec["live_half"]
+
+
+# ---------------------------------------------------------------------------
+# E-16 §1-§2 (ruling doc PART 19), ratified owner pin 92 — the TIER-2
+# production launch gate. Task 22 cleared the crossing; these pin the shape
+# the clearance actually authorised.
+# ---------------------------------------------------------------------------
+
+
+def test_tier2_launch_threshold_is_twice_the_MEASURED_peak() -> None:
+    """Threshold = 2 x 4365 MiB, the measured peak -- not the model's 5154.
+
+    Bug caught: wiring the gate to size_tile's predicted peak. Pin 89
+    MEASURED peak RSS 4365 MiB against a model 5154 and found the model
+    OVER-predicts by 18%; E-16 §2 says "twice the MEASURED peak, not the
+    model's 5154" in those words. A model-fed gate demands ~10308 MiB and
+    would park every leg forever on a box whose headroom tops out at
+    ~11.2 GiB. Expected value hand-computed from E-16 §2.
+    """
+    gate = _mod.tier2_launch_gate(mem_available_mib=99999.0)
+    assert gate["threshold_mib"] == 8730.0
+    assert _mod.TIER2_MEASURED_PEAK_MIB == 4365.0
+
+
+def test_tier2_launch_gate_boundary_admits_exactly_the_threshold() -> None:
+    """>= at the threshold: 8730 launches, 8729.9 refuses.
+
+    Bug caught: a strict > comparison, which refuses a leg at exactly the
+    authorised headroom. On a box that cycles to ~11.2 GiB roughly every
+    4 h, refusing at the boundary costs a whole cycle per occurrence.
+    """
+    assert _mod.tier2_launch_gate(mem_available_mib=8730.0)["passed"] is True
+    assert _mod.tier2_launch_gate(mem_available_mib=8729.9)["passed"] is False
+
+
+def test_tier2_wall_ceiling_is_per_leg_not_per_stage() -> None:
+    """A leg over 40 h STOPS; 124 h (the stage figure) is not the ceiling.
+
+    Bug caught: applying E-16's ceiling to the STAGE (4 tiles ~ 124 h)
+    instead of per leg. E-16 §1 is explicit -- "CEILING IS PER LEG:
+    ~40 h per tile, NOT 124 h for the stage" -- and a stage-scoped ceiling
+    lets a runaway first leg burn 3 extra days before anything trips.
+    Values from E-16 §1: 31.0 h measured x 1.3 residual span.
+    """
+    assert _mod.TIER2_MAX_LEG_WALL_H == 40.0
+    assert _mod.tier2_wall_ceiling(elapsed_h=40.1)["stop"] is True
+    assert _mod.tier2_wall_ceiling(elapsed_h=39.9)["stop"] is False
+    # The recorded block must say which scope it is, so a reader cannot
+    # mistake it for the stage figure.
+    assert "LEG" in _mod.tier2_wall_ceiling(elapsed_h=1.0)["scope"].upper()
+
+
+def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The Tier-2 gate never calls ladder.tier1_eligible.
+
+    Bug caught: the live one. preflight raises RuntimeError on
+    `not tier1_eligible(...)`, so a Tier-2-cleared leg refuses before it
+    loads anything -- task 22's clearance would be inert. tier2_probe
+    already set the precedent (it bypasses the predicate with a live
+    headroom guard and says why); this pins that the production gate does
+    the same rather than inheriting the Tier-1 refusal.
+    """
+    from sverdrup.application import ladder
+
+    called = False
+
+    def _spy(peak_mib: float, *a: object, **k: object) -> bool:
+        nonlocal called
+        called = True
+        return False
+
+    monkeypatch.setattr(ladder, "tier1_eligible", _spy)
+    gate = _mod.tier2_launch_gate(mem_available_mib=9000.0)
+    assert gate["passed"] is True
+    assert called is False
+
+
+def test_preflight_tier1_refusal_still_bites_for_other_callers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """preflight keeps refusing on the Tier-1 predicate (seam_pair depends on it).
+
+    Bug caught: "fixing" the Tier-2 problem by deleting the Tier-1 check
+    from preflight, which silently disarms the launch guard for seam_pair
+    and the anchor gate -- callers that were never Tier-2-cleared. The
+    Tier-2 authorisation is T5-scoped; preflight is shared.
+    """
+    from sverdrup.application import ladder
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
+    with pytest.raises(RuntimeError, match="Tier-1"):
+        _mod.preflight("seam_n", 100)

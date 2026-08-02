@@ -1069,6 +1069,81 @@ def seam_ram_gate(*, peak_model_mib: float, mem_available_mib: float) -> dict[st
     }
 
 
+# ---------------------------------------------------------------------------
+# E-16 §1-§2 (ruling doc PART 19), ratified owner PIN 92 — the TIER-2
+# PRODUCTION LAUNCH GATE for T5's diverse-tile legs.
+#
+# Task 22 cleared the Tier-2 crossing, so the Tier-1 ladder predicate is NOT
+# the gate for these legs. It stays exactly as it is for every other caller:
+# `preflight` still refuses on it, because seam_pair and the anchor gate were
+# never Tier-2-cleared and the clearance is T5-scoped. tier2_probe set this
+# precedent (it bypassed the predicate with a live-headroom guard and said
+# why); this is that shape, promoted to the production path.
+#
+# Both numbers are MEASURED, not modelled:
+#   * peak — pin 89 measured 4365 MiB peak RSS at m=100 on kuroshio against a
+#     model 5154: the model OVER-predicts by 18%. E-16 §2 gates on "twice the
+#     MEASURED peak, not the model's 5154".
+#   * wall — pin 89 measured 3.440 h for ONE window; x9 windows = 31.0 h per
+#     tile, x1.3 residual span -> ~40 h. PER LEG. The stage figure (123.8 h
+#     for four tiles) is NOT a ceiling: E-16 §1 says "a leg exceeding 40 h
+#     STOPS and reports" rather than running on, so a runaway first leg is
+#     known after ~31 h instead of after 5 days.
+TIER2_MEASURED_PEAK_MIB = 4365.0
+TIER2_MAX_LEG_WALL_H = 40.0
+TIER2_WALL_SCOPE = (
+    "PER LEG (one tile), NOT per stage — the four-tile 123.8 h figure is an "
+    "expectation, never a ceiling (E-16 §1)"
+)
+
+
+def tier2_launch_gate(*, mem_available_mib: float) -> dict[str, Any]:
+    """E-16 §2's per-leg launch gate: MemAvailable >= 2 x the MEASURED peak.
+
+    Deliberately does NOT consult ``ladder.tier1_eligible``: task 22
+    cleared the Tier-2 crossing for these legs, and gating them on the
+    Tier-1 predicate would make the clearance inert. The predicate is
+    untouched for every other caller.
+
+    Args:
+        mem_available_mib: Measured MemAvailable [MiB], read at call time.
+
+    Returns:
+        The recorded gate block (``passed`` False = never launch; wait for
+        the top of the co-tenant headroom cycle).
+    """
+    threshold = SEAM_RAM_GATE_FACTOR * TIER2_MEASURED_PEAK_MIB
+    return {
+        "mem_available_mib": mem_available_mib,
+        "threshold_mib": threshold,
+        "measured_peak_mib": TIER2_MEASURED_PEAK_MIB,
+        "basis": (
+            "2 x the MEASURED 4365 MiB peak (pin 89), NOT the model's 5154 — "
+            "the model over-predicts by 18%"
+        ),
+        "passed": mem_available_mib >= threshold,
+    }
+
+
+def tier2_wall_ceiling(*, elapsed_h: float) -> dict[str, Any]:
+    """E-16 §1's PER-LEG wall ceiling: over ~40 h the leg STOPS and reports.
+
+    Args:
+        elapsed_h: The leg's elapsed wall clock [h].
+
+    Returns:
+        The recorded ceiling block (``stop`` True = stop and report; the
+        leg does NOT run on).
+    """
+    return {
+        "elapsed_h": elapsed_h,
+        "ceiling_h": TIER2_MAX_LEG_WALL_H,
+        "scope": TIER2_WALL_SCOPE,
+        "basis": "31.0 h measured (3.440 h x 9 windows, pin 89) x 1.3 residual",
+        "stop": elapsed_h > TIER2_MAX_LEG_WALL_H,
+    }
+
+
 def seam_probe_size_model(n_obs: int) -> dict[str, float]:
     """Task-22 sizing arithmetic at the SEAM geometry, m=1, ONE window.
 
