@@ -1453,6 +1453,140 @@ against the ruling rather than against the stale criteria.
 - **The lane-0 MANIFEST is mirrored, the maps are not** (96e). Pin-67 class:
   **WITNESSED AT CREATION** (96d) — the first artifact in the stage that can claim it.
   Witness at creation, not at T9, so the interval never opens (96b, pin 60).
+
+---
+
+## PART 22 — T9 OUTPUT-SHAPE RULING (verbatim), pins 97–99 + reboot addendum, 2026-08-01
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-01.** Rules the T9 output-shape items and
+the remaining sweep items, explicitly **before T5b hardens the row shapes that feed the
+pack**. Carries an owner addendum R1–R6 for an imminent host reboot.
+
+> 97. T9 OUTPUT SHAPE — ruled now, before T5b hardens the rows.
+>     (a) "SIX TRANSFER READINGS" → FOUR. The store settles it: seam_n/seam_s carry no
+>         scores, no reference_row, no bridge_caveat — solve records, not readings — and
+>         SEAM_NON_TRANSFER_NOTE says so in the artifact itself. The anchor is the identity
+>         subject, not a transfer reading. Stage 1 delivers FOUR transfer readings, one per
+>         diverse tile. Correct the criterion and test-pin the count against the store so it
+>         cannot drift back.
+>     (b) "ANCHOR FIVE-GATE BLOCK" → the honest accounting already ruled 2026-07-26 and
+>         already written into phase14_anchor_gate.py:164-177: TWO run and passed (1, 5),
+>         TWO cited and pre-ratified at Gate 0 (2, 4), ONE proxy-passed with the specified
+>         era no-op DEFERRED. The code says "five green" does not survive careful reading in
+>         Stage 2; the pack must say the same. Cite the code as the discharge.
+>     (c) "SEAM VERDICT" SINGULAR → the pack reports TWO attributable mean CLEAN verdicts
+>         and TWO σ cells NOT_ESTABLISHED, and states that Stage 1 has NO attributable
+>         σ-route seam verdict. Per pin 37(b), the σ seam question is UNANSWERED, not
+>         answered clean. Keep the pin-37(b) firewall: the diagnosis-derived bound must not
+>         sit adjacent to the UNMEASURED rows in any form a reader could take as a verdict.
+>     (d) PACK CONTENTS (1)-(10) GAIN THE REQUIRED SECTIONS: pin 61 (58(d)'s result — three
+>         of four check-1 routes would have re-passed against a substituted reference, both
+>         fixes, the capture caveat and its reconciliation, including the searched-and-
+>         absent one), pin 86 (the σ question OPEN with the full inheritance package
+>         enumerated), pin 87 (the CRN production defect in its own words — a property of
+>         the shipped system, and Stage 2G cannot close while it stands).
+>     (e) Report the corrected criteria set before building T5b, so the row shapes are cut
+>         to a pack whose shape is settled.
+>
+> 98. χ² PIN-42 FIELD RECORDS, IT DOES NOT GATE. Your reading is right and is now the
+>     ruling. reduced_chi2 compares against an expectation of 1.0, and harness.py:1145
+>     deliberately made it non-gating with coverage as the only bar. That was a decision,
+>     not an oversight, and pin 42 does not reverse it.
+>     (a) The pin-42 field STATES the outcome conditions under null and alternative and
+>         RECORDS the non-gating status with its citation. It must not be implemented as a
+>         threshold, a refusal, or anything that changes what ships.
+>     (b) Test-pin the non-gating status explicitly — a later reader must not be able to
+>         "complete" the gate by adding the bar that was deliberately left out.
+>     (c) This is pin 42's purpose working correctly: the object was always an
+>         expectation-comparison with no stated failure condition, and now it says so.
+>
+> 99. THE REMAINING SIX SWEEP ITEMS — ruled together, briefly, since each has one answer.
+>     (a) T6's ±66 branch: pin 2 ruled production-representative 2026-07-25, so only
+>         halo ≤ 2.0 is live. Collapse the branch; keep the derivation from the frame per
+>         pin 16 so the arithmetic stays computed, not typed.
+>     (b) T7's "no new ceilings exist": false since task 22 and E-16. Rewrite against the
+>         live ceiling — a lane affordable under the 40 h per-leg ceiling is not a WAIT.
+>     (c) T8's pricing basis: pin 23(a) ruled the T2 probe CAPPED and unusable for absolute
+>         claims. Price from the CONVERGED numbers instead — pin 89's probe (3.440 h/window,
+>         4365 MiB peak, 441/486 iters) and the anchor gate. State the basis in-row.
+>     (d) Any sweep item not covered by 97-99: report it, do not fix it. 91(a)'s report-only
+>         constraint still holds for anything I have not ruled.
+>
+> SEQUENCE: land 97-99 verbatim; fold; report the corrected criteria set; THEN build T5b;
+> THEN launch leg 1 at the top of a RAM cycle under E-16's gate.
+>
+> STOP CONDITION: unchanged. Leg 1 does not launch until the corrected criteria set is in
+> front of me. After leg 1, the mandatory re-assess per E-16 step 4. Nothing sealed; 18, 19,
+> 20 remain READY-not-RUNNABLE.
+>
+> ADDENDUM — OWNER REBOOTING SOON. Read before executing 97-99.
+>
+> R1. ⛔ LEG 1 DOES NOT LAUNCH BEFORE THE REBOOT. Regardless of RAM headroom, regardless
+>     of whether T5b finishes. A 31-40 h leg started now dies partway. Build only; the
+>     launch waits until the owner says the box is back and stable.
+> R2. INVENTORY WHAT IS ACTUALLY IN FLIGHT, and report it as a list. Do not assume either
+>     direction: this session has produced three false completion reports from pgrep
+>     returning wrappers, and a set of watcher shells that turned out to be stale with
+>     nothing behind them. Use the pids captured at launch (logs/gate.pid and equivalents),
+>     not a scrape. For each live process: what it is, what it writes, and whether losing it
+>     costs anything.
+> R3. ANYTHING OF VALUE ONTO ORIGIN FIRST. If a suite is mid-run it dies with the box — let
+>     it die rather than racing it, and re-run after. Do not commit on a stamp whose suite
+>     did not complete; the pin-83 fix now refuses that, and it should be allowed to.
+> R4. setsid DOES NOT SURVIVE A REBOOT. It protects against the terminal or session closing,
+>     not against the machine going down. The standing detach discipline gives no protection
+>     here, and any note implying otherwise should be corrected where it stands.
+> R5. BEFORE THE LEGS EVER RUN, ESTABLISH WHETHER RESUME ACTUALLY WORKS. Per-window PCG
+>     checkpointing exists (b71dc7f, efd515a) and the anchor gate used a leg-level crash
+>     resume. Whether a T5 diverse leg can resume from checkpoint after a hard kill is
+>     UNVERIFIED. Verify it cheaply — kill a short run mid-window and resume it — before
+>     committing 31 h to a path whose recovery is assumed. If resume does not work, that is
+>     worth knowing before leg 1, not after a power event during leg 3.
+> R6. BANNER BEFORE THE REBOOT: what was in flight, what was killed, what needs re-running,
+>     and the standing state (T5b in build, leg 1 unlaunched and NOT to be launched without
+>     the owner). Write it for a reader who returns to a cold box.
+>
+> Then stop. Do not start anything long-running until the owner confirms the box is back.
+
+### R2 inventory as executed, 2026-08-01 — NOTHING OF VALUE WAS IN FLIGHT
+
+Resolved from the pids captured at launch, not a scrape, per R2:
+
+| Handle | Captured pid | Reality |
+|---|---|---|
+| `logs/gate.pid` | 1795155 | **not alive** |
+| `logs/phase14_settling.pid` | 532474 / 532537 / 532886 | **not alive** |
+| any real `gate_suite` / `pytest` / phase14 worker | — | **none exists** |
+| 8 watcher shells | alive `Ss` | **stale — nothing behind them** |
+
+The eight live processes were watcher shells spinning `sleep`. Watcher `1695408` watches
+pid `1692440`, which is **itself a watcher shell** — so it would spin forever on a shell
+and never on the gate. That is R2's named failure mode, confirmed by resolution rather
+than assumed. **The reboot cost nothing**; no suite was mid-run, so R3 had nothing to race.
+
+### Consequences for the executor (PART 22)
+
+- **T9 delivers FOUR transfer readings**, test-pinned against the store (97a).
+- **The pack carries the ruled anchor accounting**, citing `phase14_anchor_gate.py:164-177`
+  as the discharge — never "five green" (97b).
+- **The pack reports two mean CLEAN + two σ NOT_ESTABLISHED** and states plainly that
+  Stage 1 has **no attributable σ-route seam verdict**; pin 37(b)'s firewall holds — the
+  diagnosis-derived bound must not sit adjacent to the UNMEASURED rows (97c).
+- **Pack sections gain pins 61, 86, 87** (97d).
+- **The χ² pin-42 field RECORDS, never gates** (98) — and the non-gating status is itself
+  test-pinned so nobody can "complete" the bar that was deliberately left out (98b).
+- **T6 collapses to `halo ≤ 2.0`, computed from the frame, never typed** (99a).
+- **T7 rewrites against the live 40 h per-leg ceiling** (99b).
+- **T8 prices from the CONVERGED numbers** — pin 89's probe and the anchor gate, basis
+  stated in-row; the CAPPED T2 probe is unusable for absolute claims (99c).
+- **Report-only still binds anything 97–99 did not rule** (99d).
+- **⛔ R1: leg 1 does not launch before the reboot**, regardless of headroom or build state.
+- **R4 correction owed:** `setsid` protects against terminal/session close, **NOT** against
+  the machine going down. Any standing note implying reboot protection is wrong and is
+  corrected where it stands.
+- **⛔ R5 is a NEW PRECONDITION ON LEG 1:** resume-after-hard-kill is **UNVERIFIED**. Verify
+  it cheaply (kill a short run mid-window, resume) **before** committing 31 h to a recovery
+  path that is currently assumed.
 - **No `box_election_pending` state is to be created** — pin 42 bars a gate that cannot
   fire (90).
 - **A positive frame pin is added** (90b): the equatorial frame IS `(200.0, 215.0, -4.0,
