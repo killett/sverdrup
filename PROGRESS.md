@@ -7,8 +7,36 @@
 > report is in front of the owner.** "A 31 h leg run against a stale criterion is 31 h
 > spent measuring the wrong thing."
 >
-> **SEQUENCE, owner-ordered:** land 90–93 ✅ → discharge criterion 8 per 90 → **run 91(a)
-> and report** → build T5 → launch leg 1 at the top of a RAM cycle under E-16's gate.
+> **SEQUENCE, owner-ordered:** land 90–93 ✅ → discharge criterion 8 per 90 ✅ (`5e65ecb`)
+> → run 91(a) and report ✅ (`5469389`) → **⛔ AWAITING OWNER REVIEW OF THE SWEEP** →
+> build T5 → launch leg 1 at the top of a RAM cycle under E-16's gate.
+>
+> **✅ THE 91(a) SWEEP IS DONE — 13 LIVE STALE CRITERIA across T5–T9.** Report:
+> `docs/superpowers/2026-08-01-phase14-stage1-stale-criteria-sweep.md`. Pin 91(c)
+> predicted "more than one". **The owner has not yet ruled on it; leg 1 stays blocked.**
+> - **NINE share criterion 8's mechanism** — a criterion that named an open election or a
+>   current ceiling and **outlived the ruling that closed it**: T6's ±66 "either ruling"
+>   branch (pin 2 ruled production-representative, so only `halo ≤ 2.0` is live), T7's
+>   **"no new ceilings exist"** (task 22 + E-16 created one), T8's **Tier-1-only pricing
+>   off Task-2 actuals** (pin 23(a) ruled that probe CAPPED and un-usable; pin 89 is the
+>   live number).
+> - **⛔ FOUR describe an OUTPUT whose shape later evidence changed** — these would NOT
+>   have failed loudly, they would have been **assembled**:
+>   - **T9 "anchor FIVE-GATE block"** — the 2026-07-26 ruling says the gate is **NOT
+>     "five green"**; `phase14_anchor_gate.py:164-177` says so in those words.
+>   - **T9 "seam VERDICT" (singular)** — Stage 1 has **NO attributable σ-route seam
+>     verdict** (pins 45b, 84, 86).
+>   - **⛔⛔ T9 "SIX transfer readings" — THE COUNT IS WRONG, and checkable today.** The
+>     seam pair is recorded **NON-transfer** (`seam_pair.non_transfer_note`: "not a
+>     production-geometry seam reading … 10×5 halves inside the anchor footprint") and its
+>     sub-rows carry **no `scores`, no `reference_row`, no `bridge_caveat`**. Anchor is the
+>     identity subject. **Stage 1 can deliver FOUR.** It would have surfaced at
+>     pack-assembly time — after all four legs had run.
+>   - **T9 pack contents (1)–(10) omit content pins 61, 86, 87 REQUIRE** (61 is explicit:
+>     "58(d)'s RESULT GOES IN THE GATE-1 PACK, not only the fix log").
+> - Also flagged: T5's **uncaveated raw-σ row** against pins 45b/84/86/87, `build_evidence_row`'s
+>   pinned key set against **pin 42/78 required schema fields**, and the equatorial lane-0
+>   manifest against the **pin 56/58 mirror boundary**.
 >
 > - **90 — T5 CRITERION 8 IS DISCHARGED BY THE PIN-12 RULING**, recorded with TWO test
 >   citations, **never as "met" and never as "dropped"** (90d — the anchor-gate check-3
