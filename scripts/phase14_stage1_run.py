@@ -205,6 +205,62 @@ BRIDGE_CAVEAT = (
     "readout"
 )
 
+# ---------------------------------------------------------------------------
+# Owner pin 90 (ruling doc PART 20, 2026-08-01) — T5 ACCEPTANCE CRITERION 8,
+# DISCHARGED BY THE PIN-12 RULING.
+#
+# The criterion asks the programmatic path (record_evidence_row for tile
+# "equatorial") to REFUSE while box_election_pending. It was written while the
+# election was open. The election closed 2026-07-25 (box KEPT, -4..11N), no
+# such state exists in this module, and NO NEW STATE IS TO BE CREATED — pin 42
+# refuses a gate that cannot fire, and a permanently-False flag is that exact
+# object.
+#
+# Recorded the way the anchor gate records SPEC §10 check 3 (ERA_NOOP_* in
+# phase14_anchor_gate.py): a criterion whose specified mechanism became
+# unrunnable is recorded HONESTLY, with what was run in its place NAMED —
+# never as "met", never as "dropped" (pin 90d).
+#
+# The citations are load-bearing, not decorative: test_criterion8_discharge_
+# cites_live_tests fails if a cited test is renamed or deleted, so the
+# discharge cannot rot into a claim pointing at nothing (pin 90a).
+CRITERION_8_DISCHARGE: dict[str, Any] = {
+    "criterion": (
+        "T5 acceptance criterion 8 (pin-12 gate breadth): the equatorial "
+        "election gate must also cover the programmatic path "
+        '(record_evidence_row for tile "equatorial" refuses while '
+        "box_election_pending), not only the CLI run entry — test-pinned"
+    ),
+    "status": "DISCHARGED_BY_RULING",
+    "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+    "pin": "90 (PART 20); the pin-12 election closed 2026-07-25",
+    "dead_half": (
+        "the REFUSAL. There is no box_election_pending state and none is to "
+        "be created: pin 42 bars a gate that cannot fire. The criterion's "
+        "refusal clause outlived its own premise when the owner ruled the "
+        "box KEPT"
+    ),
+    "live_half": (
+        "the BREADTH. Criterion 8's actual concern was CLI-only coverage, "
+        "and that is still live: record_evidence_row for tile 'equatorial' "
+        "must be exercised on the REAL path once the production solve leg "
+        "exists, rather than at the NotImplementedError stub (pin 90c)"
+    ),
+    "live_half_deferred_to": "_solve_leg (T5b)",
+    "evidence_tests": (
+        "test_run_equatorial_reaches_gated_stub_after_pin12_ruling",
+        "test_equatorial_frame_is_the_pin12_ruled_box",
+    ),
+    "why_two_tests": (
+        "the first proves the pin-12 gate is GONE; the second proves the box "
+        "that SURVIVED is the one the owner ruled. Different facts, both "
+        "load-bearing — the whole point of keeping -4..11N was in-band "
+        "coverage, and a later frame edit would pass the first test silently "
+        "(pin 90b)"
+    ),
+    "never_recorded_as": ("met", "dropped"),
+}
+
 
 def registry_frame(tile: str) -> TileFrame:
     """The registry tile's frame — anchor CONSUMED, seams pinned, diverse gated.

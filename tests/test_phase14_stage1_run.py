@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -2346,3 +2347,87 @@ def test_not_established_marking_refuses_a_mean_row() -> None:
         _mod.mark_not_established(
             row=mean_row, diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
         )
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 90 (ruling doc PART 20) — T5 acceptance criterion 8 is DISCHARGED
+# BY THE PIN-12 RULING. The criterion was written while the equatorial box
+# election was open and asks the programmatic path to refuse while
+# box_election_pending; the election closed 2026-07-25 (box KEPT) and no such
+# state exists. These four tests are the discharge's evidence.
+# ---------------------------------------------------------------------------
+
+# The box the owner RULED on 2026-07-25 (pin 12: "box KEPT"), stated here from
+# the ruling rather than read off the implementation. Order is BBox's:
+# (lon_min, lon_max, lat_min, lat_max).
+_PIN12_RULED_EQUATORIAL_BOX = (200.0, 215.0, -4.0, 11.0)
+
+
+def test_equatorial_frame_is_the_pin12_ruled_box() -> None:
+    """The equatorial frame IS the ruled -4..11N x 200..215E box (pin 90b).
+
+    Bug caught: a later frame edit shifting the box to the REJECTED
+    -2..13N option (or any other span). test_run_equatorial_reaches_
+    gated_stub_after_pin12_ruling passes straight through such an edit --
+    it only proves the pin-12 gate no longer refuses, never that the box
+    which survived is the one the owner kept. Asserted through
+    registry_frame so a frame-constructor bug is caught as well as a
+    registry edit.
+    """
+    core = _mod.registry_frame("equatorial").core
+    assert (core.lon_min, core.lon_max, core.lat_min, core.lat_max) == (
+        _PIN12_RULED_EQUATORIAL_BOX
+    )
+
+
+def test_no_box_election_pending_state_exists() -> None:
+    """No box_election_pending state exists anywhere (pin 90, pin 42).
+
+    Bug caught: someone "restores" criterion 8 literally by adding a
+    permanently-False box_election_pending flag and a refusal keyed to
+    it. Pin 42 bars a gate that cannot fire, and that flag is exactly
+    that object; the election closed 2026-07-25.
+    """
+    assert not [n for n in dir(_mod) if "box_election" in n.lower()]
+    # The NAME may appear in prose (the discharge record describes the state
+    # it refuses to create); what must not appear is the state itself -- an
+    # assignment binding it, or a refusal branching on it.
+    source = Path(str(_mod.__file__)).read_text()
+    assert not re.search(r"^\s*box_election_pending\s*[:=]", source, re.MULTILINE)
+    assert not re.search(r"\bif\s+.*\bbox_election_pending\b", source)
+
+
+def test_criterion8_discharge_cites_live_tests() -> None:
+    """Every test the discharge record cites actually exists (pin 90a).
+
+    Bug caught: test_run_equatorial_reaches_gated_stub_after_pin12_ruling
+    is renamed or deleted in a later refactor and the discharge record
+    goes on claiming test-backed evidence while pointing at nothing. The
+    owner's point is that a criterion discharged by a citation to a test
+    that fails if the fact stops holding beats one discharged by prose --
+    this test is what makes the citation load-bearing.
+    """
+    cited = _mod.CRITERION_8_DISCHARGE["evidence_tests"]
+    assert cited, "the discharge must cite at least one test"
+    here = globals()
+    for name in cited:
+        assert name in here, f"discharge cites {name!r}, which no longer exists"
+        assert callable(here[name])
+
+
+def test_criterion8_discharge_record_contract() -> None:
+    """The record says DISCHARGED_BY_RULING and names both halves (pin 90d).
+
+    Bug caught: the record is quietly upgraded to "met" once _solve_leg
+    lands, erasing that the refusal half was never run -- the "check 3
+    passed" failure three documents downstream that the anchor-gate split
+    exists to prevent. Also catches the opposite erasure: dropping the
+    live breadth half (90c) so nothing carries it to _solve_leg.
+    """
+    rec = _mod.CRITERION_8_DISCHARGE
+    assert rec["status"] == "DISCHARGED_BY_RULING"
+    assert rec["status"] not in {"met", "dropped", "PASS"}
+    assert rec["dead_half"]
+    assert "refus" in rec["dead_half"].lower()
+    assert rec["live_half_deferred_to"] == "_solve_leg (T5b)"
+    assert "record_evidence_row" in rec["live_half"]
