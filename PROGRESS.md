@@ -1,6 +1,42 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
+> # ⛔⛔ START HERE — COLD BOX AFTER A PLANNED REBOOT (2026-08-01). READ THIS BLOCK FIRST.
+>
+> **THE BOX WAS REBOOTED DELIBERATELY BY THE OWNER.** If you are resuming on a cold box,
+> this block tells you what was lost (nothing) and what to do.
+>
+> **✅ WHAT WAS IN FLIGHT: NOTHING OF VALUE. NOTHING NEEDS RE-RUNNING.**
+> The R2 inventory was resolved from the pids captured at launch, not a scrape:
+> - `logs/gate.pid` = 1795155 → **already dead before the reboot**
+> - `logs/phase14_settling.pid` = 532474/532537/532886 → **already dead**
+> - **No** real `gate_suite`, `pytest` or phase14 worker process existed
+> - The 8 live processes were **stale watcher shells** spinning `sleep` with nothing behind
+>   them. One (`1695408`) was watching pid `1692440` — **itself another watcher shell**, so
+>   it would have spun forever and never seen the gate. That is the named failure mode from
+>   this session's three false completion reports, confirmed by resolution, not assumed.
+> - **No suite was mid-run**, so nothing was raced or killed mid-write. **Nothing to redo.**
+>
+> **✅ EVERYTHING IS ON ORIGIN.** A hook pushes on commit; verified against
+> `git ls-remote`, not the local ref. Working tree was clean at the reboot.
+>
+> **⛔ R4 — CORRECTED WHERE IT STANDS: `setsid` DOES NOT SURVIVE A REBOOT.** It protects
+> against the terminal or session closing, **not** against the machine going down. Any note
+> in this file implying the detach discipline gives reboot protection is **wrong** — it
+> gives none. Treat every long leg as lost on a power event.
+>
+> **⛔ R5 — A NEW PRECONDITION ON LEG 1: RESUME-AFTER-HARD-KILL IS UNVERIFIED.**
+> Per-window PCG checkpointing exists (`b71dc7f`, `efd515a`) and the anchor gate used a
+> leg-level crash resume, but **whether a T5 diverse leg can resume from checkpoint after a
+> hard kill has never been tested.** Verify it CHEAPLY — kill a short run mid-window and
+> resume it — **before** committing 31 h to a recovery path that is currently assumed.
+> Better to learn it now than during a power event in leg 3.
+>
+> **⛔⛔ R1 — LEG 1 DOES NOT LAUNCH WITHOUT THE OWNER SAYING THE BOX IS BACK AND STABLE.**
+> Regardless of RAM headroom. Regardless of whether T5b is finished. **Build only.**
+>
+> ---
+>
+> # ⛔ T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
 >
 > **✅ PINS 90–93 RULED AND LANDED 2026-08-01 (ruling doc PART 20, verbatim).**
 > **⛔⛔ HARD STOP CONDITION (91b): LEG 1 DOES NOT LAUNCH until the 91(a) stale-criteria
@@ -10,6 +46,34 @@
 > **SEQUENCE, owner-ordered:** land 90–93 ✅ (`c94c720`) → discharge criterion 8 per 90 ✅
 > (`5e65ecb`) → run 91(a) and report ✅ (`5469389`) → sweep RULED, pins 94–96 ✅
 > (`8d1bf0b`) → **build T5 (IN PROGRESS)** → launch leg 1 at the top of a RAM cycle.
+>
+> **✅ PINS 97–99 RULED AND FOLDED 2026-08-01 (ruling doc PART 22) — T9's OUTPUT SHAPE IS
+> SETTLED, deliberately BEFORE T5b hardens the rows that feed it.** All corrections are in
+> the plan (`6888e3a`).
+> - **97(a) "SIX transfer readings" → FOUR**, one per diverse tile, **test-pinned against
+>   the store** so it cannot drift back. The store settles it: `seam_n`/`seam_s` carry no
+>   `scores`/`reference_row`/`bridge_caveat` — solve records, not readings — and the
+>   artifact's own `non_transfer_note` says so. Anchor is the identity subject.
+> - **97(b) "anchor five-gate block" → the RULED ACCOUNTING**, citing
+>   `phase14_anchor_gate.py:164-177` as the discharge: TWO run and passed, TWO cited and
+>   pre-ratified at Gate 0, ONE proxy-passed with the era no-op DEFERRED.
+> - **97(c) "seam verdict" → TWO mean CLEAN + TWO σ NOT_ESTABLISHED**, stating that Stage 1
+>   has **NO attributable σ-route seam verdict**. **Pin 37(b)'s firewall HOLDS** — the
+>   diagnosis-derived bound must NOT sit adjacent to the UNMEASURED rows in any form a
+>   reader could take as a verdict.
+> - **97(d)** pack gains sections for **pins 61, 86, 87**.
+> - **98 — the χ² pin-42 field RECORDS, it does NOT GATE.** `harness.py:1145` made χ²
+>   non-gating deliberately ("coverage remains the only bar") and pin 42 does not reverse a
+>   decision. **The non-gating status is itself test-pinned** so a later reader cannot
+>   "complete" the bar that was deliberately left out.
+> - **99** — T6 collapses to `halo ≤ 2.0` (still COMPUTED from the frame, never typed);
+>   T7 rewritten against the live 40 h per-leg ceiling; T8 prices from the **CONVERGED**
+>   numbers (pin 89 + anchor gate), never the CAPPED T2 probe, basis stated in-row.
+>
+> **⚖ TWO SWEEP ITEMS REMAIN UNRULED — report-only still binds them (99d): do NOT fix.**
+> (i) T9's "**zero locked opens**" attestation vs pin 87's open production defect —
+> wording, not substance. (ii) T9's `verifyCommand` is bare `pytest`, which reproduces the
+> pre-format-tree defect **pin 83 exists to fix**; the gate suite is the correct command.
 >
 > **▶ NEXT ACTION: T5b — implement `_solve_leg` (it is still `NotImplementedError`).**
 > Build against Task 4's `_seam_pair_real_leg` as the analog (pin 92). Carries pin 94's
@@ -153,6 +217,10 @@
 > - `setsid`-detached, checkpointed, completion AND stall watchers. **Watch the PID
 >   captured at launch** — `pgrep` returned a wrapper instead of the real process twice
 >   this session, and both times a watcher reported completion early.
+>   **⛔ R4 CORRECTION (2026-08-01): `setsid` gives NO reboot protection.** It survives the
+>   terminal or session closing, **not** the machine going down. A leg is lost on a power
+>   event no matter how it was detached — which is why **R5's resume verification is a
+>   precondition on leg 1**, not an optional nicety.
 >
 > **NOT AUTHORISED:** trimming tiles to fit Tier-1.
 >
