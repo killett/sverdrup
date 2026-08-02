@@ -1360,6 +1360,99 @@ election was open and outlived its own premise.
 - **Criterion 8 is DISCHARGED BY RULING**, recorded with two test citations — never as
   "met", never as "dropped" (90d). The **refusal** half is dead; the **breadth** half
   (90c) is live and lands with `_solve_leg`.
+
+---
+
+## PART 21 — SWEEP-CONSEQUENCE RULING (verbatim), pins 94–96, 2026-08-01
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-01.** Rules the three sweep findings
+that land inside the T5 build itself (report items 4, 5, 6), so the build is written
+against the ruling rather than against the stale criteria.
+
+> 94. OPTION 1 — VERBATIM PIN-87 CAVEAT ON EVERY σ ROW, structurally attached.
+>     (a) SIGMA_CAVEAT as a constant, attached the way BRIDGE_CAVEAT already is at
+>         build_evidence_row (line 456) — a schema field the row cannot be built without,
+>         not prose added at write time. An unqualified σ number must not be able to reach
+>         the pack.
+>     (b) It cites phase14.stage1.crn_production_defect_deferred and states the defect in
+>         pin 87's terms: a property of the SHIPPED SYSTEM, not of an instrument.
+>     (c) OPTION 2 IS BARRED BY THE RECORD. Review pin 17 divides where FREE PROSE lives,
+>         not where facts about the data live — and the bridge caveat is itself the
+>         precedent: a per-row provenance fact, attached at the row, on the mean side. The
+>         σ defect is the same kind of fact. Pack-level attachment also fails the pin-8
+>         test: T5's rows travel independently of T9's prose, and a row that must be paired
+>         with a document to be read correctly will eventually be read alone.
+>     (d) OPTION 3 IS BARRED: fork-d pin 6 pre-registered the raw-σ row and pin 86 records
+>         the σ question OPEN, not unmeasured. Dropping the row would delete the per-tile
+>         σ levels Stage 2G needs to parameterize the correlation channels — the
+>         inheritance package pin 86(a) enumerates.
+>     (e) The caveat is a FACT, not an interpretation: the CRN origin defect is measured,
+>         mechanism named, both channels quantified. The rider forbids interpreting the
+>         numbers, not disclosing what produced them.
+>     (f) SCOPE IT HONESTLY. Per pin 68, the σ defect's visible consequence is at tile
+>         boundaries, and only seam_n/seam_s are adjacent — the four diverse tiles are
+>         pairwise disjoint. The caveat therefore states that these are per-tile σ levels
+>         under per-tile CRN origins, that cross-tile σ comparison is not supported, and
+>         that the boundary gradient is deferred and named. Do not let it imply the
+>         within-tile level is compromised; it is not.
+>
+> 95. OPTION 3 — SPLIT. Report-only rows; pin-42 fields on the j3-validation χ² only.
+>     (a) Your Option 1 reasoning is right for MOST of the row: no threshold, no verdict,
+>         no gate for pin 42 to attach to, and test-pinning report-only status so the
+>         judgment is recorded rather than assumed is the correct instinct. Keep that.
+>     (b) But the χ² j3-validation row COMPARES AGAINST AN EXPECTATION, and that is what
+>         makes a gate — not whether the word "verdict" appears. Your own Option 3 names it
+>         as the genuinely gate-shaped element; I agree, and that is decisive. Pin 42's
+>         five prior instances were all things nobody called gates at authorship time.
+>     (c) So: pin-42 fields on the χ² row (each outcome's condition under null and under
+>         the alternative it is meant to detect), pin-78's validated range where a model is
+>         involved, and report-only status test-pinned for everything else.
+>     (d) Extend _PINNED_KEYS accordingly. A widened schema is the cost; the alternative is
+>         a comparison-against-expectation with no stated failure condition, which is the
+>         exact object pin 42 refuses.
+>     (e) If the χ² row turns out to carry no expectation at all in the shipped
+>         implementation — check before building — then Option 1 is right in full and the
+>         split collapses. Verify rather than assume; report which.
+>
+> 96. OPTION 1 — MIRROR IT, classified under pin 67.
+>     (a) Pin 58's boundary is citation, not stage or artifact type. Fork-b pin 1 makes the
+>         bundle the substrate for the future wave-increment comparison, and pin 12's ruling
+>         turns on in-band coverage — the bundle IS that claim's evidence. It is cited.
+>     (b) OPTION 3 IS BARRED BY THE PROPERTY THAT MAKES MIRRORING WORTH ANYTHING. Pin 60:
+>         the guarantee is PROSPECTIVE. Witnessing at T9 witnesses from T9, leaving the
+>         interval from creation open for exactly the artifact whose value is being frozen
+>         at a known configuration. Witness at creation and the interval never opens. This
+>         is 58(a)'s logic — witness before the risk, not after.
+>     (c) OPTION 2 IS INSUFFICIENT: a local manifest is self-witnessing. Both the manifest
+>         and the file it describes sit on one box under one process's control; nothing
+>         external can show either is unaltered. That is the gap pin 56(a) named.
+>     (d) Assign the pin-67 class explicitly. This one is WITNESSED AT CREATION — the
+>         strongest class available and the first artifact in the stage that can claim it,
+>         because it is being made now rather than reconciled after the fact.
+>     (e) Mirror the manifest with per-file shas, not the maps. The manifest is small and
+>         append-only; the maps are bulk and stay out per pin 56(b). The shas are the
+>         witness.
+
+### Consequences for the executor (PART 21)
+
+- **`SIGMA_CAVEAT` is a REQUIRED schema field**, attached at `build_evidence_row` exactly
+  as `BRIDGE_CAVEAT` is — a row the σ side cannot be built without. Not prose at write
+  time (94a).
+- **Its scope is bounded** (94f): per-tile σ levels under per-tile CRN origins;
+  **cross-tile σ comparison NOT supported**; boundary gradient deferred and named. It must
+  **not** imply the within-tile level is compromised — it is not. The four diverse tiles
+  are pairwise disjoint; only `seam_n`/`seam_s` are adjacent (pin 68).
+- **The σ row is NOT dropped** (94d): fork-d pin 6 pre-registered it, and Stage 2G needs
+  the per-tile σ levels to parameterize the correlation channels (pin 86a's inheritance
+  package).
+- **Pin 42 applies to the χ² j3-validation row ONLY** (95c); everything else is
+  **report-only, test-pinned as such**. Extend `_PINNED_KEYS` (95d).
+- **⛔ 95(e) IS A VERIFY-BEFORE-BUILD**: check whether the shipped χ² row carries an
+  expectation at all. If it does not, the split collapses and report-only is right in
+  full. **Report which** — do not assume.
+- **The lane-0 MANIFEST is mirrored, the maps are not** (96e). Pin-67 class:
+  **WITNESSED AT CREATION** (96d) — the first artifact in the stage that can claim it.
+  Witness at creation, not at T9, so the interval never opens (96b, pin 60).
 - **No `box_election_pending` state is to be created** — pin 42 bars a gate that cannot
   fire (90).
 - **A positive frame pin is added** (90b): the equatorial frame IS `(200.0, 215.0, -4.0,

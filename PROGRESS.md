@@ -7,9 +7,44 @@
 > report is in front of the owner.** "A 31 h leg run against a stale criterion is 31 h
 > spent measuring the wrong thing."
 >
-> **SEQUENCE, owner-ordered:** land 90–93 ✅ → discharge criterion 8 per 90 ✅ (`5e65ecb`)
-> → run 91(a) and report ✅ (`5469389`) → **⛔ AWAITING OWNER REVIEW OF THE SWEEP** →
+> **SEQUENCE, owner-ordered:** land 90–93 ✅ (`c94c720`) → discharge criterion 8 per 90 ✅
+> (`5e65ecb`) → run 91(a) and report ✅ (`5469389`) → **sweep RULED: pins 94–96 ✅** →
 > build T5 → launch leg 1 at the top of a RAM cycle under E-16's gate.
+>
+> **✅ PINS 94–96 RULED AND LANDED 2026-08-01 (ruling doc PART 21, verbatim)** — the three
+> sweep findings that land inside the T5 build itself.
+> - **94 — `SIGMA_CAVEAT` IS A REQUIRED SCHEMA FIELD**, attached at `build_evidence_row`
+>   exactly as `BRIDGE_CAVEAT` is (line 512) — a row the σ side **cannot be built
+>   without**, never prose at write time. Cites
+>   `phase14.stage1.crn_production_defect_deferred` in pin 87's terms: a property of the
+>   **SHIPPED SYSTEM**, not of an instrument. **The σ row is NOT dropped** (94d — fork-d
+>   pin 6 pre-registered it; Stage 2G needs the per-tile σ levels for pin 86(a)'s
+>   inheritance package). **⛔ SCOPE IT HONESTLY (94f):** per-tile σ levels under per-tile
+>   CRN origins; **cross-tile σ comparison NOT supported**; boundary gradient deferred and
+>   named — and it must **NOT** imply the within-tile level is compromised. **It is not.**
+>   The four diverse tiles are pairwise disjoint; only `seam_n`/`seam_s` are adjacent
+>   (pin 68). Pack-level attachment was BARRED (94c): a row that must be paired with a
+>   document to be read correctly will eventually be read alone.
+> - **95 — SPLIT: pin-42 fields on the χ² j3-validation row ONLY**; everything else
+>   **report-only, test-pinned as such**. Extend `_PINNED_KEYS` (95d). What makes a gate is
+>   **comparison against an expectation**, not whether the word "verdict" appears — pin 42's
+>   five prior instances were all things nobody called gates at authorship time.
+> - **✅ 95(e) VERIFIED BEFORE BUILDING — THE SPLIT STANDS.** `reduced_chi2`
+>   (`src/sverdrup/eval/calibration.py:13-15`) is defined against an expectation in its own
+>   docstring: **"1.0 is calibrated"**. So it is NOT "no expectation at all" and Option 1
+>   does not collapse into place. **But the nuance is load-bearing:** the shipped record
+>   already made χ² deliberately non-gating —
+>   `harness.py:1145` states *"jet-core post-fit chi2 named as a recorded outcome
+>   (motivated the phase; **coverage remains the only bar**)"*. So the shipped χ² is an
+>   expectation-comparison **with no stated failure condition**, which is the exact object
+>   pin 42 refuses (95d). The pin-42 field therefore **records** the outcome conditions and
+>   **preserves** the non-gating status (null `E[χ²_red] = 1`; recorded, coverage is the
+>   bar) — it does NOT re-gate χ² behind the earlier ruling's back.
+> - **96 — MIRROR THE LANE-0 MANIFEST, NOT THE MAPS** (96e; maps are bulk, out per 56(b) —
+>   the shas are the witness). Pin-67 class: **WITNESSED AT CREATION** (96d), the first
+>   artifact in the stage that can claim it. **Witness at creation, not at T9** (96b, pin
+>   60: the guarantee is PROSPECTIVE) so the interval from creation never opens. A local
+>   manifest alone is **self-witnessing** and insufficient (96c, pin 56a).
 >
 > **✅ THE 91(a) SWEEP IS DONE — 13 LIVE STALE CRITERIA across T5–T9.** Report:
 > `docs/superpowers/2026-08-01-phase14-stage1-stale-criteria-sweep.md`. Pin 91(c)
