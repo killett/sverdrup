@@ -1278,3 +1278,93 @@ The owner authorised the work and deferred its START. **T5 does not dispatch in 
 session that received this ruling.** Task 22 is cleared so the next session finds T5
 READY with the operating procedure in its description — that is the intent, not an
 accident of blocker removal.
+
+---
+
+## PART 20 — STALE-CRITERIA RULING (verbatim), pins 90–93, 2026-08-01
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-01.** Raised on resume, before any T5
+build work, when the executor found that T5's acceptance criterion 8 (the pin-12
+`box_election_pending` refusal on the programmatic path) had been written while the
+election was open and outlived its own premise.
+
+> 4 — DISCHARGED BY RULING, WITH THE EXISTING TEST NAMED AS THE EVIDENCE.
+>
+> Option 1 is right and I am ruling it, with one correction to how it is recorded and one
+> addition. Option 2 is barred: pin 42 refuses a gate that cannot fire, and building a
+> permanently-False flag is that exact object. Option 3 defers a question that is already
+> answered and would arrive at Gate 1 as noise.
+>
+> 90. CRITERION 8 IS DISCHARGED BY THE PIN-12 RULING. The criterion was written while the
+>     election was open; it asks the programmatic path to refuse while box_election_pending.
+>     The election closed 2026-07-25 (box KEPT, -4..11N), no such state exists in the code,
+>     and NO NEW STATE IS TO BE CREATED.
+>     (a) THE EVIDENCE ALREADY EXISTS. tests/test_phase14_stage1_run.py:244,
+>         test_run_equatorial_reaches_gated_stub_after_pin12_ruling, pins that the
+>         equatorial path no longer refuses and dies at the solve stub — and its docstring
+>         names the stale-flag bug as what it catches. Cite that test as the discharge, not
+>         the ruling alone. A criterion discharged by a citation to prose is weaker than one
+>         discharged by a citation to a test that fails if the fact stops holding.
+>     (b) ADD THE POSITIVE PIN, as Option 1 proposes: the equatorial frame IS the ruled
+>         (200.0, 215.0, -4.0, 11.0) box. Today's test proves the gate is gone; it does not
+>         prove the box that survived is the one I ruled. Those are different facts and both
+>         are load-bearing — the whole point of keeping -4..11N was in-band coverage, and a
+>         later frame edit would pass 244 silently.
+>     (c) When _solve_leg lands, extend 244 to the programmatic path (record_evidence_row
+>         for "equatorial") so the criterion's actual breadth concern — CLI-only coverage —
+>         is met on the real path rather than at the stub. That is the part of criterion 8
+>         that is still live; the refusal is not.
+>     (d) Record the criterion as DISCHARGED BY RULING with the two test citations, not as
+>         met and not as dropped. Same treatment as check 3 of the anchor gate: a criterion
+>         whose specified mechanism became unrunnable is recorded honestly, with what was
+>         run in its place named.
+>
+> 91. STALE PRE-REGISTERED CRITERIA — sweep once, now, rather than one at a time. This is
+>     the second stale artifact this session (the plan's "the run command from Task 1 should
+>     already do these" was the first, and it understated T5 by an entire build). Both were
+>     written before rulings that changed them.
+>     (a) Walk T5-T9's acceptance criteria against the rulings landed since 3264524 and
+>         report every criterion whose premise a later ruling changed. Report only — no
+>         edits, no new tasks; pin 88's halt lifted for the deliverable path, not for
+>         scope growth.
+>     (b) I want that list BEFORE leg 1 launches, not discovered mid-stage. A 31 h leg run
+>         against a stale criterion is 31 h spent measuring the wrong thing.
+>     (c) This is cheap and it is the T11 coverage-walk method pointed at criteria instead
+>         of at rubric clauses. It found four unassigned clauses then; expect it to find
+>         more than one now.
+>
+> 92. THE T5 BUILD FINDING IS RATIFIED AND WELL RAISED. The plan's Files line was wrong,
+>     _solve_leg is NotImplementedError, and T5 is a substantial build before any leg
+>     starts. The authorisation covers the run; the build is ordinary Stage-1 work under it.
+>     Build against Task 4's _seam_pair_real_leg as the working analog, per your reading.
+>     The E-16 preflight reconciliation (replacing tier1_eligible with the ~8730 MiB
+>     measured-peak gate and the 40 h per-leg ceiling) is authorised work, correctly
+>     identified as such.
+>     CONFIRMED NON-ISSUES, ratified: pin 12 ruled; PCG cap needs no change (production
+>     default 1200 against the probe's measured 486 at identical rtol 1e-6 — tolerance
+>     consistency verified, which is the right check).
+>
+> 93. E-16 STAYS AT E-16. Filing an executor-authored plan I adopted in full as E-16 rather
+>     than as a pin is exactly pin 40 working. Adoption authorises the work; it does not
+>     make the words mine. Do not renumber it.
+>
+> SEQUENCE: land 90-93 verbatim; discharge criterion 8 per 90; run 91(a) and report; THEN
+> build T5; THEN launch leg 1 at the top of a RAM cycle under E-16's gate.
+>
+> STOP CONDITION: leg 1 does not launch until 91(a)'s stale-criteria report is in front of
+> me. After leg 1: the mandatory re-assess, per E-16 step 4. Nothing sealed; no [STAGE 2]
+> task runs — READY is not RUNNABLE for 18, 19, 20.
+
+### Consequences for the executor
+
+- **Criterion 8 is DISCHARGED BY RULING**, recorded with two test citations — never as
+  "met", never as "dropped" (90d). The **refusal** half is dead; the **breadth** half
+  (90c) is live and lands with `_solve_leg`.
+- **No `box_election_pending` state is to be created** — pin 42 bars a gate that cannot
+  fire (90).
+- **A positive frame pin is added** (90b): the equatorial frame IS `(200.0, 215.0, -4.0,
+  11.0)`. Test 244 proves the gate is gone, not that the ruled box survived.
+- **91(a) is a HARD STOP CONDITION on leg 1**, not a nicety. Report only — no edits, no
+  new tasks; pin 88's halt lifted for the deliverable path, not for scope growth.
+- **PCG cap: no change.** Ratified at 92.
+- **E-16 is not renumbered** (93).

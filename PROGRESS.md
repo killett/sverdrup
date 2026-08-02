@@ -1,6 +1,41 @@
 # Sverdrup — Progress notebook
 
-> # ⛔ START HERE — T5 IS AUTHORISED AND READY. RUN IT. (Tier-2 cleared 2026-07-30.)
+> # ⛔ START HERE — T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
+>
+> **✅ PINS 90–93 RULED AND LANDED 2026-08-01 (ruling doc PART 20, verbatim).**
+> **⛔⛔ HARD STOP CONDITION (91b): LEG 1 DOES NOT LAUNCH until the 91(a) stale-criteria
+> report is in front of the owner.** "A 31 h leg run against a stale criterion is 31 h
+> spent measuring the wrong thing."
+>
+> **SEQUENCE, owner-ordered:** land 90–93 ✅ → discharge criterion 8 per 90 → **run 91(a)
+> and report** → build T5 → launch leg 1 at the top of a RAM cycle under E-16's gate.
+>
+> - **90 — T5 CRITERION 8 IS DISCHARGED BY THE PIN-12 RULING**, recorded with TWO test
+>   citations, **never as "met" and never as "dropped"** (90d — the anchor-gate check-3
+>   treatment). **(a)** cite `tests/test_phase14_stage1_run.py:244`
+>   `test_run_equatorial_reaches_gated_stub_after_pin12_ruling` as the discharge — a test
+>   that fails if the fact stops holding beats a citation to prose. **(b)** ADD a POSITIVE
+>   pin: the equatorial frame IS the ruled `(200.0, 215.0, -4.0, 11.0)` box — 244 proves
+>   the gate is gone, NOT that the ruled box survived; a later frame edit passes 244
+>   silently. **(c)** the criterion's BREADTH half is still live: when `_solve_leg` lands,
+>   extend 244 to the programmatic path (`record_evidence_row` for "equatorial"). The
+>   REFUSAL half is dead.
+> - **⛔ NO `box_election_pending` STATE IS TO BE CREATED — pin 42 bars a gate that cannot
+>   fire.** A permanently-False flag is that exact object.
+> - **91 — THE T5–T9 STALE-CRITERIA SWEEP (report only).** Walk T5–T9's acceptance
+>   criteria against every ruling landed since `3264524` and report each criterion whose
+>   premise a later ruling changed. **NO edits, NO new tasks** — pin 88's halt lifted for
+>   the deliverable path, not for scope growth. Second stale artifact this session (the
+>   first understated T5 by an entire build); it is the T11 coverage-walk method pointed
+>   at criteria instead of rubric clauses, and that found four unassigned clauses.
+> - **92 — THE T5 BUILD FINDING IS RATIFIED.** `_solve_leg` is `NotImplementedError`; T5
+>   is a substantial BUILD before any leg starts. Build against Task 4's
+>   `_seam_pair_real_leg`. The E-16 preflight reconciliation (`tier1_eligible` → the
+>   ~8730 MiB measured-peak gate + the 40 h per-leg ceiling) is AUTHORISED work.
+>   **PCG cap needs NO change** — production default 1200 against the probe's measured 486
+>   at identical rtol 1e-6 (tolerance consistency verified).
+> - **93 — E-16 STAYS AT E-16. Do not renumber it.** Adoption authorises the work; it does
+>   not make the words the owner's (pin 40).
 >
 > **ON RESUME, IN THIS ORDER:**
 > 1. `pixi run python scripts/phase14_evidence_mirror.py check` — provenance mirror
