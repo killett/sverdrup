@@ -8,8 +8,23 @@
 > spent measuring the wrong thing."
 >
 > **SEQUENCE, owner-ordered:** land 90–93 ✅ (`c94c720`) → discharge criterion 8 per 90 ✅
-> (`5e65ecb`) → run 91(a) and report ✅ (`5469389`) → **sweep RULED: pins 94–96 ✅** →
-> build T5 → launch leg 1 at the top of a RAM cycle under E-16's gate.
+> (`5e65ecb`) → run 91(a) and report ✅ (`5469389`) → sweep RULED, pins 94–96 ✅
+> (`8d1bf0b`) → **build T5 (IN PROGRESS)** → launch leg 1 at the top of a RAM cycle.
+>
+> **▶ NEXT ACTION: T5b — implement `_solve_leg` (it is still `NotImplementedError`).**
+> Build against Task 4's `_seam_pair_real_leg` as the analog (pin 92). Carries pin 94's
+> `SIGMA_CAVEAT` as a required schema field, pin 95's pin-42 fields on the χ² row only
+> (everything else report-only, test-pinned), and pin 90(c)'s programmatic-path extension
+> of test 244. Then T5c (GroundTrack wiring + structural pin), T5d (per-tile extras incl.
+> pin 96's mirrored lane-0 manifest), T5e (gate suite → launch).
+>
+> **✅ T5a IS DONE (`7ce99e3`) — the Tier-2 production launch gate exists.**
+> `tier2_launch_gate` (MemAvailable ≥ 2 × the **MEASURED** 4365 MiB = **8730**, never the
+> model's 5154) and `tier2_wall_ceiling` (**PER LEG ~40 h**; the four-tile 123.8 h figure
+> is an expectation, NEVER a ceiling). It deliberately does **not** consult
+> `ladder.tier1_eligible` — task 22's clearance would otherwise be inert — and **`preflight`
+> is UNCHANGED for every other caller**: `seam_pair` and the anchor gate were never
+> Tier-2-cleared, and the clearance is T5-scoped. Both directions test-pinned.
 >
 > **✅ PINS 94–96 RULED AND LANDED 2026-08-01 (ruling doc PART 21, verbatim)** — the three
 > sweep findings that land inside the T5 build itself.
