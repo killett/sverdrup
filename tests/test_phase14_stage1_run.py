@@ -39,6 +39,7 @@ _PINNED_KEYS = {
     "scores",
     "reference_row",
     "bridge_caveat",
+    "sigma_caveat",
     "label",
     "date",
 }
@@ -50,6 +51,18 @@ _PINNED_CAVEAT = (
     "BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at "
     "THIS tile is unmeasured; interpretation WAITS on the owner attribution "
     "readout"
+)
+
+# Owner pin 94 — test-pinned VERBATIM (stated here independently of the
+# implementation, exactly as the bridge caveat is): the raw-sigma row cannot
+# be built without it, and 94(f) scopes the defect honestly.
+_PINNED_SIGMA_CAVEAT = (
+    "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN "
+    "production defect (phase14.stage1.crn_production_defect_deferred) is a "
+    "property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma "
+    "comparison is NOT supported and the boundary gradient is DEFERRED and "
+    "unmeasured; the within-tile sigma level is NOT compromised - the four "
+    "diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent"
 )
 
 _PINNED_REFERENCE_ROW = {
@@ -310,6 +323,47 @@ def test_evidence_row_seam_reference_only_no_caveat() -> None:
         assert row["source"] == "dc2021a"
         assert row["bridge_caveat"] is None
         assert row["reference_row"] == _PINNED_REFERENCE_ROW
+
+
+@pytest.mark.parametrize("tile", _DIVERSE)
+def test_evidence_row_raw_sigma_carries_pinned_sigma_caveat(tile: str) -> None:
+    """A scores block carrying raw_sigma yields the VERBATIM pin-94 caveat.
+
+    Bug caught: the caveat written as prose at pack/write time (pin 94c)
+    instead of attached in the builder — a transfer row could then be built,
+    recorded and read with its raw sigma uncaveated.
+    """
+    kwargs = _row_kwargs(tile)
+    kwargs["scores"] = {"mu": 0.9, "raw_sigma": 0.0431}
+    row = _mod.build_evidence_row(**kwargs)
+    assert row["sigma_caveat"] == _PINNED_SIGMA_CAVEAT
+
+
+def test_evidence_row_without_raw_sigma_has_no_sigma_caveat() -> None:
+    """No raw sigma in scores -> sigma_caveat is None (the anchor row).
+
+    Bug caught: attaching the caveat unconditionally would stamp a
+    withheld-sigma disclaimer on the one tile whose scores ARE calibrated,
+    inverting what the caveat means.
+    """
+    row = _mod.build_evidence_row(**_row_kwargs("anchor"))
+    assert row["scores"]["mu"] == 0.9  # the fixture carries no raw_sigma
+    assert row["sigma_caveat"] is None
+
+
+def test_sigma_caveat_scopes_the_deferred_defect_honestly() -> None:
+    """Pin 94(f): the caveat names the scope limit AND clears the level.
+
+    Bug caught: a rewrite that drops "cross-tile ... NOT supported" (making
+    the per-tile levels look inter-comparable) or one that implies the
+    within-tile level is compromised — pin 94(f) says it is not.
+    """
+    caveat = _mod.SIGMA_CAVEAT
+    assert "phase14.stage1.crn_production_defect_deferred" in caveat
+    assert "SHIPPED SYSTEM, not of an instrument" in caveat
+    assert "cross-tile sigma comparison is NOT supported" in caveat
+    assert "boundary gradient is DEFERRED" in caveat
+    assert "within-tile sigma level is NOT compromised" in caveat
 
 
 def test_build_evidence_row_pure_and_unaliased() -> None:

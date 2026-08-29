@@ -206,6 +206,36 @@ BRIDGE_CAVEAT = (
 )
 
 # ---------------------------------------------------------------------------
+# Owner pin 94 (ruling doc PART 21, 2026-08-01) — THE SIGMA CAVEAT IS A
+# REQUIRED SCHEMA FIELD, attached HERE exactly as BRIDGE_CAVEAT is.
+#
+# A raw-sigma transfer row cannot be BUILT without it: a row that must be
+# paired with a document to be read correctly will eventually be read alone,
+# so pack-level attachment was barred (94c). The row is NOT dropped (94d) —
+# fork-d pin 6 pre-registered it and Stage 2G needs the per-tile levels for
+# pin 86(a)'s inheritance package.
+#
+# 94(f) scopes it HONESTLY in both directions: these are per-tile levels
+# under per-tile CRN origins, so cross-tile comparison is unsupported and the
+# boundary gradient is deferred — and the WITHIN-tile level is not
+# compromised (the four diverse tiles are pairwise disjoint; only seam_n and
+# seam_s are adjacent, pin 68). The deferred defect is cited in pin 87's
+# terms: a property of the SHIPPED SYSTEM, not of an instrument.
+SIGMA_CAVEAT = (
+    "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN "
+    "production defect (phase14.stage1.crn_production_defect_deferred) is a "
+    "property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma "
+    "comparison is NOT supported and the boundary gradient is DEFERRED and "
+    "unmeasured; the within-tile sigma level is NOT compromised - the four "
+    "diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent"
+)
+
+# The scores key that MAKES a row a sigma row (the uncalibrated ensemble
+# spread the transfer reading reports; their_eval's own `sigma` is the
+# vendored RMS statistic and a different object).
+RAW_SIGMA_KEY = "raw_sigma"
+
+# ---------------------------------------------------------------------------
 # Owner pin 90 (ruling doc PART 20, 2026-08-01) — T5 ACCEPTANCE CRITERION 8,
 # DISCHARGED BY THE PIN-12 RULING.
 #
@@ -450,6 +480,13 @@ def build_evidence_row(
     free-prose field exists. Fresh containers every call — callers may
     mutate their row without corrupting the next one.
 
+    Owner PIN 94: ``sigma_caveat`` is a REQUIRED schema field carrying the
+    verbatim :data:`SIGMA_CAVEAT` whenever ``scores`` carries a raw sigma
+    (:data:`RAW_SIGMA_KEY`) — the sigma side cannot be built without it.
+    It is None where no raw sigma is reported: the caveat scopes a level
+    that a row without one never states, and stamping it on the calibrated
+    anchor row would invert its meaning.
+
     Owner PIN 26(a): the PRODUCTION row carries the same convergence shape
     the probe row carries — every pcg leg stamped with the rtol/cap it
     actually ran under, a ``convergence`` verdict, and
@@ -510,6 +547,7 @@ def build_evidence_row(
         "scores": {**scores, "capped_measurement": capped},
         "reference_row": reference_row,
         "bridge_caveat": BRIDGE_CAVEAT if source == "cmems_my" else None,
+        "sigma_caveat": SIGMA_CAVEAT if RAW_SIGMA_KEY in scores else None,
         "label": "STAGE1-EVIDENCE",
         "date": date,
     }
