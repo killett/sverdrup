@@ -73,6 +73,25 @@ _PINNED_REFERENCE_ROW = {
 _DIVERSE = ("equatorial", "southern", "quiet_gyre", "kuroshio")
 
 
+class _SolveStopped(Exception):
+    """Sentinel: the leg reached the point under test and went no further."""
+
+
+class _FakeLoad:
+    """Stand-in for the data loader (the one true external boundary here)."""
+
+    @staticmethod
+    def for_tile(tile: str) -> tuple[Any, Any, Any, dict[str, Any] | None]:
+        """The (frame, grid, framed, superobs_cfg) tuple _solve_leg expects."""
+        from types import SimpleNamespace
+
+        grid = SimpleNamespace(x=np.zeros(3), y=np.zeros(4), shape=(4, 3))
+        framed = SimpleNamespace(
+            values=lambda: np.zeros(5), mission=np.array(["alg"] * 5)
+        )
+        return _mod.registry_frame(tile), grid, framed, None
+
+
 def _row_kwargs(
     tile: str,
     *,
@@ -258,18 +277,20 @@ def test_run_has_no_source_option() -> None:
 def test_run_equatorial_reaches_gated_stub_after_pin12_ruling(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Equatorial run no longer refuses pin 12; it dies at the solve stub.
+    """Equatorial run no longer refuses pin 12; it reaches the Tier-2 gate.
 
     Bug caught: a stale box_election_pending flag (or leftover refusal)
-    still blocking the KEPT box after the 2026-07-25 ruling; the stub's
-    NotImplementedError (with the seal verifier untouched) also proves no
-    solve or evidence write sneaks in behind the ruling.
+    still blocking the KEPT box after the 2026-07-25 ruling. The refusal
+    it DOES hit is the headroom gate (forced short here), which also
+    proves no solve or evidence write sneaks in behind the ruling.
     """
     from sverdrup.application import ladder
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    with pytest.raises(NotImplementedError, match="Task"):
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 100.0)
+    with pytest.raises(RuntimeError, match="Tier-2") as excinfo:
         _mod.run("equatorial")
+    assert "box_election" not in str(excinfo.value)
 
 
 def test_evidence_row_schema_is_exactly_the_pinned_set() -> None:
@@ -348,6 +369,7 @@ _SCORE_KWARGS: dict[str, Any] = {
     "reduced_chi2": 1.83,
     "raw_sigma": 0.0217,
     "scalar_s_star": 2.14,
+    "calibration_n": 19004,
     "track": "data/j3.nc",
     "track_sha256": "beef" * 16,
 }
@@ -387,6 +409,9 @@ def test_chi2_pin42_records_the_outcome_and_does_not_gate() -> None:
     """
     row = _mod.build_scores_block(**_SCORE_KWARGS)["chi2_j3_validation"]
     assert row["value"] == 1.83
+    # The support the reading rests on, which is NOT n_scored_points
+    # (20431): the member-std map is masked at some scored points.
+    assert row["n"] == 19004
     assert row["gates"] is False
     assert row["pin42"]["null"] == "E[chi2_red] = 1 (calibrated)"
     assert row["pin42"]["pass_condition"] is None
@@ -523,6 +548,143 @@ def test_record_writes_row_under_stage1_tiles_preserving_store(
     assert calls == ["verified"]
 
 
+def test_calibration_readings_are_the_stated_arithmetic() -> None:
+    """The four track readings, against hand-computed values.
+
+    Bug caught: coverage taken at 2 sigma instead of 1; a chi2 that is not
+    REDUCED (no /n); s* built from sigma instead of sigma^2; or the raw
+    sigma level reported as mean(std) = 1.5 rather than the level
+    sqrt(mean(var)) = 1.5811 the transfer reading needs.
+    """
+    std = np.array([1.0, 1.0, 2.0, 2.0])
+    z = np.array([0.5, -0.5, 2.0, -3.0])
+    mean = np.zeros(4)
+    truth = mean + z * std  # residual/std is exactly z, by construction
+    got = _mod.calibration_readings(mean=mean, std=std, truth=truth)
+    assert got["coverage_1sigma"] == 0.5  # |z| <= 1 for 2 of 4 points
+    assert got["reduced_chi2"] == pytest.approx(3.375)  # mean(z^2) = 13.5/4
+    assert got["scalar_s_star"] == pytest.approx(3.375)  # closed form = mean(z^2)
+    assert got["raw_sigma"] == pytest.approx(1.5811388, abs=1e-6)  # sqrt(2.5)
+    assert got["n_used"] == 4
+
+
+def test_calibration_readings_drop_unusable_points_and_say_how_many() -> None:
+    """NaN truth and non-positive variance are dropped; n_used is honest.
+
+    Bug caught: land-masked / un-interpolable track points propagating a
+    NaN into chi2 (recorded as a number nobody can read), or being counted
+    in the support the readings claim to rest on -- the kuroshio land-mask
+    path is exactly where this bites.
+    """
+    std = np.array([1.0, 1.0, 0.0, 2.0])
+    truth = np.array([0.5, -0.5, 1.0, np.nan])
+    mean = np.zeros(4)
+    got = _mod.calibration_readings(mean=mean, std=std, truth=truth)
+    assert got["n_used"] == 2  # zero-variance point and NaN point dropped
+    assert got["reduced_chi2"] == pytest.approx(0.25)  # mean(0.5^2, 0.5^2)
+    assert got["coverage_1sigma"] == 1.0
+
+
+def test_calibration_readings_refuse_when_nothing_survives() -> None:
+    """No usable point -> a refusal, never a masked/NaN reading.
+
+    Bug caught: an all-land core silently scoring to NaN and being
+    recorded as a transfer reading (T5 criterion 6: an all-land core
+    refusal must be surfaced, not swallowed).
+    """
+    with pytest.raises(ValueError, match="no usable"):
+        _mod.calibration_readings(
+            mean=np.zeros(2), std=np.zeros(2), truth=np.array([1.0, 2.0])
+        )
+
+
+def test_run_diverse_tile_waits_when_tier2_headroom_is_short(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A T5 leg REFUSES below 2 x the measured peak, before any load.
+
+    Bug caught: launching a 31 h leg over headroom (the exit-137 OOM
+    class) because the Tier-2 gate was computed and then ignored.
+    """
+    called: list[str] = []
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 8729.9)
+    monkeypatch.setattr(_mod, "_solve_leg", lambda *a, **k: called.append("solved"))
+    with pytest.raises(RuntimeError, match="Tier-2"):
+        _mod.run("kuroshio")
+    assert called == []
+
+
+def test_run_diverse_tile_does_not_consult_the_tier1_predicate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """T5 legs are gated by E-16 s2, NOT by ladder.tier1_eligible.
+
+    Bug caught: the live sweep item -- preflight's Tier-1 refusal firing on
+    a Tier-2-CLEARED leg, so task 22's clearance is inert and every diverse
+    tile refuses before it loads anything.
+    """
+    from sverdrup.application import ladder
+
+    seen: list[float] = []
+
+    def _spy(peak_mib: float, *a: object, **k: object) -> bool:
+        seen.append(peak_mib)
+        return False
+
+    solved: list[tuple[str, int]] = []
+    monkeypatch.setattr(ladder, "tier1_eligible", _spy)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 12000.0)
+    monkeypatch.setattr(
+        _mod, "_solve_leg", lambda tile, m, ds, mi: solved.append((tile, m))
+    )
+    _mod.run("southern", m=100)
+    assert seen == []
+    assert solved == [("southern", 100)]
+
+
+def test_run_seam_tile_still_routes_through_the_tier1_preflight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Tiles that were never Tier-2-cleared keep the Tier-1 refusal.
+
+    Bug caught: "fixing" the diverse-tile gate by routing EVERY tile past
+    preflight, silently disarming the launch guard for the seam tiles and
+    the anchor gate. The Tier-2 authorisation is T5-scoped.
+    """
+    from sverdrup.application import ladder
+
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 12000.0)
+    with pytest.raises(RuntimeError, match="Tier-1"):
+        _mod.run("seam_n")
+
+
+def test_record_tile_leg_records_equatorial_on_the_programmatic_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 90(c) live half: the REAL leg's write path, tile "equatorial".
+
+    Bug caught: criterion 8's breadth concern left CLI-only -- a wiring
+    change that recorded the row at the wrong node, or dropped the pin-94
+    sigma caveat / pin-7 bridge caveat on the path production actually
+    uses, would pass every CLI-level test in this file.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    row = _mod.record_tile_leg(evidence_path=evid, **kwargs)
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["tiles"]["equatorial"] == row
+    assert stored["phase13"] == {"kept": True}
+    assert row["sigma_caveat"] == _PINNED_SIGMA_CAVEAT
+    assert row["bridge_caveat"] == _PINNED_CAVEAT
+    assert set(row["scores"]) == _PINNED_SCORE_KEYS | {"capped_measurement"}
+
+
 def test_preflight_refuses_when_tier1_ineligible(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -566,17 +728,24 @@ def test_run_checks_ladder_before_any_load(
 def test_run_reaches_gated_solve_stub_when_eligible(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An eligible run hits the solve-leg stub naming its owning tasks.
+    """An eligible run threads tile/m/stride/maxiter into the solve leg.
 
-    Bug caught: the CI core silently "succeeding" without a solve — the
-    stub must refuse loudly and name the later gated tasks that own the
-    real legs.
+    Bug caught: a CLI option accepted at the signature and dropped on the
+    floor — a leg silently running at the library's 500 cap (which leaves
+    every 19-degree leg un-converged, PIN 26(b)) instead of the cap the
+    operator asked for.
     """
     from sverdrup.application import ladder
 
+    seen: list[tuple[str, int, int, int]] = []
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    with pytest.raises(NotImplementedError, match="Task"):
-        _mod.run("seam_n")
+    monkeypatch.setattr(
+        _mod,
+        "_solve_leg",
+        lambda tile, m, ds, mi: seen.append((tile, m, ds, mi)),
+    )
+    _mod.run("seam_n", m=7, days_stride=5, maxiter=1900)
+    assert seen == [("seam_n", 7, 5, 1900)]
 
 
 # ---------------------------------------------------------------------------
@@ -1243,15 +1412,49 @@ def test_run_maxiter_option_flows_through_to_the_solve_leg(
     assert seen == [777]
 
 
-def test_solve_leg_stub_reports_the_cap_it_was_handed() -> None:
-    """The gated stub still names the tile, m, stride AND the maxiter.
+def test_solve_leg_hands_the_cap_to_the_solver(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """_solve_leg builds its method at the maxiter it was handed.
 
-    Bug caught: a maxiter accepted at the signature but dropped on the
-    floor inside the leg — the stub's message is the only place the
-    threaded value is observable until T4/T5 land the real legs.
+    Bug caught: the leg constructing Miost at the library default while
+    the row records the requested cap — every window would silently exit
+    un-converged at 500 and the recorded convergence verdict would be
+    about a cap the solve never ran under.
     """
-    with pytest.raises(NotImplementedError, match="1200"):
-        _mod._solve_leg("seam_n", m=3, days_stride=1, maxiter=1200)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase14": {"stage0": {"seal": {"sha": "ab" * 32}}}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(_mod, "_tile_framed_obs", lambda tile: _FakeLoad.for_tile(tile))
+    seen: dict[str, Any] = {}
+
+    def _miost(frame: Any, **kwargs: Any) -> Any:
+        seen.update(kwargs)
+        raise _SolveStopped
+
+    monkeypatch.setattr(_mod, "_seam_miost", _miost)
+    with pytest.raises(_SolveStopped):
+        _mod._solve_leg("kuroshio", m=3, days_stride=1, maxiter=1900)
+    assert seen["maxiter"] == 1900
+
+
+def test_solve_leg_refuses_without_a_seal_sha_to_quote(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No stage-0 seal sha in the store -> refuse BEFORE loading anything.
+
+    Bug caught: a 31 h leg running to completion and then failing to
+    record, or recording a row that quotes an empty seal — the row's whole
+    claim is that it was measured under a named seal.
+    """
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase14": {"stage1": {}}}))
+    loaded: list[str] = []
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    monkeypatch.setattr(_mod, "_tile_framed_obs", lambda tile: loaded.append(tile))
+    with pytest.raises(RuntimeError, match="seal"):
+        _mod._solve_leg("kuroshio", m=3, days_stride=1, maxiter=1200)
+    assert loaded == []
 
 
 # ---------------------------------------------------------------------------

@@ -132,6 +132,51 @@ def test_guard_raises_when_track_mission_unidentifiable(tmp_path: Path) -> None:
         assert_scored_not_assimilated(tagged, Path("track.nc"))
 
 
+def test_mission_parsed_from_a_stage1_per_tile_track_name() -> None:
+    """Stage-1's per-tile validation tracks resolve their mission too.
+
+    Bug caught: the parser hard-wired to the gulfstream challenge filename.
+    Stage-1 scores tiles outside that box against per-tile j3 holdout
+    tracks, so under a gulfstream-only parser EVERY diverse-tile score
+    raises "no recognizable mission id" — and the tempting workaround is
+    to name a Pacific track "gulfstream", claiming provenance it lacks.
+    """
+    from sverdrup.validation.provenance_guard import mission_from_track_path
+
+    stage1 = Path("dt_quiet_gyre_j3_phy_l3_2017_stage1.nc")
+    assert mission_from_track_path(stage1) == "j3"
+    # The challenge name keeps resolving to the same mission (regression).
+    assert mission_from_track_path(J3_TRACK) == "j3"
+
+
+def test_guard_fires_on_a_leaked_map_scored_with_a_stage1_track(
+    tmp_path: Path,
+) -> None:
+    """The leak check bites on per-tile tracks, not just the challenge one.
+
+    Bug caught: generalizing the parser but leaving the enforcement path
+    keyed to the old name — a Stage-1 tile that assimilated j3 could then
+    be scored on j3, the exact Task-13 leak class, at every diverse tile.
+    """
+    leaked = _map_file(tmp_path, ("alg", "j3"))
+    track = Path("dt_kuroshio_j3_phy_l3_2017_stage1.nc")
+    # The message must name the LEAK, not "unidentifiable track" — the
+    # latter would also raise here while proving nothing about the check.
+    with pytest.raises(TrainScoreLeakError, match="train/score leak"):
+        assert_scored_not_assimilated(leaked, track)
+
+
+def test_track_without_the_l3_naming_still_fails_loud(tmp_path: Path) -> None:
+    """A name that is not the L3 scheme stays unidentifiable — never a skip.
+
+    Bug caught: a parser loosened so far that any filename yields some
+    token, so an unverifiable track silently passes the guard.
+    """
+    tagged = _map_file(tmp_path, ("alg",))
+    with pytest.raises(TrainScoreLeakError, match="track"):
+        assert_scored_not_assimilated(tagged, Path("j3_track_2017.nc"))
+
+
 def test_their_eval_score_asserts_before_scoring(tmp_path: Path) -> None:
     """their_eval.score (the c2 acceptance path) is guard-wired.
 

@@ -15,7 +15,14 @@ from pathlib import Path
 import xarray as xr
 
 ASSIMILATED_ATTR = "assimilated_missions"
-_TRACK_MISSION_RE = re.compile(r"dt_gulfstream_([a-z0-9]+)_phy")
+# The mission is the token immediately before ``_phy_l3`` in the L3 naming
+# scheme. Written this way rather than against ``dt_gulfstream_`` so the
+# phase-14 per-tile validation tracks (``dt_<tile>_<mission>_phy_l3_...``,
+# tiles far outside the challenge box) resolve their mission too — the
+# alternative was naming a Pacific track "gulfstream" to satisfy the parser,
+# i.e. claiming provenance it does not have. A name that does not follow the
+# scheme still yields None, and the guard still fails LOUD on it.
+_TRACK_MISSION_RE = re.compile(r"_([a-z0-9]+)_phy_l3")
 
 
 class TrainScoreLeakError(RuntimeError):
@@ -26,8 +33,10 @@ def mission_from_track_path(track_path: Path) -> str | None:
     """Extract the mission id from a challenge along-track filename.
 
     Args:
-        track_path: The along-track L3 file (challenge naming scheme,
-            ``dt_gulfstream_<mission>_phy_l3_...``). The file need not exist.
+        track_path: The along-track L3 file (L3 naming scheme — the
+            challenge's ``dt_gulfstream_<mission>_phy_l3_...`` or a
+            per-tile ``dt_<tile>_<mission>_phy_l3_...``). The file need
+            not exist.
 
     Returns:
         The mission id, or None if the name does not match the scheme.

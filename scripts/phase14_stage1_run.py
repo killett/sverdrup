@@ -607,6 +607,7 @@ def build_scores_block(
     reduced_chi2: float,
     raw_sigma: float,
     scalar_s_star: float,
+    calibration_n: int,
     track: str,
     track_sha256: str,
 ) -> dict[str, Any]:
@@ -638,6 +639,10 @@ def build_scores_block(
             its presence is what attaches :data:`SIGMA_CAVEAT` to the row).
         scalar_s_star: The closed-form scalar variance scaling, LABELED
             reference-only where its number is read.
+        calibration_n: How many track points the coverage / chi2 readings
+            actually rest on (:func:`calibration_readings`' ``n_used``) —
+            recorded ON those two rows, because it can be smaller than
+            ``n_scored_points`` wherever the member-std map is masked.
         track: The validation track path (provenance, in-row).
         track_sha256: That track's sha256 — the row witnesses WHAT it
             scored against, never merely that it scored.
@@ -651,9 +656,10 @@ def build_scores_block(
         "sigma": {"value": sigma, **reading},
         "lambda_x": {"value": lambda_x, **reading},
         "n_scored_points": n_scored_points,
-        "coverage_1sigma": {"value": coverage_1sigma, **reading},
+        "coverage_1sigma": {"value": coverage_1sigma, "n": calibration_n, **reading},
         "chi2_j3_validation": {
             "value": reduced_chi2,
+            "n": calibration_n,
             "gates": False,
             "pin42": dict(CHI2_PIN42),
         },
@@ -1251,6 +1257,11 @@ TIER2_WALL_SCOPE = (
     "PER LEG (one tile), NOT per stage — the four-tile 123.8 h figure is an "
     "expectation, never a ceiling (E-16 §1)"
 )
+
+# The tiles task 22's Tier-2 crossing CLEARED — the T5 diverse roster and
+# nothing else. seam_pair and the anchor gate were never Tier-2-cleared and
+# keep the Tier-1 preflight refusal (the clearance is T5-scoped).
+TIER2_TILES = ("equatorial", "southern", "quiet_gyre", "kuroshio")
 
 
 def tier2_launch_gate(*, mem_available_mib: float) -> dict[str, Any]:
@@ -3476,8 +3487,388 @@ def seam_pair(
     typer.echo("seam pair done: rows at phase14.stage1.seam_rows")
 
 
+# ---------------------------------------------------------------------------
+# TASK 5 — the diverse-tile production leg (T5b). Built against Task 4's
+# _seam_tile_leg as the working analog (owner pin 92): same crash-durable
+# member store, same map-before-compare ordering, same one classifier for
+# the pcg legs. What is NEW here is the scoring side — these tiles are
+# scored against their OWN j3 holdout track, not the challenge box's.
+# ---------------------------------------------------------------------------
+STAGE1_N_DAYS = 365
+# j3 is the holdout convention (it is absent from the five mapping missions
+# on BOTH sources) — the validation mission at every Stage-1 tile.
+VALIDATION_MISSION = "j3"
+# The scoring window: the vendored per-tile scorer's own 2017 convention.
+VALIDATION_TIME_MIN = "2017-01-01"
+VALIDATION_TIME_MAX = "2017-12-31"
+
+
+def tile_mean_map(tile: str) -> Path:
+    """The tile's blended mean map (STAGE1-EVIDENCE)."""
+    return STAGE1_DIR / f"{tile}_signed_maps.nc"
+
+
+def tile_std_map(tile: str) -> Path:
+    """The tile's member-std map (STAGE1-EVIDENCE)."""
+    return STAGE1_DIR / f"{tile}_member_std_maps.nc"
+
+
+def tile_member_store(tile: str) -> Path:
+    """The leg's own member store — crash-resume substrate, never a reference."""
+    return STAGE1_DIR / f"{tile}_member_store.npz"
+
+
+def tile_validation_track(tile: str) -> Path:
+    """The tile's j3 holdout track, in the L3 naming scheme.
+
+    The name follows ``dt_<tile>_<mission>_phy_l3_...`` so the provenance
+    guard can read the scored mission off it. It is NOT named after the
+    challenge box: these tiles are nowhere near it, and a track that
+    claimed gulfstream provenance to satisfy a parser would be a lie in a
+    filename.
+    """
+    return STAGE1_DIR / f"dt_{tile}_{VALIDATION_MISSION}_phy_l3_2017_stage1.nc"
+
+
+def calibration_readings(
+    *, mean: ArrayLike, std: ArrayLike, truth: ArrayLike
+) -> dict[str, Any]:
+    """The four track-level readings, on the points that are usable.
+
+    A point is usable only when the map mean, the member std and the track
+    truth are all finite AND the std is strictly positive — an
+    un-interpolable (land-masked) or zero-variance point cannot be scored,
+    and is DROPPED rather than propagated as a NaN into a recorded number.
+    ``n_used`` reports how many survived, so the readings never claim more
+    support than they have.
+
+    ``scalar_s_star`` is the closed-form scalar variance scaling, which on
+    these same points is numerically IDENTICAL to the pre-scaling reduced
+    chi-squared by construction — both are ``mean(r^2/v)``. They are
+    recorded separately because they are consumed separately (Stage 2G
+    inherits s*), never as two independent confirmations of one fact.
+
+    Args:
+        mean: Map mean interpolated at the track points [m].
+        std: Member std interpolated at the same points [m].
+        truth: The along-track truth at those points [m].
+
+    Returns:
+        ``coverage_1sigma``, ``reduced_chi2``, ``scalar_s_star``,
+        ``raw_sigma`` (the level ``sqrt(mean(var))``) and ``n_used``.
+
+    Raises:
+        ValueError: If no point is usable — an all-land or all-masked core
+            is surfaced, never scored to a masked/NaN triple.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.eval.calibration import coverage, reduced_chi2  # noqa: PLC0415
+
+    mu = np.asarray(mean, dtype=float)
+    sd = np.asarray(std, dtype=float)
+    tr = np.asarray(truth, dtype=float)
+    usable = np.isfinite(mu) & np.isfinite(sd) & np.isfinite(tr) & (sd > 0.0)
+    n_used = int(usable.sum())
+    if n_used == 0:
+        raise ValueError(
+            "no usable validation points (every point is non-finite or has "
+            "non-positive variance) — an empty/all-land core is surfaced "
+            "here, never scored to a masked triple"
+        )
+    mu, sd, tr = mu[usable], sd[usable], tr[usable]
+    var = sd**2
+    chi2 = float(reduced_chi2(mu, var, tr))
+    return {
+        "coverage_1sigma": float(coverage(mu, var, tr)),
+        "reduced_chi2": chi2,
+        "scalar_s_star": chi2,
+        "raw_sigma": float(np.sqrt(np.mean(var))),
+        "n_used": n_used,
+    }
+
+
+def build_tile_validation_track(tile: str, *, dest: Path | None = None) -> Path:
+    """Write the tile's 2017 j3 holdout track as one L3-schema NetCDF.
+
+    The CMEMS-MY daily files already carry the vendored reader's schema
+    (``time``/``latitude``/``longitude``/``sla_unfiltered``/``mdt``/
+    ``lwe``), so this concatenates and clips rather than deriving anything:
+    the scored quantity stays the challenge's own
+    ``sla_unfiltered + mdt - lwe``.
+
+    Args:
+        tile: Registry tile name (its ``core`` is the clip region).
+        dest: Output path; defaults to :func:`tile_validation_track`.
+
+    Returns:
+        The written track path.
+
+    Raises:
+        RuntimeError: If no j3 point falls in the tile core in 2017.
+    """
+    import numpy as np  # noqa: PLC0415
+    import xarray as xr  # noqa: PLC0415
+
+    from sverdrup.adapters.altimetry.cmems_my import CMEMS_DATA_DIR  # noqa: PLC0415
+
+    frame = registry_frame(tile)
+    core = frame.core
+    out = tile_validation_track(tile) if dest is None else dest
+    t0 = np.datetime64(VALIDATION_TIME_MIN)
+    t1 = np.datetime64(VALIDATION_TIME_MAX) + np.timedelta64(1, "D")
+    fields = ("sla_unfiltered", "mdt", "lwe", "latitude", "longitude")
+    parts: list[xr.Dataset] = []
+    for path in sorted((CMEMS_DATA_DIR / VALIDATION_MISSION).glob("*.nc")):
+        with xr.open_dataset(path) as ds:
+            t = np.asarray(ds["time"].values)
+            if t.size == 0 or t.max() < t0 or t.min() >= t1:
+                continue
+            lon = np.asarray(ds["longitude"].values, dtype=float) % 360.0
+            lat = np.asarray(ds["latitude"].values, dtype=float)
+            keep = (
+                (t >= t0)
+                & (t < t1)
+                & (lon >= core.lon_min % 360.0)
+                & (lon <= core.lon_max % 360.0)
+                & (lat >= core.lat_min)
+                & (lat <= core.lat_max)
+            )
+            if not keep.any():
+                continue
+            parts.append(ds[list(fields)].isel(time=np.flatnonzero(keep)).load())
+    if not parts:
+        raise RuntimeError(
+            f"tile {tile!r}: no {VALIDATION_MISSION} validation point falls in "
+            f"the core {core} during {VALIDATION_TIME_MIN}..{VALIDATION_TIME_MAX} "
+            "— the tile cannot be scored and the leg refuses rather than "
+            "recording an unscored row"
+        )
+    track = xr.concat(parts, dim="time").sortby("time")
+    track.attrs["mission"] = VALIDATION_MISSION
+    track.attrs["label"] = "STAGE1-EVIDENCE"
+    track.attrs["tile"] = tile
+    out.parent.mkdir(parents=True, exist_ok=True)
+    track.to_netcdf(out)
+    return out
+
+
+def _tile_framed_obs(
+    tile: str,
+) -> tuple[TileFrame, GridSpec, Any, dict[str, Any] | None]:  # noqa: ANN401
+    """Frame, grid, framed mapping obs and the applied super-obs cfg.
+
+    Routes on the REGISTRY source (never a caller's choice): the dc2021a
+    tiles reuse the seam loader unchanged; the cmems_my tiles take the
+    Stage-0 probe's path — challenge-coarsen super-obs, then the rebase
+    into the solver's days-since-2017 frame.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.adapters.altimetry import apply_superobs  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.cmems_my import CmemsMySource  # noqa: PLC0415
+    from sverdrup.application.spatial_tiles import (  # noqa: PLC0415
+        frame_grid,
+        frame_obs,
+    )
+    from sverdrup.core.observations import (  # noqa: PLC0415
+        DiagonalErrorModel,
+        ObsWindow,
+    )
+    from sverdrup.validation.params import (  # noqa: PLC0415
+        COARSEN_TIME,
+        OBS_NOISE_VARIANCE,
+    )
+
+    if str(TILES[tile]["source"]) != "cmems_my":
+        frame, grid, framed = _seam_framed_obs(tile)
+        return frame, grid, framed, None
+
+    frame = registry_frame(tile)
+    grid = frame_grid(frame, RESOLUTION_DEG)
+    obs_93 = CmemsMySource().load(
+        frame.obs_bbox(resolution_deg=RESOLUTION_DEG),
+        np.datetime64("2016-11-01"),
+        np.datetime64("2018-03-01"),
+        missions=PROBE_MISSIONS,
+    )
+    superobs_cfg: dict[str, Any] = {"kind": "challenge-coarsen", "n": COARSEN_TIME}
+    obs_93 = apply_superobs(obs_93, cfg=superobs_cfg)
+    c = obs_93.coords()
+    obs = ObsWindow.from_arrays(
+        c[:, 0],
+        c[:, 1],
+        c[:, 2] - _DAYS_1993_TO_2017,  # -> days since 2017-01-01 (solver frame)
+        obs_93.values(),
+        DiagonalErrorModel(np.full(len(obs_93), OBS_NOISE_VARIANCE)),
+        mission=obs_93.mission,
+    )
+    del obs_93
+    framed = frame_obs(obs, frame, resolution_deg=RESOLUTION_DEG)
+    del obs
+    return frame, grid, framed, superobs_cfg
+
+
+def _score_tile_leg(
+    tile: str, *, frame: TileFrame, mean_map: Path, std_map: Path, track: Path
+) -> dict[str, Any]:
+    """Score one tile against its own j3 holdout track -> the scores block.
+
+    The mu/sigma/lambda_x triple comes from the EXISTING per-tile scorer
+    (core-only extraction, vendored statistics). The calibration readings
+    ride the SAME vendored selection: the mean map goes through
+    ``interp_on_alongtrack``, and the member-std map is then evaluated at
+    exactly the points that call returned, so mean, std and truth are the
+    same points by construction rather than by two independent maskings.
+
+    Args:
+        tile: Registry tile name.
+        frame: The tile frame (scoring is core-only).
+        mean_map: The blended mean map.
+        std_map: The member-std map.
+        track: The tile's j3 holdout track.
+
+    Returns:
+        The scores block from :func:`build_scores_block`.
+    """
+    import pyinterp  # noqa: PLC0415
+
+    from sverdrup.validation.pertile_scoring import (  # noqa: PLC0415
+        extract_core_track,
+        score_tile,
+    )
+    from sverdrup.validation.provenance_guard import (  # noqa: PLC0415
+        assert_scored_not_assimilated,
+    )
+    from sverdrup.validation.vendor import prepare_vendored_imports  # noqa: PLC0415
+
+    gate = _anchor_gate_module()
+    score = score_tile(frame, mean_map, track, VALIDATION_TIME_MIN, VALIDATION_TIME_MAX)
+    # The std map carries the same assimilated-mission provenance; scoring
+    # it against the holdout is checked on its own terms, not by proxy.
+    assert_scored_not_assimilated(std_map, track)
+
+    ds_track = extract_core_track(
+        frame, track, VALIDATION_TIME_MIN, VALIDATION_TIME_MAX
+    )
+    prepare_vendored_imports()
+    from src.mod_inout import read_l4_dataset  # noqa: PLC0415
+    from src.mod_interp import interp_on_alongtrack  # noqa: PLC0415
+
+    core = frame.core
+    box: dict[str, Any] = {
+        "lon_min": core.lon_min,
+        "lon_max": core.lon_max,
+        "lat_min": core.lat_min,
+        "lat_max": core.lat_max,
+        "time_min": VALIDATION_TIME_MIN,
+        "time_max": VALIDATION_TIME_MAX,
+        "is_circle": False,
+    }
+    time_a, lat_a, lon_a, ssh_a, mean_interp = interp_on_alongtrack(
+        str(mean_map), ds_track, **box
+    )
+    _, _, z_axis, std_grid = read_l4_dataset([str(std_map)], **box)
+    std_interp = pyinterp.trivariate(
+        std_grid, lon_a, lat_a, z_axis.safe_cast(time_a), bounds_error=False
+    )
+    readings = calibration_readings(mean=mean_interp, std=std_interp, truth=ssh_a)
+    _t5_echo(
+        f"{tile}: scored mu={score.mu:.6f} lambda_x={score.lambda_x:.1f} km "
+        f"on {score.n_scored_points} points; calibration on "
+        f"{readings['n_used']} of them"
+    )
+    return build_scores_block(
+        mu=float(score.mu),
+        sigma=float(score.sigma),
+        lambda_x=float(score.lambda_x),
+        n_scored_points=int(score.n_scored_points),
+        coverage_1sigma=readings["coverage_1sigma"],
+        reduced_chi2=readings["reduced_chi2"],
+        raw_sigma=readings["raw_sigma"],
+        scalar_s_star=readings["scalar_s_star"],
+        calibration_n=readings["n_used"],
+        track=str(track),
+        track_sha256=gate.sha256_file(track),
+    )
+
+
+def record_tile_leg(
+    *,
+    seal_sha: str,
+    tile: str,
+    frame: dict[str, Any],
+    window_plan: dict[str, Any],
+    m: int,
+    superobs_cfg: dict[str, Any] | None,
+    n_obs: int,
+    wall_s: float,
+    peak_rss_mib: float,
+    pcg: Iterable[dict[str, Any]],
+    pcg_rtol: float,
+    pcg_maxiter: int,
+    scores: dict[str, Any],
+    date: str,
+    evidence_path: Path = EVIDENCE,
+) -> dict[str, Any]:
+    """Build the tile row and record it — THE production write path.
+
+    Owner pin 90(c): criterion 8's live half is breadth, and this is the
+    function the real leg writes through, so the programmatic path is
+    exercised (and test-pinned) rather than only the CLI entry.
+
+    Args:
+        seal_sha: The verified evaluation-seal sha the row quotes.
+        tile: Registry tile name.
+        frame: Frame provenance block.
+        window_plan: Window-plan provenance block.
+        m: Ensemble members retained.
+        superobs_cfg: The applied super-obs cfg (cmems side) or None.
+        n_obs: Framed observation count.
+        wall_s: Measured leg wall time [s].
+        peak_rss_mib: Measured peak RSS [MiB].
+        pcg: Per-window PCG convergence rows.
+        pcg_rtol: The solver rtol actually used.
+        pcg_maxiter: The solver iteration cap actually used.
+        scores: The scores block (:func:`build_scores_block`).
+        date: ISO date string.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Returns:
+        The recorded row.
+    """
+    row = build_evidence_row(
+        seal_sha=seal_sha,
+        tile=tile,
+        frame=frame,
+        window_plan=window_plan,
+        m=m,
+        superobs_cfg=superobs_cfg,
+        n_obs=n_obs,
+        wall_s=wall_s,
+        peak_rss_mib=peak_rss_mib,
+        pcg=pcg,
+        pcg_rtol=pcg_rtol,
+        pcg_maxiter=pcg_maxiter,
+        scores=scores,
+        date=date,
+    )
+    record_evidence_row(row, evidence_path=evidence_path)
+    return row
+
+
+def _t5_echo(msg: str) -> None:
+    """Flushed heartbeat line (the detached-log/stall-watcher convention)."""
+    print(f"[stage1-t5] {datetime.now(UTC).isoformat()} {msg}", flush=True)
+
+
 def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
-    """The real load/solve/score/record leg — OWNED BY LATER GATED TASKS.
+    """The real load/solve/score/record leg for ONE tile (T5b).
+
+    Crash-durable at two levels, as Task 4's analog is: member-batch PCG
+    checkpoints inside the window solve, and this leg's own member store
+    afterwards, so a scoring-phase death never costs the solves. The maps
+    are written BEFORE any scoring runs.
 
     Args:
         tile: Registry tile name.
@@ -3488,17 +3879,188 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
             production row ran under is part of the row).
 
     Raises:
-        NotImplementedError: Always — Stage-1 Task 3 (anchor identity
-            gate), Task 4 (seam-pair run), and Task 5 (diverse-tile runs)
-            own the real legs. (Task 2's measured-first probe LANDED as
-            the separate ``probe`` command.)
+        RuntimeError: If the evidence store carries no Stage-0 seal sha to
+            quote (the row must quote the seal it was measured under).
     """
-    raise NotImplementedError(
-        f"tile {tile!r} (m={m}, days_stride={days_stride}, maxiter={maxiter}): "
-        "the real solve legs are separately gated — Stage-1 Task 3 (anchor "
-        "identity gate), Task 4 (seam-pair run), Task 5 (diverse-tile runs); "
-        "Task 2's measured-first probe landed as the `probe` command."
+    import resource  # noqa: PLC0415
+    import threading  # noqa: PLC0415
+    import time  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    import sverdrup.methods.miost as miost_mod  # noqa: PLC0415
+    from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
+    from sverdrup.core.seeding import derive_seed  # noqa: PLC0415
+    from sverdrup.distributions.miost_ensemble import (  # noqa: PLC0415
+        merged_members,
     )
+    from sverdrup.methods.miost import PHASE13_WINNER_PARAMS  # noqa: PLC0415
+    from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+    from sverdrup.validation.input_adapter import load_mdt_grid  # noqa: PLC0415
+    from sverdrup.validation.output_adapter import write_map  # noqa: PLC0415
+
+    gate = _anchor_gate_module()
+    t_leg = time.monotonic()
+    store_json = json.loads(EVIDENCE.read_text())
+    seal_sha = str(
+        store_json.get("phase14", {}).get("stage0", {}).get("seal", {}).get("sha", "")
+    )
+    if not seal_sha:
+        raise RuntimeError(
+            "no phase14.stage0.seal.sha in the evidence store — the row must "
+            "quote the seal it was measured under; the leg refuses"
+        )
+
+    frame, grid, framed, superobs_cfg = _tile_framed_obs(tile)
+    n_obs = int(len(framed.values()))
+    _t5_echo(f"{tile}: framed obs {n_obs}, grid {grid.x.size}x{grid.y.size}")
+
+    plan = WindowPlan()
+    provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
+    ckpt = STAGE1_DIR / f"{tile}_pcg_ckpt"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    method = _seam_miost(frame, starts=None, maxiter=maxiter, ckpt_dir=ckpt)
+    # Per-tile CRN origin (pin 94f names the consequence: the sigma levels
+    # are per-tile and are NOT cross-tile comparable).
+    root = int(derive_seed("miost", "phase14-stage1", tile, 0))
+
+    stop_beat = threading.Event()
+
+    def _beat() -> None:
+        while not stop_beat.wait(300.0):
+            rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+            _t5_echo(
+                f"{tile}: heartbeat peak_rss={rss:.0f}MiB "
+                f"mem_avail={_mem_available_mib():.0f}MiB "
+                f"elapsed={(time.monotonic() - t_leg) / 3600.0:.2f}h"
+            )
+
+    threading.Thread(target=_beat, daemon=True).start()
+    try:
+        store = tile_member_store(tile)
+        resumed = store.exists()
+        if resumed:
+            _t5_echo(f"{tile}: RESUME from own member store {store}")
+            with np.load(store, allow_pickle=False) as z:
+                wids = [str(w) for w in np.asarray(z["window_ids"])]
+                etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
+                anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+                starts = {w: float(z[f"start_{w}"]) for w in wids}
+                pcg_rows = json.loads(str(z["pcg_rows"][()]))
+                solve_wall_s = float(z["solve_wall_s"])
+            spec = method._spec_from(provider, grid)  # noqa: SLF001
+        else:
+            t_solve = time.monotonic()
+            log_start = len(miost_mod.CONVERGENCE_LOG)
+            spec, etas_a, anoms, starts = merged_members(
+                method,
+                framed,
+                grid,
+                provider,
+                m,
+                root,
+                on_window=lambda wid, day: _t5_echo(
+                    f"{tile}: window {wid} solved (day {day:.0f}); "
+                    f"{time.monotonic() - t_leg:.0f}s"
+                ),
+            )
+            pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
+            solve_wall_s = time.monotonic() - t_solve
+            STAGE1_DIR.mkdir(parents=True, exist_ok=True)
+            np.savez(
+                store,
+                **_store_payload(
+                    etas_a,
+                    anoms,
+                    starts,
+                    pcg_rows,
+                    solve_wall_s,
+                    f"T5 diverse leg member store ({tile}); crash-resume "
+                    "substrate, never a reference",
+                ),
+            )
+            _t5_echo(f"{tile}: member store persisted -> {store}")
+
+        stamped, capped = classify_pcg_legs(
+            pcg_rows, rtol=float(method.pcg_rtol), maxiter=int(method.pcg_maxiter)
+        )
+        mean_map, std_map = tile_mean_map(tile), tile_std_map(tile)
+        if not mean_map.exists() or not std_map.exists():
+            days = [float(d) for d in range(0, STAGE1_N_DAYS, days_stride)]
+            means = _lineage_mean_fields()(spec, starts, etas_a, grid, plan, days)
+            stds = _lineage_std_fields()(spec, starts, anoms, grid, plan, days)
+            mdt = np.asarray(load_mdt_grid([Path(p) for p in gate.MAPPING_SIX], grid))
+            mean_stack = np.stack([mn.reshape(grid.shape) for mn in means]) + mdt[None]
+            std_stack = np.stack([sd.reshape(grid.shape) for sd in stds])
+            assimilated = tuple(sorted({str(s) for s in np.asarray(framed.mission)}))
+            epoch = np.datetime64("2017-01-01")
+            times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
+            for stack, dest in ((mean_stack, mean_map), (std_stack, std_map)):
+                write_map(
+                    times,
+                    grid.y,
+                    grid.x,
+                    stack,
+                    dest,
+                    assimilated_missions=assimilated,
+                )
+                gate._attach_label(dest, "STAGE1-EVIDENCE")  # noqa: SLF001
+            del means, stds, mean_stack, std_stack
+            _t5_echo(f"{tile}: maps written (mean + member-std)")
+
+        track = tile_validation_track(tile)
+        if not track.exists():
+            build_tile_validation_track(tile)
+            _t5_echo(f"{tile}: validation track built -> {track}")
+        scores = _score_tile_leg(
+            tile, frame=frame, mean_map=mean_map, std_map=std_map, track=track
+        )
+    finally:
+        stop_beat.set()
+
+    solve = frame.solve_bbox
+    wall_s = time.monotonic() - t_leg
+    row = record_tile_leg(
+        seal_sha=seal_sha,
+        tile=tile,
+        frame={
+            "core": list(TILES[tile]["core"]),
+            "overlap_deg": frame.overlap_deg,
+            "halo_deg": frame.halo_deg,
+            "missing_neighbors": sorted(frame.missing_neighbors),
+            "solve_bbox": [solve.lon_min, solve.lon_max, solve.lat_min, solve.lat_max],
+            "convention": DIVERSE_FRAME_CONVENTION,
+            "resolution_deg": RESOLUTION_DEG,
+        },
+        window_plan={
+            "starts": list(plan.starts),
+            "w_days": plan.w_days,
+            "n_windows": len(plan.windows),
+            "days_stride": days_stride,
+        },
+        m=m,
+        superobs_cfg=superobs_cfg,
+        n_obs=n_obs,
+        wall_s=wall_s,
+        peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
+        pcg=pcg_rows,
+        pcg_rtol=float(method.pcg_rtol),
+        pcg_maxiter=int(method.pcg_maxiter),
+        scores=scores,
+        date=datetime.now(UTC).date().isoformat(),
+    )
+    ceiling = tier2_wall_ceiling(elapsed_h=wall_s / 3600.0)
+    _t5_echo(
+        f"{tile}: recorded at phase14.stage1.tiles.{tile} "
+        f"({row['convergence']}, solve {solve_wall_s / 3600.0:.2f} h, "
+        f"leg {wall_s / 3600.0:.2f} h, capped={capped})"
+    )
+    if ceiling["stop"]:
+        _t5_echo(
+            f"{tile}: WALL CEILING EXCEEDED — {ceiling['elapsed_h']:.1f} h > "
+            f"{ceiling['ceiling_h']:.0f} h (E-16 §1): the leg is recorded and "
+            "the NEXT leg does not launch until the owner re-prices"
+        )
 
 
 SIGMA_DIAGNOSIS_NODE = "seam_sigma_diagnosis"
@@ -3610,6 +4172,12 @@ def run(
     lives in the registry and is recorded as provenance, never chosen at
     the command line.
 
+    The RAM predicate depends on which authorisation the tile runs under
+    (E-16 §2, ratified pin 92): the four Tier-2-CLEARED T5 tiles are gated
+    on MEASURED live headroom, and NOT on ``ladder.tier1_eligible`` —
+    gating them on the Tier-1 predicate would make task 22's clearance
+    inert. Every other caller keeps the Tier-1 preflight refusal unchanged.
+
     Args:
         tile: Registry tile name.
         m: Ensemble members retained.
@@ -3619,12 +4187,29 @@ def run(
 
     Raises:
         typer.BadParameter: Unknown tile.
-        RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
+        RuntimeError: Tier-1 ladder refusal (via :func:`preflight`) for
+            tiles that were never Tier-2-cleared, or the Tier-2 launch
+            gate refusing on measured headroom for the T5 tiles.
     """
     if tile not in TILES:
         raise typer.BadParameter(f"unknown tile {tile!r}; known: {sorted(TILES)}")
-    model = preflight(tile, m)
-    typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
+    if tile in TIER2_TILES:
+        from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
+
+        model = tile_size_model(tile, m=m, n_windows=len(WindowPlan().windows))
+        gate = tier2_launch_gate(mem_available_mib=_mem_available_mib())
+        typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
+        typer.echo(json.dumps(gate))
+        if not gate["passed"]:
+            raise RuntimeError(
+                f"tile {tile!r}: Tier-2 launch gate REFUSES — MemAvailable "
+                f"{gate['mem_available_mib']:.0f} MiB < {gate['threshold_mib']:.0f} "
+                "MiB (2 x the MEASURED peak, E-16 §2). The leg WAITS for the "
+                "top of the co-tenant headroom cycle; never launch over headroom"
+            )
+    else:
+        model = preflight(tile, m)
+        typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
     _solve_leg(tile, m, days_stride, maxiter)
 
 
