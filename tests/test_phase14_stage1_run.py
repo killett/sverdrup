@@ -325,6 +325,99 @@ def test_evidence_row_seam_reference_only_no_caveat() -> None:
         assert row["reference_row"] == _PINNED_REFERENCE_ROW
 
 
+# The pinned Stage-1 scores schema (plan T5 criterion 1: mu / lambda_x /
+# coverage / chi2 j3-validation rows + raw sigma + LABELED scalar-s*).
+_PINNED_SCORE_KEYS = {
+    "mu",
+    "sigma",
+    "lambda_x",
+    "n_scored_points",
+    "coverage_1sigma",
+    "chi2_j3_validation",
+    "raw_sigma",
+    "scalar_s_star",
+    "track",
+}
+
+_SCORE_KWARGS: dict[str, Any] = {
+    "mu": -0.0131,
+    "sigma": 0.0402,
+    "lambda_x": 141.5,
+    "n_scored_points": 20431,
+    "coverage_1sigma": 0.591,
+    "reduced_chi2": 1.83,
+    "raw_sigma": 0.0217,
+    "scalar_s_star": 2.14,
+    "track": "data/j3.nc",
+    "track_sha256": "beef" * 16,
+}
+
+
+def test_scores_block_keys_are_exactly_the_pinned_set() -> None:
+    """build_scores_block output keys == the pinned scores set, nothing else.
+
+    Bug caught: a free-prose scores field (the one place an interpretation
+    could be written) sneaking in, or a required row silently dropped.
+    """
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+    assert set(scores) == _PINNED_SCORE_KEYS
+
+
+def test_pin42_fields_sit_on_the_chi2_row_only() -> None:
+    """Pin 95: only the chi2 j3-validation row carries pin-42 fields.
+
+    Bug caught: pin-42 blocks sprayed across every row, which would dress
+    the report-only mu/lambda_x/coverage readings as verdict-bearing — or
+    omitted from chi2, the one row compared against an expectation.
+    """
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+    assert "pin42" in scores["chi2_j3_validation"]
+    assert "report_only" not in scores["chi2_j3_validation"]
+    for key in ("mu", "sigma", "lambda_x", "coverage_1sigma", "raw_sigma"):
+        assert scores[key]["report_only"] is True, key
+        assert "pin42" not in scores[key], key
+
+
+def test_chi2_pin42_records_the_outcome_and_does_not_gate() -> None:
+    """Pin 98: the chi2 pin-42 field RECORDS; the non-gating status is pinned.
+
+    Bug caught: a later reader "completing" the bar that harness.py:1145
+    deliberately left out — a threshold or pass/fail condition here would
+    re-gate chi2 behind the earlier ruling's back (98b).
+    """
+    row = _mod.build_scores_block(**_SCORE_KWARGS)["chi2_j3_validation"]
+    assert row["value"] == 1.83
+    assert row["gates"] is False
+    assert row["pin42"]["null"] == "E[chi2_red] = 1 (calibrated)"
+    assert row["pin42"]["pass_condition"] is None
+    assert row["pin42"]["fail_condition"] is None
+    assert "coverage remains the only bar" in row["pin42"]["why_not_gating"]
+
+
+def test_scalar_s_star_row_is_labeled_reference_only() -> None:
+    """The scalar-s* transfer reading is LABELED where its number is read.
+
+    Bug caught: an unlabeled s* row read as a calibrated scaling rather
+    than the uncalibrated transfer reference it is.
+    """
+    row = _mod.build_scores_block(**_SCORE_KWARGS)["scalar_s_star"]
+    assert row["value"] == 2.14
+    assert row["label"] == "REFERENCE-ONLY, NOT CALIBRATED"
+
+
+def test_scores_block_raw_sigma_drives_the_pin94_caveat() -> None:
+    """A row built from build_scores_block carries the pin-94 sigma caveat.
+
+    Bug caught: renaming the scores builder's raw-sigma key — the caveat
+    attachment keys off it, so the rename would silently produce an
+    uncaveated sigma row while every other test still passed.
+    """
+    kwargs = _row_kwargs("kuroshio")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    row = _mod.build_evidence_row(**kwargs)
+    assert row["sigma_caveat"] == _PINNED_SIGMA_CAVEAT
+
+
 @pytest.mark.parametrize("tile", _DIVERSE)
 def test_evidence_row_raw_sigma_carries_pinned_sigma_caveat(tile: str) -> None:
     """A scores block carrying raw_sigma yields the VERBATIM pin-94 caveat.

@@ -236,6 +236,50 @@ SIGMA_CAVEAT = (
 RAW_SIGMA_KEY = "raw_sigma"
 
 # ---------------------------------------------------------------------------
+# Owner pins 95 + 98 (ruling doc PART 21/22) — THE SPLIT, and the chi2 row's
+# pin-42 field.
+#
+# 95: what makes a gate is COMPARISON AGAINST AN EXPECTATION, not whether the
+# word "verdict" appears. Only the chi2 j3-validation reading has one
+# (`reduced_chi2`'s own docstring, src/sverdrup/eval/calibration.py:13-15:
+# "1.0 is calibrated"). Every other Stage-1 reading is report-only and is
+# stamped as such HERE, where it is read.
+#
+# 98: the field RECORDS, it does NOT GATE. The shipped record already made
+# chi2 deliberately non-gating — harness.py:1145, "jet-core post-fit chi2
+# named as a recorded outcome (motivated the phase; coverage remains the only
+# bar)" — and pin 42 does not reverse a decision. So the null is stated and
+# the failure condition is deliberately ABSENT, with that absence recorded:
+# a later reader must not "complete" the bar that was left out on purpose.
+REPORT_ONLY_NOTE = (
+    "REPORT-ONLY: a reading with no expectation to compare against, so pin "
+    "42's gate fields do not apply and none are recorded here (pin 95)"
+)
+
+CHI2_PIN42: dict[str, Any] = {
+    "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+    "pin": "95 (the split) + 98 (records, does not gate)",
+    "kind": "recorded outcome, NOT a gate",
+    "null": "E[chi2_red] = 1 (calibrated)",
+    "null_source": (
+        'src/sverdrup/eval/calibration.py reduced_chi2 docstring — "1.0 is calibrated"'
+    ),
+    "pass_condition": None,
+    "fail_condition": None,
+    "why_not_gating": (
+        "the shipped record made this chi2 non-gating deliberately: "
+        "harness.py:1145 names the jet-core post-fit chi2 as a recorded "
+        "outcome (motivated the phase; coverage remains the only bar). Pin "
+        "42 requires the outcome conditions be RECORDED; it does not "
+        "re-gate a bar an earlier ruling left out"
+    ),
+    "not_to_be_completed": (
+        "adding a threshold here would re-gate chi2 behind that ruling's "
+        "back (98b) — the absent failure condition is the record, not a gap"
+    ),
+}
+
+# ---------------------------------------------------------------------------
 # Owner pin 90 (ruling doc PART 20, 2026-08-01) — T5 ACCEPTANCE CRITERION 8,
 # DISCHARGED BY THE PIN-12 RULING.
 #
@@ -550,6 +594,80 @@ def build_evidence_row(
         "sigma_caveat": SIGMA_CAVEAT if RAW_SIGMA_KEY in scores else None,
         "label": "STAGE1-EVIDENCE",
         "date": date,
+    }
+
+
+def build_scores_block(
+    *,
+    mu: float,
+    sigma: float,
+    lambda_x: float,
+    n_scored_points: int,
+    coverage_1sigma: float,
+    reduced_chi2: float,
+    raw_sigma: float,
+    scalar_s_star: float,
+    track: str,
+    track_sha256: str,
+) -> dict[str, Any]:
+    """Assemble one tile's Stage-1 scores block — PURE, schema pinned.
+
+    Owner PINS 95 + 98, the SPLIT: pin-42 fields go on the chi2
+    j3-validation row and NOWHERE else. What makes a gate is comparison
+    against an expectation, and chi2 has one — ``reduced_chi2``'s own
+    docstring says *1.0 is calibrated*. Everything else here is a reading
+    with no expectation to compare against, so every other row is stamped
+    ``report_only`` and test-pinned as such.
+
+    The chi2 pin-42 field RECORDS the outcome conditions and PRESERVES the
+    non-gating status (98): ``harness.py:1145`` made chi2 deliberately
+    non-gating — *"coverage remains the only bar"* — and pin 42 does not
+    reverse a shipped decision. The null is stated; there is deliberately
+    NO failure condition, and that absence is pinned so a later reader
+    cannot "complete" the bar that was left out on purpose.
+
+    Args:
+        mu: their_eval mu at this tile core.
+        sigma: their_eval sigma (the vendored RMS statistic — NOT the
+            ensemble spread; see ``raw_sigma``).
+        lambda_x: Effective resolution [km].
+        n_scored_points: Track points the scores were computed over.
+        coverage_1sigma: Empirical 1-sigma coverage on the j3 track.
+        reduced_chi2: Reduced chi-squared on the j3 validation track.
+        raw_sigma: The UNCALIBRATED ensemble spread level (the sigma row —
+            its presence is what attaches :data:`SIGMA_CAVEAT` to the row).
+        scalar_s_star: The closed-form scalar variance scaling, LABELED
+            reference-only where its number is read.
+        track: The validation track path (provenance, in-row).
+        track_sha256: That track's sha256 — the row witnesses WHAT it
+            scored against, never merely that it scored.
+
+    Returns:
+        The scores block (exactly the pinned key set).
+    """
+    reading = {"report_only": True, "report_only_note": REPORT_ONLY_NOTE}
+    return {
+        "mu": {"value": mu, **reading},
+        "sigma": {"value": sigma, **reading},
+        "lambda_x": {"value": lambda_x, **reading},
+        "n_scored_points": n_scored_points,
+        "coverage_1sigma": {"value": coverage_1sigma, **reading},
+        "chi2_j3_validation": {
+            "value": reduced_chi2,
+            "gates": False,
+            "pin42": dict(CHI2_PIN42),
+        },
+        "raw_sigma": {
+            "value": raw_sigma,
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            **reading,
+        },
+        "scalar_s_star": {
+            "value": scalar_s_star,
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            **reading,
+        },
+        "track": {"path": track, "sha256": track_sha256},
     }
 
 
