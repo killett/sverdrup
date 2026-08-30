@@ -4,6 +4,14 @@
 This project may be built across multiple sessions, and a session can die
 mid-run. On **every** new or resumed session, before doing anything else:
 
+0. Run `sh scripts/resume_checks.sh` **before committing anything** (owner
+   ruling pin 104, 2026-08-30). `.git/hooks` is not versioned, so a clone or
+   a rebuilt box starts with **no post-commit hook** and nothing announces
+   it — origin sat behind local for a whole stage while every report claimed
+   otherwise. The script reports hook presence, any `.git/UNPUSHED_COMMITS`
+   marker, local-vs-**remote** head (`git ls-remote`, never `rev-parse`
+   alone) and tree state, exiting non-zero on any of them. If the hook is
+   missing: `sh scripts/install_git_hooks.sh`.
 1. Read `PROGRESS.md` at the repo root. It carries the index of the current
    active work AND the project's running notebook of deferred items,
    cross-cutting decisions, gotchas, and open questions. Read all of it.

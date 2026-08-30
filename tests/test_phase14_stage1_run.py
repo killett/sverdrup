@@ -482,6 +482,122 @@ def test_identity_holds_on_readings_taken_from_one_call() -> None:
     assert scores["s_star_chi2_identity"]["same_by_construction"] is True
 
 
+def test_readings_carry_chi2_and_s_star_as_ONE_value() -> None:
+    """Pin 103(c): single-source, not agreement — the same object twice.
+
+    Bug caught: a refactor that computes s* on its own from inputs that
+    later drift. Equality is guaranteed by aliasing TODAY, so an equality
+    assertion would pass right through such a refactor and only start
+    failing once the two inputs actually diverged — in a recorded row.
+    """
+    readings = _mod.calibration_readings(
+        mean=np.zeros(3), std=np.ones(3), truth=np.array([0.5, -0.5, 2.0])
+    )
+    assert readings["reduced_chi2"] is readings["scalar_s_star"]
+
+
+def test_scores_from_readings_wires_both_fields_from_the_one_mapping() -> None:
+    """The wiring hop is single-source too, not just the computation hop.
+
+    Bug caught: a future caller assembling the block by hand and feeding
+    scalar_s_star from a separate path — the exact construction error the
+    row-build raise exists for. A sentinel value proves both fields were
+    READ from the readings mapping rather than recomputed.
+    """
+    sentinel = 4.2424
+    readings = {
+        "coverage_1sigma": 0.61,
+        "reduced_chi2": sentinel,
+        "scalar_s_star": sentinel,
+        "raw_sigma": 0.02,
+        "n_used": 11,
+    }
+    scores = _mod.scores_from_readings(
+        readings,
+        mu=0.0,
+        sigma=0.04,
+        lambda_x=140.0,
+        n_scored_points=12,
+        track="data/j3.nc",
+        track_sha256="beef" * 16,
+    )
+    assert scores["chi2_j3_validation"]["value"] == sentinel
+    assert scores["scalar_s_star"]["value"] == sentinel
+    assert scores["chi2_j3_validation"]["n"] == 11
+
+
+@pytest.mark.parametrize("tile", ["kuroshio", "seam_n"])
+def test_run_exercises_row_construction_before_any_load(
+    tile: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 103(a): the construction smoke runs BEFORE the leg, both branches.
+
+    Bug caught: a construction error (the two fields wired from separate
+    paths) first discovered at the END of a 31 h leg, because the only
+    check sat at row build. Placement is the whole point -- the error is
+    present from the first line and costs seconds to find.
+    """
+    from sverdrup.application import ladder
+
+    loaded: list[str] = []
+    monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
+    monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 12000.0)
+    monkeypatch.setattr(_mod, "_solve_leg", lambda *a, **k: loaded.append("solved"))
+
+    def _broken(**kwargs: Any) -> dict[str, Any]:
+        raise ValueError("SENTINEL-CONSTRUCTION-BROKEN")
+
+    monkeypatch.setattr(_mod, "build_scores_block", _broken)
+    with pytest.raises(ValueError, match="SENTINEL-CONSTRUCTION-BROKEN"):
+        _mod.run(tile)
+    assert loaded == []
+
+
+def test_solve_leg_exercises_row_construction_before_any_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Direct callers of the leg get the same early firing.
+
+    Bug caught: the smoke living only in the CLI entry, so a leg launched
+    programmatically (or from a future runner) keeps the old placement and
+    the old cost.
+    """
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase14": {"stage0": {"seal": {"sha": "ab" * 32}}}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    loaded: list[str] = []
+    monkeypatch.setattr(_mod, "_tile_framed_obs", lambda tile: loaded.append(tile))
+
+    def _broken(**kwargs: Any) -> dict[str, Any]:
+        raise ValueError("SENTINEL-CONSTRUCTION-BROKEN")
+
+    monkeypatch.setattr(_mod, "build_scores_block", _broken)
+    with pytest.raises(ValueError, match="SENTINEL-CONSTRUCTION-BROKEN"):
+        _mod._solve_leg("kuroshio", m=3, days_stride=1, maxiter=1200)
+    assert loaded == []
+
+
+def test_preflight_construction_smoke_records_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The smoke is synthetic and MUST NOT touch the evidence store.
+
+    Bug caught: a pre-launch self-check that writes -- a synthetic row
+    landing at phase14.stage1.tiles.<tile>, or a seal-verified write path
+    being exercised for real, would make the cheap check expensive and the
+    store untrustworthy.
+    """
+    evid = tmp_path / "evidence.json"
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+    written: list[str] = []
+    monkeypatch.setattr(
+        _mod, "record_evidence_row", lambda *a, **k: written.append("w")
+    )
+    _mod.preflight_scores_construction()
+    assert written == []
+    assert not evid.exists()
+
+
 def test_scalar_s_star_row_is_labeled_reference_only() -> None:
     """The scalar-s* transfer reading is LABELED where its number is read.
 

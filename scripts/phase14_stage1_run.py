@@ -744,6 +744,88 @@ def build_scores_block(
     }
 
 
+def scores_from_readings(
+    readings: dict[str, Any],
+    *,
+    mu: float,
+    sigma: float,
+    lambda_x: float,
+    n_scored_points: int,
+    track: str,
+    track_sha256: str,
+) -> dict[str, Any]:
+    """Wire ONE :func:`calibration_readings` result into a scores block.
+
+    The single wiring point (owner pin 103c): both the chi2 field and the
+    s* field are READ from the same mapping, so they cannot drift apart by
+    a caller assembling the block by hand from two paths. That — not their
+    agreement, which today is guaranteed by aliasing — is the invariant.
+
+    Args:
+        readings: One :func:`calibration_readings` result.
+        mu: their_eval mu at this tile core.
+        sigma: their_eval sigma (the vendored RMS statistic).
+        lambda_x: Effective resolution [km].
+        n_scored_points: Track points the mu/sigma/lambda_x triple used.
+        track: The validation track path.
+        track_sha256: That track's sha256.
+
+    Returns:
+        The scores block from :func:`build_scores_block`.
+    """
+    return build_scores_block(
+        mu=mu,
+        sigma=sigma,
+        lambda_x=lambda_x,
+        n_scored_points=n_scored_points,
+        coverage_1sigma=readings["coverage_1sigma"],
+        reduced_chi2=readings["reduced_chi2"],
+        raw_sigma=readings["raw_sigma"],
+        scalar_s_star=readings["scalar_s_star"],
+        calibration_n=readings["n_used"],
+        track=track,
+        track_sha256=track_sha256,
+    )
+
+
+def preflight_scores_construction() -> None:
+    """Exercise the row construction on synthetic inputs — BEFORE any solve.
+
+    Owner pin 103(a). The s*/chi2 raise in :func:`build_scores_block` can
+    only fire on a caller wiring the two fields from separate paths, which
+    is a CONSTRUCTION error: present from the first line, and — with the
+    raise as the only check — first discovered at the END of a leg. Run
+    here it costs microseconds. Pin 103(b) keeps the row-build raise: with
+    this in place, the only remaining route to it is a genuine mid-leg
+    change, which is worth losing a leg over.
+
+    Pin 103(d), the general form: a check earns its placement by where the
+    error it catches ORIGINATES, not by where the value is consumed.
+
+    Nothing is recorded — the block is built from synthetic numbers, is
+    labeled as such, and is discarded.
+
+    Raises:
+        ValueError: The construction is broken (the whole point).
+    """
+    import numpy as np  # noqa: PLC0415
+
+    readings = calibration_readings(
+        mean=np.zeros(4),
+        std=np.ones(4),
+        truth=np.array([0.5, -0.5, 2.0, -1.0]),
+    )
+    scores_from_readings(
+        readings,
+        mu=0.0,
+        sigma=0.04,
+        lambda_x=140.0,
+        n_scored_points=4,
+        track="PREFLIGHT-SYNTHETIC — never recorded",
+        track_sha256="0" * 64,
+    )
+
+
 def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
     """Record one row under ``phase14.stage1.tiles.<tile>`` — seal-gated.
 
@@ -3859,16 +3941,12 @@ def _score_tile_leg(
         f"on {score.n_scored_points} points; calibration on "
         f"{readings['n_used']} of them"
     )
-    return build_scores_block(
+    return scores_from_readings(
+        readings,
         mu=float(score.mu),
         sigma=float(score.sigma),
         lambda_x=float(score.lambda_x),
         n_scored_points=int(score.n_scored_points),
-        coverage_1sigma=readings["coverage_1sigma"],
-        reduced_chi2=readings["reduced_chi2"],
-        raw_sigma=readings["raw_sigma"],
-        scalar_s_star=readings["scalar_s_star"],
-        calibration_n=readings["n_used"],
         track=str(track),
         track_sha256=gate.sha256_file(track),
     )
@@ -3980,6 +4058,9 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     from sverdrup.validation.input_adapter import load_mdt_grid  # noqa: PLC0415
     from sverdrup.validation.output_adapter import write_map  # noqa: PLC0415
 
+    # Pin 103(a) again, for callers that reach the leg without the CLI: the
+    # construction smoke precedes the seal read and every load.
+    preflight_scores_construction()
     gate = _anchor_gate_module()
     t_leg = time.monotonic()
     store_json = json.loads(EVIDENCE.read_text())
@@ -4274,6 +4355,9 @@ def run(
     """
     if tile not in TILES:
         raise typer.BadParameter(f"unknown tile {tile!r}; known: {sorted(TILES)}")
+    # Pin 103(a): the row construction is exercised on synthetic inputs
+    # before EITHER gate, so a construction error costs seconds, not a leg.
+    preflight_scores_construction()
     if tile in TIER2_TILES:
         from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
 

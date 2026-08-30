@@ -111,6 +111,29 @@
 > - **⛔ STANDING FORM (102b): every report line verifies against the REMOTE.**
 >   `git ls-remote origin <branch>` — never `git rev-parse HEAD` alone.
 >
+> **✅ PINS 103–105 RULED AND LANDED 2026-08-30 (ruling doc PART 24, verbatim); 103 + 104
+> FOLDED.**
+> - **103 — the identity invariant fired too late.** `calibration_readings` returns the
+>   SAME object as both `reduced_chi2` and `scalar_s_star`, so the row-build raise is
+>   unreachable on the current path: only a future caller wiring them from separate paths
+>   can trip it, and that is a CONSTRUCTION error — present from the first line, found at
+>   the END of a leg. **(a) `preflight_scores_construction()` now exercises the whole
+>   construction on synthetic numbers before either gate in `run` AND at the top of
+>   `_solve_leg`** (so a programmatic caller gets it too); it records nothing and is
+>   test-pinned to record nothing. **(b) the row-build raise STAYS** — a divergent row is
+>   wrong and must not be written. **(c) the pinned invariant is SINGLE-SOURCE, not
+>   agreement:** `readings["reduced_chi2"] is readings["scalar_s_star"]` at the computation
+>   hop, and `scores_from_readings` (the one wiring point) proven by sentinel to read both
+>   fields from the same mapping — an equality test would have survived a refactor that
+>   computed them twice from drifting inputs. **(d) §7 gains discipline 12:** a check earns
+>   its placement by where the error it catches ORIGINATES.
+> - **104 — hook installation is PROTOCOL now, not a gotcha.** `sh scripts/resume_checks.sh`
+>   is step 0 in `CLAUDE.md` and the first step of `docs/project-context.md` §10's boot
+>   sequence; it makes "no hook" a REPORTED state (exit 1), alongside the marker check, the
+>   `ls-remote` comparison and tree state. Both report paths exercised in scratch repos.
+> - **105 — the both-directions sweep is RATIFIED as the standard for widening a guard**
+>   (what was gained, and that nothing previously refused is now accepted).
+>
 > **▶ NEXT ACTION: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
 > `Registry.applicable` + `report_rows` machinery; zero new producers, absence RECORDED
 > as absence.** Then T5d (per-tile extras: equatorial lane-0 persistence incl. pin 96's
@@ -5538,14 +5561,16 @@ above confirm them**, so the spec stops lagging the decision.
 ## Gotchas
 
 - **`.git/hooks` IS NOT VERSIONED — the "hook pushes on commit" belief was false
-  (2026-08-29, owner pin 102).** The repo had only `pre-commit` installed; no post-commit
-  hook existed on this box, so commits stayed local while every report line said
-  "everything is on origin". Two consequences worth keeping: (i) after any clone, box
-  rebuild or `.git` recreation, run `sh scripts/install_git_hooks.sh` — nothing else
-  installs it and nothing warns you it is missing; (ii) **verify against the REMOTE**
-  (`git ls-remote origin <branch>`), never against `git rev-parse HEAD`, which is exactly
-  the check that cannot detect this class of failure. The hook now fails loudly (stderr
-  banner + `.git/UNPUSHED_COMMITS` marker) rather than silently.
+  (2026-08-29, owner pins 102 + 104).** There was never a post-commit hook on this box;
+  commits stayed local while every report line said "everything is on origin", and
+  **absence looked exactly like success**. ⛔ **This is now a PROTOCOL step, not a
+  gotcha** (pin 104: a note here is prose a fresh session may read after it has already
+  committed) — `CLAUDE.md` step 0 and `docs/project-context.md` §10 both run
+  `sh scripts/resume_checks.sh` first, which REPORTS hook presence, any
+  `.git/UNPUSHED_COMMITS` marker, local-vs-**remote** head via `ls-remote`, and tree
+  state, exiting non-zero on any of them. Kept here only as the trail: **verify against
+  the REMOTE**, never `git rev-parse HEAD` alone — that is precisely the check that
+  cannot see this failure.
 
 - **A pin-42-style "required schema field" must round-trip through JSON (2026-08-29).**
   `S_STAR_CHI2_IDENTITY` first carried its `fields` entry as a TUPLE; the in-memory row
