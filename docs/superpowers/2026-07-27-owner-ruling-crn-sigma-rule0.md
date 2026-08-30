@@ -1866,3 +1866,76 @@ consumer of an ORBIT_GEOMETRY-derived quantity across T6–T9.
   under-evidenced kernel choice becomes a GEOMETRY FACT.
 - **The 106 surface is swept ONCE, report-only** (109), and the result folds into 106(d)'s
   Stage-2 handoff so per-tile orbit geometry arrives with its full consumer list (109c).
+
+---
+
+## PART 27 — STRAY-ARTIFACT, ATTRS-BUG AND LOOKUP RULING (verbatim), pins 110–113, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Authorises deletion of the two test
+strays with a recorded trace, orders the production-path attrs bug fixed FIRST, amends
+106's scope to exclude the box tiles, and ratifies the 109 sweep.
+
+> 110. DELETE BOTH STRAYS — authorised. Record the deletion, do not just do it: what they
+>      were, when written, by which test, and the sha of the .nc before removal. A deletion
+>      from the evidence directory that leaves no trace is its own provenance gap.
+>      (a) ROOT CAUSE IS TEST ISOLATION. Tests reaching the production data directory is the
+>          defect; the two artifacts are symptoms. Sandbox the Stage-1 test paths so this
+>          cannot recur, and test-pin that a test run writes nothing under data/.
+>      (b) THE REUSE PATTERN IS THE SEVENTH INSTANCE of the unfailable-check family
+>          (phase14_stage1_run.py:4875, `if not track.exists()`). A bare existence check
+>          cannot distinguish a legitimately built artifact from a test leftover, so it
+>          silently adopts whatever is there. Gate reuse on the artifact's own provenance —
+>          at minimum a recorded sha and a build record — not on the filename existing.
+>          Add to §7's instance list.
+> 111. ⛔ THE ATTRS BUG IS IN THE PRODUCTION PATH — fix before leg 1, ahead of everything
+>      else here. build_tile_validation_track inherits the first daily file's global attrs,
+>      so every T5 leg would write evidence claiming 2016-12-31 to 2017-01-01 coverage for a
+>      year concatenated from ~365 files. combine_attrs="drop" plus our own provenance is
+>      the right fix. Test-pin the coverage span against the actual concatenated range, so
+>      the assertion is about the data rather than about the setting.
+> 112. FIX THE LOOKUP, NOT THE PLACEMENT — and 106 is amended.
+>      (a) RESOLVE THE GEOMETRY ARTIFACT FROM ITS CANONICAL LOCATION in ours/, as
+>          phase13_probe.py:51 and phase13_refit_readings.py:47 already do. Do NOT copy it
+>          into the evidence directory: a duplicate raises the witness question you
+>          correctly flagged, and the canonical artifact should stay canonical.
+>      (b) 106 IS AMENDED IN SCOPE. It stands for the four diverse tiles — genuine design
+>          conflict, h2ag ≠ h2g, box-and-φ₀ scoped, absence honestly recorded. It does NOT
+>          cover anchor, seam_n, seam_s, where the absence was a lookup path and is fixable
+>          with no new producer. Record the amendment against 106 with the sweep as its
+>          cause; do not silently widen the fix.
+>      (c) WEDGE EXCLUSION: expect restoration at anchor and the seam pair only. The four
+>          diverse tiles stay outside the derivation's scope, so the southern tile's slope
+>          remains a degraded estimand and 108 stands for T6 unchanged. State which tiles
+>          recovered and which did not, in-row — wedge_exclusion:false must never appear
+>          without saying whether it is 106's conflict or a fixable gap.
+>      (d) The seam and anchor readings are already recorded. Say plainly whether restoring
+>          GroundTrack there changes any recorded value or only adds rows; if it changes a
+>          recorded value, that is a supersession and comes to me before it lands.
+> 113. 109 RATIFIED, including its correction of my own 106. One direct consumer, one
+>      indirect through track_wedge_masks, one correctly pruned; T7 and T8 verified clear
+>      rather than assumed. The prune was real and the radius was wider than the key —
+>      that distinction is the sweep earning its cost for the third time.
+>
+> SEQUENCE: 111 first, it is in the production path. Then 110 with its record, then 112.
+> Land 110-113 verbatim alongside. THEN T5e.
+>
+> STOP CONDITION: unchanged. Leg 1 does not launch until you declare the box back and
+> stable. If 112(d) turns out to change a recorded value, stop and bring it to me.
+
+### 112(d) ANSWERED BEFORE ANY FIX LANDS — additive only, NO supersession
+
+**Restoring GroundTrack at anchor / seam_n / seam_s changes NO recorded value. It can only
+ADD rows, and today it does not even do that.** Verified against the live store rather than
+reasoned from the code:
+
+- `phase14.stage1` currently holds no `report_rows` node at all (store keys read
+  2026-08-30; `tiles`, `report_rows`, `anisotropy_inputs`, `land_mask_exercise` and
+  `equatorial_lane0_manifest` are all absent). The T5c wiring writes report blocks from
+  `_solve_leg`, and the anchor (T3) and seam-pair (T4) legs ran BEFORE that wiring existed.
+- The recorded anchor and seam values — `anchor_gate` (five checks), `gate5` (µ/σ/λx) and
+  `seam_rows` (the rubric verdicts) — are produced by `score_tile` / `their_eval` and the
+  seam metrics. **No instrument row feeds any of them**, so no geometry-derived quantity
+  enters a recorded number.
+- Consequence: the lookup fix is **purely additive and prospective**. It makes GroundTrack
+  and the wedge exclusion available to any FUTURE block built for those tiles; it rewrites
+  nothing. **No supersession, and nothing to bring back under the 112(d) condition.**
