@@ -3751,6 +3751,91 @@ def calibration_readings(
     }
 
 
+def track_build_record_path(track: Path) -> Path:
+    """The sidecar build record beside a validation track."""
+    return track.with_suffix(track.suffix + ".build.json")
+
+
+def write_track_build_record(
+    track: Path, *, tile: str, n_points: int, source_files: int
+) -> dict[str, Any]:
+    """Record HOW a validation track was built, and its digest.
+
+    Owner pin 110(b): reuse is gated on provenance, never on a filename
+    existing. This is the record the gate reads.
+
+    Args:
+        track: The written track.
+        tile: The tile it was built for.
+        n_points: Points in the concatenation.
+        source_files: Daily files it was concatenated from.
+
+    Returns:
+        The build record (also written beside the track).
+    """
+    import hashlib  # noqa: PLC0415
+
+    record = {
+        "label": "TRACK-BUILD-RECORD",
+        "track": track.name,
+        "tile": tile,
+        "mission": VALIDATION_MISSION,
+        "sha256": hashlib.sha256(track.read_bytes()).hexdigest(),
+        "n_points": int(n_points),
+        "source_files": int(source_files),
+        "time_min": VALIDATION_TIME_MIN,
+        "time_max": VALIDATION_TIME_MAX,
+        "built_by": "phase14_stage1_run.build_tile_validation_track",
+        "date": datetime.now(UTC).date().isoformat(),
+    }
+    track_build_record_path(track).write_text(json.dumps(record, indent=2))
+    return record
+
+
+def assert_track_reusable(track: Path, *, tile: str) -> dict[str, Any]:
+    """Refuse to reuse a track that cannot prove what it is (pin 110b).
+
+    A bare ``exists()`` check cannot distinguish a legitimately built
+    artifact from a leftover — it silently adopts whatever is on disk,
+    which is how a test-written file came to sit in the evidence directory
+    wearing a STAGE1-EVIDENCE label. Reuse therefore requires the build
+    record, a digest that still matches the bytes, and the right tile.
+
+    Args:
+        track: The candidate track.
+        tile: The tile it must have been built for.
+
+    Returns:
+        The build record, when reuse is legitimate.
+
+    Raises:
+        RuntimeError: No build record, digest mismatch, or wrong tile.
+    """
+    import hashlib  # noqa: PLC0415
+
+    record_path = track_build_record_path(track)
+    if not record_path.exists():
+        raise RuntimeError(
+            f"{track} exists but has no build record ({record_path.name}): its "
+            "provenance is unknown, so it is REFUSED rather than adopted "
+            "(pin 110b). Delete it deliberately, or rebuild the track"
+        )
+    record = json.loads(record_path.read_text())
+    actual = hashlib.sha256(track.read_bytes()).hexdigest()
+    if actual != record.get("sha256"):
+        raise RuntimeError(
+            f"{track}: sha256 mismatch against its build record "
+            f"(file {actual[:12]}…, record {str(record.get('sha256'))[:12]}…) "
+            "— the bytes changed after the record was written"
+        )
+    if record.get("tile") != tile:
+        raise RuntimeError(
+            f"{track} was built for tile {record.get('tile')!r}, not {tile!r} "
+            "— scoring against another region's holdout is refused"
+        )
+    return dict(record)
+
+
 def build_tile_validation_track(tile: str, *, dest: Path | None = None) -> Path:
     """Write the tile's 2017 j3 holdout track as one L3-schema NetCDF.
 
@@ -3807,12 +3892,34 @@ def build_tile_validation_track(tile: str, *, dest: Path | None = None) -> Path:
             "— the tile cannot be scored and the leg refuses rather than "
             "recording an unscored row"
         )
-    track = xr.concat(parts, dim="time").sortby("time")
-    track.attrs["mission"] = VALIDATION_MISSION
-    track.attrs["label"] = "STAGE1-EVIDENCE"
-    track.attrs["tile"] = tile
+    # Owner pin 111: DROP the inherited attrs. xarray.concat keeps the FIRST
+    # dataset's globals, so a year concatenated from ~365 daily files would
+    # be written claiming that first day's coverage span — an
+    # evidence-labeled artifact whose provenance describes 1/365th of
+    # itself. Everything below is derived from the concatenation.
+    track = xr.concat(parts, dim="time", combine_attrs="drop").sortby("time")
+    times = np.asarray(track["time"].values)
+    track.attrs = {
+        "mission": VALIDATION_MISSION,
+        "label": "STAGE1-EVIDENCE",
+        "tile": tile,
+        "core_bbox": [core.lon_min, core.lon_max, core.lat_min, core.lat_max],
+        "time_coverage_start": str(np.min(times)),
+        "time_coverage_end": str(np.max(times)),
+        "n_points": int(times.size),
+        "source_files": len(parts),
+        "source_product": "CMEMS-MY SEALEVEL_GLO_PHY_L3_MY_008_062 daily files",
+        "scored_quantity": "sla_unfiltered + mdt - lwe (the vendored L3 convention)",
+        "provenance_note": (
+            "global attributes describe THIS concatenation; the daily files' "
+            "own attributes are deliberately NOT inherited (pin 111)"
+        ),
+    }
     out.parent.mkdir(parents=True, exist_ok=True)
     track.to_netcdf(out)
+    write_track_build_record(
+        out, tile=tile, n_points=int(times.size), source_files=len(parts)
+    )
     return out
 
 
@@ -3821,6 +3928,60 @@ STAGE1_REPORT_ROWS_NODE = "report_rows"
 # excuse. ONE constant, shared with the seam rows, so the two can never
 # drift into disagreeing about what era Stage 1 measured.
 STAGE1_ERA = SEAM_ERA
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 112 — RESOLVE THE GEOMETRY ARTIFACT FROM ITS CANONICAL LOCATION.
+#
+# The artifact lives in `ours/`, as phase13_probe.py:51 and
+# phase13_refit_readings.py:47 already read it. It is NOT copied beside the
+# Stage-1 maps: a duplicate raises a witness question of its own, and the
+# canonical artifact should stay canonical (112a).
+#
+# 112(b) — THE SCOPE IS THE DERIVATION'S OWN, not a tile allow-list. The
+# artifact records the box it was derived over (`box_lon`) and its reference
+# latitude (`phi0`), and those fields — never a constant typed here — decide
+# which tiles it covers. Four of the five CMEMS mission codes match the
+# artifact's families (alg/j2g/j2n/s3a), so a lookup keyed on missions alone
+# would hand Gulf-Stream geometry to a Pacific tile: exactly the "geometry
+# that does not belong to the tile" pin 106 refused.
+CANONICAL_GEOMETRY_ARTIFACT = EVIDENCE.parent / "phase11_orbit_geometry.json"
+
+
+def geometry_artifact_for(tile: str) -> tuple[Path | None, str]:
+    """The geometry artifact covering ``tile``, or None with the reason why.
+
+    Args:
+        tile: Registry tile name.
+
+    Returns:
+        ``(path, reason)``. ``path`` is None when the canonical
+        derivation's own scope does not cover the tile — the reason then
+        cites pin 106, because that absence is the design conflict rather
+        than a lookup gap.
+    """
+    artifact = CANONICAL_GEOMETRY_ARTIFACT
+    if not artifact.exists():
+        return None, (
+            f"no geometry artifact at {artifact} — GroundTrack is not "
+            "applicable and the wedge exclusion is unavailable"
+        )
+    meta = json.loads(artifact.read_text())
+    lon_lo, lon_hi = (float(v) for v in meta["box_lon"])
+    core = registry_frame(tile).core
+    in_box = lon_lo <= core.lon_min % 360.0 and core.lon_max % 360.0 <= lon_hi
+    if not in_box:
+        return None, (
+            f"tile core [{core.lon_min}, {core.lon_max}] lies OUTSIDE the "
+            f"derivation's box [{lon_lo}, {lon_hi}] (phi0={meta['phi0']}) — "
+            "this is owner pin 106's design conflict, not a lookup gap: "
+            "applying this geometry here would be geometry that does not "
+            "belong to the tile. Per-tile derivation is named Stage-2 work"
+        )
+    return artifact, (
+        f"tile core is in scope of the derivation's box [{lon_lo}, {lon_hi}] "
+        f"at phi0={meta['phi0']}; missions {sorted(meta['missions'])}"
+    )
 
 
 def build_tile_report_block(*, tile: str, era: str, mean_map: Path) -> dict[str, Any]:
@@ -3855,8 +4016,9 @@ def build_tile_report_block(*, tile: str, era: str, mean_map: Path) -> dict[str,
         report_only_instruments_block,
     )
 
-    block = report_only_instruments_block(mean_map)
-    expected_geometry = (
+    geometry, geometry_reason = geometry_artifact_for(tile)
+    block = report_only_instruments_block(mean_map, geometry_artifact=geometry)
+    expected_geometry = geometry or (
         Path(mean_map).parent / eval_context._GEOMETRY_ARTIFACT_NAME  # noqa: SLF001
     )
     rows = list(block["rows"])
@@ -3891,6 +4053,37 @@ def build_tile_report_block(*, tile: str, era: str, mean_map: Path) -> dict[str,
         # reader can see WHERE the geometry artifact was looked for.
         "geometry_artifact_expected_at": str(expected_geometry),
         "geometry_artifact_present": expected_geometry.exists(),
+        "geometry_scope": {
+            "applies": geometry is not None,
+            "artifact": str(geometry) if geometry else None,
+            "reason": geometry_reason,
+            "resolution": (
+                "the CANONICAL artifact in ours/ (pin 112a) — never a copy "
+                "beside the maps, which would raise a witness question of "
+                "its own"
+            ),
+        },
+        # Pin 112(c): a bare wedge_exclusion:false cannot be read. Say
+        # which KIND of absence produced it, because the two carry
+        # completely different consequences.
+        "wedge_exclusion_status": {
+            "kind": (
+                "IN SCOPE — wedge exclusion available"
+                if geometry is not None
+                else "DESIGN CONFLICT (pin 106)"
+            ),
+            "detail": geometry_reason,
+            "consequence": (
+                "the spectral slope is fitted with the track-aligned wedges "
+                "excluded, as intended"
+                if geometry is not None
+                else "the spectral slope is a DEGRADED estimand here: it is "
+                "fitted without excluding the track-aligned wedges, so "
+                "orbit-sampling artifacts sit inside the fitted band. Not "
+                "fixable in Stage 1 (pin 106); per-tile derivation is "
+                "Stage-2 work (106d)"
+            ),
+        },
         "wiring": (
             "Registry.applicable + build_report_rows via "
             "report_only_instruments_block — no Stage-1 producers exist"
@@ -4872,7 +5065,15 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
             _t5_echo(f"{tile}: maps written (mean + member-std)")
 
         track = tile_validation_track(tile)
-        if not track.exists():
+        if track.exists():
+            # Pin 110(b): reuse proves itself or refuses. A bare exists()
+            # check adopts whatever is on disk, including a leftover.
+            record = assert_track_reusable(track, tile=tile)
+            _t5_echo(
+                f"{tile}: validation track REUSED (sha {record['sha256'][:12]}…, "
+                f"{record['n_points']} points from {record['source_files']} files)"
+            )
+        else:
             build_tile_validation_track(tile)
             _t5_echo(f"{tile}: validation track built -> {track}")
         scores = _score_tile_leg(
@@ -4884,6 +5085,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     solve = frame.solve_bbox
     wall_s = time.monotonic() - t_leg
     row, report_block = record_leg_evidence(
+        evidence_path=EVIDENCE,
         mean_map=mean_map,
         seal_sha=seal_sha,
         tile=tile,
@@ -4915,14 +5117,20 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     )
     # Per-tile extras (T5d): each fires for its ELECTED tile only.
     if record_anisotropy_if_elected(
-        tile=tile, era=STAGE1_ERA, report_block=report_block
+        tile=tile, era=STAGE1_ERA, report_block=report_block, evidence_path=EVIDENCE
     ):
         _t5_echo(f"{tile}: anisotropy inputs recorded for T6")
     if record_land_mask_if_elected(
-        tile=tile, era=STAGE1_ERA, n_obs=n_obs, scores=scores
+        tile=tile,
+        era=STAGE1_ERA,
+        n_obs=n_obs,
+        scores=scores,
+        evidence_path=EVIDENCE,
     ):
         _t5_echo(f"{tile}: land-mask path exercise recorded")
     manifest = persist_lane0_if_elected(
+        evidence_path=EVIDENCE,
+        dest=LANE0_DIR,
         tile=tile,
         row=row,
         report_block=report_block,

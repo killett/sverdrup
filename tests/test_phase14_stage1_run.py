@@ -73,6 +73,35 @@ _PINNED_REFERENCE_ROW = {
 _DIVERSE = ("equatorial", "southern", "quiet_gyre", "kuroshio")
 
 
+_REAL_DATA_ROOT = Path("data/2021a_ssh_mapping_ose/ours")
+
+
+@pytest.fixture(autouse=True)
+def _sandbox_stage1_paths(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 110(a): no test in this module may reach the real data tree.
+
+    The two strays (a STAGE1-EVIDENCE-labeled track and a pcg checkpoint
+    directory) were written into the production evidence directory by a test
+    that reached ``_solve_leg`` with the real module paths live. Redirecting
+    here makes that structurally impossible rather than a thing every future
+    test must remember.
+    """
+    root = tmp_path_factory.mktemp("stage1_sandbox")
+    monkeypatch.setattr(_mod, "STAGE1_DIR", root / "phase14_stage1")
+    monkeypatch.setattr(_mod, "EVIDENCE", root / "evidence.json")
+    monkeypatch.setattr(_mod, "LANE0_DIR", root / "phase14_stage1" / "equatorial_lane0")
+
+
+def _data_tree_inventory() -> set[str]:
+    """Every path under the real Stage-1 data directory (names + mtimes)."""
+    root = _REAL_DATA_ROOT / "phase14_stage1"
+    if not root.exists():
+        return set()
+    return {f"{p.relative_to(root)}:{p.stat().st_mtime_ns}" for p in root.rglob("*")}
+
+
 class _SolveStopped(Exception):
     """Sentinel: the leg reached the point under test and went no further."""
 
@@ -1302,6 +1331,235 @@ def test_land_mask_exercise_recorded_for_kuroshio_only(
     else:
         assert out is None
         assert not evid.exists()
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 111 — the validation track's provenance describes ITSELF, not the
+# first daily file it was concatenated from.
+# ---------------------------------------------------------------------------
+
+
+def _fake_cmems_j3_day(path: Path, day: str, *, decoy: str) -> None:
+    """One CMEMS-shaped daily j3 file carrying misleading global attrs."""
+    import xarray as xr
+
+    t = np.array([f"{day}T00:30", f"{day}T12:30"], dtype="datetime64[ns]")
+    ds = xr.Dataset(
+        {
+            "sla_unfiltered": ("time", np.array([0.01, 0.02])),
+            "mdt": ("time", np.array([0.5, 0.5])),
+            "lwe": ("time", np.array([0.0, 0.0])),
+            "latitude": ("time", np.array([30.0, 31.0])),
+            "longitude": ("time", np.array([140.0, 141.0])),
+        },
+        coords={"time": t},
+        attrs={
+            "time_coverage_start": decoy,
+            "time_coverage_end": decoy,
+            "platform": "Jason-3",
+            "title": "DT Jason-3 Global Ocean Along track",
+        },
+    )
+    ds.to_netcdf(path)
+
+
+def test_validation_track_attrs_describe_the_concatenated_range(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The written track's coverage span is ITS OWN, not the first file's.
+
+    Bug caught: the live one (pin 111). xarray.concat keeps the first
+    dataset's global attrs, so a year concatenated from ~365 daily files
+    was written claiming the FIRST DAY's coverage span -- evidence-labeled
+    provenance describing 1/365th of the artifact. The assertion is against
+    the data (the actual min/max times) so it cannot pass by someone
+    setting a flag and moving on.
+    """
+    import xarray as xr
+
+    from sverdrup.adapters.altimetry import cmems_my
+
+    src = tmp_path / "cmems" / "j3"
+    src.mkdir(parents=True)
+    for day, decoy in (
+        ("2017-03-05", "1999-01-01T00:00:00Z"),
+        ("2017-09-20", "1999-01-01T00:00:00Z"),
+    ):
+        _fake_cmems_j3_day(src / f"dt_global_j3_{day}.nc", day, decoy=decoy)
+    monkeypatch.setattr(cmems_my, "CMEMS_DATA_DIR", tmp_path / "cmems")
+
+    out = _mod.build_tile_validation_track("kuroshio", dest=tmp_path / "track.nc")
+    with xr.open_dataset(out) as ds:
+        times = np.asarray(ds["time"].values)
+        attrs = dict(ds.attrs)
+    assert str(np.min(times))[:10] == "2017-03-05"
+    assert str(np.max(times))[:10] == "2017-09-20"
+    # The span the file CLAIMS equals the span it HOLDS.
+    assert attrs["time_coverage_start"][:10] == "2017-03-05"
+    assert attrs["time_coverage_end"][:10] == "2017-09-20"
+    # And the inherited decoys are gone, not merely overwritten in two keys.
+    assert "1999" not in " ".join(f"{k}={v}" for k, v in attrs.items())
+    assert "platform" not in attrs
+    assert attrs["n_points"] == 4
+    assert attrs["source_files"] == 2
+
+
+def test_no_test_write_reaches_the_real_data_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 110(a): exercising the risky entry points leaves data/ untouched.
+
+    Bug caught: the live one. A test that reaches _solve_leg with the module
+    paths live creates a pcg checkpoint directory and can write an
+    evidence-LABELED validation track into the production evidence
+    directory. The inventory is taken over the real tree, so this fails if
+    the sandbox is ever removed or bypassed.
+    """
+    before = _data_tree_inventory()
+    monkeypatch.setattr(_mod, "_tile_framed_obs", lambda tile: _FakeLoad.for_tile(tile))
+
+    def _stop(*a: object, **k: object) -> None:
+        raise _SolveStopped
+
+    monkeypatch.setattr(_mod, "_seam_miost", _stop)
+    evid = _mod.EVIDENCE
+    evid.parent.mkdir(parents=True, exist_ok=True)
+    evid.write_text(json.dumps({"phase14": {"stage0": {"seal": {"sha": "ab" * 32}}}}))
+    with pytest.raises(_SolveStopped):
+        _mod._solve_leg("kuroshio", m=3, days_stride=1, maxiter=1200)
+    # The checkpoint dir WAS created -- inside the sandbox, where it belongs.
+    assert (_mod.STAGE1_DIR / "kuroshio_pcg_ckpt").exists()
+    assert _data_tree_inventory() == before
+
+
+def test_track_reuse_is_gated_on_provenance_not_existence(tmp_path: Path) -> None:
+    """Pin 110(b): a file with no build record is REFUSED, not adopted.
+
+    Bug caught: the seventh instance of the unfailable-check family. A bare
+    `if not track.exists()` cannot tell a legitimately built track from a
+    test leftover, so it silently adopts whatever is on disk -- which is
+    exactly how a test-written artifact came to sit in the evidence
+    directory wearing a STAGE1-EVIDENCE label.
+    """
+    track = tmp_path / "dt_kuroshio_j3_phy_l3_2017_stage1.nc"
+    track.write_bytes(b"not a real track")
+    with pytest.raises(RuntimeError, match="no build record"):
+        _mod.assert_track_reusable(track, tile="kuroshio")
+
+
+def test_track_reuse_refuses_a_tampered_file(tmp_path: Path) -> None:
+    """A build record whose sha no longer matches the bytes is REFUSED.
+
+    Bug caught: a build record treated as a permission slip rather than a
+    digest -- the file is replaced or truncated after the record was
+    written, and reuse proceeds against different bytes.
+    """
+    track = tmp_path / "dt_kuroshio_j3_phy_l3_2017_stage1.nc"
+    track.write_bytes(b"original bytes")
+    _mod.write_track_build_record(track, tile="kuroshio", n_points=4, source_files=2)
+    track.write_bytes(b"different bytes now")
+    with pytest.raises(RuntimeError, match="sha256 mismatch"):
+        _mod.assert_track_reusable(track, tile="kuroshio")
+
+
+def test_track_reuse_refuses_another_tiles_track(tmp_path: Path) -> None:
+    """A build record for a DIFFERENT tile is refused.
+
+    Bug caught: a track built for seam_n being reused for kuroshio because
+    a path was constructed wrong -- the scores would then be computed
+    against another region's holdout and nothing would say so.
+    """
+    track = tmp_path / "dt_kuroshio_j3_phy_l3_2017_stage1.nc"
+    track.write_bytes(b"bytes")
+    _mod.write_track_build_record(track, tile="seam_n", n_points=4, source_files=2)
+    with pytest.raises(RuntimeError, match="built for tile"):
+        _mod.assert_track_reusable(track, tile="kuroshio")
+
+
+def test_track_reuse_accepts_its_own_build_record(tmp_path: Path) -> None:
+    """The happy path: same file, same tile, matching digest -> reuse.
+
+    Bug caught: a gate so strict it refuses the artifact it just wrote,
+    which would make crash-resume impossible and invite someone to delete
+    the check.
+    """
+    track = tmp_path / "dt_kuroshio_j3_phy_l3_2017_stage1.nc"
+    track.write_bytes(b"bytes")
+    rec = _mod.write_track_build_record(
+        track, tile="kuroshio", n_points=4, source_files=2
+    )
+    assert _mod.assert_track_reusable(track, tile="kuroshio") == rec
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 112 — resolve the geometry artifact from its CANONICAL location,
+# and only where the derivation's own scope covers the tile.
+# ---------------------------------------------------------------------------
+
+
+_HAS_GEOMETRY = _mod.CANONICAL_GEOMETRY_ARTIFACT.exists()
+
+
+@pytest.mark.skipif(not _HAS_GEOMETRY, reason="canonical geometry artifact absent")
+@pytest.mark.parametrize("tile", ["anchor", "seam_n", "seam_s"])
+def test_geometry_applies_to_the_in_box_tiles(tile: str) -> None:
+    """The canonical artifact is offered to the tiles it actually covers.
+
+    Bug caught: leaving the box tiles on the beside-the-maps lookup, where
+    the artifact does not sit -- their GroundTrack absence was a LOOKUP
+    PATH, not the 106 design conflict, and pin 112(b) says 106 does not
+    cover them.
+    """
+    path, reason = _mod.geometry_artifact_for(tile)
+    assert path == _mod.CANONICAL_GEOMETRY_ARTIFACT
+    assert "in scope" in reason
+
+
+@pytest.mark.skipif(not _HAS_GEOMETRY, reason="canonical geometry artifact absent")
+@pytest.mark.parametrize("tile", _DIVERSE)
+def test_geometry_refused_for_the_diverse_tiles(tile: str) -> None:
+    """The challenge-box artifact is NOT offered to the diverse tiles.
+
+    Bug caught: the fix widening past its warrant. Four of the five
+    families' codes match (alg/j2g/j2n/s3a), so a naive lookup would hand
+    Gulf-Stream geometry to a Pacific tile and produce rows that look
+    standing -- 'geometry that does not belong to the tile', which pin 106
+    refused. The scope test must key on the DERIVATION's box, not on the
+    mission codes alone.
+    """
+    path, reason = _mod.geometry_artifact_for(tile)
+    assert path is None
+    assert "106" in reason
+    assert "box" in reason.lower()
+
+
+def test_geometry_scope_is_read_from_the_artifact_not_typed() -> None:
+    """The box test reads box_lon/phi0 FROM the artifact.
+
+    Bug caught: hard-coding 295-305/38.1 in the driver. If a future
+    artifact is derived over a different box, a typed constant would keep
+    admitting tiles the new derivation does not cover -- the same class as
+    a stale threshold.
+    """
+    src = inspect.getsource(_mod.geometry_artifact_for)
+    assert "box_lon" in src
+    assert "295" not in src and "38.1" not in src
+
+
+@pytest.mark.skipif(not _HAS_GEOMETRY, reason="canonical geometry artifact absent")
+def test_report_block_states_why_wedge_exclusion_is_false(tmp_path: Path) -> None:
+    """Pin 112(c): a false wedge flag says WHICH kind of absence it is.
+
+    Bug caught: `wedge_exclusion:false` appearing bare. A reader cannot
+    tell 106's design conflict (diverse tiles, unfixable in Stage 1) from a
+    fixable gap -- and the two carry completely different consequences.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile="quiet_gyre", era="2017", mean_map=maps)
+    scope = block["geometry_scope"]
+    assert scope["applies"] is False
+    assert "106" in scope["reason"]
+    assert block["wedge_exclusion_status"]["kind"] == "DESIGN CONFLICT (pin 106)"
 
 
 def test_record_refuses_when_seal_unverified(

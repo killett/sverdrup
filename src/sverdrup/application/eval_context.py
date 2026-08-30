@@ -215,10 +215,12 @@ def build_report_rows(
 _GEOMETRY_ARTIFACT_NAME = "phase11_orbit_geometry.json"
 
 
-def report_only_instruments_block(mean_maps: Path | str) -> dict[str, Any]:
+def report_only_instruments_block(
+    mean_maps: Path | str, geometry_artifact: Path | str | None = None
+) -> dict[str, Any]:
     """Reference-free report rows on a product's mean-map file (spec §7).
 
-    The orbit-geometry artifact is expected BESIDE the maps file
+    The orbit-geometry artifact defaults to BESIDE the maps file
     (``phase11_orbit_geometry.json``, the obligation-7 path); when absent,
     GroundTrack is simply not applicable — absence means absence, and the
     fidelity row's ``wedge_exclusion:false`` flag makes the degraded estimand
@@ -227,6 +229,10 @@ def report_only_instruments_block(mean_maps: Path | str) -> dict[str, Any]:
     Args:
         mean_maps: Product mean-map NetCDF (time, lat, lon ``ssh``) carrying
             the ``assimilated_missions`` attr.
+        geometry_artifact: Explicit artifact path (owner pin 112a — a caller
+            whose maps do NOT sit beside the canonical artifact resolves it
+            from its canonical location rather than copying it). None keeps
+            the beside-the-maps default, so existing callers are unchanged.
 
     Returns:
         Evidence block with provenance shas and the report rows.
@@ -239,7 +245,11 @@ def report_only_instruments_block(mean_maps: Path | str) -> dict[str, Any]:
         lon = np.asarray(ds["lon"].values, dtype=float)
         lat = np.asarray(ds["lat"].values, dtype=float)
         missions = ds.attrs.get("assimilated_missions")
-    geometry = mean_maps.parent / _GEOMETRY_ARTIFACT_NAME
+    geometry = (
+        mean_maps.parent / _GEOMETRY_ARTIFACT_NAME
+        if geometry_artifact is None
+        else Path(geometry_artifact)
+    )
     built = build_eval_context(
         {"fields": fields, "grid_lon": lon, "grid_lat": lat},
         field_kind="mean",

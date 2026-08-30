@@ -222,6 +222,40 @@
 >   `operative_halo_deg()`/±66 via fork-d pin 4 + pin 10; T9 policy (b); and the
 >   `h2g`/`h2ag` mapping) so per-tile geometry arrives as a package, not one missing row.
 >
+> **✅ PINS 110–113 LANDED (PART 27) AND 110/111/112 FOLDED, in the ruled order.**
+> - **111 FIRST (production path).** `build_tile_validation_track` concatenated with
+>   xarray's default attrs handling, so every T5 leg would have written an
+>   evidence-labeled track claiming the FIRST daily file's 2-day coverage span for a year
+>   built from ~365 files. Now `combine_attrs="drop"` + provenance describing the
+>   concatenation itself; the coverage span is **test-pinned against the actual min/max
+>   times**, with a decoy attr in the fixture, so the assertion is about the data.
+> - **110 — both strays DELETED, with the record.**
+>   `docs/superpowers/2026-08-30-stray-artifact-deletion-record.md` carries what they were,
+>   when, by which test, and the `.nc` sha256 **before** removal
+>   (`a8d32733d38a0ed0…`, 105 787 bytes, written 2026-08-29T22:48Z).
+>   **(a) Root cause fixed:** autouse fixture sandboxes `STAGE1_DIR`/`EVIDENCE`/`LANE0_DIR`,
+>   and `_solve_leg` now threads them EXPLICITLY into every recorder — default arguments
+>   bind at import, so monkeypatching the constant alone would not have stopped the writes.
+>   `test_no_test_write_reaches_the_real_data_tree` inventories the REAL tree and asserts
+>   it is unchanged. **(b) Reuse is provenance-gated:** `write_track_build_record` +
+>   `assert_track_reusable` refuse a missing record, a sha mismatch, or another tile's
+>   track. **§7's instance list now carries it as the SEVENTH instance.**
+> - **112 — the LOOKUP fixed, not the placement.** `geometry_artifact_for` resolves the
+>   CANONICAL artifact in `ours/` (no copy into the evidence directory) and admits a tile
+>   only when the artifact's own `box_lon`/`phi0` cover it — read from the artifact, never
+>   typed, because four of five CMEMS codes match and a mission-keyed lookup would have
+>   handed Gulf-Stream geometry to a Pacific tile. `report_only_instruments_block` gained
+>   an optional explicit path; every existing caller is unchanged.
+>   **(c) `wedge_exclusion:false` is never bare again:** every block carries
+>   `wedge_exclusion_status.kind` — `IN SCOPE` vs **`DESIGN CONFLICT (pin 106)`** — with
+>   the consequence spelled out. Recovery is anchor + seam pair ONLY; the four diverse
+>   tiles stay degraded and **108 stands for T6 unchanged**.
+>   **(d) ANSWERED BEFORE THE FIX: additive only, NO supersession.** The store holds no
+>   `report_rows` node at all (T3/T4 ran before the T5c wiring), and every recorded
+>   anchor/seam value comes from `score_tile`/`their_eval`/seam metrics — no instrument row
+>   feeds any of them. Nothing recorded changes.
+> - **113 — the 109 sweep is RATIFIED**, including its correction of 106's scope.
+>
 > **▶ NEXT ACTION: T5e — the gate suite on the final tree, then the launch sequence
 > (which STAYS BLOCKED: R1 + 91b). Build-side T5 is complete.**
 >
@@ -5397,7 +5431,17 @@ above confirm them**, so the spec stops lagging the decision.
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
 - **⚖ DESIGN CONFLICT, NOT AN EXECUTION GAP — "GroundTrack per tile×era" vs "zero new
-  surfaces" (owner pin 106, 2026-08-30).** The spec asks for both, and **they are
+  surfaces" (owner pin 106, 2026-08-30; ⚖ AMENDED IN SCOPE by pin 112(b), same day).**
+  **THE AMENDMENT, recorded against 106 with the 109(a) sweep as its cause:** 106 stands
+  for the **four diverse tiles** — `h2ag` ≠ `h2g`, box-and-φ₀ scoped, absence honestly
+  recorded. It does **NOT** cover `anchor`, `seam_n`, `seam_s`: their GroundTrack absence
+  was a **LOOKUP PATH** (the canonical artifact sits in `ours/`, the reader looked beside
+  the maps one directory below) and is fixed with **no new producer** —
+  `geometry_artifact_for` resolves the canonical artifact and admits a tile only when the
+  DERIVATION'S OWN `box_lon`/`phi0` cover it (read from the artifact, never typed: four of
+  five CMEMS codes match, so a mission-keyed lookup would have handed Gulf-Stream geometry
+  to a Pacific tile). **The fix was not silently widened** (112a: no copy into the evidence
+  directory — a duplicate raises its own witness question). The spec asks for both, and **they are
   incompatible while the orbit-geometry provider is CHALLENGE-BOX scoped**:
   `build_geometry_artifact` fixes `_LON_LO`/`_LON_HI` and φ0 = 38.1 and derives from the
   dc_obs L3 files, so `ContextKey.ORBIT_GEOMETRY` is unavailable at the four diverse
