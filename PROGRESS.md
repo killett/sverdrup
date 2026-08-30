@@ -171,7 +171,35 @@
 > instead. If the owner wants standing GroundTrack rows at the diverse tiles, that is a
 > scoped new task (per-tile geometry derivation), not a T5 edit.
 >
-> **▶ NEXT ACTION: T5d — per-tile extras: equatorial lane-0 persistence bundle (maps +
+> **✅ T5d IS DONE — the three per-tile extras, each firing for its ELECTED tile only.**
+> - **Equatorial lane-0 bundle (fork-b pins 1/2, pin 96).** `persist_lane0_bundle` copies
+>   the maps, writes `evidence_pack.json` + `fold_eval_frame.json`, and emits
+>   `lane0_manifest.json` carrying **fork-b pin 2 VERBATIM**, the pin-67 class
+>   **WITNESSED_AT_CREATION**, per-file sha+size (never contents — 96e: the manifest is
+>   mirrored, the maps are not), and the **instrument composition** (the pin-107 coupling,
+>   so a later wave-increment run under per-tile geometry can never be compared blind).
+>   `record_lane0_manifest` writes its own node, and that node is now in the evidence
+>   mirror's `MIRRORED` set — **a local manifest alone is self-witnessing (96c)**. The leg
+>   echoes a ⛔ WITNESS NOW line: until `phase14_evidence_mirror.py sync` + push lands, the
+>   manifest witnesses nothing (96b, pin 60's prospective guarantee).
+> - **Southern anisotropy inputs for T6** at `anisotropy_inputs.southern.<era>`: grid
+>   anisotropy **computed from the tile's own axes** (`dy/dx ≈ 1.72` at ~54.5°S) + the
+>   SpectralFidelity row **cited** from the recorded report block. **⚖ The per-direction
+>   TRACK half is a RECORDED ABSENCE** — it needs ORBIT_GEOMETRY, which pin 106 establishes
+>   is challenge-box scoped — with the consequence stated for T6: its anisotropy evidence
+>   is grid geometry + the ISOTROPIC ring spectrum, and it must not present its arithmetic
+>   as though per-direction sampling were measured.
+> - **Kuroshio land-mask exercise** at `land_mask_exercise.kuroshio.<era>`: all three
+>   counts (framed obs / scored points / calibration points) **with their gap**, so
+>   coverage and χ² are never read as resting on `n_scored_points`. The record states the
+>   mechanism honestly — **there is no explicit land mask**; land appears as absent obs and
+>   absent track points — and names the refusal path: an empty core RAISES in both
+>   `score_tile` and `calibration_readings`, uncaught in the scoring leg (test-pinned).
+>
+> **▶ NEXT ACTION: T5e — the gate suite on the final tree, then the launch sequence
+> (which STAYS BLOCKED: R1 + 91b). Build-side T5 is complete.**
+>
+> **[superseded — kept for the trail] NEXT ACTION WAS: T5d — per-tile extras: equatorial lane-0 persistence bundle (maps +
 > pack + FROZEN fold/eval frame + pin 96's MIRRORED `lane0_manifest.json`), southern
 > anisotropy inputs for T6, kuroshio land-mask path assertions. Then T5e (gate suite →
 > launch). Leg 1 remains STOP-CONDITIONED (R1 + 91b): build only.**

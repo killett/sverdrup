@@ -903,6 +903,407 @@ def test_solve_leg_records_the_tile_report_block(
     assert "groundtrack" in {r["evaluator"] for r in block["rows"]}
 
 
+# ---------------------------------------------------------------------------
+# T5d part A — the equatorial lane-0 persistence bundle (fork-b pins 1/2,
+# owner pin 96: mirror the MANIFEST, witnessed AT CREATION).
+# ---------------------------------------------------------------------------
+
+# Fork-B.2 verbatim (spec 2026-07-21 §4-B.2), stated here independently of
+# the implementation: it is the control on the future increment comparison.
+_PINNED_FORK_B_PIN2 = (
+    "the equatorial baseline is recorded UNDER Stage 1's config policy "
+    "(frozen signed config, §6), and the future increment comparison HOLDS "
+    "THAT POLICY FIXED — a wave-component gain must never be confounded "
+    "with a config change (the tuned-constant control lesson, Phase 10)"
+)
+
+
+def _lane0_inputs(tmp_path: Path) -> dict[str, Any]:
+    """Maps, an evidence row, a report block and a frozen frame for the bundle."""
+    mean_map = _stage1_mean_map(tmp_path, geometry=False)
+    std_map = tmp_path / "equatorial_member_std_maps.nc"
+    std_map.write_bytes(mean_map.read_bytes())
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    return {
+        "mean_map": mean_map,
+        "std_map": std_map,
+        "row": _mod.build_evidence_row(**kwargs),
+        "report_block": _mod.build_tile_report_block(
+            tile="equatorial", era="2017", mean_map=mean_map
+        ),
+        "fold_eval_frame": _mod.build_fold_eval_frame(
+            tile="equatorial",
+            frame={"core": [200.0, 215.0, -4.0, 11.0], "overlap_deg": 2.0},
+            window_plan={"n_windows": 9, "w_days": 60.0},
+            root=12345,
+            pcg_rtol=1e-6,
+            pcg_maxiter=1200,
+            track="data/j3.nc",
+            track_sha256="beef" * 16,
+        ),
+    }
+
+
+def test_lane0_manifest_carries_fork_b_pin2_verbatim(tmp_path: Path) -> None:
+    """The frozen-config policy sentence rides the manifest, word for word.
+
+    Bug caught: a paraphrase. This sentence is the CONTROL on the future
+    wave-increment comparison — it is what forbids reading a config change
+    as a wave-component gain. A summarized version cannot be checked
+    against the policy it claims to hold fixed.
+    """
+    bundle = _mod.persist_lane0_bundle(
+        dest=tmp_path / "lane0", **_lane0_inputs(tmp_path)
+    )
+    assert bundle["frozen_config_policy"] == _PINNED_FORK_B_PIN2
+
+
+def test_lane0_manifest_shas_every_persisted_file(tmp_path: Path) -> None:
+    """Every file in the bundle has a sha in the manifest, matching its bytes.
+
+    Bug caught: a stale or wrong sha (the witness is then worth nothing),
+    or a file persisted but omitted from the manifest — the manifest IS
+    the mirrored object, so anything it omits is unwitnessed.
+    """
+    import hashlib
+
+    dest = tmp_path / "lane0"
+    bundle = _mod.persist_lane0_bundle(dest=dest, **_lane0_inputs(tmp_path))
+    listed = {f["name"]: f["sha256"] for f in bundle["files"]}
+    on_disk = {p.name for p in dest.iterdir() if p.name != "lane0_manifest.json"}
+    assert set(listed) == on_disk
+    for name, sha in listed.items():
+        assert hashlib.sha256((dest / name).read_bytes()).hexdigest() == sha
+
+
+def test_lane0_bundle_holds_maps_pack_and_frozen_frame(tmp_path: Path) -> None:
+    """The substrate the increment comparison needs is all there.
+
+    Bug caught: a bundle missing the frozen fold/eval frame or the pack —
+    the future pre/post comparison then has maps it cannot interpret, and
+    the frame it was supposed to hold fixed is gone.
+    """
+    dest = tmp_path / "lane0"
+    _mod.persist_lane0_bundle(dest=dest, **_lane0_inputs(tmp_path))
+    names = {p.name for p in dest.iterdir()}
+    assert "equatorial_signed_maps.nc" in names
+    assert "equatorial_member_std_maps.nc" in names
+    assert "evidence_pack.json" in names
+    assert "fold_eval_frame.json" in names
+    assert "lane0_manifest.json" in names
+    frame = json.loads((dest / "fold_eval_frame.json").read_text())
+    assert frame["validation_mission"] == "j3"
+    assert frame["assimilated_missions"] == list(_mod.PROBE_MISSIONS)
+    assert frame["frozen"] is True
+
+
+def test_lane0_manifest_records_the_instrument_composition(tmp_path: Path) -> None:
+    """The baseline is self-describing about WHICH instruments stood.
+
+    Bug caught: the pin-107 coupling. A future wave-increment run under
+    per-tile orbit geometry carries a DIFFERENT composition; a blind
+    pack-to-pack comparison would then read an instrument-set change as an
+    increment effect.
+    """
+    bundle = _mod.persist_lane0_bundle(
+        dest=tmp_path / "lane0", **_lane0_inputs(tmp_path)
+    )
+    comp = bundle["instrument_composition"]
+    assert "groundtrack" in comp["absent"]
+    assert comp["standing"]  # the instruments that DID run are named too
+    assert "composition" in comp["compare_note"]
+
+
+def test_lane0_manifest_is_witnessed_at_creation_and_mirrored(tmp_path: Path) -> None:
+    """Pin 96: the manifest declares its class AND is in the mirror's set.
+
+    Bug caught: a local manifest that is never mirrored — self-witnessing
+    (pin 56a/96c), since manifest and files sit on one box under one
+    process's control. Also catches the class being asserted in prose while
+    the mirror config knows nothing about the node.
+    """
+    from tests.helpers import load_script
+
+    bundle = _mod.persist_lane0_bundle(
+        dest=tmp_path / "lane0", **_lane0_inputs(tmp_path)
+    )
+    assert bundle["witness_class"] == "WITNESSED_AT_CREATION"
+    mirror = load_script("phase14_evidence_mirror")
+    assert bundle["mirror_node"] in mirror.MIRRORED
+
+
+def test_lane0_maps_are_not_mirrored(tmp_path: Path) -> None:
+    """Pin 96(e)/56(b): the manifest is mirrored, the maps are not.
+
+    Bug caught: bulk NetCDF paths creeping into the mirrored subset, which
+    the mirror deliberately excludes — the shas ARE the witness.
+    """
+    from tests.helpers import load_script
+
+    mirror = load_script("phase14_evidence_mirror")
+    assert not [k for k in mirror.MIRRORED if k.endswith("maps")]
+    bundle = _mod.persist_lane0_bundle(
+        dest=tmp_path / "lane0", **_lane0_inputs(tmp_path)
+    )
+    # The manifest names the bulk files and digests them; it never carries
+    # their contents, so mirroring it stays small and append-only.
+    assert any(str(f["name"]).endswith(".nc") for f in bundle["files"])
+    for entry in bundle["files"]:
+        assert set(entry) == {"name", "sha256", "bytes"}
+        assert isinstance(entry["bytes"], int)  # a SIZE, not a payload
+
+
+def test_record_lane0_manifest_lands_at_its_own_node(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The manifest is recorded under its own node, seal-gated, store intact.
+
+    Bug caught: the manifest recorded into the tiles node (where T9 reads
+    evidence rows), or a write that clobbers the standing store, or one
+    that skips the seal ceremony.
+    """
+    from sverdrup.validation import phase14_seal
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        phase14_seal, "verify_current_seal", lambda: calls.append("verified")
+    )
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    bundle = _mod.persist_lane0_bundle(
+        dest=tmp_path / "lane0", **_lane0_inputs(tmp_path)
+    )
+    _mod.record_lane0_manifest(bundle, evidence_path=evid)
+    stored = json.loads(evid.read_text())
+    assert stored["phase13"] == {"kept": True}
+    assert stored["phase14"]["stage1"]["equatorial_lane0_manifest"] == bundle
+    assert calls == ["verified"]
+
+
+@pytest.mark.parametrize("tile", ["equatorial", "kuroshio"])
+def test_lane0_bundle_is_persisted_for_the_elected_tile_only(
+    tile: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only the equatorial leg lays down a lane-0 bundle.
+
+    Bug caught: every tile writing into the shared lane-0 directory — the
+    frozen equatorial baseline would be silently overwritten by whichever
+    leg ran last, destroying the pre-increment substrate fork-b pin 1
+    exists to preserve.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    inputs = _lane0_inputs(tmp_path)
+    dest = tmp_path / "lane0"
+    kwargs = _row_kwargs(tile)
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    manifest = _mod.persist_lane0_if_elected(
+        tile=tile,
+        row=_mod.build_evidence_row(**kwargs),
+        report_block=inputs["report_block"],
+        mean_map=inputs["mean_map"],
+        std_map=inputs["std_map"],
+        fold_eval_frame=inputs["fold_eval_frame"],
+        evidence_path=evid,
+        dest=dest,
+    )
+    if tile == "equatorial":
+        assert manifest is not None
+        assert (dest / "lane0_manifest.json").exists()
+        stored = json.loads(evid.read_text())["phase14"]["stage1"]
+        assert stored["equatorial_lane0_manifest"]["tile"] == "equatorial"
+    else:
+        assert manifest is None
+        assert not dest.exists()
+        assert not evid.exists()
+
+
+# ---------------------------------------------------------------------------
+# T5d part B — southern anisotropy inputs for T6 (existing families only).
+# ---------------------------------------------------------------------------
+
+
+def test_anisotropy_grid_aspect_is_computed_from_the_tile_axes(
+    tmp_path: Path,
+) -> None:
+    """The grid aspect is the cos(lat) projection at the tile's OWN latitude.
+
+    Bug caught: computing dx without the cos(lat) projection (the aspect
+    collapses to 1.0 and the high-latitude anisotropy the kernel decision
+    turns on disappears), or projecting at the wrong latitude. Expected
+    value is hand-derived: the southern core spans -62..-47, so phi0 is
+    about -54.5 and dy/dx = 1/cos(54.5 deg) ~ 1.72 -- nowhere near 1.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile="southern", era="2017", mean_map=maps)
+    got = _mod.build_anisotropy_inputs(tile="southern", era="2017", report_block=block)
+    grid = got["grid_anisotropy"]
+    assert grid["dx_km"] < grid["dy_km"]
+    assert grid["aspect_dy_over_dx"] == pytest.approx(1.72, abs=0.05)
+    # The frame, not a typed constant: the southern core's own span.
+    assert grid["phi0_deg"] == pytest.approx(-54.5, abs=1.5)
+
+
+def test_anisotropy_cites_the_recorded_spectral_row(tmp_path: Path) -> None:
+    """The spectral input is CITED from the report block, never recomputed.
+
+    Bug caught: a second computation of an instrument that already ran --
+    two producers for one number, which is exactly what the zero-new-surface
+    rule forbids and how the two copies drift apart.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile="southern", era="2017", mean_map=maps)
+    got = _mod.build_anisotropy_inputs(tile="southern", era="2017", report_block=block)
+    row = next(r for r in block["rows"] if r["evaluator"] == "spectral_fidelity")
+    assert got["spectral_fidelity"]["metrics"] == row["metrics"]
+    assert got["spectral_fidelity"]["cited_from"] == (
+        "phase14.stage1.report_rows.southern.2017"
+    )
+
+
+def test_anisotropy_records_the_missing_per_direction_diagnostics(
+    tmp_path: Path,
+) -> None:
+    """Per-direction TRACK diagnostics are absent, and say so with the reason.
+
+    Bug caught: T6 inheriting silence. The kernel pack's criterion expects
+    per-direction track diagnostics; pin 106 says the geometry provider is
+    challenge-box scoped, so they do not exist here. An input block that
+    simply omits them lets T6 assume they were never needed.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile="southern", era="2017", mean_map=maps)
+    got = _mod.build_anisotropy_inputs(tile="southern", era="2017", report_block=block)
+    absent = got["per_direction_track_diagnostics"]
+    assert absent["status"] == "NOT AVAILABLE — RECORDED ABSENCE"
+    assert "ORBIT_GEOMETRY" in absent["missing_context"]
+    assert "106" in absent["ruling_pin"]
+
+
+@pytest.mark.parametrize("tile", ["southern", "quiet_gyre"])
+def test_anisotropy_inputs_recorded_for_the_southern_tile_only(
+    tile: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only the southern leg records T6's anisotropy inputs.
+
+    Bug caught: another tile's numbers landing at the node T6 reads --
+    the kernel decision is about the high-latitude regime, and quiet_gyre's
+    subtropical grid would quietly answer a question it was never asked.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile=tile, era="2017", mean_map=maps)
+    out = _mod.record_anisotropy_if_elected(
+        tile=tile, era="2017", report_block=block, evidence_path=evid
+    )
+    if tile == "southern":
+        assert out is not None
+        stored = json.loads(evid.read_text())["phase14"]["stage1"]
+        assert stored["anisotropy_inputs"]["southern"]["2017"]["tile"] == "southern"
+    else:
+        assert out is None
+        assert not evid.exists()
+
+
+# ---------------------------------------------------------------------------
+# T5d part C — the kuroshio land-mask path exercise.
+# ---------------------------------------------------------------------------
+
+
+def test_land_mask_exercise_records_all_three_counts() -> None:
+    """n_obs, n_scored_points and the calibration n, with their gap.
+
+    Bug caught: one count standing in for the others. coverage and chi2
+    rest on the calibration n (19004 here), NOT on n_scored_points (20431)
+    -- the member-std map is masked at some scored points, and a reader who
+    sees a single number reads more support than exists.
+    """
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+    got = _mod.build_land_mask_exercise(
+        tile="kuroshio", era="2017", n_obs=12345, scores=scores
+    )
+    counts = got["counts"]
+    assert counts["n_obs_framed"] == 12345
+    assert counts["n_scored_points"] == 20431
+    assert counts["n_calibration_points"] == 19004
+    assert counts["scored_minus_calibration"] == 1427
+
+
+def test_land_mask_exercise_states_there_is_no_explicit_mask() -> None:
+    """The mechanism is named honestly: land is ABSENT OBS, not a mask.
+
+    Bug caught: a record implying a land mask was applied. Nothing in this
+    pipeline masks land — altimetry simply has no observations there, and
+    the coastal editing happens upstream. Claiming a mask would invent a
+    control that does not exist.
+    """
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+    got = _mod.build_land_mask_exercise(
+        tile="kuroshio", era="2017", n_obs=12345, scores=scores
+    )
+    assert "no explicit land mask" in got["mechanism"].lower()
+    assert "absent" in got["mechanism"].lower()
+
+
+def test_scoring_leg_does_not_swallow_an_all_land_core_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An empty-core refusal propagates out of the scoring leg.
+
+    Bug caught: an except that turns score_tile's refusal into a NaN or
+    masked triple. Its own docstring says an empty tile 'must be handled by
+    the caller, never scored to a masked/NaN triple' -- swallowing it would
+    record a transfer reading for a tile that scored nothing.
+    """
+    from sverdrup.validation import pertile_scoring
+
+    def _refuse(*a: object, **k: object) -> None:
+        raise ValueError("no validation track points survive in tile core")
+
+    monkeypatch.setattr(pertile_scoring, "score_tile", _refuse)
+    with pytest.raises(ValueError, match="no validation track points survive"):
+        _mod._score_tile_leg(
+            "kuroshio",
+            frame=_mod.registry_frame("kuroshio"),
+            mean_map=tmp_path / "m.nc",
+            std_map=tmp_path / "s.nc",
+            track=tmp_path / "dt_kuroshio_j3_phy_l3_2017_stage1.nc",
+        )
+
+
+@pytest.mark.parametrize("tile", ["kuroshio", "southern"])
+def test_land_mask_exercise_recorded_for_kuroshio_only(
+    tile: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only the kuroshio leg records the coastal exercise.
+
+    Bug caught: an open-ocean tile's counts recorded as the land-mask
+    exercise -- the criterion asks for the RISKIEST path to be exercised,
+    and a tile with no coastline cannot exercise it.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+    out = _mod.record_land_mask_if_elected(
+        tile=tile, era="2017", n_obs=1000, scores=scores, evidence_path=evid
+    )
+    if tile == "kuroshio":
+        assert out is not None
+        stored = json.loads(evid.read_text())["phase14"]["stage1"]
+        assert stored["land_mask_exercise"]["kuroshio"]["2017"]["tile"] == "kuroshio"
+    else:
+        assert out is None
+        assert not evid.exists()
+
+
 def test_record_refuses_when_seal_unverified(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

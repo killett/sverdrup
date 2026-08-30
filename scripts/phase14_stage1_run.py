@@ -4131,6 +4131,521 @@ def record_tile_leg(
     return row
 
 
+# ---------------------------------------------------------------------------
+# T5d part A — the equatorial lane-0 persistence bundle (fork-b pins 1/2).
+#
+# Fork-B.1: the Stage-1 run persists everything the eventual wave-increment
+# comparison needs — maps, evidence pack, fold/eval frame — so the increment
+# (when elected) is judged by the standing pre/post pattern against a FROZEN
+# pre-increment baseline.
+#
+# Owner pin 96: the MANIFEST is mirrored (96e — maps are bulk and stay out
+# per 56b; the shas are the witness), classified under pin 67 as WITNESSED AT
+# CREATION (96d), and witnessed AT CREATION rather than at T9 (96b, pin 60:
+# the guarantee is PROSPECTIVE — witnessing later leaves the interval from
+# creation open for exactly the artifact whose value is being frozen). A
+# local manifest alone is self-witnessing and insufficient (96c, pin 56a).
+LANE0_TILE = "equatorial"
+LANE0_DIR = STAGE1_DIR / "equatorial_lane0"
+LANE0_MANIFEST_NAME = "lane0_manifest.json"
+LANE0_MIRROR_NODE = "phase14.stage1.equatorial_lane0_manifest"
+
+# Fork-B.2 VERBATIM (spec 2026-07-21 §4-B.2). It is the control on the
+# future comparison, not decoration: it forbids a config change being read
+# as a wave-component gain.
+FORK_B_PIN2 = (
+    "the equatorial baseline is recorded UNDER Stage 1's config policy "
+    "(frozen signed config, §6), and the future increment comparison HOLDS "
+    "THAT POLICY FIXED — a wave-component gain must never be confounded "
+    "with a config change (the tuned-constant control lesson, Phase 10)"
+)
+
+
+def build_fold_eval_frame(
+    *,
+    tile: str,
+    frame: dict[str, Any],
+    window_plan: dict[str, Any],
+    root: int,
+    pcg_rtol: float,
+    pcg_maxiter: int,
+    track: str,
+    track_sha256: str,
+) -> dict[str, Any]:
+    """The FROZEN fold/eval frame — what the increment comparison holds fixed.
+
+    Fold side: the five-mission workhorse actually assimilated, the tile
+    geometry, the window plan and the solver settings the maps were made
+    under. Eval side: the j3 holdout track, identified by sha so a later
+    comparison can prove it scored the same points.
+
+    Args:
+        tile: Registry tile name.
+        frame: Frame provenance block.
+        window_plan: Window-plan provenance block.
+        root: The CRN root the members were drawn under.
+        pcg_rtol: Solver rtol actually used.
+        pcg_maxiter: Solver iteration cap actually used.
+        track: Validation track path.
+        track_sha256: That track's sha256.
+
+    Returns:
+        The frozen frame descriptor.
+    """
+    return {
+        "frozen": True,
+        "tile": tile,
+        "era": STAGE1_ERA,
+        "config": "phase-13 winner params + PHASE13_DELTAS rspec (signed, frozen)",
+        "assimilated_missions": list(PROBE_MISSIONS),
+        "validation_mission": VALIDATION_MISSION,
+        "validation_track": track,
+        "validation_track_sha256": track_sha256,
+        "frame": frame,
+        "window_plan": window_plan,
+        "resolution_deg": RESOLUTION_DEG,
+        "crn_root_int": root,
+        "pcg_rtol": pcg_rtol,
+        "pcg_maxiter": pcg_maxiter,
+        "held_fixed_by": FORK_B_PIN2,
+    }
+
+
+def _sha_and_size(path: Path) -> dict[str, Any]:
+    """One manifest file entry: name, digest, size — never contents."""
+    import hashlib  # noqa: PLC0415
+
+    data = path.read_bytes()
+    return {
+        "name": path.name,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "bytes": len(data),
+    }
+
+
+def persist_lane0_bundle(
+    *,
+    mean_map: Path,
+    std_map: Path,
+    row: dict[str, Any],
+    report_block: dict[str, Any],
+    fold_eval_frame: dict[str, Any],
+    dest: Path = LANE0_DIR,
+) -> dict[str, Any]:
+    """Persist the lane-0 substrate and return its manifest (fork-b pin 1).
+
+    Copies the maps rather than pointing at them: the bundle's whole job is
+    to still be the pre-increment baseline after the working artifacts have
+    moved on. The manifest digests every file it persists — that, not the
+    bulk, is what gets mirrored (96e).
+
+    Args:
+        mean_map: The tile's mean map.
+        std_map: The tile's member-std map.
+        row: The tile's evidence row.
+        report_block: The tile's report-only instrument block, whose
+            composition the manifest records (the pin-107 coupling: a later
+            wave-increment run under per-tile geometry carries a DIFFERENT
+            composition, and a blind comparison would read the instrument
+            change as an increment effect).
+        fold_eval_frame: :func:`build_fold_eval_frame` output.
+        dest: Bundle directory.
+
+    Returns:
+        The manifest (also written to ``dest/lane0_manifest.json``).
+    """
+    import shutil  # noqa: PLC0415
+
+    dest.mkdir(parents=True, exist_ok=True)
+    tile = str(row["tile"])
+    copies = {
+        f"{tile}_signed_maps.nc": mean_map,
+        f"{tile}_member_std_maps.nc": std_map,
+    }
+    for name, src in copies.items():
+        shutil.copyfile(src, dest / name)
+    (dest / "evidence_pack.json").write_text(
+        json.dumps({"row": row, "report_rows": report_block}, indent=2)
+    )
+    (dest / "fold_eval_frame.json").write_text(json.dumps(fold_eval_frame, indent=2))
+
+    files = sorted(
+        (_sha_and_size(p) for p in dest.iterdir() if p.name != LANE0_MANIFEST_NAME),
+        key=lambda e: str(e["name"]),
+    )
+    standing = sorted({str(r["evaluator"]) for r in report_block["rows"]})
+    absent = {
+        str(a["evaluator"]): list(a["missing_context"])
+        for a in report_block["recorded_absences"]
+    }
+    manifest = {
+        "label": "STAGE1-EVIDENCE",
+        "tile": tile,
+        "era": STAGE1_ERA,
+        "purpose": (
+            "the FROZEN pre-increment baseline for the future wave-increment "
+            "comparison (fork-b pin 1): same tile, lane-0 = this "
+            "mesoscale-only baseline, judged by the standing pre/post pattern"
+        ),
+        "frozen_config_policy": FORK_B_PIN2,
+        "witness_class": "WITNESSED_AT_CREATION",
+        "witness_class_basis": (
+            "pin 67 as extended by pin 96(d): the strongest class available, "
+            "and the first Stage-1 artifact that can claim it because it is "
+            "being MADE now rather than reconciled after the fact. Pin 96(b): "
+            "witnessing at T9 would leave the interval from creation open"
+        ),
+        "mirror_node": LANE0_MIRROR_NODE,
+        "mirror_scope": (
+            "the MANIFEST is mirrored, not the maps (96e): the maps are bulk "
+            "and stay out per pin 56(b) — the shas are the witness. A local "
+            "manifest alone is self-witnessing (96c, pin 56a)"
+        ),
+        "instrument_composition": {
+            "standing": standing,
+            "absent": absent,
+            "compare_note": (
+                "this baseline's instrument composition is recorded so a "
+                "future wave-increment run is never compared against it "
+                "blind: a run under per-tile orbit geometry would carry a "
+                "DIFFERENT composition (owner pins 106, 107), and an "
+                "instrument-set change must not be read as an increment "
+                "effect"
+            ),
+        },
+        "fold_eval_frame": fold_eval_frame,
+        "files": files,
+        "dir": str(dest),
+        "date": datetime.now(UTC).date().isoformat(),
+    }
+    (dest / LANE0_MANIFEST_NAME).write_text(json.dumps(manifest, indent=2))
+    return manifest
+
+
+def record_lane0_manifest(
+    manifest: dict[str, Any], evidence_path: Path = EVIDENCE
+) -> None:
+    """Record the lane-0 manifest at its own node — seal-gated.
+
+    Its own node, not ``tiles``: this is a substrate descriptor, not a
+    transfer reading. The node name is the one the evidence mirror carries,
+    so witnessing follows creation immediately (pin 96b).
+
+    Args:
+        manifest: A :func:`persist_lane0_bundle` result.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    node[LANE0_MIRROR_NODE.rsplit(".", 1)[-1]] = manifest
+    atomic_write_json(evidence_path, results)
+
+
+def persist_lane0_if_elected(
+    *,
+    tile: str,
+    row: dict[str, Any],
+    report_block: dict[str, Any],
+    mean_map: Path,
+    std_map: Path,
+    fold_eval_frame: dict[str, Any],
+    evidence_path: Path = EVIDENCE,
+    dest: Path = LANE0_DIR,
+) -> dict[str, Any] | None:
+    """Lay down the lane-0 bundle — for the ELECTED tile and no other.
+
+    Fork-b pin 1 names the equatorial tile specifically: it is the
+    wave-increment comparison's baseline. Any other tile writing here would
+    overwrite the frozen substrate with maps from a different box.
+
+    Args:
+        tile: The tile whose leg just finished.
+        row: That tile's evidence row.
+        report_block: That tile's report-only instrument block.
+        mean_map: The tile's mean map.
+        std_map: The tile's member-std map.
+        fold_eval_frame: :func:`build_fold_eval_frame` output.
+        evidence_path: The evidence store (tmp path in tests).
+        dest: Bundle directory.
+
+    Returns:
+        The manifest, or None when the tile is not the elected one.
+    """
+    if tile != LANE0_TILE:
+        return None
+    manifest = persist_lane0_bundle(
+        mean_map=mean_map,
+        std_map=std_map,
+        row=row,
+        report_block=report_block,
+        fold_eval_frame=fold_eval_frame,
+        dest=dest,
+    )
+    record_lane0_manifest(manifest, evidence_path=evidence_path)
+    return manifest
+
+
+# ---------------------------------------------------------------------------
+# T5d part B — the SOUTHERN tile's anisotropy inputs for T6's kernel pack.
+#
+# Built from what EXISTS: the tile's own grid geometry (the cos(lat)
+# projection the high-latitude decision turns on) and the spectral row that
+# already ran, CITED rather than recomputed. The per-direction TRACK
+# diagnostics the criterion also names are NOT available — they come from
+# orbit geometry, which pin 106 establishes is challenge-box scoped — so
+# they are recorded as an absence with the reason, rather than omitted for
+# T6 to rediscover.
+ANISOTROPY_NODE = "anisotropy_inputs"
+ANISOTROPY_TILE = "southern"
+
+
+def build_anisotropy_inputs(
+    *, tile: str, era: str, report_block: dict[str, Any]
+) -> dict[str, Any]:
+    """T6's measurable anisotropy inputs for one tile x era — REPORT-ONLY.
+
+    Args:
+        tile: Registry tile name.
+        era: The era the inputs describe.
+        report_block: That tile's recorded report block — the spectral row
+            is CITED from it, never recomputed (one producer per number).
+
+    Returns:
+        The inputs block: grid anisotropy, the cited spectral row, and the
+        recorded absence of the per-direction track diagnostics.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.application.spatial_tiles import frame_grid  # noqa: PLC0415
+    from sverdrup.eval.map_spectrum import PlaneGrid  # noqa: PLC0415
+
+    grid = frame_grid(registry_frame(tile), RESOLUTION_DEG)
+    plane = PlaneGrid.from_deg(np.asarray(grid.x), np.asarray(grid.y))
+    dx_km = float(plane.x_km[1] - plane.x_km[0])
+    dy_km = float(plane.y_km[1] - plane.y_km[0])
+    spectral = next(
+        (r for r in report_block["rows"] if r["evaluator"] == "spectral_fidelity"),
+        None,
+    )
+    cited = (
+        {
+            "cited_from": f"phase14.stage1.{STAGE1_REPORT_ROWS_NODE}.{tile}.{era}",
+            "metrics": spectral["metrics"],
+            "flags": spectral["flags"],
+            "note": (
+                "the RING (isotropic) spectrum — cited from the row that "
+                "already ran, never recomputed here"
+            ),
+        }
+        if spectral is not None
+        else {
+            "cited_from": f"phase14.stage1.{STAGE1_REPORT_ROWS_NODE}.{tile}.{era}",
+            "status": "NOT APPLICABLE — RECORDED ABSENCE",
+        }
+    )
+    return {
+        "label": "REPORT-ONLY",
+        "gates": False,
+        "tile": tile,
+        "era": era,
+        "consumer": "T6 — high-latitude kernel decision pack (spec 1-4)",
+        "grid_anisotropy": {
+            "dx_km": dx_km,
+            "dy_km": dy_km,
+            "aspect_dy_over_dx": dy_km / dx_km,
+            "phi0_deg": float(plane.phi0),
+            "resolution_deg": RESOLUTION_DEG,
+            "basis": (
+                "COMPUTED from the tile's own solve-grid axes via "
+                "PlaneGrid.from_deg (cos(phi0) zonal projection) — never a "
+                "typed constant"
+            ),
+        },
+        "spectral_fidelity": cited,
+        "per_direction_track_diagnostics": {
+            "status": "NOT AVAILABLE — RECORDED ABSENCE",
+            "missing_context": ["ORBIT_GEOMETRY"],
+            "ruling_pin": "106 (PART 25) — accepted for Stage 1 as a named gap",
+            "reason": (
+                "per-direction track diagnostics come from the orbit-geometry "
+                "provider, which is CHALLENGE-BOX scoped "
+                "(build_geometry_artifact fixes the box and phi0=38.1), so "
+                "groundtrack is not applicable at this tile. Deriving "
+                "per-tile geometry is a NEW PRODUCER, which the wiring "
+                "criterion forbids; it is named Stage-2 work (pin 106d)"
+            ),
+            "consequence_for_t6": (
+                "the kernel decision's anisotropy evidence is the GRID "
+                "geometry plus the isotropic spectral row — there is no "
+                "measured per-direction track sampling at this tile, and T6 "
+                "must not present its arithmetic as though there were"
+            ),
+        },
+        "date": datetime.now(UTC).date().isoformat(),
+    }
+
+
+def record_anisotropy_if_elected(
+    *,
+    tile: str,
+    era: str,
+    report_block: dict[str, Any],
+    evidence_path: Path = EVIDENCE,
+) -> dict[str, Any] | None:
+    """Record T6's anisotropy inputs — for the SOUTHERN tile and no other.
+
+    The kernel decision is about the high-latitude regime; a subtropical
+    tile's grid would quietly answer a question it was never asked.
+
+    Args:
+        tile: The tile whose leg just finished.
+        era: The era the inputs describe.
+        report_block: That tile's recorded report block.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Returns:
+        The inputs block, or None when the tile is not the elected one.
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    if tile != ANISOTROPY_TILE:
+        return None
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    block = build_anisotropy_inputs(tile=tile, era=era, report_block=report_block)
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    node.setdefault(ANISOTROPY_NODE, {}).setdefault(tile, {})[era] = block
+    atomic_write_json(evidence_path, results)
+    return block
+
+
+# ---------------------------------------------------------------------------
+# T5d part C — the kuroshio land-mask path exercise.
+#
+# There is no explicit land mask anywhere in this pipeline, and the record
+# says so: altimetry simply has no observations over land (coastal editing
+# happens upstream, in the product), so "land handling" is visible only as
+# ABSENT obs and ABSENT track points. The honest evidence is therefore the
+# three counts and their gaps — plus the fact that an empty core REFUSES
+# rather than scoring to a masked triple.
+LAND_MASK_NODE = "land_mask_exercise"
+LAND_MASK_TILE = "kuroshio"
+
+
+def build_land_mask_exercise(
+    *, tile: str, era: str, n_obs: int, scores: dict[str, Any]
+) -> dict[str, Any]:
+    """The coastal/island-dense path's honest counts — REPORT-ONLY.
+
+    Args:
+        tile: Registry tile name.
+        era: The era the counts describe.
+        n_obs: Framed observation count for the leg.
+        scores: That leg's scores block.
+
+    Returns:
+        The exercise block: the three counts, their gap, the mechanism
+        statement and the refusal path.
+    """
+    n_scored = int(scores["n_scored_points"])
+    n_cal = int(scores["chi2_j3_validation"]["n"])
+    return {
+        "label": "REPORT-ONLY",
+        "gates": False,
+        "tile": tile,
+        "era": era,
+        "counts": {
+            "n_obs_framed": int(n_obs),
+            "n_scored_points": n_scored,
+            "n_calibration_points": n_cal,
+            "scored_minus_calibration": n_scored - n_cal,
+        },
+        "counts_note": (
+            "mu/sigma/lambda_x rest on n_scored_points; coverage and chi2 "
+            "rest on the SMALLER calibration count (points where the "
+            "member-std map is also usable). The gap is reported so neither "
+            "number is read as resting on the other's support"
+        ),
+        "mechanism": (
+            "there is no explicit land mask in this pipeline: land appears "
+            "as ABSENT observations and ABSENT track points (coastal editing "
+            "is upstream, in the product). Claiming a mask would invent a "
+            "control that does not exist; the counts are the evidence"
+        ),
+        "refusal_path": (
+            "an all-land or otherwise empty core REFUSES: score_tile raises "
+            "when no track point survives in the core, and "
+            "calibration_readings raises when no point is usable. Neither is "
+            "caught in the scoring leg — a tile that scored nothing is "
+            "surfaced, never recorded as a reading"
+        ),
+        "date": datetime.now(UTC).date().isoformat(),
+    }
+
+
+def record_land_mask_if_elected(
+    *,
+    tile: str,
+    era: str,
+    n_obs: int,
+    scores: dict[str, Any],
+    evidence_path: Path = EVIDENCE,
+) -> dict[str, Any] | None:
+    """Record the land-mask exercise — for the KUROSHIO tile and no other.
+
+    The criterion asks for the riskiest path to be exercised; an
+    open-ocean tile cannot exercise it, so its counts must not stand in.
+
+    Args:
+        tile: The tile whose leg just finished.
+        era: The era the counts describe.
+        n_obs: Framed observation count.
+        scores: That leg's scores block.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Returns:
+        The exercise block, or None when the tile is not the elected one.
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    if tile != LAND_MASK_TILE:
+        return None
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    block = build_land_mask_exercise(tile=tile, era=era, n_obs=n_obs, scores=scores)
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    node.setdefault(LAND_MASK_NODE, {}).setdefault(tile, {})[era] = block
+    atomic_write_json(evidence_path, results)
+    return block
+
+
 def record_leg_evidence(
     *,
     mean_map: Path,
@@ -4149,7 +4664,7 @@ def record_leg_evidence(
     scores: dict[str, Any],
     date: str,
     evidence_path: Path = EVIDENCE,
-) -> dict[str, Any]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     """Record BOTH sides of one leg: the evidence row and the report rows.
 
     They are one action with two destinations — the gate-bearing row at
@@ -4178,7 +4693,7 @@ def record_leg_evidence(
         evidence_path: The evidence store (tmp path in tests).
 
     Returns:
-        The recorded evidence row.
+        ``(row, report_block)`` — both recorded.
     """
     row = record_tile_leg(
         seal_sha=seal_sha,
@@ -4197,11 +4712,9 @@ def record_leg_evidence(
         date=date,
         evidence_path=evidence_path,
     )
-    record_tile_report_block(
-        build_tile_report_block(tile=tile, era=STAGE1_ERA, mean_map=mean_map),
-        evidence_path=evidence_path,
-    )
-    return row
+    report_block = build_tile_report_block(tile=tile, era=STAGE1_ERA, mean_map=mean_map)
+    record_tile_report_block(report_block, evidence_path=evidence_path)
+    return row, report_block
 
 
 def _t5_echo(msg: str) -> None:
@@ -4370,7 +4883,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
 
     solve = frame.solve_bbox
     wall_s = time.monotonic() - t_leg
-    row = record_leg_evidence(
+    row, report_block = record_leg_evidence(
         mean_map=mean_map,
         seal_sha=seal_sha,
         tile=tile,
@@ -4400,6 +4913,47 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         scores=scores,
         date=datetime.now(UTC).date().isoformat(),
     )
+    # Per-tile extras (T5d): each fires for its ELECTED tile only.
+    if record_anisotropy_if_elected(
+        tile=tile, era=STAGE1_ERA, report_block=report_block
+    ):
+        _t5_echo(f"{tile}: anisotropy inputs recorded for T6")
+    if record_land_mask_if_elected(
+        tile=tile, era=STAGE1_ERA, n_obs=n_obs, scores=scores
+    ):
+        _t5_echo(f"{tile}: land-mask path exercise recorded")
+    manifest = persist_lane0_if_elected(
+        tile=tile,
+        row=row,
+        report_block=report_block,
+        mean_map=mean_map,
+        std_map=std_map,
+        fold_eval_frame=build_fold_eval_frame(
+            tile=tile,
+            frame=row["frame"],
+            window_plan=row["window_plan"],
+            root=root,
+            pcg_rtol=float(method.pcg_rtol),
+            pcg_maxiter=int(method.pcg_maxiter),
+            track=str(track),
+            track_sha256=gate.sha256_file(track),
+        ),
+    )
+    if manifest is not None:
+        _t5_echo(
+            f"{tile}: lane-0 bundle persisted -> {manifest['dir']} "
+            f"({len(manifest['files'])} files, manifest recorded at "
+            f"{LANE0_MIRROR_NODE})"
+        )
+        # Pin 96(b): the witness must FOLLOW CREATION, not wait for T9 —
+        # until the mirror is synced AND pushed, the manifest is
+        # self-witnessing (96c).
+        _t5_echo(
+            f"{tile}: ⛔ WITNESS NOW — run `pixi run python "
+            "scripts/phase14_evidence_mirror.py sync`, then commit and push. "
+            "Until that push lands, the lane-0 manifest witnesses nothing "
+            "(pin 96b/96c: the guarantee is PROSPECTIVE)"
+        )
     ceiling = tier2_wall_ceiling(elapsed_h=wall_s / 3600.0)
     _t5_echo(
         f"{tile}: recorded at phase14.stage1.tiles.{tile} "

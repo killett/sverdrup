@@ -120,6 +120,17 @@ MIRRORED: dict[str, str] = {
         "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one "
         "of the three rests on phase13_lane0_mean.nc, witnessed forward-only"
     ),
+    "phase14.stage1.equatorial_lane0_manifest": (
+        "pin 96. The lane-0 bundle's manifest — per-file shas of the FROZEN "
+        "pre-increment baseline (fork-b pin 1), carrying the fork-b pin 2 "
+        "policy sentence and the bundle's instrument composition. Mirrored "
+        "because a local manifest is SELF-witnessing (96c, pin 56a): "
+        "manifest and files sit on one box under one process's control. The "
+        "MANIFEST is mirrored, never the maps (96e) — bulk stays out per pin "
+        "56(b) and the shas are the witness. Class: WITNESSED AT CREATION "
+        "(96d), witnessed AT creation rather than at T9 so the interval from "
+        "creation never opens (96b, pin 60's prospective guarantee)"
+    ),
     "phase14.stage1.artifact_witness_classes": (
         "pin 67. Splits the 'no sha' bucket by what ELSE constrains each "
         "artifact: 7 constrained by reproduction, 1 verified by "
