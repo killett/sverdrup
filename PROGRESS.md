@@ -196,6 +196,32 @@
 >   absent track points — and names the refusal path: an empty core RAISES in both
 >   `score_tile` and `calibration_readings`, uncaught in the scoring leg (test-pinned).
 >
+> **✅ PINS 108–109 LANDED (PART 26); THE 109(a) SWEEP IS DONE — REPORT:**
+> `docs/superpowers/2026-08-30-phase14-stage1-orbit-geometry-consumer-sweep.md`.
+> - **109(b) holds for the KEY, and is one quantity too narrow for the SURFACE.**
+>   `EffectiveResolution` did drop its over-declared `ORBIT_GEOMETRY` (2026-07-15, never
+>   read) and `SpectralFidelity` genuinely does not read it — **but fidelity consumes the
+>   geometry-DERIVED `track_wedge_masks`**, so without geometry its slope carries
+>   `wedge_exclusion:false`: a **degraded estimand, not an absence**. One direct consumer,
+>   one indirect, one correctly pruned.
+> - **T7 and T8 have NO exposure** (verified, not assumed): lanes/bands are
+>   parameter-space boxes and the revisit's rows are score deltas; T8 is pricing.
+> - **⚖ THE THIRD CLASS EXISTS, AND IT RUNS OPPOSITE TO 106 — OWNER DECISION OWED.**
+>   `phase11_orbit_geometry.json` **exists** (v3, φ₀ = 38.1, missions `alg h2g j2g j2n
+>   s3a`) in `ours/` — but `report_only_instruments_block` looks for it **beside the maps**,
+>   and the Stage-1 maps live one directory below. `anchor_signed_maps.nc` and
+>   `seam_n_signed_maps.nc` both carry **exactly that mission set** and sit **inside the
+>   box at its own φ₀**. So at `anchor`/`seam_n`/`seam_s` GroundTrack is absent and
+>   fidelity degraded **for a placement reason, not the 106 conflict** — the inputs exist,
+>   in-box, matching. NOT fixed (109a is report-only, and placing a geometry artifact in
+>   the evidence directory raises a witness question of its own).
+> - The four diverse tiles stay squarely inside 106: CMEMS codes (`h2ag` ≠ `h2g`) would be
+>   dropped by the mission filter, and the derivation is box-and-φ₀ scoped regardless.
+> - **109(c) folded:** the report carries the full Stage-2 consumer list (groundtrack; the
+>   wedge-mask path into fidelity — invisible to a grep for the key; T6's anisotropy axis;
+>   `operative_halo_deg()`/±66 via fork-d pin 4 + pin 10; T9 policy (b); and the
+>   `h2g`/`h2ag` mapping) so per-tile geometry arrives as a package, not one missing row.
+>
 > **▶ NEXT ACTION: T5e — the gate suite on the final tree, then the launch sequence
 > (which STAYS BLOCKED: R1 + 91b). Build-side T5 is complete.**
 >
