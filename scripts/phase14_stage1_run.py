@@ -230,6 +230,12 @@ SIGMA_CAVEAT = (
     "diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent"
 )
 
+# Review pin 8/17 — the row-serialization tripwire. DECORATIVE, and named
+# as such: the CONTROL is the pinned key set (a row has no free-prose field
+# to interpret in). This catches the other route — an interpretation written
+# into a VALUE — which a key-set pin structurally cannot see.
+INTERPRETATION_WORDS = ("suggests", "consistent with", "attributable", "implies")
+
 # The scores key that MAKES a row a sigma row (the uncalibrated ensemble
 # spread the transfer reading reports; their_eval's own `sigma` is the
 # vendored RMS statistic and a different object).
@@ -321,9 +327,16 @@ CRITERION_8_DISCHARGE: dict[str, Any] = {
         "exists, rather than at the NotImplementedError stub (pin 90c)"
     ),
     "live_half_deferred_to": "_solve_leg (T5b)",
+    # T5b landed the leg, so the breadth half is now covered ON the real
+    # path: record_tile_leg is what the production leg writes through, and
+    # the cited test drives it for tile "equatorial" end to end.
+    "live_half_discharged_by": (
+        "test_record_tile_leg_records_equatorial_on_the_programmatic_path"
+    ),
     "evidence_tests": (
         "test_run_equatorial_reaches_gated_stub_after_pin12_ruling",
         "test_equatorial_frame_is_the_pin12_ruled_box",
+        "test_record_tile_leg_records_equatorial_on_the_programmatic_path",
     ),
     "why_two_tests": (
         "the first proves the pin-12 gate is GONE; the second proves the box "
@@ -685,12 +698,18 @@ def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     :class:`~sverdrup.validation.phase14_seal.SealError` propagates. The
     write is atomic and merges into the standing store (never clobbers).
 
+    Review pin 8/17: the CONTROL is the pinned key set (no free-prose
+    field exists to interpret in). :data:`INTERPRETATION_WORDS` is the
+    decorative tripwire ON TOP of it — it catches an interpretation
+    smuggled into a VALUE, which a key-set pin cannot see.
+
     Args:
         row: An evidence row from :func:`build_evidence_row`.
         evidence_path: The evidence store (tmp path in tests).
 
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
+        ValueError: The serialized row carries an interpretation word.
     """
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
@@ -698,6 +717,14 @@ def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
     phase14_seal.verify_current_seal()
+    serialized = json.dumps(row).lower()
+    hits = [w for w in INTERPRETATION_WORDS if w in serialized]
+    if hits:
+        raise ValueError(
+            f"row for tile {row.get('tile')!r} carries interpretation prose "
+            f"{hits} — Stage-1 rows are numbers plus the pinned caveats; "
+            "interpretation WAITS on the owner readout (review pin 8)"
+        )
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )

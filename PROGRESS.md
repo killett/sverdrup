@@ -75,12 +75,39 @@
 > wording, not substance. (ii) T9's `verifyCommand` is bare `pytest`, which reproduces the
 > pre-format-tree defect **pin 83 exists to fix**; the gate suite is the correct command.
 >
-> **▶ NEXT ACTION: T5b — implement `_solve_leg` (it is still `NotImplementedError`).**
-> Build against Task 4's `_seam_pair_real_leg` as the analog (pin 92). Carries pin 94's
-> `SIGMA_CAVEAT` as a required schema field, pin 95's pin-42 fields on the χ² row only
-> (everything else report-only, test-pinned), and pin 90(c)'s programmatic-path extension
-> of test 244. Then T5c (GroundTrack wiring + structural pin), T5d (per-tile extras incl.
-> pin 96's mirrored lane-0 manifest), T5e (gate suite → launch).
+> **▶ NEXT ACTION: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
+> `Registry.applicable` + `report_rows` machinery; zero new producers, absence RECORDED
+> as absence.** Then T5d (per-tile extras: equatorial lane-0 persistence incl. pin 96's
+> mirrored manifest, southern anisotropy inputs, kuroshio land-mask assertions), T5e
+> (gate suite → launch). **Leg 1 is still STOP-CONDITIONED (R1 + 91b): build only.**
+>
+> **✅ T5b IS DONE — `_solve_leg` IS THE REAL LEG** (`bcc08b7`, `fda691c`, `4096a2e`).
+> Built against Task 4's `_seam_tile_leg` (pin 92): own member store + member-batch PCG
+> checkpoints, maps written BEFORE scoring, one pcg classifier, per-tile CRN root.
+> - **pin 94** — `SIGMA_CAVEAT` attached in `build_evidence_row` exactly as
+>   `BRIDGE_CAVEAT` is; a raw-σ row cannot be built without it; verbatim test-pinned;
+>   None where no raw σ is reported, so the calibrated anchor row is never stamped.
+> - **pins 95+98** — `build_scores_block`: pin-42 fields on the χ² j3-validation row
+>   ONLY, everything else `report_only` test-pinned. The χ² field RECORDS (null stated,
+>   failure condition deliberately ABSENT per `harness.py:1145`, and that absence itself
+>   pinned so nobody "completes" the bar).
+> - **pin 90(c)** — `record_tile_leg` is the production write path and is driven for
+>   "equatorial" in test; `CRITERION_8_DISCHARGE.live_half_discharged_by` now cites it.
+> - **sweep item 3 (HIGH) CLEARED** — `run` routes the four Tier-2-cleared tiles through
+>   `tier2_launch_gate` on MEASURED headroom; `preflight`'s Tier-1 refusal still bites for
+>   seam/anchor. Both directions test-pinned.
+> - **Scoring is per-tile now:** each diverse tile gets its OWN j3 holdout track built
+>   from the CMEMS-MY dailies (they already carry the vendored L3 schema, so the scored
+>   quantity stays `sla_unfiltered + mdt - lwe`). `calibration_readings` drops
+>   un-interpolable / zero-variance points, reports `n_used`, and REFUSES on an all-land
+>   core rather than scoring a masked triple. The member-std map is evaluated at exactly
+>   the points `interp_on_alongtrack` returned, so mean/std/truth align by construction.
+> - **⚠ src change:** `provenance_guard.mission_from_track_path` was hard-wired to
+>   `dt_gulfstream_…`; every diverse-tile score would have raised "no recognizable
+>   mission id". Now matches the token before `_phy_l3` (loud failure retained). The
+>   alternative — naming a Pacific track "gulfstream" — was a lie in a filename.
+> - **T5 criterion 3 (structural withholding) MET:** row key set pinned, scores key set
+>   pinned, and the four-word serialization tripwire now fires on the tile-row path.
 >
 > **✅ T5a IS DONE (`7ce99e3`) — the Tier-2 production launch gate exists.**
 > `tier2_launch_gate` (MemAvailable ≥ 2 × the **MEASURED** 4365 MiB = **8730**, never the

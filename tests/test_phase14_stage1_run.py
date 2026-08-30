@@ -502,6 +502,52 @@ def test_build_evidence_row_pure_and_unaliased() -> None:
     assert b["reference_row"] == _PINNED_REFERENCE_ROW
 
 
+@pytest.mark.parametrize(
+    "word", ["suggests", "consistent with", "attributable", "implies"]
+)
+def test_recording_a_row_carrying_interpretation_prose_refuses(
+    word: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The four-word serialization tripwire fires on the tile-row path.
+
+    Bug caught: an interpretation smuggled into a value (not a key) of an
+    otherwise schema-clean row -- the structural control pins the KEY set,
+    so a caveat or label rewritten into "consistent with the anchor" would
+    otherwise serialize straight into the evidence store.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    kwargs = _row_kwargs("kuroshio")
+    kwargs["scores"] = {"mu": 0.9, "note": f"the transfer is {word} the anchor"}
+    row = _mod.build_evidence_row(**kwargs)
+    with pytest.raises(ValueError, match=word.split()[0]):
+        _mod.record_evidence_row(row, evidence_path=evid)
+    assert not evid.exists()
+
+
+def test_the_pinned_caveats_themselves_pass_the_tripwire(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A normal row -- caveats, labels and all -- records without tripping.
+
+    Bug caught: a tripwire so broad it fires on the pin-7 bridge caveat's
+    "attribution readout" or on the pin-94 sigma caveat, which would block
+    every legitimate cmems row and invite someone to delete the check.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    kwargs = _row_kwargs("kuroshio")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    row = _mod.build_evidence_row(**kwargs)
+    _mod.record_evidence_row(row, evidence_path=evid)
+    stored = json.loads(evid.read_text())
+    assert stored["phase14"]["stage1"]["tiles"]["kuroshio"]["sigma_caveat"]
+
+
 def test_record_refuses_when_seal_unverified(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -2781,6 +2827,20 @@ def test_criterion8_discharge_record_contract() -> None:
     assert "refus" in rec["dead_half"].lower()
     assert rec["live_half_deferred_to"] == "_solve_leg (T5b)"
     assert "record_evidence_row" in rec["live_half"]
+
+
+def test_criterion8_live_half_is_discharged_on_the_real_path() -> None:
+    """T5b landed the leg, so the breadth half names the test that covers it.
+
+    Bug caught: _solve_leg lands and the discharge record still says the
+    breadth half is DEFERRED -- the criterion would then be carried
+    forward as open work forever, which is the mirror of the "quietly
+    upgraded to met" failure the record contract already guards.
+    """
+    rec = _mod.CRITERION_8_DISCHARGE
+    covered = rec["live_half_discharged_by"]
+    assert covered == "test_record_tile_leg_records_equatorial_on_the_programmatic_path"
+    assert covered in rec["evidence_tests"]  # so pin 90a's citation check binds it
 
 
 # ---------------------------------------------------------------------------
