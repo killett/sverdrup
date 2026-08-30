@@ -1801,3 +1801,68 @@ looking like a like-for-like increment. The manifest therefore records the compo
 (standing rows + recorded absences with their reasons) as a first-class field, so the
 later comparison is composition-aware by construction. This changes nothing about the
 bundle's shape — it makes the frozen baseline self-describing.
+
+---
+
+## PART 26 — ANISOTROPY-AXIS + 106-SURFACE-SWEEP RULING (verbatim), pins 108–109, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Sharpens where the T6 anisotropy
+line sits (UNEVIDENCED, not "limited"), and orders a report-only sweep of every Stage-1
+consumer of an ORBIT_GEOMETRY-derived quantity across T6–T9.
+
+> 108. T6's ANISOTROPY AXIS IS UNEVIDENCED — say so, do not weaken it to "limited".
+>      Verified: the reported 1.72 is exactly 1/cos(54.5°), a coordinate-grid property that
+>      would read 1.72 under perfectly isotropic sampling. The ring spectrum is isotropic by
+>      construction. Neither can speak to directional sampling.
+>      (a) T6 records the anisotropy axis as UNEVIDENCED at Stage 1, with the cause cited to
+>          106. Any kernel option whose case rests on directional sampling is marked
+>          UNSUPPORTED BY STAGE-1 EVIDENCE — not "weakly supported", which invites a reader
+>          to weigh it.
+>      (b) THE DECISION MAY NOT BE MADE ON THIS AXIS. If the option set cannot be separated
+>          without it, that is a WAIT and it comes to me as one. A kernel election is not
+>          improved by being made from a cosine.
+>      (c) STATE THE PROPAGATION. The kernel election drives operative_halo_deg() (fork-d
+>          pin 4), which sets the SO obs-frame edge and the ±66 margin (pin 10). An
+>          under-evidenced kernel choice becomes a geometry fact. The option table already
+>          carries the halo column; add the sentence that says why it matters here.
+>      (d) Your handling — absence recorded with the consequence written into the block,
+>          T6 forbidden from presenting grid arithmetic as measured sampling — is ratified
+>          and is the correct shape. 108 sharpens where the line sits, it does not reverse
+>          you.
+>
+> 109. SWEEP THE 106 SURFACE ONCE — third time this method is called for.
+>      106's conflict has now bitten twice (T5's GroundTrack rows, T6's per-direction
+>      diagnostics), both discovered by building into them. T7 and T8 are next and will
+>      discover theirs the same way unless swept.
+>      (a) Enumerate every Stage-1 consumer of an ORBIT_GEOMETRY-derived quantity across
+>          T6-T9 and report which are satisfied, which are absent, and what each absence
+>          costs its consumer. Report only — no fixes, no producers, no new tasks.
+>      (b) The grep already suggests the radius may be narrow: fidelity.py:130 records that
+>          fidelity deliberately does not read ORBIT_GEOMETRY, and resolution.py:42 records
+>          it as over-declared there and never read. Someone pruned this surface before.
+>          Confirm that holds rather than assuming it.
+>      (c) Fold the result into 106(d)'s Stage-2 handoff, so per-tile orbit geometry arrives
+>          at Stage 2 with its full consumer list rather than as one missing row.
+>      (d) Same method as T11's coverage table and 91(a)'s criteria sweep, and it has found
+>          something every time. This is the last surface I expect it to be needed on in
+>          this stage; if it finds a third class, that is worth knowing before T6 opens.
+>
+> SEQUENCE: commit T5d when the suite is green; land 108-109; run 109(a) and report; THEN
+> T5e.
+>
+> STOP CONDITION: unchanged. Build only. Leg 1 does not launch until you declare the box
+> back and stable. 109 is report-only.
+
+### What PART 26 changes
+
+- **T6's anisotropy axis is UNEVIDENCED, not "limited"** (108a) — 1.72 is exactly
+  1/cos(54.5°), a coordinate property that would read the same under perfectly isotropic
+  sampling. Any kernel option resting on directional sampling is **UNSUPPORTED BY STAGE-1
+  EVIDENCE**, a phrasing that cannot be weighed.
+- **The kernel decision may not be made on that axis** (108b) — if the options cannot be
+  separated without it, that is a WAIT that comes to the owner.
+- **The propagation is stated** (108c): the election drives `operative_halo_deg()`
+  (fork-d pin 4), which sets the SO obs-frame edge and the ±66 margin (pin 10) — an
+  under-evidenced kernel choice becomes a GEOMETRY FACT.
+- **The 106 surface is swept ONCE, report-only** (109), and the result folds into 106(d)'s
+  Stage-2 handoff so per-tile orbit geometry arrives with its full consumer list (109c).
