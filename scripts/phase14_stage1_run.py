@@ -262,6 +262,47 @@ REPORT_ONLY_NOTE = (
     "42's gate fields do not apply and none are recorded here (pin 95)"
 )
 
+# ---------------------------------------------------------------------------
+# Owner pin 100 (ruling doc PART 23) — THE s*/χ² IDENTITY IS A SCHEMA FIELD.
+#
+# `reduced_chi2` (src/sverdrup/eval/calibration.py:13-15) returns
+# mean((truth-mean)**2/var), and the closed-form scalar s* on the SAME points
+# is the same expression. The docstring said so; a docstring is not what
+# travels. The identity therefore rides the row — same construction as
+# SIGMA_CAVEAT under pin 94 — so no consumer can read agreement between the
+# two fields as corroboration. It is one number recorded twice.
+#
+# 100(a): the supports are NOT split. s*'s support is set by what Stage 2G
+# inherits, never by the wish to make a comparison look meaningful —
+# manufacturing independence would degrade one number to decorate the other.
+# 100(c): the identity is enforced as an INVARIANT in build_scores_block, not
+# merely declared here; a divergence raises rather than serializing quietly.
+S_STAR_CHI2_IDENTITY: dict[str, Any] = {
+    "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+    "pin": "100(b) — the identity travels in the row",
+    "shared_expression": "mean((truth - mean)**2 / var)",
+    # A LIST, not a tuple: the row round-trips through JSON, and a tuple
+    # would come back as a list — an in-memory row and its stored copy must
+    # compare equal.
+    "fields": ["scores.chi2_j3_validation.value", "scores.scalar_s_star.value"],
+    "supports_coincide": True,
+    "same_by_construction": True,
+    "not_corroboration": (
+        "agreement between these two fields is an IDENTITY, not independent "
+        "confirmation: a consumer reading them as two witnesses is reading "
+        "one number twice"
+    ),
+    "support_basis": (
+        "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT "
+        "supports were REFUSED — independence manufactured by splitting the "
+        "point set degrades one number to decorate the other"
+    ),
+    "enforced_by": (
+        "build_scores_block raises when the two values differ (100c): "
+        "divergence may be legitimate, but it is never silent"
+    ),
+}
+
 CHI2_PIN42: dict[str, Any] = {
     "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
     "pin": "95 (the split) + 98 (records, does not gate)",
@@ -663,6 +704,14 @@ def build_scores_block(
     Returns:
         The scores block (exactly the pinned key set).
     """
+    if scalar_s_star != reduced_chi2:
+        raise ValueError(
+            f"scalar_s_star {scalar_s_star!r} != reduced_chi2 {reduced_chi2!r} on "
+            "COINCIDENT supports: both are mean((truth-mean)**2/var) over the same "
+            "points, so same_by_construction cannot be asserted for this row. "
+            "Divergence may be legitimate — it must be made EXPLICIT here (pin "
+            "100c), never recorded silently under names that imply they match"
+        )
     reading = {"report_only": True, "report_only_note": REPORT_ONLY_NOTE}
     return {
         "mu": {"value": mu, **reading},
@@ -685,6 +734,11 @@ def build_scores_block(
             "value": scalar_s_star,
             "label": "REFERENCE-ONLY, NOT CALIBRATED",
             **reading,
+        },
+        "s_star_chi2_identity": {
+            **S_STAR_CHI2_IDENTITY,
+            "fields": list(S_STAR_CHI2_IDENTITY["fields"]),  # fresh container
+            "n": calibration_n,
         },
         "track": {"path": track, "sha256": track_sha256},
     }

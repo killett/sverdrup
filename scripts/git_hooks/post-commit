@@ -1,0 +1,48 @@
+#!/bin/sh
+# Push every commit to origin and NEVER fail silently (owner pin 102a).
+#
+# The hazard this exists for: a push mechanism that is TRUSTED and quietly
+# does nothing is worse than no mechanism at all — origin sat at ba35d80
+# while local had moved four commits ahead, and the failure mode is the
+# owner walking a stale tree and ruling on it.
+#
+# Two rules, both from pin 102:
+#   (a) every failure is LOUD — a banner on stderr plus a marker file at
+#       .git/UNPUSHED_COMMITS, so a later session trips over it;
+#   (b) success is confirmed AGAINST THE REMOTE (git ls-remote), never
+#       against the local ref, which is what made the original miss possible.
+#
+# Install: scripts/install_git_hooks.sh (symlinks this file into .git/hooks).
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+local_sha=$(git rev-parse HEAD)
+marker="$(git rev-parse --git-dir)/UNPUSHED_COMMITS"
+
+loud() {
+    echo "" >&2
+    echo "################################################################" >&2
+    echo "## PUSH HOOK FAILED — origin does NOT have this commit" >&2
+    echo "##   branch : $branch" >&2
+    echo "##   local  : $local_sha" >&2
+    echo "##   reason : $1" >&2
+    echo "## Run:  git push origin $branch" >&2
+    echo "## Marker written: $marker" >&2
+    echo "################################################################" >&2
+    printf '%s %s %s\n' "$branch" "$local_sha" "$1" >>"$marker"
+}
+
+if ! push_err=$(git push --porcelain origin "$branch" 2>&1); then
+    loud "git push failed: $(printf '%s' "$push_err" | tr '\n' ' ')"
+    exit 0
+fi
+
+# (b) Confirm against the REMOTE, not the local ref.
+remote_sha=$(git ls-remote origin "refs/heads/$branch" 2>/dev/null | cut -f1)
+if [ "$remote_sha" != "$local_sha" ]; then
+    loud "git push reported success but origin is at '${remote_sha:-<absent>}'"
+    exit 0
+fi
+
+rm -f "$marker"
+echo "[post-commit] origin/$branch verified at $local_sha (ls-remote)"
+exit 0

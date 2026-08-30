@@ -357,6 +357,7 @@ _PINNED_SCORE_KEYS = {
     "chi2_j3_validation",
     "raw_sigma",
     "scalar_s_star",
+    "s_star_chi2_identity",
     "track",
 }
 
@@ -368,7 +369,8 @@ _SCORE_KWARGS: dict[str, Any] = {
     "coverage_1sigma": 0.591,
     "reduced_chi2": 1.83,
     "raw_sigma": 0.0217,
-    "scalar_s_star": 2.14,
+    # 100(a): the supports are NOT split, so s* IS the pre-scaling chi2.
+    "scalar_s_star": 1.83,
     "calibration_n": 19004,
     "track": "data/j3.nc",
     "track_sha256": "beef" * 16,
@@ -419,6 +421,67 @@ def test_chi2_pin42_records_the_outcome_and_does_not_gate() -> None:
     assert "coverage remains the only bar" in row["pin42"]["why_not_gating"]
 
 
+def test_scores_block_carries_the_s_star_chi2_identity_field() -> None:
+    """Pin 100(b): the identity travels IN the row, naming the expression.
+
+    Bug caught: the identity living only in a docstring. A consumer reading
+    the stored row sees chi2 and s* agreeing and counts two independent
+    witnesses, when it is one number recorded twice — the docstring is not
+    what travels.
+    """
+    ident = _mod.build_scores_block(**_SCORE_KWARGS)["s_star_chi2_identity"]
+    assert ident["same_by_construction"] is True
+    assert ident["supports_coincide"] is True
+    assert ident["shared_expression"] == "mean((truth - mean)**2 / var)"
+    assert set(ident["fields"]) == {
+        "scores.chi2_j3_validation.value",
+        "scores.scalar_s_star.value",
+    }
+    assert "not independent confirmation" in ident["not_corroboration"]
+
+
+def test_scores_block_refuses_a_silent_divergence() -> None:
+    """Pin 100(c): unequal values on coincident supports fire LOUDLY.
+
+    Bug caught: a future change to how s* is computed producing a number
+    different from the pre-scaling chi2 while both keep names that imply
+    they must match — recorded silently, and read as agreement-or-not by
+    whoever finds them. Divergence may be legitimate; silence never is.
+    """
+    kwargs = dict(_SCORE_KWARGS)
+    kwargs["scalar_s_star"] = kwargs["reduced_chi2"] + 0.01
+    with pytest.raises(ValueError, match="same_by_construction"):
+        _mod.build_scores_block(**kwargs)
+
+
+def test_identity_holds_on_readings_taken_from_one_call() -> None:
+    """The production path feeds both fields from ONE calibration call.
+
+    Bug caught: 100(a) violated by splitting the supports — computing s*
+    on a different point set to manufacture independence, which degrades
+    one number to decorate the other. Here the readings come from a single
+    hand-built call, and the block must accept them unchanged.
+    """
+    readings = _mod.calibration_readings(
+        mean=np.zeros(3), std=np.ones(3), truth=np.array([0.5, -0.5, 2.0])
+    )
+    scores = _mod.build_scores_block(
+        mu=0.0,
+        sigma=0.04,
+        lambda_x=140.0,
+        n_scored_points=3,
+        coverage_1sigma=readings["coverage_1sigma"],
+        reduced_chi2=readings["reduced_chi2"],
+        raw_sigma=readings["raw_sigma"],
+        scalar_s_star=readings["scalar_s_star"],
+        calibration_n=readings["n_used"],
+        track="data/j3.nc",
+        track_sha256="beef" * 16,
+    )
+    assert scores["scalar_s_star"]["value"] == scores["chi2_j3_validation"]["value"]
+    assert scores["s_star_chi2_identity"]["same_by_construction"] is True
+
+
 def test_scalar_s_star_row_is_labeled_reference_only() -> None:
     """The scalar-s* transfer reading is LABELED where its number is read.
 
@@ -426,7 +489,7 @@ def test_scalar_s_star_row_is_labeled_reference_only() -> None:
     than the uncalibrated transfer reference it is.
     """
     row = _mod.build_scores_block(**_SCORE_KWARGS)["scalar_s_star"]
-    assert row["value"] == 2.14
+    assert row["value"] == 1.83
     assert row["label"] == "REFERENCE-ONLY, NOT CALIBRATED"
 
 

@@ -75,6 +75,42 @@
 > wording, not substance. (ii) T9's `verifyCommand` is bare `pytest`, which reproduces the
 > pre-format-tree defect **pin 83 exists to fix**; the gate suite is the correct command.
 >
+> **✅ PINS 100–102 RULED AND LANDED 2026-08-29 (ruling doc PART 23, verbatim).**
+> - **100 — the s\*/χ² identity is a SCHEMA FIELD** (`S_STAR_CHI2_IDENTITY`), not a
+>   docstring: shared expression named, `same_by_construction` asserted, and
+>   `not_corroboration` stated in the row so agreement can never be read as two
+>   witnesses. **Supports stay coincident (100a)** — splitting them to manufacture
+>   independence is REFUSED. **The identity is an INVARIANT (100c):**
+>   `build_scores_block` RAISES when the two values differ, so a future divergence
+>   fires loudly instead of serializing quietly. **Sixth instance of the
+>   unfailable-check family; §7 item 11's list now carries all six (100d).**
+> - **101 — the provenance-guard broadening is RATIFIED.** **101(a) CONFIRMED, with
+>   evidence, in both directions:** (i) the narrowness was INCIDENTAL, not a whitelist —
+>   the regex was born at `e4c7514` (Task 21), whose stated design is "attr-absent maps
+>   pass; a tagged map scored against an unidentifiable track fails loud"; there is no
+>   restrict-to-challenge-tracks clause anywhere, and at that time the only scoring
+>   targets in the repo WERE the gulfstream challenge files. (ii) **Nothing previously
+>   refused is now accepted.** Scanned all 2665 `.nc` names under `data/`: **zero** names
+>   the old regex resolved and the new one does not, **zero** whose mission token
+>   changed, 1900 newly resolved (the CMEMS dailies + the per-tile scheme). The newly
+>   resolved names move from *blanket refusal (unidentifiable)* to *checked against the
+>   assimilated list* — a leak can never be downgraded to a pass, because detection needs
+>   `mission ∈ assimilated` and the token is IDENTICAL wherever both patterns resolve.
+>   Non-scheme names still yield None and still fail loud (test-pinned). One corner is
+>   now STRICTER, not looser: `dt_gulfstream_<m>_phy…` without `_l3` used to resolve and
+>   now refuses — no such file exists in the repo.
+> - **102 — the push hook did not fire because THERE WAS NO HOOK.** `.git/hooks` held
+>   only `pre-commit`; nothing anywhere pushed on commit, and the belief that something
+>   did is what let origin sit at `ba35d80`. **102(a) folded:** `scripts/git_hooks/post-commit`
+>   pushes, then **confirms against `git ls-remote`, not the local ref (102b)**, and on
+>   any failure prints a stderr banner AND writes `.git/UNPUSHED_COMMITS` so a later
+>   session trips over it. Installed via `scripts/install_git_hooks.sh` (`.git/hooks` is
+>   not versioned — a fresh clone or rebuilt box starts with no hook and says nothing).
+>   Both paths exercised in a scratch repo: loud banner + marker with no remote, and
+>   `origin/main verified at <sha> (ls-remote)` with marker cleared on success.
+> - **⛔ STANDING FORM (102b): every report line verifies against the REMOTE.**
+>   `git ls-remote origin <branch>` — never `git rev-parse HEAD` alone.
+>
 > **▶ NEXT ACTION: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
 > `Registry.applicable` + `report_rows` machinery; zero new producers, absence RECORDED
 > as absence.** Then T5d (per-tile extras: equatorial lane-0 persistence incl. pin 96's
@@ -5500,6 +5536,23 @@ above confirm them**, so the spec stops lagging the decision.
   for obs-less coordinator probes in tests; real solves always set it).
 
 ## Gotchas
+
+- **`.git/hooks` IS NOT VERSIONED — the "hook pushes on commit" belief was false
+  (2026-08-29, owner pin 102).** The repo had only `pre-commit` installed; no post-commit
+  hook existed on this box, so commits stayed local while every report line said
+  "everything is on origin". Two consequences worth keeping: (i) after any clone, box
+  rebuild or `.git` recreation, run `sh scripts/install_git_hooks.sh` — nothing else
+  installs it and nothing warns you it is missing; (ii) **verify against the REMOTE**
+  (`git ls-remote origin <branch>`), never against `git rev-parse HEAD`, which is exactly
+  the check that cannot detect this class of failure. The hook now fails loudly (stderr
+  banner + `.git/UNPUSHED_COMMITS` marker) rather than silently.
+
+- **A pin-42-style "required schema field" must round-trip through JSON (2026-08-29).**
+  `S_STAR_CHI2_IDENTITY` first carried its `fields` entry as a TUPLE; the in-memory row
+  and its stored copy then compared UNEQUAL (tuple vs list), which is how the
+  programmatic-path test caught it. Any constant embedded in an evidence row uses JSON
+  types only, and is copied into a fresh container per row so a caller's mutation cannot
+  leak into the next tile's row.
 
 - **The σ route's floor is the ENSEMBLE, not the solver — CRN is keyed to the basis
   ORIGIN, not to the ocean (2026-07-27, `phase14.stage1.seam_sigma_diagnosis`).**
