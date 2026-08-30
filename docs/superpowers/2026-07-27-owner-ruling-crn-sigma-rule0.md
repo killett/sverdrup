@@ -1595,3 +1595,69 @@ than assumed. **The reboot cost nothing**; no suite was mid-run, so R3 had nothi
   new tasks; pin 88's halt lifted for the deliverable path, not for scope growth.
 - **PCG cap: no change.** Ratified at 92.
 - **E-16 is not renumbered** (93).
+
+---
+
+## PART 23 — s*/χ² IDENTITY + GUARD + PUSH-HOOK RULING (verbatim), pins 100–102, 2026-08-29
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-29.** Rules the s*/χ² identity surfaced
+during T5b, ratifies the provenance-guard broadening with one confirmation owed, and names
+the silent push hook as the standing hazard it is.
+
+> 100. s* / χ² IDENTITY — MAKE IT STRUCTURAL, DO NOT SPLIT THE SUPPORTS.
+>      Verified: calibration.py:15 returns mean((truth-mean)**2/var), and s* on the same
+>      points is the same expression. The docstring is right; the docstring is not what
+>      travels.
+>      (a) DISJOINT SUPPORTS REFUSED. s*'s support is set by what Stage 2G needs to inherit,
+>          not by the wish to make a comparison meaningful. Manufacturing independence
+>          degrades one number to decorate another.
+>      (b) ATTACH THE IDENTITY TO THE ROW as a schema field — the shared expression named,
+>          and same_by_construction asserted — so no consumer can read agreement as
+>          corroboration. Same construction as SIGMA_CAVEAT under pin 94.
+>      (c) TEST-PIN THE IDENTITY AS AN INVARIANT, not as documentation: assert equality
+>          where the supports coincide, so a future change that makes them diverge fires
+>          loudly instead of quietly producing two different numbers under names that imply
+>          they should match. Divergence may be legitimate; it must never be silent.
+>      (d) Sixth instance of the unfailable-check family (T11 vacuous pin, T0 source scan,
+>          the 1.3× bracket, pin 32's 3×, the ±4 sd acceptance, this). Record it as such in
+>          the §7 discipline's instance list — the list is the argument for why the rule
+>          is mechanical.
+> 101. PROVENANCE GUARD — RATIFIED, with one confirmation owed.
+>      Broadening mission_from_track_path to the token before _phy_l3 is correct, and
+>      refusing the filename workaround was the right call: a Pacific track named
+>      "gulfstream" would have been undetectable forever and would have poisoned every
+>      downstream mission attribution.
+>      (a) CONFIRM THE ORIGINAL NARROWNESS WAS INCIDENTAL, not a deliberate whitelist. It
+>          matched exactly one scheme; if that was load-bearing somewhere, broadening it
+>          widens what the guard accepts. You retained and test-pinned loud failure on
+>          non-scheme names, which is the right protection — say explicitly that nothing
+>          previously refused is now accepted.
+> 102. THE PUSH HOOK DID NOT FIRE, and that is the standing hazard itself. Remote sat at
+>      ba35d80 while local had moved. You caught it with git ls-remote; it would otherwise
+>      have surfaced as my walking a stale tree and ruling on it.
+>      (a) MAKE THE HOOK'S FAILURE LOUD. A silent no-op in the mechanism that keeps origin
+>          and local in step is worse than having no hook, because it is trusted.
+>      (b) VERIFY AGAINST THE REMOTE, not the local ref, in the report line — you did this
+>          round; make it the standing form.
+>      (c) No archaeology needed: I have verified origin every round, so nothing shipped
+>          unpushed before this.
+>
+> SEQUENCE: land 100-102 verbatim; fold 100 and 101(a); THEN T5c.
+>
+> STOP CONDITION: unchanged. Leg 1 does not launch — R1 stands until you declare the box
+> back and stable, and the 91(a) sweep items outside 97-99 remain report-only. Build only.
+
+### What PART 23 changes
+
+- **The s*/χ² identity becomes a row field, not a docstring** (100b) — the shared
+  expression named in the record, `same_by_construction` asserted, so agreement can never
+  be read as corroboration.
+- **Supports stay coincident** (100a) — splitting them to manufacture independence is
+  REFUSED; s*'s support is Stage 2G's inheritance requirement, nothing else.
+- **The identity is an INVARIANT with teeth** (100c) — equality asserted where the
+  supports coincide; divergence must fire loudly, never appear silently.
+- **§7's instance list grows to six** (100d) — the list is the argument for the rule.
+- **The guard broadening is RATIFIED** (101), with the incidental-not-whitelist
+  confirmation owed and answered below.
+- **The push hook is the hazard** (102) — its silence is worse than its absence, because
+  it is trusted. Loud failure required; remote-verified reporting is now the standing form.
