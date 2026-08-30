@@ -1732,3 +1732,72 @@ and ratifies the guard-widening sweep as the standard for that class of change.
   absence becomes self-announcing (104b): "no hook" must be a REPORTED state, because
   absence looked like success for an entire stage.
 - **The both-directions sweep is now the STANDARD for widening a guard** (105).
+
+---
+
+## PART 25 — GROUNDTRACK-ABSENCE RULING (verbatim), pins 106–107, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Accepts the GroundTrack absence at
+the four diverse tiles as a NAMED GAP, orders the spec tension recorded as a design
+conflict rather than an execution gap, and clears T5d to proceed.
+
+> 106. GROUNDTRACK ABSENCE — ACCEPTED FOR STAGE 1, RECORDED AS A NAMED GAP.
+>      Verified cause: groundtrack requires ORBIT_GEOMETRY, the Phase-11 provider is
+>      challenge-box scoped, so Registry.applicable correctly returns false at the diverse
+>      tiles. Absence recorded as absence is fork F working.
+>      (a) NO PRODUCER IN STAGE 1. A per-tile geometry derivation is a new surface, which
+>          the spec forbids for this wiring, and pin 82's constraint holds.
+>      (b) NAME THE SPEC TENSION, because Stage 2 inherits it: the spec asks for GroundTrack
+>          per tile×era AND zero new surfaces, and those are incompatible while the geometry
+>          provider is challenge-box scoped. That is a design conflict, not an execution
+>          gap, and it should be recorded as one so the successor stage does not rediscover
+>          it as a bug.
+>      (c) THE GATE-1 PACK STATES THE COMPOSITION IS INCOMPLETE at the four diverse tiles —
+>          in the transfer-readings section where a reader meets the numbers, not only in an
+>          absence row they may never open. Policy (b) pins the composition; the pack must
+>          not present four readings as if that composition were satisfied.
+>      (d) C1→2 CARRIES PER-TILE ORBIT GEOMETRY as named Stage-2 work, with the founding-
+>          metric context: this is the 0.410→0.331 lineage, the spec's own standing
+>          instrument, absent at exactly the tiles the stage was built to measure. Cheap to
+>          record now, expensive to reconstruct later.
+>      (e) This is a REAL WEAKENING of the deliverable and the record says so plainly. It is
+>          accepted because absence honestly recorded beats geometry that does not belong to
+>          the tile, not because the gap is small.
+>
+> 107. T5d PROCEEDS. State the lane-0 coupling before building rather than after: my reading
+>      is the equatorial bundle serves fork-b pin 1's wave-increment substrate and has no
+>      dependency on orbit geometry, so a future per-tile geometry decision does not touch
+>      it. If any part of the bundle would be shaped differently under 106(d)'s Stage-2 work,
+>      say so now — that is the only thing that would justify settling geometry first.
+
+### What PART 25 changes
+
+- **The absence is ACCEPTED, and named** (106) — fork F worked; no Stage-1 producer (106a).
+- **The tension is a DESIGN CONFLICT, recorded as one** (106b): "GroundTrack per tile×era"
+  and "zero new surfaces" cannot both hold while the geometry provider is challenge-box
+  scoped. Recorded so Stage 2 inherits a known conflict, not a fresh bug report.
+- **T9's pack states the incomplete composition WHERE THE NUMBERS ARE** (106c) — not only
+  in an absence row a reader may never open.
+- **C1→2 carries per-tile orbit geometry as named Stage-2 work** (106d), with the
+  0.410→0.331 founding-metric context attached.
+- **The record calls this a real weakening** (106e) — accepted on honesty grounds, not
+  because it is small.
+
+### Answer to 107 (the lane-0 coupling, stated BEFORE building)
+
+**Nothing in the bundle would be shaped differently by 106(d)'s Stage-2 work, so geometry
+does not need settling first.** Checked against what the bundle actually is: maps, the
+FROZEN fold/eval frame, the evidence pack and `lane0_manifest.json`. The frame is a
+fold/eval partition, the maps are the solve output, and pin 12's in-band-coverage claim —
+the thing pin 96(a) says the bundle is evidence FOR — turns on the box, not on orbit
+geometry. `groundtrack` reads ORBIT_GEOMETRY at evaluation time; it contributes nothing to
+what is persisted.
+
+**One genuine coupling, folded into T5d now rather than discovered later:** the persisted
+pack embeds TODAY's instrument composition, in which GroundTrack is a recorded absence. A
+future wave-increment run under per-tile geometry would carry a DIFFERENT composition, and
+a blind pack-to-pack comparison would then be comparing different instrument sets while
+looking like a like-for-like increment. The manifest therefore records the composition
+(standing rows + recorded absences with their reasons) as a first-class field, so the
+later comparison is composition-aware by construction. This changes nothing about the
+bundle's shape — it makes the frozen baseline self-describing.
