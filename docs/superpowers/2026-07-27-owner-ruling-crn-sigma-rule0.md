@@ -1661,3 +1661,74 @@ the silent push hook as the standing hazard it is.
   confirmation owed and answered below.
 - **The push hook is the hazard** (102) — its silence is worse than its absence, because
   it is trusted. Loud failure required; remote-verified reporting is now the standing form.
+
+---
+
+## PART 24 — CHECK-PLACEMENT + HOOK-PROTOCOL RULING (verbatim), pins 103–105, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Moves the s*/χ² invariant's first
+firing into preflight, promotes hook installation from a gotcha into the resume protocol,
+and ratifies the guard-widening sweep as the standard for that class of change.
+
+> 103. THE s*/χ² INVARIANT FIRES TOO LATE — move the first firing into preflight.
+>      Verified at calibration_readings (phase14_stage1_run.py:3608-3613): chi2 is computed
+>      once and returned as both reduced_chi2 and scalar_s_star — the same object. They
+>      cannot differ for any input on the current path. So the raise in build_scores_block
+>      can only fire on a future caller wiring them from separate paths, which is a
+>      CONSTRUCTION error: present from the first line, discoverable in seconds, and under
+>      the current placement first discovered at the end of a leg.
+>      (a) EXERCISE build_scores_block IN PREFLIGHT on cheap synthetic inputs, before any
+>          solve. A construction error then costs seconds. Your own fixture demonstrated
+>          this: s*=2.14 vs χ²=1.83 fired on first contact, which is where it belongs.
+>      (b) KEEP THE ROW-BUILD RAISE. Do not downgrade it to a recorded warning — if the two
+>          diverge at row build the row is wrong and must not be written. With (a) in place
+>          the only path to it is a genuine mid-leg change, which is worth losing a leg over.
+>      (c) TEST-PIN THAT THEY COME FROM ONE CALL, not merely that they are equal. Equality
+>          is guaranteed by aliasing today, so an equality test passes even if a future
+>          refactor computes them twice from drifting inputs. The invariant worth pinning is
+>          single-source, not agreement.
+>      (d) GENERAL FORM, for §7 alongside the six instances: a check earns its placement by
+>          where the error it catches ORIGINATES, not by where the value is consumed. An
+>          invariant guarding a construction error belongs where construction happens. This
+>          is pin 83's lesson (formatter before the suite) and pin 89's (measure before the
+>          5-day decision) in a third costume.
+>
+> 104. HOOK INSTALLATION BELONGS IN THE RESUME PROTOCOL, not in a gotcha.
+>      .git/hooks is unversioned, so every clone and every box rebuild starts with no hook —
+>      and this session has already had one box reset. A note in PROGRESS is prose a fresh
+>      session may read after it has already committed.
+>      (a) Add scripts/install_git_hooks.sh to docs/project-context.md §10's resume
+>          checklist as an explicit early step, alongside the mirror check.
+>      (b) Better still, make its absence self-announcing: have the resume checks REPORT
+>          whether the post-commit hook is installed, so "no hook" is a visible state rather
+>          than a silent one. That there was never a hook — not one that failed — is the
+>          finding, and it went unnoticed for the whole stage precisely because absence
+>          looked like success.
+>
+> 105. RATIFIED: 101(a)'s both-directions sweep (2665 names, zero resolved-then-unresolved,
+>      zero changed tokens, 1900 newly resolved, one corner stricter with no such file) is
+>      the standard for a guard widening — it establishes what was gained and, more
+>      importantly, that nothing previously refused is now accepted. The provenance argument
+>      that a leak cannot be downgraded is sound: detection needs mission ∈ assimilated and
+>      the token is identical wherever both patterns resolve. 100(a)-(d) and 102 as folded.
+>
+> SEQUENCE: commit the pending folds when the suite is green; land 103-105 verbatim; fold
+> 103 and 104; THEN T5c.
+>
+> STOP CONDITION: unchanged. Build only. Leg 1 does not launch — R1 stands until you declare
+> the box back and stable, and the sweep items outside 97-99 remain report-only.
+
+### What PART 24 changes
+
+- **The identity check gets a SECOND, EARLIER firing site** (103a) — the row-build raise
+  stays exactly as it is (103b), but the construction is exercised on synthetic inputs
+  before any solve, so a mis-wiring costs seconds instead of a leg.
+- **The pinned invariant becomes SINGLE-SOURCE, not agreement** (103c) — equality is
+  guaranteed by aliasing today, so an equality test would survive a refactor that computed
+  the two values twice from drifting inputs.
+- **§7 gains the placement rule** (103d): a check earns its placement by where the error it
+  catches ORIGINATES, not by where the value is consumed — pins 83 and 89 in a third costume.
+- **Hook installation moves from a gotcha into the resume protocol** (104a), and its
+  absence becomes self-announcing (104b): "no hook" must be a REPORTED state, because
+  absence looked like success for an entire stage.
+- **The both-directions sweep is now the STANDARD for widening a guard** (105).
