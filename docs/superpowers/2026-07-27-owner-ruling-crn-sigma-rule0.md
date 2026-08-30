@@ -1939,3 +1939,65 @@ reasoned from the code:
 - Consequence: the lookup fix is **purely additive and prospective**. It makes GroundTrack
   and the wedge exclusion available to any FUTURE block built for those tiles; it rewrites
   nothing. **No supersession, and nothing to bring back under the 112(d) condition.**
+
+---
+
+## PART 28 — POST-HOC RECOVERY + BEHAVIOURAL SCOPE PIN (verbatim), pins 114–116, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Authorises a bounded, additive
+post-hoc recovery of the box tiles' report rows, replaces the fragile source-scan scope
+test with behavioural ones, and ratifies the 110–112 folds.
+
+> 114. POST-HOC RECOVERY AUTHORISED — bounded, additive, its own task.
+>      Verified from the signature: build_tile_report_block takes mean_map: Path and
+>      computes from a persisted artifact. No solve. The anchor and seam maps exist.
+>      (a) Compute the report rows for anchor, seam_n, seam_s against the stored maps under
+>          the fixed lookup, and APPEND them. Read-only inputs; no closed leg re-runs; no
+>          recorded value changes — you have already established there is no report_rows
+>          node to conflict with.
+>      (b) Appending to closed tasks' evidence goes through the append-only path with a
+>          forward pointer from the T3/T4 nodes, per pin 64. A reader arriving at the anchor
+>          gate node must be able to reach rows that did not exist when it was written.
+>      (c) Same shape as pin 71's re-score: scoring existing artifacts is not the
+>          evaluation-bearing execution the stop condition guards. If it turns out to
+>          require a solve, stop and tell me — that changes the ruling.
+>      (d) If any row comes back with a value that contradicts something recorded rather
+>          than merely adding to it, stop. That would be a supersession and it comes to me.
+>      (e) The diverse tiles are untouched: still 106, still DESIGN CONFLICT, and 108 stands
+>          for T6.
+> 115. MAKE THE SCOPE PIN BEHAVIOURAL. Asserting 295 and 38.1 appear nowhere in the source
+>      is the T0 source-scan construction I already replaced once — "295" is a substring of
+>      1295, and 2.95e2 passes it vacuously. The catch it encodes is the best find in this
+>      round and must not rest on a fragile test.
+>      (a) Feed the function an artifact carrying a DIFFERENT box_lon and phi0 and assert
+>          the scope follows the artifact. That fails on any hardcoding, including forms a
+>          string scan cannot see.
+>      (b) Add the adversarial case directly: an artifact whose mission families match a
+>          tile outside its box, asserting the tile is refused rather than handed geometry
+>          that does not belong to it. Four of five CMEMS codes matching is precisely why a
+>          mission-keyed lookup would have succeeded silently, and that is the bug worth a
+>          permanent test.
+> 116. RATIFIED: 111's decoy-first red/green with the span pinned against the data rather
+>      than the setting; the deletion record with pre-deletion sha, producing test, and why
+>      the leg reached that point; the default-argument diagnosis — that an autouse sandbox
+>      cannot help when `evidence_path: Path = EVIDENCE` binds at import — which is a real
+>      find and the reason threading paths explicitly was the correct fix rather than a
+>      heavier one; provenance-gated reuse; and the wedge flag carrying IN SCOPE versus
+>      DESIGN CONFLICT in-row.
+>
+> SEQUENCE: commit the current folds when green; land 114-116; do 115 then 114; THEN T5e.
+>
+> STOP CONDITION: unchanged. Leg 1 does not launch until you declare the box back and
+> stable. 114 stops on any contradiction rather than resolving it.
+
+### What PART 28 changes
+
+- **The box tiles' report rows are recovered post-hoc** (114) — computed from the STORED
+  maps under the fixed lookup, appended, no solve and no closed leg re-run. It stops on
+  any contradiction (114d) rather than resolving it.
+- **The forward pointer goes in the mirror's amendment index, NOT in the witnessed node**
+  — pin 64(b) is explicit ("Do NOT edit the witnessed node to add the pointer"), and 114(b)
+  cites 64, so reachability is satisfied by the index.
+- **The scope pin becomes behavioural** (115) — a synthetic artifact with a different
+  `box_lon`/`phi0`, plus the adversarial mission-match-outside-the-box case, replacing a
+  string scan that `1295` or `2.95e2` would defeat.
