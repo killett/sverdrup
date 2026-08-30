@@ -146,7 +146,23 @@
 > `_present` say where it looked). Both branches test-pinned; rows proven ⊆ the registry's
 > own evaluator names, so no Stage-1 producer can sneak in.
 >
-> **⚖ OWNER DECISION OWED — GroundTrack will be ABSENT for all four diverse tiles.**
+> **✅ PINS 106–107 RULED AND LANDED 2026-08-30 (ruling doc PART 25, verbatim); 106 FOLDED.**
+> The GroundTrack absence is **ACCEPTED for Stage 1 as a NAMED GAP** — fork F working, no
+> Stage-1 producer (106a). The spec tension is recorded as a **DESIGN CONFLICT** in
+> Cross-cutting decisions (106b), T9 must state the incomplete composition **in the
+> transfer-readings section where the numbers are** (106c, folded), and T12's C1→2 table
+> carries **per-tile orbit geometry as named Stage-2 work** with the 0.410→0.331 context
+> (106d, folded). The record says plainly it is a **real weakening** (106e).
+> **107 ANSWERED BEFORE BUILDING: the lane-0 bundle has NO orbit-geometry dependency** —
+> maps, the frozen fold/eval frame and pin 12's in-band-coverage claim all turn on the box,
+> not on geometry; `groundtrack` reads ORBIT_GEOMETRY at evaluation time and contributes
+> nothing to what is persisted. **One coupling folded into T5d now:** the manifest records
+> the INSTRUMENT COMPOSITION (standing rows + recorded absences with reasons), so a future
+> wave-increment run under per-tile geometry cannot be compared blind against a baseline
+> with a different composition. Bundle shape unchanged; the baseline becomes
+> self-describing.
+>
+> **[superseded by pin 106 — kept for the trail] OWNER DECISION OWED — GroundTrack will be ABSENT for all four diverse tiles.**
 > The only orbit-geometry artifact that exists is derived over the CHALLENGE box
 > (`build_geometry_artifact` fixes `_LON_LO`/`_LON_HI` and φ0 = 38.1) from the dc_obs L3
 > files. Using Gulf-Stream geometry at a Pacific tile would be geometry from the wrong
@@ -5325,6 +5341,23 @@ above confirm them**, so the spec stops lagging the decision.
   Design: `docs/superpowers/specs/2026-06-21-regatta-phase1-architecture-design.md`.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
+
+- **⚖ DESIGN CONFLICT, NOT AN EXECUTION GAP — "GroundTrack per tile×era" vs "zero new
+  surfaces" (owner pin 106, 2026-08-30).** The spec asks for both, and **they are
+  incompatible while the orbit-geometry provider is CHALLENGE-BOX scoped**:
+  `build_geometry_artifact` fixes `_LON_LO`/`_LON_HI` and φ0 = 38.1 and derives from the
+  dc_obs L3 files, so `ContextKey.ORBIT_GEOMETRY` is unavailable at the four diverse
+  tiles and `Registry.applicable` correctly excludes `groundtrack` there. Stage 1's
+  wiring is CORRECT and the absences are honestly recorded (fork F) — **there is no bug
+  to find here**, which is exactly why it is written down: a successor stage that meets
+  four transfer readings with no GroundTrack row would otherwise open it as a defect.
+  **Ruled consequences:** no Stage-1 producer (106a — a per-tile derivation is a new
+  surface); the Gate-1 pack states the incomplete composition **in the transfer-readings
+  section, where the numbers are** (106c, folded into T9); C1→2 carries **per-tile orbit
+  geometry as named Stage-2 work** with the 0.410→0.331 founding-metric context (106d,
+  folded into T12). **The record calls it what it is (106e): a REAL WEAKENING of the
+  deliverable**, accepted because absence honestly recorded beats geometry that does not
+  belong to the tile — not because the gap is small.
 
 - **Method 1 = hand-rolled dense GP/OI** (not pyinterp/GPSat). Native covariance +
   whole-field samples via cached Cholesky `L` of `K_dd+R`, `cov(A,B)=K_AB−Vᵀ_A V_B`,
