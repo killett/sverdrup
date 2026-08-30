@@ -727,6 +727,182 @@ def test_the_pinned_caveats_themselves_pass_the_tripwire(
     assert stored["phase14"]["stage1"]["tiles"]["kuroshio"]["sigma_caveat"]
 
 
+# ---------------------------------------------------------------------------
+# T5c — GroundTrack wiring (T5 criterion 2). The EXISTING Phase-11 machinery
+# (Registry.applicable + build_report_rows, via report_only_instruments_block)
+# evaluated per tile x era; NO new producers; absence RECORDED as absence.
+# ---------------------------------------------------------------------------
+
+
+def _stage1_mean_map(tmp_path: Path, *, geometry: bool) -> Path:
+    """A small challenge-schema mean map, optionally beside a geometry artifact."""
+    from sverdrup.validation.output_adapter import write_map
+
+    lon = np.arange(295, 305.01, 0.2)
+    lat = np.arange(33, 43.21, 0.2)
+    rng = np.random.default_rng(0)
+    dest = write_map(
+        times=np.array(["2017-01-01", "2017-01-02"], dtype="datetime64[ns]"),
+        lats=lat,
+        lons=lon,
+        ssh=rng.standard_normal((2, lat.size, lon.size)),
+        dest=tmp_path / "kuroshio_signed_maps.nc",
+        assimilated_missions=("alg", "s3a"),
+    )
+    if geometry:
+        fam = {
+            "heading_north_deg": 12.0,
+            "n_passes": 24,
+            "n_crossings": 24,
+            "orbit_class": "repeat",
+            "s_lon_km": 300.0,
+            "d_perp_km": 280.0,
+            "spacing_quantiles_km": None,
+        }
+        (tmp_path / "phase11_orbit_geometry.json").write_text(
+            json.dumps(
+                {
+                    "derivation_version": 1,
+                    "key": "test",
+                    "phi0": 38.1,
+                    "missions": {
+                        "alg": {
+                            "asc": fam,
+                            "desc": {**fam, "heading_north_deg": 168.0},
+                        },
+                        "s3a": {"asc": fam, "desc": None},
+                    },
+                    "provenance": {"obs_sha256": {}},
+                }
+            )
+        )
+    return dest
+
+
+def test_tile_report_block_uses_only_registry_evaluators(tmp_path: Path) -> None:
+    """Every row comes from the EXISTING registry — no new producers.
+
+    Bug caught: a Stage-1-local GroundTrack (or any other) producer added
+    to make the criterion pass. The criterion is a WIRING requirement:
+    zero new surfaces, evaluated through Registry.applicable.
+    """
+    from sverdrup.application.eval_context import default_registry, evaluator_names
+
+    maps = _stage1_mean_map(tmp_path, geometry=True)
+    block = _mod.build_tile_report_block(tile="kuroshio", era="2017", mean_map=maps)
+    known = set(evaluator_names(default_registry()))
+    got = {r["evaluator"] for r in block["rows"]}
+    assert got <= known
+    assert {a["evaluator"] for a in block["recorded_absences"]} <= known
+    # Every registry evaluator is accounted for: standing row OR absence.
+    assert got | {a["evaluator"] for a in block["recorded_absences"]} == known
+
+
+def test_tile_report_block_records_absence_as_absence(tmp_path: Path) -> None:
+    """No geometry artifact -> GroundTrack absent AND RECORDED (fork F).
+
+    Bug caught: an inapplicable evaluator simply missing from the rows. A
+    reader then cannot distinguish "not applicable here" from "we forgot to
+    run it" — which is the whole point of recording absence.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    block = _mod.build_tile_report_block(tile="kuroshio", era="2017", mean_map=maps)
+    absent = {a["evaluator"]: a for a in block["recorded_absences"]}
+    assert "groundtrack" in absent
+    assert "groundtrack" not in {r["evaluator"] for r in block["rows"]}
+    assert "ORBIT_GEOMETRY" in absent["groundtrack"]["missing_context"]
+    assert block["geometry_artifact_sha256"] is None
+    # The absence is CHECKABLE: the record says where it looked.
+    assert block["geometry_artifact_present"] is False
+    assert block["geometry_artifact_expected_at"].endswith(
+        "phase11_orbit_geometry.json"
+    )
+    assert str(tmp_path) in block["geometry_artifact_expected_at"]
+
+
+def test_tile_report_block_yields_a_standing_groundtrack_row(tmp_path: Path) -> None:
+    """Geometry present -> GroundTrack is applicable and yields a row.
+
+    Bug caught: wiring that never supplies the geometry artifact path, so
+    the instrument is permanently "absent" and the whole wiring is inert —
+    a criterion met on paper by a path that can never fire.
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=True)
+    block = _mod.build_tile_report_block(tile="kuroshio", era="2017", mean_map=maps)
+    assert "groundtrack" in {r["evaluator"] for r in block["rows"]}
+    assert "groundtrack" not in {a["evaluator"] for a in block["recorded_absences"]}
+    assert block["geometry_artifact_sha256"] is not None
+
+
+def test_tile_report_block_is_labeled_report_only_and_keyed(tmp_path: Path) -> None:
+    """The block carries tile, era and the REPORT-ONLY label.
+
+    Bug caught: a report-only block read as gate-bearing at T9, or rows
+    that cannot be attributed to the tile x era they describe (Stage 1's
+    era is degenerate, which is a ROW COUNT, not a schema excuse).
+    """
+    maps = _stage1_mean_map(tmp_path, geometry=True)
+    block = _mod.build_tile_report_block(tile="kuroshio", era="2017", mean_map=maps)
+    assert block["tile"] == "kuroshio"
+    assert block["era"] == "2017"
+    assert block["label"] == "REPORT-ONLY"
+    assert block["gates"] is False
+
+
+def test_record_tile_report_block_writes_beside_the_tiles_node(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Report rows land at phase14.stage1.report_rows.<tile>.<era>, seal-gated.
+
+    Bug caught: report-only rows written INTO the gate-bearing tiles node
+    (where T9 reads verdict-bearing evidence), or a write that clobbers the
+    standing store, or one that skips the seal ceremony.
+    """
+    from sverdrup.validation import phase14_seal
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        phase14_seal, "verify_current_seal", lambda: calls.append("verified")
+    )
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    maps = _stage1_mean_map(tmp_path, geometry=True)
+    block = _mod.build_tile_report_block(tile="kuroshio", era="2017", mean_map=maps)
+    _mod.record_tile_report_block(block, evidence_path=evid)
+    stored = json.loads(evid.read_text())
+    assert stored["phase13"] == {"kept": True}
+    assert stored["phase14"]["stage1"]["report_rows"]["kuroshio"]["2017"] == block
+    assert "tiles" not in stored["phase14"]["stage1"]
+    assert calls == ["verified"]
+
+
+def test_solve_leg_records_the_tile_report_block(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The leg records report rows for the tile x era it just solved.
+
+    Bug caught: the wiring built but never called from the leg — the exact
+    drift the Phase-11 architecture audit found for track_power, where an
+    instrument existed and no evidence pack carried it. Pinned on the leg's
+    own path: the block must be recorded for the tile, with its maps.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    maps = _stage1_mean_map(tmp_path, geometry=True)
+    kwargs = _row_kwargs("kuroshio")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    _mod.record_leg_evidence(mean_map=maps, evidence_path=evid, **kwargs)
+    stage1 = json.loads(evid.read_text())["phase14"]["stage1"]
+    # BOTH sides of the leg's recording, in their own nodes.
+    assert stage1["tiles"]["kuroshio"]["scores"]["mu"]["value"] == -0.0131
+    block = stage1["report_rows"]["kuroshio"][_mod.STAGE1_ERA]
+    assert block["label"] == "REPORT-ONLY"
+    assert "groundtrack" in {r["evaluator"] for r in block["rows"]}
+
+
 def test_record_refuses_when_seal_unverified(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

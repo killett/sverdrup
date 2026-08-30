@@ -3816,6 +3816,121 @@ def build_tile_validation_track(tile: str, *, dest: Path | None = None) -> Path:
     return out
 
 
+STAGE1_REPORT_ROWS_NODE = "report_rows"
+# Era is DEGENERATE at Stage 1 (2017 only) — a ROW COUNT, not a schema
+# excuse. ONE constant, shared with the seam rows, so the two can never
+# drift into disagreeing about what era Stage 1 measured.
+STAGE1_ERA = SEAM_ERA
+
+
+def build_tile_report_block(*, tile: str, era: str, mean_map: Path) -> dict[str, Any]:
+    """Reference-free instrument rows for one tile x era — REPORT-ONLY.
+
+    T5 criterion 2, owner-ruled FROM THE SPEC: applicability is evaluated
+    through the EXISTING Phase-11 machinery — ``Registry.applicable`` +
+    ``build_report_rows``, reached here via
+    :func:`~sverdrup.application.eval_context.report_only_instruments_block`,
+    the same call the calibration harness makes. There are NO new
+    producers: this function wires, it does not evaluate.
+
+    Fork F: each evaluator yields either a standing row or a RECORDED
+    ABSENCE naming the context it lacked. Absence means absence — an
+    evaluator merely missing from the row list is indistinguishable from
+    one nobody ran, which is the failure this records against.
+
+    Args:
+        tile: Registry tile name.
+        era: The era the rows describe (degenerate at Stage 1).
+        mean_map: The tile's mean-map NetCDF. The orbit-geometry artifact
+            is expected BESIDE it (the obligation-7 path); when it is
+            absent, GroundTrack is simply not applicable.
+
+    Returns:
+        The report block: the Phase-11 block plus ``tile``/``era``, the
+        REPORT-ONLY label and ``recorded_absences``.
+    """
+    from sverdrup.application import eval_context  # noqa: PLC0415
+    from sverdrup.application.eval_context import (  # noqa: PLC0415
+        default_registry,
+        report_only_instruments_block,
+    )
+
+    block = report_only_instruments_block(mean_map)
+    expected_geometry = (
+        Path(mean_map).parent / eval_context._GEOMETRY_ARTIFACT_NAME  # noqa: SLF001
+    )
+    rows = list(block["rows"])
+    present = {str(r["evaluator"]) for r in rows}
+    available = set(rows[0]["context_keys_available"]) if rows else set()
+    absences: list[dict[str, Any]] = []
+    for ev in default_registry()._evaluators:  # noqa: SLF001 - names + their needs
+        if ev.name in present:
+            continue
+        missing = sorted(k.name for k in ev.required_context if k.name not in available)
+        absences.append(
+            {
+                "evaluator": ev.name,
+                "status": "NOT APPLICABLE — RECORDED ABSENCE",
+                "missing_context": missing,
+                "context_keys_available": sorted(available),
+                "means": (
+                    "absence, not omission: the instrument was evaluated for "
+                    "applicability and could not run here (fork F)"
+                ),
+            }
+        )
+    return {
+        **block,
+        "tile": tile,
+        "era": era,
+        "label": "REPORT-ONLY",
+        "gates": False,
+        "rows": rows,
+        "recorded_absences": absences,
+        # Named so an absence is checkable rather than merely asserted: a
+        # reader can see WHERE the geometry artifact was looked for.
+        "geometry_artifact_expected_at": str(expected_geometry),
+        "geometry_artifact_present": expected_geometry.exists(),
+        "wiring": (
+            "Registry.applicable + build_report_rows via "
+            "report_only_instruments_block — no Stage-1 producers exist"
+        ),
+    }
+
+
+def record_tile_report_block(
+    block: dict[str, Any], evidence_path: Path = EVIDENCE
+) -> None:
+    """Record one report block at ``phase14.stage1.report_rows.<tile>.<era>``.
+
+    Deliberately NOT under ``tiles`` — that node is where T9 reads the
+    evidence rows, and a report-only block sitting in it would eventually
+    be read as one. Same seal ceremony as every other Stage-1 write.
+
+    Args:
+        block: A :func:`build_tile_report_block` result.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Raises:
+        sverdrup.validation.phase14_seal.SealError: No verified seal.
+    """
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+    from sverdrup.validation import phase14_seal  # noqa: PLC0415
+
+    phase14_seal.verify_current_seal()
+    results: dict[str, Any] = (
+        json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
+    )
+    node = results.setdefault("phase14", {}).setdefault("stage1", {})
+    per_tile = node.setdefault(STAGE1_REPORT_ROWS_NODE, {}).setdefault(
+        str(block["tile"]), {}
+    )
+    per_tile[str(block["era"])] = block
+    atomic_write_json(evidence_path, results)
+
+
 def _tile_framed_obs(
     tile: str,
 ) -> tuple[TileFrame, GridSpec, Any, dict[str, Any] | None]:  # noqa: ANN401
@@ -4016,6 +4131,79 @@ def record_tile_leg(
     return row
 
 
+def record_leg_evidence(
+    *,
+    mean_map: Path,
+    seal_sha: str,
+    tile: str,
+    frame: dict[str, Any],
+    window_plan: dict[str, Any],
+    m: int,
+    superobs_cfg: dict[str, Any] | None,
+    n_obs: int,
+    wall_s: float,
+    peak_rss_mib: float,
+    pcg: Iterable[dict[str, Any]],
+    pcg_rtol: float,
+    pcg_maxiter: int,
+    scores: dict[str, Any],
+    date: str,
+    evidence_path: Path = EVIDENCE,
+) -> dict[str, Any]:
+    """Record BOTH sides of one leg: the evidence row and the report rows.
+
+    They are one action with two destinations — the gate-bearing row at
+    ``tiles.<tile>``, the reference-free instrument rows at
+    ``report_rows.<tile>.<era>`` — so the report side cannot silently stop
+    happening while the evidence side keeps landing. That drift (an
+    instrument that exists but reaches no evidence pack) is the recorded
+    Phase-11 failure this shape exists against.
+
+    Args:
+        mean_map: The tile's mean map — the report rows' subject.
+        seal_sha: The verified evaluation-seal sha the row quotes.
+        tile: Registry tile name.
+        frame: Frame provenance block.
+        window_plan: Window-plan provenance block.
+        m: Ensemble members retained.
+        superobs_cfg: The applied super-obs cfg (cmems side) or None.
+        n_obs: Framed observation count.
+        wall_s: Measured leg wall time [s].
+        peak_rss_mib: Measured peak RSS [MiB].
+        pcg: Per-window PCG convergence rows.
+        pcg_rtol: The solver rtol actually used.
+        pcg_maxiter: The solver iteration cap actually used.
+        scores: The scores block.
+        date: ISO date string.
+        evidence_path: The evidence store (tmp path in tests).
+
+    Returns:
+        The recorded evidence row.
+    """
+    row = record_tile_leg(
+        seal_sha=seal_sha,
+        tile=tile,
+        frame=frame,
+        window_plan=window_plan,
+        m=m,
+        superobs_cfg=superobs_cfg,
+        n_obs=n_obs,
+        wall_s=wall_s,
+        peak_rss_mib=peak_rss_mib,
+        pcg=pcg,
+        pcg_rtol=pcg_rtol,
+        pcg_maxiter=pcg_maxiter,
+        scores=scores,
+        date=date,
+        evidence_path=evidence_path,
+    )
+    record_tile_report_block(
+        build_tile_report_block(tile=tile, era=STAGE1_ERA, mean_map=mean_map),
+        evidence_path=evidence_path,
+    )
+    return row
+
+
 def _t5_echo(msg: str) -> None:
     """Flushed heartbeat line (the detached-log/stall-watcher convention)."""
     print(f"[stage1-t5] {datetime.now(UTC).isoformat()} {msg}", flush=True)
@@ -4182,7 +4370,8 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
 
     solve = frame.solve_bbox
     wall_s = time.monotonic() - t_leg
-    row = record_tile_leg(
+    row = record_leg_evidence(
+        mean_map=mean_map,
         seal_sha=seal_sha,
         tile=tile,
         frame={

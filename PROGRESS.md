@@ -134,7 +134,33 @@
 > - **105 — the both-directions sweep is RATIFIED as the standard for widening a guard**
 >   (what was gained, and that nothing previously refused is now accepted).
 >
-> **▶ NEXT ACTION: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
+> **✅ T5c IS DONE — GroundTrack wiring landed, ZERO new surfaces.**
+> `build_tile_report_block` → `report_only_instruments_block` → `Registry.applicable` +
+> `build_report_rows` (the same call the calibration harness makes), recorded by
+> `record_tile_report_block` at **`phase14.stage1.report_rows.<tile>.<era>` — deliberately
+> NOT under `tiles`**, which is where T9 reads gate-bearing evidence. `record_leg_evidence`
+> records both sides in one action so the report side cannot silently stop happening while
+> the evidence row keeps landing (the recorded Phase-11 `track_power` drift). Every
+> registry evaluator is accounted for: a standing row OR a `recorded_absences` entry naming
+> the missing context — and the absence is CHECKABLE (`geometry_artifact_expected_at` /
+> `_present` say where it looked). Both branches test-pinned; rows proven ⊆ the registry's
+> own evaluator names, so no Stage-1 producer can sneak in.
+>
+> **⚖ OWNER DECISION OWED — GroundTrack will be ABSENT for all four diverse tiles.**
+> The only orbit-geometry artifact that exists is derived over the CHALLENGE box
+> (`build_geometry_artifact` fixes `_LON_LO`/`_LON_HI` and φ0 = 38.1) from the dc_obs L3
+> files. Using Gulf-Stream geometry at a Pacific tile would be geometry from the wrong
+> place. Deriving per-tile geometry from the CMEMS dailies is a NEW PRODUCER, which
+> criterion 2 forbids — so it is **not** done, and the absence is recorded honestly
+> instead. If the owner wants standing GroundTrack rows at the diverse tiles, that is a
+> scoped new task (per-tile geometry derivation), not a T5 edit.
+>
+> **▶ NEXT ACTION: T5d — per-tile extras: equatorial lane-0 persistence bundle (maps +
+> pack + FROZEN fold/eval frame + pin 96's MIRRORED `lane0_manifest.json`), southern
+> anisotropy inputs for T6, kuroshio land-mask path assertions. Then T5e (gate suite →
+> launch). Leg 1 remains STOP-CONDITIONED (R1 + 91b): build only.**
+>
+> **[superseded — kept for the trail] NEXT ACTION WAS: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
 > `Registry.applicable` + `report_rows` machinery; zero new producers, absence RECORDED
 > as absence.** Then T5d (per-tile extras: equatorial lane-0 persistence incl. pin 96's
 > mirrored manifest, southern anisotropy inputs, kuroshio land-mask assertions), T5e
