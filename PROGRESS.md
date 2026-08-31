@@ -256,6 +256,42 @@
 >   feeds any of them. Nothing recorded changes.
 > - **113 — the 109 sweep is RATIFIED**, including its correction of 106's scope.
 >
+> **✅ PINS 114–116 LANDED (PART 28); 115 AND 114 FOLDED, in the ruled order.**
+> - **115 — the scope pin is BEHAVIOURAL now.** The string scan is gone (it would pass on
+>   `1295` or `2.95e2`). Replaced by: a synthetic artifact with `box_lon=[195,220]`,
+>   `phi0=3.5` that INVERTS which tiles are in scope (equatorial in, anchor out); the
+>   adversarial case — an artifact whose mission set covers `kuroshio` exactly but whose
+>   box does not, asserting refusal; and the absent-artifact path. **Mutation-checked:** a
+>   hardcoded variant fails three separate assertions.
+> - **114 — RECOVERY DONE, additive, no solve.** `recover_report_rows` computes from the
+>   STORED maps (`stored_mean_map` resolves each tile's own artifact) and appends at
+>   `phase14.stage1.report_rows.<tile>.2017` for **anchor, seam_n, seam_s**. Test-pinned
+>   that the loader and the solver both RAISE if touched (114c). All three came back
+>   **`wedge_exclusion:true`** — 112(c)'s predicted recovery, box tiles only.
+> - **⭐ THE RECOVERY REPRODUCED THE FOUNDING METRIC EXACTLY.** The anchor's
+>   `track_excess_log10_max_repeat` = **0.331012884019381**, **bit-identical** to the
+>   Phase-13 Gate-1 pack's recorded winner figure (`2026-07-21-phase13-gate1-pack.md:49`)
+>   — the 0.331 of the 0.410→0.331 lineage. **CONFIRMATION, not contradiction**, so 114(d)
+>   does not trip: nothing recorded changed, and the T5c wiring is now validated end-to-end
+>   against an owner-cited number.
+> - **114(d) guard hardened by its own first run:** the naive comparison would have raised
+>   a FALSE supersession, because groundtrack legitimately reports **NaN** for families
+>   beyond the grid's Nyquist (flagged `under_floor`) and `nan != nan`. The guard compares
+>   canonical TEXT; the idempotency test does the same.
+> - **114(b) forward pointers via the MIRROR'S AMENDMENT INDEX**, never by editing the
+>   witnessed node — pin 64(b) forbids that in as many words. `anchor_gate` and `seam_pair`
+>   now point at `report_rows`, and each entry says the amending node is derived and
+>   re-derivable so it stays OUTSIDE the mirrored subset (56b) — reachability, not a
+>   witness claim. **The append-only index gate caught my first attempt** (I inserted the
+>   pointer at the front; append-only means appended) — the gate working.
+> - **⚠ Mirror defect found and fixed:** registering `equatorial_lane0_manifest` in
+>   `MIRRORED` during T5d broke `sync` outright — `select_nodes` demands every registered
+>   path resolve, and that node cannot exist until the stop-conditioned equatorial leg
+>   runs. Registered-but-unwritten paths are now **PENDING**: reported by name on every
+>   `sync` and `check`, and recorded in the manifest as `registered_but_not_yet_written`,
+>   so the registration cannot be forgotten and its absence cannot be read as a decision
+>   not to witness it. Mirror re-synced: **34 nodes, check PASS, 16 forward pointers**.
+>
 > **▶ NEXT ACTION: T5e — the gate suite on the final tree, then the launch sequence
 > (which STAYS BLOCKED: R1 + 91b). Build-side T5 is complete.**
 >

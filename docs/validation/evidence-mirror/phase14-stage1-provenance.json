@@ -9,6 +9,12 @@
   "what_this_is": "Mirror of the PROVENANCE-BEARING subset of the gitignored evidence store (owner pin 56). The issue is WITNESS, not backup: write-once enforced by a file only its author can see is a convention. Once pushed, these digests sit in history the author cannot silently rewrite.",
   "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
   "pin": "56 — mirror the provenance-bearing evidence into the tree",
+  "registered_but_not_yet_written": {
+    "paths": [
+      "phase14.stage1.equatorial_lane0_manifest"
+    ],
+    "meaning": "REGISTERED for mirroring, and the work that writes them has not run. They are named here rather than skipped silently, so the registration cannot be forgotten and their absence cannot be mistaken for a decision not to witness them. A path leaves this list by being written and then synced."
+  },
   "source_store": "data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json",
   "source_store_note": "gitignored (.gitignore:42) and NOT un-ignored wholesale, per pin 56(b). Only the nodes below are mirrored.",
   "the_line_mirrored": {
@@ -23,6 +29,7 @@
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.anchor_gate_artifact_shas": "pin 58(d). Check-1's mean, Gamma and variance routes recorded the comparison OUTCOME but no sha of the artifact compared against, so a later substitution would have re-passed. This node captures those shas. Witnessing it is the whole point — an unwitnessed sha record closes nothing",
     "phase14.stage1.gate5_mu_witness_scope": "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one of the three rests on phase13_lane0_mean.nc, witnessed forward-only",
+    "phase14.stage1.equatorial_lane0_manifest": "pin 96. The lane-0 bundle's manifest — per-file shas of the FROZEN pre-increment baseline (fork-b pin 1), carrying the fork-b pin 2 policy sentence and the bundle's instrument composition. Mirrored because a local manifest is SELF-witnessing (96c, pin 56a): manifest and files sit on one box under one process's control. The MANIFEST is mirrored, never the maps (96e) — bulk stays out per pin 56(b) and the shas are the witness. Class: WITNESSED AT CREATION (96d), witnessed AT creation rather than at T9 so the interval from creation never opens (96b, pin 60's prospective guarantee)",
     "phase14.stage1.artifact_witness_classes": "pin 67. Splits the 'no sha' bucket by what ELSE constrains each artifact: 7 constrained by reproduction, 1 verified by re-derivation, 2 unconstrained. The class assignment is a standing claim, so it is witnessed",
     "phase14.stage1.seam_crn_mechanism_separation_construction": "pin 75. Records N and the SE construction beside the cited separation, and supersedes the 155.6 figure with 167.6 — the number will be cited, so its construction is witnessed with it",
     "phase14.stage1.rho_model_range_limitation": "pin 77. The sweep's REACHABLE span [0, 0.2523] against the applied r ~ 0.9, the structural cause, and 77(c)'s pre-registered branch. It declares its own extrapolation, so it is the first block to pass pin 78's refusal on disclosure rather than on silence",
@@ -62,6 +69,13 @@
         "what": "That node's caveat says the 2026-07-28 capture cannot speak to the interval before it. Pin 60(a) then CLOSED that interval for phase13_winner_mean.nc and phase13_winner_var.nc by exact match against phase 13's own contemporaneous shas. The caveat still stands for phase13_lane0_mean.nc, which is recorded SEARCHED AND ABSENT. Read the reconciliation before relying on the caveat as written."
       }
     ],
+    "phase14.stage1.seam_pair": [
+      {
+        "amended_by": "phase14.stage1.report_rows",
+        "date": "2026-08-30",
+        "what": "Pin 114: the seam pair closed before the T5c reference-free wiring existed, so its GroundTrack / SpectralFidelity rows were never computed. Under the pin-112 lookup the seam tiles ARE in scope, and the rows were recovered post-hoc from the STORED maps — read-only, no solve, no leg re-run, and no recorded value changed. The amending node is a DERIVED, re-derivable artifact, so it is not itself mirrored (pin 56b); this pointer is reachability, not a witness claim about it."
+      }
+    ],
     "phase14.stage1.anchor_gate": [
       {
         "amended_by": "phase14.stage1.anchor_gate_artifact_shas",
@@ -72,6 +86,11 @@
         "amended_by": "phase14.stage1.gate5_mu_witness_scope",
         "date": "2026-07-28",
         "what": "Pin 65: the gate-5 scope note's pin-29 mu disambiguation leans on phase13_lane0_mean.nc, whose witness is FORWARD-ONLY. The scope statement is recorded separately rather than edited into this witnessed node."
+      },
+      {
+        "amended_by": "phase14.stage1.report_rows",
+        "date": "2026-08-30",
+        "what": "Pin 114: same recovery as the seam pair — the anchor gate's reference-free rows were computed post-hoc from the map that leg already wrote, under the pin-112 canonical-artifact lookup. A reader arriving at this node must be able to reach rows that did not exist when it was written (pin 64); the node itself is NOT edited (64b). The amending node is derived and re-derivable, so it stays outside the mirrored subset (pin 56b)."
       }
     ],
     "phase14.stage1.gate5": [
@@ -144,7 +163,7 @@
       }
     ]
   },
-  "generated_utc": "2026-07-30T10:47:13.982646+00:00",
+  "generated_utc": "2026-08-30T23:47:09.714740+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",

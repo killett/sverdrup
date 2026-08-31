@@ -281,6 +281,23 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
             ),
         }
     ],
+    "phase14.stage1.seam_pair": [
+        {
+            "amended_by": "phase14.stage1.report_rows",
+            "date": "2026-08-30",
+            "what": (
+                "Pin 114: the seam pair closed before the T5c reference-free "
+                "wiring existed, so its GroundTrack / SpectralFidelity rows "
+                "were never computed. Under the pin-112 lookup the seam "
+                "tiles ARE in scope, and the rows were recovered post-hoc "
+                "from the STORED maps — read-only, no solve, no leg re-run, "
+                "and no recorded value changed. The amending node is a "
+                "DERIVED, re-derivable artifact, so it is not itself "
+                "mirrored (pin 56b); this pointer is reachability, not a "
+                "witness claim about it."
+            ),
+        }
+    ],
     "phase14.stage1.anchor_gate": [
         {
             "amended_by": "phase14.stage1.anchor_gate_artifact_shas",
@@ -301,6 +318,20 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
                 "leans on phase13_lane0_mean.nc, whose witness is "
                 "FORWARD-ONLY. The scope statement is recorded separately "
                 "rather than edited into this witnessed node."
+            ),
+        },
+        {
+            "amended_by": "phase14.stage1.report_rows",
+            "date": "2026-08-30",
+            "what": (
+                "Pin 114: same recovery as the seam pair — the anchor gate's "
+                "reference-free rows were computed post-hoc from the map "
+                "that leg already wrote, under the pin-112 canonical-artifact "
+                "lookup. A reader arriving at this node must be able to reach "
+                "rows that did not exist when it was written (pin 64); the "
+                "node itself is NOT edited (64b). The amending node is "
+                "derived and re-derivable, so it stays outside the mirrored "
+                "subset (pin 56b)."
             ),
         },
     ],
@@ -448,16 +479,45 @@ def _load(path: Path) -> Any:  # noqa: ANN401 - arbitrary JSON
     return json.loads(path.read_text())
 
 
-def _extract() -> tuple[dict[str, Any], dict[str, Any]]:
+def _pending_nodes(store: dict[str, Any]) -> list[str]:
+    """Registered mirror paths that the store does not carry YET.
+
+    A node can be registered here before the work that writes it has run —
+    the lane-0 manifest was registered with its wiring so the registration
+    could not be forgotten, while the leg that writes it is stop-conditioned.
+    Such a path is PENDING, not missing: it is reported by name on every
+    sync and check rather than silently skipped, and it does not stop the
+    other nodes being witnessed.
+
+    Args:
+        store: The evidence store document.
+
+    Returns:
+        The registered paths that do not resolve, sorted.
+    """
+    pending = []
+    for path in MIRRORED:
+        cursor: Any = store
+        for part in path.split("."):
+            if not isinstance(cursor, dict) or part not in cursor:
+                pending.append(path)
+                break
+            cursor = cursor[part]
+    return sorted(pending)
+
+
+def _extract() -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     """Pull the mirrored subset from the store and the seal.
 
     Returns:
-        ``(nodes, seal)``.
+        ``(nodes, seal, pending)`` — ``pending`` names registered paths the
+        store does not carry yet.
     """
     store = _load(STORE)
-    nodes = select_nodes(store, list(MIRRORED))
+    pending = _pending_nodes(store)
+    nodes = select_nodes(store, [p for p in MIRRORED if p not in set(pending)])
     seal = _load(SEAL)
-    return nodes, seal
+    return nodes, seal, pending
 
 
 def _write_json(path: Path, payload: Any) -> None:  # noqa: ANN401
@@ -485,7 +545,12 @@ def sync(
         RuntimeError: If an already-mirrored node changed and was not
             explicitly superseded — the append-only STOP.
     """
-    nodes, seal = _extract()
+    nodes, seal, pending = _extract()
+    if pending:
+        typer.echo(
+            "PENDING (registered, not yet written — nothing to witness yet): "
+            + ", ".join(pending)
+        )
     allowed = set(supersede or [])
     if allowed and not reason:
         raise RuntimeError(
@@ -559,6 +624,16 @@ def sync(
         ),
         "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
         "pin": "56 — mirror the provenance-bearing evidence into the tree",
+        "registered_but_not_yet_written": {
+            "paths": pending,
+            "meaning": (
+                "REGISTERED for mirroring, and the work that writes them has "
+                "not run. They are named here rather than skipped silently, so "
+                "the registration cannot be forgotten and their absence cannot "
+                "be mistaken for a decision not to witness them. A path leaves "
+                "this list by being written and then synced."
+            ),
+        },
         "source_store": str(STORE),
         "source_store_note": (
             "gitignored (.gitignore:42) and NOT un-ignored wholesale, per "
@@ -618,7 +693,7 @@ def check() -> None:
     if bad:
         raise RuntimeError(f"MIRROR SELF-CHECK FAILED — digest mismatch: {bad}")
 
-    nodes, seal = _extract()
+    nodes, seal, pending = _extract()
     existing = {k: v["value"] for k, v in doc["nodes"].items()}
     drift = detect_changes(existing, nodes)
     added = sorted(set(nodes) - set(existing))
@@ -636,6 +711,8 @@ def check() -> None:
     idx_regressed = detect_index_regressions(doc.get("amendment_index", {}), AMENDMENTS)
     if idx_regressed:
         raise RuntimeError(f"AMENDMENT-INDEX REGRESSION: {idx_regressed}")
+    if pending:
+        typer.echo("PENDING (registered, not yet written): " + ", ".join(pending))
     n_ptr = sum(len(v) for v in doc.get("amendment_index", {}).values())
     typer.echo(
         f"amendment index: PASS ({n_ptr} forward pointers over "

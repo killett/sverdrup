@@ -7,6 +7,7 @@ Tier-1-before-load ordering. No data beyond the checkout is touched.
 
 from __future__ import annotations
 
+import functools
 import inspect
 import json
 import re
@@ -1533,17 +1534,98 @@ def test_geometry_refused_for_the_diverse_tiles(tile: str) -> None:
     assert "box" in reason.lower()
 
 
-def test_geometry_scope_is_read_from_the_artifact_not_typed() -> None:
-    """The box test reads box_lon/phi0 FROM the artifact.
+def _synthetic_geometry_artifact(
+    path: Path, *, box_lon: tuple[float, float], phi0: float, missions: tuple[str, ...]
+) -> Path:
+    """A geometry artifact with a chosen box, phi0 and mission set."""
+    fam = {
+        "heading_north_deg": 12.0,
+        "n_passes": 24,
+        "n_crossings": 24,
+        "orbit_class": "repeat",
+        "s_lon_km": 300.0,
+        "d_perp_km": 280.0,
+        "spacing_quantiles_km": None,
+    }
+    path.write_text(
+        json.dumps(
+            {
+                "derivation_version": 3,
+                "key": "synthetic",
+                "phi0": phi0,
+                "box_lon": list(box_lon),
+                "missions": {m: {"asc": fam, "desc": None} for m in missions},
+                "provenance": {"obs_sha256": {}},
+            }
+        )
+    )
+    return path
 
-    Bug caught: hard-coding 295-305/38.1 in the driver. If a future
-    artifact is derived over a different box, a typed constant would keep
-    admitting tiles the new derivation does not cover -- the same class as
-    a stale threshold.
+
+def test_geometry_scope_follows_the_artifacts_own_box(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 115(a): a DIFFERENT box_lon moves which tiles are in scope.
+
+    Bug caught: the box hard-coded in the driver, in ANY form -- including
+    ones a string scan cannot see (1295 contains "295"; 2.95e2 is the same
+    number spelled differently). Here the artifact says the Pacific
+    equatorial box, so `equatorial` must become in-scope and `anchor` --
+    in-scope under the real artifact -- must drop out. Only a function
+    reading box_lon can produce that inversion.
     """
-    src = inspect.getsource(_mod.geometry_artifact_for)
-    assert "box_lon" in src
-    assert "295" not in src and "38.1" not in src
+    art = _synthetic_geometry_artifact(
+        tmp_path / "geom.json",
+        box_lon=(195.0, 220.0),
+        phi0=3.5,
+        missions=("alg", "j2g"),
+    )
+    monkeypatch.setattr(_mod, "CANONICAL_GEOMETRY_ARTIFACT", art)
+    eq_path, eq_reason = _mod.geometry_artifact_for("equatorial")
+    anchor_path, anchor_reason = _mod.geometry_artifact_for("anchor")
+    assert eq_path == art, eq_reason
+    assert "3.5" in eq_reason  # the artifact's phi0, not a typed 38.1
+    assert anchor_path is None
+    assert "195.0, 220.0" in anchor_reason
+
+
+def test_geometry_refused_when_missions_match_but_box_does_not(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 115(b): mission overlap must NOT buy a tile geometry.
+
+    Bug caught: the silent one. Four of the five CMEMS codes (alg, j2g,
+    j2n, s3a) match the challenge artifact's families, so a lookup keyed on
+    missions would hand Gulf-Stream geometry to a Pacific tile and emit
+    rows that LOOK standing. This artifact's mission set covers kuroshio
+    exactly, and its box does not -- the tile must still be refused.
+    """
+    art = _synthetic_geometry_artifact(
+        tmp_path / "geom.json",
+        box_lon=(295.0, 305.0),
+        phi0=38.1,
+        missions=("alg", "h2ag", "j2g", "j2n", "s3a"),
+    )
+    monkeypatch.setattr(_mod, "CANONICAL_GEOMETRY_ARTIFACT", art)
+    path, reason = _mod.geometry_artifact_for("kuroshio")
+    assert path is None
+    assert "OUTSIDE" in reason
+    assert "106" in reason
+
+
+def test_geometry_refused_when_the_artifact_is_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No artifact at all -> refusal naming the path, never a crash.
+
+    Bug caught: a missing artifact raising FileNotFoundError mid-leg
+    instead of yielding the recorded-absence path the wiring is built
+    around -- a fresh clone has no data/ at all.
+    """
+    monkeypatch.setattr(_mod, "CANONICAL_GEOMETRY_ARTIFACT", tmp_path / "absent.json")
+    path, reason = _mod.geometry_artifact_for("anchor")
+    assert path is None
+    assert "no geometry artifact" in reason
 
 
 @pytest.mark.skipif(not _HAS_GEOMETRY, reason="canonical geometry artifact absent")
@@ -1560,6 +1642,147 @@ def test_report_block_states_why_wedge_exclusion_is_false(tmp_path: Path) -> Non
     assert scope["applies"] is False
     assert "106" in scope["reason"]
     assert block["wedge_exclusion_status"]["kind"] == "DESIGN CONFLICT (pin 106)"
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 114 — post-hoc recovery of the box tiles' report rows: computed
+# from STORED maps, appended, no solve, stops on any contradiction.
+# ---------------------------------------------------------------------------
+
+
+def test_stored_mean_map_resolves_each_tiles_own_artifact() -> None:
+    """Each tile resolves to the map its own leg actually wrote.
+
+    Bug caught: the recovery scoring the anchor's map for a seam tile (or
+    vice versa) because one path template was applied to every tile -- the
+    rows would be real, attributed to the wrong region, and nothing in the
+    block would say so.
+    """
+    assert _mod.stored_mean_map("anchor") == _mod.ANCHOR_MEAN_MAPS
+    assert _mod.stored_mean_map("seam_n") == _mod.SEAM_MEAN_MAPS["seam_n"]
+    assert _mod.stored_mean_map("seam_s") == _mod.SEAM_MEAN_MAPS["seam_s"]
+    assert _mod.stored_mean_map("kuroshio") == _mod.tile_mean_map("kuroshio")
+
+
+def test_recovery_computes_from_stored_maps_without_loader_or_solver(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 114(c): the recovery touches neither the obs loader nor the solver.
+
+    Bug caught: a recovery that quietly re-runs a leg. The stop condition
+    guards evaluation-bearing EXECUTION; scoring an existing artifact is
+    not that, and this pin is what keeps the distinction true -- both the
+    loader and the solver raise if called.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+
+    def _boom(*a: object, **k: object) -> None:
+        raise AssertionError("the recovery must not load obs or solve")
+
+    monkeypatch.setattr(_mod, "_tile_framed_obs", _boom)
+    monkeypatch.setattr(_mod, "_seam_miost", _boom)
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: maps)
+    evid = tmp_path / "evidence.json"
+    blocks = _mod.recover_report_rows(tiles=("seam_n",), era="2017", evidence_path=evid)
+    assert list(blocks) == ["seam_n"]
+    stored = json.loads(evid.read_text())["phase14"]["stage1"]
+    assert stored["report_rows"]["seam_n"]["2017"]["label"] == "REPORT-ONLY"
+
+
+def test_recovery_refuses_when_the_stored_map_is_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing map is named and refused, never silently skipped.
+
+    Bug caught: a recovery that reports success having produced nothing,
+    because the artifact it was supposed to score is not on this box.
+    """
+    monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: tmp_path / "absent.nc")
+    with pytest.raises(RuntimeError, match="absent.nc"):
+        _mod.recover_report_rows(
+            tiles=("anchor",), era="2017", evidence_path=tmp_path / "e.json"
+        )
+
+
+def test_recovery_stops_on_a_contradiction_instead_of_overwriting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pin 114(d): a differing existing block is a STOP, not an overwrite.
+
+    Bug caught: the recovery silently replacing a recorded block with a
+    different one -- that is a supersession, and it goes to the owner
+    rather than landing inside an append-only store.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: maps)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(
+        json.dumps(
+            {
+                "phase14": {
+                    "stage1": {
+                        "report_rows": {
+                            "seam_n": {"2017": {"label": "REPORT-ONLY", "rows": []}}
+                        }
+                    }
+                }
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match="SUPERSESSION, not an append"):
+        _mod.recover_report_rows(tiles=("seam_n",), era="2017", evidence_path=evid)
+    # The recorded block is untouched by the refusal.
+    stored = json.loads(evid.read_text())["phase14"]["stage1"]
+    assert stored["report_rows"]["seam_n"]["2017"]["rows"] == []
+
+
+def test_recovery_is_idempotent_on_an_identical_block(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Re-running with the same inputs is a no-op, not a contradiction.
+
+    Bug caught: a guard so blunt that the second run of a recovery -- the
+    ordinary case after an interrupted one -- reports a supersession that
+    is not one.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    maps = _stage1_mean_map(tmp_path, geometry=False)
+    monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: maps)
+    evid = tmp_path / "evidence.json"
+    first = _mod.recover_report_rows(tiles=("seam_n",), era="2017", evidence_path=evid)
+    second = _mod.recover_report_rows(tiles=("seam_n",), era="2017", evidence_path=evid)
+    # Canonical TEXT, not object equality: groundtrack legitimately reports
+    # NaN for families beyond the grid's Nyquist, and nan != nan would make
+    # an identical block look like a contradiction.
+    dump = functools.partial(json.dumps, sort_keys=True, default=str)
+    assert dump(first["seam_n"]["rows"]) == dump(second["seam_n"]["rows"])
+
+
+def test_amendment_index_points_the_closed_nodes_at_the_new_rows() -> None:
+    """Pin 114(b)/64: reachability lives in the mirror's amendment index.
+
+    Bug caught: a forward pointer written INTO the witnessed anchor-gate
+    node, which pin 64(b) forbids in as many words -- the index exists so
+    the witnessed node stays exactly as witnessed. Also catches the
+    pointer being omitted entirely, which leaves a reader at a node whose
+    claims are individually accurate and collectively stale.
+    """
+    from tests.helpers import load_script
+
+    mirror = load_script("phase14_evidence_mirror")
+    for node in ("phase14.stage1.anchor_gate", "phase14.stage1.seam_pair"):
+        entries = mirror.AMENDMENTS.get(node, [])
+        assert any(e["amended_by"] == "phase14.stage1.report_rows" for e in entries), (
+            node
+        )
 
 
 def test_record_refuses_when_seal_unverified(

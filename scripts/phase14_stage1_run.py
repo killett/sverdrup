@@ -4839,6 +4839,124 @@ def record_land_mask_if_elected(
     return block
 
 
+# ---------------------------------------------------------------------------
+# Owner pin 114 — POST-HOC RECOVERY of the box tiles' report rows.
+#
+# The anchor (T3) and seam-pair (T4) legs closed before the T5c wiring
+# existed, so their reference-free rows were never computed. Under the pin-112
+# lookup those tiles ARE in scope, and the rows can be computed from the
+# STORED maps: read-only inputs, no solve, no closed leg re-run (114a/c).
+#
+# 114(d) is the guard that keeps it additive: a block that differs from one
+# already recorded is a SUPERSESSION and STOPS, rather than being written.
+# ---------------------------------------------------------------------------
+
+
+def stored_mean_map(tile: str) -> Path:
+    """The mean map the tile's own leg wrote.
+
+    Args:
+        tile: Registry tile name.
+
+    Returns:
+        The stored mean-map path — the anchor gate's and the seam pair's
+        own artifacts for those tiles, the T5 leg's for the rest. One
+        template applied to every tile would score one region's map under
+        another region's name.
+    """
+    if tile == "anchor":
+        return ANCHOR_MEAN_MAPS
+    if tile in SEAM_MEAN_MAPS:
+        return SEAM_MEAN_MAPS[tile]
+    return tile_mean_map(tile)
+
+
+def recover_report_rows(
+    *,
+    tiles: tuple[str, ...] = ("anchor", "seam_n", "seam_s"),
+    era: str = STAGE1_ERA,
+    evidence_path: Path | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Append report rows for closed-leg tiles, computed from stored maps.
+
+    Args:
+        tiles: Tiles to recover (default: the three box tiles).
+        era: The era the rows describe.
+        evidence_path: The evidence store; defaults to :data:`EVIDENCE`
+            resolved AT CALL TIME (a default argument would bind at import
+            and defeat the pin-110 sandbox).
+
+    Returns:
+        ``{tile: block}`` for every tile recovered.
+
+    Raises:
+        RuntimeError: A stored map is absent, or a recomputed block
+            CONTRADICTS one already recorded (pin 114d — that is a
+            supersession and goes to the owner, never into the store).
+    """
+    store = EVIDENCE if evidence_path is None else evidence_path
+    existing: dict[str, Any] = json.loads(store.read_text()) if store.exists() else {}
+    recorded = (
+        existing.get("phase14", {}).get("stage1", {}).get(STAGE1_REPORT_ROWS_NODE, {})
+    )
+    out: dict[str, dict[str, Any]] = {}
+    for tile in tiles:
+        maps = stored_mean_map(tile)
+        if not maps.exists():
+            raise RuntimeError(
+                f"tile {tile!r}: stored mean map {maps} is ABSENT — the "
+                "recovery scores existing artifacts and refuses rather than "
+                "reporting success having produced nothing"
+            )
+        block = build_tile_report_block(tile=tile, era=era, mean_map=maps)
+        prior = recorded.get(tile, {}).get(era)
+        # Compare what WOULD BE STORED against what IS stored, as canonical
+        # TEXT. Two traps this avoids, both of which fake a contradiction:
+        # a tuple in the fresh block differs from its stored list twin, and
+        # NaN != NaN — and groundtrack legitimately reports NaN for families
+        # whose probe band lies beyond the grid's Nyquist (flagged
+        # under_floor). A false supersession stop is worse than useless.
+        fresh_as_stored = json.dumps(block, sort_keys=True, default=str)
+        prior_as_stored = (
+            None if prior is None else json.dumps(prior, sort_keys=True, default=str)
+        )
+        if prior is not None and prior_as_stored != fresh_as_stored:
+            raise RuntimeError(
+                f"tile {tile!r} era {era}: the recomputed block DIFFERS from "
+                f"the one recorded at phase14.stage1.{STAGE1_REPORT_ROWS_NODE}"
+                f".{tile}.{era}. That is a SUPERSESSION, not an append — it "
+                "stops here and goes to the owner (pin 114d)"
+            )
+        if prior is None:
+            record_tile_report_block(block, evidence_path=store)
+        out[tile] = block
+    return out
+
+
+@app.command()
+def recover_rows(
+    era: Annotated[str, typer.Option(help="Era the rows describe")] = STAGE1_ERA,
+    evidence_path: Annotated[Path, typer.Option("--evidence-path")] = EVIDENCE,
+) -> None:
+    """Append the closed-leg tiles' report rows (owner pin 114).
+
+    No solve, no leg re-run: the rows are computed from the maps those
+    legs already wrote. Stops on any contradiction.
+    """
+    blocks = recover_report_rows(era=era, evidence_path=evidence_path)
+    for tile, block in blocks.items():
+        standing = sorted(str(r["evaluator"]) for r in block["rows"])
+        absent = sorted(str(a["evaluator"]) for a in block["recorded_absences"])
+        typer.echo(
+            f"{tile}: standing={standing} absent={absent} "
+            f"wedge={block['wedge_exclusion_status']['kind']}"
+        )
+    typer.echo(
+        f"recorded: phase14.stage1.{STAGE1_REPORT_ROWS_NODE}.<tile>.{era} "
+        f"({len(blocks)} tiles)"
+    )
+
+
 def record_leg_evidence(
     *,
     mean_map: Path,
