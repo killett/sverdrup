@@ -268,12 +268,16 @@
 >   `phase14.stage1.report_rows.<tile>.2017` for **anchor, seam_n, seam_s**. Test-pinned
 >   that the loader and the solver both RAISE if touched (114c). All three came back
 >   **`wedge_exclusion:true`** — 112(c)'s predicted recovery, box tiles only.
-> - **⭐ THE RECOVERY REPRODUCED THE FOUNDING METRIC EXACTLY.** The anchor's
->   `track_excess_log10_max_repeat` = **0.331012884019381**, **bit-identical** to the
->   Phase-13 Gate-1 pack's recorded winner figure (`2026-07-21-phase13-gate1-pack.md:49`)
->   — the 0.331 of the 0.410→0.331 lineage. **CONFIRMATION, not contradiction**, so 114(d)
->   does not trip: nothing recorded changed, and the T5c wiring is now validated end-to-end
->   against an owner-cited number.
+> - **⚖ THE 0.331 REPRODUCTION IS A DETERMINISM CHECK — labelled as one (owner pin 119).**
+>   The anchor's `track_excess_log10_max_repeat` = **0.331012884019381**, bit-identical to
+>   the Phase-13 Gate-1 pack's recorded winner figure
+>   (`2026-07-21-phase13-gate1-pack.md:49`). **It is NOT independent confirmation of the
+>   founding metric:** the anchor maps were already bit-identical to the phase-13 winner
+>   (check 1, max|Δ| = 0), so an identical score FOLLOWS from identical inputs. What it IS:
+>   a genuine end-to-end wiring test that could have failed — a wrong map, a wrong mission
+>   filter, a wrong geometry artifact or a broken lookup would each have moved it. Same
+>   distinction as s*/χ² under pin 100: agreement that could not have failed to hold must
+>   never be read as corroboration. 114(d) does not trip — nothing recorded changed.
 > - **114(d) guard hardened by its own first run:** the naive comparison would have raised
 >   a FALSE supersession, because groundtrack legitimately reports **NaN** for families
 >   beyond the grid's Nyquist (flagged `under_floor`) and `nan != nan`. The guard compares
