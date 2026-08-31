@@ -292,8 +292,31 @@
 >   so the registration cannot be forgotten and its absence cannot be read as a decision
 >   not to witness it. Mirror re-synced: **34 nodes, check PASS, 16 forward pointers**.
 >
-> **▶ NEXT ACTION: T5e — the gate suite on the final tree, then the launch sequence
-> (which STAYS BLOCKED: R1 + 91b). Build-side T5 is complete.**
+> **✅ T5e IS DONE — THE BUILD SIDE OF T5 IS COMPLETE, AND THE STAGE NOW WAITS ON YOU.**
+> Gate suite run in pin 83's order (`format → mypy → stamp → suite → verify`) via
+> `scripts/phase14_gate_suite.py`, detached, watched on **pid exit**:
+> - **suite: 1543 passed, 21 skipped, 1 xfailed — exit 0, 44:22**, and the stamp records
+>   the tree was **unchanged across the run** (419 files).
+> - **`gate_suite verify`: PASS** — 419 files unchanged since the suite ran, against a
+>   stamp that records a COMPLETED suite, so the evidence describes the committed tree.
+> - **seal `check`: PASS** — sha `a17ea419f1d1ca11…`, **re-derived**, not compared.
+> - **tally: BYTE-IDENTICAL** — sha256 `34cd71893f5123a8…` before and after. Zero touches.
+> - **mirror `check`: PASS** — 34 nodes, no witnessed node changed, seal matches, 16
+>   forward pointers, `equatorial_lane0_manifest` correctly reported PENDING.
+>
+> **⛔⛔ NEXT ACTION IS THE OWNER'S, NOT THE EXECUTOR'S.** Everything T5 can build without
+> running a leg is built and verified. **Leg 1 does not launch until BOTH hold:**
+> **(1) R1 — you declare the box back and stable** (the reboot precondition; `setsid` gives
+> no protection against a power event, R4), and **(2) 91(b) — the 91(a) stale-criteria
+> report is ruled**; its items outside 97–99 remain report-only.
+> **R5 also stands and is CHEAP: resume-after-hard-kill on a T5 diverse leg is UNVERIFIED.**
+> Kill a short run mid-window and resume it BEFORE committing 31 h to a recovery path that
+> is currently assumed.
+>
+> **What leg 1 will run when released:** `pixi run python scripts/phase14_stage1_run.py run
+> kuroshio` (the plan's own ordering — riskiest path first, and the one pin 89's probe
+> already converged on), detached, at the top of a RAM cycle: the Tier-2 gate demands
+> `MemAvailable ≥ 8730 MiB` and REFUSES below it, and the leg stops and reports past ~40 h.
 >
 > **[superseded — kept for the trail] NEXT ACTION WAS: T5d — per-tile extras: equatorial lane-0 persistence bundle (maps +
 > pack + FROZEN fold/eval frame + pin 96's MIRRORED `lane0_manifest.json`), southern
@@ -5752,6 +5775,16 @@ above confirm them**, so the spec stops lagging the decision.
   for obs-less coordinator probes in tests; real solves always set it).
 
 ## Gotchas
+
+- **A LOG-GROWTH STALL WATCHER IS BLIND TO `pytest -q` (2026-08-30).** The T5e gate suite
+  ran green in 44:22, and the watcher reported **`STALL: log unchanged for ~20 min`**
+  anyway: `pytest -q` under `pixi run` with output redirected is BLOCK-BUFFERED, so the
+  log grows in one burst at the end. The completion signal (pid exit) was correct; the
+  growth signal was a false alarm. **Do not tighten a stall threshold against this — it
+  cannot be made true.** Either run the suite unbuffered (`PYTHONUNBUFFERED=1`, without
+  `-q`, so per-file progress lines land as they happen) or watch pid liveness only and
+  accept that a hung suite is caught by wall-clock, not by silence. The earlier lesson
+  still stands for solve legs, which DO emit heartbeats.
 
 - **`.git/hooks` IS NOT VERSIONED — the "hook pushes on commit" belief was false
   (2026-08-29, owner pins 102 + 104).** There was never a post-commit hook on this box;
