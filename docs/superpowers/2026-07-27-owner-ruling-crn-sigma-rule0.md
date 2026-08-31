@@ -2061,3 +2061,86 @@ finds.
   were already bit-identical to the phase-13 winner, so an identical score follows from
   identical inputs. A genuine end-to-end wiring test that could have failed; NOT
   independent confirmation of the founding metric. Same distinction as s*/χ² under pin 100.
+
+---
+
+## PART 30 — PER-WINDOW PERSISTENCE + DURABILITY RULING (verbatim), pins 121–126, 2026-08-31
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-31.** Orders per-window persistence and
+an atomic checkpoint write before leg 1, rules the two residual sweep items, and requires
+the relabel interpretation to travel with the bridge caveat.
+
+> 121. PER-WINDOW PERSISTENCE BEFORE LEG 1 — bounded, acceptance is bit-identity.
+>      R5 was raised to decide whether 31 h legs are safe to launch. Bit-identity answers a
+>      narrower question, as you said. Re-derived: per-solve checkpointing caps loss at ~31 h;
+>      per-window persistence caps it at ~3.44 h, a 9× reduction over ~124 h of compute.
+>      (a) Persist each window's members as it completes, so a crash costs one window.
+>      (b) ACCEPTANCE IS BIT-IDENTITY of the assembled member store against the current
+>          monolithic path. R5 just built the harness for exactly this comparison; reuse it.
+>      (c) Bounded: persistence and reassembly only. No change to the solve, the scoring, or
+>          the evidence schema.
+>      (d) If bit-identity fails, stop and bring it to me. A cheaper recovery path that
+>          perturbs the output is not cheaper.
+> 122. FIX THE NON-ATOMIC CHECKPOINT WRITE. np.savez straight to the final path, ~23 MB, no
+>      temp-and-rename, with the vulnerable window recurring every 50 iterations across
+>      ~124 h. Write to a temp path and rename — atomic on POSIX same-filesystem, no change
+>      to checkpoint content, no numerical consequence. This kill landed clean; that is luck
+>      and not a property. Test-pin that a truncated checkpoint is DETECTED rather than
+>      silently half-loaded.
+> 123. h2ag → h2g IS AN INTERPRETATION AND TRAVELS WITH THE BRIDGE CAVEAT.
+>      Applying the golden tile's recorded relabel rather than inventing one is right, and
+>      refusing loudly on codes with no counterpart is the correct guard. But the anchor uses
+>      h2g natively while the diverse tiles use relabelled h2ag, so the two sides differ in a
+>      component of the frozen config.
+>      (a) The golden-tile bridge delta was measured WITH the relabel in place, so it already
+>          absorbs whatever the relabel costs — AT THE ANCHOR BOX. Per pin 7 that does not
+>          transfer per-tile, so the relabel's cost at the diverse tiles is unmeasured, with
+>          exactly the structure of the bridge caveat itself.
+>      (b) Name it in the same breath as the bridge caveat, not in a separate note. The
+>          mission_relabel row field is the right mechanism; the pack must say what it means.
+>      (c) Record the alternatives that were refused and why: dropping h2ag changes the
+>          constellation and breaks like-for-like; deriving an R for it unfreezes the config.
+>          Relabelling is the least-bad option, not a free one.
+> 124. RESIDUAL SWEEP ITEMS RULED.
+>      (a) #14 — adopt your honest form verbatim: "zero locked opens, one deferred production
+>          defect named at crn_production_defect_deferred". As phrased it read as a clean
+>          bill, and pin 87 makes it not one.
+>      (b) #15 — T9's verifyCommand becomes the gate suite in pin 83's order. T5e has run it
+>          for real, so the correct command is established rather than hypothetical.
+>      (c) RULED-BUT-UNFOLDED NEEDS A TRACKER STATE. You are right that it is indistinguishable
+>          from unruled on a checklist, and rows 7-9 sit in it. Mark them explicitly so a
+>          fresh session cannot read a ruled item as an open question or an unfolded one as
+>          done. Same defect class as READY-not-RUNNABLE.
+> 125. STATE THE PROBE/PRODUCTION PATH COMPARISON. Pin 89's probe omitted the frozen rspec;
+>      R5's baseline includes it. Mean-leg iterations 441 → 437, under one percent. Record
+>      that against the probe's numbers as the evidence they transfer, replacing the
+>      size-dominated assertion. Also record that the probe path and production path differ
+>      at all — a future reader must not assume a probe exercises production.
+> 126. RATIFIED: the invalid-R5 retraction and its cause; attempt 2's construction
+>      (process-group kill, survivor check, no-completed-record check, checkpoint readability,
+>      distinct exit codes so a failure names itself); the h2ag fix and its three tests,
+>      including that relabelled codes satisfy RSpec.sigma2_for while h2ag still raises; and
+>      119's relabelling of the 0.331 reproduction.
+>
+> SEQUENCE: commit the relabel fix when green; land 121-126; do 122, then 121; fold 123-125.
+> THEN hold at the launch gate.
+>
+> STOP CONDITION: leg 1 needs 121 bit-identical, 122 landed, 124 folded, and the owner's
+> declaration. 117 is green; 118 is now ruled.
+
+### What PART 30 changes
+
+- **Per-window persistence lands BEFORE leg 1** (121), with **bit-identity of the assembled
+  member store** as its acceptance — reusing R5's comparison harness. Loss per crash drops
+  from ~31 h to ~3.44 h across ~124 h of compute. Bounded to persistence and reassembly
+  (121c); a bit-identity failure STOPS and comes to the owner (121d).
+- **The checkpoint write becomes atomic** (122) — temp-and-rename — and a truncated
+  checkpoint must be DETECTED, not half-loaded.
+- **The relabel travels with the bridge caveat** (123): its cost is absorbed at the anchor
+  box and is UNMEASURED per-tile, with the bridge caveat's exact structure. The refused
+  alternatives are recorded — dropping `h2ag` breaks like-for-like, deriving an R for it
+  unfreezes the config. **Least-bad, not free.**
+- **Both residual sweep items are RULED** (124a/b), and **"ruled but unfolded" becomes an
+  explicit tracker state** (124c) — the same defect class as READY-not-RUNNABLE.
+- **The probe/production divergence is recorded** (125) with the measured transfer: mean
+  leg 441 → 437, under one percent.

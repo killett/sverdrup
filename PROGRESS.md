@@ -308,6 +308,37 @@
 > - **mirror `check`: PASS** — 34 nodes, no witnessed node changed, seal matches, 16
 >   forward pointers, `equatorial_lane0_manifest` correctly reported PENDING.
 >
+> **✅ R5 IS DONE — PASS ON THE RULED BAR (pin 117). Report:**
+> `docs/superpowers/2026-08-31-r5-resume-after-hard-kill.md`.
+> Baseline 876 s (kuroshio, m=2, one window, production path); hard `kill -9` on the
+> **process group** mid-window with the checkpoint at `it = 50` of the member-batch solve;
+> resume 653 s; **η and anomaly digests IDENTICAL, PCG [437, 474] on both sides.**
+> - **⚠ FINDING 1 — the checkpoint covers ONE SOLVE, not the leg.** Completed windows live
+>   in memory until the leg's member store is written at the END. This kill recovered ~10%
+>   of one solve (50 of 474 iterations) and the already-complete mean leg (437) was
+>   **re-solved**. **A power event at hour 30 of a 31 h leg costs ~30 h, not ~0.** Resume
+>   protects the tail of one solve; it does not protect a leg. R5 asked whether 31 h legs
+>   are safe to launch — "resume works" answers a narrower question than that.
+> - **⚠ FINDING 2 — the checkpoint write is NOT atomic.** `np.savez` writes straight to the
+>   final path (~23 MB, no temp+rename), so a kill inside that write truncates the ONLY
+>   checkpoint. This run's kill landed clean. **Not fixed** — it is shipped solver code and
+>   the owner's call whether to change it before leg 1.
+> - **⛔ ATTEMPT 1 WAS INVALID and is recorded as such.** `pgrep` returned the **pixi
+>   wrapper**; the solver survived, finished, and a concurrent "resume" overwrote the
+>   record — and the comparison printed `BIT-IDENTICAL` from a run that was never killed.
+>   **E-16 §6 records this exact trap** and it was walked into anyway. Attempt 2 fixed it
+>   structurally: `setsid` + process-group kill, a survivor check, and an assertion that the
+>   killed run's log carries no completed-record line.
+> - **⛔ A SEPARATE LAUNCH-BLOCKING DEFECT, found by R5's dry run and FIXED:** `RSpec`
+>   refuses any mission outside the five CHALLENGE codes (the j3/c2 leak guard, correct),
+>   while CMEMS-MY labels the same HY-2A geodetic stream **`h2ag`**. Unrelabelled, **every
+>   diverse leg would have died at window 0**, ~30 s into a 31 h run. `_tile_framed_obs`
+>   now applies the recorded interpretation the golden tile already applies
+>   (`CHALLENGE_TO_CMEMS` inverse, `h2ag → h2g`), refusing loudly on any code without a
+>   counterpart, and the row records `mission_relabel`. **Note: pin 89's Tier-2 probe never
+>   hit this** because `_probe_solve` builds `Miost` WITHOUT the frozen `rspec` — the probe
+>   path and the production path differ in exactly the component that refused.
+>
 > **⛔⛔ NEXT ACTION IS THE OWNER'S, NOT THE EXECUTOR'S.** Everything T5 can build without
 > running a leg is built and verified. **Leg 1 does not launch until BOTH hold:**
 > **(1) R1 — you declare the box back and stable** (the reboot precondition; `setsid` gives
