@@ -1,5 +1,39 @@
 # Sverdrup — Progress notebook
 
+> # ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
+>
+> | # | Item | State |
+> |---|---|---|
+> | 1 | **121 — per-window persistence, BIT-IDENTICAL at ≥2 windows** | ⬜ executor work, IN PROGRESS |
+> | 2 | **122 — atomic checkpoint write landed** | ✅ done (temp-and-rename + truncation refusal, mutation-checked) |
+> | 3 | **124 — the two residual sweep items folded** | ✅ done (attestation form verbatim; verifyCommand = the gate suite) |
+> | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ⬜ **NOT executor work. Open across several sessions.** |
+>
+> **⛔ 121's ACCEPTANCE IS ≥2 WINDOWS (owner pin 127) — this is the thing a clear destroys.**
+> A fresh session told "test bit-identity" writes the ONE-window test, because it is the
+> obvious one, **and it cannot fail**: at one window, assembly IS the identity operation.
+> Precedent (127a): pin 43's replay failed its own check at **4.2e-17** because the member
+> axis must be fastest-varying — invisible at n=1, and exactly what per-window assembly can
+> reintroduce. Run it at **two windows, m=2**, against a **FRESH two-window monolithic
+> baseline** (127c). **⛔ `logs/r5/baseline.json` is RETIRED as 121's reference** — it is a
+> one-window digest and must not be quietly reused.
+>
+> **⛔ READY ≠ RUNNABLE (H4).** READY is `[5, 12, 18, 19, 20]`. **18, 19 and 20 are the
+> [STAGE 2] σ chain under pin 88's halt and MUST NOT BE STARTED.** Only **5 and 12** are
+> Stage-1 work.
+>
+> **⚖ RULED BUT UNFOLDED (H5, pin 124c)** — sweep rows 7–9 are RULED (pins 99a/b/c) with
+> their folds landing inside **T6/T7/T8**, which have not opened. This state is neither
+> "unruled" nor "done"; it is now marked **in the tracker itself**
+> (`…spatial-2017.md.tasks.json`, task ids 6/7/8), not left inferable from a checklist.
+>
+> **⚖ CARRY PIN 108 (H6):** T6's anisotropy axis is **UNEVIDENCED** at Stage 1 — not
+> "limited" — and 106's design conflict means **the southern tile's spectral slope stays a
+> degraded estimand regardless of 112's lookup fix**. The lookup fix recovered anchor and
+> the seam pair only.
+>
+> ---
+>
 > # ⛔⛔ START HERE — COLD BOX AFTER A PLANNED REBOOT (2026-08-01). READ THIS BLOCK FIRST.
 >
 > **THE BOX WAS REBOOTED DELIBERATELY BY THE OWNER.** If you are resuming on a cold box,

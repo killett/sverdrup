@@ -95,3 +95,22 @@ degrading into a green line.
 - Nothing at production scale: m=2, one window. The *mechanism* is the same code; the
   *cost* profile is not (117e forbade scaling it up, and correctly).
 - Nothing about the checkpoint surviving a kill during its own write (3b).
+
+## 6. Probe vs production path — MEASURED, replacing the size-dominated assertion (pin 125)
+
+Pin 89's Tier-2 probe builds `Miost` **without** the frozen `rspec`; R5's baseline includes
+it. **The two paths differ, and a future reader must not assume a probe exercises
+production.** The transfer is now measured rather than argued:
+
+| | mean-leg PCG iterations |
+|---|---|
+| pin 89 probe, kuroshio m=100, no rspec (`tier2_probe_kuroshio_m100`) | **441** |
+| R5 baseline, kuroshio m=2, WITH the frozen rspec | **437** |
+
+**Δ = 4 iterations, 0.9 %.** The mean leg solves a single RHS, so its iteration count does
+not depend on m — the comparison is like-for-like in the one component that changed. That
+is the evidence the probe's numbers transfer on; the earlier "size-dominated" claim was
+reasoning offered where a measurement was available, and is withdrawn.
+
+**The divergence itself is the durable point:** the probe path omits the component that
+refused `h2ag`, which is exactly why a launch-blocking defect survived a "successful" probe.
