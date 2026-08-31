@@ -4124,6 +4124,55 @@ def record_tile_report_block(
     atomic_write_json(evidence_path, results)
 
 
+# The recorded interpretation the golden tile already applies
+# (phase14_golden_tile.py:14-17): CMEMS codes map to the challenge codes
+# BEFORE the solve, so the frozen config's mission-keyed R applies
+# identically on both sides. Identical codes except challenge h2g (HY-2A
+# geodetic) -> CMEMS h2ag.
+MISSION_RELABEL_NOTE = (
+    "CMEMS-MY codes relabelled to CHALLENGE codes before the solve "
+    "(h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — "
+    "the recorded interpretation the golden tile applies, so the frozen "
+    "config's mission-keyed R deltas apply per instrument on both sources"
+)
+
+
+def relabel_missions_to_challenge(missions: NDArray[Any]) -> NDArray[Any]:
+    """Map CMEMS-MY mission codes to the challenge codes the frozen R keys on.
+
+    ``RSpec.r_diag_for`` refuses any mission outside the five fit missions
+    — that refusal is the j3/c2 leak guard and is correct. CMEMS-MY labels
+    the same HY-2A geodetic stream ``h2ag``, so without this every diverse
+    leg dies at window 0 with "unknown mission hash".
+
+    Args:
+        missions: Per-obs mission codes as loaded from CMEMS-MY.
+
+    Returns:
+        The same array with challenge codes.
+
+    Raises:
+        RuntimeError: A code with no challenge counterpart — refused here
+            rather than deferred to a hash lookup deep inside the solve.
+    """
+    import numpy as np  # noqa: PLC0415
+
+    from sverdrup.adapters.altimetry.cmems_my import (  # noqa: PLC0415
+        CHALLENGE_TO_CMEMS,
+    )
+
+    inverse = {v: k for k, v in CHALLENGE_TO_CMEMS.items()}
+    unknown = sorted({str(m) for m in np.asarray(missions)} - set(inverse))
+    if unknown:
+        raise RuntimeError(
+            f"mission code(s) {unknown} have no challenge code in "
+            "CHALLENGE_TO_CMEMS — refusing to pass them into the frozen "
+            "config's mission-keyed R, which would either refuse deep in the "
+            "solve or (worse) match a mission they are not"
+        )
+    return np.array([inverse[str(m)] for m in np.asarray(missions)])
+
+
 def _tile_framed_obs(
     tile: str,
 ) -> tuple[TileFrame, GridSpec, Any, dict[str, Any] | None]:  # noqa: ANN401
@@ -4172,11 +4221,19 @@ def _tile_framed_obs(
         c[:, 2] - _DAYS_1993_TO_2017,  # -> days since 2017-01-01 (solver frame)
         obs_93.values(),
         DiagonalErrorModel(np.full(len(obs_93), OBS_NOISE_VARIANCE)),
-        mission=obs_93.mission,
+        # Relabel BEFORE the solve, per the recorded interpretation the
+        # golden tile applies. Without it the frozen config's mission-keyed
+        # R refuses 'h2ag' at window 0 of every diverse leg.
+        mission=(
+            None
+            if obs_93.mission is None
+            else relabel_missions_to_challenge(obs_93.mission)
+        ),
     )
     del obs_93
     framed = frame_obs(obs, frame, resolution_deg=RESOLUTION_DEG)
     del obs
+    superobs_cfg["mission_relabel"] = MISSION_RELABEL_NOTE
     return frame, grid, framed, superobs_cfg
 
 

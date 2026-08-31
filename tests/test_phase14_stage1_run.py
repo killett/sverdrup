@@ -1785,6 +1785,70 @@ def test_amendment_index_points_the_closed_nodes_at_the_new_rows() -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# The R5 dry run's finding: CMEMS mission codes reach the frozen config's
+# mission-keyed R, which REFUSES anything outside the five challenge codes.
+# ---------------------------------------------------------------------------
+
+
+def test_cmems_missions_are_relabelled_to_challenge_codes() -> None:
+    """h2ag -> h2g before the solve; every other code passes through.
+
+    Bug caught: the live one, found by the R5 dry run. RSpec refuses any
+    mission outside FIT_MISSIONS ('alg','h2g','j2g','j2n','s3a') -- that
+    refusal is the j3/c2 leak guard and is correct -- while CMEMS-MY labels
+    the same HY-2A geodetic stream 'h2ag'. Unrelabelled, EVERY diverse leg
+    dies at window 0 with 'unknown mission hash'.
+    """
+    import numpy as np
+
+    from sverdrup.methods.miost_rspec import FIT_MISSIONS
+
+    got = _mod.relabel_missions_to_challenge(
+        np.array(["alg", "h2ag", "j2g", "j2n", "s3a"])
+    )
+    assert list(got) == ["alg", "h2g", "j2g", "j2n", "s3a"]
+    assert set(got) <= set(FIT_MISSIONS)
+
+
+def test_relabelling_refuses_an_unknown_code() -> None:
+    """A code with no challenge counterpart is refused, not passed through.
+
+    Bug caught: a silent pass-through that would defer the failure to the
+    solver's own refusal deep inside window 0 -- or worse, to a mission
+    that happens to hash into the table.
+    """
+    import numpy as np
+
+    with pytest.raises(RuntimeError, match="no challenge code"):
+        _mod.relabel_missions_to_challenge(np.array(["alg", "c2n"]))
+
+
+def test_relabelled_obs_survive_the_frozen_configs_r(tmp_path: Path) -> None:
+    """The relabelled codes actually satisfy the frozen config's R lookup.
+
+    Bug caught: a relabelling that looks right but still fails the check
+    that matters. This asserts against RSpec itself -- the component that
+    refused -- rather than against a list of strings.
+    """
+    import numpy as np
+
+    from sverdrup.methods.miost import PHASE13_DELTAS
+    from sverdrup.methods.miost_error_basis import mission_hash_ints
+    from sverdrup.methods.miost_rspec import RSpec
+
+    rspec = RSpec(deltas=dict(PHASE13_DELTAS))
+    relabelled = _mod.relabel_missions_to_challenge(
+        np.array(["alg", "h2ag", "j2g", "j2n", "s3a"])
+    )
+    r = rspec.sigma2_for(mission_hash_ints(np.asarray(relabelled)))
+    assert r.shape == (5,)
+    assert np.all(r > 0.0)
+    # And the unrelabelled form is exactly what refuses.
+    with pytest.raises(ValueError, match="unknown mission hash"):
+        rspec.sigma2_for(mission_hash_ints(np.asarray(["h2ag"])))
+
+
 def test_record_refuses_when_seal_unverified(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
