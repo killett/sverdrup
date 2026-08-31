@@ -2001,3 +2001,63 @@ test with behavioural ones, and ratifies the 110–112 folds.
 - **The scope pin becomes behavioural** (115) — a synthetic artifact with a different
   `box_lon`/`phi0`, plus the adversarial mission-match-outside-the-box case, replacing a
   string scan that `1295` or `2.95e2` would defeat.
+
+---
+
+## PART 29 — R5 RESUME TEST + RESIDUAL SWEEP RULING (verbatim), pins 117–120, 2026-08-30
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-30.** Rules R5 into an executable test
+with bit-identity as its bar, orders the residual sweep items enumerated for a single
+ruling, corrects how the 0.331 reproduction is labelled, and ratifies the T5e-adjacent
+finds.
+
+> 117. R5 RULED — RUN IT, and its acceptance is bit-identity, not survival.
+>      Resume-after-hard-kill has never been tested and four legs at ~31 h is ~5 days of
+>      exposure during which setsid protects nothing (R4).
+>      (a) Kill a short diverse-tile run mid-window, resume, and compare the resumed output
+>          against an uninterrupted run of the same configuration. The bar is BIT-IDENTICAL
+>          output. "Resume completed without error" is not the test — a resume that produces
+>          subtly different results is worse than no resume, because the difference is
+>          invisible and would silently enter a leg's evidence.
+>      (b) Kill it hard (SIGKILL), not gracefully. A clean shutdown path is not what a power
+>          event exercises.
+>      (c) Test resume from a MID-WINDOW checkpoint, not a window boundary. Boundaries are
+>          the easy case and are not what costs 30 hours.
+>      (d) IF RESUME IS NOT BIT-IDENTICAL, that is a finding and it comes to me before leg 1
+>          — it would mean the four legs must each complete uninterrupted, which changes the
+>          risk profile of the whole authorisation and possibly its shape.
+>      (e) Cheap by construction: short run, small window count. Do not scale it up.
+> 118. THE RESIDUAL SWEEP ITEMS — bring me the list. 97, 99 and 94-96 ruled eleven of the
+>      thirteen; enumerate exactly what remains unruled, one line each with its criterion and
+>      what changed underneath it. I will rule them together. They should not be discovered
+>      one at a time by building into them, which is the failure mode 91 was created to end.
+> 119. THE 0.331 REPRODUCTION IS A DETERMINISM CHECK — label it as one. The anchor maps were
+>      already bit-identical to the phase-13 winner (check 1, max|Δ| = 0), so an identical
+>      score follows from identical inputs. It is a genuine end-to-end wiring test and it
+>      could have failed; it is not independent confirmation of the founding metric. State
+>      which kind it is wherever it appears, including the Gate-1 pack. Same distinction as
+>      s*/χ² under pin 100.
+> 120. RATIFIED: the NaN canonical-text fix (a guard that would have raised a false
+>      supersession on its own second run is the seventh-and-a-half instance of the family,
+>      and catching it before it fired is the point); PENDING for registered-but-unwritten
+>      mirror paths, which correctly makes absence a named state rather than a silent one;
+>      114's recovery as executed; 115's mutation-checked behavioural pins; and the
+>      stall-watcher gotcha with its do-not-tune instruction.
+>
+> SEQUENCE: land 117-120; run 118's enumeration and report; run 117; THEN hold at the launch
+> gate.
+>
+> STOP CONDITION: leg 1 does not launch on this ruling. It needs 117 green, 118 ruled, and
+> the owner's declaration that the box is back and stable — all three.
+
+### What PART 29 changes
+
+- **R5 becomes an executable test with a hard bar** (117): SIGKILL, mid-window, and
+  **bit-identical** output against an uninterrupted run — survival is explicitly not the
+  test. A non-identical resume is a FINDING that comes to the owner before leg 1 (117d).
+- **The residual sweep items are enumerated once and ruled together** (118), rather than
+  discovered by building into them — the failure mode 91 exists to end.
+- **The 0.331 reproduction is relabelled a DETERMINISM CHECK** (119) — the anchor maps
+  were already bit-identical to the phase-13 winner, so an identical score follows from
+  identical inputs. A genuine end-to-end wiring test that could have failed; NOT
+  independent confirmation of the founding metric. Same distinction as s*/χ² under pin 100.
