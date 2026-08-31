@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -127,7 +128,20 @@ class MiostSolver:
             ).hexdigest()
         start_it = 1
         if checkpoint is not None and checkpoint.exists():
-            with np.load(checkpoint) as ck:
+            try:
+                ck_ctx = np.load(checkpoint)
+            except Exception as exc:  # noqa: BLE001 - any load failure is corruption
+                # Owner pin 122: a truncated checkpoint REFUSES, naming
+                # itself. Resuming from a partially-loaded state would
+                # produce a solve that is neither the interrupted one nor a
+                # fresh one, with nothing to say so. A bare BadZipFile
+                # tells an operator nothing about what to do.
+                raise RuntimeError(
+                    f"PCG checkpoint {checkpoint} is unreadable ({exc!r}) — it "
+                    "is corrupt, most likely a crash inside its own write. "
+                    "Delete it to solve fresh; do NOT resume from it"
+                ) from exc
+            with ck_ctx as ck:
                 if str(ck["b_hash"]) != b_hash or tuple(ck["shape"]) != b2.shape:
                     raise ValueError(
                         "stale PCG checkpoint: saved state belongs to a "
@@ -162,8 +176,14 @@ class MiostSolver:
             p = z + (rz_new / np.maximum(rz, 1e-300)) * p
             rz = rz_new
             if checkpoint is not None and it % checkpoint_every == 0:
+                # Owner pin 122: temp-and-rename, never a direct write to the
+                # live path. os.replace is atomic on POSIX within a
+                # filesystem, so a crash inside the write leaves the PREVIOUS
+                # checkpoint intact instead of destroying the only one. The
+                # content is unchanged; there is no numerical consequence.
+                tmp = checkpoint.with_name(checkpoint.name + ".tmp")
                 np.savez(
-                    checkpoint,
+                    tmp,
                     x=x,
                     r=r,
                     p=p,
@@ -173,6 +193,10 @@ class MiostSolver:
                     b_hash=b_hash,
                     shape=np.asarray(b2.shape),
                 )
+                # np.savez appends .npz when the target has no suffix; the
+                # rename must move whatever it actually wrote.
+                written = tmp if tmp.exists() else tmp.with_name(tmp.name + ".npz")
+                os.replace(written, checkpoint)
         if checkpoint is not None:
             checkpoint.unlink(missing_ok=True)
         report = ConvergenceReport(iters, np.linalg.norm(r, axis=0) / b_norm)

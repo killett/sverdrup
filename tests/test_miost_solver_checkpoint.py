@@ -111,7 +111,12 @@ def test_checkpoint_of_mismatched_system_is_refused(
     def _abort_soon(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         orig(*args, **kwargs)
         calls["n"] += 1
-        if calls["n"] == 1:
+        # Abort on the SECOND write, so one complete checkpoint has been
+        # renamed into place first. Under pin 122's temp-and-rename an
+        # aborted FIRST write leaves no checkpoint at all -- which is the
+        # atomicity working, and is why this setup aborts later than it
+        # once did. The assertion below is unchanged.
+        if calls["n"] == 2:
             raise _Abort
 
     with monkeypatch.context() as mp:
@@ -121,3 +126,79 @@ def test_checkpoint_of_mismatched_system_is_refused(
 
     with pytest.raises(ValueError, match="checkpoint"):
         solver.solve(b * 2.0, checkpoint=ck, checkpoint_every=5)
+
+
+def test_interrupted_write_leaves_THE_PREVIOUS_checkpoint_intact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 122: a crash DURING a checkpoint write costs nothing.
+
+    Bug caught: the live one. np.savez wrote straight to the final path --
+    ~23 MB in production, the vulnerable window recurring every 50
+    iterations across ~124 h -- so a crash inside the write destroyed the
+    ONLY checkpoint. The property that matters is not "the write is fast"
+    but "an interrupted write leaves the LAST GOOD checkpoint readable",
+    which is what temp-and-rename buys and a direct write does not.
+    """
+    from typing import Any
+
+    solver, b = _small_system()
+    ck = tmp_path / "ck.npz"
+    orig = np.savez
+    calls = {"n": 0}
+
+    def _crash_inside_the_third_write(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        calls["n"] += 1
+        if calls["n"] == 3:
+            # Real bytes at the write target, then die before it completes --
+            # the shape of a hard kill landing inside savez.
+            target = Path(str(args[0]))
+            target.write_bytes(b"PK\x03\x04 truncated garbage")
+            raise KeyboardInterrupt
+        orig(*args, **kwargs)
+
+    with monkeypatch.context() as mp:
+        mp.setattr(np, "savez", _crash_inside_the_third_write)
+        with pytest.raises(KeyboardInterrupt):
+            solver.solve(b, checkpoint=ck, checkpoint_every=5)
+
+    # The final path still holds checkpoint 2, not the wreckage of 3.
+    assert ck.exists()
+    with np.load(ck) as z:
+        assert int(z["it"]) == 10  # checkpoint_every=5, second write
+
+
+def test_truncated_checkpoint_refuses_with_a_message_naming_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 122: a corrupt checkpoint REFUSES, and says which file.
+
+    Bug caught: resuming from a partially-written checkpoint and continuing
+    from whatever loaded -- a solve that is neither the interrupted one nor
+    a fresh one, with nothing to say so. Also catches the refusal arriving
+    as a bare zipfile.BadZipFile, which tells an operator nothing.
+    """
+    from typing import Any
+
+    solver, b = _small_system()
+    ck = tmp_path / "ck.npz"
+    orig = np.savez
+    calls = {"n": 0}
+
+    def _die_after_a_few(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        orig(*args, **kwargs)
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise KeyboardInterrupt
+
+    with monkeypatch.context() as mp:
+        mp.setattr(np, "savez", _die_after_a_few)
+        with pytest.raises(KeyboardInterrupt):
+            solver.solve(b, checkpoint=ck, checkpoint_every=5)
+
+    assert ck.exists()
+    data = ck.read_bytes()
+    ck.write_bytes(data[: len(data) // 2])  # as a hard kill mid-write would
+    solver2, b2 = _small_system()
+    with pytest.raises(RuntimeError, match="unreadable"):
+        solver2.solve(b2, checkpoint=ck, checkpoint_every=5)

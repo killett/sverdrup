@@ -2144,3 +2144,76 @@ the relabel interpretation to travel with the bridge caveat.
   explicit tracker state** (124c) — the same defect class as READY-not-RUNNABLE.
 - **The probe/production divergence is recorded** (125) with the measured transfer: mean
   leg 441 → 437, under one percent.
+
+---
+
+## PART 31 — CHECK-AUTHORITY RULING + HANDOFF (verbatim), pins 127–129, 2026-08-31
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-31.** Fixes 121's acceptance to ≥2
+windows, ratifies 128's finding, rules that a narrower check may not override a broader one
+that has already spoken, and records the owner's handoff.
+
+> 127. 121's ACCEPTANCE NEEDS ≥2 WINDOWS. A single-window bit-identity test cannot fail on
+>      the thing 121 changes — with one window, assembly is the identity operation. Run the
+>      comparison at two windows minimum, so ordering, concatenation axis, dtype and
+>      member-axis alignment are actually exercised.
+>      (a) Precedent: pin 43's replay failed its own check at 4.2e-17 because the member axis
+>          must be fastest-varying. That bug is invisible at n=1 and is precisely what
+>          per-window assembly can reintroduce.
+>      (b) Keep m small. The question is assembly correctness, not cost; m=2 across two
+>          windows is enough and stays cheap.
+>      (c) Compare against a fresh monolithic run at the SAME configuration, not against a
+>          stored digest from a different window count.
+> 128. CONFIRM THE GATE SUITE'S mypy SCOPE matches the commit hook's. Your narrow pre-check
+>      over one file passed where the hook over 419 refused. The hook did its job here; the
+>      concern is whether phase14_gate_suite.py's own mypy step has the same scope. If it is
+>      narrower, the same divergence recurs inside the gate, where it costs a suite run
+>      instead of a commit attempt. One line to check, and it is pin 83's own territory.
+> 129. A NARROWER CHECK MAY NOT OVERRIDE A BROADER ONE THAT HAS ALREADY SPOKEN.
+>      Distinct from pin 42's family: these checks worked. The mypy hook reported Failed over
+>      419 files and was answered with Success over 1; R5's survivor warning was correct and
+>      was read past to a green two lines below. In both cases the authoritative signal came
+>      first and a weaker one was run afterward and believed.
+>      (a) §7 rule: once a gate has reported a failure, only a rerun of THAT gate at THAT
+>          scope clears it. A narrower or different check is evidence about something else.
+>      (b) Where a check emits a warning alongside a verdict, the warning is part of the
+>          verdict. A test whose green line can be read without its warnings is mis-designed
+>          — make the warning fail the exit code, as R5's attempt 2 did with distinct codes.
+>      (c) 128's finding is ratified: both hook and gate suite run `mypy .` over the whole
+>          tree, `pass_filenames: false`, scopes match. No divergence in the tooling.
+>      (d) 127 accepted as revised — two windows, m=2, fresh two-window baseline, and the
+>          old single-window digest correctly retired rather than quietly reused.
+>
+> HANDOFF, whenever the owner clears. Nothing here is new work.
+>
+> H1. Land 127-129 verbatim FIRST, before building anything. 127's design rationale is the
+>     thing that does not survive a clear: a fresh session told "test bit-identity" writes
+>     the one-window test, because it is the obvious one, and it cannot fail.
+> H2. The two-window monolithic baseline digests go in the tree when measured, with the
+>     window plan and m recorded beside them, and an explicit line retiring
+>     logs/r5/baseline.json as the reference.
+> H3. Banner states the leg-1 gate as four items, all of which must be true:
+>     121 bit-identical at ≥2 windows / 122 landed / 124 folded / owner declares the box back
+>     and stable. Three are executor work; the fourth is not, and has been open across
+>     several sessions.
+> H4. READY ≠ RUNNABLE, restated at the top: READY is [5, 12, 18, 19, 20]; 18, 19 and 20 are
+>     the [STAGE 2] σ chain under pin 88's halt and must not be started. Only 5 and 12 are
+>     Stage-1 work.
+> H5. Rows 7-9 of the stale-criteria sweep are RULED BUT UNFOLDED, their folds landing inside
+>     T6/T7/T8 which have not opened. Per 124(c) that state must be visible in the tracker,
+>     not inferable — a fresh session reading a checklist cannot distinguish it from unruled.
+> H6. Carry pin 108 forward: T6's anisotropy axis is UNEVIDENCED, and 106's design conflict
+>     means the southern tile's slope stays degraded regardless of 112's lookup fix.
+
+### What PART 31 changes
+
+- **121's acceptance moves to ≥2 windows** (127) — at one window assembly is the identity
+  operation and the test cannot fail on what 121 changes. Pin 43's 4.2e-17 member-axis
+  ordering bug is the named precedent for what hides at n=1.
+- **The single-window R5 baseline is RETIRED as 121's reference** (127c/H2) — a fresh
+  two-window monolithic run is the only valid comparison.
+- **§7 gains the check-authority rule** (129a/b): once a gate reports a failure, only a
+  rerun of THAT gate at THAT scope clears it, and a warning emitted beside a verdict is
+  PART of the verdict — make it fail the exit code rather than trusting it to be read.
+- **The tooling is exonerated** (129c): hook and gate suite both run `mypy .` whole-tree.
+  The divergence was an executor error, not a scope gap.
