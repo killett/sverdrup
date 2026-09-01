@@ -14,6 +14,7 @@ instance is reachable as its ``.underlying``.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -364,6 +365,74 @@ def exclusive_days(plan: WindowPlan) -> dict[str, float]:
     return out
 
 
+def _window_store_file(store: Path, wid: str) -> Path:
+    """Path of one window's persisted members inside ``store``."""
+    return store / f"window_{wid}.npz"
+
+
+def _save_window(
+    store: Path,
+    wid: str,
+    *,
+    eta: np.ndarray,
+    anom: np.ndarray,
+    start: float,
+    m: int,
+    root: Seed,
+) -> None:
+    """Persist ONE window's members atomically (owner pins 121a, 122).
+
+    Temp-and-rename, so a crash inside the write leaves the previous state
+    intact rather than a half-written window a later leg would read as
+    complete. ``m`` and ``root`` ride along so a store from a different
+    configuration is refused rather than adopted.
+    """
+    store.mkdir(parents=True, exist_ok=True)
+    dest = _window_store_file(store, wid)
+    tmp = dest.with_name(dest.name + ".tmp")
+    np.savez(
+        tmp,
+        eta=eta,
+        anom=anom,
+        start=float(start),
+        wid=wid,
+        m=int(m),
+        root=str(root),
+    )
+    written = tmp if tmp.exists() else tmp.with_name(tmp.name + ".npz")
+    os.replace(written, dest)
+
+
+def _load_window(
+    path: Path, *, wid: str, m: int, root: Seed
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Load ONE persisted window, refusing anything that is not it.
+
+    Raises:
+        RuntimeError: The file is unreadable (a crash inside its own
+            write), or it belongs to a different configuration. Neither is
+            recoverable by guessing, and adopting either silently is how a
+            leg assembles one configuration's window under another's name.
+    """
+    try:
+        ctx = np.load(path, allow_pickle=False)
+    except Exception as exc:  # noqa: BLE001 - any load failure is corruption
+        raise RuntimeError(
+            f"persisted window {path} is unreadable ({exc!r}) — it is corrupt, "
+            "most likely a crash inside its own write. Delete it and the "
+            "window will be re-solved"
+        ) from exc
+    with ctx as z:
+        if str(z["wid"]) != wid or int(z["m"]) != int(m) or str(z["root"]) != str(root):
+            raise RuntimeError(
+                f"persisted window {path} belongs to a different configuration "
+                f"(stored wid={str(z['wid'])!r} m={int(z['m'])} root={str(z['root'])!r}; "
+                f"requested wid={wid!r} m={int(m)} root={str(root)!r}) — refusing to "
+                "assemble it"
+            )
+        return np.asarray(z["eta"]), np.asarray(z["anom"]), float(z["start"])
+
+
 def merged_members(
     method: Miost,
     obs: ObsWindow,
@@ -372,6 +441,7 @@ def merged_members(
     m: int,
     root: Seed,
     on_window: Callable[[str, float], None] | None = None,
+    window_store: Path | None = None,
 ) -> tuple[BasisSpec, dict[str, np.ndarray], dict[str, np.ndarray], dict[str, float]]:
     """All windows' member anomalies via one sample_members call per window.
 
@@ -387,6 +457,13 @@ def merged_members(
         root: CRN seed root — the SAME root for every window.
         on_window: Optional progress callback ``(window_id, day)`` fired
             after each window's batched solve.
+        window_store: Optional directory for PER-WINDOW persistence (owner
+            pin 121). Each window's members are written as it completes and
+            an already-persisted window is LOADED instead of re-solved, so a
+            crash costs one window rather than every completed one. The
+            solve is unchanged; this is persistence and reassembly only
+            (121c), and the assembled result is bit-identical to the
+            monolithic path (121b, test-pinned at two windows per pin 127).
 
     Returns:
         (spec, etas_a, anoms, window_starts) merged over all windows.
@@ -399,6 +476,13 @@ def merged_members(
     anoms: dict[str, np.ndarray] = {}
     starts: dict[str, float] = {}
     for wid, day in exclusive_days(method._plan).items():
+        stored = None if window_store is None else _window_store_file(window_store, wid)
+        if stored is not None and stored.exists():
+            eta, anom, start = _load_window(stored, wid=wid, m=m, root=root)
+            etas_a[wid], anoms[wid], starts[wid] = eta, anom, start
+            if on_window is not None:
+                on_window(wid, day)
+            continue
         # sample_members returns the CalibratedDistribution wrapper (Phase-9
         # §3); the merge needs the RAW coefficient internals -> .underlying.
         dist = method.sample_members(obs, grid, params, day, m, root).underlying
@@ -406,10 +490,25 @@ def merged_members(
         etas_a.update(dist._etas_a)
         anoms.update(dist._anoms)
         starts.update(dist._window_starts)
+        if window_store is not None:
+            _save_window(
+                window_store,
+                wid,
+                eta=dist._etas_a[wid],
+                anom=dist._anoms[wid],
+                start=dist._window_starts[wid],
+                m=m,
+                root=root,
+            )
         if on_window is not None:
             on_window(wid, day)
     if spec is None:
-        raise ValueError("plan has no windows — nothing to merge")
+        if not etas_a:
+            raise ValueError("plan has no windows — nothing to merge")
+        # Every window came from the store, so no solve produced a spec.
+        # This is the resume path the seam and anchor legs already use:
+        # the spec is a pure function of the params and the grid.
+        spec = method._spec_from(params, grid)
     return spec, etas_a, anoms, starts
 
 

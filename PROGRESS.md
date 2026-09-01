@@ -4,10 +4,18 @@
 >
 > | # | Item | State |
 > |---|---|---|
-> | 1 | **121 — per-window persistence, BIT-IDENTICAL at ≥2 windows** | ⬜ executor work, IN PROGRESS |
+> | 1 | **121 — per-window persistence, BIT-IDENTICAL at ≥2 windows** | ✅ **DONE** — CI at 2 windows + production path on kuroshio (`starts=(0.0,45.0)`, m=2): both windows' η and anomaly digests IDENTICAL against a FRESH two-window monolithic baseline |
 > | 2 | **122 — atomic checkpoint write landed** | ✅ done (temp-and-rename + truncation refusal, mutation-checked) |
 > | 3 | **124 — the two residual sweep items folded** | ✅ done (attestation form verbatim; verifyCommand = the gate suite) |
 > | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ⬜ **NOT executor work. Open across several sessions.** |
+>
+> **✅ 121 MEASURED — the record is `docs/superpowers/2026-08-31-r5-resume-after-hard-kill.md` §7.**
+> Window 1 persisted at 640 s; the process GROUP was hard-killed 60 s later, mid-window-2;
+> the resume LOADED window 1 and SOLVED window 2 (532 s vs 1185 s) and reproduced BOTH
+> windows bit-identically. The decisive evidence that window 1 was loaded rather than
+> re-solved is the convergence log: **two** PCG rows on the resume `[430, 474]` where the
+> monolithic run recorded **four** `[437, 474, 430, 474]`. A hard kill now costs **one
+> window** instead of every completed one.
 >
 > **⛔ 121's ACCEPTANCE IS ≥2 WINDOWS (owner pin 127) — this is the thing a clear destroys.**
 > A fresh session told "test bit-identity" writes the ONE-window test, because it is the

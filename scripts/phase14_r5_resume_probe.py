@@ -64,6 +64,12 @@ def solve(
     tile: Annotated[str, typer.Option(help="Diverse tile")] = "kuroshio",
     m: Annotated[int, typer.Option(help="Members (small on purpose, pin 117e)")] = 2,
     maxiter: Annotated[int, typer.Option(help="PCG cap")] = 1200,
+    starts: Annotated[
+        str, typer.Option(help="Comma-separated window starts (pin 127: >=2)")
+    ] = "0.0",
+    window_store: Annotated[
+        Path | None, typer.Option(help="Per-window store dir (pin 121)")
+    ] = None,
 ) -> None:
     """Solve ONE window on the production path and digest the coefficients.
 
@@ -74,6 +80,11 @@ def solve(
         tile: Registry tile.
         m: Ensemble members.
         maxiter: PCG iteration cap.
+        starts: Comma-separated window starts. Pin 127 requires >= 2 for the
+            pin-121 acceptance: at one window assembly is the identity
+            operation and the comparison cannot fail.
+        window_store: Per-window persistence directory (pin 121); None runs
+            the monolithic path.
     """
     import time  # noqa: PLC0415
 
@@ -95,14 +106,15 @@ def solve(
 
     ckpt.mkdir(parents=True, exist_ok=True)
     # ONE window (117e), the production window length, the production config.
+    start_tuple = tuple(float(x) for x in starts.split(","))
     method = run._seam_miost(  # noqa: SLF001
-        frame, starts=(0.0,), maxiter=maxiter, ckpt_dir=ckpt
+        frame, starts=start_tuple, maxiter=maxiter, ckpt_dir=ckpt
     )
     provider = ConstantProvider(dict(PHASE13_WINNER_PARAMS))
     root = int(derive_seed("miost", "phase14-stage1", tile, 0))
     log_start = len(miost_mod.CONVERGENCE_LOG)
     echo(f"solving: m={m} root={root} maxiter={maxiter} ckpt={ckpt}")
-    _spec, etas, anoms, starts = merged_members(
+    _spec, etas, anoms, window_starts = merged_members(
         method,
         framed,
         grid,
@@ -110,6 +122,7 @@ def solve(
         m,
         root,
         on_window=lambda wid, day: echo(f"window {wid} solved (day {day:.0f})"),
+        window_store=window_store,
     )
     rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
     record = {
@@ -125,7 +138,9 @@ def solve(
         "windows": sorted(anoms),
         "eta_sha256": {w: _sha_array(etas[w]) for w in sorted(etas)},
         "anom_sha256": {w: _sha_array(anoms[w]) for w in sorted(anoms)},
-        "starts": {w: float(starts[w]) for w in sorted(starts)},
+        "starts": {w: float(window_starts[w]) for w in sorted(window_starts)},
+        "window_plan_starts": list(start_tuple),
+        "window_store": str(window_store) if window_store else None,
         "pcg": rows,
         "wall_s": time.monotonic() - t0,
         "date": datetime.now(UTC).isoformat(),

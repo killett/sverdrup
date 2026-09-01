@@ -13,7 +13,10 @@ from sverdrup.core.parameters import ConstantProvider
 from sverdrup.core.provenance import TransformKind
 from sverdrup.core.types import UncertaintyCapability
 from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
-from sverdrup.distributions.miost_ensemble import MiostEnsembleDistribution
+from sverdrup.distributions.miost_ensemble import (
+    MiostEnsembleDistribution,
+    exclusive_days,
+)
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.miost_solver import MiostSolver
 from sverdrup.methods.miost_windows import WindowPlan
@@ -543,3 +546,120 @@ def test_shipped_miost6_carries_the_same_phase8_field() -> None:
     assert m6._calibration.key() == m5._calibration.key()
     assert m6.members == m5.members == 100
     assert m6.member_root == m5.member_root
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 121 — per-window persistence. Acceptance is BIT-IDENTITY of the
+# assembled result against the monolithic path, at TWO windows (pin 127):
+# at one window assembly is the identity operation and cannot fail.
+# ---------------------------------------------------------------------------
+
+
+def _digests(
+    etas: dict[str, np.ndarray], anoms: dict[str, np.ndarray]
+) -> dict[str, str]:
+    """sha256 over each window's exact coefficient bytes."""
+    import hashlib
+
+    out = {}
+    for w in sorted(etas):
+        out[f"eta:{w}"] = hashlib.sha256(
+            np.ascontiguousarray(etas[w]).tobytes()
+        ).hexdigest()
+    for w in sorted(anoms):
+        out[f"anom:{w}"] = hashlib.sha256(
+            np.ascontiguousarray(anoms[w]).tobytes()
+        ).hexdigest()
+    return out
+
+
+def test_per_window_store_reassembles_BIT_IDENTICALLY(tmp_path: Path) -> None:
+    """Assembled-from-store == monolithic, byte for byte, across TWO windows.
+
+    Bug caught: the assembly reordering, transposing or re-dtyping the
+    coefficients. Pin 43's replay failed its own check at 4.2e-17 because
+    the member axis must be fastest-varying -- a bug that is INVISIBLE at
+    one window, where assembly is the identity operation (pin 127a), and
+    that per-window persistence can reintroduce.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    spec_a, etas_a, anoms_a, starts_a = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT
+    )
+    store = tmp_path / "windows"
+    spec_b, etas_b, anoms_b, starts_b = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
+    )
+    assert sorted(etas_a) == sorted(etas_b)
+    assert len(etas_a) == 2, "the acceptance needs TWO windows (pin 127)"
+    assert _digests(etas_a, anoms_a) == _digests(etas_b, anoms_b)
+    assert starts_a == starts_b
+    for w in etas_a:
+        assert etas_a[w].dtype == etas_b[w].dtype
+        assert etas_a[w].shape == etas_b[w].shape
+
+
+def test_resume_from_a_partial_store_is_BIT_IDENTICAL(tmp_path: Path) -> None:
+    """A crash after window 1 costs window 1 only, and changes nothing.
+
+    Bug caught: the resume path producing a different assembled result
+    from the uninterrupted one -- a cheaper recovery that perturbs the
+    output is not cheaper (pin 121d). The first window is loaded from the
+    store while the second is solved, so the mixed path is what is
+    compared, not a fresh run.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    spec_a, etas_a, anoms_a, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT
+    )
+
+    store = tmp_path / "windows"
+    # Persist ONLY the first window, as a crash mid-leg would leave it.
+    first = sorted(exclusive_days(_method()._plan))[0]  # noqa: SLF001
+    merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
+    for f in sorted(store.glob("window_*.npz"))[1:]:
+        f.unlink()
+    assert len(list(store.glob("window_*.npz"))) == 1
+    assert first  # the surviving window is the first one
+
+    spec_b, etas_b, anoms_b, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
+    )
+    assert _digests(etas_a, anoms_a) == _digests(etas_b, anoms_b)
+
+
+def test_window_store_refuses_a_different_configuration(tmp_path: Path) -> None:
+    """A store written under a different m or root is REFUSED, not adopted.
+
+    Bug caught: silently assembling one configuration's window with
+    another's -- the same class as the stale-checkpoint refusal, and the
+    same class as pin 110(b)'s bare existence check.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    store = tmp_path / "windows"
+    merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
+    with pytest.raises(RuntimeError, match="different configuration"):
+        merged_members(_method(), _obs(), GRID, PARAMS, M + 1, ROOT, window_store=store)
+    with pytest.raises(RuntimeError, match="different configuration"):
+        merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT + 1, window_store=store)
+
+
+def test_window_store_refuses_a_corrupt_file(tmp_path: Path) -> None:
+    """A truncated window file refuses by name; it is never half-loaded.
+
+    Bug caught: the pin-122 failure one level up -- a crash inside the
+    window write leaving a partial file that a later leg reads as a
+    completed window.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    store = tmp_path / "windows"
+    merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
+    victim = sorted(store.glob("window_*.npz"))[0]
+    data = victim.read_bytes()
+    victim.write_bytes(data[: len(data) // 2])
+    with pytest.raises(RuntimeError, match="unreadable"):
+        merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)

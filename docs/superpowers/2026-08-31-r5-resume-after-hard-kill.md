@@ -114,3 +114,61 @@ reasoning offered where a measurement was available, and is withdrawn.
 
 **The divergence itself is the durable point:** the probe path omits the component that
 refused `h2ag`, which is exactly why a launch-blocking defect survived a "successful" probe.
+
+## 7. Pin 121 — per-window persistence, measured at TWO windows (owner pins 121, 127)
+
+**RESULT: BIT-IDENTICAL on the production path.** Pin 127 is why this is a two-window
+measurement: at one window assembly is the identity operation and the comparison cannot
+fail on what 121 changes.
+
+### 7a. The reference (pin 127c, handoff H2)
+
+**⛔ `logs/r5/baseline.json` is RETIRED as 121's reference.** It is a ONE-window digest;
+reusing it would have compared a two-window assembly against a configuration that never
+exercised assembly. The reference is a FRESH monolithic run at the same configuration:
+
+| | |
+|---|---|
+| tile / members | `kuroshio` / **m = 2** |
+| window plan | **`starts = (0.0, 45.0)`**, `w_days = 60` — TWO windows |
+| store | none (monolithic path) |
+| wall | 1185 s |
+| PCG | `[mean 437, member 474, mean 430, member 474]` |
+
+| window | η sha256 | anomaly sha256 |
+|---|---|---|
+| `w+00000.0+60` | `baa019b3c9bff619…` | `e2848ffebed76764…` |
+| `w+00045.0+60` | `ba819b95884419ec…` | `23be4b84684b89ed…` |
+
+### 7b. The interrupted run
+
+Same configuration with `--window-store`. Window 1 persisted at **640 s**; the process
+GROUP was hard-killed 60 s later, so the kill landed **mid-window-2**.
+
+- process group at kill: `pixi` (843175) + `python` (843224)
+- **survivor check: none**
+- **killed run's log carries no completed-record line**
+- **windows persisted at kill time: 1 of 2**
+
+### 7c. The resume, and the evidence that window 1 was LOADED not re-solved
+
+Resume wall **532 s** vs 1185 s monolithic — the saving is the whole of window 1. The
+decisive evidence is in the convergence log: the resumed run recorded **two** PCG rows
+`[430, 474]` where the monolithic run recorded **four** `[437, 474, 430, 474]`. Window 1
+produced no PCG rows at all, because it was loaded from the store.
+
+**Both windows bit-identical:**
+
+```
+w+00000.0+60: eta IDENTICAL (baa019b3c9bf… vs baa019b3c9bf…), anom IDENTICAL
+w+00045.0+60: eta IDENTICAL (ba819b958844… vs ba819b958844…), anom IDENTICAL
+```
+
+### 7d. What it buys, in the terms 121 was raised in
+
+A hard kill now costs **one window (~3.44 h at production scale)** instead of every
+completed window (~31 h at the tail of a leg) — the 9× reduction over ~124 h of compute
+that pin 121 re-derived. The CI acceptance
+(`tests/test_miost_ensemble.py::test_per_window_store_reassembles_BIT_IDENTICALLY` and its
+three siblings) pins the same property at two windows without needing the data, and asserts
+`len(etas) == 2` outright so it cannot decay into the vacuous one-window form.

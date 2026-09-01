@@ -5183,6 +5183,11 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         else:
             t_solve = time.monotonic()
             log_start = len(miost_mod.CONVERGENCE_LOG)
+            # Owner pin 121: each window persists as it completes, so a
+            # hard kill costs ONE window (~3.44 h) instead of every
+            # completed one (~31 h). Assembly is bit-identical to the
+            # monolithic path, test-pinned at two windows (pin 127).
+            window_store = STAGE1_DIR / f"{tile}_windows"
             spec, etas_a, anoms, starts = merged_members(
                 method,
                 framed,
@@ -5194,6 +5199,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
                     f"{tile}: window {wid} solved (day {day:.0f}); "
                     f"{time.monotonic() - t_leg:.0f}s"
                 ),
+                window_store=window_store,
             )
             pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
             solve_wall_s = time.monotonic() - t_solve
