@@ -19,6 +19,42 @@
 >
 > ---
 >
+> # 🚀 LEG 1 IS RUNNING — kuroshio, launched 2026-08-31 22:44 PDT (05:44 UTC)
+>
+> **Command:** `pixi run python -u scripts/phase14_stage1_run.py run kuroshio --m 100
+> --maxiter 1200` (E-16 order: kuroshio first — riskiest path AND the de-risked one).
+> `setsid`-detached, `nohup`, stdin `/dev/null`.
+> - **log** `logs/t5_leg1_kuroshio.log` · **real pid** `904620` (`logs/t5_leg1_kuroshio.pid`)
+>   · pixi wrapper `904521` (`…wrapper.pid`). **The pid was captured from the launch, then
+>   RESOLVED against `pgrep -af 'phase14_stage1_run.py run kuroshio'`** — the wrapper-vs-real
+>   confusion is the named failure mode that produced three false completion reports.
+> - **Launch gate PASSED in-process, recorded in the log:** `mem_available_mib 10689.36`
+>   vs `threshold_mib 8730.0` (2 × the MEASURED 4365 MiB peak, pin 89 — not the model's
+>   5154, which over-predicts by 18%).
+> - **PCG cap 1200** = `STAGE1_PCG_MAXITER` (pin 26b), already the CLI default; E-16 item 5
+>   is satisfied without an override. The achieved residual is recorded per leg.
+> - **Framing done at +44 s:** `kuroshio: framed obs 138518, grid 96x97`.
+> - **Watcher armed** (E-16 item 6): completion on **pid exit**, stall on **log-growth age
+>   > 5 h** (one measured window is 3.44 h and the heartbeat is per-window, so a shorter
+>   threshold false-alarms), and a hard **40 h ceiling** trip. All three exit the watcher
+>   loudly rather than waiting.
+>
+> **⛔ STOP CONDITIONS ON THIS LEG (E-16, unchanged):** over 40 h → **STOP and report**, do
+> not run on. **RE-ASSESS AFTER LEG 1 BEFORE LAUNCHING LEG 2** — 31.0 h is ONE measured
+> window × 9, and this leg is the test of that extrapolation. Near 31 h → the remaining
+> three are predictable; high → stop and report at ~31 h, not after five days.
+>
+> **Crash durability:** per-window store `phase14_stage1/kuroshio_windows` (pin 121) +
+> the leg's own member store afterwards. A hard kill now costs ONE window, and resume is
+> automatic on relaunch (`RESUME from own member store` / per-window load).
+>
+> **NEXT ACTION: none for the executor while the leg runs.** On completion: verify the
+> evidence row, `seal_run check` PASS, tally byte-identical, commit
+> `feat: stage1 kuroshio transfer reading recorded`, then **re-assess before leg 2
+> (southern)**.
+>
+> ---
+>
 > # ✅ T12 IS DONE (2026-08-31) — and it TRIPPED ITS STOP CONDITION. TWO RULINGS OWED.
 >
 > `docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`. The C1→2 contract
