@@ -12,6 +12,50 @@
 > **✅ ITEMS 1–3 RATIFIED AND CLOSED BY THE OWNER (pin 130, 2026-09-01).** Item 4 is the
 > only remaining precondition. **There is no executor work left on the leg-1 gate.**
 >
+> ---
+>
+> # ✅ T12 IS DONE (2026-08-31) — and it TRIPPED ITS STOP CONDITION. TWO RULINGS OWED.
+>
+> `docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`. The C1→2 contract
+> walked both directions: **C-01…C-11** segment spec §3.2's C1→2 sentence, **C-12…C-14**
+> are the owner-added lines (86a inheritance package, 37(c) contract line, 87 production
+> defect). T12 was the ONLY runnable Stage-1 work — T5 is stopped on gate item 4 (R1),
+> and T18/T19/T20 are `[STAGE 2]` under pin 88's halt.
+>
+> **⛔ FINDING 1 (STOP-condition trigger) — C-11 "the Gate-1 shipped-config election
+> OUTCOME with its scope" IS ASSIGNED TO NO TASK AC.** The plan produces the *question*:
+> T9 pack item (7) presents the presumptive rule (δ_j3 := δ_j2n, scope = Stage-2G
+> assembly onward) with the decision cell EMPTY, and T9's terminal AC is *"STOP after
+> posting — Gate 1 is the owner's."* **After the owner rules, nothing writes the outcome
+> or its scope anywhere.** Stage 2 would inherit a contract line discharged by a
+> presentation of an undecided question. Same shape as T11's Finding 1: the deliverable
+> is the *reading*, and only the machinery around it was assigned. *Remedy shape (owner's,
+> not the executor's): a post-gate recording AC on T9 — outcome + scope at e.g.
+> `phase14.stage1.refresh_election`, ruling cited by sha/section — or a one-AC closing
+> task after the Gate-1 walk.*
+>
+> **⛔ FINDING 5 — THIS TABLE HAS NO SLOT IN THE GATE-1 PACK.** T12's own AC requires it
+> posted *"beside the instrument table"*, but T9's pack list (items 1–13) names only
+> **item (10) the T11 table**. One AC edit, same ruling.
+>
+> **Carried, already ruled, and now written into the contract:** Finding 2 — C-06's
+> reading composition ships **INCOMPLETE** (no GroundTrack row at any of the four tiles,
+> pin 106; per-tile orbit geometry handed forward as named Stage-2 work with the
+> 0.410→0.331 context, 106d). Finding 3 — C-05's anisotropy input is **UNEVIDENCED** on
+> the directional axis (pin 108), so any kernel option resting on directional sampling is
+> unsupported and that is a **WAIT to the owner, not a T6 decision**. Finding 4 — C-03
+> **discharges on REPORTING, not on answering** (pin 84): two mean CLEAN + two σ
+> NOT_ESTABLISHED; Stage 1 has **no attributable σ-route seam verdict**. Finding 6 (LOW) —
+> T2/T7/T8/T11 discharge no C1→2 line and claim none.
+>
+> **⚖ TRACKER NOTE:** T13 and T22 exist only in `…spatial-2017.md.tasks.json` (ids 13,
+> 22), not as `### Task N:` headings in the plan prose — both were created by owner ruling
+> after the prose was written. T11's heading-only spot-check would read them as phantoms.
+>
+> **NEXT ACTION: the owner's.** Findings 1 and 5 want one ruling; T5 wants item 4 (R1).
+> **No executor work is unblocked on the Stage-1 critical path.** Remaining path is
+> unchanged: **T5 → {T6, T7, T8} → T9**, with T12 now closed.
+>
 > **⚖ CARRIED FORWARD — UNRESOLVED, AND NOT RESOLVABLE BY EXECUTOR WORK (owner pin 132):**
 > 1. **The four diverse tiles carry NO GroundTrack row** — pin 106's design conflict. The
 >    transfer readings are presented with their composition stated **INCOMPLETE**, in the
