@@ -2217,3 +2217,44 @@ that has already spoken, and records the owner's handoff.
   PART of the verdict — make it fail the exit code rather than trusting it to be read.
 - **The tooling is exonerated** (129c): hook and gate suite both run `mypy .` whole-tree.
   The divergence was an executor error, not a scope gap.
+
+---
+
+## PART 32 — LEG-1 GATE RATIFICATION (verbatim), pins 130–132, 2026-09-01
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-01.** Closes executor items 1–3 of the
+leg-1 gate, makes the format-before-suite ordering the standing form, and carries the three
+unresolved items forward explicitly.
+
+> 130. LEG-1 GATE — ITEMS 1-3 RATIFIED AND CLOSED.
+>      121: bit-identical at two windows, CI and production path, with window 1 proven
+>      LOADED by the convergence log (two PCG rows against the monolithic four) rather than
+>      inferred from wall time. That is the right evidence and the timing argument would not
+>      have settled it.
+>      122: mutation-checked against a direct-write mutant, with the truncated-checkpoint
+>      refusal naming itself instead of surfacing as a bare BadZipFile.
+>      124: both residual items folded, attestation form verbatim, verifyCommand corrected.
+>      Item 4 is the owner's and remains open.
+> 131. RUN ruff format . BEFORE ANY SUITE INTENDED FOR A COMMIT, not only inside the gate
+>      suite. You identified this correctly: pin 83 fixed the ordering where it was
+>      mechanised and left it broken everywhere else, so the defect recurred structurally on
+>      ordinary commits. Make it the standing form, and prefer running phase14_gate_suite.py
+>      for any commit whose evidence will be cited — a second ordering discipline maintained
+>      by memory will drift from the mechanised one.
+> 132. CARRIED FORWARD, unresolved and not resolvable by executor work: the four diverse
+>      tiles carry no GroundTrack row (106's design conflict — transfer readings presented
+>      with their composition stated INCOMPLETE, per 106(c)); T6's anisotropy axis is
+>      UNEVIDENCED (108), so any kernel option resting on directional sampling is a WAIT
+>      that comes to me, not a decision T6 makes; and a power event still costs the window
+>      in flight (~3.44 h), which is the residual R5 could not remove.
+
+### What PART 32 changes
+
+- **Leg-1 gate items 1–3 are CLOSED** (130). Item 4 — the owner's declaration that the box
+  is back and stable — is the only remaining precondition.
+- **Format-before-suite becomes the standing form** (131), and the *mechanised* path
+  (`phase14_gate_suite.py`) is preferred for any commit whose evidence will be cited,
+  because a second ordering discipline maintained by memory drifts from the mechanised one.
+- **Three items are carried forward as unresolved** (132), none of them executor-fixable:
+  GroundTrack absent at the four diverse tiles, T6's anisotropy axis unevidenced, and the
+  ~3.44 h in-flight window a power event still costs.
