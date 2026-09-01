@@ -2258,3 +2258,35 @@ unresolved items forward explicitly.
 - **Three items are carried forward as unresolved** (132), none of them executor-fixable:
   GroundTrack absent at the four diverse tiles, T6's anisotropy axis unevidenced, and the
   ~3.44 h in-flight window a power event still costs.
+
+---
+
+## PART 33 — R1 DISCHARGED: THE BOX DECLARATION (verbatim), 2026-08-31
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-08-31.** This is leg-1 gate **item 4** —
+the one precondition pin 130 left open, and the one that is not executor work.
+
+> box is stable
+
+### What PART 33 changes
+
+- **The leg-1 gate is now FOUR-FOR-FOUR.** Items 1–3 were ratified and closed at pin 130
+  (121 bit-identical at two windows; 122 atomic checkpoint write; 124 both residual sweep
+  items folded). Item 4 is discharged by the declaration above. **R1's standing block —
+  "LEG 1 DOES NOT LAUNCH WITHOUT THE OWNER SAYING THE BOX IS BACK AND STABLE" — is
+  LIFTED.**
+- **Leg 1 launches under E-16 unchanged** (ruling PART 19, owner-adopted). Nothing in this
+  declaration alters the operating procedure: per-leg ceiling ~40 h with a leg over it
+  STOPPING and reporting; per-leg launch gate `MemAvailable ≥ ~8730 MiB` (2 × the MEASURED
+  4365 MiB peak); order **kuroshio → southern → equatorial → quiet_gyre**, commit per tile;
+  **re-assess after leg 1 before leg 2**; PCG cap raised (`STAGE1_PCG_MAXITER = 1200`, pin
+  26b — already the CLI default); `setsid`-detached with completion AND stall watchers on
+  the PID captured at launch.
+- **What the declaration does NOT cover, stated so it is not read wider than it is:**
+  pin 132's third carried item still holds — a power event costs the window in flight
+  (~3.44 h). Pin 121 capped that loss at ONE window; it did not remove it. A stable box
+  lowers the probability of that event; it does not change the cost when it happens.
+- **Unchanged by this declaration:** T12's Findings 1 and 5 (the Gate-1 shipped-config
+  election OUTCOME has no producing AC; this table has no slot in the Gate-1 pack) are
+  **still owed a ruling**. They bind T9, not T5, so they do not hold leg 1 — but they are
+  not discharged by it either.

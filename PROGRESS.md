@@ -7,10 +7,15 @@
 > | 1 | **121 — per-window persistence, BIT-IDENTICAL at ≥2 windows** | ✅ **DONE** — CI at 2 windows + production path on kuroshio (`starts=(0.0,45.0)`, m=2): both windows' η and anomaly digests IDENTICAL against a FRESH two-window monolithic baseline |
 > | 2 | **122 — atomic checkpoint write landed** | ✅ done (temp-and-rename + truncation refusal, mutation-checked) |
 > | 3 | **124 — the two residual sweep items folded** | ✅ done (attestation form verbatim; verifyCommand = the gate suite) |
-> | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ⬜ **NOT executor work. Open across several sessions.** |
+> | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ✅ **DONE 2026-08-31** — *"box is stable"*, landed verbatim as ruling doc **PART 33** |
 >
-> **✅ ITEMS 1–3 RATIFIED AND CLOSED BY THE OWNER (pin 130, 2026-09-01).** Item 4 is the
-> only remaining precondition. **There is no executor work left on the leg-1 gate.**
+> **✅ ITEMS 1–3 RATIFIED AND CLOSED BY THE OWNER (pin 130, 2026-09-01).**
+> **✅ ITEM 4 DISCHARGED 2026-08-31 (PART 33). THE GATE IS FOUR-FOR-FOUR — R1 IS LIFTED
+> AND LEG 1 LAUNCHES.**
+>
+> **⚖ WHAT THE DECLARATION DOES NOT COVER:** pin 132's third carried item stands — a power
+> event still costs the window in flight (~3.44 h). Pin 121 capped the loss at ONE window;
+> it did not remove it. A stable box lowers the probability, not the cost.
 >
 > ---
 >
