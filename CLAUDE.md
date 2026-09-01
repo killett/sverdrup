@@ -12,6 +12,14 @@ mid-run. On **every** new or resumed session, before doing anything else:
    marker, local-vs-**remote** head (`git ls-remote`, never `rev-parse`
    alone) and tree state, exiting non-zero on any of them. If the hook is
    missing: `sh scripts/install_git_hooks.sh`.
+0a. **Run `pixi run ruff format .` BEFORE any test suite whose result will
+   support a commit** (owner ruling pin 131, 2026-09-01) — and prefer
+   `pixi run python scripts/phase14_gate_suite.py run` outright for any
+   commit whose evidence will be cited. Pin 83 mechanised this ordering
+   inside the gate suite and left it broken everywhere else, so the defect
+   recurred on ordinary commits: a full suite described the pre-format
+   tree, and the pre-commit hook then rewrote files underneath it. A second
+   ordering discipline maintained by memory drifts from the mechanised one.
 1. Read `PROGRESS.md` at the repo root. It carries the index of the current
    active work AND the project's running notebook of deferred items,
    cross-cutting decisions, gotchas, and open questions. Read all of it.

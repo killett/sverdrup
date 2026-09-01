@@ -9,6 +9,20 @@
 > | 3 | **124 — the two residual sweep items folded** | ✅ done (attestation form verbatim; verifyCommand = the gate suite) |
 > | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ⬜ **NOT executor work. Open across several sessions.** |
 >
+> **✅ ITEMS 1–3 RATIFIED AND CLOSED BY THE OWNER (pin 130, 2026-09-01).** Item 4 is the
+> only remaining precondition. **There is no executor work left on the leg-1 gate.**
+>
+> **⚖ CARRIED FORWARD — UNRESOLVED, AND NOT RESOLVABLE BY EXECUTOR WORK (owner pin 132):**
+> 1. **The four diverse tiles carry NO GroundTrack row** — pin 106's design conflict. The
+>    transfer readings are presented with their composition stated **INCOMPLETE**, in the
+>    transfer-readings section where the numbers are (106c), as a **real weakening** (106e).
+> 2. **T6's anisotropy axis is UNEVIDENCED** (108) — not "limited". Any kernel option whose
+>    case rests on directional sampling is **UNSUPPORTED BY STAGE-1 EVIDENCE**, and if the
+>    option set cannot be separated without it that is a **WAIT that comes to the owner**,
+>    not a decision T6 makes.
+> 3. **A power event still costs the window in flight (~3.44 h)** — the residual R5 could
+>    not remove. Pin 121 capped the loss at one window; it did not eliminate it.
+>
 > **✅ 121 MEASURED — the record is `docs/superpowers/2026-08-31-r5-resume-after-hard-kill.md` §7.**
 > Window 1 persisted at 640 s; the process GROUP was hard-killed 60 s later, mid-window-2;
 > the resume LOADED window 1 and SOLVED window 2 (532 s vs 1185 s) and reproduced BOTH
