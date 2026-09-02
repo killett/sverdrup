@@ -19,6 +19,65 @@
 >
 > ---
 >
+> # ⛔ LEG 2 IS HELD ON PIN 133. Diagnosis DONE, fix LANDED, peak re-measure QUEUED.
+>
+> **✅ PINS 133–138 RULED AND LANDED 2026-09-01 (ruling doc PART 34, verbatim).**
+>
+> **133(a) — THE MECHANISM.** `merged_members` accumulates every window's member block
+> into the dicts it returns; `_save_window` writes the block to disk and the in-memory
+> copy stays live. A probe with **zero solving** (fake method, production-shaped arrays)
+> reproduces it exactly: **+377.5 MiB per window** (eta 3.7 + anom 373.8). Not the
+> solver, not fragmentation. Secondary and minor: `Miost._eta_cache` is **unbounded**
+> (3.7 MiB/window); `_s_cache` is correctly bounded at 2. The eta cache is LEFT ALONE —
+> 34 MiB over a leg, and bounding it risks re-solves.
+>
+> **⚖ ARITHMETIC CORRECTION, and it changes the ruling's numbers.** The reported "3,379
+> MiB after window 1" was the **first heartbeat at 0.09 h — inside window 1, before the
+> member batch**. Re-derived at window boundaries: `4259, 4873, 5377, 5666, 6063, 6555,
+> 6763, 7069, 7389`, so the slope is **(7389−4259)/8 = 391.3 MiB/window**, which the
+> retained arrays (377.5) plus the eta cache (3.7) account for. **Post-fix peak is
+> therefore ~4,259 MiB and 2× is ~8,518 MiB — not the ~6,758 the ruling estimated.**
+> Still inside the cycle, so **E-16 §2 stands unchanged (133b)** — with less room than
+> the estimate implied.
+>
+> **133(b) — THE FIX IS LANDED (`75684bd`).** With a window store, `merged_members`
+> returns a `WindowBackedAnoms` reader over the store (two blocks resident, loaded on
+> demand) and keeps only the cheap `eta`/`start` fields eager. The leg store is now
+> **streamed**, one window at a time, because `np.savez(**payload)` would pull all nine
+> back at the end of the leg and restore the peak **while producing a correct file**.
+>
+> **133(e) — ACCEPTANCE IS 121's, AT PRODUCTION SCALE, WITHOUT RE-SOLVING.** Leg 1 left
+> both halves on disk, so reassembling its store from its nine window files is the test:
+> **all 31 members bit-identical (sha256 over exact bytes), 1,235 MiB peak, 2 blocks
+> resident.** The pin-121 two-window bit-identity tests now run through the lazy path
+> unchanged; new tests pin the residency bound, the reload identity, and the streamed
+> writer's equivalence and atomicity.
+>
+> **⏳ THE PEAK RE-MEASURE IS QUEUED, NOT RUNNING — it is waiting for headroom.**
+> Three windows at production scale (kuroshio, m=100, FRESH store so every window really
+> solves), via the R5 probe's non-evidence-bearing path. **The driver holds at the SAME
+> gate a leg would (`MemAvailable ≥ 8730 MiB`)** and polls every 5 min; the box is at
+> ~5.9 GiB. Pin 133(d) refuses a margin that is asserted rather than held, and a
+> measurement that sneaked in under the gate would make that mistake one level down.
+> Log `logs/pin133/vmhwm.log`; VmHWM sampled every 60 s so the trajectory is measured.
+>
+> **✅ 135 RATIFIED** — the `tiles.*` mirror registration stands.
+> **✅ 136 DONE** — **task 23** added (`blockedBy [9]`): the post-gate C-11 producer,
+> recording the election outcome AND its scope to `phase14.stage1.refresh_election`
+> (pre-registered in the mirror now, the lane-0 precedent), with **a decline recorded as
+> an outcome** and **Stage 1 not closing while C-11 is outstanding (136c)** stated in the
+> contract table itself. T9's AC now says presenting with an empty decision cell does NOT
+> discharge the line (136b).
+> **✅ 137 DONE** — T9 pack item (10) carries the C1→2 table beside T11's.
+> **✅ 138 DONE** — `scripts/check_task_citations.py` resolves citations against the
+> **tracker**; both coverage docs' verify steps and T12's `verifyCommand` now use it.
+> **It is worse than the ruling assumed: ELEVEN tracker-only tasks, not two.** The plan
+> prose stops at Task 12, so **T13–T23** all read as phantoms to the old method. Drift is
+> reported as INFO; only an id no task carries fails.
+> **⏳ 134 (pin 78's hole) — not started; the ruling puts it "when convenient".**
+>
+> ---
+>
 > # ✅ LEG 1 IS DONE — kuroshio CONVERGED in 19.67 h. ⛔ LEG 2 DOES NOT LAUNCH YET.
 >
 > **The leg finished cleanly**: 9/9 windows, `CONVERGED`, `capped=False`, solve 19.57 h,

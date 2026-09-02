@@ -149,6 +149,14 @@ MIRRORED: dict[str, str] = {
         "`tiles` alone (T5c). That is a choice, recorded so it is visible "
         "rather than another incidental narrowness"
     ),
+    "phase14.stage1.refresh_election": (
+        "pin 136. The Gate-1 shipped-config election OUTCOME and its SCOPE — "
+        "the C1->2 contract line T9 could only present, never discharge. "
+        "Registered BEFORE task 23 writes it (the lane-0 manifest precedent) "
+        "so the witness cannot be forgotten once the owner has ruled and the "
+        "gate is behind us. A DECLINE is an outcome and lands in this same "
+        "node; an empty node is not a decline"
+    ),
     "phase14.stage1.tiles.southern": (
         "the C1->2 transfer reading for the southern tile — same basis as "
         "tiles.kuroshio above. Registered BEFORE its leg runs, the lane-0 "

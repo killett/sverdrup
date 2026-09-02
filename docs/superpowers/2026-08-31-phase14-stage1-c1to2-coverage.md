@@ -1,5 +1,15 @@
 # Stage-1 C1→2 contract coverage table (T12 — precondition on T9)
 
+> **✅ THE STOP CONDITION BELOW WAS RULED 2026-09-01 (owner pins 136/137, ruling doc
+> PART 34). It is kept in place as the trail — it is why task 23 exists.**
+> **C-11 now has a producer: TASK 23, post-gate, `blockedBy [9]`**, recording the outcome
+> and its scope to the witnessed node `phase14.stage1.refresh_election`; T9's AC states
+> that presenting the rule with an empty decision cell does NOT discharge the line
+> (136b); and **⛔ STAGE 1 DOES NOT CLOSE WHILE C-11 IS OUTSTANDING (136c)** — recorded in
+> the C-11 row above, not only here, so a successor cannot read a presented question as an
+> answered one. **Finding 5 is ratified (137):** T9 pack item (10) now carries this table
+> beside the T11 instrument table.
+>
 > **⛔ STOP CONDITION TRIGGERED — ONE UNASSIGNED CONTRACT ITEM FOUND.**
 > The C1→2 line **"the Gate-1 shipped-config election OUTCOME with its scope"**
 > is assigned to **no task AC in the Stage-1 plan**. T9 pack item (7) produces
@@ -58,7 +68,7 @@ a different state from unassigned and is marked as such.
 | C-08 | **…LABELED scalar-s\* reference rows** | T5 AC-1 (labelled reference row per tile); T1 evidence AC pins the label and the `bridge_caveat` exact string; **`S_STAR_CHI2_IDENTITY` schema field (pin 100)** states the shared expression, `same_by_construction`, and `not_corroboration` in-row, and `build_scores_block` RAISES on divergence (pin 100c) with `preflight_scores_construction()` exercising the construction before either gate (pin 103a) | ASSIGNED, UNRUN (schema + invariant landed and test-pinned) |
 | C-09 | **Equatorial lane-0 baseline persisted under the frozen fold/eval frame** | T5 equatorial-persistence AC (fork-b pin 1: maps + `evidence_pack.json` + `fold_eval_frame.json` + `lane0_manifest.json` with per-file sha+size, recorded at `phase14.stage1.equatorial_lane0_manifest`); machinery LANDED at T5d — `persist_lane0_bundle` / `record_lane0_manifest`, manifest node in the evidence mirror's `MIRRORED` set (96c), fork-b pin 2 verbatim, pin-67 class `WITNESSED_AT_CREATION`, and the **instrument composition** recorded (pin 107) so a later wave-increment run cannot be compared blind | ASSIGNED, UNRUN (mirror shows the node `PENDING (registered, not yet written)` — correct pre-run state) |
 | C-10 | **Land-mask path exercised** | T5 kuroshio AC (dropped-land handling in framing/scoring; `n_scored_points` honest; all-land core refusal surfaced not swallowed); machinery LANDED at T5d — `land_mask_exercise.kuroshio.<era>` records all three counts (framed obs / scored points / calibration points) **with their gap** | ASSIGNED, UNRUN. Partially de-risked already: pin 89's kuroshio probe converged **with the land-mask path intact** |
-| C-11 | **The Gate-1 shipped-config election OUTCOME with its scope** | T9 pack item (7) produces the **presentation** (presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly runs onward). **No AC records the OUTCOME** — T9's terminal AC is "STOP after posting" | **UNASSIGNED → FINDING 1 (STOP)** |
+| C-11 | **The Gate-1 shipped-config election OUTCOME with its scope** | **RULED (owner pin 136): the producer is TASK 23, post-gate, `blockedBy [9]`** — it records the outcome AND its scope to the witnessed node `phase14.stage1.refresh_election`, and a DECLINE is an outcome, not an empty node. T9 pack item (7) produces only the **presentation** (presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly runs onward) and **its AC now states that presenting with an empty decision cell does NOT discharge this line** (136b) | **ASSIGNED (T23), OUTSTANDING — ⛔ STAGE 1 DOES NOT CLOSE WHILE IT IS (136c)** |
 | C-12 | **(pin 86a — added to the contract) The σ seam question is recorded OPEN, with the inheritance package NAMED** | This table, §2 below (the package enumerated, not referenced); T9 pack item (12); T13 pin-45b (the withholding cells as produced); the closure map §3 (the branch-B reading the owner adopted at pin 84) | COVERED — §2 is the discharge |
 | C-13 | **(pin 86b / pin 37c — added to the contract) STAGE 2 / 2G MAY NOT ASSUME σ SEAMS ARE CLEAN** | This table, §2.6 — **carried as a contract line item in those words**; T9 pack item (12) | COVERED |
 | C-14 | **(pin 87 — added to the contract) The CRN defect travels forward as a PRODUCTION DEFECT** | `phase14.stage1.crn_production_defect_deferred` (recorded in those words); T9 pack item (13); pin 124(a)'s attestation wording — "zero locked opens, **one deferred production defect named at `crn_production_defect_deferred`**" — so the attestation cannot read as a clean bill | COVERED |
@@ -304,14 +314,14 @@ interpretation withholding under C-06…C-08).
 
 - `rg -c 'T[0-9]+' docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`
   → nonzero (task citations present).
-- Spot-check, **run**: every task number cited here exists. T0–T12 exist as
-  `### Task N:` headings in
-  `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`. **T13 and
-  T22 exist only in the co-located tracker**
-  (`…spatial-2017.md.tasks.json`, ids 13 and 22) — both were created by owner
-  ruling after the plan prose was written (T13 by pin 45's restructure, T22 by
-  pin 85's Tier-2 gate), and the tracker is the source of task state. Stated
-  here so a later reader running T11's heading-only spot-check does not read
-  two live tasks as phantom citations.
+- **Citations (owner pin 138 — the check reads the TRACKER, not headings):**
+  `pixi run python scripts/check_task_citations.py docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`
+  → `PASS every cited task exists in the tracker` (18 citations, exit 0).
+  T11's heading-only spot-check called tracker-only tasks phantoms; run against
+  this tree it is **eleven** tasks, not two — the plan prose stops at Task 12,
+  so **T13–T23 exist only in the co-located `.tasks.json`**, each created by an
+  owner ruling after the prose was written (T13 by pin 45's restructure, T22 by
+  pin 85's Tier-2 gate, T23 by pin 136, T14–T21 moved to `[STAGE 2]` by 86c).
+  The script reports that drift as INFO and refuses only an id no task carries.
 - The four seam numbers in C-02/C-03 reproduce
   `docs/superpowers/2026-07-29-phase14-stage1-closure-map.md` §3 exactly.

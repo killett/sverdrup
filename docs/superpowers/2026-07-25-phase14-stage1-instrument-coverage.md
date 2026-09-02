@@ -195,5 +195,14 @@ exhaustive; they claim no rubric authority and require none.
 
 - `rg -c 'T[0-9]+' docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`
   → nonzero (task citations present).
-- Spot-check: every task number cited here (T0–T11) exists as a `### Task N:`
-  heading in `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`.
+- **[CORRECTED 2026-09-01 by owner pin 138]** The spot-check below read `### Task N:`
+  headings in the plan prose. **That method is wrong**: the plan prose stops at Task 12,
+  so every task added by a later owner ruling — T13–T23 — reads as a phantom, and a
+  verification tool blind to a third of the recent tasks misleads whoever trusts it next.
+  The check now reads the **tracker**, which is the source of truth for task existence:
+  `pixi run python scripts/check_task_citations.py docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`
+  → `PASS every cited task exists in the tracker` (10 citations, exit 0). Plan/tracker
+  drift is reported as INFO, never as a refusal.
+- *[superseded — kept for the trail]* Spot-check: every task number cited here (T0–T11)
+  exists as a `### Task N:` heading in
+  `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`.
