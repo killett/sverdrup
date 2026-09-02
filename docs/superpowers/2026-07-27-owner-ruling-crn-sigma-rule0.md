@@ -2375,3 +2375,76 @@ verification tool fixed.
 - **T12 Finding 5 ratified** (137) and **the heading-only spot-check is fixed to read the
   tracker** (138), because a verification tool blind to a third of the recent tasks
   misleads whoever trusts it next.
+
+
+---
+
+## PART 35 — PROJECTION-DECLARATION RULING (verbatim), pins 139–142, 2026-09-02
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-02.** Turns the pin-134 audit into a
+refusal, orders the eleven declared by forward-pointer amendment with spans per axis,
+re-keys pin 42 on shape as instance seven, and sets two conditions on the re-measure.
+
+> 139. PIN 134 — REFUSE NOW, DECLARE THE ELEVEN BY FORWARD-POINTER AMENDMENT.
+>      (a) Option (a). The declaring is the point, not the refusal: eleven blocks make
+>          projections whose spans nobody has stated, and the pin-89 probe proves what that
+>          costs — a caveat on the wall axis, nothing on the RAM axis, and the RAM axis is
+>          what broke. Expect to find that asymmetry again.
+>      (b) NEVER A REWRITE. Forward-pointer amendments through the pin-64 index; no
+>          witnessed node is edited.
+>      (c) ⛔ THE DECLARATION MUST CARRY THE SPAN, NOT A FLAG. Refuse an
+>          `extrapolation_declared: true` with no values. `measured_over` must state the
+>          actual range and `application_range` the actual use. A boolean satisfies the
+>          check without stating anything, which would make the fix an instance of the
+>          defect it closes — the third time in this stage that risk has appeared inside a
+>          remedy.
+>      (d) Each of the eleven states its span PER AXIS. The pin-89 blocks are the model
+>          case: one axis caveated, one silent, both extrapolated 1→9.
+> 140. PIN 42 HAS NEVER FIRED — record it as instance seven and correct it the same way.
+>      Zero blocks declare `kind: gate`; the reachability refusal has inspected nothing since
+>      it was written. `kind` is additionally overloaded with domain vocabulary
+>      (member-batch, poly, challenge-coarsen, free prose), so the discriminator collides
+>      with the data.
+>      (a) Re-key pin 42 on shape as 134 does — a block carrying threshold-like or
+>          verdict-like fields is inspected whether or not it volunteers.
+>      (b) Add to §7's instance list, authored by me, with the mechanism named: a schema
+>          field that only inspects volunteers inspects nothing. That correction belongs in
+>          the list precisely because I wrote the rule it breaks.
+>      (c) Sweep what the re-keyed check catches and report before wiring any refusal — same
+>          sequence as 134, and for the same reason.
+> 141. THE 3-WINDOW RE-MEASURE IS THE GATE BASIS, and holding it at the same 8,730 MiB a leg
+>      would is right — a measurement sneaking in under the gate to establish the gate is the
+>      mistake one level down, and you saw it. Two conditions on the result:
+>      (a) It must be the SOLVE path's peak, not the reassembly path's. The 1,235 MiB
+>          reassembly figure is 133(e)'s acceptance and is not the gate basis.
+>      (b) Report the per-window slope, not only the peak. A flat slope is the evidence the
+>          retention is gone; a peak alone cannot distinguish "fixed" from "three windows
+>          is not enough to show it."
+> 142. RATIFIED: 133's mechanism and fix, including the streamed leg-store write — catching
+>      that np.savez(**payload) would have restored the peak at the end while producing a
+>      correct file is exactly the kind of thing that passes every test and defeats the
+>      purpose. 135-138 as folded, and 138's eleven tracker-only tasks rather than two.
+>
+> SEQUENCE: 139, then 140(a)-(c). The re-measure runs when the box allows; leg 2 waits on it
+> and on my basis ruling.
+>
+> STOP CONDITION: leg 2 held. Nothing sealed. If the re-measured slope is not flat, that is a
+> finding and it comes to me before any basis ruling.
+
+### What PART 35 changes
+
+- **The pin-134 audit becomes a REFUSAL** (139a), and the eleven caught blocks are declared
+  through the **pin-64 forward-pointer index — no witnessed node is edited** (139b).
+- **A declaration must carry VALUES** (139c): `extrapolation_declared: true` with no span is
+  refused, because a boolean satisfies a check without stating anything — the remedy
+  becoming an instance of the defect, named as the third such risk in this stage.
+- **Spans are stated PER AXIS** (139d). The pin-89 probe is the model case: wall caveated,
+  RAM silent, both extrapolated 1→9, and RAM is the axis that broke.
+- **Pin 42 is re-keyed on shape and recorded as instance SEVEN** (140), with the mechanism
+  named by the owner: *a schema field that only inspects volunteers inspects nothing.*
+  **Sweep and report before wiring any refusal** (140c).
+- **The re-measure must report the SOLVE path's peak and the per-window SLOPE** (141) —
+  1,235 MiB is 133(e)'s reassembly acceptance and is **not** the gate basis, and a peak
+  alone cannot separate "fixed" from "three windows is too few to show it".
+- **If the slope is not flat, that is a finding and it comes to the owner BEFORE any basis
+  ruling.**
