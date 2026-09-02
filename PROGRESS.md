@@ -69,10 +69,39 @@
 > `tests/test_project_context_instances.py` asserts the tags are contiguous, unique and
 > complete, and **refuses any restated prose count**.
 >
-> **⏳ 147(a) IS RUNNING** — kuroshio, **m=25, four windows**, fresh store, pid 1314819.
-> A failed fix accumulates **93.4 MiB/window** (≈283 MiB across four); a working one is
-> flat. Still inside window 1; peak 3,226 MiB so far. **147(b) stays parked at 8,730 MiB**
-> and is pointless if the slope is not flat (147d).
+> **✅ 147(a) IS DONE — THE SLOPE IS FLAT. THE RETENTION IS GONE.** kuroshio, m=25, four
+> windows, fresh store, 2.6 h.
+>
+> | window | solved | peak at boundary | Δ | RSS at boundary |
+> |---|---|---|---|---|
+> | w+00000.0+60 | 00:58:18 | 3,226 MiB | — | 2,079 MiB |
+> | w+00045.0+60 | 01:39:01 | 3,226 MiB | **+0** | 2,101 MiB |
+> | w+00090.0+60 | 02:09:47 | 3,323 MiB | +97 | 2,231 MiB |
+> | w+00135.0+60 | 02:45:57 | 3,323 MiB | **+0** | 2,225 MiB |
+>
+> **Mean 32.3 MiB/window against the 93.4 MiB/window a failed fix would show** (489,920 ×
+> 25 × 8 B), and total growth **+97 MiB against +280**. The single +97 step is **not** at a
+> boundary: the peak trace puts it at **01:42:22, three minutes INTO window 3's solve**,
+> and windows 3→4 added **zero**. **Accumulation is monotone per window; this is not** —
+> and the RSS column falls at the last step (2,231 → 2,225), which retention cannot do.
+> ⛔ **147(d) does not trigger. 147(b) is not pointless and proceeds.**
+>
+> **⏳ 147(b) IS RUNNING — it started itself.** The parked driver saw the gate pass at
+> **02:12 (8,933 ≥ 8,730 MiB)** and launched: kuroshio, m=100, 3 windows, fresh store,
+> real pid **1355884**. At 37 min it is inside window 1 at **peak 4,426 MiB**.
+>
+> **⚖ TWO THINGS TO REPORT HONESTLY ABOUT THAT LAUNCH.**
+> 1. **It overlapped 147(a) for 34 minutes** (02:12–02:46). Peak RSS is per-process, so the
+>    basis number is unaffected, but the box was carrying two production-shaped jobs while
+>    a gate premised on 2× headroom for ONE had just passed. The gate measured the box, not
+>    the box's future.
+> 2. **⛔ THE SAMPLER TRACKED THE WRONG PROCESS.** `pgrep -f 'phase14_r5_resume_probe.py
+>    solve'` matched BOTH probes, so 147(b)'s sampler latched onto 147(a)'s pid and wrote
+>    `process gone` at 02:45 while 147(b) ran on — **the wrapper-vs-real failure family
+>    again, in a new guise: not wrapper vs real, but two legitimate matches.** Nothing was
+>    lost (VmHWM is a kernel high-water mark and no window boundary fell in the gap) and
+>    the trace is re-attached, keyed on `--m 100` with a guard that **REFUSES** a
+>    non-matching pid rather than sampling it.
 >
 > ---
 >
