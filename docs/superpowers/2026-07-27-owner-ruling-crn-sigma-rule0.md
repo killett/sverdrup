@@ -2549,3 +2549,76 @@ and ratifies the reconstruction and triage.
   gate a leg would face. **A non-flat slope stops (b) outright.**
 - **The two golden-tile blocks declare first** (148), and an unfailable one there is a
   finding about anchor-gate check 2.
+
+
+---
+
+## PART 37 — BASIS RE-PIN, EXCLUSION LOCK AND THE 140 REFUSAL (verbatim), pins 150–153, 2026-09-02
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-02.** Re-pins E-16 §2 to 9,146 MiB,
+orders an exclusion lock and in-run headroom sampling, turns the re-keyed pin-42 check
+into a refusal, and ratifies the two measurements and the work around them.
+
+> 150. E-16 §2 BASIS RE-PINNED TO 9,146 MiB = 2 × the measured 4,573.
+>      (a) TIER2_MEASURED_PEAK_MIB becomes 4,573; the 4,365 one-window figure is superseded
+>          with the prior value preserved, not overwritten.
+>      (b) THE EXTRAPOLATION IS DECLARED, per 143(a): measured over 3 windows, applied to 9,
+>          bounded by the flat-slope evidence rather than by an assumption of linearity.
+>          Record beside it that leg 1's increments minus retention give per-window
+>          working-set variation of −170 to +236 MiB, so a nine-window peak near ~4,809 is
+>          consistent and 9,146 still covers it at 1.90×.
+>      (c) LEG 2 CLOSES THE PROJECTION. It is a nine-window run at production scale: record
+>          its boundary peaks and re-pin the basis from the direct measurement afterward.
+>          After leg 2 this threshold stops being derived from a shorter run.
+>      (d) I am NOT holding 8,730 at 1.909×. It is within a rounding error of the rule, and
+>          that is exactly the kind of "close enough" that produced the 1.18× we just spent
+>          two rounds unwinding. The rule says 2×; the measurement says 4,573; the threshold
+>          is 9,146.
+> 151. ⛔ THE GATE MEASURES THE BOX, NOT THE BOX'S FUTURE — your finding, and it needs a fix.
+>      147(b) launched on a passing gate and then shared the box with 147(a) for 34 minutes.
+>      Peak RSS is per-process so the basis survives, but nothing prevented a second
+>      production-shaped job from arriving after the check.
+>      (a) Take an exclusion lock at launch, held for the run's duration, refusing any second
+>          Stage-1 solve while it is held. A gate that admits one job and then admits
+>          another has not gated anything.
+>      (b) Sample MemAvailable DURING the run, not only at launch, and record the minimum
+>          beside the peak. Leg 1 bottomed at 3,660 MiB and we learned that afterward; it
+>          should be a recorded field.
+>      (c) This is why leg 1 survived at an asserted-2×-actual-1.18× gate: it happened to
+>          have the box to itself. That was luck, not the gate working.
+> 152. PIN 140's REFUSAL — REFUSE NOW, same shape as 139. The 24 phase14 blocks are declared
+>      with pass condition, fail condition and outcome observed; the 9 uncited prior-phase
+>      blocks are recorded as found with the citation test that cleared them and remain
+>      visible in every sweep run. That is the right resting state, and leaving the re-keyed
+>      check reporting would make it a check that cannot fail — in the pin whose entire
+>      subject is checks that cannot fail.
+> 153. RATIFIED: 147(a) and (b) as measured, including the boundary-versus-mid-solve
+>      discrimination that makes them conclusive; 148 — check 2's citation holds, and
+>      mu_scale_check's discriminator being an equality against an independent artifact is a
+>      better two-sidedness argument than the one I offered; 145's 33 → 9; 143's three
+>      consumers, including STAGE1_PCG_MAXITER which the sweep found on its own; 146; and
+>      the append-only gate firing on your own edit, resolved by supersession with the prior
+>      body preserved rather than by re-syncing.
+>
+> SEQUENCE: land 150-153; fold 150 and 151(a)/(b); then 152. Leg 2 launches when the box
+> clears 9,146 with the exclusion lock held.
+>
+> STOP CONDITION: leg 2 runs to completion or stops at 40 h. Re-assess after it, per E-16 §4
+> and 150(c).  Nothing sealed.
+
+### What PART 37 changes
+
+- **The launch gate is 9,146 MiB** (150): 2 × the measured 4,573, with the 4,365 one-window
+  figure **superseded and preserved**, never overwritten. **8,730 at 1.909× is REFUSED**
+  (150d) — "close enough" is what produced the 1.18×.
+- **The remaining extrapolation is declared and bounded** (150b): 3 windows measured,
+  9 applied, with leg-1 working-set variation of **−170 to +236 MiB** recorded, so a
+  nine-window peak near **~4,809 MiB** is consistent and 9,146 covers it at **1.90×**.
+- **Leg 2 CLOSES the projection** (150c): nine windows at production scale, boundary peaks
+  recorded, and the basis re-pinned from the direct measurement afterward.
+- **A gate that admits one job and then another has not gated anything** (151a): an
+  exclusion lock is held for the run, and **MemAvailable is sampled DURING the run with its
+  minimum recorded beside the peak** (151b). Leg 1's survival was the box being free, not
+  the gate working (151c).
+- **The re-keyed pin-42 check REFUSES** (152) — leaving it reporting would make it a check
+  that cannot fail, inside the pin whose subject is checks that cannot fail.
