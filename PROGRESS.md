@@ -86,9 +86,38 @@
 > and the RSS column falls at the last step (2,231 → 2,225), which retention cannot do.
 > ⛔ **147(d) does not trigger. 147(b) is not pointless and proceeds.**
 >
-> **⏳ 147(b) IS RUNNING — it started itself.** The parked driver saw the gate pass at
-> **02:12 (8,933 ≥ 8,730 MiB)** and launched: kuroshio, m=100, 3 windows, fresh store,
-> real pid **1355884**. At 37 min it is inside window 1 at **peak 4,426 MiB**.
+> # ⚖ 147(b) IS DONE — THE GATE BASIS IS **4,573 MiB**. THE RULING IS YOURS.
+>
+> kuroshio, **m=100, three windows**, solve path, fresh store, **6.79 h** (2.264 h/window
+> vs leg 1's 2.174 — within variation while sharing the box for part of the run).
+>
+> | window | solved | peak at boundary | Δ | MemAvailable |
+> |---|---|---|---|---|
+> | w+00000.0+60 | 04:49:25 | 4,426 MiB | — | 6,441 MiB |
+> | w+00045.0+60 | 06:51:10 | 4,426 MiB | **+0** | 8,782 MiB |
+> | w+00090.0+60 | 08:59:48 | 4,573 MiB | +147 | 6,116 MiB |
+>
+> **FLAT at production scale.** Retention at m=100 would add **373.8 MiB at EVERY
+> boundary**; two boundaries produced **+147 total**. The peak changed exactly ONCE in the
+> whole run — at **06:56:08, five minutes INSIDE window 3's solve**, not at a boundary.
+> Same signature as 147(a) at m=25.
+>
+> **THE NUMBERS FOR THE BASIS RULING:**
+> - **Corrected peak: 4,573 MiB** (3 windows, m=100, solve path, fix in) — 141(a)'s
+>   requirement; the 1,235 MiB reassembly figure is 133(e)'s acceptance and is **not** this.
+> - Against leg 1's unfixed nine-window peak of 7,389 MiB, the fix removes **2,816 MiB**.
+> - **8,730 / 4,573 = 1.909×** — after the fix, **today's standing threshold is already
+>   close to the 2× it names**, so the basis change is small: **2 × 4,573 = 9,146 MiB**
+>   (+416 over today).
+> - Headroom during the run: **5,767–8,782 MiB**. 9,146 is reachable at the top of the
+>   cycle, not always — the same wait leg 2 already faces.
+> - **⚖ IT IS STILL A PROJECTION (pin 143a):** measured over **three** windows, applied to
+>   **nine**. The same 1→9 mistake one step smaller, and what bounds it is the slope
+>   evidence, not an assumption of linearity. Recorded in the gate's own `basis_span`.
+>
+> **⛔ RECORDED, NOT ADOPTED.** `TIER2_MEASURED_PEAK_MIB` still reads 4,365 — re-pinning it
+> is yours (pins 133c, 141). The gate record now carries the re-measure beside the old
+> basis so a reader meets both where the threshold is used.
 >
 > **⚖ TWO THINGS TO REPORT HONESTLY ABOUT THAT LAUNCH.**
 > 1. **It overlapped 147(a) for 34 minutes** (02:12–02:46). Peak RSS is per-process, so the

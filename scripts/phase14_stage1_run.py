@@ -1457,9 +1457,32 @@ TIER2_GATE_BASIS_SPAN: dict[str, Any] = {
         "ratio_measured_over_projected": 1.693,
         "slope_before_fix_mib_per_window": 391.3,
         "status": (
-            "the basis is SUPERSEDED pending the pin-133(b) three-window "
-            "re-measure at production scale; this gate's threshold is 1.18x the "
-            "measured leg peak, not the 2x it names"
+            "the ORIGINAL basis (4365 MiB, one window, pre-fix) was wrong by "
+            "1.69x at nine windows; against that leg peak this gate's threshold "
+            "was 1.18x, not the 2x it names"
+        ),
+    },
+    # Owner pin 147(b), measured 2026-09-02: the re-measure the basis ruling
+    # rests on. RECORDED HERE, NOT ADOPTED — TIER2_MEASURED_PEAK_MIB is the
+    # owner's to re-pin (pins 133c, 141).
+    "remeasured_2026_09_02_pin_147b": {
+        "peak_mib": 4573.0,
+        "measured_over": {"n_windows": 3, "tile": "kuroshio", "m": 100},
+        "wall_h_per_window": 2.264,
+        "slope_after_fix": (
+            "FLAT: boundary peaks 4426, 4426, 4573 MiB. The single +147 MiB step "
+            "occurred at 06:56:08, five minutes INSIDE window 3's solve rather "
+            "than at a boundary, and retention at m=100 would have added 373.8 "
+            "MiB at EVERY boundary"
+        ),
+        "against_todays_threshold": (
+            "8730 / 4573 = 1.909x — after the fix the STANDING threshold is "
+            "already close to the 2x it names. 2 x 4573 = 9146 MiB"
+        ),
+        "still_a_projection": (
+            "measured over THREE windows and applied to NINE (pin 143a). The "
+            "shape is the same 1->9 mistake one step smaller, and the slope "
+            "evidence is what bounds it rather than an assumption of linearity"
         ),
     },
 }
