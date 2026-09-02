@@ -154,7 +154,7 @@ _VERDICT = re.compile(
 _THRESHOLD = re.compile(r"threshold|clean_max|elevated_max|ceiling|criterion", re.I)
 
 
-def verdict_audit(block: dict[str, Any]) -> list[str]:
+def verdict_audit(block: dict[str, Any], declared: bool = False) -> list[str]:
     """Report verdict/threshold blocks that state no reachability (pin 140a).
 
     Pin 42 requires every quantitative gate to name the conditions under
@@ -168,11 +168,14 @@ def verdict_audit(block: dict[str, Any]) -> list[str]:
 
     Args:
         block: One recorded block. Only its own keys are examined.
+        declared: True when a forward-pointer reachability declaration
+            covers this block (pins 148, 139b) — the declaration states
+            the two conditions, so the block itself is not rewritten.
 
     Returns:
         One message when the block gates without stating reachability.
     """
-    if block.get("gates") is False:
+    if declared or block.get("gates") is False:
         return []
     marks = sorted(k for k in block if _VERDICT.match(k) or _THRESHOLD.search(k))
     if not marks:

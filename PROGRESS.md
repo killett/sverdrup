@@ -19,6 +19,63 @@
 >
 > ---
 >
+> # ✅ PINS 143–149 LANDED (PART 36). 144/145/146/148 DONE; 143 DONE; 147(a) RUNNING.
+>
+> **144 — NO EARLIER COLLAPSE.** The `AMENDMENTS` literal was reconstructed from the AST
+> at **every commit that ever touched it** (7 commits, 2026-07-29 → 09-01): keys 9 → 10,
+> pointers 14 → 16, **zero duplicate-key commits, zero pointers vanishing from a surviving
+> node.** Today's three were the first and never reached a commit. Widened, because the
+> failure belongs to the literal and not to that one variable: **every dict literal in the
+> repo** was swept for duplicate constant keys — **zero**.
+>
+> **148 — CHECK 2's CITATION IS NOT HOLLOW.** Both golden-tile legs FIRED:
+> **mu 6.23×** over its 0.002 tolerance (−0.012457) and **map RMS 4.10×** over its 0.010
+> (0.041034) — your figures exactly. The `mu_scale_check` is two-sided for a different
+> reason worth keeping: its discriminator is an **equality against an independent
+> artifact** (`phase13_lane0_mean.nc`, 1.43 cm rms; lane0 0.76953 vs mu_a 0.76941), so had
+> the generalized path drifted, the same check returns *drift* instead of *scale mismatch*.
+> **No finding; 148 does not stop.**
+>
+> **145 — THE SWEEP IS DOWN FROM 33 TO 9.** All **24 phase14 blocks are DECLARED** at
+> `phase14.stage1.reachability_declarations` (pass condition, fail condition, outcome
+> observed, per block). The **9 uncited prior-phase blocks are RECORDED AS FOUND** in that
+> same node with the citation test that cleared them — and they **stay in the sweep
+> output**, so they are visible on every run rather than quietly exempted.
+>
+> **⚖ THE APPEND-ONLY GATE FIRED ON ME, CORRECTLY.** Witnessing the node at pin 148's
+> two-block tranche and then growing it to 24 tripped `STORE HAS DRIFTED from the witnessed
+> mirror`. Resolved the deliberate way — `sync --supersede … --reason`, prior body
+> preserved — not by re-syncing reflexively. That is the mechanism working on its author.
+>
+> **143 — THE CONSUMER SIDE, THREE SUBJECTS DECLARED IN CODE.**
+> 1. **E-16 §2's launch gate** (`tier2_launch_gate`) now emits `basis_span`: cites the
+>    probe's `measured_one_window`, `measured_over` **1 window**, `application_range`
+>    **9 windows**, extrapolation declared, and **leg 1's outcome beside it (1.69×)** with
+>    the status stated plainly — *this gate's threshold is 1.18× the measured leg peak, not
+>    the 2× it names.*
+> 2. **The 40 h ceiling** — `40 = 31.0 × 1.3`, and the 31.0 is itself one window × 9.
+>    Declared, with leg 1's 19.67 h beside it. ⚖ Worth stating: **a ceiling set from a
+>    PESSIMISTIC projection is safe in the direction that matters**, which is why this one
+>    cost nothing while the RAM basis cost a margin asserted as 2×.
+> 3. **A third subject the sweep found: `STAGE1_PCG_MAXITER = 1200`**, derived as 2× the
+>    converged 19-degree probe's worst leg and applied at unmeasured geometries. One-sided
+>    in the safe direction, and **leg 1 exercised the margin for real — two member-batch
+>    legs took 502 and 505 iterations**, over the 500 default a smaller cap would impose.
+>
+> **146 — BOTH MECHANICAL.** (a) The declarations node's exemption is now pinned by a test
+> that drives the seal-run walker with a **malformed** node and asserts it FAILS — the
+> exemption is only safe because the stricter validator is wired, not described. (b) §7
+> discipline 11's instances are tagged `(i1)…(i8)` and the **count is derived**:
+> `tests/test_project_context_instances.py` asserts the tags are contiguous, unique and
+> complete, and **refuses any restated prose count**.
+>
+> **⏳ 147(a) IS RUNNING** — kuroshio, **m=25, four windows**, fresh store, pid 1314819.
+> A failed fix accumulates **93.4 MiB/window** (≈283 MiB across four); a working one is
+> flat. Still inside window 1; peak 3,226 MiB so far. **147(b) stays parked at 8,730 MiB**
+> and is pointless if the slope is not flat (147d).
+>
+> ---
+>
 > # ✅ PINS 139–142 LANDED (ruling doc PART 35). 139 DONE; 140 SWEPT — REPORT BELOW.
 >
 > **139 — THE AUDIT NOW REFUSES, AND THE ELEVEN ARE DECLARED.**

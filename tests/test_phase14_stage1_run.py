@@ -4329,3 +4329,47 @@ def test_leg_store_stream_is_atomic(tmp_path: Path) -> None:
         )
     assert dest.read_bytes() == b"previous good store"
     assert not list(tmp_path.glob("*.tmp*")), "the temp file was left behind"
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 143 — the CONSUMER declares the span of the measurement it cites.
+# ---------------------------------------------------------------------------
+
+
+def test_the_launch_gate_declares_its_basis_span() -> None:
+    """The gate record states what was measured and where it is applied.
+
+    Bug caught: pin 143's own subject — a one-window peak became the basis
+    for a nine-window leg's gate, and no field name at the RECORDING site
+    could catch it because the projection was made where the measurement
+    was USED. A reader of the gate record must meet the span there, not
+    three documents away.
+    """
+    gate = _mod.tier2_launch_gate(mem_available_mib=9000.0)
+    span = gate["basis_span"]
+
+    assert span["measured_over"]["n_windows"] == 1
+    assert span["application_range"]["n_windows"] == 9
+    assert isinstance(span["extrapolation_declared"], str)
+    assert span["measured_outcome_2026_09_01"]["ratio_measured_over_projected"] > 1.6
+
+
+def test_every_declared_basis_span_states_VALUES_not_flags() -> None:
+    """No consumer-side declaration satisfies itself with a boolean.
+
+    Bug caught: pin 139(c) reappearing on the consumer side — an
+    `extrapolation_declared: true` that passes a check while stating no
+    span. All three subjects (RAM basis, wall ceiling, PCG cap) are held
+    to the same rule.
+    """
+    from sverdrup.validation.gate_schema import projection_audit
+
+    for span in (
+        _mod.TIER2_GATE_BASIS_SPAN,
+        _mod.TIER2_CEILING_BASIS_SPAN,
+        _mod.STAGE1_PCG_MAXITER_BASIS_SPAN,
+    ):
+        assert isinstance(span["extrapolation_declared"], str)
+        assert span["extrapolation_declared"].strip()
+        assert span["measured_over"] and span["application_range"]
+        assert projection_audit(span) == [], "a declaration must satisfy the audit"

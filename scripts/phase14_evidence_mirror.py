@@ -149,6 +149,13 @@ MIRRORED: dict[str, str] = {
         "`tiles` alone (T5c). That is a choice, recorded so it is visible "
         "rather than another incidental narrowness"
     ),
+    "phase14.stage1.reachability_declarations": (
+        "pins 148 + 42. The pass condition, the fail condition and the "
+        "outcome observed, per gate, by forward pointer. Mirrored for the "
+        "same reason the projection declarations are: anchor-gate check 2 "
+        "is discharged by CITATION to the golden tile, so what makes that "
+        "citation non-hollow must be as hard to change as the citation"
+    ),
     "phase14.stage1.projection_declarations": (
         "pin 139. The declared span of every projecting block, per axis, "
         "with the range MEASURED and the range APPLIED and never a bare "
@@ -398,6 +405,20 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
                 "node itself is NOT edited (64b). The amending node is "
                 "derived and re-derivable, so it stays outside the mirrored "
                 "subset (pin 56b)."
+            ),
+        },
+        {
+            "amended_by": "phase14.stage1.reachability_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 148: check 2 RUNS NOTHING — it is discharged by "
+                "citation to phase14.stage0.golden_tile, so whether that "
+                "citation is hollow turns on whether the cited gates could "
+                "have fired. They did: mu by 6.23x and map rms by 4.10x over "
+                "their recorded tolerances, and the scale check's "
+                "discriminator is an equality against an independent "
+                "artifact. Declared with the margins at "
+                "phase14.stage1.reachability_declarations"
             ),
         },
     ],

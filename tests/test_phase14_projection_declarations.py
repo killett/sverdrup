@@ -108,3 +108,84 @@ def test_declared_axes_by_path_feeds_the_audit_the_field_names() -> None:
     assert by_path[
         "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall"
     ] == frozenset({"implied_exponent"})
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 148 — the two golden-tile blocks, and pin 146(a) — the exemption
+# is mechanical, not described.
+# ---------------------------------------------------------------------------
+
+
+def test_the_cited_golden_tile_gates_COULD_have_failed() -> None:
+    """Check 2's citation is not hollow: both legs fired, with margins.
+
+    Bug caught: an unfailable gate discharging a cited check. Anchor-gate
+    check 2 RUNS NOTHING — it is discharged by citation to these blocks —
+    so if either could not have fired, the identity chain rests on a gate
+    that was never a gate. Both fired: mu 6.23x and map rms 4.10x over
+    their recorded tolerances.
+    """
+    entry = _mod.REACHABILITY["phase14.stage0.golden_tile.dc2021a_vs_cmems_my"]
+    margins = entry["margins"]
+
+    assert entry["both_outcomes_reachable"] is True
+    assert margins["mu_over_by"] > 6.0
+    assert margins["map_rms_over_by"] > 4.0
+    assert abs(margins["mu_delta"]) > margins["mu_threshold"]
+    assert margins["map_rms_m"] > margins["map_rms_threshold_m"]
+    assert _mod.validate_reachability(_mod.REACHABILITY) == []
+
+
+def test_a_reachability_claim_without_a_failing_condition_is_REFUSED() -> None:
+    """Asserting both outcomes is not the same as naming them.
+
+    Bug caught: pin 42's own defect inside its remedy — a declaration
+    that sets `both_outcomes_reachable: true` and says nothing about what
+    failure would have looked like, which is exactly the unexamined claim
+    the rule exists to refuse.
+    """
+    bad = {
+        "x.y": {
+            "amends": "x",
+            "both_outcomes_reachable": True,
+            "pass_condition": "it passed",
+            "fail_condition": "",
+            "outcome_observed": "PASS",
+        }
+    }
+    findings = _mod.validate_reachability(bad)
+    assert any("fail_condition" in f for f in findings)
+
+
+def test_the_declarations_node_exemption_is_MECHANICAL(tmp_path: Path) -> None:
+    """A malformed declarations node fails the check that exempts it.
+
+    Bug caught: pin 146(a) — the audit skips the declarations subtree, so
+    if the stricter validator were only described rather than wired, that
+    exemption would be a hole big enough to hide any projection in. This
+    drives the seal-run walker directly with a broken node.
+    """
+    seal_run = load_script("phase14_seal_run")
+    store = {
+        "phase14": {
+            "stage1": {
+                "projection_declarations": {
+                    "declarations": {
+                        "phase14.stage1.somewhere": {
+                            "amends": "phase14.stage1",
+                            "axes": {
+                                "predicted_thing": {
+                                    "measured_over": {},
+                                    "applied_to": {"m": 100},
+                                    "extrapolation_declared": True,
+                                }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+    findings = seal_run._projection_findings(store)
+    assert findings, "the exempt subtree must still be validated, and more strictly"
+    assert any("139c" in f for f in findings)

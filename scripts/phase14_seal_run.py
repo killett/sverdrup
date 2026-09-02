@@ -98,6 +98,7 @@ def build(
 _ENVELOPE_KEYS = ("supersedes", "signoff", "date")
 
 DECLARATIONS_PATH = "phase14.stage1.projection_declarations"
+VERDICT_DECLARATIONS_PATH = "phase14.stage1.reachability_declarations"
 
 
 def _schema_refusals(results: dict[str, object]) -> list[str]:
@@ -212,13 +213,20 @@ def _verdict_findings(results: dict[str, Any]) -> list[str]:
     """
     from sverdrup.validation.gate_schema import verdict_audit  # noqa: PLC0415
 
+    node = (
+        results.get("phase14", {})
+        .get("stage1", {})
+        .get("reachability_declarations", {})
+    )
+    declared = set(node.get("declarations") or {})
     found: list[str] = []
 
     def walk(node: object, path: str) -> None:
         if isinstance(node, dict):
-            if path.removeprefix("evidence.") == DECLARATIONS_PATH:
+            key = path.removeprefix("evidence.")
+            if key in (DECLARATIONS_PATH, VERDICT_DECLARATIONS_PATH):
                 return
-            for msg in verdict_audit(node):
+            for msg in verdict_audit(node, key in declared):
                 found.append(f"{path}: {msg}")
             for key, value in node.items():
                 walk(value, f"{path}.{key}")

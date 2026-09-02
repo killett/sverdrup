@@ -1,0 +1,47 @@
+{
+  "supersessions": [
+    {
+      "path": "phase14.stage1.reachability_declarations",
+      "superseded_utc": "2026-09-02T07:45:39.883573+00:00",
+      "reason": "Pin 148 witnessed this node at its FIRST tranche — the two golden-tile blocks that anchor-gate check 2 is discharged by citation to. Pin 145(a)/(b) then extend it to all 24 phase14 blocks plus the record of the nine uncited prior-phase gates. The two original declarations are unchanged in substance; the node grew, which is what the append-only gate correctly refused to let happen silently.",
+      "prior_digest": "9182772d499bfe4dfb45adb43630787b20b33429a172408620fa0f5bc0510fb9",
+      "prior_value": {
+        "label": "VERDICT REACHABILITY DECLARATIONS — owner pins 148, 42",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "148 — the two golden-tile blocks declare first",
+        "gates": false,
+        "method": "Pin 42 keyed on a self-declared `kind: gate` that appears ZERO times in this store, so it never inspected anything (pin 140). These declarations state, per block, the condition under which each verdict could occur and which one did — by forward pointer, so no witnessed node is edited",
+        "why_these_two_first": "anchor-gate check 2 RUNS NOTHING: it is discharged by citation to phase14.stage0.gate2_loader_identity and to the golden tile. A cited gate that could never have fired makes the citation hollow, and check 2 is one of two cited checks under the identity chain",
+        "finding": "NOT hollow. Both golden-tile legs FIRED — mu by 6.23x and map rms by 4.10x over their recorded tolerances — and the scale check's discriminator is an equality against an independent artifact (phase13_lane0_mean.nc), so its other verdict was reachable too",
+        "declarations": {
+          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my": {
+            "amends": "phase14.stage0.golden_tile",
+            "cited_by": "phase14.stage1.anchor_gate.checks.loader_identity — check 2 runs nothing and is discharged by citation to this block and to phase14.stage0.gate2_loader_identity",
+            "both_outcomes_reachable": true,
+            "pass_condition": "|mu_delta| <= 0.002 AND map rms <= 0.010 m — the recorded thresholds",
+            "fail_condition": "either leg over its threshold; both legs are one-sided tolerances on a measured difference, so either verdict was available before the numbers existed",
+            "outcome_observed": "FAILED BOTH LEGS, which is why the bridge caveat exists",
+            "margins": {
+              "mu_delta": -0.012457116394516077,
+              "mu_threshold": 0.002,
+              "mu_over_by": 6.228558197258039,
+              "map_rms_m": 0.041034469767374786,
+              "map_rms_threshold_m": 0.01,
+              "map_rms_over_by": 4.103446976737479
+            },
+            "why_not_unfailable": "the two legs are independent tolerances on measured differences between two data lineages; a repackaging-only difference would have landed inside both. They did not, by 6.2x and 4.1x, and the failure is the finding the tabled row carries forward"
+          },
+          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my.mu_scale_check": {
+            "amends": "phase14.stage0.golden_tile",
+            "cited_by": "the same check-2 citation; this sub-block is what rules out solver drift as the explanation of the mu delta above",
+            "both_outcomes_reachable": true,
+            "pass_condition": "side A reproduces the SIGNED solution (mu_a 0.76941 vs lane0 0.76953 on the their_eval scale, 1.43 cm rms against phase13_lane0_mean.nc) -> the delta is a SCALE mismatch, not drift",
+            "fail_condition": "side A does NOT reproduce the signed solution -> solver drift, and the whole A-vs-B comparison becomes uninterpretable",
+            "outcome_observed": "scale mismatch CONFIRMED, no solver drift",
+            "why_not_unfailable": "the discriminator is an equality against an independent recorded artifact, not a property of the comparison itself: had the generalized path drifted, mu_a would not have matched lane0 and this check would have said so"
+          }
+        }
+      }
+    }
+  ]
+}

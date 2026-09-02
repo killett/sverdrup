@@ -112,6 +112,29 @@ DC_MAPPING_FIVE = ("alg", "h2g", "j2g", "j2n", "s3a")
 # measurement taken (probe 554 vs 524; anchor 396-459 vs 342-422) and T10's
 # sigma field kind is built on it — margins are set by that leg.
 STAGE1_PCG_MAXITER = 1200
+# Owner pin 143(b), third subject of the consumer sweep. This cap is DERIVED
+# from measurements (2 x the converged 19-degree probe's worst leg), so it
+# declares the span it was measured over and the span it is applied to.
+STAGE1_PCG_MAXITER_BASIS_SPAN: dict[str, Any] = {
+    "cites": "the converged 19-degree probe legs (pin 26b/26d)",
+    "measured_over": {
+        "worst_leg_iterations": {"probe": 554, "anchor_range": [396, 459]},
+        "geometry": "19-degree solve frames",
+        "m": [1, 100],
+    },
+    "application_range": {
+        "geometry": "every Stage-1 production leg incl. the 15x15 diverse tiles",
+        "m": 100,
+    },
+    "extrapolation_declared": (
+        "the cap is applied at geometries and member counts beyond those "
+        "measured. It is one-sided in the safe direction — too high a cap costs "
+        "iterations that convergence does not use, while too low a cap CAPS the "
+        "leg and can only under-report — and leg 1 exercised the margin for "
+        "real: two member-batch legs took 502 and 505 iterations, over the "
+        "library default of 500 that a smaller cap would have imposed"
+    ),
+}
 
 # Owner PIN 26(c) — the SEAM-FRAME convergence probe. The seam frames are
 # SMALLER than the anchor (51x37 = 1887 solve-grid nodes vs 51x52 = 2652)
@@ -1416,7 +1439,55 @@ def seam_ram_gate(*, peak_model_mib: float, mem_available_mib: float) -> dict[st
 #     STOPS and reports" rather than running on, so a runaway first leg is
 #     known after ~31 h instead of after 5 days.
 TIER2_MEASURED_PEAK_MIB = 4365.0
+# Owner pin 143(a). The gate cites pin 89's probe peak; the probe measured ONE
+# window and the gate is applied to a NINE-window leg. Leg 1 measured that
+# projection wrong by 1.69x, and the number rides in the gate record so a
+# reader meets the span where the threshold is used, not three documents away.
+TIER2_GATE_BASIS_SPAN: dict[str, Any] = {
+    "cites": "phase14.stage1.tier2_probe_kuroshio_m100.measured_one_window",
+    "measured_over": {"n_windows": 1, "tile": "kuroshio", "m": 100},
+    "application_range": {"n_windows": 9, "tiles": 4, "m": 100},
+    "extrapolation_declared": (
+        "EXTRAPOLATION on the window-count axis. A one-window peak is not a "
+        "nine-window peak when completed windows are retained, which they were "
+        "until pin 133"
+    ),
+    "measured_outcome_2026_09_01": {
+        "leg1_peak_mib": 7389.3359375,
+        "ratio_measured_over_projected": 1.693,
+        "slope_before_fix_mib_per_window": 391.3,
+        "status": (
+            "the basis is SUPERSEDED pending the pin-133(b) three-window "
+            "re-measure at production scale; this gate's threshold is 1.18x the "
+            "measured leg peak, not the 2x it names"
+        ),
+    },
+}
 TIER2_MAX_LEG_WALL_H = 40.0
+# Owner pin 143(b). The ceiling is 31.0 h x 1.3, and the 31.0 h is itself the
+# probe's one-window wall scaled to nine — the same 1->9 extrapolation as the
+# RAM basis, on the other axis.
+TIER2_CEILING_BASIS_SPAN: dict[str, Any] = {
+    "cites": "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d",
+    "measured_over": {"n_windows": 1, "wall_h": 3.4398840666791592, "tile": "kuroshio"},
+    "application_range": {"n_windows": 9, "derived_ceiling_h": 40.0},
+    "extrapolation_declared": (
+        "40 h = 31.0 h x the 1.3 residual span, and 31.0 h = one measured window "
+        "x 9. Both factors are declared: the linear-in-windows scaling and the "
+        "residual span for window-to-window variation plus the host's x1.70 "
+        "non-stationarity (pin 28)"
+    ),
+    "measured_outcome_2026_09_01": {
+        "leg1_wall_h": 19.67,
+        "ratio_measured_over_projected": 0.635,
+        "status": (
+            "the ceiling was never approached; the projection was PESSIMISTIC by "
+            "1.58x. A ceiling set from a pessimistic projection is safe in the "
+            "direction that matters, which is why this one cost nothing while the "
+            "RAM basis cost a 1.18x margin asserted as 2x"
+        ),
+    },
+}
 TIER2_WALL_SCOPE = (
     "PER LEG (one tile), NOT per stage — the four-tile 123.8 h figure is an "
     "expectation, never a ceiling (E-16 §1)"
@@ -1452,6 +1523,11 @@ def tier2_launch_gate(*, mem_available_mib: float) -> dict[str, Any]:
             "2 x the MEASURED 4365 MiB peak (pin 89), NOT the model's 5154 — "
             "the model over-predicts by 18%"
         ),
+        # Owner pin 143(a): the CONSUMER declares the span of what it cites.
+        # A projection is created where a measurement is USED, and this gate
+        # is where a one-window peak became a nine-window basis. No field
+        # name at the recording site could have caught that.
+        "basis_span": TIER2_GATE_BASIS_SPAN,
         "passed": mem_available_mib >= threshold,
     }
 
