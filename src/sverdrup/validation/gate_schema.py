@@ -20,13 +20,70 @@ is not validated there.
 **Keys on self-declaration.** Only blocks carrying ``kind`` of ``gate``
 or ``validation`` are examined, so ordinary recorded content — and the
 existing sealed content, whose seal is unspent — passes untouched.
+
+**Owner pin 134 — that is also the hole.** Swept over the live store,
+``kind: gate`` appears ZERO times and ``kind: validation`` exactly ONCE
+(``phase14.stage1.rho_model_range_limitation``, the ρ-model node that
+motivated pin 78). The reachability rule has therefore never fired on any
+block, and the range rule has only ever inspected the instance that
+produced it, while ``kind`` itself is overloaded in this store with
+``member-batch``, ``poly``, ``challenge-coarsen`` and free prose. An
+unsealed measurement extrapolates silently because nothing makes it
+declare anything: the pin-89 probe scaled ONE window to nine in
+``per_tile_wall_h_if_linear_in_windows`` with its caveat in prose, and
+came back 0.63× on wall and 1.69× on RAM.
+
+:func:`projection_audit` closes the blindness by keying on the SHAPE of a
+block rather than on what it calls itself. It REPORTS; it does not refuse.
+Twelve pre-existing blocks are caught, and retro-refusing recorded
+evidence is the owner's decision, not this module's.
 """
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
-__all__ = ["validate_gate_schema"]
+__all__ = ["projection_audit", "validate_gate_schema"]
+
+# Field names that assert something beyond what was measured. Matched on
+# the block's OWN keys; the evidence walker visits nested blocks itself.
+_PROJECTION = re.compile(
+    r"if_linear|extrapolat|projected|predicted|implied|forecast|scaled_to",
+    re.IGNORECASE,
+)
+# Any ONE of these makes the basis machine-readable. `measured_over` is
+# accepted so a probe can state its span without relabelling itself a
+# `validation` — the overload that made `kind` useless here.
+_BASIS_KEYS = (
+    "validated_range",
+    "measured_over",
+    "application_range",
+    "extrapolation_declared",
+)
+
+
+def projection_audit(block: dict[str, Any]) -> list[str]:
+    """Report projection-shaped fields carrying no declared basis (pin 134).
+
+    Args:
+        block: One recorded block. Only its own keys are examined.
+
+    Returns:
+        One message naming the offending fields, or empty when the block
+        either projects nothing or declares its basis. Reporting only —
+        the caller decides whether an audit finding is fatal.
+    """
+    projected = sorted(k for k in block if _PROJECTION.search(k))
+    if not projected or any(k in block for k in _BASIS_KEYS):
+        return []
+    return [
+        "pin 134: projected fields with no declared basis "
+        f"({', '.join(projected)}) — state `measured_over` (or "
+        "`validated_range`) and, where it is applied beyond that span, "
+        "`extrapolation_declared`. A caveat in prose is not read by any "
+        "check, which is how a one-window probe set a nine-window budget"
+    ]
 
 
 def validate_gate_schema(block: dict[str, Any]) -> list[str]:

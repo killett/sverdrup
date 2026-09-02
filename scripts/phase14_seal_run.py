@@ -125,6 +125,40 @@ def _schema_refusals(results: dict[str, object]) -> list[str]:
     return found
 
 
+def _projection_findings(results: dict[str, object]) -> list[str]:
+    """Blocks that project beyond what they measured without saying so (pin 134).
+
+    Reported, never refused, and deliberately so: every block this finds
+    is ALREADY RECORDED, and turning the audit into a refusal would
+    retro-refuse recorded evidence. That is the owner's call. What this
+    removes is the blindness — pins 42/78 key on a self-declared ``kind``
+    that appears zero times (gate) and once (validation) in this store,
+    so an unsealed measurement could extrapolate with nothing looking.
+
+    Args:
+        results: The parsed evidence store.
+
+    Returns:
+        One message per offending block, each naming its path.
+    """
+    from sverdrup.validation.gate_schema import projection_audit  # noqa: PLC0415
+
+    found: list[str] = []
+
+    def walk(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            for msg in projection_audit(node):
+                found.append(f"{path}: {msg}")
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+
+    walk(results, "evidence")
+    return found
+
+
 @app.command()
 def check(
     epoch_table: _EpochTableOpt = EPOCH_TABLE_PATH,
@@ -154,10 +188,23 @@ def check(
     # over unless the extrapolation is DECLARED at the point of use. Keys
     # on self-declared `kind`, so existing recorded content is untouched.
     failures.extend(_schema_refusals(json.loads(evidence_path.read_text())))
+    # Owner pin 134: the refusals above are opt-in by self-declared `kind`,
+    # and in this store nothing opts in. The audit below is what the
+    # refusal set could not see. It REPORTS — every block it names is
+    # already recorded, and retro-refusing recorded evidence is the
+    # owner's decision, not this script's.
+    audit = _projection_findings(json.loads(evidence_path.read_text()))
     if failures:
         for f in failures:
             typer.echo(f"FAIL: {f}")
         raise typer.Exit(code=1)
+    if audit:
+        typer.echo(
+            f"AUDIT (pin 134, reported not refused): {len(audit)} block(s) project "
+            "beyond what they measured with no declared basis"
+        )
+        for a in audit:
+            typer.echo(f"  {a.split(':')[0]}")
     typer.echo(f"PASS: seal {recorded['path']} sha {recorded['sha']} re-derived")
 
 

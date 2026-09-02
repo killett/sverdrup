@@ -74,7 +74,41 @@
 > **It is worse than the ruling assumed: ELEVEN tracker-only tasks, not two.** The plan
 > prose stops at Task 12, so **T13–T23** all read as phantoms to the old method. Drift is
 > reported as INFO; only an id no task carries fails.
-> **⏳ 134 (pin 78's hole) — not started; the ruling puts it "when convenient".**
+> **✅ 134 — WHY PIN 78 DID NOT FIRE. THE HOLE IS WORSE THAN "ONLY SEALED GATES".**
+> Pins 42 and 78 are enforced by `validate_gate_schema`, which examines a block **only
+> if the block says `kind: "gate"` or `kind: "validation"` about itself.** Swept over the
+> live store:
+> - **`kind: gate` appears ZERO times.** Pin 42's reachability refusal **has never fired
+>   on any block in this project.**
+> - **`kind: validation` appears exactly ONCE** — `phase14.stage1.rho_model_range_limitation`,
+>   the ρ-model node that motivated pin 78. The rule has only ever inspected its own
+>   instance.
+> - **`kind` is overloaded**: the store also uses it for `member-batch`, `poly`,
+>   `challenge-coarsen`, and free prose (`"recorded outcome, NOT a gate"`,
+>   `"DESIGN CONFLICT (pin 106)"`). The schema discriminator collides with domain use.
+>
+> So it is not that the refusal set covers only sealed gates — **it covers only blocks
+> that volunteer, and essentially nothing volunteers.** The pin-89 probe scaled ONE window
+> to nine in a field whose own name says `per_tile_wall_h_if_linear_in_windows`, with the
+> caveat **in prose, where no check reads it**. ⚖ And the asymmetry that actually cost us:
+> **the wall extrapolation carried a caveat; the RAM one carried none** — the launch gate
+> took `measured_one_window.peak_rss_mib` as a leg peak with nothing stated at all. The
+> caveat covered the axis they worried about, not the axis that broke.
+>
+> **THE FIX IS SHAPE, NOT SELF-DECLARATION:** `projection_audit()` keys on the block's own
+> field names (`if_linear|extrapolat|projected|predicted|implied|forecast|scaled_to`) and
+> passes it only when a machine-readable basis is present — `measured_over` (so a probe
+> can state its span without relabelling itself a validation), `validated_range`,
+> `application_range` or `extrapolation_declared`. Wired into `phase14_seal_run.py check`.
+>
+> **⛔ IT REPORTS; IT DOES NOT REFUSE — AND THAT IS AN OWNER DECISION, NOT A SOFTENING.**
+> It catches **11 already-recorded blocks** across 6 nodes (the two seam σ diagnosis
+> lines, both settling-measurement half-split reproductions, the pin-54 condition, the
+> shared-observation channel, both CRN-mechanism prediction blocks, and **both pin-89
+> probe blocks**). Turning the audit into a refusal **retro-refuses recorded evidence**,
+> which needs your ruling: (a) refuse now and declare the 11 by forward-pointer amendment
+> (the established mechanism — never a rewrite), (b) refuse for blocks recorded from here
+> on, or (c) keep it reported. `seal check` currently PASSes with the audit printed.
 >
 > ---
 >
