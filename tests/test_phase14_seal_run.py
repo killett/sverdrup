@@ -254,3 +254,51 @@ def test_check_still_re_derives_after_supersession(
     bad = runner.invoke(_mod.app, _args(p, "check"))
     assert bad.exit_code != 0
     assert "FAIL" in bad.output
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 152 — the re-keyed pin-42 check REFUSES, with the recorded-as-found
+# nine visible but not fatal.
+# ---------------------------------------------------------------------------
+
+
+def test_a_NEW_undeclared_verdict_block_is_a_refusal() -> None:
+    """An undeclared gate anywhere fails the check.
+
+    Bug caught: leaving the re-keyed check reporting, which would make it
+    a check that cannot fail — inside the pin whose entire subject is
+    checks that cannot fail. This is the block a future leg might add.
+    """
+    store = {"phase14": {"stage1": {"brand_new_thing": {"verdict": "CLEAN"}}}}
+    findings = _mod._verdict_findings(store)
+
+    assert findings, "an undeclared verdict block must be caught"
+    assert not findings[0].startswith("RECORDED-AS-FOUND ")
+
+
+def test_the_recorded_as_found_nine_are_VISIBLE_but_not_fatal() -> None:
+    """A recorded prior-phase gate is flagged for display, not for failure.
+
+    Bug caught: silently exempting them, which is how a list of known
+    exceptions stops being read; and conversely, failing on them, which
+    would reopen closed owner-signed work the citation test already
+    cleared (pin 145b).
+    """
+    store = {
+        "phase10": {"oi": {"lanes": {"verdict": "PASS"}}},
+        "phase14": {
+            "stage1": {
+                "reachability_declarations": {
+                    "declarations": {},
+                    "not_declared_uncited_prior_phase": {
+                        "blocks": ["phase10.oi.lanes"]
+                    },
+                }
+            }
+        },
+    }
+    findings = _mod._verdict_findings(store)
+
+    assert len(findings) == 1
+    assert findings[0].startswith("RECORDED-AS-FOUND ")
+    assert "phase10.oi.lanes" in findings[0]

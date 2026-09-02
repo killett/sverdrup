@@ -86,7 +86,34 @@
 > and the RSS column falls at the last step (2,231 → 2,225), which retention cannot do.
 > ⛔ **147(d) does not trigger. 147(b) is not pointless and proceeds.**
 >
-> # ⚖ 147(b) IS DONE — THE GATE BASIS IS **4,573 MiB**. THE RULING IS YOURS.
+> # ✅ PINS 150–153 LANDED (PART 37) AND FOLDED. LEG 2 LAUNCHES AT **9,146 MiB**.
+>
+> **150 — THE BASIS IS RE-PINNED.** `TIER2_MEASURED_PEAK_MIB = 4573.0`, threshold
+> **9,146 MiB**. The 4,365 one-window figure is **preserved, not overwritten**, at
+> `TIER2_MEASURED_PEAK_SUPERSEDED` with why it fell. **8,730 no longer admits** — pinned
+> in the test, because 1.909× is the "close enough" that produced the 1.18×.
+> The gate's `basis_span` now declares **3 windows measured → 9 applied**, bounded by the
+> flat-slope evidence, with leg 1's working-set variation **−170 to +236 MiB** recorded and
+> a nine-window peak near **~4,809 MiB** covered at **1.90×**. **Leg 2 closes the
+> projection (150c)** — nine windows at production scale, boundary peaks recorded, basis
+> re-pinned from the direct measurement afterward.
+>
+> **151 — THE GATE NOW HOLDS THE BOX.** `stage1_solve_lock` is taken at leg start and held
+> to the end (released in the same `finally` that stops the heartbeat): a second Stage-1
+> solve is **REFUSED by name** while it is held. A lock whose holder is **dead** is taken
+> over and **the takeover is recorded** — a leg killed by a power event must not block every
+> future leg, and a lock that vanishes without a trace teaches nothing. `HeadroomTracker`
+> samples MemAvailable **during** the run; the row now carries
+> `headroom.min_mem_available_mib` beside the peak, and the heartbeat prints it live.
+>
+> **152 — THE PIN-42 RE-KEY REFUSES.** `seal_run check` now FAILS on any undeclared
+> verdict- or threshold-bearing block. The **9 uncited prior-phase gates print every run**
+> under `NOTED (pin 145b, recorded as found — not reopened)` and are **not fatal**; a NEW
+> undeclared block **is**. Both halves test-pinned.
+>
+> ---
+>
+> # ⚖ 147(b) — THE MEASUREMENT BEHIND THE 150 RE-PIN
 >
 > kuroshio, **m=100, three windows**, solve path, fresh store, **6.79 h** (2.264 h/window
 > vs leg 1's 2.174 — within variation while sharing the box for part of the run).

@@ -201,9 +201,12 @@ def _projection_findings(results: dict[str, Any]) -> list[str]:
 def _verdict_findings(results: dict[str, Any]) -> list[str]:
     """Verdict/threshold blocks stating no reachability (owner pin 140a).
 
-    REPORTED, not refused: pin 140(c) orders the sweep before any
-    refusal, for the same reason pin 134's did — every block this names
-    is already recorded, and several belong to prior phases.
+    A REFUSAL as of owner pin 152. It began as a report because pin
+    140(c) ordered the sweep first, and the sweep now has a resting
+    state: the 24 phase14 blocks are declared, and the 9 uncited
+    prior-phase blocks are recorded as found. Leaving it reporting would
+    make it a check that cannot fail, inside the pin whose whole subject
+    is checks that cannot fail.
 
     Args:
         results: The parsed evidence store.
@@ -219,6 +222,13 @@ def _verdict_findings(results: dict[str, Any]) -> list[str]:
         .get("reachability_declarations", {})
     )
     declared = set(node.get("declarations") or {})
+    # Pins 145(b) + 152: uncited prior-phase gates are RECORDED AS FOUND.
+    # They do not fail the check — reopening closed, owner-signed work is
+    # scope growth — but they stay VISIBLE on every run, never silently
+    # exempted, which is why they are prefixed rather than skipped.
+    recorded = set(
+        (node.get("not_declared_uncited_prior_phase") or {}).get("blocks") or []
+    )
     found: list[str] = []
 
     def walk(node: object, path: str) -> None:
@@ -227,7 +237,8 @@ def _verdict_findings(results: dict[str, Any]) -> list[str]:
             if key in (DECLARATIONS_PATH, VERDICT_DECLARATIONS_PATH):
                 return
             for msg in verdict_audit(node, key in declared):
-                found.append(f"{path}: {msg}")
+                prefix = "RECORDED-AS-FOUND " if key in recorded else ""
+                found.append(f"{prefix}{path}: {msg}")
             for key, value in node.items():
                 walk(value, f"{path}.{key}")
         elif isinstance(node, list):
@@ -272,17 +283,23 @@ def check(
     # is what they could not see, and it REFUSES. The eleven pre-existing
     # blocks are declared by forward pointer (139b) rather than rewritten.
     failures.extend(_projection_findings(json.loads(evidence_path.read_text())))
+    # Owner pin 152: the re-keyed pin-42 check REFUSES too, now that the
+    # sweep has a resting state — 24 declared, 9 uncited recorded as found.
+    # The recorded-as-found nine are printed, never fatal (pin 145b).
+    verdicts = _verdict_findings(json.loads(evidence_path.read_text()))
+    noted = [v for v in verdicts if v.startswith("RECORDED-AS-FOUND ")]
+    failures.extend(v for v in verdicts if not v.startswith("RECORDED-AS-FOUND "))
+    if noted:
+        typer.echo(
+            f"NOTED (pin 145b, recorded as found — uncited prior-phase gates, "
+            f"not reopened): {len(noted)} block(s)"
+        )
+        for n in noted:
+            typer.echo(f"  {n.split(':')[0].removeprefix('RECORDED-AS-FOUND ')}")
     if failures:
         for f in failures:
             typer.echo(f"FAIL: {f}")
         raise typer.Exit(code=1)
-    sweep = _verdict_findings(json.loads(evidence_path.read_text()))
-    if sweep:
-        typer.echo(
-            f"SWEEP (pin 140a, reported not refused pending the owner's ruling): "
-            f"{len(sweep)} verdict- or threshold-bearing block(s) state no "
-            "reachability and are not marked `gates: false`"
-        )
     typer.echo(f"PASS: seal {recorded['path']} sha {recorded['sha']} re-derived")
 
 

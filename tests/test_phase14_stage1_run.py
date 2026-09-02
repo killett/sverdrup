@@ -10,6 +10,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -4152,29 +4153,34 @@ def test_criterion8_live_half_is_discharged_on_the_real_path() -> None:
 
 
 def test_tier2_launch_threshold_is_twice_the_MEASURED_peak() -> None:
-    """Threshold = 2 x 4365 MiB, the measured peak -- not the model's 5154.
+    """Threshold = 2 x 4573 MiB, the RE-MEASURED peak (owner pin 150a).
 
-    Bug caught: wiring the gate to size_tile's predicted peak. Pin 89
-    MEASURED peak RSS 4365 MiB against a model 5154 and found the model
-    OVER-predicts by 18%; E-16 §2 says "twice the MEASURED peak, not the
-    model's 5154" in those words. A model-fed gate demands ~10308 MiB and
-    would park every leg forever on a box whose headroom tops out at
-    ~11.2 GiB. Expected value hand-computed from E-16 §2.
+    Bug caught: wiring the gate to a predicted or a stale peak. It has
+    been both. The model's 5154 over-predicts by 18% and a model-fed gate
+    would park every leg on a box topping out near 11.2 GiB; and pin 89's
+    4365 was ONE window taken as a leg peak, wrong by 1.69x once nine
+    windows ran, which left the gate asserting 2x while holding 1.18x.
+    The basis is now pin 147(b)'s three-window measurement, and the prior
+    value is preserved rather than overwritten. Hand-computed: 2 x 4573.
     """
     gate = _mod.tier2_launch_gate(mem_available_mib=99999.0)
-    assert gate["threshold_mib"] == 8730.0
-    assert _mod.TIER2_MEASURED_PEAK_MIB == 4365.0
+    assert gate["threshold_mib"] == 9146.0
+    assert _mod.TIER2_MEASURED_PEAK_MIB == 4573.0
+    assert _mod.TIER2_MEASURED_PEAK_SUPERSEDED["prior_value_mib"] == 4365.0
 
 
 def test_tier2_launch_gate_boundary_admits_exactly_the_threshold() -> None:
-    """>= at the threshold: 8730 launches, 8729.9 refuses.
+    """>= at the threshold: 9146 launches, 9145.9 refuses.
 
     Bug caught: a strict > comparison, which refuses a leg at exactly the
     authorised headroom. On a box that cycles to ~11.2 GiB roughly every
     4 h, refusing at the boundary costs a whole cycle per occurrence.
+    Also pins that the SUPERSEDED threshold no longer admits: 8730 was
+    1.909x the corrected peak, and pin 150(d) refuses "close enough".
     """
-    assert _mod.tier2_launch_gate(mem_available_mib=8730.0)["passed"] is True
-    assert _mod.tier2_launch_gate(mem_available_mib=8729.9)["passed"] is False
+    assert _mod.tier2_launch_gate(mem_available_mib=9146.0)["passed"] is True
+    assert _mod.tier2_launch_gate(mem_available_mib=9145.9)["passed"] is False
+    assert _mod.tier2_launch_gate(mem_available_mib=8730.0)["passed"] is False
 
 
 def test_tier2_wall_ceiling_is_per_leg_not_per_stage() -> None:
@@ -4216,7 +4222,7 @@ def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(
         return False
 
     monkeypatch.setattr(ladder, "tier1_eligible", _spy)
-    gate = _mod.tier2_launch_gate(mem_available_mib=9000.0)
+    gate = _mod.tier2_launch_gate(mem_available_mib=9500.0)
     assert gate["passed"] is True
     assert called is False
 
@@ -4348,7 +4354,7 @@ def test_the_launch_gate_declares_its_basis_span() -> None:
     gate = _mod.tier2_launch_gate(mem_available_mib=9000.0)
     span = gate["basis_span"]
 
-    assert span["measured_over"]["n_windows"] == 1
+    assert span["measured_over"]["n_windows"] == 3
     assert span["application_range"]["n_windows"] == 9
     assert isinstance(span["extrapolation_declared"], str)
     assert span["measured_outcome_2026_09_01"]["ratio_measured_over_projected"] > 1.6
@@ -4373,3 +4379,103 @@ def test_every_declared_basis_span_states_VALUES_not_flags() -> None:
         assert span["extrapolation_declared"].strip()
         assert span["measured_over"] and span["application_range"]
         assert projection_audit(span) == [], "a declaration must satisfy the audit"
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 151 — a gate that admits one job and then another has not gated
+# anything, and the headroom it measured must keep being measured.
+# ---------------------------------------------------------------------------
+
+
+def test_a_second_stage1_solve_is_REFUSED_while_the_lock_is_held(
+    tmp_path: Path,
+) -> None:
+    """Two production-shaped solves cannot hold the box at once.
+
+    Bug caught: pin 151's subject — 147(b) passed the launch gate and then
+    shared the box with 147(a) for 34 minutes, because nothing prevented a
+    second job from ARRIVING after the check. The gate measured the box,
+    not the box's future.
+    """
+    lock = tmp_path / "solve.lock"
+    with _mod.stage1_solve_lock("leg:kuroshio", path=lock) as held:
+        assert held["pid"] == os.getpid()
+        with pytest.raises(RuntimeError, match="already holds the Stage-1 solve lock"):
+            with _mod.stage1_solve_lock("leg:southern", path=lock):
+                pass
+    assert not lock.exists(), "the lock is released when the run ends"
+
+
+def test_a_STALE_lock_is_taken_over_and_the_takeover_is_recorded(
+    tmp_path: Path,
+) -> None:
+    """A lock left by a dead process does not block the box forever.
+
+    Bug caught: the mirror image of the defect — a leg killed by a power
+    event leaves its lock behind, and a refusal that cannot distinguish a
+    live holder from a corpse would stop every future leg. The takeover is
+    RECORDED rather than silent, because a lock that vanishes without a
+    trace teaches nothing.
+    """
+    lock = tmp_path / "solve.lock"
+    lock.write_text(json.dumps({"pid": 2**22, "label": "leg:ghost", "started": "then"}))
+
+    with _mod.stage1_solve_lock("leg:kuroshio", path=lock) as held:
+        assert held["took_over_stale"]["label"] == "leg:ghost"
+        assert held["pid"] == os.getpid()
+
+
+def test_the_lock_is_released_even_when_the_leg_RAISES(tmp_path: Path) -> None:
+    """A failed leg does not leave the box locked.
+
+    Bug caught: a leg that dies inside the solve leaving a live-looking
+    lock, so the next attempt refuses on a holder that is gone — turning
+    one failure into a permanent one.
+    """
+    lock = tmp_path / "solve.lock"
+    with (
+        pytest.raises(ValueError, match="solve blew up"),
+        _mod.stage1_solve_lock("leg:kuroshio", path=lock),
+    ):
+        raise ValueError("solve blew up")
+    assert not lock.exists()
+
+
+def test_headroom_is_sampled_DURING_the_run_not_only_at_launch() -> None:
+    """The minimum MemAvailable seen during a leg is a recorded field.
+
+    Bug caught: pin 151(b) — leg 1 bottomed at 3,660 MiB and we learned it
+    afterward by reading a log. A launch-time reading says what the box
+    had before the work started, which is the one moment it is guaranteed
+    not to be under pressure.
+    """
+    tracker = _mod.HeadroomTracker(initial_mib=8000.0)
+    tracker.sample(6100.0)
+    tracker.sample(3660.0)
+    tracker.sample(7200.0)
+
+    block = tracker.record()
+    assert block["min_mem_available_mib"] == 3660.0
+    assert block["at_launch_mem_available_mib"] == 8000.0
+    assert block["n_samples"] == 4
+
+
+def test_the_recorded_row_CARRIES_the_headroom_block(tmp_path: Path) -> None:
+    """A leg's row carries the minimum headroom it actually saw.
+
+    Bug caught: the tracker existing but never reaching the row, so the
+    in-run measurement lives in a log again — which is exactly how leg 1's
+    3,660 MiB floor was learned after the fact rather than from the record
+    (pin 151b).
+    """
+    tracker = _mod.HeadroomTracker(initial_mib=9200.0)
+    tracker.sample(4100.0)
+
+    row = _mod.build_evidence_row(
+        **{k: v for k, v in _row_kwargs("kuroshio").items() if k != "scores"},
+        scores=_mod.build_scores_block(**_SCORE_KWARGS),
+        headroom=tracker.record(),
+    )
+
+    assert row["headroom"]["min_mem_available_mib"] == 4100.0
+    assert row["headroom"]["at_launch_mem_available_mib"] == 9200.0

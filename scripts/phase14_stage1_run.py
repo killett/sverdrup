@@ -29,6 +29,7 @@ Standing refusals wired here:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import math
 import os
@@ -39,7 +40,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 import typer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
     from types import ModuleType
 
     import numpy as np
@@ -587,6 +588,7 @@ def build_evidence_row(
     n_obs: int,
     wall_s: float,
     peak_rss_mib: float,
+    headroom: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -626,6 +628,10 @@ def build_evidence_row(
         n_obs: Framed observation count.
         wall_s: Measured wall time [s].
         peak_rss_mib: Measured peak RSS [MiB].
+        headroom: MemAvailable sampled DURING the run, minimum beside the
+            launch reading (owner pin 151b). None on paths that do not
+            sample it, in which case no field is recorded — an absent
+            measurement must never serialize as a present one.
         pcg: Per-window PCG convergence rows (``iterations`` and
             ``final_rel_residual`` required per leg).
         pcg_rtol: The solver rtol ACTUALLY used (stamped per leg).
@@ -664,6 +670,7 @@ def build_evidence_row(
         "n_obs": n_obs,
         "wall_s": wall_s,
         "peak_rss_mib": peak_rss_mib,
+        **({"headroom": headroom} if headroom is not None else {}),
         "pcg": pcg_rows,
         "convergence": "CAPPED" if capped else "CONVERGED",
         "scores": {**scores, "capped_measurement": capped},
@@ -1392,6 +1399,124 @@ def probe(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Owner pin 151 — the launch gate measures the box, not the box's future.
+# ---------------------------------------------------------------------------
+
+STAGE1_SOLVE_LOCK = STAGE1_DIR / ".stage1_solve.lock"
+
+
+class HeadroomTracker:
+    """MemAvailable during a run, not only at its launch (owner pin 151b).
+
+    A launch-time reading describes the one moment the box is guaranteed
+    not to be under pressure. Leg 1 bottomed at 3,660 MiB and that was
+    learned afterward, from a log, rather than from the leg's own record.
+    """
+
+    def __init__(self, initial_mib: float) -> None:
+        """Start tracking from the launch-time reading.
+
+        Args:
+            initial_mib: MemAvailable at launch [MiB].
+        """
+        self._at_launch = float(initial_mib)
+        self._min = float(initial_mib)
+        self._n = 1
+
+    def sample(self, mib: float) -> None:
+        """Record one in-run reading.
+
+        Args:
+            mib: MemAvailable now [MiB].
+        """
+        self._min = min(self._min, float(mib))
+        self._n += 1
+
+    def record(self) -> dict[str, Any]:
+        """The recorded block: the minimum seen, beside the launch reading."""
+        return {
+            "at_launch_mem_available_mib": self._at_launch,
+            "min_mem_available_mib": self._min,
+            "n_samples": self._n,
+            "pin": "151(b) — sampled DURING the run; the launch reading alone "
+            "describes the moment before the work started",
+        }
+
+
+def _lock_holder_alive(pid: int) -> bool:
+    """True when a pid is a live process this user can signal."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:  # pragma: no cover - a live process we cannot signal
+        return True
+    return True
+
+
+@contextlib.contextmanager
+def stage1_solve_lock(
+    label: str, *, path: Path | None = None
+) -> Iterator[dict[str, Any]]:
+    """Hold the box for ONE Stage-1 solve (owner pin 151a).
+
+    The launch gate reads MemAvailable once. Nothing stopped a second
+    production-shaped job from arriving after that read — 147(b) passed
+    the gate and then shared the box with 147(a) for 34 minutes. A gate
+    that admits one job and then admits another has not gated anything.
+
+    A lock whose holder is DEAD is taken over, and the takeover is
+    recorded rather than silent: a leg killed by a power event must not
+    block every future leg, but a lock that vanishes without a trace
+    teaches nothing.
+
+    Args:
+        label: What is holding it, e.g. ``leg:kuroshio``.
+        path: Lock file; defaults to the Stage-1 lock.
+
+    Yields:
+        The recorded holder block.
+
+    Raises:
+        RuntimeError: A LIVE process already holds it.
+    """
+    dest = STAGE1_SOLVE_LOCK if path is None else path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    stale: dict[str, Any] | None = None
+    if dest.exists():
+        try:
+            held = json.loads(dest.read_text())
+        except Exception:  # noqa: BLE001 - an unreadable lock is a stale lock
+            held = {"pid": -1, "label": "unreadable"}
+        if _lock_holder_alive(int(held.get("pid", -1))):
+            raise RuntimeError(
+                f"pid {held.get('pid')} ({held.get('label')!r}, since "
+                f"{held.get('started')}) already holds the Stage-1 solve lock at "
+                f"{dest}. Two production-shaped solves must not share the box: "
+                "the launch gate reads MemAvailable ONCE, and a second job "
+                "arriving afterwards makes that reading a fiction (pin 151a)"
+            )
+        stale = held
+    block: dict[str, Any] = {
+        "pid": os.getpid(),
+        "label": label,
+        "started": datetime.now(UTC).isoformat(),
+    }
+    if stale is not None:
+        block["took_over_stale"] = stale
+    dest.write_text(json.dumps(block))
+    try:
+        yield block
+    finally:
+        try:
+            current = json.loads(dest.read_text())
+        except Exception:  # noqa: BLE001 - nothing left to release
+            current = {}
+        if current.get("pid") == os.getpid():
+            dest.unlink(missing_ok=True)
+
+
 def _mem_available_mib() -> float:
     """MemAvailable read AT CALL TIME (the co-tenant box's headroom moves)."""
     for line in Path("/proc/meminfo").read_text().splitlines():
@@ -1438,20 +1563,49 @@ def seam_ram_gate(*, peak_model_mib: float, mem_available_mib: float) -> dict[st
 #     for four tiles) is NOT a ceiling: E-16 §1 says "a leg exceeding 40 h
 #     STOPS and reports" rather than running on, so a runaway first leg is
 #     known after ~31 h instead of after 5 days.
-TIER2_MEASURED_PEAK_MIB = 4365.0
+# Owner pin 150(a): re-pinned to the pin-147(b) measurement. The prior value
+# is PRESERVED here, not overwritten — a superseded basis a reader cannot see
+# is a basis they cannot check.
+TIER2_MEASURED_PEAK_MIB = 4573.0
+TIER2_MEASURED_PEAK_SUPERSEDED: dict[str, Any] = {
+    "prior_value_mib": 4365.0,
+    "prior_basis": (
+        "pin 89's probe: ONE window at m=100, taken as the leg peak. Wrong by "
+        "1.69x at nine windows, because completed windows were retained until "
+        "pin 133"
+    ),
+    "superseded_by": "pin 147(b), measured 2026-09-02",
+    "superseded_on": "2026-09-02",
+    "why": (
+        "owner pin 150(d): 8730 was 1.909x the corrected peak — within a "
+        "rounding error of the rule, and 'close enough' is exactly what "
+        "produced the 1.18x that two rounds went into unwinding. The rule says "
+        "2x; the measurement says 4573; the threshold is 9146"
+    ),
+}
 # Owner pin 143(a). The gate cites pin 89's probe peak; the probe measured ONE
 # window and the gate is applied to a NINE-window leg. Leg 1 measured that
 # projection wrong by 1.69x, and the number rides in the gate record so a
 # reader meets the span where the threshold is used, not three documents away.
 TIER2_GATE_BASIS_SPAN: dict[str, Any] = {
     "cites": "phase14.stage1.tier2_probe_kuroshio_m100.measured_one_window",
-    "measured_over": {"n_windows": 1, "tile": "kuroshio", "m": 100},
+    "measured_over": {"n_windows": 3, "tile": "kuroshio", "m": 100},
     "application_range": {"n_windows": 9, "tiles": 4, "m": 100},
     "extrapolation_declared": (
-        "EXTRAPOLATION on the window-count axis. A one-window peak is not a "
-        "nine-window peak when completed windows are retained, which they were "
-        "until pin 133"
+        "EXTRAPOLATION on the window-count axis, 3 -> 9 (owner pin 150b). What "
+        "bounds it is the FLAT-SLOPE evidence, not an assumption of linearity: "
+        "boundary peaks 4426, 4426, 4573 MiB, with the one +147 MiB step "
+        "occurring five minutes INSIDE window 3's solve rather than at a "
+        "boundary. Leg 1's boundary increments MINUS the 377.5 MiB/window "
+        "retention give per-window working-set variation of -170 to +236 MiB, "
+        "so a nine-window peak near ~4809 MiB is consistent — and 9146 still "
+        "covers that at 1.90x. LEG 2 CLOSES THIS (150c): nine windows at "
+        "production scale, boundary peaks recorded, basis re-pinned from the "
+        "direct measurement afterward"
     ),
+    "working_set_variation_mib": {"min": -170.0, "max": 236.0},
+    "nine_window_peak_consistent_with_mib": 4809.0,
+    "coverage_at_that_peak": 1.902,
     "measured_outcome_2026_09_01": {
         "leg1_peak_mib": 7389.3359375,
         "ratio_measured_over_projected": 1.693,
@@ -1543,8 +1697,9 @@ def tier2_launch_gate(*, mem_available_mib: float) -> dict[str, Any]:
         "threshold_mib": threshold,
         "measured_peak_mib": TIER2_MEASURED_PEAK_MIB,
         "basis": (
-            "2 x the MEASURED 4365 MiB peak (pin 89), NOT the model's 5154 — "
-            "the model over-predicts by 18%"
+            "2 x the MEASURED 4573 MiB peak (owner pin 150a, from pin 147b's "
+            "three-window re-measure). Supersedes 2 x 4365 (pin 89's ONE "
+            "window), which was 1.18x the peak leg 1 actually reached"
         ),
         # Owner pin 143(a): the CONSUMER declares the span of what it cites.
         # A projection is created where a measurement is USED, and this gate
@@ -4493,6 +4648,7 @@ def record_tile_leg(
     n_obs: int,
     wall_s: float,
     peak_rss_mib: float,
+    headroom: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -4516,6 +4672,10 @@ def record_tile_leg(
         n_obs: Framed observation count.
         wall_s: Measured leg wall time [s].
         peak_rss_mib: Measured peak RSS [MiB].
+        headroom: In-run MemAvailable record (owner pin 151b) — the
+            minimum SEEN beside the launch reading. None where the
+            caller does not sample it, and then no field is recorded:
+            an absent measurement must not serialize as a present one.
         pcg: Per-window PCG convergence rows.
         pcg_rtol: The solver rtol actually used.
         pcg_maxiter: The solver iteration cap actually used.
@@ -5191,6 +5351,7 @@ def record_leg_evidence(
     n_obs: int,
     wall_s: float,
     peak_rss_mib: float,
+    headroom: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -5218,6 +5379,8 @@ def record_leg_evidence(
         n_obs: Framed observation count.
         wall_s: Measured leg wall time [s].
         peak_rss_mib: Measured peak RSS [MiB].
+        headroom: In-run MemAvailable record (owner pin 151b);
+            None where the caller does not sample it.
         pcg: Per-window PCG convergence rows.
         pcg_rtol: The solver rtol actually used.
         pcg_maxiter: The solver iteration cap actually used.
@@ -5238,6 +5401,7 @@ def record_leg_evidence(
         n_obs=n_obs,
         wall_s=wall_s,
         peak_rss_mib=peak_rss_mib,
+        headroom=headroom,
         pcg=pcg,
         pcg_rtol=pcg_rtol,
         pcg_maxiter=pcg_maxiter,
@@ -5321,17 +5485,38 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     root = int(derive_seed("miost", "phase14-stage1", tile, 0))
 
     stop_beat = threading.Event()
+    # Pin 151(b): the headroom the gate read at launch is the one moment the
+    # box is guaranteed not to be under pressure. Track the minimum SEEN.
+    headroom = HeadroomTracker(initial_mib=_mem_available_mib())
 
     def _beat() -> None:
         while not stop_beat.wait(300.0):
             rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+            avail = _mem_available_mib()
+            headroom.sample(avail)
             _t5_echo(
                 f"{tile}: heartbeat peak_rss={rss:.0f}MiB "
-                f"mem_avail={_mem_available_mib():.0f}MiB "
+                f"mem_avail={avail:.0f}MiB "
+                f"min_avail={headroom.record()['min_mem_available_mib']:.0f}MiB "
                 f"elapsed={(time.monotonic() - t_leg) / 3600.0:.2f}h"
             )
 
     threading.Thread(target=_beat, daemon=True).start()
+    # Pin 151(a): the lock is held for the WHOLE leg and released in the same
+    # `finally` that stops the heartbeat. The launch gate reads MemAvailable
+    # ONCE, so without this a second production-shaped solve can arrive after
+    # the check and make that reading a fiction — which is exactly what
+    # happened when 147(b) launched on a passing gate and then shared the box
+    # with 147(a) for 34 minutes.
+    leg_lock = contextlib.ExitStack()
+    lock_block = leg_lock.enter_context(stage1_solve_lock(f"leg:{tile}"))
+    if lock_block.get("took_over_stale"):
+        stale = lock_block["took_over_stale"]
+        _t5_echo(
+            f"{tile}: took over a STALE solve lock from pid {stale.get('pid')} "
+            f"({stale.get('label')!r}) — its holder is gone; recorded rather "
+            "than cleared silently"
+        )
     try:
         store = tile_member_store(tile)
         resumed = store.exists()
@@ -5430,6 +5615,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         )
     finally:
         stop_beat.set()
+        leg_lock.close()
 
     solve = frame.solve_bbox
     wall_s = time.monotonic() - t_leg
@@ -5458,6 +5644,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         n_obs=n_obs,
         wall_s=wall_s,
         peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
+        headroom=headroom.record(),
         pcg=pcg_rows,
         pcg_rtol=float(method.pcg_rtol),
         pcg_maxiter=int(method.pcg_maxiter),
