@@ -131,6 +131,38 @@ MIRRORED: dict[str, str] = {
         "(96d), witnessed AT creation rather than at T9 so the interval from "
         "creation never opens (96b, pin 60's prospective guarantee)"
     ),
+    "phase14.stage1.tiles.kuroshio": (
+        "the C1->2 transfer reading for this tile (spec 3.2: per-tile "
+        "frozen-config transfer readings — raw-sigma + labelled scalar-s* "
+        "reference row + j3-side coverage/chi2). The store is gitignored, so "
+        "before this registration the reading existed in exactly ONE place "
+        "with no git history and no mirror. Registered by ABSENCE, not by "
+        "rule: no NOT_MIRRORED group names the tile rows, so their omission "
+        "was incidental in the pin-101(a) sense. Witnessed AT creation per "
+        "pin 60's prospective guarantee — the four legs run over days and a "
+        "reading witnessed at T9 has an open interval behind it. The ROW is "
+        "mirrored, never the maps (pin 56b: bulk stays out; the row carries "
+        "the shas). The report-only siblings (report_rows, "
+        "land_mask_exercise, anisotropy_inputs) are deliberately NOT "
+        "registered here: they are gates:false report material recorded "
+        "OUTSIDE `tiles` precisely so T9 reads gate-bearing evidence under "
+        "`tiles` alone (T5c). That is a choice, recorded so it is visible "
+        "rather than another incidental narrowness"
+    ),
+    "phase14.stage1.tiles.southern": (
+        "the C1->2 transfer reading for the southern tile — same basis as "
+        "tiles.kuroshio above. Registered BEFORE its leg runs, the lane-0 "
+        "manifest precedent: registration lands with the wiring so the "
+        "witness cannot be forgotten after the expensive part is done"
+    ),
+    "phase14.stage1.tiles.equatorial": (
+        "the C1->2 transfer reading for the equatorial tile — same basis as "
+        "tiles.kuroshio above; registered before its leg runs"
+    ),
+    "phase14.stage1.tiles.quiet_gyre": (
+        "the C1->2 transfer reading for the quiet-gyre tile — same basis as "
+        "tiles.kuroshio above; registered before its leg runs"
+    ),
     "phase14.stage1.artifact_witness_classes": (
         "pin 67. Splits the 'no sha' bucket by what ELSE constrains each "
         "artifact: 7 constrained by reproduction, 1 verified by "

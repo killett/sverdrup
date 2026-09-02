@@ -19,7 +19,71 @@
 >
 > ---
 >
-> # 🚀 LEG 1 IS RUNNING — kuroshio, launched 2026-08-31 22:44 PDT (05:44 UTC)
+> # ✅ LEG 1 IS DONE — kuroshio CONVERGED in 19.67 h. ⛔ LEG 2 DOES NOT LAUNCH YET.
+>
+> **The leg finished cleanly**: 9/9 windows, `CONVERGED`, `capped=False`, solve 19.57 h,
+> leg 19.67 h, recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**
+> (35 nodes, `check` PASS). Seal `check` PASS; `store vs mirror: PASS (no witnessed node
+> has changed)`.
+>
+> **The reading (REPORT-ONLY, numbers only — no interpretation is recorded anywhere):**
+> µ **0.285954**, σ **0.218613**, λx **232.53 km** on **89,383** scored points;
+> raw-σ **0.038187** and scalar-s\* **416.678**, both labelled `REFERENCE-ONLY, NOT
+> CALIBRATED`; **coverage_1σ 0.009778** (n=89,383); **χ²_j3_validation 416.678**, which is
+> the s\*/χ² **IDENTITY** (`same_by_construction`, `not_corroboration` — pin 100), recorded
+> and **non-gating** (pin 98). `bridge_caveat` verbatim, seal sha quoted.
+> Report block: SpectralFidelity `spec_slope −4.8330 ± 0.0204`; **four recorded absences**
+> (calibration, skill, **groundtrack**, insitu_gauges) — pin 106's named gap, exactly as
+> predicted. Land-mask exercise: framed **138,518** / scored **89,383** / calibration
+> **89,383**, gap **0**.
+>
+> **⛔⛔ E-16 ITEM 4 RE-ASSESSMENT — THE PROBE WAS WRONG IN BOTH DIRECTIONS, AND ONE OF
+> THEM IS AN OWNER DECISION.**
+>
+> | axis | pin-89 probe (1 window) | leg 1 (9 windows) | ratio |
+> |---|---|---|---|
+> | wall per window | 3.440 h | **2.174 h** | **0.63× — probe PESSIMISTIC** |
+> | leg wall | 31.0 h extrapolated | **19.67 h** | 0.63× |
+> | **peak RSS** | **4,365 MiB** | **7,389 MiB** | **1.69× — probe OPTIMISTIC** |
+>
+> **The RAM miss is STRUCTURAL, not tile variation — same tile, same m.** Peak RSS grows
+> monotonically with window count: 3,379 MiB after window 1 → 7,389 MiB at window 9
+> (+~500 MiB/window early, tapering). **A one-window probe cannot measure a nine-window
+> leg's peak**, and `MemAvailable` bottomed at **~3,660 MiB** during the run.
+>
+> **⚖ THE LAUNCH GATE'S BASIS IS NOW FALSE, AND ONLY THE OWNER CAN RE-PIN IT.** E-16 §2
+> sets the gate at **2 × the MEASURED peak**. On the probe's 4,365 MiB that gave 8,730 MiB.
+> On leg 1's measured **7,389 MiB**, the same rule demands **14,778 MiB** — **more than
+> this box's observed cycle top (~11.2 GiB), so the rule as written is UNSATISFIABLE and
+> legs 2–4 would never launch.** Keeping 8,730 silently would be worse: it is now **1.18×**
+> the true peak, not 2×, and the gate would be asserting a headroom margin it no longer
+> has. **This is an E-16 §2 basis change and it is not an executor call.** Three shapes,
+> priced: (a) hold 8,730 and accept ~1.18× — the box survived leg 1 at exactly that;
+> (b) 2 × 7,389 = 14,778 — correct by the rule, unreachable on this box, legs stop;
+> (c) re-pin the multiplier against the PRODUCTION peak (e.g. 1.3 × 7,389 ≈ **9,606 MiB**,
+> reachable at the top of the cycle).
+>
+> **The raised PCG cap EARNED ITSELF, with evidence:** member-batch legs recorded **502
+> and 505 iterations**. Against the library default of 500 those two windows would have
+> exited CAPPED, and a capped leg can only under-report. `maxiter=1200` is in every pcg
+> row. Achieved residuals all `< 1e-6` at rtol 1e-6.
+>
+> **⚖ WITNESSING GAP FOUND AND CLOSED — FLAGGED FOR RATIFICATION.** The T5 tile rows were
+> in **no** `MIRRORED` entry, and **no `NOT_MIRRORED` group names them** — omission by
+> absence, the pin-101(a) "incidental narrowness" shape. The store is gitignored, so
+> before this the kuroshio reading existed in exactly ONE place with no git history and no
+> mirror. All four `phase14.stage1.tiles.*` paths are now registered (kuroshio witnessed;
+> the other three PENDING, registered before their legs run — the lane-0 manifest
+> precedent), with the report-only siblings deliberately left out and the reason recorded
+> in-line. **This is a witnessing addition, not a change to any recorded value; the owner
+> should ratify or reverse it.**
+>
+> **NEXT ACTION: OWNER.** (1) the E-16 §2 launch-gate basis, above — leg 2 (southern) is
+> HELD on it; (2) ratify the mirror registration; (3) still owed from T12: Findings 1 and 5.
+>
+> ---
+>
+> ## [superseded — kept for the trail] LEG 1 LAUNCH BLOCK — kuroshio, launched 2026-08-31 22:44 PDT (05:44 UTC)
 >
 > **Command:** `pixi run python -u scripts/phase14_stage1_run.py run kuroshio --m 100
 > --maxiter 1200` (E-16 order: kuroshio first — riskiest path AND the de-risked one).
