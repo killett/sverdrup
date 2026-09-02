@@ -2290,3 +2290,88 @@ the one precondition pin 130 left open, and the one that is not executor work.
   election OUTCOME has no producing AC; this table has no slot in the Gate-1 pack) are
   **still owed a ruling**. They bind T9, not T5, so they do not hold leg 1 — but they are
   not discharged by it either.
+
+---
+
+## PART 34 — LEG-1 RE-ASSESSMENT RULING (verbatim), pins 133–138, 2026-09-01
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-01.** Holds leg 2 on a diagnosis rather
+than a basis change, refuses the "hold 8,730" option outright, ratifies the mirror
+registration and T12's Finding 5, gives C-11 a post-gate producer, and orders the
+verification tool fixed.
+
+> 133. ⛔ DIAGNOSE THE RAM GROWTH BEFORE ANY BASIS CHANGE. Leg 2 stays held.
+>      Re-derived: (7389 − 3379)/8 = 501.2 MiB per additional window, and the linear model
+>      reproduces window 9 exactly. That is accumulation, not a peak. With per-window
+>      persistence live, a completed window's members should be releasable.
+>      (a) Determine whether the ~501 MiB/window is retained by merged_members holding
+>          completed windows after persisting them, or by something else. Report the
+>          mechanism, not a workaround.
+>      (b) IF RELEASABLE: fix it, re-measure the peak on a SHORT multi-window run (3 windows
+>          is enough — the signal is the slope, not the magnitude), and E-16 §2 stands
+>          unchanged at 2 × the corrected peak. On window 1's figure that is ~6,758 MiB,
+>          comfortably inside the cycle.
+>      (c) IF GENUINELY UNRELEASABLE: bring me the mechanism and I will re-pin the basis.
+>          Option (c) may then be right, but the multiplier must be re-derived from what the
+>          2× was protecting against, not chosen because 1.3 is reachable. A margin picked
+>          to fit the box is not a margin.
+>      (d) OPTION (a) IS REFUSED OUTRIGHT: holding 8,730 while it means 1.18× is asserting a
+>          margin that does not exist, and MemAvailable bottomed at 3,660 MiB — leg 1 was
+>          closer to an OOM than the gate implied. It survived; that is not evidence the
+>          gate worked.
+>      (e) The fix, if there is one, is bounded and its acceptance is bit-identity of the
+>          assembled store, exactly as 121's was. Reuse that harness.
+> 134. PIN 78 SHOULD HAVE CAUGHT THE PROBE'S EXTRAPOLATION. The probe was validated at ONE
+>      window and applied to NINE — an out-of-range application of exactly the kind 78
+>      requires be declared at the point of use. Wall came back 0.63× pessimistic, RAM 1.69×
+>      optimistic. Report why 78 did not fire: if seal_run's refusal set covers only sealed
+>      gates, then unsealed measurements can extrapolate silently and the discipline has a
+>      hole. Fix the hole rather than the instance.
+> 135. MIRROR REGISTRATION OF tiles.* — RATIFIED. A reading in one gitignored place with no
+>      history and no witness is the gap 56(a) exists to close, and finding it as omission-
+>      by-absence rather than by a failing check is the 101(a) shape. Excluding the
+>      report-only siblings with the reason recorded in-line is correct. Witnessing addition
+>      only; nothing recorded changed.
+> 136. T12 FINDING 1 — C-11 NEEDS A PRODUCER, AND IT SITS AFTER THE GATE.
+>      The contract owes the election OUTCOME with its scope; T9 produces the question and
+>      stops. An outcome cannot be written before I rule, so the producer cannot live in T9.
+>      (a) Add a post-gate task, blocked behind T9, whose sole job is to record the owner's
+>          election outcome AND ITS SCOPE to a witnessed node and into the C1→2 contract.
+>      (b) T9's AC states explicitly that presenting the presumptive rule with an empty
+>          decision cell does NOT discharge C-11. Same correction as T11's Finding 1: the
+>          deliverable is the reading, not the machinery that produces it.
+>      (c) Stage 1 does not close with C-11 outstanding. Record that in the contract, so a
+>          successor cannot read a presented question as an answered one.
+> 137. T12 FINDING 5 — RATIFIED, one AC edit: T9's pack list gains a slot for the C1→2
+>      coverage table beside T11's instrument table, as T12's AC already requires.
+> 138. THE HEADING-ONLY SPOT-CHECK IS BLIND TO T13 AND T22. Tracker-only tasks read as
+>      phantoms to T11's verification method. Fix the check to read the tracker as the
+>      source of truth rather than the plan's headings — a verification tool that cannot see
+>      a third of the recent tasks will mislead the next person who trusts it.
+>
+> SEQUENCE: 133 first — leg 2 is held on it. Then 136/137/138; 134 when convenient.
+>
+> STOP CONDITION: leg 2 does not launch until 133 resolves and I have ruled the basis. Legs
+> 3-4 likewise. Nothing sealed. T5's remaining legs are the only Stage-1 critical path.
+
+### What PART 34 changes
+
+- **Leg 2 is held on a DIAGNOSIS, not on a number** (133). The basis change is not
+  available until the mechanism is reported, and **option (a) — hold 8,730 — is refused
+  outright** (133d): a 1.18× margin asserted as 2× is a margin that does not exist, and
+  `MemAvailable` bottoming at 3,660 MiB means leg 1 ran closer to an OOM than the gate
+  implied. Surviving is not evidence the gate worked.
+- **If the retention is releasable, E-16 §2 stands unchanged** (133b) — 2 × the corrected
+  peak, ~6,758 MiB on window 1's figure. **If it is genuinely unreleasable** (133c), the
+  multiplier is re-derived from what the 2× was protecting against; **a margin picked to
+  fit the box is not a margin.**
+- **Acceptance for any fix is bit-identity of the assembled store** (133e), reusing pin
+  121's harness — the same standard per-window persistence itself had to meet.
+- **Pin 78's hole is the subject, not the instance** (134): if `seal_run`'s refusal set
+  covers only sealed gates, unsealed measurements can extrapolate silently.
+- **C-11 gains a post-gate producer** (136) behind T9, T9's AC states that presenting the
+  question does not discharge the line, and **Stage 1 does not close with C-11
+  outstanding** — recorded in the contract itself.
+- **T12 Finding 5 ratified** (137) and **the heading-only spot-check is fixed to read the
+  tracker** (138), because a verification tool blind to a third of the recent tasks
+  misleads whoever trusts it next.
