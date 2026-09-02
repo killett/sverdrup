@@ -19,6 +19,53 @@
 >
 > ---
 >
+> # ✅ PINS 139–142 LANDED (ruling doc PART 35). 139 DONE; 140 SWEPT — REPORT BELOW.
+>
+> **139 — THE AUDIT NOW REFUSES, AND THE ELEVEN ARE DECLARED.**
+> `phase14.stage1.projection_declarations` records **12 blocks / 27 axes**, each with the
+> range **MEASURED** and the range **APPLIED** (139c — values, never a flag) and stated
+> **PER AXIS** (139d). **No witnessed node was edited (139b):** five nodes gained
+> forward pointers through the pin-64 index, now **21 pointers over 12 nodes**. `seal_run
+> check` **PASSES with the refusal live**.
+>
+> **⚖ 139(a)'s "expect that asymmetry again" — FOUND, and it is worse than the wall case.**
+> The probe's RAM projection was **never written as a projection at all**:
+> `measured_one_window.peak_rss_mib` became the launch-gate basis with **no derived
+> field**, so **no field name could catch it** — the shape-keyed audit is blind to it too.
+> The wall axis at least carried a prose caveat. It is declared by hand, and **the audit's
+> limit is recorded in the node**: a shape-keyed check reads what was written down, and
+> cannot see a projection that lives only in a reader's head. Both axes now carry leg 1's
+> measured outcome beside them — **wall 0.63×, RAM 1.69×**.
+>
+> **⚖ TWO DEFECTS FOUND WHILE LANDING IT, both fixed and test-pinned:**
+> 1. **The audit flagged its own remedy.** The declarations node quotes projected field
+>    names as keys, so the walker refused it. The node is now **exempt from the audit and
+>    validated by a STRICTER rule instead** (`validate_projection_declarations`) — the
+>    exemption is only safe because of that, or it would be a hole big enough to hide
+>    anything in.
+> 2. **⛔ THREE FORWARD POINTERS WERE SILENTLY DISCARDED.** `AMENDMENTS` is a dict
+>    literal; three of the five keys I added **already existed later in it**, so Python
+>    kept the later value and dropped mine — **and the index's own regression check
+>    passed, because from its side the pointers had never existed.** Fixed by appending to
+>    the existing lists, and **test-pinned by parsing the source AST**, since a dict cannot
+>    report a duplicate after it has collapsed.
+>
+> **140 — THE SWEEP, REPORTED BEFORE ANY REFUSAL (140c).** `verdict_audit` re-keys pin 42
+> on shape: a block recording a **verdict** or carrying a **threshold** is inspected
+> whether or not it volunteers; `gates: false` exempts it (pin 98 — recording is a
+> legitimate state). Vocabulary kept deliberately narrow: `rtol` rides all 68 pcg rows and
+> is not a verdict.
+>
+> **⛔ 33 BLOCKS GATE WITHOUT STATING REACHABILITY. NONE declares pin-42 fields. NONE is
+> marked `gates: false`.** By branch: **phase14 24**, phase13 3, phase8 3, stage_b 2,
+> phase10 1. **Nine are prior-phase records**, which is why this is a report and not yet a
+> refusal — retro-refusing them is heavier than the eleven, and it is your call.
+> **140(b) is folded:** §7 discipline 11 carries the instance in your words — *a schema
+> field that only inspects volunteers inspects nothing* — plus a bookkeeping note that the
+> list's stated count ("Six instances to date") has drifted from its own enumeration.
+>
+> ---
+>
 > # ⛔ LEG 2 IS HELD ON PIN 133. Diagnosis DONE, fix LANDED, peak re-measure QUEUED.
 >
 > **✅ PINS 133–138 RULED AND LANDED 2026-09-01 (ruling doc PART 34, verbatim).**

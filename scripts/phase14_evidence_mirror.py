@@ -149,6 +149,14 @@ MIRRORED: dict[str, str] = {
         "`tiles` alone (T5c). That is a choice, recorded so it is visible "
         "rather than another incidental narrowness"
     ),
+    "phase14.stage1.projection_declarations": (
+        "pin 139. The declared span of every projecting block, per axis, "
+        "with the range MEASURED and the range APPLIED and never a bare "
+        "flag (139c/d). Mirrored because the amendment index points five "
+        "witnessed nodes at it: if this node could drift, the pointers "
+        "would resolve to something other than what was declared, and the "
+        "amended nodes are witnessed precisely so that cannot happen"
+    ),
     "phase14.stage1.refresh_election": (
         "pin 136. The Gate-1 shipped-config election OUTCOME and its SCOPE — "
         "the C1->2 contract line T9 could only present, never discharge. "
@@ -306,6 +314,24 @@ NOT_MIRRORED: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 AMENDMENTS: dict[str, list[dict[str, str]]] = {
+    "phase14.stage1.seam_sigma_diagnosis": [
+        {
+            "amended_by": "phase14.stage1.projection_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 139: this node's MC-floor comparisons project via a formula. Their spans are now declared per axis — all of them evaluated AT the m they were observed at, so nothing here crosses an axis. The m=100 floor that half-splitting cannot reach is a different claim and is declared against the settling measurement, not here"
+            ),
+        }
+    ],
+    "phase14.stage1.tier2_probe_kuroshio_m100": [
+        {
+            "amended_by": "phase14.stage1.projection_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 139: both wall projections are declared as window-count extrapolations (and the four-tile one crosses tile count as well), the implied exponent as one point locating itself between anchors rather than a fitted law, and — the asymmetry pin 139(a) predicted — the RAM projection that was NEVER WRITTEN DOWN: measured_one_window.peak_rss_mib became the launch-gate basis with no derived field, so no field name could catch it. Leg 1's measured outcomes sit beside both: wall 0.63x, RAM 1.69x"
+            ),
+        }
+    ],
     "phase14.stage1.anchor_gate_artifact_shas": [
         {
             "amended_by": "phase14.stage1.anchor_gate_artifact_sha_reconciliation",
@@ -431,6 +457,13 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
                 "rho ~ r^2 turns the number into a model."
             ),
         },
+        {
+            "amended_by": "phase14.stage1.projection_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 139: the pin-54 condition applies the c4(m) form at m=100, which is the ONE value half-splitting cannot measure (a 100-member split yields halves of 50). That is declared as an m-axis extrapolation with its basis: a form checked at m=25 and m=50 and by an independent Monte-Carlo route. The half-split reproductions cross nothing"
+            ),
+        },
     ],
     "phase14.stage1.seam_crn_channel_mechanism": [
         {
@@ -451,6 +484,13 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
                 "where sqrt(1-rho) is flat. It must NOT parameterize the floor "
                 "until task 20 sweeps r across the range and names the 23% "
                 "residual."
+            ),
+        },
+        {
+            "amended_by": "phase14.stage1.projection_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 139: predicted_T_cross is evaluated at the MEASURED r and crosses nothing; the r~0.9 use of the same model is declared at rho_model_range_limitation. The sharpened T14 prediction DOES cross an axis nobody had written down — the CRN state — because it uses pre-T14 r to predict post-T14 behaviour, and r post-T14 is unmeasured"
             ),
         },
     ],
@@ -477,7 +517,14 @@ AMENDMENTS: dict[str, list[dict[str, str]]] = {
                 "T_cross ~ E[T](m) * sqrt(1 - r^2). The direction-only "
                 "pre-registration there still stands; this adds the size."
             ),
-        }
+        },
+        {
+            "amended_by": "phase14.stage1.projection_declarations",
+            "date": "2026-09-02",
+            "what": (
+                "Pin 139: implied_correlation_rho is an INVERSION of a measured T_cross, not a prediction, and is declared as speaking for THIS pair on THIS domain only — the shared-observation fraction is a property of the geometry"
+            ),
+        },
     ],
     "phase14.stage1.seam_rows": [
         {

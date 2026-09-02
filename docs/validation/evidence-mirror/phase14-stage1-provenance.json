@@ -12,6 +12,7 @@
   "registered_but_not_yet_written": {
     "paths": [
       "phase14.stage1.equatorial_lane0_manifest",
+      "phase14.stage1.refresh_election",
       "phase14.stage1.tiles.equatorial",
       "phase14.stage1.tiles.quiet_gyre",
       "phase14.stage1.tiles.southern"
@@ -34,6 +35,8 @@
     "phase14.stage1.gate5_mu_witness_scope": "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one of the three rests on phase13_lane0_mean.nc, witnessed forward-only",
     "phase14.stage1.equatorial_lane0_manifest": "pin 96. The lane-0 bundle's manifest — per-file shas of the FROZEN pre-increment baseline (fork-b pin 1), carrying the fork-b pin 2 policy sentence and the bundle's instrument composition. Mirrored because a local manifest is SELF-witnessing (96c, pin 56a): manifest and files sit on one box under one process's control. The MANIFEST is mirrored, never the maps (96e) — bulk stays out per pin 56(b) and the shas are the witness. Class: WITNESSED AT CREATION (96d), witnessed AT creation rather than at T9 so the interval from creation never opens (96b, pin 60's prospective guarantee)",
     "phase14.stage1.tiles.kuroshio": "the C1->2 transfer reading for this tile (spec 3.2: per-tile frozen-config transfer readings — raw-sigma + labelled scalar-s* reference row + j3-side coverage/chi2). The store is gitignored, so before this registration the reading existed in exactly ONE place with no git history and no mirror. Registered by ABSENCE, not by rule: no NOT_MIRRORED group names the tile rows, so their omission was incidental in the pin-101(a) sense. Witnessed AT creation per pin 60's prospective guarantee — the four legs run over days and a reading witnessed at T9 has an open interval behind it. The ROW is mirrored, never the maps (pin 56b: bulk stays out; the row carries the shas). The report-only siblings (report_rows, land_mask_exercise, anisotropy_inputs) are deliberately NOT registered here: they are gates:false report material recorded OUTSIDE `tiles` precisely so T9 reads gate-bearing evidence under `tiles` alone (T5c). That is a choice, recorded so it is visible rather than another incidental narrowness",
+    "phase14.stage1.projection_declarations": "pin 139. The declared span of every projecting block, per axis, with the range MEASURED and the range APPLIED and never a bare flag (139c/d). Mirrored because the amendment index points five witnessed nodes at it: if this node could drift, the pointers would resolve to something other than what was declared, and the amended nodes are witnessed precisely so that cannot happen",
+    "phase14.stage1.refresh_election": "pin 136. The Gate-1 shipped-config election OUTCOME and its SCOPE — the C1->2 contract line T9 could only present, never discharge. Registered BEFORE task 23 writes it (the lane-0 manifest precedent) so the witness cannot be forgotten once the owner has ruled and the gate is behind us. A DECLINE is an outcome and lands in this same node; an empty node is not a decline",
     "phase14.stage1.tiles.southern": "the C1->2 transfer reading for the southern tile — same basis as tiles.kuroshio above. Registered BEFORE its leg runs, the lane-0 manifest precedent: registration lands with the wiring so the witness cannot be forgotten after the expensive part is done",
     "phase14.stage1.tiles.equatorial": "the C1->2 transfer reading for the equatorial tile — same basis as tiles.kuroshio above; registered before its leg runs",
     "phase14.stage1.tiles.quiet_gyre": "the C1->2 transfer reading for the quiet-gyre tile — same basis as tiles.kuroshio above; registered before its leg runs",
@@ -69,6 +72,20 @@
   },
   "READ_THIS_FIRST": "A node's caveats are current AS OF ITS OWN WRITING. `amendment_index` below is what tells you whether they still stand — read the manifest first, always (pin 64). Witnessed nodes are never edited to point at what amends them; that is why the index exists (pin 64b).",
   "amendment_index": {
+    "phase14.stage1.seam_sigma_diagnosis": [
+      {
+        "amended_by": "phase14.stage1.projection_declarations",
+        "date": "2026-09-02",
+        "what": "Pin 139: this node's MC-floor comparisons project via a formula. Their spans are now declared per axis — all of them evaluated AT the m they were observed at, so nothing here crosses an axis. The m=100 floor that half-splitting cannot reach is a different claim and is declared against the settling measurement, not here"
+      }
+    ],
+    "phase14.stage1.tier2_probe_kuroshio_m100": [
+      {
+        "amended_by": "phase14.stage1.projection_declarations",
+        "date": "2026-09-02",
+        "what": "Pin 139: both wall projections are declared as window-count extrapolations (and the four-tile one crosses tile count as well), the implied exponent as one point locating itself between anchors rather than a fitted law, and — the asymmetry pin 139(a) predicted — the RAM projection that was NEVER WRITTEN DOWN: measured_one_window.peak_rss_mib became the launch-gate basis with no derived field, so no field name could catch it. Leg 1's measured outcomes sit beside both: wall 0.63x, RAM 1.69x"
+      }
+    ],
     "phase14.stage1.anchor_gate_artifact_shas": [
       {
         "amended_by": "phase14.stage1.anchor_gate_artifact_sha_reconciliation",
@@ -129,6 +146,11 @@
         "amended_by": "phase14.stage1.seam_crn_channel_mechanism",
         "date": "2026-07-28",
         "what": "Pin 70: the mechanism is named — obs perturbations are CRN-keyed on OBSERVATION identity at a shared root, so the pair is ALREADY partly paired (matched-member field correlation +0.2523 vs -0.0026 mismatched, 155 sd apart). rho ~ r^2 turns the number into a model."
+      },
+      {
+        "amended_by": "phase14.stage1.projection_declarations",
+        "date": "2026-09-02",
+        "what": "Pin 139: the pin-54 condition applies the c4(m) form at m=100, which is the ONE value half-splitting cannot measure (a 100-member split yields halves of 50). That is declared as an m-axis extrapolation with its basis: a form checked at m=25 and m=50 and by an independent Monte-Carlo route. The half-split reproductions cross nothing"
       }
     ],
     "phase14.stage1.seam_crn_channel_mechanism": [
@@ -141,6 +163,11 @@
         "amended_by": "phase14.stage1.rho_model_validation_preregistration",
         "date": "2026-07-28",
         "what": "Pins 73/74: rho = r^2 there is validated only at r = 0.2523, where sqrt(1-rho) is flat. It must NOT parameterize the floor until task 20 sweeps r across the range and names the 23% residual."
+      },
+      {
+        "amended_by": "phase14.stage1.projection_declarations",
+        "date": "2026-09-02",
+        "what": "Pin 139: predicted_T_cross is evaluated at the MEASURED r and crosses nothing; the r~0.9 use of the same model is declared at rho_model_range_limitation. The sharpened T14 prediction DOES cross an axis nobody had written down — the CRN state — because it uses pre-T14 r to predict post-T14 behaviour, and r post-T14 is unmeasured"
       }
     ],
     "phase14.stage1.rho_model_validation_preregistration": [
@@ -155,6 +182,11 @@
         "amended_by": "phase14.stage1.seam_crn_channel_mechanism",
         "date": "2026-07-28",
         "what": "Pin 70 supplies the MECHANISM behind that node's rho and a sharpened T14 prediction with a magnitude: T_cross ~ E[T](m) * sqrt(1 - r^2). The direction-only pre-registration there still stands; this adds the size."
+      },
+      {
+        "amended_by": "phase14.stage1.projection_declarations",
+        "date": "2026-09-02",
+        "what": "Pin 139: implied_correlation_rho is an INVERSION of a measured T_cross, not a prediction, and is declared as speaking for THIS pair on THIS domain only — the shared-observation fraction is a property of the geometry"
       }
     ],
     "phase14.stage1.seam_rows": [
@@ -170,7 +202,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-02T01:28:11.407963+00:00",
+  "generated_utc": "2026-09-02T06:39:52.067202+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -2350,6 +2382,447 @@
           "0.7694138605880073": "golden-tile side A — Gate-0 bridge row, not this artifact"
         },
         "date": "2026-07-29"
+      }
+    },
+    "phase14.stage1.projection_declarations": {
+      "digest_sha256": "a32fe7a1cf011495ec3e83550043cfcd50a5231f5c35444d6784e8c229bbcc52",
+      "value": {
+        "label": "PROJECTION DECLARATIONS — owner pin 139",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "139 — refuse now, declare the eleven by forward-pointer amendment",
+        "gates": false,
+        "method": "Every block the pin-134 shape audit catches is declared here PER AXIS with the range measured and the range applied (139c/d). No amended node is edited: the amendment index carries the forward pointers (139b), and the audit resolves them",
+        "the_audits_limit": "A shape-keyed audit reads what was WRITTEN. The pin-89 probe's RAM projection was never written as one — measured_one_window.peak_rss_mib became the launch-gate basis with no derived field — so no field name could catch it. It is declared here by hand, and the limit is recorded rather than papered over",
+        "declarations": {
+          "phase14.stage1.seam_sigma_diagnosis.line_1_magnitude": {
+            "amends": "phase14.stage1.seam_sigma_diagnosis",
+            "axes": {
+              "predicted_mc_floor_sigma_over_sqrt_m_minus_1_m": {
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected",
+                "measured_over": {
+                  "m": 100,
+                  "n_windows": 9,
+                  "pair": "seam_n/seam_s"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "n_windows": 9,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "the floor is EVALUATED at the same m the observation was taken at; no m axis is crossed here. The m=100 floor that splitting cannot reach is a different claim, declared at ensemble_settling_measurement.pin_54_condition.test_pinned_at"
+              },
+              "observed_over_predicted": {
+                "quantity": "ratio of the observed sigma_delta RMS to the floor above",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a ratio of two quantities measured under the same configuration; it transfers to no other pair, m or geometry"
+              }
+            }
+          },
+          "phase14.stage1.seam_sigma_diagnosis.line_4_half_split.per_tile.seam_n": {
+            "amends": "phase14.stage1.seam_sigma_diagnosis",
+            "axes": {
+              "predicted_mc_floor_m": {
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true
+              },
+              "observed_over_predicted": {
+                "quantity": "half1-minus-half2 RMS over the floor above",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true
+              }
+            }
+          },
+          "phase14.stage1.seam_sigma_diagnosis.line_4_half_split.per_tile.seam_s": {
+            "amends": "phase14.stage1.seam_sigma_diagnosis",
+            "axes": {
+              "predicted_mc_floor_m": {
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true
+              },
+              "observed_over_predicted": {
+                "quantity": "half1-minus-half2 RMS over the floor above",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_n.recorded_half_split_reproduction": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "recomputed_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "abs_diff_predicted_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recomputed_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_s.recorded_half_split_reproduction": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "recomputed_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "abs_diff_predicted_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recomputed_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.pin_54_condition.test_pinned_at": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "m_25_predicted": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": 25
+                },
+                "applied_to": {
+                  "m": 25
+                },
+                "within_measured_span": true
+              },
+              "m_50_predicted": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": 50
+                },
+                "applied_to": {
+                  "m": 50
+                },
+                "within_measured_span": true
+              },
+              "m_100_predicted_not_measurable_by_splitting": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": [
+                    25,
+                    50
+                  ],
+                  "method": "half-splitting"
+                },
+                "applied_to": {
+                  "m": 100
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the m axis, and the field name says so: splitting a 100-member ensemble yields halves of 50, so m=100 is the one value the method cannot measure. The form is checked at m=25 and m=50 against pooled means and by an independent Monte-Carlo route, and applied at m=100 on that basis — a validated FORM, not a measured point"
+              }
+            }
+          },
+          "phase14.stage1.seam_shared_observation_channel.does_it_account_for_the_deficit": {
+            "amends": "phase14.stage1.seam_shared_observation_channel",
+            "axes": {
+              "implied_correlation_rho": {
+                "quantity": "rho = 1 - (T_cross/E[T])^2, inverted from the measurement",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s",
+                  "domain": "the evaluation strip"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "an INVERSION of a measured T_cross, not a prediction: it restates the same measurement in rho units. It speaks for THIS pair on THIS domain and transfers to no other pair — the shared-observation fraction is a property of the geometry"
+              }
+            }
+          },
+          "phase14.stage1.seam_crn_channel_mechanism.the_model_pin_70a": {
+            "amends": "phase14.stage1.seam_crn_channel_mechanism",
+            "axes": {
+              "rho_implied_by_T_cross": {
+                "quantity": "the same inversion as the shared-observation channel",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true
+              },
+              "predicted_T_cross": {
+                "quantity": "T_cross under rho = r^2 at the MEASURED r",
+                "measured_over": {
+                  "r": 0.25225741093173065,
+                  "m": 100
+                },
+                "applied_to": {
+                  "r": 0.25225741093173065,
+                  "m": 100
+                },
+                "within_measured_span": true,
+                "note": "evaluated AT the measured r, so this number crosses nothing. The r ~ 0.9 application of the same model IS an extrapolation and is declared at phase14.stage1.rho_model_range_limitation (validated_range [0, 0.2523], application_range [0, 0.9]) — the one block in this store that ever declared itself"
+              }
+            }
+          },
+          "phase14.stage1.seam_crn_channel_mechanism.sharpened_t14_prediction_pin_70b.now": {
+            "amends": "phase14.stage1.seam_crn_channel_mechanism",
+            "axes": {
+              "predicted_T_cross": {
+                "quantity": "T_cross under rho = r^2, as the sharpened T14 prediction",
+                "measured_over": {
+                  "r": 0.25225741093173065,
+                  "crn_state": "per-tile pavement origins (pre-T14)"
+                },
+                "applied_to": {
+                  "crn_state": "global pavement origin (post-T14)"
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the CRN-STATE axis, which is the axis nobody wrote down: the number is computed at the pre-T14 measured r and used to predict behaviour after T14 pairs the draws by construction. r post-T14 is UNMEASURED — T14 has not run, and it is Stage 2's under pin 88's halt. Pin 68(b) already fixes the direction (T_cross must FALL, and a fall is NOT evidence of repair); the magnitude is what this axis cannot supply"
+              }
+            }
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "axes": {
+              "per_tile_wall_h_if_linear_in_windows": {
+                "quantity": "per-tile wall, one window scaled to nine",
+                "measured_over": {
+                  "n_windows": 1,
+                  "wall_h": 3.4398840666791592,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "applied_to": {
+                  "n_windows": 9,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the WINDOW-COUNT axis, linear, with across-window scaling unmeasured at the time",
+                "measured_outcome_2026_09_01": {
+                  "projected_h": 30.958956600112433,
+                  "measured_leg_h": 19.67,
+                  "ratio_measured_over_projected": 0.635,
+                  "note": "leg 1 settled it: the projection was PESSIMISTIC by 1.58x. Windows are not equal in cost and the last two are short"
+                }
+              },
+              "four_tile_wall_h_if_linear_in_windows": {
+                "quantity": "four-tile wall, one window scaled to nine and one tile to four",
+                "measured_over": {
+                  "n_windows": 1,
+                  "n_tiles": 1,
+                  "tile": "kuroshio"
+                },
+                "applied_to": {
+                  "n_windows": 9,
+                  "n_tiles": 4
+                },
+                "extrapolation_declared": "TWO axes crossed at once — window count 1->9 AND tile count 1->4 — on a single tile's measurement. Tile-to-tile variation remains UNMEASURED: only kuroshio has run, and southern, equatorial and quiet_gyre differ in obs density, land fraction and latitude"
+              }
+            }
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "axes": {
+              "implied_exponent": {
+                "quantity": "the nodes-scaling exponent implied by the probe",
+                "measured_over": {
+                  "n_geometries": 1,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "applied_to": {
+                  "claim": "where the scaling sits among the anchors"
+                },
+                "extrapolation_declared": "ONE point cannot determine an exponent. 1.28 is the exponent that would place this single measurement between the nodes^1.25 and nodes^1.5 anchors; it LOCATES the measurement, and is not a fitted scaling law. A second geometry is what would make it one"
+              }
+            }
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.measured_one_window": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "added_axis_not_caught_by_the_audit": true,
+            "axes": {
+              "peak_rss_mib": {
+                "quantity": "peak RSS, taken as the LEG peak by E-16 section 2",
+                "measured_over": {
+                  "n_windows": 1,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "applied_to": {
+                  "n_windows": 9,
+                  "role": "the launch gate's 2x basis"
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the WINDOW-COUNT axis that was NEVER WRITTEN DOWN. The wall axis at least carried a prose caveat; this one carried nothing, and no field name marks it as projected, so the shape-keyed audit cannot catch it either. It is declared here by hand (pin 139a: expect the asymmetry again)",
+                "measured_outcome_2026_09_01": {
+                  "projected_peak_mib": 4364.52734375,
+                  "measured_leg_peak_mib": 7389.3359375,
+                  "ratio_measured_over_projected": 1.693,
+                  "note": "OPTIMISTIC by 1.69x, and structurally so: peak RSS grew monotonically with window count (4259 MiB after window 1 to 7389 at window 9, ~391 MiB/window) because completed windows were retained. Pin 133 removed the retention; the corrected basis is the pin-133(b) three-window re-measure"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "phase14.stage1.rho_model_range_limitation": {

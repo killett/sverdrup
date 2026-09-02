@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -97,6 +97,8 @@ def build(
 # — it must not go blind to artifact drift to accommodate them.
 _ENVELOPE_KEYS = ("supersedes", "signoff", "date")
 
+DECLARATIONS_PATH = "phase14.stage1.projection_declarations"
+
 
 def _schema_refusals(results: dict[str, object]) -> list[str]:
     """Walk the evidence for gate/validation blocks and collect refusals.
@@ -125,15 +127,36 @@ def _schema_refusals(results: dict[str, object]) -> list[str]:
     return found
 
 
-def _projection_findings(results: dict[str, object]) -> list[str]:
-    """Blocks that project beyond what they measured without saying so (pin 134).
+def _declared_axes(results: dict[str, Any]) -> dict[str, frozenset[str]]:
+    """Forward-pointer declarations, path -> declared field names (pin 139b).
 
-    Reported, never refused, and deliberately so: every block this finds
-    is ALREADY RECORDED, and turning the audit into a refusal would
-    retro-refuse recorded evidence. That is the owner's call. What this
-    removes is the blindness — pins 42/78 key on a self-declared ``kind``
-    that appears zero times (gate) and once (validation) in this store,
-    so an unsealed measurement could extrapolate with nothing looking.
+    A witnessed node is never edited to satisfy a check; the declarations
+    live in their own node and the audit resolves the pointer.
+
+    Args:
+        results: The parsed evidence store.
+
+    Returns:
+        Declared axes per block path, empty when the node is absent.
+    """
+    node = (
+        results.get("phase14", {}).get("stage1", {}).get("projection_declarations", {})
+    )
+    return {
+        path: frozenset((entry.get("axes") or {}).keys())
+        for path, entry in (node.get("declarations") or {}).items()
+    }
+
+
+def _projection_findings(results: dict[str, Any]) -> list[str]:
+    """Blocks that project beyond what they measured without saying so.
+
+    Owner pin 139(a) makes this a REFUSAL. Pins 42/78 key on a
+    self-declared ``kind`` that appears zero times (gate) and once
+    (validation) in this store, so an unsealed measurement could
+    extrapolate with nothing looking; this check keys on shape instead.
+    Declarations arrive by forward pointer, so no recorded block is
+    rewritten to pass.
 
     Args:
         results: The parsed evidence store.
@@ -141,13 +164,61 @@ def _projection_findings(results: dict[str, object]) -> list[str]:
     Returns:
         One message per offending block, each naming its path.
     """
-    from sverdrup.validation.gate_schema import projection_audit  # noqa: PLC0415
+    from sverdrup.validation.gate_schema import (  # noqa: PLC0415
+        projection_audit,
+        validate_projection_declarations,
+    )
+
+    declared = _declared_axes(results)
+    found: list[str] = []
+    node = results.get("phase14", {}).get("stage1", {}).get("projection_declarations")
+    if node:
+        found.extend(
+            f"{DECLARATIONS_PATH}: {m}" for m in validate_projection_declarations(node)
+        )
+
+    def walk(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            key = path.removeprefix("evidence.")
+            if key == DECLARATIONS_PATH:
+                # The declarations quote projected field names as keys.
+                # They are checked by validate_projection_declarations
+                # above — a stricter rule — not by the audit they feed.
+                return
+            for msg in projection_audit(node, declared.get(key, frozenset())):
+                found.append(f"{path}: {msg}")
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+
+    walk(results, "evidence")
+    return found
+
+
+def _verdict_findings(results: dict[str, Any]) -> list[str]:
+    """Verdict/threshold blocks stating no reachability (owner pin 140a).
+
+    REPORTED, not refused: pin 140(c) orders the sweep before any
+    refusal, for the same reason pin 134's did — every block this names
+    is already recorded, and several belong to prior phases.
+
+    Args:
+        results: The parsed evidence store.
+
+    Returns:
+        One message per offending block, each naming its path.
+    """
+    from sverdrup.validation.gate_schema import verdict_audit  # noqa: PLC0415
 
     found: list[str] = []
 
     def walk(node: object, path: str) -> None:
         if isinstance(node, dict):
-            for msg in projection_audit(node):
+            if path.removeprefix("evidence.") == DECLARATIONS_PATH:
+                return
+            for msg in verdict_audit(node):
                 found.append(f"{path}: {msg}")
             for key, value in node.items():
                 walk(value, f"{path}.{key}")
@@ -188,23 +259,22 @@ def check(
     # over unless the extrapolation is DECLARED at the point of use. Keys
     # on self-declared `kind`, so existing recorded content is untouched.
     failures.extend(_schema_refusals(json.loads(evidence_path.read_text())))
-    # Owner pin 134: the refusals above are opt-in by self-declared `kind`,
-    # and in this store nothing opts in. The audit below is what the
-    # refusal set could not see. It REPORTS — every block it names is
-    # already recorded, and retro-refusing recorded evidence is the
-    # owner's decision, not this script's.
-    audit = _projection_findings(json.loads(evidence_path.read_text()))
+    # Owner pins 134 + 139(a): the refusals above are opt-in by self-declared
+    # `kind`, and in this store nothing opts in. The shape-keyed check below
+    # is what they could not see, and it REFUSES. The eleven pre-existing
+    # blocks are declared by forward pointer (139b) rather than rewritten.
+    failures.extend(_projection_findings(json.loads(evidence_path.read_text())))
     if failures:
         for f in failures:
             typer.echo(f"FAIL: {f}")
         raise typer.Exit(code=1)
-    if audit:
+    sweep = _verdict_findings(json.loads(evidence_path.read_text()))
+    if sweep:
         typer.echo(
-            f"AUDIT (pin 134, reported not refused): {len(audit)} block(s) project "
-            "beyond what they measured with no declared basis"
+            f"SWEEP (pin 140a, reported not refused pending the owner's ruling): "
+            f"{len(sweep)} verdict- or threshold-bearing block(s) state no "
+            "reachability and are not marked `gates: false`"
         )
-        for a in audit:
-            typer.echo(f"  {a.split(':')[0]}")
     typer.echo(f"PASS: seal {recorded['path']} sha {recorded['sha']} re-derived")
 
 
