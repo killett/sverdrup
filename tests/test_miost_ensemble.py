@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,7 @@ from sverdrup.core.types import UncertaintyCapability
 from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
 from sverdrup.distributions.miost_ensemble import (
     MiostEnsembleDistribution,
+    WindowBackedAnoms,
     exclusive_days,
 )
 from sverdrup.methods.miost import Miost
@@ -556,7 +558,7 @@ def test_shipped_miost6_carries_the_same_phase8_field() -> None:
 
 
 def _digests(
-    etas: dict[str, np.ndarray], anoms: dict[str, np.ndarray]
+    etas: Mapping[str, np.ndarray], anoms: Mapping[str, np.ndarray]
 ) -> dict[str, str]:
     """sha256 over each window's exact coefficient bytes."""
     import hashlib
@@ -663,3 +665,68 @@ def test_window_store_refuses_a_corrupt_file(tmp_path: Path) -> None:
     victim.write_bytes(data[: len(data) // 2])
     with pytest.raises(RuntimeError, match="unreadable"):
         merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 133 — per-window persistence must RELEASE what it persisted.
+# Leg 1 (kuroshio) grew 391 MiB per window across nine windows: the arrays
+# were written to the window store and then kept in the returned dicts, so
+# peak RSS was O(n_windows) when the store makes it O(1). Acceptance is
+# 121's: bit-identity of the assembled result (pin 133e).
+# ---------------------------------------------------------------------------
+
+
+def test_window_store_RELEASES_completed_windows(tmp_path: Path) -> None:
+    """With a store, member anomalies are not retained window by window.
+
+    Bug caught: the leg-1 accumulation itself — every completed window's
+    (n_el, m) anomaly block kept live after `_save_window` wrote it, which
+    at production shape is 373.8 MiB per window and is what took peak RSS
+    from 4,259 MiB at window 1 to 7,389 MiB at window 9. A mapping that is
+    lazy in name but returns a dict (or caches every window it is asked
+    for) reproduces the defect and must fail here.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    store = tmp_path / "windows"
+    _, _, anoms, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
+    )
+    assert not isinstance(anoms, dict), "a dict retains every window by definition"
+    assert isinstance(anoms, WindowBackedAnoms)
+    assert len(anoms) == 2, "both windows are addressable"
+    assert anoms.resident_window_ids() == (), (
+        "nothing is resident before it is asked for"
+    )
+
+    for wid in sorted(anoms):
+        block = anoms[wid]
+        assert block.shape[1] == M
+    assert len(anoms.resident_window_ids()) <= 2, (
+        "a full pass must not accumulate: the sliding blend touches at most "
+        "two windows at a time"
+    )
+
+
+def test_released_anoms_RELOAD_bit_identically(tmp_path: Path) -> None:
+    """A released window reloads byte-for-byte, not merely close.
+
+    Bug caught: the reload transposing, re-dtyping or returning a
+    neighbouring window's block — invisible to a shape check and exactly
+    the failure class pin 127(a) names, where the member axis must stay
+    fastest-varying.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    _, etas_a, anoms_a, _ = merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT)
+    store = tmp_path / "windows"
+    _, etas_b, anoms_b, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
+    )
+
+    assert _digests(etas_a, anoms_a) == _digests(etas_b, anoms_b)
+    for wid in sorted(anoms_a):
+        first, second = anoms_b[wid], anoms_b[wid]
+        assert first.dtype == anoms_a[wid].dtype
+        assert first.shape == anoms_a[wid].shape
+        assert np.array_equal(first, second), "a second read must not drift"

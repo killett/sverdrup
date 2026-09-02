@@ -4236,3 +4236,96 @@ def test_preflight_tier1_refusal_still_bites_for_other_callers(
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
     with pytest.raises(RuntimeError, match="Tier-1"):
         _mod.preflight("seam_n", 100)
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 133 — the leg store must be written WITHOUT re-materialising the
+# windows the window store just released.
+# ---------------------------------------------------------------------------
+
+
+def test_leg_store_streams_and_matches_savez(tmp_path: Path) -> None:
+    """Streamed leg store == np.savez output, one window resident at a time.
+
+    Bug caught: writing the leg store with ``np.savez(**payload)`` over a
+    released mapping, which pulls every window back into memory at the end
+    of the leg and restores exactly the O(n_windows) peak pin 133 removes
+    — while looking correct, because the file it produces is right.
+    """
+    import numpy as np
+
+    from sverdrup.distributions.miost_ensemble import WindowBackedAnoms, _save_window
+
+    store = tmp_path / "windows"
+    ids = [f"w+{d:08.1f}+60" for d in (0.0, 45.0, 90.0)]
+    rng = np.random.default_rng(3)
+    eager_eta, eager_anom, starts = {}, {}, {}
+    for i, wid in enumerate(ids):
+        eta = rng.standard_normal(97)
+        anom = rng.standard_normal((97, 4))
+        eager_eta[wid], eager_anom[wid], starts[wid] = eta, anom, float(i * 45)
+        _save_window(store, wid, eta=eta, anom=anom, start=float(i * 45), m=4, root=99)
+
+    released = WindowBackedAnoms(store, ids, m=4, root=99)
+    rows = [{"window": ids[0], "iterations": 7}]
+
+    streamed = tmp_path / "streamed.npz"
+    _mod._savez_leg_store(
+        streamed,
+        window_ids=ids,
+        etas_a=eager_eta,
+        anoms=released,
+        starts=starts,
+        pcg_rows=rows,
+        wall_s=12.5,
+        label="test leg store",
+    )
+    assert len(released.resident_window_ids()) <= 2, (
+        "the writer materialised the whole mapping — the defect this pins"
+    )
+
+    reference = tmp_path / "savez.npz"
+    np.savez(
+        reference,
+        **_mod._store_payload(
+            eager_eta, eager_anom, starts, rows, 12.5, "test leg store"
+        ),
+    )
+    with (
+        np.load(streamed, allow_pickle=False) as a,
+        np.load(reference, allow_pickle=False) as b,
+    ):
+        assert sorted(a.files) == sorted(b.files)
+        for key in sorted(b.files):
+            assert np.array_equal(a[key], b[key]), key
+            assert a[key].dtype == b[key].dtype, key
+
+
+def test_leg_store_stream_is_atomic(tmp_path: Path) -> None:
+    """A crash inside the write leaves no half-file for a later leg to read.
+
+    Bug caught: the pin-122 failure one level up — the leg store is the
+    crash-resume substrate, so a truncated one is worse than none.
+    """
+    import numpy as np
+
+    dest = tmp_path / "leg.npz"
+    dest.write_bytes(b"previous good store")
+
+    class _Boom(dict[str, "np.ndarray"]):
+        def __getitem__(self, key: str) -> np.ndarray:
+            raise RuntimeError("solve died mid-write")
+
+    with pytest.raises(RuntimeError, match="died mid-write"):
+        _mod._savez_leg_store(
+            dest,
+            window_ids=["w+00000.0+60"],
+            etas_a={"w+00000.0+60": np.zeros(3)},
+            anoms=_Boom(),
+            starts={"w+00000.0+60": 0.0},
+            pcg_rows=[],
+            wall_s=1.0,
+            label="x",
+        )
+    assert dest.read_bytes() == b"previous good store"
+    assert not list(tmp_path.glob("*.tmp*")), "the temp file was left behind"

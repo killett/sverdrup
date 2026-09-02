@@ -15,6 +15,8 @@ instance is reachable as its ``.underlying``.
 from __future__ import annotations
 
 import os
+from collections import OrderedDict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -41,7 +43,7 @@ from sverdrup.methods.miost_basis import (
 from sverdrup.methods.miost_windows import Window, WindowPlan
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator, Sequence
 
     from sverdrup.core.observations import ObsWindow
     from sverdrup.core.parameters import ParameterProvider
@@ -122,7 +124,9 @@ class MiostEnsembleDistribution:
     m: int
     _spec: BasisSpec
     _etas_a: dict[str, np.ndarray]  # window_id -> unperturbed eta^a (f64)
-    _anoms: dict[str, np.ndarray]  # window_id -> (n_el, m) RAW member anomalies
+    # Read-only here; with a window store this is a WindowBackedAnoms
+    # reader rather than a dict (owner pin 133).
+    _anoms: Mapping[str, np.ndarray]  # window_id -> (n_el, m) RAW member anomalies
     _window_starts: dict[str, float]
     _w_days: float = W_DAYS
     # persisted kind tag: KIND for scalar-era configs, KIND_AUG for
@@ -135,7 +139,7 @@ class MiostEnsembleDistribution:
             starts=tuple(sorted(self._window_starts.values())), w_days=self._w_days
         )
 
-    def _eval(self, pts: Points, cols: dict[str, np.ndarray]) -> np.ndarray:
+    def _eval(self, pts: Points, cols: Mapping[str, np.ndarray]) -> np.ndarray:
         """Blend-weighted basis evaluation of per-window column stacks.
 
         Args:
@@ -179,7 +183,9 @@ class MiostEnsembleDistribution:
         """Member i's field (mean + anomaly) at arbitrary points."""
         return np.asarray(self.mean_at(pts) + self._anoms_at(pts)[:, i])
 
-    def _grid_eval(self, cols: dict[str, np.ndarray], time_days: float) -> np.ndarray:
+    def _grid_eval(
+        self, cols: Mapping[str, np.ndarray], time_days: float
+    ) -> np.ndarray:
         """(n_nodes, k) blended evaluation on the grid via the SPARSE S-path.
 
         Grid-shaped queries must never build the dense gamma
@@ -433,6 +439,129 @@ def _load_window(
         return np.asarray(z["eta"]), np.asarray(z["anom"]), float(z["start"])
 
 
+def _load_window_fields(
+    path: Path, *, wid: str, m: int, root: Seed, fields: tuple[str, ...]
+) -> tuple[np.ndarray | float, ...]:
+    """Load NAMED members of one persisted window, refusing anything else.
+
+    ``np.load`` on an npz reads members on demand, so asking for ``eta``
+    and ``start`` never materialises the ``(n_el, m)`` anomaly block —
+    which is the whole point of pin 133: the leg keeps the cheap fields
+    and leaves the expensive one on disk until a consumer asks.
+
+    Args:
+        path: The persisted window file.
+        wid: Window id this file must belong to.
+        m: Member count this file must have been written under.
+        root: CRN root this file must have been written under.
+        fields: Member names to read, in the order they are returned.
+
+    Returns:
+        The requested members, in ``fields`` order.
+
+    Raises:
+        RuntimeError: The file is unreadable, or it belongs to a different
+            configuration — the same two refusals :func:`_load_window`
+            makes, made in the same place so a lazy read can never be the
+            laxer path.
+    """
+    try:
+        ctx = np.load(path, allow_pickle=False)
+    except Exception as exc:  # noqa: BLE001 - any load failure is corruption
+        raise RuntimeError(
+            f"persisted window {path} is unreadable ({exc!r}) — it is corrupt, "
+            "most likely a crash inside its own write. Delete it and the "
+            "window will be re-solved"
+        ) from exc
+    with ctx as z:
+        if str(z["wid"]) != wid or int(z["m"]) != int(m) or str(z["root"]) != str(root):
+            raise RuntimeError(
+                f"persisted window {path} belongs to a different configuration "
+                f"(stored wid={str(z['wid'])!r} m={int(z['m'])} root={str(z['root'])!r}; "
+                f"requested wid={wid!r} m={int(m)} root={str(root)!r}) — refusing to "
+                "assemble it"
+            )
+        out: list[np.ndarray | float] = []
+        for name in fields:
+            out.append(float(z[name]) if name == "start" else np.asarray(z[name]))
+        return tuple(out)
+
+
+class WindowBackedAnoms(Mapping[str, np.ndarray]):
+    """Member anomalies read from the window store, ``max_resident`` at a time.
+
+    Owner pin 133. A completed window's ``(n_el, m)`` anomaly block is on
+    disk the moment ``_save_window`` returns; holding it as well made peak
+    RSS O(n_windows). At leg-1 kuroshio shape that block is 373.8 MiB, and
+    nine of them is the 391 MiB-per-window growth the leg measured.
+
+    Consumers walk days in order and each day blends at most two windows
+    (``WindowPlan.covering``), so a two-entry LRU loads each window once
+    per pass rather than thrashing. The mapping is READ-ONLY and its
+    contents are byte-identical to the eager path — the acceptance pin
+    133(e) names, checked by the same digests as pin 121.
+    """
+
+    def __init__(
+        self,
+        store: Path,
+        window_ids: Sequence[str],
+        *,
+        m: int,
+        root: Seed,
+        max_resident: int = 2,
+    ) -> None:
+        """Bind the mapping to a store without reading anything.
+
+        Args:
+            store: Directory holding ``window_<wid>.npz``.
+            window_ids: The windows this leg assembled.
+            m: Member count every file must carry.
+            root: CRN root every file must carry.
+            max_resident: How many blocks may stay live at once.
+        """
+        if max_resident < 1:
+            raise ValueError("max_resident must be at least 1")
+        self._store = store
+        self._ids = tuple(window_ids)
+        self._m = int(m)
+        self._root = root
+        self._max_resident = int(max_resident)
+        self._cache: OrderedDict[str, np.ndarray] = OrderedDict()
+
+    def __getitem__(self, wid: str) -> np.ndarray:
+        """One window's anomaly block, loading it if it is not resident."""
+        if wid not in self._ids:
+            raise KeyError(wid)
+        if wid in self._cache:
+            self._cache.move_to_end(wid)
+            return self._cache[wid]
+        (anom,) = _load_window_fields(
+            _window_store_file(self._store, wid),
+            wid=wid,
+            m=self._m,
+            root=self._root,
+            fields=("anom",),
+        )
+        block = np.asarray(anom)
+        self._cache[wid] = block
+        while len(self._cache) > self._max_resident:
+            self._cache.popitem(last=False)
+        return block
+
+    def __iter__(self) -> Iterator[str]:
+        """Window ids, in the order the leg assembled them."""
+        return iter(self._ids)
+
+    def __len__(self) -> int:
+        """How many windows this leg assembled."""
+        return len(self._ids)
+
+    def resident_window_ids(self) -> tuple[str, ...]:
+        """Which blocks are live right now — the pin-133 property, observable."""
+        return tuple(self._cache)
+
+
 def merged_members(
     method: Miost,
     obs: ObsWindow,
@@ -442,7 +571,9 @@ def merged_members(
     root: Seed,
     on_window: Callable[[str, float], None] | None = None,
     window_store: Path | None = None,
-) -> tuple[BasisSpec, dict[str, np.ndarray], dict[str, np.ndarray], dict[str, float]]:
+) -> tuple[
+    BasisSpec, dict[str, np.ndarray], Mapping[str, np.ndarray], dict[str, float]
+]:
     """All windows' member anomalies via one sample_members call per window.
 
     Identity-keyed CRN (same root every call) makes the merged ensemble
@@ -467,6 +598,11 @@ def merged_members(
 
     Returns:
         (spec, etas_a, anoms, window_starts) merged over all windows.
+        With ``window_store`` set, ``anoms`` is a
+        :class:`WindowBackedAnoms` reader over the store rather than a
+        dict (owner pin 133): the blocks are already persisted, so holding
+        them too made peak RSS O(n_windows). Content is unchanged and
+        bit-identical, which is the acceptance pin 133(e) names.
 
     Raises:
         ValueError: If the plan has no windows.
@@ -478,8 +614,14 @@ def merged_members(
     for wid, day in exclusive_days(method._plan).items():
         stored = None if window_store is None else _window_store_file(window_store, wid)
         if stored is not None and stored.exists():
-            eta, anom, start = _load_window(stored, wid=wid, m=m, root=root)
-            etas_a[wid], anoms[wid], starts[wid] = eta, anom, start
+            # Pin 133: read the CHEAP fields only. The (n_el, m) block stays
+            # on disk until a consumer asks for it — at leg-1 kuroshio shape
+            # that is 373.8 MiB per window not held.
+            eta, start = _load_window_fields(
+                stored, wid=wid, m=m, root=root, fields=("eta", "start")
+            )
+            etas_a[wid] = np.asarray(eta)
+            starts[wid] = float(start)
             if on_window is not None:
                 on_window(wid, day)
             continue
@@ -488,7 +630,6 @@ def merged_members(
         dist = method.sample_members(obs, grid, params, day, m, root).underlying
         spec = dist._spec
         etas_a.update(dist._etas_a)
-        anoms.update(dist._anoms)
         starts.update(dist._window_starts)
         if window_store is not None:
             _save_window(
@@ -500,6 +641,12 @@ def merged_members(
                 m=m,
                 root=root,
             )
+            # Pin 133. The block is on disk now; the only thing keeping it
+            # live is this scope, and `dist` is rebound next iteration.
+            # Dropping it here is what makes peak RSS O(1) in windows.
+            del dist
+        else:
+            anoms.update(dist._anoms)
         if on_window is not None:
             on_window(wid, day)
     if spec is None:
@@ -509,6 +656,15 @@ def merged_members(
         # This is the resume path the seam and anchor legs already use:
         # the spec is a pure function of the params and the grid.
         spec = method._spec_from(params, grid)
+    if window_store is not None:
+        # Pin 133: the store IS the retention. Hand back a reader over it,
+        # never a dict — a dict is the defect by definition.
+        return (
+            spec,
+            etas_a,
+            WindowBackedAnoms(window_store, list(etas_a), m=m, root=root),
+            starts,
+        )
     return spec, etas_a, anoms, starts
 
 
@@ -530,7 +686,7 @@ def _window_smats(
 def mean_fields(
     spec: BasisSpec,
     starts: dict[str, float],
-    etas_a: dict[str, np.ndarray],
+    etas_a: Mapping[str, np.ndarray],
     grid: GridSpec,
     plan: WindowPlan,
     days: list[float],
@@ -562,7 +718,7 @@ def mean_fields(
 def std_fields(
     spec: BasisSpec,
     starts: dict[str, float],
-    anoms: dict[str, np.ndarray],
+    anoms: Mapping[str, np.ndarray],
     grid: GridSpec,
     plan: WindowPlan,
     days: list[float],

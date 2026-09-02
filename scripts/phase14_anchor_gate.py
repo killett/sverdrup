@@ -70,7 +70,10 @@ import numpy as np
 import typer
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from types import ModuleType
+
+    from numpy.typing import NDArray
 
     from sverdrup.application.spatial_tiles import TileFrame
     from sverdrup.core.grid import GridSpec
@@ -1086,7 +1089,9 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 with np.load(OWN_STORE, allow_pickle=False) as z:
                     wids = [str(w) for w in np.asarray(z["window_ids"])]
                     etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
-                    anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+                    anoms: Mapping[str, NDArray[np.float64]] = {
+                        w: np.asarray(z[f"anom_{w}"]) for w in wids
+                    }
                     starts = {w: float(z[f"start_{w}"]) for w in wids}
                     pcg_rows = json.loads(str(z["pcg_rows"][()]))
                     solve_wall_s = float(z["solve_wall_s"])

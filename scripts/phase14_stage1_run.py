@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
@@ -38,7 +39,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 import typer
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping, Sequence
     from types import ModuleType
 
     import numpy as np
@@ -2782,9 +2783,9 @@ def _seam_miost(
 
 
 def _store_payload(
-    etas_a: dict[str, Any],
-    anoms: dict[str, Any],
-    starts: dict[str, float],
+    etas_a: Mapping[str, Any],
+    anoms: Mapping[str, Any],
+    starts: Mapping[str, float],
     pcg_rows: list[dict[str, Any]],
     wall_s: float,
     label: str,
@@ -2803,6 +2804,69 @@ def _store_payload(
         payload[f"anom_{w}"] = anoms[w]
         payload[f"start_{w}"] = starts[w]
     return payload
+
+
+def _savez_leg_store(
+    dest: Path,
+    *,
+    window_ids: Sequence[str],
+    etas_a: Mapping[str, Any],
+    anoms: Mapping[str, Any],
+    starts: Mapping[str, float],
+    pcg_rows: list[dict[str, Any]],
+    wall_s: float,
+    label: str,
+) -> None:
+    """Write the leg's member store ONE WINDOW AT A TIME (owner pin 133).
+
+    ``np.savez(**_store_payload(...))`` needs every array in a dict before
+    it writes the first byte. Over a released mapping that pulls all nine
+    windows back into memory at the end of the leg — 3.4 GiB at leg-1
+    kuroshio shape — restoring the peak the window store exists to remove.
+    The npz layout is np.savez's own (uncompressed zip of ``.npy``
+    members), so :func:`_load_window_coefficients` and every existing
+    reader are unaffected.
+
+    Atomic like the per-window write (pin 122): a crash inside the write
+    leaves the previous store intact rather than a truncated one a later
+    leg would read as complete.
+
+    Args:
+        dest: The leg store path.
+        window_ids: Windows to write, in order.
+        etas_a: window id -> unperturbed coefficients.
+        anoms: window id -> (n_el, m) member anomalies; read one at a time.
+        starts: window id -> window start day.
+        pcg_rows: Convergence rows for this leg.
+        wall_s: Solve wall seconds.
+        label: The store's self-description.
+    """
+    import zipfile  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+    from numpy.lib import format as npy_format  # noqa: PLC0415
+
+    tmp = dest.with_name(dest.name + ".tmp.npz")
+    try:
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_STORED, allowZip64=True) as zf:
+
+            def _write(name: str, value: object) -> None:
+                arr = np.asanyarray(value)
+                with zf.open(f"{name}.npy", "w", force_zip64=True) as handle:
+                    npy_format.write_array(handle, arr, allow_pickle=False)
+
+            _write("window_ids", np.array(sorted(window_ids)))
+            _write("pcg_rows", json.dumps(pcg_rows))
+            _write("solve_wall_s", wall_s)
+            _write("label", label)
+            for wid in sorted(window_ids):
+                _write(f"eta_{wid}", etas_a[wid])
+                _write(f"anom_{wid}", anoms[wid])
+                _write(f"start_{wid}", starts[wid])
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    os.replace(tmp, dest)
 
 
 def _load_window_coefficients(store: Path, window_id: str) -> dict[str, Any]:
@@ -2869,7 +2933,9 @@ def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, A
         with np.load(store, allow_pickle=False) as z:
             wids = [str(w) for w in np.asarray(z["window_ids"])]
             etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
-            anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+            anoms: Mapping[str, NDArray[np.float64]] = {
+                w: np.asarray(z[f"anom_{w}"]) for w in wids
+            }
             starts = {w: float(z[f"start_{w}"]) for w in wids}
             pcg_rows = json.loads(str(z["pcg_rows"][()]))
             solve_wall_s = float(z["solve_wall_s"])
@@ -5175,7 +5241,9 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
             with np.load(store, allow_pickle=False) as z:
                 wids = [str(w) for w in np.asarray(z["window_ids"])]
                 etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
-                anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+                anoms: Mapping[str, NDArray[np.float64]] = {
+                    w: np.asarray(z[f"anom_{w}"]) for w in wids
+                }
                 starts = {w: float(z[f"start_{w}"]) for w in wids}
                 pcg_rows = json.loads(str(z["pcg_rows"][()]))
                 solve_wall_s = float(z["solve_wall_s"])
@@ -5204,17 +5272,18 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
             pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
             solve_wall_s = time.monotonic() - t_solve
             STAGE1_DIR.mkdir(parents=True, exist_ok=True)
-            np.savez(
+            # Pin 133: streamed, so the windows the window store released are
+            # not all pulled back to write this file.
+            _savez_leg_store(
                 store,
-                **_store_payload(
-                    etas_a,
-                    anoms,
-                    starts,
-                    pcg_rows,
-                    solve_wall_s,
-                    f"T5 diverse leg member store ({tile}); crash-resume "
-                    "substrate, never a reference",
-                ),
+                window_ids=list(etas_a),
+                etas_a=etas_a,
+                anoms=anoms,
+                starts=starts,
+                pcg_rows=pcg_rows,
+                wall_s=solve_wall_s,
+                label=f"T5 diverse leg member store ({tile}); crash-resume "
+                "substrate, never a reference",
             )
             _t5_echo(f"{tile}: member store persisted -> {store}")
 
