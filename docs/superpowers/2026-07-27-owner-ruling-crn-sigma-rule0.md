@@ -2448,3 +2448,104 @@ re-keys pin 42 on shape as instance seven, and sets two conditions on the re-mea
   alone cannot separate "fixed" from "three windows is too few to show it".
 - **If the slope is not flat, that is a finding and it comes to the owner BEFORE any basis
   ruling.**
+
+
+---
+
+## PART 36 — CONSUMER-SIDE, INDEX-INTEGRITY AND TRIAGE RULING (verbatim), pins 143–149, 2026-09-02
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-02.** Moves the projection question from
+producers to CONSUMERS, orders an index-integrity audit of the amendment history, triages
+the pin-140 sweep by citation, splits the re-measure into a slope test and a gate basis,
+and ratifies the reconstruction and triage.
+
+> 143. AUDIT THE CONSUMERS, NOT ONLY THE PRODUCERS — the blind spot is mine.
+>      A projection is created where a measurement is USED, not where it is written. The
+>      probe recorded a one-window peak honestly; the projection appeared when I ruled the
+>      gate at 2× it for a nine-window leg. No field name at the recording site could have
+>      caught that.
+>      (a) Any THRESHOLD, GATE or BASIS field that cites a measurement must state, machine-
+>          readably, the measurement's span and its own application span. E-16 §2's launch
+>          gate is the first subject: basis, measured_over = 1 window, application_range = 9
+>          windows, and leg 1's outcome beside it.
+>      (b) Sweep for other thresholds derived from measurements and declare them the same
+>          way. The 40 h per-leg ceiling is the obvious second (derived from 31.0 h, itself
+>          a 1→9 extrapolation).
+>      (c) Record in the audit node that a shape-keyed check reads what was written down and
+>          cannot see a projection made in a ruling — you have already done this; keep it,
+>          because it is the honest statement of the tool's reach.
+> 144. ⛔ AUDIT WHETHER EARLIER POINTERS WERE LOST THE SAME WAY. A dict literal with
+>      duplicate keys silently kept the later value, and the index's own regression check
+>      could not see it. That failure mode has existed for as long as AMENDMENTS has been a
+>      dict literal, so today's three may not be the first.
+>      (a) Reconstruct the full pointer history from the AST across the index's git history
+>          and compare against what each node's amendments should be. Report any earlier
+>          collapse.
+>      (b) If any is found, restore by appending — never by rewriting a witnessed node.
+>      (c) This is the mechanism that makes append-only honest. A silent loss here is worse
+>          than a wrong value, because a wrong value can be noticed.
+> 145. 140's 33 BLOCKS — TRIAGE BY CITATION, not by branch.
+>      (a) The 24 phase14 blocks: declare, as the eleven were.
+>      (b) The 9 prior-phase blocks: triage by pin 58's boundary — does a standing Stage-1
+>          claim cite it? The anchor gate's checks 2 and 4 are discharged by CITATION to
+>          stage-0 and phase-13 records; if a cited gate could never have fired, that
+>          citation is hollow and the block must be declared. Uncited prior-phase blocks are
+>          recorded as found and left alone: those gates are closed and owner-signed, and
+>          reopening them is scope growth into finished work.
+>      (c) Report the triage before declaring anything, as with 140(c). I want to see which
+>          of the nine are load-bearing.
+> 146. EXEMPTIONS AND BOOKKEEPING.
+>      (a) The declarations node's audit exemption is acceptable ONLY with the stricter rule
+>          test-pinned, not described. An exemption plus a prose rule is how exemptions
+>          become holes; you said as much, so make it mechanical.
+>      (b) §7 discipline 11 states "Six instances to date" and enumerates seven, naming the
+>          seventh inline. Fix the count, and derive it from the list rather than restating
+>          it — a stated count that drifts from its own enumeration is a small instance of
+>          the family the list exists to catalogue.
+> 147. SPLIT 141's TWO QUESTIONS.
+>      (a) SLOPE TEST, runs now: ≥4 windows at reduced m (m=25 is ample — a failed fix shows
+>          ~283 MiB of accumulation against flat). This answers whether the retention is
+>          gone, which is the scientific question and the one currently blocked on RAM for
+>          no good reason.
+>      (b) GATE BASIS, runs when the box opens: 3 windows at m=100, solve path, unchanged.
+>          Production scale is required here because the number IS the basis — 143(a) will
+>          make it declare its own span, so it must be measured over the span it is applied
+>          to as nearly as affordable.
+>      (c) Keep holding (b) at the same gate a leg would. Your reasoning stands: a
+>          measurement admitted under a relaxed gate to establish that gate is the mistake
+>          one level down.
+>      (d) If (a) shows the slope is NOT flat, stop — (b) is pointless and the fix is
+>          incomplete.
+> 148. THE TWO GOLDEN-TILE BLOCKS DECLARE FIRST, ahead of the other 22. They are what anchor-
+>      gate check 2 is discharged by citation to, and check 2 is one of the two CITED checks
+>      holding up the identity chain. Expect reachability by outcome — the gates fired, 6.2×
+>      and 4.1× over tolerance, which is why the bridge caveat exists. Record that as the
+>      declaration's substance. If either turns out to be unfailable, that is a finding about
+>      check 2 and it stops.
+> 149. RATIFIED: 144's AST reconstruction and the repo-wide duplicate-key sweep; 145(c)'s
+>      triage, including its correction of my branch-based framing — the boundary is
+>      citation, as it has been every time it has been tested.
+>
+> SEQUENCE: commit the in-flight 139/140 work; land PART 36; run 147(a) immediately; then
+> 148, then 145(a)/(b) for the remaining 22, then 146.
+>
+> STOP CONDITION: leg 2 held on 147(b) and my basis ruling. 147(d) and 148 each stop on
+> their own.
+
+### What PART 36 changes
+
+- **The projection question moves to the CONSUMER** (143): a threshold that cites a
+  measurement declares the measurement's span and its own application span. E-16 §2's
+  launch gate is the first subject; the 40 h ceiling the second.
+- **The amendment index gets an integrity audit across its whole history** (144), because a
+  silent pointer loss is worse than a wrong value — a wrong value can be noticed.
+- **The pin-140 sweep triages by CITATION, not branch** (145): uncited prior-phase gates are
+  recorded and left alone; a cited gate that could never have fired makes the citation
+  hollow and must be declared.
+- **The exemption becomes mechanical** (146a) and **§7's instance count is derived from its
+  own list** (146b).
+- **The re-measure splits** (147): the slope test runs now at m=25 and answers whether the
+  retention is gone; the gate basis waits for production-scale headroom, still held at the
+  gate a leg would face. **A non-flat slope stops (b) outright.**
+- **The two golden-tile blocks declare first** (148), and an unfailable one there is a
+  finding about anchor-gate check 2.
