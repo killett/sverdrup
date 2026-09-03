@@ -1,6 +1,82 @@
 # Sverdrup — Progress notebook
 
-> # ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
+> # ⬛ CURRENT STATE — 2026-09-02. THIS IS THE ONLY BLOCK DESCRIBING NOW.
+>
+> **Everything below this block is TRAIL.** Owner pin 154: the banner had become a stack of
+> headline blocks whose top two contradicted each other — one saying leg 2 launches at
+> 9,146 MiB, one still saying leg 2 was held on pin 133 with the re-measure queued. A
+> headline block that outlives its body is the closure-map defect in another file, and the
+> fix is the same: **rewrite what went stale rather than layering over it.**
+>
+> ## Where the stage is
+>
+> | | state |
+> |---|---|
+> | **Leg 1 — kuroshio** | ✅ **DONE.** 9/9 windows CONVERGED, `capped=False`, solve 19.57 h, leg 19.67 h. Recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**. µ 0.285954 · λx 232.53 km · **coverage_1σ 0.009778** · χ² 416.678 (the s\*/χ² identity, non-gating) · raw-σ 0.038187 and s\* 416.678 both `REFERENCE-ONLY, NOT CALIBRATED` |
+> | **Leg 2 — southern** | ⏳ **PARKED AT THE GATE, LAUNCHES ITSELF.** Driver polls for `MemAvailable ≥ 9,146 MiB`; last poll 7,620. Nine windows at production scale — **this run CLOSES the 3→9 projection (pin 150c)** |
+> | **Legs 3–4 — equatorial, quiet_gyre** | Behind leg 2, E-16 order. Re-assess after leg 2 per E-16 §4 |
+> | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
+>
+> ## What holds the legs
+>
+> - **The launch gate is `MemAvailable ≥ 9,146 MiB`** = 2 × the **measured 4,573 MiB**
+>   (owner pin 150). The superseded 4,365 one-window figure is **preserved** at
+>   `TIER2_MEASURED_PEAK_SUPERSEDED`, and **8,730 no longer admits** — 1.909× is the "close
+>   enough" that produced the 1.18×.
+> - **The per-leg wall ceiling is 40 h.** A leg over it **STOPS and reports**.
+> - **An exclusion lock is held for the whole leg** (pin 151a): a second Stage-1 solve is
+>   refused by name. A dead holder's lock is taken over and **the takeover is recorded**.
+> - **Headroom is sampled DURING the run** (151b) — `headroom.min_mem_available_mib` lands
+>   in the row beside the peak.
+> - **Order: kuroshio → southern → equatorial → quiet_gyre**, commit per tile.
+>
+> ## What is measured and settled
+>
+> - **Pin 133 is RESOLVED.** `merged_members` retained every completed window after
+>   persisting it (377.5 MiB/window at production shape). Fixed by a store-backed reader
+>   plus a streamed leg-store write; acceptance was 121's — leg 1's store reassembled
+>   **bit-identically, all 31 members**.
+> - **147(a), m=25 × 4 windows: SLOPE FLAT** — boundary deltas +0/+97/+0, mean 32.3 against
+>   93.4 MiB/window if broken.
+> - **147(b), m=100 × 3 windows: PEAK 4,573 MiB, FLAT** — deltas +0/+147, against 373.8
+>   MiB/window if broken; the one step sits **inside** window 3's solve, not at a boundary.
+> - **The projection that remains** (declared, pin 143a): 3 windows measured → 9 applied,
+>   bounded by the flat-slope evidence. Leg 2 closes it.
+> - **Declarations:** 12 projection blocks / 27 axes and 24 reachability blocks recorded by
+>   **forward-pointer amendment — no witnessed node edited**. `seal_run check` REFUSES an
+>   undeclared projection (pin 139) or verdict block (pin 152); the **9 uncited prior-phase
+>   gates print every run** as recorded-as-found and are not fatal.
+>
+> ## ⚖ Carried forward — unresolved, and NOT resolvable by executor work
+>
+> 1. **The four diverse tiles carry NO GroundTrack row** (pin 106). The transfer readings
+>    ship with their composition stated **INCOMPLETE**, in the section where the numbers
+>    are, as a **real weakening**.
+> 2. **T6's anisotropy axis is UNEVIDENCED** (pin 108) — not "limited". Any kernel option
+>    resting on directional sampling is a **WAIT that comes to the owner**.
+> 3. **A power event still costs the window in flight (~3.44 h)** (pin 132). Pin 121 capped
+>    the loss at one window; it did not remove it.
+> 4. **The CRN production defect** stands at `phase14.stage1.crn_production_defect_deferred`
+>    — a property of the shipped system, and **Stage 2G cannot close while it stands**.
+> 5. **Stage 1 does not close while C-11 is outstanding** (pin 136c) — task 23 is its
+>    producer and sits after the Gate-1 walk.
+>
+> ## ⛔ Standing stops
+>
+> - **`[STAGE 2]` tasks 14–21 are under pin 88's halt.** They show READY when blockers
+>   clear; **that is not permission.**
+> - **Nothing is sealed.** The one sanctioned seal change is UNSPENT.
+> - **Gate 1 (T9) is the owner's walk.** T9 STOPs after posting.
+>
+> ## Next action
+>
+> **Executor: none until leg 2 finishes.** It launches itself; the watcher reports
+> completion, a stall, the 40 h ceiling, or 12 h still parked. On completion: verify the
+> row, `seal_run check`, mirror sync + push, commit `feat: stage1 southern transfer reading
+> recorded`, record the boundary peaks, and **re-assess before leg 3 (E-16 §4, pin 150c)**.
+>
+> ---
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
 >
 > | # | Item | State |
 > |---|---|---|
@@ -19,7 +95,7 @@
 >
 > ---
 >
-> # ✅ PINS 143–149 LANDED (PART 36). 144/145/146/148 DONE; 143 DONE; 147(a) RUNNING.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 143–149 LANDED (PART 36). 144/145/146/148 DONE; 143 DONE; 147(a) RUNNING.
 >
 > **144 — NO EARLIER COLLAPSE.** The `AMENDMENTS` literal was reconstructed from the AST
 > at **every commit that ever touched it** (7 commits, 2026-07-29 → 09-01): keys 9 → 10,
@@ -86,7 +162,7 @@
 > and the RSS column falls at the last step (2,231 → 2,225), which retention cannot do.
 > ⛔ **147(d) does not trigger. 147(b) is not pointless and proceeds.**
 >
-> # ✅ PINS 150–153 LANDED (PART 37) AND FOLDED. LEG 2 LAUNCHES AT **9,146 MiB**.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 150–153 LANDED (PART 37) AND FOLDED. LEG 2 LAUNCHES AT **9,146 MiB**.
 >
 > **150 — THE BASIS IS RE-PINNED.** `TIER2_MEASURED_PEAK_MIB = 4573.0`, threshold
 > **9,146 MiB**. The 4,365 one-window figure is **preserved, not overwritten**, at
@@ -113,7 +189,7 @@
 >
 > ---
 >
-> # ⚖ 147(b) — THE MEASUREMENT BEHIND THE 150 RE-PIN
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⚖ 147(b) — THE MEASUREMENT BEHIND THE 150 RE-PIN
 >
 > kuroshio, **m=100, three windows**, solve path, fresh store, **6.79 h** (2.264 h/window
 > vs leg 1's 2.174 — within variation while sharing the box for part of the run).
@@ -161,7 +237,7 @@
 >
 > ---
 >
-> # ✅ PINS 139–142 LANDED (ruling doc PART 35). 139 DONE; 140 SWEPT — REPORT BELOW.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 139–142 LANDED (ruling doc PART 35). 139 DONE; 140 SWEPT — REPORT BELOW.
 >
 > **139 — THE AUDIT NOW REFUSES, AND THE ELEVEN ARE DECLARED.**
 > `phase14.stage1.projection_declarations` records **12 blocks / 27 axes**, each with the
@@ -208,7 +284,7 @@
 >
 > ---
 >
-> # ⛔ LEG 2 IS HELD ON PIN 133. Diagnosis DONE, fix LANDED, peak re-measure QUEUED.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔ LEG 2 IS HELD ON PIN 133. Diagnosis DONE, fix LANDED, peak re-measure QUEUED.
 >
 > **✅ PINS 133–138 RULED AND LANDED 2026-09-01 (ruling doc PART 34, verbatim).**
 >
@@ -301,7 +377,7 @@
 >
 > ---
 >
-> # ✅ LEG 1 IS DONE — kuroshio CONVERGED in 19.67 h. ⛔ LEG 2 DOES NOT LAUNCH YET.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ LEG 1 IS DONE — kuroshio CONVERGED in 19.67 h. ⛔ LEG 2 DOES NOT LAUNCH YET.
 >
 > **The leg finished cleanly**: 9/9 windows, `CONVERGED`, `capped=False`, solve 19.57 h,
 > leg 19.67 h, recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**
@@ -401,7 +477,7 @@
 >
 > ---
 >
-> # ✅ T12 IS DONE (2026-08-31) — and it TRIPPED ITS STOP CONDITION. TWO RULINGS OWED.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ T12 IS DONE (2026-08-31) — and it TRIPPED ITS STOP CONDITION. TWO RULINGS OWED.
 >
 > `docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`. The C1→2 contract
 > walked both directions: **C-01…C-11** segment spec §3.2's C1→2 sentence, **C-12…C-14**
@@ -487,7 +563,7 @@
 >
 > ---
 >
-> # ⛔⛔ START HERE — COLD BOX AFTER A PLANNED REBOOT (2026-08-01). READ THIS BLOCK FIRST.
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ START HERE — COLD BOX AFTER A PLANNED REBOOT (2026-08-01). READ THIS BLOCK FIRST.
 >
 > **THE BOX WAS REBOOTED DELIBERATELY BY THE OWNER.** If you are resuming on a cold box,
 > this block tells you what was lost (nothing) and what to do.
@@ -523,7 +599,7 @@
 >
 > ---
 >
-> # ⛔ T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔ T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
 >
 > **✅ PINS 90–93 RULED AND LANDED 2026-08-01 (ruling doc PART 20, verbatim).**
 > **⛔⛔ HARD STOP CONDITION (91b): LEG 1 DOES NOT LAUNCH until the 91(a) stale-criteria
