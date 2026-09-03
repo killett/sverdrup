@@ -2622,3 +2622,31 @@ into a refusal, and ratifies the two measurements and the work around them.
   the gate working (151c).
 - **The re-keyed pin-42 check REFUSES** (152) — leaving it reporting would make it a check
   that cannot fail, inside the pin whose subject is checks that cannot fail.
+
+
+---
+
+## PART 38 — BANNER-STATE RULING (verbatim), pin 154, 2026-09-02
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-02.** The progress banner had become a
+stack of headline blocks whose top two contradicted each other.
+
+> 154. THE BANNER'S TOP TWO ENTRIES CONTRADICT EACH OTHER. Line 89 reads "LEG 2 LAUNCHES AT
+>      9,146 MiB"; line 211 still reads "LEG 2 IS HELD ON PIN 133 — peak re-measure QUEUED."
+>      Both are prefixed as headline blocks. 133 is resolved, the re-measure is done, and the
+>      basis is ruled — the second entry is stale and a fresh session reading top-down meets
+>      a resolved hold presented as current.
+>      (a) Retire or supersede line 211's block rather than leaving it under a newer one.
+>      (b) The banner's current state should be one block, not a stack a reader has to date-
+>          order. Same defect the closure map had when its header outlived its body, and the
+>          same fix: rewrite what went stale rather than layering over it.
+
+### What PART 38 changes
+
+- **The banner is ONE current-state block** (154b). Everything older is demoted below it and
+  marked as trail, so a top-down reader meets the current state once rather than a stack
+  they must date-order.
+- **Line 211's hold is retired** (154a): pin 133 is resolved, 147(a)/(b) are measured, and
+  the basis is ruled at 9,146 MiB.
+- **The rule, stated generally:** rewrite what went stale rather than layering over it. A
+  headline block that outlives its body is the closure-map defect in another file.
