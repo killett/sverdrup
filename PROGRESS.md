@@ -13,8 +13,8 @@
 > | | state |
 > |---|---|
 > | **Leg 1 — kuroshio** | ✅ **DONE.** 9/9 windows CONVERGED, `capped=False`, solve 19.57 h, leg 19.67 h. Recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**. µ 0.285954 · λx 232.53 km · **coverage_1σ 0.009778** · χ² 416.678 (the s\*/χ² identity, non-gating) · raw-σ 0.038187 and s\* 416.678 both `REFERENCE-ONLY, NOT CALIBRATED` |
-> | **Leg 2 — southern** | ⏳ **PARKED AT THE GATE, LAUNCHES ITSELF.** Driver polls for `MemAvailable ≥ 9,146 MiB`; last poll 7,620. Nine windows at production scale — **this run CLOSES the 3→9 projection (pin 150c)** |
-> | **Legs 3–4 — equatorial, quiet_gyre** | Behind leg 2, E-16 order. Re-assess after leg 2 per E-16 §4 |
+> | **Leg 2 — southern** | ✅ **DONE 2026-09-04.** 9/9 windows CONVERGED, `capped=False`, solve 27.37 h, leg 27.48 h — inside the 40 h ceiling, no trip. Recorded at `phase14.stage1.tiles.southern` and **witnessed in the mirror**. µ −0.617629 · σ 0.137723 · λx 141.95 km · **coverage_1σ 0.0025807** · χ² 1637.484 (the s\*/χ² identity, non-gating) · raw-σ 0.0349657 and s\* 1637.484 both `REFERENCE-ONLY, NOT CALIBRATED`. **It CLOSED the 3→9 projection — see below** |
+> | **Legs 3–4 — equatorial, quiet_gyre** | ⛔ Behind the **E-16 §4 re-assessment, which is OWED and is the owner's** (pin 150c). Leg 3 does not launch until it lands. E-16 order |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 >
 > ## What holds the legs
@@ -51,8 +51,29 @@
 >   93.4 MiB/window if broken.
 > - **147(b), m=100 × 3 windows: PEAK 4,573 MiB, FLAT** — deltas +0/+147, against 373.8
 >   MiB/window if broken; the one step sits **inside** window 3's solve, not at a boundary.
-> - **The projection that remains** (declared, pin 143a): 3 windows measured → 9 applied,
->   bounded by the flat-slope evidence. Leg 2 closes it.
+> - **⭐ THE 3→9 PROJECTION IS CLOSED (pin 150c, leg 2, 2026-09-04).** Nine windows at
+>   production scale, measured directly, no extrapolation left on the window-count axis.
+>   **Boundary peaks: 4,575 then 4,951 ×8** — deltas **+376 then +0 ×7**, mean increment
+>   **47.0 MiB/window** against pin 133's 377.5 retention signature. The one +376 landed
+>   *inside* window 2's solve, the same shape 147(b) saw at +147. **Nine-window peak
+>   4,951.16 MiB**, against the three-window 4,573 → the extrapolation was good to
+>   **1.083×**, and against the declaration's "consistent with ~4,809" it is 142 MiB high.
+>   ⚖ **What this does to the gate is the OWNER's, not the executor's:** 9,146 / 4,951 =
+>   **1.847×, not the 2× the gate names** — the same shape as the 1.18× pin 150 corrected,
+>   one step smaller and in the safe direction. A true 2× on the measured peak is
+>   **9,902 MiB**. That arithmetic is the E-16 §4 input; **it is recorded here, NOT adopted.**
+> - **Wall, leg 2:** per-window 3.193 / 3.268 / 3.026 / 2.744 / 3.203 / 3.793 / 2.903 /
+>   2.846 / 2.404 h, mean 3.042, **slope −0.060 h per window index** — decreasing, not
+>   growing. 1.40× leg 1's 19.67 h. PCG worst 626 iterations (`w+00207` member-batch),
+>   over the 500 default a smaller cap would impose and under the 1200 — pin 143's third
+>   subject exercised for real a second time.
+> - **⚠ The leg-2 launch gate measured a box that did not stay measured.** Launch cleared
+>   at 10,771 MiB; the run bottomed at **1,382 MiB** (tracker) / 1,526 (1-min sampler),
+>   far below leg 1's 3,660. Swap hit **zero**, the leg swapped ~100 MiB, and **both the
+>   in-process heartbeat and the external sampler stalled ~10 min together** around
+>   2026-09-04T07:29Z — a whole-box stall, from an unrelated tenant growing ~3 GiB.
+>   It survived only because the owner freed memory twice, the second time ~35 min before
+>   window 8's checkpoint. **A launch-time gate does not hold the box for the leg.**
 > - **Declarations:** 12 projection blocks / 27 axes and 24 reachability blocks recorded by
 >   **forward-pointer amendment — no witnessed node edited**. `seal_run check` REFUSES an
 >   undeclared projection (pin 139) or verdict block (pin 152); the **9 uncited prior-phase
@@ -81,10 +102,19 @@
 >
 > ## Next action
 >
-> **Executor: none until leg 2 finishes.** It launches itself; the watcher reports
-> completion, a stall, the 40 h ceiling, or 12 h still parked. On completion: verify the
-> row, `seal_run check`, mirror sync + push, commit `feat: stage1 southern transfer reading
-> recorded`, record the boundary peaks, and **re-assess before leg 3 (E-16 §4, pin 150c)**.
+> **⛔ EXECUTOR: NONE. The next move is the OWNER's — the E-16 §4 re-assessment.**
+>
+> Leg 2 is done, recorded, witnessed, committed and pushed. The completion procedure ran
+> in full: row verified, `seal_run check` PASS (seal sha `a17ea419…` re-derived), mirror
+> `sync` + `check` PASS (38 nodes, no witnessed node changed, **no supersession spent**).
+>
+> **What is owed before leg 3 (equatorial) launches**, and none of it is executor work:
+> 1. **Re-assess per E-16 §4** on leg 2's nine-window measurement (pin 150c).
+> 2. **Rule on the basis:** re-pin `TIER2_MEASURED_PEAK_MIB` 4,573 → **4,951** from the
+>    direct measurement? If yes, the gate at a true 2× becomes **9,902 MiB**; the standing
+>    9,146 is **1.847×** of the measured peak. Recorded, **not adopted** — see above.
+> 3. **Decide whether a launch-time gate is still the right instrument** given that leg 2's
+>    box fell from 10,771 to 1,382 MiB mid-run and stalled for ~10 min.
 >
 > ---
 > ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
