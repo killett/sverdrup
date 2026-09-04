@@ -14,15 +14,26 @@
 > |---|---|
 > | **Leg 1 — kuroshio** | ✅ **DONE.** 9/9 windows CONVERGED, `capped=False`, solve 19.57 h, leg 19.67 h. Recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**. µ 0.285954 · λx 232.53 km · **coverage_1σ 0.009778** · χ² 416.678 (the s\*/χ² identity, non-gating) · raw-σ 0.038187 and s\* 416.678 both `REFERENCE-ONLY, NOT CALIBRATED` |
 > | **Leg 2 — southern** | ✅ **DONE 2026-09-04.** 9/9 windows CONVERGED, `capped=False`, solve 27.37 h, leg 27.48 h — inside the 40 h ceiling, no trip. Recorded at `phase14.stage1.tiles.southern` and **witnessed in the mirror**. µ −0.617629 · σ 0.137723 · λx 141.95 km · **coverage_1σ 0.0025807** · χ² 1637.484 (the s\*/χ² identity, non-gating) · raw-σ 0.0349657 and s\* 1637.484 both `REFERENCE-ONLY, NOT CALIBRATED`. **It CLOSED the 3→9 projection — see below** |
-> | **Legs 3–4 — equatorial, quiet_gyre** | ⛔ Behind the **E-16 §4 re-assessment, which is OWED and is the owner's** (pin 150c). Leg 3 does not launch until it lands. E-16 order |
+> | **Legs 3–4 — equatorial, quiet_gyre** | ✅ **AUTHORISED TOGETHER** by the E-16 §4 re-assessment (owner pin 157), conditional on 156(a) — **the watchdog is landed and tested, so the condition is MET**. Run **back to back, equatorial then quiet_gyre**; **no re-assessment between them** (157a). 40 h ceiling per leg unchanged (157c) |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 >
 > ## What holds the legs
 >
-> - **The launch gate is `MemAvailable ≥ 9,146 MiB`** = 2 × the **measured 4,573 MiB**
->   (owner pin 150). The superseded 4,365 one-window figure is **preserved** at
->   `TIER2_MEASURED_PEAK_SUPERSEDED`, and **8,730 no longer admits** — 1.909× is the "close
->   enough" that produced the 1.18×.
+> - **The launch gate is `MemAvailable ≥ 9,902.33 MiB`** = 2 × the **measured 4,951.16 MiB**
+>   (owner pin 155, leg 2's DIRECT nine-window measurement — no projection). Both prior
+>   bases are **preserved** as a chain at `TIER2_MEASURED_PEAK_SUPERSEDED`: 4,365 → 4,573 →
+>   4,951. **Neither 8,730 nor 9,146 admits** — 1.909× and 1.847× are the "close enough"
+>   that produced the 1.18× and survived two rounds.
+> - **⛔ THE GATE IS LAUNCH-TIME ONLY AND DOES NOT PROTECT THE LEG** (owner pin 156). The
+>   box **shed 9,389 MiB during leg 2** against a 4,951 MiB leg peak; no launch threshold
+>   covers that. **What protects the leg is the in-run watchdog** — below a floor of
+>   **2,048 MiB**, or on the leg's own `VmSwap` reaching 64 MiB with headroom under 4,096,
+>   the leg **STOPS CLEANLY at the next window boundary**. The boundary is where it is
+>   clean: `on_window` fires *after* `_save_window`, so the halt costs nothing already
+>   solved and pin 121's store carries the rest. A halt is **not a completion and not a
+>   crash** — `kind: HEADROOM_HALT`, exit code **75**, and **no evidence row**.
+>   `scripts/stage1_leg_launcher.sh` parks and relaunches on 75, and **stops and reports on
+>   any other non-zero** rather than relaunching a crash blind.
 > - **The per-leg wall ceiling is 40 h.** A leg over it **STOPS and reports**.
 >   ⚠ **The check is POST-HOC and cannot lose work.** `tier2_wall_ceiling` is
 >   evaluated at `phase14_stage1_run.py:5701`, *after* the leg has solved and been
@@ -38,7 +49,11 @@
 > - **An exclusion lock is held for the whole leg** (pin 151a): a second Stage-1 solve is
 >   refused by name. A dead holder's lock is taken over and **the takeover is recorded**.
 > - **Headroom is sampled DURING the run** (151b) — `headroom.min_mem_available_mib` lands
->   in the row beside the peak.
+>   in the row beside the peak — **at 60 s, the external sampler's cadence** (pin 156c).
+>   Leg 2's tracker ran at 300 s and recorded 1,382 while the 1-minute sampler caught
+>   1,526: two clocks disagreeing about one run. A **resumed** leg carries its halt in the
+>   row inside `headroom` (156a-ii); the row's top-level key set is pinned exactly, so
+>   nothing was added to the schema (156d).
 > - **Order: kuroshio → southern → equatorial → quiet_gyre**, commit per tile.
 >
 > ## What is measured and settled
@@ -74,6 +89,16 @@
 >   2026-09-04T07:29Z — a whole-box stall, from an unrelated tenant growing ~3 GiB.
 >   It survived only because the owner freed memory twice, the second time ~35 min before
 >   window 8's checkpoint. **A launch-time gate does not hold the box for the leg.**
+> - **⭐ WALL IS SETTLED (owner pin 157a).** 19.67 h and 27.48 h against the probe's 31.0 h
+>   prediction, mean 23.58 h, both well inside the 40 h ceiling. The extrapolation that made
+>   per-leg re-assessment necessary is **validated twice over**, which is why legs 3 and 4
+>   run back to back with no re-assessment between them. Southern took **1.40×** kuroshio;
+>   the ceiling stands for the case where a remaining tile is worse (157c).
+> - **Ratified (pin 158):** leg 2 as recorded, the completion procedure run in full, and
+>   PROGRESS rewritten rather than layered. **The finding of the round was that the gate
+>   measured a box that did not stay measured** — surfaced rather than reported as a clean
+>   leg. Pin 26(b)'s raised PCG cap earned itself again at **626 iterations** on
+>   `w+00207`'s member batch, over the 500 a smaller cap would have imposed.
 > - **Declarations:** 12 projection blocks / 27 axes and 24 reachability blocks recorded by
 >   **forward-pointer amendment — no witnessed node edited**. `seal_run check` REFUSES an
 >   undeclared projection (pin 139) or verdict block (pin 152); the **9 uncited prior-phase
@@ -102,19 +127,30 @@
 >
 > ## Next action
 >
-> **⛔ EXECUTOR: NONE. The next move is the OWNER's — the E-16 §4 re-assessment.**
+> **▶ RUN LEG 3 (equatorial), THEN LEG 4 (quiet_gyre), BACK TO BACK.**
 >
-> Leg 2 is done, recorded, witnessed, committed and pushed. The completion procedure ran
-> in full: row verified, `seal_run check` PASS (seal sha `a17ea419…` re-derived), mirror
-> `sync` + `check` PASS (38 nodes, no witnessed node changed, **no supersession spent**).
+> Pins 155–158 are landed (ruling doc **PART 39**), 155 is folded, and **156 is built and
+> tested** — so pin 157(b)'s condition is met and the legs are authorised together.
 >
-> **What is owed before leg 3 (equatorial) launches**, and none of it is executor work:
-> 1. **Re-assess per E-16 §4** on leg 2's nine-window measurement (pin 150c).
-> 2. **Rule on the basis:** re-pin `TIER2_MEASURED_PEAK_MIB` 4,573 → **4,951** from the
->    direct measurement? If yes, the gate at a true 2× becomes **9,902 MiB**; the standing
->    9,146 is **1.847×** of the measured peak. Recorded, **not adopted** — see above.
-> 3. **Decide whether a launch-time gate is still the right instrument** given that leg 2's
->    box fell from 10,771 to 1,382 MiB mid-run and stalled for ~10 min.
+> ```sh
+> sh scripts/stage1_leg_launcher.sh equatorial
+> ```
+>
+> The launcher parks on the 9,902.33 MiB gate, launches, relaunches itself on a clean
+> headroom halt (exit 75), and **stops and reports on a crash**. Per leg on completion:
+> verify the row, `seal_run check`, mirror sync + push, commit
+> `feat: stage1 <tile> transfer reading recorded`. **No re-assessment between legs 3 and
+> 4** (157a) — go straight into quiet_gyre.
+>
+> ⚖ **Equatorial carries things the other tiles do not.** The pin-12 **box election is
+> CLOSED** (2026-07-25, box KEPT, −4..11N) and no `box_election_pending` state exists or is
+> to be created — pin 90 discharged that criterion, so the leg is **not** gated on it. What
+> *is* live: the **lane-0 persistence bundle** with its `WITNESS NOW` step (96b/96c — the
+> manifest witnesses nothing until the mirror is synced AND pushed), and **pin 90's
+> `live_half`**, deferred to `_solve_leg`: `record_evidence_row` for tile `equatorial` gets
+> exercised on the REAL path for the first time by this leg, not at a stub.
+>
+> **After leg 4:** T6/T7/T8 → T9, still behind T5. **T6–T9 and task 23 remain unopened.**
 >
 > ---
 > ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)

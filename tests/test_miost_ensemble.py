@@ -730,3 +730,58 @@ def test_released_anoms_RELOAD_bit_identically(tmp_path: Path) -> None:
         assert first.dtype == anoms_a[wid].dtype
         assert first.shape == anoms_a[wid].shape
         assert np.array_equal(first, second), "a second read must not drift"
+
+
+def test_a_raising_on_window_halts_AFTER_the_window_is_persisted(
+    tmp_path: Path,
+) -> None:
+    """Owner pin 156(a): the clean stop lands where nothing is lost.
+
+    Bug caught: a watchdog wired anywhere but the window boundary. The
+    whole cheapness of 156(a) rests on `on_window` firing AFTER
+    `_save_window` -- if it fired before, a halt would discard the window
+    that had just finished solving (~3 h at production shape) and the
+    "at most the window in flight" guarantee pin 121 gives would be
+    false. This drives the real callback and asserts the completed window
+    survived the raise, and that resume then reassembles it BIT
+    IDENTICALLY rather than re-solving it differently.
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    spec_a, etas_a, anoms_a, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT
+    )
+
+    class _Halt(RuntimeError):
+        """Stands in for Stage1HeadroomHalt: same shape, no script import."""
+
+    store = tmp_path / "windows"
+    seen: list[str] = []
+
+    def _on_window(wid: str, day: float) -> None:
+        seen.append(wid)
+        raise _Halt(wid)
+
+    with pytest.raises(_Halt):
+        merged_members(
+            _method(),
+            _obs(),
+            GRID,
+            PARAMS,
+            M,
+            ROOT,
+            on_window=_on_window,
+            window_store=store,
+        )
+
+    # The window that had just solved is ON DISK despite the raise. That
+    # is the entire basis for calling the halt clean.
+    assert len(seen) == 1
+    assert len(list(store.glob("window_*.npz"))) == 1
+
+    # And the relaunch resumes from it rather than re-solving it: the
+    # assembled result is bit-identical to the uninterrupted run.
+    spec_b, etas_b, anoms_b, _ = merged_members(
+        _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
+    )
+    assert _digests(etas_a, anoms_a) == _digests(etas_b, anoms_b)
