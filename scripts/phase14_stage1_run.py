@@ -1406,12 +1406,252 @@ def probe(
 STAGE1_SOLVE_LOCK = STAGE1_DIR / ".stage1_solve.lock"
 
 
+# ---------------------------------------------------------------------------
+# Owner pin 156 — the IN-RUN headroom watchdog.
+#
+# 155 re-pinned the launch gate and MUST NOT be read as a fix. Re-derived from
+# leg 2: the box shed 9,389 MiB DURING the run against a 4,951 MiB leg peak.
+# No launch threshold covers that. A gate prevents starting into a bad box; it
+# cannot prevent the box going bad. Leg 2 survived by owner intervention, and
+# that is not a property the remaining legs can rely on.
+#
+# The stop is CLEAN and lands at a window boundary: `on_window` fires AFTER
+# `_save_window`, so the completed window is already on disk and pin 121 caps
+# the loss at the window in flight. Bounded change per 133(e) — persistence
+# and stop logic only; the solve, the scoring and the row schema are untouched.
+# ---------------------------------------------------------------------------
+
+# Sampled at the EXTERNAL sampler's cadence (pin 156c). Leg 2's in-run tracker
+# ran at 300 s and recorded 1,382 MiB while the 1-minute sampler caught 1,526:
+# two clocks disagreeing about one run, with the row carrying whichever landed
+# on a dip.
+STAGE1_HEADROOM_SAMPLE_S = 60.0
+# A halt exits with its OWN code, so the parked launcher can tell a clean
+# headroom stop (relaunch when the box recovers) from a crash (do not).
+STAGE1_HEADROOM_HALT_EXIT = 75
+# Owner pin 156(a)(i): from leg 2's own trace, not invented.
+STAGE1_HEADROOM_FLOOR_MIB = 2048.0
+# The leg's OWN resident set going to disk. Gated on headroom (below) because
+# this box ran leg 2 healthily for hours with swap exhausted by a co-tenant.
+STAGE1_HEADROOM_SWAP_ONSET_MIB = 64.0
+STAGE1_HEADROOM_SWAP_GUARD_MIB = 2.0 * STAGE1_HEADROOM_FLOOR_MIB
+STAGE1_HEADROOM_FLOOR_BASIS: dict[str, Any] = {
+    "tile": "southern",
+    "leg": "leg 2, 2026-09-03/04",
+    "observed_bottom_mib": 1382.0,
+    "observed_bottom_sampler_mib": 1526.0,
+    "floor_mib": STAGE1_HEADROOM_FLOOR_MIB,
+    "margin_over_observed_bottom": round(
+        STAGE1_HEADROOM_FLOOR_MIB / 1382.0, 3
+    ),  # 1.482
+    "healthy_band_mib": {"min": 5526.0, "max": 8016.0},
+    "why_this_floor": (
+        "leg 2 bottomed at 1382 MiB (5-minute tracker) / 1526 (1-minute "
+        "sampler) with its heartbeat stretched from 5 min to 11.75 and the "
+        "external sampler skipping 10 minutes outright — that is the region "
+        "where the leg was ALREADY failing, so the floor sits above it. It "
+        "also sits far below the 5526-8016 MiB band leg 2 ran in for 24 h, so "
+        "it does not halt a healthy leg on this box"
+    ),
+    "swap_signal": (
+        "owner pin 156(a)(i): swap onset is a signal as much as the absolute "
+        "number. Keyed on the LEG'S OWN VmSwap, not SwapFree — this box ran "
+        "leg 2 with SwapFree at 0-2 MiB for hours while the leg was healthy, "
+        "because swap was exhausted by another tenant before launch. An "
+        "unconditional swap trip would halt on a condition that says nothing "
+        "about this leg"
+    ),
+    "swap_observation_limit": (
+        "⚖ HONEST LIMIT: the leg's VmSwap was read at TWO instants during leg "
+        "2 (84 MiB and 98 MiB, both inside the squeeze), not sampled across "
+        "the run. It is NOT established that VmSwap was zero earlier, so the "
+        "64 MiB onset threshold is bounded by the healthy-headroom gate rather "
+        "than by a measured baseline. Legs 3 and 4 sample it throughout and "
+        "close this"
+    ),
+    "measured_over": {"n_legs": 1, "tile": "southern", "n_windows": 9},
+    "application_range": {"n_legs": 4, "tiles": 4},
+    "extrapolation_declared": (
+        "DECLARED on the tile axis: the floor is derived from southern's trace "
+        "and applied to equatorial and quiet_gyre. What bounds it is that the "
+        "floor is a property of the BOX under co-tenancy rather than of the "
+        "tile, and that it sits 2.7x below leg 2's healthy band — a tile whose "
+        "working set differs moves the peak, not the box's failure region"
+    ),
+}
+
+
+class Stage1HeadroomHalt(RuntimeError):
+    """A clean in-run halt on headroom (owner pin 156a).
+
+    Raised from the window-boundary callback, which fires AFTER the
+    window is persisted — so the halt costs nothing already solved.
+    """
+
+    def __init__(self, watchdog: dict[str, Any], window_id: str) -> None:
+        """Carry the deciding block, so the halt records why.
+
+        Args:
+            watchdog: The :func:`headroom_watchdog` block that tripped.
+            window_id: The window that had just completed.
+        """
+        super().__init__(watchdog["reason"])
+        self.watchdog = watchdog
+        self.window_id = window_id
+
+
+def headroom_watchdog(
+    *, mem_available_mib: float, proc_vm_swap_mib: float
+) -> dict[str, Any]:
+    """Decide whether the leg stops cleanly at the next window boundary.
+
+    Owner pin 156(a). Two signals: MemAvailable against a floor derived
+    from leg 2's trace, and the leg's OWN pages being evicted — the
+    second gated on headroom also being degraded, because this box's
+    swap is routinely exhausted by a co-tenant while the leg is fine.
+
+    Args:
+        mem_available_mib: MemAvailable now [MiB].
+        proc_vm_swap_mib: This process's ``VmSwap`` now [MiB].
+
+    Returns:
+        The recorded block; ``stop`` True means halt at the next window
+        boundary. ``reason`` is None when nothing tripped.
+    """
+    below_floor = mem_available_mib < STAGE1_HEADROOM_FLOOR_MIB
+    swap_onset = (
+        proc_vm_swap_mib >= STAGE1_HEADROOM_SWAP_ONSET_MIB
+        and mem_available_mib < STAGE1_HEADROOM_SWAP_GUARD_MIB
+    )
+    reasons = []
+    if below_floor:
+        reasons.append(
+            f"MEM_AVAILABLE_BELOW_FLOOR: {mem_available_mib:.0f} MiB < "
+            f"{STAGE1_HEADROOM_FLOOR_MIB:.0f} MiB"
+        )
+    if swap_onset:
+        reasons.append(
+            f"SWAP_ONSET: the leg's own VmSwap is {proc_vm_swap_mib:.0f} MiB "
+            f"(>= {STAGE1_HEADROOM_SWAP_ONSET_MIB:.0f}) with headroom "
+            f"{mem_available_mib:.0f} MiB below the "
+            f"{STAGE1_HEADROOM_SWAP_GUARD_MIB:.0f} MiB guard"
+        )
+    return {
+        "mem_available_mib": mem_available_mib,
+        "proc_vm_swap_mib": proc_vm_swap_mib,
+        "floor_mib": STAGE1_HEADROOM_FLOOR_MIB,
+        "swap_onset_mib": STAGE1_HEADROOM_SWAP_ONSET_MIB,
+        "stop": bool(reasons),
+        "reason": "; ".join(reasons) if reasons else None,
+        "basis": STAGE1_HEADROOM_FLOOR_BASIS,
+        "pin": "156(a) — the launch gate cannot prevent the box going bad",
+    }
+
+
+def _proc_vm_swap_mib() -> float:
+    """This process's ``VmSwap`` [MiB], 0.0 where /proc is unreadable."""
+    try:
+        for line in Path("/proc/self/status").read_text().splitlines():
+            if line.startswith("VmSwap:"):
+                return float(line.split()[1]) / 1024.0
+    except OSError:  # pragma: no cover - /proc absent
+        return 0.0
+    return 0.0
+
+
+def record_headroom_halt(
+    dest: Path,
+    *,
+    tile: str,
+    watchdog: dict[str, Any],
+    windows_done: int,
+    window_id: str,
+) -> dict[str, Any]:
+    """Persist a halt record: not a completion, not a crash (pin 156a-ii).
+
+    A halt read as a completion turns six windows into a nine-window
+    reading. A halt read as a crash sends someone diagnosing a fault that
+    did not happen. The record names itself and outlives the process, so
+    the parked launcher can read it and relaunch.
+
+    Args:
+        dest: Where to write the record.
+        tile: The halted leg's tile.
+        watchdog: The :func:`headroom_watchdog` block that tripped.
+        windows_done: Completed windows on disk at the halt.
+        window_id: The window after which the leg stopped.
+
+    Returns:
+        The written record.
+    """
+    record = {
+        "kind": "HEADROOM_HALT",
+        "clean": True,
+        "tile": tile,
+        "halted_at": datetime.now(UTC).isoformat(),
+        "halted_after_window": window_id,
+        "windows_completed": windows_done,
+        "watchdog": watchdog,
+        "resume": "automatic — the window store carries the completed windows",
+        "not_a_completion": (
+            "no evidence row was produced: this leg did not finish its windows, "
+            "and reading it as a completion would turn a partial leg into a "
+            "full reading"
+        ),
+        "not_a_crash": (
+            "the leg stopped itself at a window boundary with the completed "
+            "windows persisted and the solve lock released; nothing faulted"
+        ),
+        "pin": "156(a)(ii)",
+    }
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(record, indent=2))
+    return record
+
+
+def _prior_halts_block(tile: str) -> dict[str, Any]:
+    """Any headroom halt this leg recovered from (owner pin 156a-ii).
+
+    A leg that halted, waited for the box and resumed produces the same
+    numbers as one that ran straight through — and that is exactly why
+    the row has to say so. Without it the wall figure is unexplained and
+    the next re-assessment prices a leg that never happened.
+
+    Args:
+        tile: The leg's tile.
+
+    Returns:
+        A block to merge into the row's ``headroom``; empty when the leg
+        never halted.
+    """
+    halt = STAGE1_DIR / f"{tile}_headroom_halt.json"
+    if not halt.exists():
+        return {}
+    try:
+        record = json.loads(halt.read_text())
+    except (OSError, json.JSONDecodeError):  # pragma: no cover - unreadable
+        return {}
+    return {
+        "prior_headroom_halt": record,
+        "wall_includes_a_halt": (
+            "this leg STOPPED CLEANLY on the headroom watchdog (pin 156a) and "
+            "resumed from its window store. wall_s therefore spans a pause "
+            "that was not solve time — do not price a future leg from it "
+            "without subtracting the halt"
+        ),
+    }
+
+
 class HeadroomTracker:
     """MemAvailable during a run, not only at its launch (owner pin 151b).
 
     A launch-time reading describes the one moment the box is guaranteed
     not to be under pressure. Leg 1 bottomed at 3,660 MiB and that was
     learned afterward, from a log, rather than from the leg's own record.
+
+    Owner pin 156(c): samples at :data:`STAGE1_HEADROOM_SAMPLE_S`, the
+    EXTERNAL sampler's cadence, so the recorded minimum is the real one
+    rather than whichever dip a slower clock happened to land on.
     """
 
     def __init__(self, initial_mib: float) -> None:
@@ -1439,8 +1679,13 @@ class HeadroomTracker:
             "at_launch_mem_available_mib": self._at_launch,
             "min_mem_available_mib": self._min,
             "n_samples": self._n,
+            "sample_interval_s": STAGE1_HEADROOM_SAMPLE_S,
+            "reconciled_with": "the external 1-minute vmhwm sampler",
+            "floor_mib": STAGE1_HEADROOM_FLOOR_MIB,
             "pin": "151(b) — sampled DURING the run; the launch reading alone "
-            "describes the moment before the work started",
+            "describes the moment before the work started. 156(c) — sampled at "
+            "the external sampler's cadence, so the recorded minimum is the "
+            "real one rather than whichever dip a slower clock landed on",
         }
 
 
@@ -5576,17 +5821,47 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
     # box is guaranteed not to be under pressure. Track the minimum SEEN.
     headroom = HeadroomTracker(initial_mib=_mem_available_mib())
 
+    # Pin 156(a): the watchdog's live view, written by the beat thread and
+    # read at the window boundary. A boundary is the only place a stop is
+    # clean, so the thread never stops anything itself.
+    watch: dict[str, Any] = {
+        "block": headroom_watchdog(
+            mem_available_mib=headroom.record()["at_launch_mem_available_mib"],
+            proc_vm_swap_mib=_proc_vm_swap_mib(),
+        )
+    }
+
     def _beat() -> None:
-        while not stop_beat.wait(300.0):
+        # Pin 156(c): SAMPLE at the external sampler's cadence; ECHO at the
+        # old one. Leg 2's tracker sampled every 300 s and recorded 1,382 MiB
+        # while the 1-minute sampler caught 1,526 — the row carried whichever
+        # dip a slower clock happened to land on.
+        beats = 0
+        echo_every = int(300.0 / STAGE1_HEADROOM_SAMPLE_S)
+        while not stop_beat.wait(STAGE1_HEADROOM_SAMPLE_S):
+            beats += 1
             rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
             avail = _mem_available_mib()
             headroom.sample(avail)
-            _t5_echo(
-                f"{tile}: heartbeat peak_rss={rss:.0f}MiB "
-                f"mem_avail={avail:.0f}MiB "
-                f"min_avail={headroom.record()['min_mem_available_mib']:.0f}MiB "
-                f"elapsed={(time.monotonic() - t_leg) / 3600.0:.2f}h"
+            block = headroom_watchdog(
+                mem_available_mib=avail, proc_vm_swap_mib=_proc_vm_swap_mib()
             )
+            watch["block"] = block
+            if block["stop"] and not watch.get("announced"):
+                watch["announced"] = True
+                _t5_echo(
+                    f"{tile}: ⛔ HEADROOM WATCHDOG TRIPPED — {block['reason']}. "
+                    "The leg STOPS CLEANLY at the next window boundary (pin "
+                    "156a); the completed windows are already persisted"
+                )
+            if beats % echo_every == 0:
+                _t5_echo(
+                    f"{tile}: heartbeat peak_rss={rss:.0f}MiB "
+                    f"mem_avail={avail:.0f}MiB "
+                    f"min_avail={headroom.record()['min_mem_available_mib']:.0f}MiB "
+                    f"vm_swap={block['proc_vm_swap_mib']:.0f}MiB "
+                    f"elapsed={(time.monotonic() - t_leg) / 3600.0:.2f}h"
+                )
 
     threading.Thread(target=_beat, daemon=True).start()
     # Pin 151(a): the lock is held for the WHOLE leg and released in the same
@@ -5627,6 +5902,29 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
             # completed one (~31 h). Assembly is bit-identical to the
             # monolithic path, test-pinned at two windows (pin 127).
             window_store = STAGE1_DIR / f"{tile}_windows"
+
+            def _on_window(wid: str, day: float) -> None:
+                """Progress echo, then pin 156(a)'s clean-stop check.
+
+                Fires AFTER `_save_window`, so raising here costs nothing
+                already solved: the window is on disk and pin 121's store
+                carries every earlier one.
+
+                Args:
+                    wid: The window that just completed.
+                    day: Its blend day.
+
+                Raises:
+                    Stage1HeadroomHalt: When the watchdog has tripped.
+                """
+                _t5_echo(
+                    f"{tile}: window {wid} solved (day {day:.0f}); "
+                    f"{time.monotonic() - t_leg:.0f}s"
+                )
+                block = watch["block"]
+                if block["stop"]:
+                    raise Stage1HeadroomHalt(block, wid)
+
             spec, etas_a, anoms, starts = merged_members(
                 method,
                 framed,
@@ -5634,10 +5932,7 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
                 provider,
                 m,
                 root,
-                on_window=lambda wid, day: _t5_echo(
-                    f"{tile}: window {wid} solved (day {day:.0f}); "
-                    f"{time.monotonic() - t_leg:.0f}s"
-                ),
+                on_window=_on_window,
                 window_store=window_store,
             )
             pcg_rows = [dict(r) for r in miost_mod.CONVERGENCE_LOG[log_start:]]
@@ -5700,6 +5995,33 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         scores = _score_tile_leg(
             tile, frame=frame, mean_map=mean_map, std_map=std_map, track=track
         )
+    except Stage1HeadroomHalt as halt:
+        # Owner pin 156(a): a CLEAN stop, not a crash. The completed windows
+        # are on disk (pin 121), the lock is released in `finally` below, and
+        # no evidence row is written — a partial leg must never be readable as
+        # a full reading (156a-ii).
+        window_store = STAGE1_DIR / f"{tile}_windows"
+        done = (
+            len(list(window_store.glob("window_*.npz"))) if window_store.exists() else 0
+        )
+        record = record_headroom_halt(
+            STAGE1_DIR / f"{tile}_headroom_halt.json",
+            tile=tile,
+            watchdog=halt.watchdog,
+            windows_done=done,
+            window_id=halt.window_id,
+        )
+        _t5_echo(
+            f"{tile}: ⛔ HEADROOM HALT (clean) after window {halt.window_id} — "
+            f"{done} window(s) persisted, NO evidence row written. "
+            f"{halt.watchdog['reason']}"
+        )
+        _t5_echo(
+            f"{tile}: recorded at {STAGE1_DIR / f'{tile}_headroom_halt.json'} — "
+            "this is NOT a completion and NOT a crash. Relaunch when the box "
+            "recovers; the resume is automatic from the window store"
+        )
+        raise SystemExit(STAGE1_HEADROOM_HALT_EXIT) from halt
     finally:
         stop_beat.set()
         leg_lock.close()
@@ -5731,7 +6053,10 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         n_obs=n_obs,
         wall_s=wall_s,
         peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
-        headroom=headroom.record(),
+        # Pin 156(a)(ii): a leg that halted and resumed carries that in its
+        # row. Inside `headroom` deliberately — the row's top-level key set is
+        # pinned exactly, and 156(d) is bounded change: no schema edit.
+        headroom={**headroom.record(), **_prior_halts_block(tile)},
         pcg=pcg_rows,
         pcg_rtol=float(method.pcg_rtol),
         pcg_maxiter=int(method.pcg_maxiter),

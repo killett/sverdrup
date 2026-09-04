@@ -4235,6 +4235,216 @@ def test_tier2_wall_ceiling_is_per_leg_not_per_stage() -> None:
     assert "LEG" in _mod.tier2_wall_ceiling(elapsed_h=1.0)["scope"].upper()
 
 
+# ---------------------------------------------------------------------------
+# Owner pin 156 — the IN-RUN headroom watchdog. The launch gate is not what
+# protects the leg: leg 2 cleared at 10,771 MiB and the box then shed 9,389
+# MiB against a 4,951 MiB leg peak. A gate prevents starting into a bad box;
+# it cannot prevent the box going bad.
+# ---------------------------------------------------------------------------
+
+
+def test_headroom_watchdog_holds_through_leg2s_healthy_band() -> None:
+    """The band leg 2 ran in for 24 h must NOT trip the watchdog.
+
+    Bug caught: a floor set high enough to be safe on paper and useless in
+    practice. Leg 2 sat at 5,500-6,200 MiB for almost the whole run with
+    swap already exhausted by a co-tenant; a watchdog that halts there
+    halts every leg on this box forever and the four-tile roster never
+    finishes. Values are leg 2's own trace, not invented.
+    """
+    for avail in (5526.0, 5896.0, 6165.0, 8016.0):
+        block = _mod.headroom_watchdog(mem_available_mib=avail, proc_vm_swap_mib=0.0)
+        assert block["stop"] is False, f"{avail} MiB is leg 2's healthy band"
+
+
+def test_headroom_watchdog_halts_in_the_region_leg2_was_failing_in() -> None:
+    """Below the floor it STOPS. Leg 2 bottomed at 1,382 with both clocks
+    stalling ~10 min -- that is the region, and the floor sits above it.
+
+    Bug caught: a floor set at or below the observed bottom, which only
+    fires once the leg is already thrashing. By 1,382 MiB leg 2's
+    heartbeat had gone from 5-minute to 11.75-minute cadence and its
+    external sampler had skipped 10 minutes entirely; halting there is
+    halting after the damage. Hand-computed: floor 2048 > 1526 (the
+    1-minute sampler's true bottom) > 1382 (the 5-minute tracker's).
+    """
+    block = _mod.headroom_watchdog(mem_available_mib=1382.0, proc_vm_swap_mib=98.0)
+    assert block["stop"] is True
+    assert block["floor_mib"] == 2048.0
+    assert "MEM_AVAILABLE_BELOW_FLOOR" in block["reason"]
+
+
+def test_headroom_watchdog_keys_on_swap_onset_not_only_the_absolute_number() -> None:
+    """The leg's OWN pages being evicted is a stop signal (pin 156a-i).
+
+    Bug caught: watching MemAvailable alone. Owner pin 156(a)(i) is
+    explicit that swap onset is a signal "as much as the absolute
+    number" -- when the solve's own resident set starts going to disk the
+    leg is already degrading, and on leg 2 that showed as VmSwap climbing
+    to ~100 MiB while MemAvailable was still reading above the floor.
+    """
+    block = _mod.headroom_watchdog(mem_available_mib=2600.0, proc_vm_swap_mib=98.0)
+    assert block["stop"] is True
+    assert "SWAP_ONSET" in block["reason"]
+
+
+def test_headroom_watchdog_ignores_swap_while_headroom_is_healthy() -> None:
+    """Swap alone does not halt a leg on a box whose swap is a co-tenant's.
+
+    Bug caught: keying on swap unconditionally. This box ran leg 2 with
+    SwapFree at 0-2 MiB for hours while MemAvailable sat near 6 GiB and
+    the leg was entirely healthy -- swap was exhausted by another tenant
+    before leg 2 even launched. An unconditional swap trip halts on a
+    condition that says nothing about this leg, so the signal is gated on
+    headroom also being degraded.
+    """
+    block = _mod.headroom_watchdog(mem_available_mib=6000.0, proc_vm_swap_mib=98.0)
+    assert block["stop"] is False
+
+
+def test_headroom_floor_declares_the_trace_it_came_from() -> None:
+    """The floor cites leg 2's numbers, per 156(a)(i) "not invented".
+
+    Bug caught: a magic constant. Every RAM number in this project that
+    was not traceable to a measurement has been wrong -- 5154 modelled,
+    4365 one window, 4573 three windows -- and each cost a round to
+    unwind. The floor must carry its derivation where it is defined.
+    """
+    basis = _mod.STAGE1_HEADROOM_FLOOR_BASIS
+    assert basis["observed_bottom_mib"] == 1382.0
+    assert basis["observed_bottom_sampler_mib"] == 1526.0
+    assert basis["tile"] == "southern"
+    assert str(basis["margin_over_observed_bottom"]).startswith("1.4")
+    # The honest limit: VmSwap was read at two instants, not sampled.
+    assert "not sampled" in basis["swap_observation_limit"]
+
+
+def test_headroom_tracker_reconciles_the_two_samplers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The recorded minimum is the REAL one (pin 156c).
+
+    Bug caught: the live one. Leg 2's in-run tracker sampled every 300 s
+    and recorded 1,382 MiB while the external 1-minute sampler caught
+    1,526 -- two clocks disagreeing about the same run, with the row
+    carrying whichever happened to land on a dip. The tracker must sample
+    at the external cadence so the two cannot diverge.
+    """
+    assert _mod.STAGE1_HEADROOM_SAMPLE_S == 60.0
+    tracker = _mod.HeadroomTracker(10771.0)
+    for mib in (6000.0, 1526.0, 5000.0):
+        tracker.sample(mib)
+    rec = tracker.record()
+    assert rec["min_mem_available_mib"] == 1526.0
+    assert rec["sample_interval_s"] == 60.0
+    assert rec["reconciled_with"] == "the external 1-minute vmhwm sampler"
+
+
+def test_headroom_halt_is_recorded_and_distinguishable(tmp_path: Path) -> None:
+    """A halt is neither a completion nor a crash (pin 156a-ii).
+
+    Bug caught: a clean stop that looks like either of the other two. A
+    halt read as a completion produces a nine-window reading from six
+    windows; a halt read as a crash sends someone diagnosing a fault that
+    did not happen. The record must name itself, carry why it stopped and
+    how far it got, and survive the process that wrote it -- the parked
+    launcher reads it to decide whether to relaunch.
+    """
+    block = _mod.headroom_watchdog(mem_available_mib=1382.0, proc_vm_swap_mib=98.0)
+    dest = tmp_path / "southern_headroom_halt.json"
+    rec = _mod.record_headroom_halt(
+        dest, tile="southern", watchdog=block, windows_done=6, window_id="w+00252.0+60"
+    )
+    assert rec["kind"] == "HEADROOM_HALT"
+    assert rec["kind"] != "CONVERGED"
+    assert rec["clean"] is True
+    assert rec["windows_completed"] == 6
+    assert rec["halted_after_window"] == "w+00252.0+60"
+    assert rec["resume"] == "automatic — the window store carries the completed windows"
+    assert json.loads(dest.read_text())["kind"] == "HEADROOM_HALT"
+
+
+def test_headroom_halt_raises_only_at_a_window_boundary() -> None:
+    """The stop is CLEAN because it lands where the window is on disk.
+
+    Bug caught: stopping mid-solve. `on_window` fires AFTER `_save_window`
+    in merged_members, so raising there costs nothing already solved --
+    but a watchdog wired into the beat thread, or into the solver's
+    iteration loop, would kill the window in flight and lose ~3 h. This
+    pins the boundary contract by driving the real callback shape: a
+    tripped watchdog raises, an untripped one returns None.
+    """
+    tripped = _mod.headroom_watchdog(mem_available_mib=1000.0, proc_vm_swap_mib=0.0)
+    healthy = _mod.headroom_watchdog(mem_available_mib=8000.0, proc_vm_swap_mib=0.0)
+    assert tripped["stop"] is True and healthy["stop"] is False
+
+    halt = _mod.Stage1HeadroomHalt(tripped, "w+00252.0+60")
+    assert halt.window_id == "w+00252.0+60"
+    assert "MEM_AVAILABLE_BELOW_FLOOR" in str(halt)
+    # It must be catchable as the specific halt, never swallowed as a
+    # generic solver failure.
+    assert isinstance(halt, RuntimeError)
+
+
+def test_a_resumed_leg_says_so_in_its_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A leg that halted and resumed carries the halt in its row (156a-ii).
+
+    Bug caught: silent recovery. A halted-then-resumed leg produces the
+    same nine windows as a clean one, so its row is indistinguishable --
+    but its wall_s spans a pause that was not solve time. Pricing legs 3
+    and 4 from an unexplained wall is how the 31.0 h projection got its
+    authority in the first place. Also pins that the block goes INSIDE
+    `headroom`: the row's top-level key set is pinned exactly and pin
+    156(d) forbids a schema change.
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    assert _mod._prior_halts_block("equatorial") == {}
+
+    _mod.record_headroom_halt(
+        tmp_path / "equatorial_headroom_halt.json",
+        tile="equatorial",
+        watchdog=_mod.headroom_watchdog(
+            mem_available_mib=1382.0, proc_vm_swap_mib=98.0
+        ),
+        windows_done=4,
+        window_id="w+00117.0+60",
+    )
+    block = _mod._prior_halts_block("equatorial")
+    assert block["prior_headroom_halt"]["windows_completed"] == 4
+    assert "not solve time" in block["wall_includes_a_halt"]
+
+
+def test_the_launcher_script_cannot_drift_from_the_pinned_constants() -> None:
+    """The shell launcher's gate and halt code track the Python ones.
+
+    Bug caught: the live shape of every RAM defect in this project --
+    a threshold in one place and its basis in another, drifting apart
+    silently. The launcher duplicates two constants it cannot import, so
+    a re-pin that updates Python and not the shell would park legs on the
+    OLD gate while the row claims the new basis, and a changed halt code
+    would make the launcher read a clean halt as a crash and refuse to
+    relaunch (pin 156b), or read a crash as a halt and relaunch it blind.
+    """
+    launcher = (
+        Path(__file__).resolve().parents[1] / "scripts/stage1_leg_launcher.sh"
+    ).read_text()
+    gate_m = re.search(r"^GATE=(\d+)", launcher, re.MULTILINE)
+    halt_m = re.search(r"^HALT_EXIT=(\d+)", launcher, re.MULTILINE)
+    assert gate_m is not None, "the launcher must define GATE"
+    assert halt_m is not None, "the launcher must define HALT_EXIT"
+    gate = int(gate_m.group(1))
+    halt = int(halt_m.group(1))
+
+    threshold = _mod.tier2_launch_gate(mem_available_mib=0.0)["threshold_mib"]
+    # Integer shell arithmetic: the gate must never admit BELOW the real
+    # threshold, so it rounds up rather than down.
+    assert gate >= threshold
+    assert gate < threshold + 1.0
+    assert halt == _mod.STAGE1_HEADROOM_HALT_EXIT
+
+
 def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
