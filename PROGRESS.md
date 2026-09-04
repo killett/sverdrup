@@ -24,6 +24,17 @@
 >   `TIER2_MEASURED_PEAK_SUPERSEDED`, and **8,730 no longer admits** — 1.909× is the "close
 >   enough" that produced the 1.18×.
 > - **The per-leg wall ceiling is 40 h.** A leg over it **STOPS and reports**.
+>   ⚠ **The check is POST-HOC and cannot lose work.** `tier2_wall_ceiling` is
+>   evaluated at `phase14_stage1_run.py:5701`, *after* the leg has solved and been
+>   recorded; it never interrupts the process. Its whole effect is the
+>   `WALL CEILING EXCEEDED` line plus **the NEXT leg not launching until the owner
+>   re-prices**. Read as a mid-run kill it invites a false trade — this session
+>   reported "a ceiling trip costs the window in flight" and that was wrong. What
+>   costs the window in flight is an OOM or a crash (pin 132), not the ceiling.
+>   Owner ruling 2026-09-03: a proposed raise to 50 h was **SKIPPED once the
+>   mechanism was established** — it would buy nothing, and `TIER2_MAX_LEG_WALL_H`
+>   carries test pins (`test_phase14_stage1_run.py:4195-4197`) plus a declared
+>   projection block (`TIER2_CEILING_BASIS_SPAN`) under pin 139.
 > - **An exclusion lock is held for the whole leg** (pin 151a): a second Stage-1 solve is
 >   refused by name. A dead holder's lock is taken over and **the takeover is recorded**.
 > - **Headroom is sampled DURING the run** (151b) — `headroom.min_mem_available_mib` lands
