@@ -1566,46 +1566,115 @@ def seam_ram_gate(*, peak_model_mib: float, mem_available_mib: float) -> dict[st
 # Owner pin 150(a): re-pinned to the pin-147(b) measurement. The prior value
 # is PRESERVED here, not overwritten — a superseded basis a reader cannot see
 # is a basis they cannot check.
-TIER2_MEASURED_PEAK_MIB = 4573.0
-TIER2_MEASURED_PEAK_SUPERSEDED: dict[str, Any] = {
-    "prior_value_mib": 4365.0,
-    "prior_basis": (
-        "pin 89's probe: ONE window at m=100, taken as the leg peak. Wrong by "
-        "1.69x at nine windows, because completed windows were retained until "
-        "pin 133"
-    ),
-    "superseded_by": "pin 147(b), measured 2026-09-02",
-    "superseded_on": "2026-09-02",
-    "why": (
-        "owner pin 150(d): 8730 was 1.909x the corrected peak — within a "
-        "rounding error of the rule, and 'close enough' is exactly what "
-        "produced the 1.18x that two rounds went into unwinding. The rule says "
-        "2x; the measurement says 4573; the threshold is 9146"
-    ),
-}
+
+# Owner pin 155, 2026-09-04: re-pinned to leg 2's DIRECT nine-window
+# measurement. There is no longer a projection on the window-count axis —
+# nine windows at production scale were measured, not scaled up from three.
+TIER2_MEASURED_PEAK_MIB = 4951.1640625
+# The superseded chain is a LIST, not a single entry (pin 155). Re-pinning a
+# second time must not overwrite the first: 4365 -> 4573 -> 4951 is the whole
+# record of how a 1.18x margin survived two rounds while asserting 2x, and a
+# superseded basis a reader cannot see is a basis they cannot check.
+TIER2_MEASURED_PEAK_SUPERSEDED: list[dict[str, Any]] = [
+    {
+        "prior_value_mib": 4365.0,
+        "prior_basis": (
+            "pin 89's probe: ONE window at m=100, taken as the leg peak. Wrong "
+            "by 1.69x at nine windows, because completed windows were retained "
+            "until pin 133"
+        ),
+        "superseded_by": "pin 147(b) / owner pin 150(a), measured 2026-09-02",
+        "superseded_on": "2026-09-02",
+        "why": (
+            "owner pin 150(d): 8730 was 1.909x the corrected peak — within a "
+            "rounding error of the rule, and 'close enough' is exactly what "
+            "produced the 1.18x that two rounds went into unwinding. The rule "
+            "says 2x; the measurement says 4573; the threshold is 9146"
+        ),
+    },
+    {
+        "prior_value_mib": 4573.0,
+        "prior_basis": (
+            "pin 147(b): THREE windows at m=100 on kuroshio, applied to a NINE "
+            "window leg. A projection, declared as one (pin 143a) and bounded "
+            "by flat-slope evidence rather than an assumption of linearity"
+        ),
+        "superseded_by": "owner pin 155, measured 2026-09-04 (leg 2, southern)",
+        "superseded_on": "2026-09-04",
+        "why": (
+            "owner pin 155: nine windows at production scale peaked at "
+            "4951.16 MiB, so the standing 9146 threshold held 1.847x, not the "
+            "2x it names. NOT held at 1.847x for the same reason 8730 was not "
+            "held at 1.909x — 'close enough' is how the 1.18x survived two "
+            "rounds. The rule says 2x; the measurement says 4951.16"
+        ),
+    },
+]
 # Owner pin 143(a). The gate cites pin 89's probe peak; the probe measured ONE
 # window and the gate is applied to a NINE-window leg. Leg 1 measured that
 # projection wrong by 1.69x, and the number rides in the gate record so a
 # reader meets the span where the threshold is used, not three documents away.
 TIER2_GATE_BASIS_SPAN: dict[str, Any] = {
-    "cites": "phase14.stage1.tier2_probe_kuroshio_m100.measured_one_window",
-    "measured_over": {"n_windows": 3, "tile": "kuroshio", "m": 100},
+    "cites": "phase14.stage1.tiles.southern",
+    "measured_over": {"n_windows": 9, "tile": "southern", "m": 100},
     "application_range": {"n_windows": 9, "tiles": 4, "m": 100},
     "extrapolation_declared": (
-        "EXTRAPOLATION on the window-count axis, 3 -> 9 (owner pin 150b). What "
-        "bounds it is the FLAT-SLOPE evidence, not an assumption of linearity: "
-        "boundary peaks 4426, 4426, 4573 MiB, with the one +147 MiB step "
-        "occurring five minutes INSIDE window 3's solve rather than at a "
-        "boundary. Leg 1's boundary increments MINUS the 377.5 MiB/window "
-        "retention give per-window working-set variation of -170 to +236 MiB, "
-        "so a nine-window peak near ~4809 MiB is consistent — and 9146 still "
-        "covers that at 1.90x. LEG 2 CLOSES THIS (150c): nine windows at "
-        "production scale, boundary peaks recorded, basis re-pinned from the "
-        "direct measurement afterward"
+        "NONE on the window-count axis (owner pin 155). Leg 2 measured NINE "
+        "windows at production scale directly, so measured_over and "
+        "application_range agree on that axis and there is nothing to declare. "
+        "What remains declared is the TILE axis: measured on southern and "
+        "kuroshio, applied to equatorial and quiet_gyre — see "
+        "'tile_axis_still_projected' below"
     ),
-    "working_set_variation_mib": {"min": -170.0, "max": 236.0},
-    "nine_window_peak_consistent_with_mib": 4809.0,
-    "coverage_at_that_peak": 1.902,
+    # Owner pin 155: the 3 -> 9 window-count projection is CLOSED by direct
+    # measurement, and its accuracy is KEPT rather than discarded. It is
+    # evidence about the METHOD, for the next time a short run has to stand
+    # in for a long one.
+    "closed_by_leg2_pin_155": {
+        "n_windows_measured": 9,
+        "tile": "southern",
+        "measured_peak_mib": 4951.1640625,
+        "prior_projected_from_mib": 4573.0,
+        "extrapolation_accuracy_ratio": 4951.1640625 / 4573.0,
+        "accuracy_note": (
+            "the 3 -> 9 extrapolation came in at 1.083x — good to 8.3%, which "
+            "VALIDATES the method that produced it (flat-slope bounding rather "
+            "than assumed linearity). Kept deliberately per pin 155: the next "
+            "time a short run stands in for a long one, this is the basis for "
+            "trusting or distrusting it"
+        ),
+        "boundary_peaks_mib": [4575, 4951, 4951, 4951, 4951, 4951, 4951, 4951, 4951],
+        "boundary_deltas_mib": [376, 0, 0, 0, 0, 0, 0, 0],
+        "mean_increment_mib_per_window": 47.0,
+        "against_pin_133_retention": (
+            "47.0 MiB/window measured against the 377.5 MiB/window retention "
+            "signature pin 133 fixed. The single +376 landed INSIDE window 2's "
+            "solve, not at a persist — the same shape 147(b) saw at +147"
+        ),
+        "projection_remaining": None,
+    },
+    "tile_axis_still_projected": (
+        "DECLARED (pin 155): the peak is measured on kuroshio and southern and "
+        "applied to equatorial and quiet_gyre. Southern peaked 4951 against "
+        "kuroshio's 4573 at three windows, so the tile axis carries real "
+        "variation and is NOT closed. Legs 3 and 4 measure it"
+    ),
+    # NOT a projected field: this records what the CLOSED axis's declaration
+    # said before leg 2 measured it, and how it came out. Keeping it under a
+    # `predicted_*` name would make this block speak for two axes, which pin
+    # 139(d) refuses — and rightly: the live projection here is the TILE axis
+    # alone, and the window-count axis is closed, not silent.
+    "declaration_outcome_2026_09_04": {
+        "nine_window_peak_consistent_with_mib": 4809.0,
+        "coverage_at_that_peak": 1.902,
+        "outcome": (
+            "the declaration predicted a nine-window peak 'consistent with "
+            "~4809 MiB'; the measurement came in at 4951.16, 142 MiB high — "
+            "outside the predicted figure but nowhere near any retention "
+            "scenario, and the direction is the unsafe one, which is why "
+            "pin 155 re-pins rather than keeping 9146"
+        ),
+    },
     "measured_outcome_2026_09_01": {
         "leg1_peak_mib": 7389.3359375,
         "ratio_measured_over_projected": 1.693,
@@ -1634,9 +1703,11 @@ TIER2_GATE_BASIS_SPAN: dict[str, Any] = {
             "already close to the 2x it names. 2 x 4573 = 9146 MiB"
         ),
         "still_a_projection": (
-            "measured over THREE windows and applied to NINE (pin 143a). The "
-            "shape is the same 1->9 mistake one step smaller, and the slope "
-            "evidence is what bounds it rather than an assumption of linearity"
+            "SUPERSEDED by pin 155 — it was measured over THREE windows and "
+            "applied to NINE (pin 143a), and leg 2 closed that axis by direct "
+            "measurement. Preserved here rather than deleted: the projection "
+            "and its 1.083x outcome are the record of whether the bounding "
+            "argument held"
         ),
     },
 }
@@ -1697,9 +1768,25 @@ def tier2_launch_gate(*, mem_available_mib: float) -> dict[str, Any]:
         "threshold_mib": threshold,
         "measured_peak_mib": TIER2_MEASURED_PEAK_MIB,
         "basis": (
-            "2 x the MEASURED 4573 MiB peak (owner pin 150a, from pin 147b's "
-            "three-window re-measure). Supersedes 2 x 4365 (pin 89's ONE "
-            "window), which was 1.18x the peak leg 1 actually reached"
+            "2 x the MEASURED 4951.16 MiB peak (owner pin 155, from leg 2's "
+            "NINE-window production run on southern — a direct measurement, "
+            "no projection on the window-count axis). Supersedes 2 x 4573 "
+            "(pin 147b's three windows), which held 1.847x against what nine "
+            "windows actually peaked at, and 2 x 4365 (pin 89's ONE window), "
+            "which held 1.18x. Both prior bases are preserved at "
+            "TIER2_MEASURED_PEAK_SUPERSEDED"
+        ),
+        # ⛔ Owner pin 156: this gate is NOT what protects the leg, and pin
+        # 155 must not be read as a fix. The box shed 9389 MiB DURING leg 2
+        # against a 4951 MiB leg peak — no launch threshold covers that. A
+        # gate prevents starting into a bad box; it cannot prevent the box
+        # going bad. The in-run watchdog is what protects the leg.
+        "not_a_run_time_guarantee": (
+            "LAUNCH-TIME ONLY (pin 156). Leg 2 cleared at 10771 MiB and "
+            "bottomed at 1382 MiB mid-run with swap exhausted and both clocks "
+            "stalling ~10 min; it survived by owner intervention, which is not "
+            "a property the remaining legs can rely on. See the in-run "
+            "headroom watchdog"
         ),
         # Owner pin 143(a): the CONSUMER declares the span of what it cites.
         # A projection is created where a measurement is USED, and this gate

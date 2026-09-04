@@ -4153,33 +4153,68 @@ def test_criterion8_live_half_is_discharged_on_the_real_path() -> None:
 
 
 def test_tier2_launch_threshold_is_twice_the_MEASURED_peak() -> None:
-    """Threshold = 2 x 4573 MiB, the RE-MEASURED peak (owner pin 150a).
+    """Threshold = 2 x 4951.16 MiB, leg 2's DIRECT measurement (pin 155).
 
-    Bug caught: wiring the gate to a predicted or a stale peak. It has
-    been both. The model's 5154 over-predicts by 18% and a model-fed gate
-    would park every leg on a box topping out near 11.2 GiB; and pin 89's
-    4365 was ONE window taken as a leg peak, wrong by 1.69x once nine
-    windows ran, which left the gate asserting 2x while holding 1.18x.
-    The basis is now pin 147(b)'s three-window measurement, and the prior
-    value is preserved rather than overwritten. Hand-computed: 2 x 4573.
+    Bug caught: wiring the gate to a predicted, a stale, or a PROJECTED
+    peak. It has been all three. The model's 5154 over-predicts by 18%;
+    pin 89's 4365 was ONE window taken as a leg peak, wrong by 1.69x once
+    nine windows ran, leaving the gate asserting 2x while holding 1.18x;
+    and pin 147(b)'s 4573 was THREE windows applied to nine, which held
+    1.847x against what nine windows actually peaked at. The basis is now
+    leg 2's nine-window production measurement with no projection left on
+    the window-count axis. Hand-computed: 2 x 4951.1640625.
     """
     gate = _mod.tier2_launch_gate(mem_available_mib=99999.0)
-    assert gate["threshold_mib"] == 9146.0
-    assert _mod.TIER2_MEASURED_PEAK_MIB == 4573.0
-    assert _mod.TIER2_MEASURED_PEAK_SUPERSEDED["prior_value_mib"] == 4365.0
+    assert gate["threshold_mib"] == 9902.328125
+    assert _mod.TIER2_MEASURED_PEAK_MIB == 4951.1640625
+
+
+def test_tier2_superseded_bases_are_preserved_not_overwritten() -> None:
+    """BOTH prior bases stay readable: 4365 and 4573 (pin 155).
+
+    Bug caught: overwriting the superseded entry when re-pinning a second
+    time, which silently drops 4365 and leaves a reader believing the
+    basis has been corrected once rather than twice. A superseded basis a
+    reader cannot see is a basis they cannot check -- and the 4365 -> 4573
+    -> 4951 chain is the whole record of how the 1.18x survived two
+    rounds. Pins the chain by value, not by length alone.
+    """
+    chain = _mod.TIER2_MEASURED_PEAK_SUPERSEDED
+    assert [entry["prior_value_mib"] for entry in chain] == [4365.0, 4573.0]
+    # The 4573 entry must name what unseated it: nine windows measured.
+    assert "155" in chain[1]["superseded_by"]
+
+
+def test_tier2_extrapolation_accuracy_is_recorded_as_method_evidence() -> None:
+    """The 3->9 projection came in at 1.083x, and that is KEPT (pin 155).
+
+    Bug caught: discarding the projection's accuracy once the direct
+    measurement lands. Pin 155 keeps it deliberately -- it is evidence
+    about the METHOD, for the next time a short run has to stand in for a
+    long one. Dropping it leaves the next executor with no basis for
+    trusting or distrusting a short-run stand-in. Hand-computed:
+    4951.1640625 / 4573 = 1.0827.
+    """
+    span = _mod.TIER2_GATE_BASIS_SPAN["closed_by_leg2_pin_155"]
+    assert span["n_windows_measured"] == 9
+    assert span["measured_peak_mib"] == 4951.1640625
+    assert round(span["extrapolation_accuracy_ratio"], 3) == 1.083
+    assert span["projection_remaining"] is None
 
 
 def test_tier2_launch_gate_boundary_admits_exactly_the_threshold() -> None:
-    """>= at the threshold: 9146 launches, 9145.9 refuses.
+    """>= at the threshold: 9902.33 launches, 9902.3 refuses.
 
     Bug caught: a strict > comparison, which refuses a leg at exactly the
     authorised headroom. On a box that cycles to ~11.2 GiB roughly every
     4 h, refusing at the boundary costs a whole cycle per occurrence.
-    Also pins that the SUPERSEDED threshold no longer admits: 8730 was
-    1.909x the corrected peak, and pin 150(d) refuses "close enough".
+    Also pins that BOTH superseded thresholds no longer admit: 8730 held
+    1.909x and 9146 held 1.847x against the measured peak, and pin 155
+    refuses "close enough" for the same reason pin 150(d) did.
     """
-    assert _mod.tier2_launch_gate(mem_available_mib=9146.0)["passed"] is True
-    assert _mod.tier2_launch_gate(mem_available_mib=9145.9)["passed"] is False
+    assert _mod.tier2_launch_gate(mem_available_mib=9902.328125)["passed"] is True
+    assert _mod.tier2_launch_gate(mem_available_mib=9902.3)["passed"] is False
+    assert _mod.tier2_launch_gate(mem_available_mib=9146.0)["passed"] is False
     assert _mod.tier2_launch_gate(mem_available_mib=8730.0)["passed"] is False
 
 
@@ -4222,7 +4257,9 @@ def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(
         return False
 
     monkeypatch.setattr(ladder, "tier1_eligible", _spy)
-    gate = _mod.tier2_launch_gate(mem_available_mib=9500.0)
+    # Above the pin-155 threshold (9902.33), so `passed` isolates the
+    # predicate question rather than the headroom one.
+    gate = _mod.tier2_launch_gate(mem_available_mib=10500.0)
     assert gate["passed"] is True
     assert called is False
 
@@ -4350,14 +4387,24 @@ def test_the_launch_gate_declares_its_basis_span() -> None:
     could catch it because the projection was made where the measurement
     was USED. A reader of the gate record must meet the span there, not
     three documents away.
+
+    After pin 155 the window-count axis is CLOSED: measured_over and
+    application_range agree at 9, so the span must no longer claim an
+    extrapolation it is not making. The bug this now catches is the
+    opposite one — leaving a stale "3 -> 9" declaration standing after the
+    measurement landed, which tells a reader the basis is weaker than it
+    is and invites re-litigating a closed axis.
     """
     gate = _mod.tier2_launch_gate(mem_available_mib=9000.0)
     span = gate["basis_span"]
 
-    assert span["measured_over"]["n_windows"] == 3
+    assert span["measured_over"]["n_windows"] == 9
     assert span["application_range"]["n_windows"] == 9
     assert isinstance(span["extrapolation_declared"], str)
     assert span["measured_outcome_2026_09_01"]["ratio_measured_over_projected"] > 1.6
+    # The TILE axis is still open and must stay declared — measured on
+    # kuroshio and southern, applied to equatorial and quiet_gyre.
+    assert span["tile_axis_still_projected"].strip()
 
 
 def test_every_declared_basis_span_states_VALUES_not_flags() -> None:
