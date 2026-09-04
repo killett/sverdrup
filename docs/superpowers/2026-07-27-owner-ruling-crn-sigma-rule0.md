@@ -2650,3 +2650,95 @@ stack of headline blocks whose top two contradicted each other.
   the basis is ruled at 9,146 MiB.
 - **The rule, stated generally:** rewrite what went stale rather than layering over it. A
   headline block that outlives its body is the closure-map defect in another file.
+
+---
+
+## PART 39 — BASIS RE-PIN, THE IN-RUN WATCHDOG AND THE E-16 §4 RE-ASSESSMENT (verbatim), pins 155–158, 2026-09-04
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-04.** Leg 2 (southern) closed the 3→9
+projection by direct measurement, and in doing so surfaced that the launch gate measures a
+box that does not stay measured.
+
+> 155. RE-PIN THE BASIS TO THE DIRECT MEASUREMENT — mechanical, per 150(c).
+>      TIER2_MEASURED_PEAK_MIB 4,573 → 4,951.16, nine windows at production scale, no
+>      projection. The 4,573 figure is superseded with the prior value preserved, as 4,365
+>      already is. Record that the 3→9 extrapolation came in at 1.083× — good to 8.3%,
+>      which validates the method that produced it and is worth keeping for the next time
+>      a short run has to stand in for a long one.
+>      Threshold becomes 2 × 4,951 = 9,902 MiB. The rule says 2×; the measurement says
+>      4,951. I am not holding 9,146 at 1.847× for the same reason I would not hold 8,730 at
+>      1.909× — "close enough" is how the 1.18× survived two rounds.
+> 156. ⛔ BUT THE LAUNCH GATE IS NOT WHAT PROTECTS THE LEG, and 155 must not be mistaken for
+>      a fix. Re-derived: the box shed 9,389 MiB during leg 2 against a leg peak of 4,951.
+>      No launch threshold covers that. The gate prevents starting into a bad box; it cannot
+>      prevent the box going bad. Leg 2 survived by owner intervention, and that is not a
+>      property the remaining legs can rely on.
+>      (a) ADD AN IN-RUN HEADROOM WATCHDOG. Below a floor, the leg STOPS CLEANLY at the next
+>          window boundary — not dies, not thrashes. Pin 121 makes this cheap: at most the
+>          window in flight is lost, and the store carries the rest.
+>          (i) Floor set from leg 2's own trace, not invented. It bottomed at 1,382 MiB with
+>              VmSwap ~100 MiB and both clocks stalling ~10 min — that is the region where
+>              the leg was already failing, so the floor sits above it with margin, and the
+>              swap onset is the signal to key on as much as the absolute number.
+>          (ii) Stop reason recorded in the row, distinguishable from a completion and from
+>               a crash.
+>      (b) THE PARKED LAUNCHER RELAUNCHES IT when the box recovers, resuming from the store.
+>          The pause/resume path is 121's and is already bit-identity tested; do not build a
+>          second one.
+>      (c) SAMPLE AT A CADENCE THAT CAN SEE THE SQUEEZE. The 1-minute sampler caught 1,526
+>          MiB while the in-run tracker recorded 1,382 — the row understated the true floor.
+>          Reconcile the two so the recorded minimum is the real one.
+>      (d) This is what 133(e)'s bounded-change discipline was for: persistence and stop
+>          logic only, no change to the solve, the scoring, or the schema.
+> 157. E-16 §4 RE-ASSESSMENT — LEGS 3 AND 4 AUTHORISED TOGETHER, CONDITIONAL ON 156(a).
+>      (a) Wall is settled: 19.67 h and 27.48 h against the probe's 31.0 h prediction, mean
+>          23.58 h, both well inside the 40 h ceiling. Two legs remain at ~47 h. The
+>          extrapolation that made per-leg re-assessment necessary is now validated twice
+>          over, so I am not re-assessing between legs 3 and 4.
+>      (b) CONDITIONAL: the watchdog lands first. Without it each leg is a supervised event
+>          requiring manual rescue, and I will not authorise two of those. With it, run them
+>          back to back.
+>      (c) The 40 h ceiling stands unchanged. Southern took 1.40× kuroshio; the remaining
+>          tiles are not obviously worse, but the ceiling exists for the case where they are.
+>      (d) Equatorial then quiet gyre, E-16 order, unchanged.
+> 158. RATIFIED: leg 2 as recorded, the completion procedure run in full, PROGRESS rewritten
+>      rather than layered per 154, and the three items recorded-not-adopted — the 1.847×
+>      coverage, the 9,902 figure, and the observation that the gate measured a box that did
+>      not stay measured. That last one is the finding of this round and you surfaced it
+>      rather than reporting a clean leg.
+>      Noting also that pin 26(b)'s raised cap earned itself again: 626 iterations on
+>      w+00207's member batch, over the 500 a smaller cap would have imposed.
+>
+> SEQUENCE: land 155-158; fold 155; build 156; then legs 3 and 4 back to back.
+>
+> STOP CONDITION: leg 3 does not launch until 156(a) is landed and tested. Each leg still
+> stops at 40 h. Nothing sealed; 18/19/20 remain halted; T6-T9 and task 23 unopened.
+
+### What PART 39 changes
+
+- **The basis is the DIRECT MEASUREMENT** (155). `TIER2_MEASURED_PEAK_MIB` becomes
+  **4,951.16** from nine production windows; 4,573 joins 4,365 in the preserved-superseded
+  set. The threshold becomes **9,902 MiB** — the rule says 2×, and 1.847× is refused for the
+  same reason 1.909× was: *"close enough" is how the 1.18× survived two rounds.*
+- **The 3→9 extrapolation is RECORDED AS VALIDATED at 1.083×** (155) — kept deliberately,
+  as evidence about the *method*, for the next time a short run stands in for a long one.
+- **⛔ 155 IS NOT A FIX, AND MUST NOT BE READ AS ONE** (156). The box shed **9,389 MiB**
+  during leg 2 against a 4,951 MiB leg peak: **no launch threshold covers that.** A gate
+  prevents starting into a bad box; it cannot prevent the box going bad.
+- **The protection is an IN-RUN WATCHDOG** (156a): below a floor the leg **stops cleanly at
+  the next window boundary** — not dies, not thrashes — and pin 121 caps the loss at the
+  window in flight. The floor comes from **leg 2's own trace**, not invention, and **swap
+  onset is a signal alongside the absolute number** (156a-i).
+- **A clean stop is DISTINGUISHABLE from a completion and from a crash** in the row
+  (156a-ii), the parked launcher **relaunches on recovery through pin 121's existing
+  pause/resume path — no second one is built** (156b), and the **two headroom samplers are
+  reconciled so the recorded minimum is the real one** (156c).
+- **Bounded change, per 133(e)** (156d): persistence and stop logic only — no change to the
+  solve, the scoring, or the schema.
+- **Legs 3 and 4 are authorised TOGETHER** (157), **conditional on 156(a) landing first**
+  (157b). Wall is settled at 19.67 h and 27.48 h against a 31.0 h prediction, so **there is
+  no re-assessment between legs 3 and 4** (157a). The **40 h ceiling stands unchanged**
+  (157c); equatorial then quiet gyre (157d).
+- **Leg 2 is RATIFIED as recorded** (158), and the finding of the round is named: *the gate
+  measured a box that did not stay measured.* Pin 26(b)'s raised cap earned itself again at
+  626 iterations.
