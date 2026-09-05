@@ -25,10 +25,18 @@ mkdir -p "$OUT"
 # Pin 155: 2 x the MEASURED nine-window peak (4951.16 MiB) = 9902.33, and
 # the leg re-reads it itself at start. GATE parks ABOVE that by GATE_MARGIN
 # because the box moves between the two checks: leg 3's first attempt read
-# 10,009 MiB here and 9,891.58 one second later, refused correctly, and was
-# then read as a crash. 9903 + 256 covers a dip of that order.
-GATE_MARGIN=256
-GATE=10159
+# 10,009 MiB here and 9,891.58 one second later and refused.
+#
+# GATE_MARGIN is a LAUNCHER HEURISTIC, not the gate. The gate is 9902.33 and
+# is the leg's own to enforce. The margin only decides how conservatively
+# this parks, and it is deliberately NOT wide: at 256 it parked for 20 min
+# against a box sitting at 10,044-10,063 MiB — 142-161 MiB clear of the real
+# threshold and perfectly launchable. 128 still exceeds the largest dip
+# actually observed (117 MiB), and since exit 76 turns a lost race into one
+# 300 s retry rather than a manual rescue, a wider margin buys little and
+# costs wall clock.
+GATE_MARGIN=128
+GATE=10031
 HALT_EXIT=75
 GATE_REFUSED_EXIT=76
 ATTEMPT=0

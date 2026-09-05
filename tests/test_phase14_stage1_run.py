@@ -4503,8 +4503,17 @@ def test_the_launcher_parks_above_the_threshold_by_a_real_margin() -> None:
     margin = int(
         re.search(r"^GATE_MARGIN=(\d+)", launcher, re.MULTILINE).group(1)  # type: ignore[union-attr]
     )
-    # The observed dip was 117 MiB; the margin covers it with room.
-    assert margin >= 256
+    # It must exceed the largest dip actually observed (117 MiB), so the
+    # common case launches rather than racing into a refusal...
+    assert margin > 117
+    # ...and it must NOT be so wide that it blocks launches the real gate
+    # admits. The margin is a launcher heuristic, not the gate: the box has
+    # sat in a 10,044-10,063 MiB band -- 142-161 MiB clear of the 9,902.33
+    # threshold -- and a 256 MiB margin parked there indefinitely while the
+    # leg was perfectly launchable. Losing a race now costs one 300 s retry
+    # (exit 76), not a manual rescue, so the margin buys much less than it
+    # did before that path existed.
+    assert margin <= 200
 
 
 def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(
