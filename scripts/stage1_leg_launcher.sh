@@ -10,6 +10,8 @@
 # Exit codes from the leg:
 #   0   completed — the evidence row is written; stop.
 #   75  STAGE1_HEADROOM_HALT_EXIT — clean headroom halt; park and relaunch.
+#   76  STAGE1_GATE_REFUSED_EXIT — the box moved between this check and the
+#       leg's own re-read; a WAIT, not a fault. Park and relaunch.
 #   *   crash — STOP and report. A crash is not relaunched blind.
 set -e
 cd /workspace
@@ -20,9 +22,15 @@ MAXITER=${3:-1200}
 OUT="logs/leg_${TILE}"
 mkdir -p "$OUT"
 
-# Pin 155: 2 x the MEASURED nine-window peak (4951.16 MiB).
-GATE=9903
+# Pin 155: 2 x the MEASURED nine-window peak (4951.16 MiB) = 9902.33, and
+# the leg re-reads it itself at start. GATE parks ABOVE that by GATE_MARGIN
+# because the box moves between the two checks: leg 3's first attempt read
+# 10,009 MiB here and 9,891.58 one second later, refused correctly, and was
+# then read as a crash. 9903 + 256 covers a dip of that order.
+GATE_MARGIN=256
+GATE=10159
 HALT_EXIT=75
+GATE_REFUSED_EXIT=76
 ATTEMPT=0
 
 log() { printf '%s %s\n' "$(date -Iseconds)" "$1" >> "$OUT/launcher.log"; }
@@ -88,6 +96,13 @@ while :; do
     # resumes from them.
     log "CLEAN HEADROOM HALT (rc=${HALT_EXIT}) — parking, then relaunching to resume"
     sleep 600
+    continue
+  fi
+  if [ "$RC" -eq "$GATE_REFUSED_EXIT" ]; then
+    # The leg's own gate re-read refused: the box moved under us. A WAIT,
+    # not a fault — park and try again at the top of the next cycle.
+    log "GATE REFUSED at the leg's own re-read (rc=${GATE_REFUSED_EXIT}) — the box moved; parking"
+    sleep 300
     continue
   fi
   log "⛔ CRASH rc=${RC} — NOT relaunched. Stop and report (a crash is not a halt)."

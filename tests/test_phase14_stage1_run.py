@@ -319,9 +319,16 @@ def test_run_equatorial_reaches_gated_stub_after_pin12_ruling(
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 100.0)
-    with pytest.raises(RuntimeError, match="Tier-2") as excinfo:
+    # Pin 156(b): the headroom refusal now exits on the WAIT code, with the
+    # typed refusal as its cause. The pin's subject is unchanged -- what
+    # equatorial hits is the gate, never a leftover election refusal.
+    with pytest.raises(SystemExit) as excinfo:
         _mod.run("equatorial")
-    assert "box_election" not in str(excinfo.value)
+    assert excinfo.value.code == _mod.STAGE1_GATE_REFUSED_EXIT
+    cause = excinfo.value.__cause__
+    assert isinstance(cause, _mod.Stage1GateRefused)
+    assert "Tier-2" in str(cause)
+    assert "box_election" not in str(cause)
 
 
 def test_evidence_row_schema_is_exactly_the_pinned_set() -> None:
@@ -1957,8 +1964,14 @@ def test_run_diverse_tile_waits_when_tier2_headroom_is_short(
     called: list[str] = []
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 8729.9)
     monkeypatch.setattr(_mod, "_solve_leg", lambda *a, **k: called.append("solved"))
-    with pytest.raises(RuntimeError, match="Tier-2"):
+    # Pin 156(b): it exits on the WAIT code, not a generic failure. Typer's
+    # handler swallows Exception and exits 1, which is how a refusal first
+    # reached the launcher looking like a crash.
+    with pytest.raises(SystemExit) as exc:
         _mod.run("kuroshio")
+    assert exc.value.code == _mod.STAGE1_GATE_REFUSED_EXIT
+    assert isinstance(exc.value.__cause__, _mod.Stage1GateRefused)
+    assert "Tier-2" in str(exc.value.__cause__)
     assert called == []
 
 
@@ -4441,8 +4454,57 @@ def test_the_launcher_script_cannot_drift_from_the_pinned_constants() -> None:
     # Integer shell arithmetic: the gate must never admit BELOW the real
     # threshold, so it rounds up rather than down.
     assert gate >= threshold
-    assert gate < threshold + 1.0
     assert halt == _mod.STAGE1_HEADROOM_HALT_EXIT
+    refused = int(
+        re.search(r"^GATE_REFUSED_EXIT=(\d+)", launcher, re.MULTILINE).group(1)  # type: ignore[union-attr]
+    )
+    assert refused == _mod.STAGE1_GATE_REFUSED_EXIT
+    # The launcher parks ABOVE the threshold, because the box moves between
+    # its check and the leg's own re-read (see the margin test below).
+    margin = int(
+        re.search(r"^GATE_MARGIN=(\d+)", launcher, re.MULTILINE).group(1)  # type: ignore[union-attr]
+    )
+    assert margin > 0
+    assert gate >= threshold + margin
+
+
+def test_a_refused_launch_gate_is_a_WAIT_not_a_crash() -> None:
+    """The leg exits 76 on a gate refusal, distinct from a crash (156b).
+
+    Bug caught: the live one, on leg 3's first launch attempt. The
+    launcher's shell gate read 10,009 MiB and the leg's own re-read one
+    second later saw 9,891.58 against a 9,902.33 threshold -- the box
+    moved between the two checks and the leg correctly refused. The
+    launcher then treated that non-zero exit as a CRASH and stopped,
+    which is exactly backwards: a gate refusal is the condition the
+    parked launcher EXISTS to wait out. Distinct codes are what let it
+    tell "wait for the box" from "something faulted, do not relaunch".
+    """
+    assert _mod.STAGE1_GATE_REFUSED_EXIT == 76
+    assert _mod.STAGE1_GATE_REFUSED_EXIT != _mod.STAGE1_HEADROOM_HALT_EXIT
+    assert _mod.STAGE1_GATE_REFUSED_EXIT != 0
+    # The typed cause survives as the SystemExit's `__cause__`, so a reader
+    # of the traceback still meets the refusal rather than a bare code.
+    assert issubclass(_mod.Stage1GateRefused, RuntimeError)
+
+
+def test_the_launcher_parks_above_the_threshold_by_a_real_margin() -> None:
+    """The park level exceeds the gate, because the box moves (156b).
+
+    Bug caught: parking at exactly the threshold. Leg 3's first attempt
+    lost 117 MiB in the one second between the launcher's check and the
+    leg's re-read, so a launcher parked at the exact threshold relaunches
+    into a refusal every cycle and never starts. The margin must cover a
+    dip of that order.
+    """
+    launcher = (
+        Path(__file__).resolve().parents[1] / "scripts/stage1_leg_launcher.sh"
+    ).read_text()
+    margin = int(
+        re.search(r"^GATE_MARGIN=(\d+)", launcher, re.MULTILINE).group(1)  # type: ignore[union-attr]
+    )
+    # The observed dip was 117 MiB; the margin covers it with room.
+    assert margin >= 256
 
 
 def test_tier2_launch_gate_does_not_consult_the_tier1_predicate(

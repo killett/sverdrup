@@ -1429,6 +1429,11 @@ STAGE1_HEADROOM_SAMPLE_S = 60.0
 # A halt exits with its OWN code, so the parked launcher can tell a clean
 # headroom stop (relaunch when the box recovers) from a crash (do not).
 STAGE1_HEADROOM_HALT_EXIT = 75
+# A REFUSED launch gate is a WAIT, not a fault. Leg 3's first attempt lost
+# 117 MiB in the one second between the launcher's shell check and the leg's
+# own re-read, refused correctly, and was then read as a crash — exactly
+# backwards, since waiting out the box is what the parked launcher is for.
+STAGE1_GATE_REFUSED_EXIT = 76
 # Owner pin 156(a)(i): from leg 2's own trace, not invented.
 STAGE1_HEADROOM_FLOOR_MIB = 2048.0
 # The leg's OWN resident set going to disk. Gated on headroom (below) because
@@ -1479,6 +1484,16 @@ STAGE1_HEADROOM_FLOOR_BASIS: dict[str, Any] = {
         "working set differs moves the peak, not the box's failure region"
     ),
 }
+
+
+class Stage1GateRefused(RuntimeError):
+    """The Tier-2 launch gate refused: WAIT for the box, do not fault.
+
+    A RuntimeError subclass deliberately — the refusal has been a bare
+    RuntimeError since E-16 §2 and callers pin it as one. This narrows
+    the type so the CLI can exit on a distinguishable code without
+    changing what any existing caller catches.
+    """
 
 
 class Stage1HeadroomHalt(RuntimeError):
@@ -6265,12 +6280,22 @@ def run(
         typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
         typer.echo(json.dumps(gate))
         if not gate["passed"]:
-            raise RuntimeError(
+            # Pin 156(b): a refusal is a WAIT. It exits on its own code so the
+            # parked launcher parks again rather than reading it as a crash —
+            # leg 3's first attempt refused on a 117 MiB dip between the
+            # launcher's check and this one, and was stopped as a fault.
+            refused = Stage1GateRefused(
                 f"tile {tile!r}: Tier-2 launch gate REFUSES — MemAvailable "
                 f"{gate['mem_available_mib']:.0f} MiB < {gate['threshold_mib']:.0f} "
                 "MiB (2 x the MEASURED peak, E-16 §2). The leg WAITS for the "
                 "top of the co-tenant headroom cycle; never launch over headroom"
             )
+            typer.echo(str(refused), err=True)
+            # SystemExit, not a bare raise: typer's exception handler swallows
+            # Exception and exits 1, which is how the refusal reached the
+            # launcher as a crash. SystemExit is a BaseException and carries
+            # the code out intact — the same route the headroom halt uses.
+            raise SystemExit(STAGE1_GATE_REFUSED_EXIT) from refused
     else:
         model = preflight(tile, m)
         typer.echo(json.dumps({k: round(v, 1) for k, v in model.items()}))
