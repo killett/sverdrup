@@ -2742,3 +2742,106 @@ box that does not stay measured.
 - **Leg 2 is RATIFIED as recorded** (158), and the finding of the round is named: *the gate
   measured a box that did not stay measured.* Pin 26(b)'s raised cap earned itself again at
   626 iterations.
+
+---
+
+## PART 40 — THE LATITUDE-SPLIT TEST, THE ABSENCE, AND LEG 4 (verbatim), pins 159–164, 2026-09-06
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-06.** Leg 3 (equatorial) solved all nine
+windows and then died in scoring on `UnresolvedScaleError`; the disposition turns on a test
+that had not been run.
+
+> 159. ⛔ RUN THE LATITUDE-SPLIT TEST BEFORE ANY DISPOSITION. Split equatorial's validation
+>      track by latitude (|lat| < 5 vs lat > 5) and recompute coherence and psd_diff/psd_ref
+>      per band, read-only over the persisted maps.
+>      (a) Coherence RECOVERS away from the equator -> consistent with geostrophic
+>          degeneracy, and 160 applies.
+>      (b) Coherence stays ~0.003 at lat > 5, where f is healthy -> NOT geostrophy. That is a
+>          defect — misalignment, reference, or sign — and it stops everything, because the
+>          same defect may be in kuroshio and southern in a form their stronger signal
+>          masks.
+>      (c) Report the bands before recording. This is the test that makes the difference
+>          between a result and a bug, and it costs minutes against 25.5 h already spent.
+> 160. IF 159(a) — RECORD THE ABSENCE PER FORK F. Option 1, not 2 or 3.
+>      (a) λx RECORDED ABSENT with the full coherence evidence attached — max 0.003,
+>          psd_diff/psd_ref 1.0005 across 12.8-996.3 km, pointwise corr 0.409, and the
+>          per-band split from 159. An absence is never bare; the evidence is what stops it
+>          hiding a defect later.
+>      (b) THE HYPOTHESIS STAYS FIREWALLED. "Consistent with the numbers, not established" is
+>          your own framing and it is correct. Record it under not_established, never as the
+>          explanation, and do not let the Gate-1 pack promote it.
+>      (c) DO NOT WRITE THE INFERENCE I AM ABOUT TO NAME, but know it: fork-b pin 1 put the
+>          equatorial tile in the roster as the substrate for a future wave increment,
+>          because B2023's equatorial components exist precisely where the standard method
+>          is expected to struggle. A geostrophic-kernel method returning no mesoscale skill
+>          at the equator is closer to the reason that tile was chosen than to a failure of
+>          it. That bears on the increment's business case, and it is exactly the kind of
+>          conclusion the interpretation firewall exists to keep out of Stage 1's record.
+>      (d) OPTION 3 IS REFUSED. Pin 12 is a closed election and reopening it because the
+>          result is inconvenient is the wrong direction. The box did what it was elected to
+>          do: it put the core across the equator and measured what happens there.
+> 161. score_tile RECORDS THE ABSENCE RATHER THAN CRASHING. Three sites already catch
+>      UnresolvedScaleError and scorer.py:56 names it as what a degenerate map raises;
+>      score_tile is the outlier. Bring it in line — but the absence carries the coherence
+>      evidence with it, so a swallowed error can never look like a clean result. Without
+>      this, leg 4 dies the same way after 27 h if quiet_gyre also fails to resolve, which is
+>      a live possibility: it is the LOW-EKE tile, so a low-SNR path to the same outcome
+>      exists there for entirely different reasons.
+> 162. THE SOUTHERN ANOMALY — ESTABLISH THE PATH BEFORE CALLING IT A DEFECT. map std 0.0875
+>      against track std 0.649 with a +0.990 m bias is worth the flag, and thank you for
+>      raising it on a committed row. But first: does diag_stage1_coherence.py compute those
+>      statistics through the SAME path the scorer uses, including per-segment detrending?
+>      (a) If the diagnostic compares raw map to raw track while the scorer detrends, then
+>          large tile-dependent biases and stds are expected and benign — and note the
+>          ordering (southern 0.649 > kuroshio 0.478 > equatorial 0.089) tracks MDT gradient
+>          strength, which is what an un-removed mean component would look like.
+>      (b) If the paths ARE the same, southern's recorded row is scored against a map
+>          carrying 7.4x less variance than its track, and that is a finding on a committed
+>          row which comes to me before leg 4 finishes.
+>      (c) Either way, record the answer. A flagged anomaly with no disposition becomes a
+>          caveat nobody can act on.
+> 163. LEG 4 LAUNCHES NOW, in parallel with 159-162. You were right to treat 157(a) as lapsed
+>      rather than standing — it assumed leg 3 produced a reading. I am re-granting it
+>      narrowly: the tiles are independent, the lock is free, quiet gyre is at -30..-15 with
+>      no mechanism connecting it to equatorial's failure, and 27 h of wall should not wait
+>      on a ruling about a different tile. Land 161 first so it completes cleanly either way.
+> 164. RATIFIED: the crash/halt distinction firing correctly on its first real test and
+>      refusing to relaunch — that is 156(b) doing exactly what it was built for, and it
+>      stopped 27 h of quiet_gyre starting behind an unexplained failure; the three-tile
+>      comparison and its refutation of your own first hypothesis; and the read-only
+>      diagnostic being made reproducible as a committed script rather than an ad-hoc query.
+>
+> SEQUENCE: 161, then launch leg 4; run 159 while it solves; then 160 or 159(b)'s stop;
+> 162 alongside.
+>
+> STOP CONDITION: 159(b) stops everything including leg 4. Nothing sealed; 18/19/20 halted;
+> T6-T9 and task 23 unopened.
+
+### What PART 40 changes
+
+- **NO DISPOSITION UNTIL THE LATITUDE SPLIT RUNS** (159). |lat| < 5 versus lat > 5, coherence
+  and `psd_diff/psd_ref` per band, read-only. **It is the test that separates a result from a
+  bug**, and it costs minutes against 25.5 h already spent.
+- **⛔ 159(b) IS A FULL STOP, INCLUDING LEG 4.** Coherence still ~0.003 where *f* is healthy
+  is **not** geostrophy — it is misalignment, reference or sign, and **the same defect may be
+  in kuroshio and southern masked by their stronger signal.**
+- **On 159(a): the absence is RECORDED per fork F** (160) — option 1, never 2 or 3. **An
+  absence is never bare**: it carries the coherence max, the `psd_diff/psd_ref` band, the
+  pointwise correlation and the per-band split, because *the evidence is what stops an
+  absence hiding a defect later*.
+- **The geostrophic reading stays FIREWALLED** (160b) under `not_established` — never as the
+  explanation, and **the Gate-1 pack must not promote it**.
+- **Option 3 is REFUSED** (160d): pin 12 is a closed election, and reopening it because the
+  result is inconvenient is the wrong direction. *The box did what it was elected to do.*
+- **`score_tile` joins the three sites that already catch `UnresolvedScaleError`** (161) —
+  but **the absence carries the coherence evidence with it, so a swallowed error can never
+  look like a clean result.** Without this, leg 4 dies the same way after 27 h, and
+  quiet_gyre is the LOW-EKE tile: a low-SNR path to the same outcome exists there for
+  entirely different reasons.
+- **The southern anomaly gets its PATH established before it is called anything** (162): if
+  the diagnostic compares raw map to raw track while the scorer detrends per segment, the
+  spread is expected — and the ordering tracking MDT gradient strength is what an un-removed
+  mean component looks like. **Either way the answer is recorded** (162c): *a flagged anomaly
+  with no disposition becomes a caveat nobody can act on.*
+- **Leg 4 launches now, in parallel** (163) — 157(a) is re-granted narrowly, because
+  quiet_gyre at −30..−15 has no mechanism connecting it to equatorial's failure.
