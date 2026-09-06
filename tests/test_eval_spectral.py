@@ -44,3 +44,49 @@ def test_short_track_raises_loudly() -> None:
     t, lat, lon, s, m = _synthetic_track(n=20)
     with pytest.raises(ShortTrackError):
         effective_resolution_lambda_x(t, lat, lon, s, m)
+
+
+def test_unresolved_scale_error_carries_its_coherence_evidence() -> None:
+    """The DEFINED signal arrives with the numbers that justify it (pin 160a).
+
+    Bug caught: an absence recorded bare. Owner pin 160(a) is explicit --
+    "an absence is never bare; the evidence is what stops it hiding a
+    defect later". A caller that catches this error and records
+    "lambda_x absent" with nothing attached produces a row indis-
+    tinguishable from one where the map was fine and the scorer broke.
+    The evidence rides on the exception so no catcher has to recompute a
+    PSD to record honestly, and none can record without it.
+    """
+    from sverdrup.eval.spectral import UnresolvedScaleError, _coherence_guard
+
+    # Equatorial's real shape: coherence never reaches 0.5 anywhere.
+    coherence = np.array([-4.169, -0.533, -0.002, 0.0003, 0.003])
+    evidence = {
+        "coherence_min": -4.169,
+        "coherence_max": 0.003,
+        "psd_diff_over_ref_median": 1.0005,
+        "wavelength_km": {"min": 12.8, "max": 996.3},
+        "n_wavenumbers": 79,
+    }
+    with pytest.raises(UnresolvedScaleError) as exc:
+        _coherence_guard(coherence, evidence=evidence)
+
+    assert exc.value.evidence is not None
+    assert exc.value.evidence["coherence_max"] == 0.003
+    assert exc.value.evidence["psd_diff_over_ref_median"] == 1.0005
+    assert exc.value.evidence["wavelength_km"]["max"] == 996.3
+
+
+def test_coherence_guard_still_refuses_without_evidence() -> None:
+    """Evidence is optional to the guard; the refusal is not.
+
+    Bug caught: making the evidence mandatory and thereby turning a
+    degenerate-map refusal into a TypeError at the call sites that do not
+    supply it (lane_compare, loop, stage_a all catch the defined signal
+    and record NaN -- they must keep working unchanged).
+    """
+    from sverdrup.eval.spectral import UnresolvedScaleError, _coherence_guard
+
+    with pytest.raises(UnresolvedScaleError) as exc:
+        _coherence_guard(np.array([0.1, 0.2, 0.3]))
+    assert exc.value.evidence is None

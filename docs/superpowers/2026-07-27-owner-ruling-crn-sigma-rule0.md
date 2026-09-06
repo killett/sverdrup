@@ -2845,3 +2845,82 @@ that had not been run.
   with no disposition becomes a caveat nobody can act on.*
 - **Leg 4 launches now, in parallel** (163) — 157(a) is re-granted narrowly, because
   quiet_gyre at −30..−15 has no mechanism connecting it to equatorial's failure.
+
+---
+
+## PART 41 — 159(b) WITHDRAWN; THE MAP'S OWN SPECTRUM IS THE DISCRIMINATOR (verbatim), pins 165–168, 2026-09-06
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-06.** The latitude-split criterion could
+not discriminate, and the owner withdrew it on re-derivation of the deformation radius.
+
+> 165. 159(b)'s CRITERION IS WITHDRAWN — it cannot discriminate, and the fault is mine.
+>      Re-derived: f at 8°N is 4.1x smaller than kuroshio's and 5.8x smaller than southern's,
+>      so Ld is ~138 km against 24 and 13. A 600 km segment holds ~4.3 deformation radii at
+>      8°N versus ~25 and ~48; a 250 km segment holds 1.8. The shortened segments have
+>      almost no spectral resolution where the equatorial signal lives, and shortening them
+>      made the test less sensitive, not more.
+>      (a) The lat > 5 band is not a clean-f control. I wrote it as though it were; it is 3-6x
+>          degenerate relative to the tiles that resolved.
+>      (b) The running control cannot license 159(b) either: kuroshio and southern will show
+>          coherence at 250-600 km because their Ld is 13-24 km. Passing proves the method
+>          works where the mesoscale is short, which nobody doubted. Let it finish — a
+>          FAILURE there would still be informative — but do not read a pass as validation.
+> 166. THE DISCRIMINATOR IS THE MAP'S OWN SPECTRUM, no track involved.
+>      (a) Compute the equatorial map's spatial power spectrum from the persisted map alone.
+>      (b) MESOSCALE ENERGY PRESENT (100-300 km) but no coherence with the track -> the map
+>          has structure that does not match the observations. Defect. Stops everything,
+>          including leg 4, and comes to me — because a misalignment or reference error could
+>          be present in kuroshio and southern in a form their stronger signal masks.
+>      (c) ESSENTIALLY NO ENERGY at those scales -> the solver produced a large-scale-only
+>          field. That is what a geostrophic kernel does as f -> 0, 160 applies, and the
+>          absence is recorded per fork F with this spectrum as part of its evidence.
+>      (d) Run the same spectrum on kuroshio and southern as the comparison. Three map
+>          spectra side by side is the control that actually controls, and it is read-only.
+>      (e) Your res/trk finding predicts the answer and should be recorded either way: 0.88
+>          in the time domain against psd_diff/psd_ref 1.0007 spectrally means the map's
+>          whole contribution lives in what per-segment detrending removes. That is a smooth
+>          field's signature, and 166 tests it directly instead of inferring it.
+> 167. LEG 4 STAYS HELD until 166 returns. I authorised it at 163 on the reasoning that no
+>      mechanism connects equatorial's failure to quiet gyre. 166(b) is that mechanism: if
+>      this is a defect rather than physics, it is not tile-specific and quiet gyre would
+>      inherit it. Your instinct to hold rather than take the standing permission was right,
+>      and I am confirming it rather than overriding it.
+>      Land 161 regardless — it is correct independent of the disposition.
+> 168. RATIFIED: refusing to call 159(b) before the control returned; stating the
+>      segment-length constraint as a constraint rather than working around it silently; and
+>      flagging the f-is-healthy phrasing against my own criterion. Reporting a result that
+>      points where the ruling said it would stop, and then arguing against it, is the
+>      behaviour this arrangement exists for.
+>
+> SEQUENCE: land 161; run 166(a)/(d); let the control finish; then 166(b) stop or 160 record.
+>
+> STOP CONDITION: 166(b) stops everything. Leg 4 held until 166 returns. Nothing sealed.
+
+### What PART 41 changes
+
+- **159(b)'s criterion is WITHDRAWN** (165). *f* at 8°N gives Ld ≈ **138 km** against
+  kuroshio's 24 and southern's 13. A 600 km segment holds ~4.3 deformation radii there
+  versus ~25 and ~48; at 250 km it holds 1.8. **Shortening the segment made the test LESS
+  sensitive, not more**, and the `lat > 5` band is 3–6× degenerate rather than a clean-*f*
+  control.
+- **A PASS on the reduced-length control does NOT validate the split** (165b): kuroshio and
+  southern resolve at 250–600 km *because* their Ld is 13–24 km. A failure there would still
+  have been informative; a pass is not.
+- **THE DISCRIMINATOR IS THE MAP'S OWN SPATIAL SPECTRUM** (166), computed from the persisted
+  map with **no track involved** — which removes every alignment, reference and sampling
+  question from the measurement at once.
+- **166(b): mesoscale energy PRESENT at 100–300 km + no coherence = DEFECT.** Stops
+  everything including leg 4, because a misalignment or reference error is **not
+  tile-specific** and could sit in kuroshio and southern masked by their stronger signal.
+- **166(c): essentially NO energy at those scales = a large-scale-only field**, which is what
+  a geostrophic kernel does as *f* → 0. Then **160 applies** and the absence is recorded per
+  fork F **with this spectrum as part of its evidence**.
+- **166(d): the same spectrum on kuroshio and southern is the control that actually
+  controls** — three map spectra side by side, read-only.
+- **166(e): the res/trk finding is recorded either way.** 0.88 in the time domain against
+  `psd_diff/psd_ref` 1.0007 spectrally means **the map's whole contribution lives in what
+  per-segment detrending removes** — a smooth field's signature, now tested directly rather
+  than inferred.
+- **LEG 4 STAYS HELD** (167): 166(b) *is* the mechanism that would connect equatorial's
+  failure to quiet gyre, so 163's standing permission is confirmed-as-suspended rather than
+  overridden. **161 lands regardless** — it is correct independent of the disposition.

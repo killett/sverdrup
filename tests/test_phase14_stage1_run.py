@@ -4807,3 +4807,72 @@ def test_the_recorded_row_CARRIES_the_headroom_block(tmp_path: Path) -> None:
 
     assert row["headroom"]["min_mem_available_mib"] == 4100.0
     assert row["headroom"]["at_launch_mem_available_mib"] == 9200.0
+
+
+def test_scores_block_records_an_ABSENT_lambda_x_with_its_evidence() -> None:
+    """λx absent is a RECORDED ABSENCE carrying evidence (pins 160a/161).
+
+    Bug caught: an absence written as a bare None, or worse as 0.0. A
+    None with nothing attached is indistinguishable from a scorer that
+    broke; a 0.0 is a claim that the map resolves everything, the exact
+    inverse of the truth. Owner pin 160(a): "an absence is never bare;
+    the evidence is what stops it hiding a defect later."
+
+    Also pins that the SCHEMA is unchanged (pin 156d/160): `lambda_x`
+    stays a key with the same siblings -- only its VALUE becomes an
+    absence record -- because the row's key set is pinned exactly.
+    """
+    absence = {
+        "reason": "UnresolvedScaleError",
+        "evidence": {
+            "coherence_max": 0.003,
+            "psd_diff_over_ref_median": 1.0005,
+            "wavelength_km": {"min": 12.8, "max": 996.3},
+        },
+    }
+    block = _mod.build_scores_block(
+        mu=0.765790,
+        sigma=0.059423,
+        lambda_x=None,
+        lambda_x_absence=absence,
+        n_scored_points=100299,
+        coverage_1sigma=0.0025,
+        calibration_n=100299,
+        reduced_chi2=1637.484,
+        raw_sigma=0.0349,
+        scalar_s_star=1637.484,
+        track="t.nc",
+        track_sha256="abc",
+    )
+    lx = block["lambda_x"]
+    assert lx["value"] is None
+    assert lx["value"] != 0.0
+    assert lx["recorded_absent"] is True
+    assert lx["absence"]["evidence"]["coherence_max"] == 0.003
+    # The absence must not silently drop the report-only framing.
+    assert lx["report_only"] is True
+
+
+def test_a_resolved_lambda_x_is_not_marked_absent() -> None:
+    """The normal path carries a value and no absence marker.
+
+    Bug caught: `recorded_absent` defaulting truthy, or the absence key
+    appearing on every row -- either makes "absent" meaningless, and a
+    real absence would stop being findable.
+    """
+    block = _mod.build_scores_block(
+        mu=0.285954,
+        sigma=0.038187,
+        lambda_x=232.53,
+        n_scored_points=1000,
+        coverage_1sigma=0.0098,
+        calibration_n=1000,
+        reduced_chi2=416.678,
+        raw_sigma=0.0382,
+        scalar_s_star=416.678,
+        track="t.nc",
+        track_sha256="abc",
+    )
+    assert block["lambda_x"]["value"] == 232.53
+    assert "recorded_absent" not in block["lambda_x"]
+    assert "absence" not in block["lambda_x"]

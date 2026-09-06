@@ -1352,11 +1352,23 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
             # ---- check 5: score-level identity + gate-5 pin -------------
             ours = score_tile(anchor_frame(), ANCHOR_SIGNED_MAPS, J3_TRACK)
             mu, sigma, lambda_x = their_eval.score(ANCHOR_SIGNED_MAPS, J3_TRACK)
+            # Owner pin 161: score_tile RECORDS an unresolved lambda_x rather
+            # than raising. On the ANCHOR that is a FAILED identity, not a
+            # pass — this gate exists to assert our scorer equals theirs, and
+            # an absent value establishes nothing. It must never be coerced.
+            lambda_x_absent = ours.lambda_x is None
             score_ok = bool(
-                np.isclose(ours.mu, mu, rtol=ROUTE_RTOL, atol=0.0)
+                ours.lambda_x is not None
+                and np.isclose(ours.mu, mu, rtol=ROUTE_RTOL, atol=0.0)
                 and np.isclose(ours.sigma, sigma, rtol=ROUTE_RTOL, atol=0.0)
                 and np.isclose(ours.lambda_x, lambda_x, rtol=ROUTE_RTOL, atol=0.0)
             )
+            if lambda_x_absent:
+                _echo(
+                    "check 5 score identity: FAIL — our lambda_x is RECORDED "
+                    "ABSENT (the map resolves no scale), so the identity is "
+                    f"UNESTABLISHED, not satisfied. {ours.lambda_x_absence}"
+                )
             _echo(
                 f"check 5 score identity: {score_ok} "
                 f"(mu={mu!r}, sigma={sigma!r}, lambda_x={lambda_x!r})"
@@ -1392,7 +1404,12 @@ def _run_real_leg(evidence_path: Path) -> int:  # noqa: PLR0915
                 "ours": {
                     "mu": float(ours.mu),
                     "sigma": float(ours.sigma),
-                    "lambda_x": float(ours.lambda_x),
+                    # Pin 161: None, never 0.0 — a zero would claim the map
+                    # resolves every scale, the inverse of what was measured.
+                    "lambda_x": (
+                        None if ours.lambda_x is None else float(ours.lambda_x)
+                    ),
+                    "lambda_x_absence": ours.lambda_x_absence,
                     "n_scored_points": int(ours.n_scored_points),
                 },
                 "theirs": {

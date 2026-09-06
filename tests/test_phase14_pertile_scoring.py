@@ -103,3 +103,82 @@ def test_provenance_guard_fires_before_scoring(tmp_path: Path) -> None:
     )
     with pytest.raises(TrainScoreLeakError):
         score_tile(_FRAME, map_path, track)
+
+
+def test_score_tile_RECORDS_an_unresolved_scale_rather_than_crashing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Owner pin 161: score_tile joins the sites that catch the signal.
+
+    Bug caught: the live one. Leg 3 (equatorial) solved all nine windows
+    over 25.5 h and then died in scoring because score_tile was the only
+    caller that let UnresolvedScaleError escape -- three other sites
+    already catch it. Worse, the same death waits for any leg whose map
+    does not resolve, and quiet_gyre is the LOW-EKE tile where a low-SNR
+    path to the same outcome exists for entirely different reasons.
+
+    The absence must arrive WITH its evidence (pin 160a), so a caught
+    error can never be recorded as a clean result.
+    """
+    from sverdrup.eval import spectral
+    from sverdrup.validation import pertile_scoring
+
+    evidence = {
+        "coherence_max": 0.003,
+        "coherence_min": -4.169,
+        "psd_diff_over_ref_median": 1.0005,
+        "wavelength_km": {"min": 12.8, "max": 996.3},
+    }
+
+    def _raise(*_a: object, **_k: object) -> float:
+        raise spectral.UnresolvedScaleError("no crossing", evidence=evidence)
+
+    monkeypatch.setattr(pertile_scoring, "effective_resolution_lambda_x", _raise)
+
+    score = pertile_scoring.score_from_arrays(
+        mu=0.765790,
+        sigma=0.059423,
+        n_scored_points=100299,
+        time_a=np.zeros(3),
+        lat_a=np.zeros(3),
+        lon_a=np.zeros(3),
+        ssh_a=np.zeros(3),
+        ssh_map_interp=np.zeros(3),
+    )
+    assert score.lambda_x is None
+    assert score.mu == 0.765790
+    assert score.n_scored_points == 100299
+    # The absence is never bare.
+    assert score.lambda_x_absence is not None
+    assert score.lambda_x_absence["reason"] == "UnresolvedScaleError"
+    assert score.lambda_x_absence["evidence"]["coherence_max"] == 0.003
+    assert score.lambda_x_absence["evidence"]["psd_diff_over_ref_median"] == 1.0005
+
+
+def test_a_resolved_tile_carries_no_absence_block(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The normal path is unchanged: a value, and no absence.
+
+    Bug caught: an absence block appearing on every row, which would make
+    "absent" meaningless and let a real absence hide in the noise. Pins
+    that catching the signal did not turn the success path into an
+    optional-everything shape.
+    """
+    from sverdrup.validation import pertile_scoring
+
+    monkeypatch.setattr(
+        pertile_scoring, "effective_resolution_lambda_x", lambda *a, **k: 232.53
+    )
+    score = pertile_scoring.score_from_arrays(
+        mu=0.285954,
+        sigma=0.038187,
+        n_scored_points=1000,
+        time_a=np.zeros(3),
+        lat_a=np.zeros(3),
+        lon_a=np.zeros(3),
+        ssh_a=np.zeros(3),
+        ssh_map_interp=np.zeros(3),
+    )
+    assert score.lambda_x == 232.53
+    assert score.lambda_x_absence is None

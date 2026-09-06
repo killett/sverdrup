@@ -18,12 +18,16 @@ from __future__ import annotations
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import xarray as xr
 
 from sverdrup.application.spatial_tiles import TileFrame
-from sverdrup.eval.spectral import effective_resolution_lambda_x
+from sverdrup.eval.spectral import (
+    UnresolvedScaleError,
+    effective_resolution_lambda_x,
+)
 from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
 from sverdrup.validation.vendor import prepare_vendored_imports
 
@@ -36,12 +40,83 @@ _TIME_MIN, _TIME_MAX = "2017-01-01", "2017-12-31"
 
 @dataclass(frozen=True)
 class TileScore:
-    """One tile's validation score triple + support count."""
+    """One tile's validation score triple + support count.
+
+    Owner pin 161: ``lambda_x`` is None when the map resolves no scale.
+    That is a RECORDED ABSENCE, not a failure to score — and it never
+    travels alone: ``lambda_x_absence`` carries the coherence evidence
+    that justifies it (pin 160a), so a caught signal can never be read
+    as a clean result.
+    """
 
     mu: float
     sigma: float
-    lambda_x: float
+    lambda_x: float | None
     n_scored_points: int
+    lambda_x_absence: dict[str, Any] | None = None
+
+
+def score_from_arrays(
+    *,
+    mu: float,
+    sigma: float,
+    n_scored_points: int,
+    time_a: np.ndarray,
+    lat_a: np.ndarray,
+    lon_a: np.ndarray,
+    ssh_a: np.ndarray,
+    ssh_map_interp: np.ndarray,
+) -> TileScore:
+    """Assemble a :class:`TileScore`, recording an unresolved λx (pin 161).
+
+    Three call sites already catch :class:`UnresolvedScaleError` and the
+    tuner names it as what a degenerate map raises; ``score_tile`` was the
+    outlier, and leg 3 died on it after nine windows had solved. This is
+    the single place the signal becomes a record.
+
+    ``ShortTrackError`` is deliberately NOT caught: too few samples to form
+    one spectral segment is a question about the SPLIT, not about the map,
+    and swallowing it would hide a track problem as a map property.
+
+    Args:
+        mu: their_eval mu at this tile core.
+        sigma: their_eval sigma (the vendored RMS statistic).
+        n_scored_points: Track points the triple was computed over.
+        time_a: Along-track sample times.
+        lat_a: Along-track latitudes.
+        lon_a: Along-track longitudes.
+        ssh_a: Observed along-track SSH (the reference signal).
+        ssh_map_interp: The mapped field on the same track points.
+
+    Returns:
+        The tile score, with ``lambda_x`` None and ``lambda_x_absence``
+        populated when the map resolves no scale.
+    """
+    try:
+        lambda_x: float | None = effective_resolution_lambda_x(
+            time_a, lat_a, lon_a, ssh_a, ssh_map_interp
+        )
+        absence: dict[str, Any] | None = None
+    except UnresolvedScaleError as unresolved:
+        lambda_x = None
+        absence = {
+            "reason": "UnresolvedScaleError",
+            "message": str(unresolved),
+            "evidence": unresolved.evidence,
+            "meaning": (
+                "the spectral coherence never crosses 0.5, so λx is UNDEFINED "
+                "for this map — a RECORDED ABSENCE (owner pins 160a/161), not "
+                "a scoring failure and not a value of zero"
+            ),
+            "pin": "161 — score_tile records the absence rather than crashing",
+        }
+    return TileScore(
+        mu=float(mu),
+        sigma=float(sigma),
+        lambda_x=lambda_x,
+        n_scored_points=int(n_scored_points),
+        lambda_x_absence=absence,
+    )
 
 
 def extract_core_track(
@@ -148,12 +223,13 @@ def score_tile(
             str(tmp / "stat.nc"),
             str(tmp / "stat_timeseries.nc"),
         )
-    lambda_x = effective_resolution_lambda_x(
-        time_a, lat_a, lon_a, ssh_a, ssh_map_interp
-    )
-    return TileScore(
+    return score_from_arrays(
         mu=float(mu),
         sigma=float(sigma),
-        lambda_x=float(lambda_x),
         n_scored_points=int(np.asarray(ssh_a).size),
+        time_a=time_a,
+        lat_a=lat_a,
+        lon_a=lon_a,
+        ssh_a=ssh_a,
+        ssh_map_interp=ssh_map_interp,
     )

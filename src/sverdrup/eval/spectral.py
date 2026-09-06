@@ -21,8 +21,12 @@ import sys
 import tempfile
 import types
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    import xarray as xr
 
 # Spectral parameters — the vendored leaderboard definition (their_eval.py).
 _VENDOR = Path(__file__).resolve().parents[3] / "vendor" / "2021a_SSH_mapping_OSE"
@@ -43,7 +47,25 @@ class UnresolvedScaleError(ValueError):
     0.5-coherence crossing, so λx is undefined. This is a defined, named signal (not the
     cryptic interpolation error the vendored crossing-finder would otherwise raise); the
     tuner records such a trial as feasible-but-unscorable and continues the sweep.
+
+    Owner pin 160(a): the error CARRIES the coherence evidence that justifies
+    it, in ``evidence``. An absence is never bare — a caller that records
+    "λx absent" with nothing attached produces a row indistinguishable from
+    one where the map was fine and the scorer broke. Carrying it here means
+    no catcher has to recompute a PSD to record honestly. ``evidence`` is
+    None when the guard was called without it (the tuner paths, which record
+    NaN and do not need it).
     """
+
+    def __init__(self, *args: object, evidence: dict[str, Any] | None = None) -> None:
+        """Carry the coherence numbers alongside the message.
+
+        Args:
+            *args: Standard exception args (the message).
+            evidence: Coherence statistics justifying the refusal.
+        """
+        super().__init__(*args)
+        self.evidence = evidence
 
 
 def _ensure_vendor_importable() -> None:
@@ -123,11 +145,49 @@ def effective_resolution_lambda_x(
         # a cryptic out-of-range error. Detect it and raise the defined signal instead.
         with xr.open_dataset(str(psd_file)) as ds:
             coherence = (1.0 - ds.psd_diff / ds.psd_ref).to_numpy()
-        _coherence_guard(coherence)
+            # Owner pin 160(a): assembled HERE, where the PSD is open, so a
+            # caller recording an absence never has to recompute one.
+            evidence = _coherence_evidence(coherence, ds)
+        _coherence_guard(coherence, evidence=evidence)
         return float(find_wavelength_05_crossing(str(psd_file)))
 
 
-def _coherence_guard(coherence: np.ndarray) -> None:
+def _coherence_evidence(coherence: np.ndarray, ds: xr.Dataset) -> dict[str, Any]:
+    """Coherence statistics that justify an unresolved-scale refusal.
+
+    Args:
+        coherence: The ``1 - psd_diff/psd_ref`` array.
+        ds: The open PSD dataset (``psd_diff``, ``psd_ref``, ``wavenumber``).
+
+    Returns:
+        The evidence block carried on :class:`UnresolvedScaleError`.
+    """
+    wavenumber = np.asarray(ds.wavenumber.to_numpy(), dtype="float64")
+    positive = wavenumber[wavenumber > 0.0]
+    ratio = np.asarray(ds.psd_diff.to_numpy(), dtype="float64") / np.asarray(
+        ds.psd_ref.to_numpy(), dtype="float64"
+    )
+    return {
+        "coherence_min": float(np.nanmin(coherence)),
+        "coherence_max": float(np.nanmax(coherence)),
+        "coherence_crossing_sought": 0.5,
+        "psd_diff_over_ref_median": float(np.nanmedian(ratio)),
+        "wavelength_km": {
+            "min": float(1.0 / np.nanmax(positive)) if positive.size else float("nan"),
+            "max": float(1.0 / np.nanmin(positive)) if positive.size else float("nan"),
+        },
+        "n_wavenumbers": int(np.asarray(coherence).size),
+        "reading": (
+            "the residual PSD is compared against the reference at every "
+            "wavenumber; a median ratio at or above 1.0 means the map removes "
+            "no variance at any resolved scale"
+        ),
+    }
+
+
+def _coherence_guard(
+    coherence: np.ndarray, *, evidence: dict[str, Any] | None = None
+) -> None:
     """Refuse degenerate coherence arrays with the DEFINED signals.
 
     A track long enough for the sample-count gate can still yield ZERO usable
@@ -137,6 +197,9 @@ def _coherence_guard(coherence: np.ndarray) -> None:
 
     Args:
         coherence: The ``1 - psd_diff/psd_ref`` array from the PSD file.
+        evidence: Optional coherence statistics carried out on the raised
+            :class:`UnresolvedScaleError` (owner pin 160a — an absence is
+            never bare). Callers that only record NaN may omit it.
 
     Raises:
         ShortTrackError: Empty or all-NaN coherence (no usable segment).
@@ -147,5 +210,6 @@ def _coherence_guard(coherence: np.ndarray) -> None:
         raise ShortTrackError("no usable spectral segment (empty PSD); λx undefined")
     if not (np.nanmin(coherence) <= 0.5 <= np.nanmax(coherence)):
         raise UnresolvedScaleError(
-            "map resolves no scale; λx undefined (no 0.5 coherence crossing)"
+            "map resolves no scale; λx undefined (no 0.5 coherence crossing)",
+            evidence=evidence,
         )

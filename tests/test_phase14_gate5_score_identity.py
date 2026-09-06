@@ -58,4 +58,13 @@ def test_gate5_anchor_score_identity() -> None:
     mu, sigma, lambda_x = their_eval.score(ANCHOR_SIGNED_MAPS, _J3_TRACK)
     assert np.isclose(ours.mu, mu, rtol=1e-12, atol=0.0)
     assert np.isclose(ours.sigma, sigma, rtol=1e-12, atol=0.0)
+    # Owner pin 161: score_tile may now RECORD an absent lambda_x instead of
+    # raising. On the ANCHOR that is a failure of the identity this gate
+    # exists to assert, not a pass -- the anchor is the identity subject, and
+    # an unestablished lambda_x there must be visible as such rather than
+    # skipped by a None-tolerant comparison.
+    assert ours.lambda_x is not None, (
+        "anchor lambda_x is RECORDED ABSENT: the map resolves no scale, so the "
+        f"score identity is UNESTABLISHED, not satisfied. {ours.lambda_x_absence}"
+    )
     assert np.isclose(ours.lambda_x, lambda_x, rtol=1e-12, atol=0.0)

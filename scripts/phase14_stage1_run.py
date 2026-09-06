@@ -686,8 +686,9 @@ def build_scores_block(
     *,
     mu: float,
     sigma: float,
-    lambda_x: float,
+    lambda_x: float | None,
     n_scored_points: int,
+    lambda_x_absence: dict[str, Any] | None = None,
     coverage_1sigma: float,
     reduced_chi2: float,
     raw_sigma: float,
@@ -716,8 +717,11 @@ def build_scores_block(
         mu: their_eval mu at this tile core.
         sigma: their_eval sigma (the vendored RMS statistic — NOT the
             ensemble spread; see ``raw_sigma``).
-        lambda_x: Effective resolution [km].
+        lambda_x: Effective resolution [km], or None when the map resolves
+            no scale (owner pin 161 — a RECORDED ABSENCE, never a zero).
         n_scored_points: Track points the scores were computed over.
+        lambda_x_absence: The absence record carrying the coherence
+            evidence, required whenever ``lambda_x`` is None (pin 160a).
         coverage_1sigma: Empirical 1-sigma coverage on the j3 track.
         reduced_chi2: Reduced chi-squared on the j3 validation track.
         raw_sigma: The UNCALIBRATED ensemble spread level (the sigma row —
@@ -744,10 +748,24 @@ def build_scores_block(
             "100c), never recorded silently under names that imply they match"
         )
     reading = {"report_only": True, "report_only_note": REPORT_ONLY_NOTE}
+    # Owner pins 160(a)/161: an ABSENT lambda_x keeps its key and its
+    # report-only framing; only the VALUE becomes an absence record, and it
+    # carries the coherence evidence. The row's key set is pinned exactly,
+    # so an absence must never add or drop a key — and a bare None would be
+    # indistinguishable from a scorer that broke.
+    lambda_x_field: dict[str, Any] = {"value": lambda_x, **reading}
+    if lambda_x is None:
+        lambda_x_field["recorded_absent"] = True
+        lambda_x_field["absence"] = lambda_x_absence
+        lambda_x_field["not_zero"] = (
+            "value is None because λx is UNDEFINED for this map, NOT zero — a "
+            "zero would claim the map resolves every scale, the inverse of "
+            "what was measured"
+        )
     return {
         "mu": {"value": mu, **reading},
         "sigma": {"value": sigma, **reading},
-        "lambda_x": {"value": lambda_x, **reading},
+        "lambda_x": lambda_x_field,
         "n_scored_points": n_scored_points,
         "coverage_1sigma": {"value": coverage_1sigma, "n": calibration_n, **reading},
         "chi2_j3_validation": {
@@ -780,10 +798,11 @@ def scores_from_readings(
     *,
     mu: float,
     sigma: float,
-    lambda_x: float,
+    lambda_x: float | None,
     n_scored_points: int,
     track: str,
     track_sha256: str,
+    lambda_x_absence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Wire ONE :func:`calibration_readings` result into a scores block.
 
@@ -796,8 +815,11 @@ def scores_from_readings(
         readings: One :func:`calibration_readings` result.
         mu: their_eval mu at this tile core.
         sigma: their_eval sigma (the vendored RMS statistic).
-        lambda_x: Effective resolution [km].
+        lambda_x: Effective resolution [km], or None when the map resolves
+            no scale (owner pin 161 — a RECORDED ABSENCE, never a zero).
         n_scored_points: Track points the mu/sigma/lambda_x triple used.
+        lambda_x_absence: The absence record carrying the coherence
+            evidence, required whenever ``lambda_x`` is None (pin 160a).
         track: The validation track path.
         track_sha256: That track's sha256.
 
@@ -808,6 +830,7 @@ def scores_from_readings(
         mu=mu,
         sigma=sigma,
         lambda_x=lambda_x,
+        lambda_x_absence=lambda_x_absence,
         n_scored_points=n_scored_points,
         coverage_1sigma=readings["coverage_1sigma"],
         reduced_chi2=readings["reduced_chi2"],
@@ -4968,16 +4991,29 @@ def _score_tile_leg(
         std_grid, lon_a, lat_a, z_axis.safe_cast(time_a), bounds_error=False
     )
     readings = calibration_readings(mean=mean_interp, std=std_interp, truth=ssh_a)
-    _t5_echo(
-        f"{tile}: scored mu={score.mu:.6f} lambda_x={score.lambda_x:.1f} km "
-        f"on {score.n_scored_points} points; calibration on "
-        f"{readings['n_used']} of them"
-    )
+    # Owner pin 161: an unresolved lambda_x is RECORDED, not fatal. It is
+    # announced loudly here so a reader of the log meets the absence at the
+    # point it happened rather than inferring it from a None in the row.
+    if score.lambda_x is None:
+        _t5_echo(
+            f"{tile}: ⚖ lambda_x RECORDED ABSENT — the map resolves no scale "
+            f"(no 0.5 coherence crossing). mu={score.mu:.6f} on "
+            f"{score.n_scored_points} points; calibration on "
+            f"{readings['n_used']} of them. This is an ABSENCE with evidence "
+            "attached (pins 160a/161), NOT a zero and NOT a failure to score"
+        )
+    else:
+        _t5_echo(
+            f"{tile}: scored mu={score.mu:.6f} lambda_x={score.lambda_x:.1f} km "
+            f"on {score.n_scored_points} points; calibration on "
+            f"{readings['n_used']} of them"
+        )
     return scores_from_readings(
         readings,
         mu=float(score.mu),
         sigma=float(score.sigma),
-        lambda_x=float(score.lambda_x),
+        lambda_x=None if score.lambda_x is None else float(score.lambda_x),
+        lambda_x_absence=score.lambda_x_absence,
         n_scored_points=int(score.n_scored_points),
         track=str(track),
         track_sha256=gate.sha256_file(track),
