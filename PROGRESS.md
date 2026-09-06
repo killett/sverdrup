@@ -148,6 +148,63 @@
 > **LEG 4 (quiet_gyre) NOT STARTED.** 157(a) removed the re-assessment between legs 3 and 4,
 > but that assumed leg 3 produced a reading. It did not.
 >
+> ## ⚖ EQUATORIAL — MECHANISM OPEN, TWO HYPOTHESES RETRACTED (2026-09-06)
+>
+> **The verdict stands; the mechanism does not.** λx is UNRESOLVED under BOTH definitions —
+> the vendored skill array (max 0.003) AND true Re(γ) (max **0.482**, never reaching 0.5).
+> That is what keeps the reading standing while the cause is open (pin 178).
+>
+> **⚠ NAMING HAZARD, recorded NOT fixed (pin 178).** The vendored quantity called
+> `coherence` is `1 - psd_diff/psd_ref` = **2√r·Re(γ) − r**, which ranges to **−4.17**. It is
+> NOT a coherence. **Do not rename it** — it is the published leaderboard definition and
+> comparability depends on it. **Do** record what it actually is at every consumer and in the
+> Gate-1 pack, together with the Re(γ) max of 0.482.
+>
+> **Two mechanisms proposed and RETRACTED, both on evidence:**
+> 1. **Executor's "defect — structure that does not match" (166b): WITHDRAWN.** It rested on
+>    a dichotomy that read over-power as evidence against degeneracy (owner pin 170).
+> 2. **Owner's "f → 0 amplitude blow-up" (170): WITHDRAWN by the owner at pin 175**, refuted
+>    by the coefficients themselves. 171(c), no track involved: equatorial's per-rung RMS is
+>    **below kuroshio's at six of eight rungs**, total RMS 1.56e-3 against kuroshio 1.41e-3
+>    and southern 1.90e-3. **No blow-up exists.**
+>
+> **What the solution actually shows (pin 175):** LONG-SCALE DOMINANCE at ordinary magnitude
+> — **75.5% of coefficient power in the single 905 km rung**, against kuroshio's 40.3% and
+> southern's 68.7%. The apparent "over-power" is that dominance leaking into 200–300 km,
+> where equatorial's track carries little variance (std 0.0889 m vs kuroshio's 0.478).
+>
+> **⚠ f AND SNR ARE CONFOUNDED and neither simple hypothesis fits (pin 177):**
+> - **Sign check:** within-tile gradients DISAGREE. Equatorial and kuroshio improve
+>   polewards; **southern WORSENS** — `diff/ref` 0.482 at |lat| 50 against 0.716 at 58. A
+>   controlling *f* should not produce opposite signs.
+> - **Magnitude check:** equatorial's track variance is **28.9× below** kuroshio's, but
+>   `study/ref` differs by only 3–5×. A constant-injected-noise model predicts ~29×, so
+>   **pure SNR does not fit either.**
+> - **A THIRD hypothesis is live (175/177c):** does the 905 km share predict skill loss
+>   across tiles and bands better than *f* or SNR? To be tested, NOT assumed.
+>
+> ## ⛔ LEG 4 (quiet_gyre) HELD ON A MEASUREMENT, NOT A WAGER (pin 176, 2026-09-06)
+>
+> Quiet gyre's validation track was built and measured **with no solve** (minutes). Result:
+> **176(c) — it sits BELOW equatorial, not near kuroshio.**
+>
+> | tile | lat span | n | track std m | variance m² | vs kuroshio |
+> |---|---|---|---|---|---|
+> | kuroshio | +28..+43 | 95,883 | 0.4793 | 2.297e-01 | 1.0× |
+> | southern | −62..−47 | 147,276 | 0.6570 | 4.317e-01 | 0.5× |
+> | equatorial | −4..+11 | 107,706 | 0.0884 | 7.813e-03 | **29.4×** |
+> | **quiet_gyre** | −30..−15 | 111,812 | **0.0695** | **4.828e-03** | **47.6×** |
+>
+> **Quiet gyre has the WEAKEST signal of all four tiles** — 47.6× below kuroshio and 1.62×
+> below equatorial — and is lower than equatorial in every wavelength band except 20–60 km.
+> Under the SNR branch, leg 4 would spend **27 h to produce a second unresolved reading**.
+> **HELD until the confound is settled** (176c).
+>
+> ⚖ Also visible: both low-EKE tiles have a **rising** spectrum below ~60 km (quiet_gyre
+> 2.161e-02 at 20–60 against 6.856e-03 at 60–100; equatorial 1.944e-02 against 9.073e-03) —
+> a noise floor comparable to their signal, which kuroshio and southern's stronger fields
+> bury. That is a THIRD reading of the same numbers and is recorded, not adopted.
+>
 > ## ⚖ Carried forward — unresolved, and NOT resolvable by executor work
 >
 > 1. **The four diverse tiles carry NO GroundTrack row** (pin 106). The transfer readings

@@ -2924,3 +2924,79 @@ not discriminate, and the owner withdrew it on re-derivation of the deformation 
 - **LEG 4 STAYS HELD** (167): 166(b) *is* the mechanism that would connect equatorial's
   failure to quiet gyre, so 163's standing permission is confirmed-as-suspended rather than
   overridden. **161 lands regardless** — it is correct independent of the disposition.
+
+---
+
+## PART 42 — MECHANISM RETRACTED; LEG 4 DECIDED BY MEASUREMENT (verbatim), pins 175–179, 2026-09-06
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-06.** The coefficients refuted the owner's
+own proposed mechanism, and leg 4's hold became a measurable question rather than a wager.
+
+> 175. 170's MECHANISM IS WITHDRAWN. 171(c) shows no blow-up — equatorial's coefficients are
+>      below kuroshio's at six of eight rungs, total RMS 1.56e-3 against 1.41e-3 and 1.90e-3.
+>      The signature is LONG-SCALE DOMINANCE at ordinary magnitude (75.5% in the 905 km rung
+>      against 40.3%), and the apparent over-power is that dominance leaking into 200-300 km
+>      where the equatorial track carries little variance. Record the retraction: I predicted
+>      f -> 0 blow-up and the coefficients refute it.
+> 176. ⛔ ANSWER LEG 4 DIRECTLY, BEFORE RESOLVING THE CONFOUND. The confound matters for the
+>      equatorial disposition; for leg 4 the decisive quantity is simply quiet gyre's own
+>      track variance, and it needs no solve.
+>      (a) Build quiet gyre's validation track and report its along-track SSH variance
+>          per band, against equatorial's 0.0889 m and kuroshio's 0.478 m. Minutes, no solve.
+>      (b) If it sits near kuroshio's, the SNR branch does not threaten it and leg 4 launches.
+>      (c) If it sits near equatorial's — which I expect, since it is the low-EKE tile — then
+>          under the SNR hypothesis leg 4 would spend 27 h to produce a second unresolved
+>          reading, and it stays held until the confound is settled.
+>      (d) Either way this is worth knowing before the confound work, because it converts a
+>          27 h wager into a measurement.
+> 177. THE CONFOUND TEST AS YOU PROPOSED IT, with one addition. Per-band track variance
+>      against per-band skill across all three tiles, SNR-matched bands at different f.
+>      (a) ADD THE SIGN CHECK: within-tile gradients disagree. Equatorial and kuroshio both
+>          improve poleward; southern WORSENS, 0.482 at |lat| 50 against 0.716 at 58. A
+>          controlling f should not produce opposite signs. Include that in the fit rather
+>          than treating equatorial's monotone gradient as decisive on its own.
+>      (b) ADD THE MAGNITUDE CHECK: equatorial's track variance is 28.9x below kuroshio's,
+>          but study/ref differs by 3-5x. A constant injected-noise model predicts ~29x, so
+>          pure SNR does not fit either. Whatever the answer is, it is not either hypothesis
+>          in its simple form, and the write-up should say so.
+>      (c) The long-scale-dominance account from 175 is a THIRD hypothesis and should be
+>          tested alongside, not assumed: does the 905 km share predict skill loss across
+>          tiles and bands better than f or SNR does?
+> 178. NAMING HAZARD, recorded not fixed: a published quantity called "coherence" that ranges
+>      to -4.17 and is really 2*sqrt(r)*Re(gamma) - r. Do not rename the vendored leaderboard
+>      definition — it is the published one and comparability depends on it. Do record, at
+>      every consumer and in the Gate-1 pack, what the array actually is, and that Re(gamma)
+>      max was 0.482 so lambda_x is unresolved under BOTH definitions. That last fact is what
+>      keeps the verdict standing while the mechanism is open.
+> 179. RATIFIED: 169's resolution and telling me the reason rather than accepting my guess at
+>      it; 161 landed with ShortTrackError deliberately left uncaught, which is the right
+>      line — too few samples is a question about the split, not the map; and stating the
+>      f/SNR confound instead of handing me a clean verdict that would have licensed leg 4 on
+>      a premise you could not support. Also noted: two guessed import paths in one task, and
+>      you caught the pattern yourself.
+>
+> SEQUENCE: 176 first — it is minutes and it decides leg 4. Then 177. Disposition after.
+>
+> STOP CONDITION: nothing recorded, nothing sealed, leg 4 held pending 176. Southern's row
+> unamended pending the equatorial mechanism.
+
+### What PART 42 changes
+
+- **THE OWNER'S OWN MECHANISM IS RETRACTED** (175). 171(c) measured the coefficients with no
+  track involved and found **no blow-up**: equatorial sits below kuroshio at six of eight
+  rungs. The signature is **long-scale dominance at ordinary magnitude** — 75.5% of power in
+  the 905 km rung — and the apparent over-power is that dominance leaking into 200–300 km
+  where the equatorial track carries little variance.
+- **LEG 4 IS DECIDED BY MEASUREMENT, NOT BY THE CONFOUND** (176): quiet gyre's own track
+  variance needs no solve, and it **converts a 27 h wager into a measurement**. Near
+  kuroshio's → launch; near equatorial's → hold.
+- **NEITHER SIMPLE HYPOTHESIS FITS** (177). The **sign check**: within-tile gradients
+  disagree — southern WORSENS polewards where equatorial and kuroshio improve, and a
+  controlling *f* cannot produce opposite signs. The **magnitude check**: a 28.9× variance
+  gap against a 3–5× `study/ref` gap, where constant injected noise predicts ~29×. **A third
+  hypothesis — long-scale dominance — is to be tested alongside, not assumed** (177c).
+- **THE NAMING HAZARD IS RECORDED, NOT FIXED** (178). The vendored `coherence` is
+  `2√r·Re(γ) − r` and ranges to −4.17. **Not renamed** — comparability depends on the
+  published definition — but recorded at every consumer and in the Gate-1 pack, with
+  **Re(γ) max 0.482**, which is what keeps λx UNRESOLVED under both definitions while the
+  mechanism stays open.
