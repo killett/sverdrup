@@ -104,6 +104,50 @@
 >   undeclared projection (pin 139) or verdict block (pin 152); the **9 uncited prior-phase
 >   gates print every run** as recorded-as-found and are not fatal.
 >
+> ## ⛔⛔ LEG 3 (equatorial) CRASHED IN SCORING — OWNER RULING OWED (2026-09-06)
+>
+> **All nine windows SOLVED and persisted; no solve work is lost.** The leg died AFTER the
+> solve, in `score_tile`, at 25.5 h (91,945 s):
+> `UnresolvedScaleError: map resolves no scale; λx undefined (no 0.5 coherence crossing)`
+> (`pertile_scoring.py:151`). Lock released. **The launcher correctly REFUSED to relaunch**
+> — `rc=1` is a crash, not a halt (pin 156b), on its first real firing.
+>
+> **This is a DEFINED SIGNAL, not a fault.** `_coherence_guard` raises it deliberately in
+> place of a cryptic vendored `interp1d` out-of-range error. `lane_compare` catches it and
+> records NaN; `score_tile` does not, so a T5 leg dies on it.
+>
+> **Measured on the persisted maps (read-only, no re-solve):**
+>
+> | tile | lat span | trk std | map std | bias | res std | res/trk | **coh max** | λx |
+> |---|---|---|---|---|---|---|---|---|
+> | kuroshio | +28.3..+42.7 | 0.4780 | 0.4130 | −0.619 | 0.2315 | 0.48 | **0.894** | resolved 232.53 |
+> | southern | −61.7..−47.3 | 0.6490 | 0.0875 | +0.990 | 0.6484 | 1.00 | **0.659** | resolved 141.95 |
+> | equatorial | −3.7..+10.7 | 0.0889 | 0.0958 | −0.201 | 0.1005 | 1.13 | **0.003** | **UNRESOLVED** |
+>
+> Equatorial: median `psd_diff/psd_ref` = **1.0005** across 12.8–996.3 km — the residual PSD
+> equals the reference at essentially every wavelength. Pointwise corr 0.409 and µ +0.7658,
+> σ 0.0594, so LARGE-scale structure is captured and MESOSCALE skill is absent.
+>
+> ⚖ **What the comparison does NOT support:** "residual ≈ signal" is not the discriminator —
+> **southern has res/trk = 1.00 and still resolved.** The discriminator is coherence max:
+> 0.894 / 0.659 / **0.003**. A hypothesis CONSISTENT with the numbers, and **NOT
+> established**: the core straddles the equator (−4..+11) and MIOST is a geostrophic-kernel
+> method, which degenerates as f → 0. The −0.201 m bias does NOT explain it (a constant
+> offset lives at zero wavenumber and is removed by per-segment detrending).
+>
+> ⚠ **A second thing the table surfaced, on an ALREADY-RECORDED leg:** southern's map std is
+> **0.0875 against a track std of 0.649** — 7.4× smaller — with a +0.990 m bias, where
+> kuroshio's map std tracks its own (0.413 vs 0.478). That row is committed. It may be
+> benign, but it is the owner's to look at.
+>
+> **The equatorial row CANNOT be built as-is** — `build_scores_block` requires a λx.
+> Options, none taken: (1) record the ABSENCE per fork F, with the coherence evidence;
+> (2) treat it as a defect and diagnose the map first; (3) revisit the box — but it is
+> **pin-12 elected (KEPT, −4..+11N, 2026-07-25)**, so that reopens a closed election.
+>
+> **LEG 4 (quiet_gyre) NOT STARTED.** 157(a) removed the re-assessment between legs 3 and 4,
+> but that assumed leg 3 produced a reading. It did not.
+>
 > ## ⚖ Carried forward — unresolved, and NOT resolvable by executor work
 >
 > 1. **The four diverse tiles carry NO GroundTrack row** (pin 106). The transfer readings
