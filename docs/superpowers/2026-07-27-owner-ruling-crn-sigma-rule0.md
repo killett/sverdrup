@@ -3000,3 +3000,81 @@ own proposed mechanism, and leg 4's hold became a measurable question rather tha
   published definition — but recorded at every consumer and in the Gate-1 pack, with
   **Re(γ) max 0.482**, which is what keeps λx UNRESOLVED under both definitions while the
   mechanism stays open.
+
+---
+
+## PART 43 — LEG 4 AS THE CONFOUND-BREAKING EXPERIMENT (verbatim), pins 180–183, 2026-09-06
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-06.** 176(c)'s hold is reversed: quiet
+gyre's cell in the (f, variance) plane is exactly the one no read-only test can reach.
+
+> 180. ⛔ LEG 4 LAUNCHES — 173 and 176(c) REVERSED. It is the confound-breaking experiment,
+>      not a wager on a predictable outcome.
+>      (a) Quiet gyre is the only tile in the moderate-f, weakest-signal cell: f 0.66x
+>          kuroshio and 6.3x equatorial, variance 0.021x kuroshio and 0.62x equatorial.
+>          No read-only test on three confounded tiles can occupy that cell.
+>      (b) PRE-REGISTER THE READING NOW, before it runs, and record it before launch:
+>          RESOLVES -> f is controlling; equatorial's failure is geostrophic degeneracy;
+>            160 applies to equatorial and quiet gyre is a normal reading.
+>          UNRESOLVED -> f is NOT controlling; the discriminator is signal against an
+>            absolute noise floor; BOTH weak-signal tiles record absence, and the transfer
+>            claim becomes regime-conditional in a way the spec did not anticipate.
+>          RESOLVES WITH DEGRADED lambda_x -> partial, and 177 arbitrates.
+>      (c) The defect branch has receded but is not closed. If quiet gyre shows equatorial's
+>          specific signature — study/ref above 1 with Re(gamma) collapsing below ~350 km —
+>          at healthy f, that is evidence for a code defect after all and it stops
+>          everything.
+>      (d) 161 is landed, so an unresolved lambda_x records with its evidence rather than
+>          crashing after the solve. That was the precondition and it is met.
+> 181. THE NOISE-FLOOR HYPOTHESIS ENTERS 177 AS A FIRST-CLASS CANDIDATE, not a variant.
+>      A rising spectrum below 60 km is not an ocean SSH spectrum — mesoscale SSH falls
+>      steeply — so 2.161e-02 against 6.856e-03 at quiet gyre and 1.944e-02 against 9.073e-03
+>      at equatorial is an instrument floor emerging above the signal, and the two agreeing to
+>      11% is what a common absolute floor looks like.
+>      (a) It makes the sharpest prediction of the four: skill keyed to ABSOLUTE variance
+>          relative to a fixed floor, not to any tile-relative ratio. That is testable across
+>          all bands and tiles on existing artifacts.
+>      (b) It also explains 177(b)'s magnitude problem, which neither f nor ratio-SNR could:
+>          28.9x in variance producing only 3-5x in study/ref is what a floor plus leakage
+>          gives, where a constant-noise ratio model predicts ~29x.
+>      (c) Report where kuroshio's and southern's spectra cross the same floor. If the floor
+>          is common, they should show the identical rise below whatever wavelength their
+>          signal drops through it — that is the test of "common floor" rather than "two
+>          tiles that happen to look alike."
+> 182. RUN 177 WHILE LEG 4 SOLVES. Read-only, no lock contention, and its characterisation is
+>      what leg 4's outcome will be interpreted against. Fold in the sign check, the magnitude
+>      check, and 181.
+> 183. RATIFIED: 176 executed with no solve and answering the question it was asked; both
+>      retractions recorded; 178 landed at the consumer level with Re(gamma) max 0.482 beside
+>      it. Your tally is the right way to read this stage — three mechanisms proposed and
+>      withdrawn on evidence, two yours and one mine, with the verdict surviving all three.
+>      That is what it looks like when the verdict is being tested rather than defended.
+>
+> SEQUENCE: land 180-183; pre-register 180(b) BEFORE launching; launch leg 4; run 177/181
+> alongside; disposition after leg 4 lands.
+>
+> STOP CONDITION: 180(c) stops everything. Leg 4 still stops at 40 h. Nothing recorded for
+> equatorial, nothing sealed, southern's row unamended.
+
+### What PART 43 changes
+
+- **LEG 4 LAUNCHES, reversing 173 and 176(c)** (180). Quiet gyre is **the only tile in the
+  moderate-*f*, weakest-signal cell** — *f* 0.66× kuroshio and 6.3× equatorial, variance
+  0.021× kuroshio and 0.62× equatorial. **No read-only test on three confounded tiles can
+  occupy that cell**, so the leg is the experiment rather than a wager on a known answer.
+- **THE READING IS PRE-REGISTERED BEFORE LAUNCH** (180b): resolves → *f* controls and 160
+  applies to equatorial; unresolved → *f* does NOT control, the discriminator is signal
+  against an **absolute noise floor**, both weak-signal tiles record absence, and the
+  transfer claim becomes **regime-conditional in a way the spec did not anticipate**;
+  degraded → partial, and 177 arbitrates.
+- **⛔ THE DEFECT BRANCH IS NOT CLOSED** (180c): quiet gyre showing equatorial's *specific*
+  signature — `study/ref` above 1 with Re(γ) collapsing below ~350 km — **at healthy f** is
+  evidence for a code defect and **stops everything**.
+- **THE NOISE FLOOR IS A FIRST-CLASS HYPOTHESIS** (181), not a variant. A rising spectrum
+  below 60 km is not an ocean SSH spectrum; the two weak tiles **agreeing to 11%** is what a
+  common absolute floor looks like. It is the only candidate that explains 177(b)'s
+  magnitude problem — 28.9× in variance producing 3–5× in `study/ref` — which neither *f*
+  nor ratio-SNR can. **Its own test** (181c): kuroshio and southern must show the identical
+  rise below wherever their signal drops through the same floor.
+- **177 RUNS WHILE LEG 4 SOLVES** (182) — read-only, no lock contention, and it is the
+  characterisation leg 4's outcome gets interpreted against.

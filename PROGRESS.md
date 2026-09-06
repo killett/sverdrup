@@ -183,7 +183,30 @@
 > - **A THIRD hypothesis is live (175/177c):** does the 905 km share predict skill loss
 >   across tiles and bands better than *f* or SNR? To be tested, NOT assumed.
 >
-> ## ⛔ LEG 4 (quiet_gyre) HELD ON A MEASUREMENT, NOT A WAGER (pin 176, 2026-09-06)
+> ## ⭐ LEG 4 IS THE CONFOUND-BREAKING EXPERIMENT — READING PRE-REGISTERED (pin 180)
+>
+> **⛔ THIS BLOCK WAS WRITTEN AND COMMITTED BEFORE THE LEG LAUNCHED (pin 180b).** Its whole
+> value is that it cannot be edited after the result is seen. Commit order is the proof.
+>
+> **Why quiet gyre and not a read-only test:** it is the ONLY tile in the moderate-*f*,
+> weakest-signal cell — *f* 0.66× kuroshio and 6.3× equatorial, variance 0.021× kuroshio and
+> 0.62× equatorial. The other three tiles confound *f* with signal strength; **no read-only
+> test on them can occupy that cell** (180a).
+>
+> | leg-4 outcome | what it establishes |
+> |---|---|
+> | **λx RESOLVES** | ***f* is controlling.** Equatorial's failure is geostrophic degeneracy; **160 applies to equatorial** and quiet gyre is a normal reading |
+> | **λx UNRESOLVED** | ***f* is NOT controlling.** The discriminator is signal against an **absolute noise floor**; **BOTH weak-signal tiles record absence**, and the transfer claim becomes **regime-conditional in a way the spec did not anticipate** |
+> | **RESOLVES, λx DEGRADED** | Partial — **177 arbitrates** |
+>
+> **⛔ 180(c) — THE DEFECT BRANCH IS NOT CLOSED AND STOPS EVERYTHING.** If quiet gyre shows
+> equatorial's *specific* signature — **`study/ref` above 1 with Re(γ) collapsing below
+> ~350 km — at healthy f**, that is evidence for a code defect after all.
+>
+> Precondition met (180d): **161 is landed**, so an unresolved λx now records with its
+> evidence instead of crashing after the solve — which is exactly how leg 3 was lost.
+>
+> ## [SUPERSEDED by pin 180 — the hold is REVERSED; kept for the trail] LEG 4 HELD ON A MEASUREMENT (pin 176)
 >
 > Quiet gyre's validation track was built and measured **with no solve** (minutes). Result:
 > **176(c) — it sits BELOW equatorial, not near kuroshio.**
