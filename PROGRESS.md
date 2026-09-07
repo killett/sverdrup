@@ -228,6 +228,43 @@
 > a noise floor comparable to their signal, which kuroshio and southern's stronger fields
 > bury. That is a THIRD reading of the same numbers and is recorded, not adopted.
 >
+> ## ⚖ 177/181 RESULTS — AND 180(c) IS WEAKENED AS A STOP CRITERION (2026-09-06)
+>
+> **⛔ THE MOST IMPORTANT FINDING: KUROSHIO CARRIES EQUATORIAL'S "DEFECT" SIGNATURE.**
+> 180(c) names `study/ref` above 1 with Re(γ) collapsing as evidence for a code defect.
+> **Kuroshio — healthy *f*, λx resolved at 232.53 km — has exactly that**, at 70–95 km:
+> `study/ref` **3.823**, `diff/ref` **4.697**. Equatorial's identical signature sits at
+> 250–400 km (`study/ref` 4.291, `diff/ref` 5.169).
+>
+> | tile | pathological band | study/ref | diff/ref | λx |
+> |---|---|---|---|---|
+> | kuroshio | **70–95 km** | 3.823 | 4.697 | resolved 232.53 |
+> | equatorial | **250–400 km** | 4.291 | 5.169 | UNRESOLVED |
+> | southern | 50–70 km (opposite sign) | 0.017 | 1.009 | resolved 141.95 |
+>
+> **The candidate mechanism this suggests, recorded NOT adopted:** every tile over-powers and
+> loses phase at its own effective resolution limit; whether λx resolves depends only on
+> whether that limit falls above or below the 0.5 crossing. Kuroshio's pathology at 70–95 km
+> sits far below its 232 km crossing and never touches the verdict; equatorial's lands on top
+> of where its crossing would be. The band ratio (~3.5×) is near the deformation-radius ratio
+> (138/24 ≈ 5.8×), and **kuroshio's band coincides with the basis ladder's shortest rung,
+> 80 km**.
+> ⚠ **Consequence for 180(c): as written in absolute km it is not equatorial-specific and
+> quiet gyre will very likely trip it.** If it is to stay a defect trigger it needs the band
+> pinned RELATIVE to each tile's own resolution limit. **Owner's call — not adjusted here.**
+>
+> **181(c) common-floor test — universal rise, but not one common level.** All four tiles turn
+> upward at **35–50 km** (ratios 1.07 / 1.03 / 1.41 / 1.58 for kuroshio / southern /
+> equatorial / quiet_gyre) and again below 25 km (1.88 / 1.93 / 2.38 / 2.52). So the rise is
+> NOT a weak-tile property. But it occurs at the SAME wavelength in all four rather than where
+> each signal drops through a fixed level, and the levels differ ~3.6× between clusters — a
+> single common absolute floor predicts convergence to ONE level. A substantial common
+> component exists (3.6× spread against 28.9× in total variance); it is not the whole story.
+>
+> **181(a) correlations (n=21):** `corr(log10 absolute band variance, diff/ref)` = **−0.464**;
+> `corr(log10 |f|, diff/ref)` = **−0.322**. Absolute variance predicts skill loss better than
+> *f* — but neither is strong, so neither hypothesis is established.
+>
 > ## ⚖ Carried forward — unresolved, and NOT resolvable by executor work
 >
 > 1. **The four diverse tiles carry NO GroundTrack row** (pin 106). The transfer readings
