@@ -109,6 +109,18 @@ MIRRORED: dict[str, str] = {
         "artifact and how it differed from the true map"
     ),
     # ---- pin 58(d): the sha capture that closes the substitution hole ----
+    # ---- pin 188(a): the ONLY stage record that cannot be reconstructed ----
+    "phase14.stage1.headroom_minima_recovered": (
+        "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM "
+        "LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a "
+        "`headroom` argument and does not pass it to build_evidence_row, so no "
+        "tile row has ever carried one. The legs are finished and the logs are "
+        "gitignored on a single box, so this is the only item in the stage that "
+        "re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind "
+        "pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; "
+        "witnessing it is the whole point. Recovery is NOT repair — the 151(b) "
+        "gap stands and is recorded as found"
+    ),
     "phase14.stage1.anchor_gate_artifact_shas": (
         "pin 58(d). Check-1's mean, Gamma and variance routes recorded the "
         "comparison OUTCOME but no sha of the artifact compared against, so "
