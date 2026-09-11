@@ -18,6 +18,21 @@
 > State it that way in the Gate-1 pack and in C1→2: **box-scale behaviour TRANSFERS to
 > strong-signal regimes and does NOT transfer to weak-signal ones, at this configuration.**
 >
+> **⭐⭐ AND STATE IT IN THREE CLASSES, NOT TWO (pin 196b/196e).** *"Resolves versus does
+> not" is TOO COARSE a summary of what Stage 1 measured* — the pack and C1→2 both carry:
+>
+> | class | tiles | what the spectrum does | verdict |
+> |---|---|---|---|
+> | **well-matched** | kuroshio | matched across the band | resolves |
+> | **UNDER-powered** | southern | `study/ref` **0.084** at 500–1000 km, `diff/ref` **0.988** — correctly PHASED, real skill at 150–300 km | resolves |
+> | **OVER-powered** | equatorial · quiet_gyre | over-powered at long scales, **phase collapsing** | absences recorded |
+>
+> **Southern is under-powered exactly where the two absences are over-powered.** That is
+> **the sharpest structural contrast the stage produced**, and it **argues against one
+> mechanism sliding along a single axis**. ⚖ **It is evidence about the MECHANISM, not a
+> caveat on a row.** Stage 2G assembles tiles across all three regimes, which is why the
+> coarse summary will not do.
+>
 > | | failing tiles | resolving tiles |
 > |---|---|---|
 > | *f* vs kuroshio | 0.11× · 0.66× | 1.00× · 1.40× |
@@ -65,7 +80,7 @@
 >   into the series under pin 40. Cite it as **190(a)**; it carries no unratified-executor
 >   status. **A restored cost with no stated origin is unauditable**: 190 stops a row
 >   restating a leg's cost *silently*, `source` stops it restating one *anonymously*.
-> - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46.**
+> - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46; PIN 196 as PART 47.**
 >
 > ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
 >
@@ -92,7 +107,7 @@
 > | **Leg 2 — southern** | ✅ **DONE 2026-09-04.** 9/9 windows CONVERGED, `capped=False`, solve 27.37 h, leg 27.48 h — inside the 40 h ceiling, no trip. Recorded at `phase14.stage1.tiles.southern` and **witnessed in the mirror**. µ −0.617629 · σ 0.137723 · λx 141.95 km · **coverage_1σ 0.0025807** · χ² 1637.484 (the s\*/χ² identity, non-gating) · raw-σ 0.0349657 and s\* 1637.484 both `REFERENCE-ONLY, NOT CALIBRATED`. **It CLOSED the 3→9 projection — see below** |
 > | **Leg 3 — equatorial** | ✅ **DONE 2026-09-10.** 9/9 CONVERGED, `capped=False`, solve 25.42 h, leg 25.54 h. **λx RECORDED ABSENT** (fork F, pins 160a/161) — coherence max **0.003**, `psd_diff/psd_ref` **1.00047**, 12.77–996.34 km. µ +0.765790 · σ 0.059423 · **coverage_1σ 0.032632** · χ² 40.311 · n 100,299. The original leg DIED in scoring at 25.5 h; 161 landed, and the re-score from the store recorded it in **21 s** |
 > | **Leg 4 — quiet_gyre** | ✅ **DONE 2026-09-08.** 9/9 CONVERGED, `capped=False`, solve 25.93 h, leg 26.03 h. **λx RECORDED ABSENT** — coherence max **0.0026**, `psd_diff/psd_ref` **1.00054**. µ +0.847933 · σ 0.062576 · **coverage_1σ 0.166670** · χ² 11.638 · n 103,786. **It was the confound-breaking experiment** (pin 180) and its reading was **pre-registered before launch** at `b7fe656` |
-> | **⭐ THE T5 RESULT** | **A TRANSFER FINDING** (pin 186a) — not four readings of which two failed. The frozen config **resolves λx in the two STRONG-signal regimes and not in the two WEAK ones** — and ***f* is NOT the discriminator**: quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED** — long-scale dominance + weak signal is the leading candidate and is **NOT established** |
+> | **⭐ THE T5 RESULT** | **A TRANSFER FINDING IN THREE CLASSES** (pins 186a, 196b) — not four readings of which two failed, and not a two-way resolves/does-not split. The frozen config **resolves λx in the two STRONG-signal regimes and not in the two WEAK ones** — and ***f* is NOT the discriminator**: quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED** — long-scale dominance + weak signal is the leading candidate and is **NOT established** |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 >
@@ -242,8 +257,10 @@
 >
 > ⚠ **A second thing the table surfaced, on an ALREADY-RECORDED leg:** southern's map std is
 > **0.0875 against a track std of 0.649** — 7.4× smaller — with a +0.990 m bias, where
-> kuroshio's map std tracks its own (0.413 vs 0.478). That row is committed. It may be
-> benign, but it is the owner's to look at.
+> kuroshio's map std tracks its own (0.413 vs 0.478). That row is committed.
+> ✅ **DISPOSED at owner pin 196 (2026-09-11): it is the THIRD FAILURE CLASS, not a defect
+> and not a caveat** — under-powered at long scales, correctly phased, verdict unaffected.
+> The row stands **UNAMENDED**. See the three-class table at the top.
 >
 > **The equatorial row CANNOT be built as-is** — `build_scores_block` requires a λx.
 > Options, none taken: (1) record the ABSENCE per fork F, with the coherence evidence;
@@ -409,11 +426,19 @@
 >    ⚠ **`phase14.stage1.refresh_election` stays PENDING by owner ruling 193** — it is task
 >    23's node and cannot be written until the shipped-config election is ruled at Gate 1
 >    (pin 136). **Do not resolve it**; it is meant to keep printing.
-> 3. **172's disposition on southern** — the owner takes it now that both absences are
->    recorded. Southern's row is still **UNAMENDED**: its map carries 0.084 of its track's
->    power at 500–1000 km with `diff/ref` 0.988 there, measured through the scorer's own
->    path. **Under-powered and correctly phased — a DIFFERENT failure class from the two
->    absences.**
+> 3. **✅ 172 IS DISPOSED (owner pin 196, 2026-09-11). SOUTHERN'S ROW STANDS UNAMENDED.**
+>    **NO AMENDMENT, NO SUPERSESSION** (196d) — *the row is accurate; what was missing was
+>    the READING of it*, and a reading goes in the pack. **Amending a witnessed row to add
+>    an interpretation would be the wrong instrument**; the single authorised supersession
+>    stays UNSPENT. The verdict is untouched (196a): λx is set by the **0.5 crossing at
+>    141.95 km**, inside a band where `diff/ref` runs **0.355–0.405** — real skill — so
+>    **the long-wavelength deficit sits ABOVE where the verdict is determined**. It is
+>    recorded instead as the **third failure class** above.
+>    ⚖ **THE BIAS HYPOTHESIS STAYS FIREWALLED (196c):** +0.990 m with the strongest MDT
+>    gradient of the four, and the bias ordering across tiles tracking gradient strength,
+>    is **CONSISTENT WITH** a reference offset; per-segment detrending removes constants
+>    before the verdict. **Consistent, NOT established** — the same discipline that held on
+>    the geostrophic account until quiet gyre refuted it.
 > 4. **T6 / T7 / T8 → T9.** Still unopened. **T9 is the owner's walk.**
 >
 > ---

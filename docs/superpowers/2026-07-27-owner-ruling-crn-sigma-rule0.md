@@ -3300,3 +3300,60 @@ pin 194. The hazard is **prevented**.
   immediately before **each** commit (191), and 191's protocol half landing in **CLAUDE.md
   step 0b** — where a fresh session reads it, not only in a ruling.
 - **⭐ THE LANE-0 `WITNESS NOW` IS DISCHARGED.** It had been outstanding **since T5d**.
+
+## PART 47 — 172 DISPOSED: SOUTHERN IS A THIRD FAILURE CLASS (verbatim), pin 196, 2026-09-11
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-11.** 172 had been open since 2026-09-06,
+when the coherence table surfaced southern's map std on an ALREADY-RECORDED leg.
+
+> 196. 172 DISPOSED — SOUTHERN'S ROW STANDS UNAMENDED, recorded as a finding.
+>      (a) The reading is unaffected: lambda_x is set by the 0.5 crossing, and the crossing
+>          sits at 141.95 km inside a band where diff/ref runs 0.355-0.405 — real skill. The
+>          long-wavelength deficit is above where the verdict is determined.
+>      (b) RECORD IT AS A THIRD FAILURE CLASS, in the pack, beside the other two:
+>            kuroshio   — well-matched across the band; resolves.
+>            southern   — UNDER-powered at 500-1000 km (study/ref 0.084, diff/ref 0.988),
+>                         correctly phased, real skill at 150-300 km; resolves.
+>            equatorial, quiet gyre — OVER-powered at long scales, phase collapsing;
+>                         absences recorded.
+>          That southern is under-powered exactly where the two absences are over-powered is
+>          the sharpest structural contrast the stage produced, and it argues against one
+>          mechanism sliding along a single axis. It is evidence about the mechanism, not a
+>          caveat on a row.
+>      (c) THE BIAS HYPOTHESIS STAYS FIREWALLED. +0.990 m with the strongest MDT gradient of
+>          the four, and the bias ordering across tiles tracking gradient strength, is
+>          consistent with a reference offset — and per-segment detrending removes constants
+>          before the verdict. Consistent, not established. Record it as such.
+>      (d) NO AMENDMENT, NO SUPERSESSION. The row is accurate; what was missing was the
+>          reading of it, and that goes in the pack. Amending a witnessed row to add an
+>          interpretation would be the wrong instrument.
+>      (e) C1->2 carries the three-class structure forward. Stage 2G assembles tiles across
+>          all of these regimes, and "resolves" versus "does not" is too coarse a summary of
+>          what Stage 1 measured.
+
+### What PART 47 changes
+
+- **⭐ STAGE 1 MEASURED THREE CLASSES, NOT TWO** (196b). "Resolves versus does not" is **too
+  coarse a summary of what Stage 1 measured** (196e): kuroshio **well-matched**; southern
+  **UNDER-powered** at 500–1000 km (`study/ref` 0.084, `diff/ref` 0.988) yet correctly
+  phased with real skill at 150–300 km; equatorial and quiet gyre **OVER-powered** at long
+  scales with phase collapsing. **Southern is under-powered exactly where the two absences
+  are over-powered** — the sharpest structural contrast the stage produced, and it **argues
+  against one mechanism sliding along a single axis**.
+- **IT IS EVIDENCE ABOUT THE MECHANISM, NOT A CAVEAT ON A ROW** (196b). That is the
+  reclassification: 172 entered the record as a possible defect on a committed row and
+  leaves it as a finding about where the transfer breaks.
+- **172 IS DISPOSED WITH NO AMENDMENT AND NO SUPERSESSION** (196d). **The row is accurate;
+  what was missing was the READING of it**, and a reading goes in the pack. **Amending a
+  witnessed row to add an interpretation would be the wrong instrument** — the single
+  authorised supersession remains **UNSPENT**.
+- **THE VERDICT IS UNAFFECTED** (196a): λx is set by the 0.5 crossing at **141.95 km**,
+  inside a band where `diff/ref` runs **0.355–0.405** — real skill. **The long-wavelength
+  deficit sits ABOVE where the verdict is determined.**
+- **THE BIAS HYPOTHESIS STAYS FIREWALLED** (196c). +0.990 m with the strongest MDT gradient
+  of the four, and the bias ordering across tiles tracking gradient strength, is
+  **CONSISTENT WITH** a reference offset; per-segment detrending removes constants before
+  the verdict. **Consistent, NOT established** — recorded as such, the same discipline that
+  held on the geostrophic account until quiet gyre refuted it.
+- **C1→2 CARRIES THE THREE-CLASS STRUCTURE FORWARD** (196e), because **Stage 2G assembles
+  tiles across all of these regimes**.
