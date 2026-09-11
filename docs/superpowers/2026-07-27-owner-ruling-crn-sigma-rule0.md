@@ -3357,3 +3357,37 @@ when the coherence table surfaced southern's map std on an ALREADY-RECORDED leg.
   held on the geostrophic account until quiet gyre refuted it.
 - **C1→2 CARRIES THE THREE-CLASS STRUCTURE FORWARD** (196e), because **Stage 2G assembles
   tiles across all of these regimes**.
+
+## PART 48 — THE STORE HOLDS MEASUREMENTS; THE PACK HOLDS INTERPRETATION (verbatim), pin 197, 2026-09-11
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-11.** Issued in answer to three scope
+calls raised at the PART 47 landing.
+
+> 197. ALL THREE SCOPE CALLS RATIFIED.
+>      (a) T12's C1->2 doc stays untouched. 196(e) is an obligation ON the pack walk, not a
+>          retroactive edit to a closed deliverable. Naming it in PROGRESS is the correct
+>          instrument.
+>      (b) NO EVIDENCE NODE FOR THE THREE-CLASS READING, and I am ruling against one rather
+>          than deferring it. The store holds measurements and firewalled hypotheses; an
+>          interpretation placed beside them acquires their standing by adjacency, which is
+>          the path 37(b) closes. It lives in the pack, where interpretation is the point.
+>      (c) The docs-only/no-suite statement in the commit body is right and should stay the
+>          habit. Evidence that states its own scope is the whole lesson of pins 78, 83 and
+>          134 compressed into one line.
+
+### What PART 48 changes
+
+- **⭐ A LINE IS DRAWN BETWEEN THE STORE AND THE PACK** (197b), and it is **RULED AGAINST,
+  NOT DEFERRED** — there is no open question here to reopen later. **The store holds
+  MEASUREMENTS and FIREWALLED HYPOTHESES. Interpretation lives in the PACK, where
+  interpretation is the point.** The mechanism is **standing by adjacency**: an
+  interpretation sitting beside measurements inherits their standing without ever being
+  granted it — **the path pin 37(b) closes**.
+- **AN OBLIGATION ON A FUTURE WALK IS NOT A RETROACTIVE EDIT** (197a). T12's C1→2 doc is a
+  **closed deliverable** and stays untouched; 196(e) binds the **pack walk**. **Naming it
+  in PROGRESS is the correct instrument** — the obligation travels to whoever opens T9
+  without rewriting what was already delivered.
+- **A COMMIT BODY STATES THE SCOPE OF ITS OWN EVIDENCE** (197c) — *including when no suite
+  was run and why*. **This is now a durability rule in CLAUDE.md**, not a habit maintained
+  by memory (the same correction pin 131 applied to the format/suite ordering). **Evidence
+  that states its own scope is pins 78, 83 and 134 compressed into one line.**

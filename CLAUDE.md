@@ -67,6 +67,14 @@ read them either way.
 - **Migrate, don't duplicate.** When a deferred item or open question
   becomes active work, move it out of PROGRESS.md into the new design/plan
   rather than leaving a copy behind.
+- **A commit body STATES THE SCOPE OF ITS OWN EVIDENCE** (owner ruling pin
+  197c, 2026-09-11) — including, explicitly, when **no suite was run and
+  why**. A docs-only commit says so; a commit citing a suite names what
+  passed, how long it took, and that the tree was unchanged across the run.
+  *Evidence that states its own scope* is pins 78, 83 and 134 compressed
+  into one line: the failure those pins each caught was evidence read as
+  covering more than it did. Silence about scope is the defect; "no suite,
+  and here is why" is not an apology, it is the record.
 
 ## Environment & tools
 

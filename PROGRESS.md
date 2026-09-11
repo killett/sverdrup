@@ -80,7 +80,8 @@
 >   into the series under pin 40. Cite it as **190(a)**; it carries no unratified-executor
 >   status. **A restored cost with no stated origin is unauditable**: 190 stops a row
 >   restating a leg's cost *silently*, `source` stops it restating one *anonymously*.
-> - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46; PIN 196 as PART 47.**
+> - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46; PIN 196 as PART 47; PIN 197 as
+>   PART 48.**
 >
 > ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
 >
@@ -400,6 +401,21 @@
 >    — a property of the shipped system, and **Stage 2G cannot close while it stands**.
 > 5. **Stage 1 does not close while C-11 is outstanding** (pin 136c) — task 23 is its
 >    producer and sits after the Gate-1 walk.
+>
+> ## ⚖ Standing practice — ruled, not preference
+>
+> - **⛔ THE STORE HOLDS MEASUREMENTS AND FIREWALLED HYPOTHESES. INTERPRETATION LIVES IN
+>   THE PACK** (owner pin 197b — **ruled against a node, not deferred**, so there is nothing
+>   here to reopen). An interpretation placed beside measurements **acquires their standing
+>   by adjacency**, which is the path **pin 37(b)** closes. The three-class reading is the
+>   worked example: it is in PROGRESS and the ruling doc, and **NOT** in the evidence store.
+> - **AN OBLIGATION ON A FUTURE WALK IS NOT A RETROACTIVE EDIT** (197a). T12's C1→2 doc is
+>   CLOSED and stays untouched; 196(e) binds the **pack walk**, and **naming it in PROGRESS
+>   is the correct instrument**.
+> - **A COMMIT BODY STATES THE SCOPE OF ITS OWN EVIDENCE** (197c), *including when no suite
+>   was run and why*. Now a **durability rule in CLAUDE.md** rather than a habit held by
+>   memory — the same correction pin 131 applied to the format/suite ordering. **Evidence
+>   that states its own scope is pins 78, 83 and 134 in one line.**
 >
 > ## ⛔ Standing stops
 >
