@@ -3251,3 +3251,52 @@ a session diverged from an owner commit it could not see.
 (91,945 s / 4,817 MiB, with the replaced values preserved at
 `headroom.restored_run_facts`), but **190(a)/(b) are NOT YET IMPLEMENTED** — the refusal and
 its row-reading test are owed. The hazard is **recorded, not yet prevented**.
+⭐ **SUPERSEDED BY PART 46:** 190(a)/(b) landed at `7fa106d` and the owner ratified them at
+pin 194. The hazard is **prevented**.
+
+## PART 46 — E-17 RATIFIED INTO 190; THE COMPLETION PROCEDURE RATIFIED (verbatim), pins 194–195, 2026-09-10
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-10.** Issued after 190(a)/(b) landed at
+`7fa106d` and the lane-0 witness push landed at `5ec3171`.
+
+> 194. E-17 RATIFIED AND FOLDED INTO PIN 190 — `source` is required.
+>      (a) A restored cost with no stated origin is unauditable. Pin 190 stops a row
+>          restating a leg's cost silently; requiring source stops it restating one
+>          anonymously. Same defect, one level up.
+>      (b) Consistent with the record: the stray-deletion record carried a pre-deletion sha,
+>          the headroom backfill carried its log and capture date, and pin 60 made the mirror
+>          state that its guarantee is prospective. Provenance travels with a restored fact
+>          or the fact is not restored, only asserted.
+>      (c) Renumber E-17 into my series as part of 190 rather than leaving it as an
+>          unratified executor item — per pin 40, that renumbering is mine to do and I am
+>          doing it here.
+>      (d) Ratified with it: refusing facts supplied WITHOUT a resume. The block restores; it
+>          is not a general override. That distinction is what keeps it from becoming the
+>          hand-edit path it was built to replace.
+> 195. RATIFIED: the completion procedure as executed — node-by-node diff verification rather
+>      than eye, zero digest changes on the forty already witnessed, no supersession spent,
+>      the other three tiles untouched per 192(a); ls-remote re-checked immediately before
+>      each commit per 191; and 191's protocol half landing as CLAUDE.md step 0b where a
+>      fresh session reads it rather than only in a ruling.
+>      The lane-0 WITNESS NOW is discharged. It has been outstanding since T5d.
+
+### What PART 46 changes
+
+- **THERE IS NO E-17. `source` IS PART OF PIN 190** (194c). The renumbering is the owner's
+  under pin 40 and was done in the ruling itself, so the requirement is cited as **190(a)**
+  everywhere and carries no unratified-executor status. **A restored cost with no stated
+  origin is unauditable** (194a): 190 stops a row restating a leg's cost *silently*,
+  `source` stops it restating one *anonymously* — the same defect one level up.
+- **PROVENANCE TRAVELS WITH A RESTORED FACT, OR THE FACT IS ONLY ASSERTED** (194b). Stated
+  as the standing pattern, not a new rule: the stray-deletion record carried a pre-deletion
+  sha, the headroom backfill carried its log and capture date, and pin 60 made the mirror
+  declare its guarantee **prospective**.
+- **REFUSING FACTS SUPPLIED WITHOUT A RESUME IS RATIFIED** (194d) — the block **restores**;
+  it is **NOT a general override**. That is what keeps it from becoming the hand-edit path
+  it exists to replace.
+- **THE COMPLETION PROCEDURE AS EXECUTED IS RATIFIED** (195), by name: node-by-node diff
+  verification rather than by eye, **zero digest changes on the forty already witnessed**,
+  **no supersession spent**, the other three tiles untouched (192a), `ls-remote` re-checked
+  immediately before **each** commit (191), and 191's protocol half landing in **CLAUDE.md
+  step 0b** — where a fresh session reads it, not only in a ruling.
+- **⭐ THE LANE-0 `WITNESS NOW` IS DISCHARGED.** It had been outstanding **since T5d**.

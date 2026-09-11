@@ -640,9 +640,13 @@ def build_evidence_row(
             REFUSED unless ``original_run_facts`` supplies the leg's.
         original_run_facts: The ORIGINAL run's ``wall_s``,
             ``peak_rss_mib``, ``headroom`` (explicitly None if it was
-            never recorded) and ``source``. Legal only together with
-            ``resumed_rescore`` — it restores facts, it does not override
-            a run that measured its own.
+            never recorded) and ``source``. ``source`` is REQUIRED (pin
+            190a as folded at 194): a restored cost with no stated
+            origin is unauditable — 190 stops a row restating a leg's
+            cost silently, ``source`` stops it restating one
+            anonymously. Legal only together with ``resumed_rescore``
+            (194d) — it restores facts, it does not override a run that
+            measured its own.
         pcg: Per-window PCG convergence rows (``iterations`` and
             ``final_rel_residual`` required per leg).
         pcg_rtol: The solver rtol ACTUALLY used (stamped per leg).
@@ -1630,14 +1634,19 @@ def _resume_rescore_facts(
     """
     if not resumed_rescore:
         if original_run_facts is not None:
+            # Owner pin 194(d): the distinction that keeps this block from
+            # becoming the hand-edit path it was built to replace.
             raise ResumeRescoreRefusal(
                 "original_run_facts supplied without resumed_rescore=True: this "
                 "block restores the facts of a run that already happened, and is "
                 "not a general override. A fresh leg measures its own cost "
-                "(owner pin 190a)."
+                "(owner pin 190a, ratified 194d)."
             )
         return wall_s, peak_rss_mib, headroom
 
+    # `source` is REQUIRED beside the three cost fields (owner pin 190a as
+    # folded at 194a): provenance travels with a restored fact, or the fact
+    # is not restored, only asserted.
     facts = original_run_facts or {}
     missing = [name for name in RESUME_COST_FIELDS if name not in facts]
     if missing or not str(facts.get("source", "")).strip():

@@ -56,10 +56,16 @@
 > - ⛔ **THREE ITEMS OF 188 ARE DISCHARGED OR STALE — do not re-execute:** **188(a) DONE**
 >   at `5ce66e3`; **188(c) STALE** (quiet gyre IS mirrored — re-recording its row recreates
 >   the drift the recovery cleared); **188(d) DONE** by the same commit.
-> - ✅ **190(a)/(b) ARE IMPLEMENTED (2026-09-10).** The resume-re-score refusal and its
->   row-reading test are landed — see *The resume-rescore hazard is PREVENTED* below.
->   **191's protocol half is landed too**: CLAUDE.md step **0b** now makes `git log` /
->   `git ls-remote` a **pre-write** check, not only a session-start one.
+> - ✅ **190(a)/(b) ARE IMPLEMENTED AND RATIFIED (pin 194, 2026-09-10).** The
+>   resume-re-score refusal and its row-reading test landed at `7fa106d` — see *The
+>   resume-rescore hazard is PREVENTED* below. **191's protocol half is landed too**:
+>   CLAUDE.md step **0b** now makes `git log` / `git ls-remote` a **pre-write** check, not
+>   only a session-start one.
+> - ⛔ **THERE IS NO E-17 — `source` IS PART OF PIN 190** (194c). The owner renumbered it
+>   into the series under pin 40. Cite it as **190(a)**; it carries no unratified-executor
+>   status. **A restored cost with no stated origin is unauditable**: 190 stops a row
+>   restating a leg's cost *silently*, `source` stops it restating one *anonymously*.
+> - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46.**
 >
 > ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
 >
@@ -141,8 +147,11 @@
 >   **Now the code refuses instead of recording.** `build_evidence_row` takes
 >   `resumed_rescore` + `original_run_facts` and raises **`ResumeRescoreRefusal`** unless
 >   the ORIGINAL run's `wall_s`, `peak_rss_mib`, `headroom` (explicitly `None` if never
->   recorded) **and** `source` are supplied. Supplied facts **without** a resume are refused
->   too — the block restores, it is **not a general override**. The refusal is
+>   recorded) **and** `source` are supplied — `source` **required** under 194(a):
+>   **provenance travels with a restored fact, or the fact is not restored, only asserted.**
+>   Supplied facts **without** a resume are refused too (ratified 194d) — the block
+>   restores, it is **not a general override**, and that is what keeps it from becoming the
+>   hand-edit path it replaces. The refusal is
 >   **satisfiable at a named path**: `<STAGE1_DIR>/<tile>_original_run_facts.json`, read by
 >   `load_original_run_facts` and echoed at the top of the resume, not only at the refusal
 >   57 s later. Which run each field describes is recorded **inside `headroom`**
@@ -388,7 +397,8 @@
 > 1. **✅ DONE — pins 184–189 landed as PART 44, pins 190–191 as PART 45.** The pin-41 hole
 >    is closed. **190(a)/(b) are now IMPLEMENTED** (refusal + row-reading test), and 191's
 >    protocol half is in CLAUDE.md step 0b.
-> 2. **✅ DONE 2026-09-10 — the completion procedure for T5 ran in full.** `seal_run check`
+> 2. **✅ DONE AND RATIFIED (pin 195) 2026-09-10 — the completion procedure for T5 ran in
+>    full, and ⭐ THE LANE-0 `WITNESS NOW` IS DISCHARGED, outstanding since T5d.** `seal_run check`
 >    PASS (seal sha `a17ea419…` re-derived), mirror **sync + push** landed at `5ec3171` and
 >    verified on origin by `ls-remote` — that push **is** the lane-0 bundle's
 >    `⛔ WITNESS NOW` (96b/96c), so `equatorial_lane0_manifest` now witnesses something.
