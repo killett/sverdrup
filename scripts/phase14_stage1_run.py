@@ -5079,6 +5079,13 @@ def record_tile_leg(
         n_obs=n_obs,
         wall_s=wall_s,
         peak_rss_mib=peak_rss_mib,
+        # Owner pin 186: this was ACCEPTED, DOCUMENTED as satisfying pin
+        # 151(b), and never passed on — so no leg's row ever carried the
+        # in-run headroom, and leg 2's 1,382 MiB floor (which drove 151b,
+        # 156c and the whole watchdog) lived only in a gitignored log. The
+        # signature, the docstring and both callers all looked correct;
+        # only reading the row back out of the store could catch it.
+        headroom=headroom,
         pcg=pcg,
         pcg_rtol=pcg_rtol,
         pcg_maxiter=pcg_maxiter,

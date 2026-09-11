@@ -4876,3 +4876,86 @@ def test_a_resolved_lambda_x_is_not_marked_absent() -> None:
     assert block["lambda_x"]["value"] == 232.53
     assert "recorded_absent" not in block["lambda_x"]
     assert "absence" not in block["lambda_x"]
+
+
+def test_headroom_REACHES_THE_RECORDED_ROW_not_just_the_signature(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 186(a): assert on the ARTIFACT, not on the argument.
+
+    Bug caught: the live one, and the eighth of its family.
+    `record_tile_leg` accepted `headroom`, documented it as satisfying
+    owner pin 151(b), and never passed it to `build_evidence_row` -- so
+    NO leg's row has ever carried it. Leg 2's 1,382 MiB floor, which
+    drove pins 151(b), 156(c) and the whole watchdog design, existed
+    only in a gitignored log.
+
+    Every angle except the output looked correct: the parameter is in
+    the signature, in the docstring, and passed by both callers. The
+    only test that could have caught it is this one -- read the row back
+    OUT of the evidence store and assert the value is in it. Same lesson
+    as pin 121's per-window store: assert on the recorded artifact.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    kwargs = _row_kwargs("quiet_gyre")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    tracker = _mod.HeadroomTracker(10084.0)
+    tracker.sample(2762.0)
+    kwargs["headroom"] = tracker.record()
+
+    _mod.record_tile_leg(evidence_path=evid, **kwargs)
+
+    # Read it back OUT of the store -- not off the return value, and not
+    # off the call arguments.
+    stored = json.loads(evid.read_text())["phase14"]["stage1"]["tiles"]["quiet_gyre"]
+    assert "headroom" in stored, (
+        "pin 151(b): the in-run headroom record must reach the ROW. A "
+        "parameter accepted and dropped looks implemented from every angle "
+        "except this one."
+    )
+    assert stored["headroom"]["min_mem_available_mib"] == 2762.0
+    assert stored["headroom"]["at_launch_mem_available_mib"] == 10084.0
+    assert stored["headroom"]["sample_interval_s"] == 60.0
+
+
+def test_a_resumed_legs_halt_ALSO_reaches_the_recorded_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 186(d): the halt block rides in on the same channel.
+
+    Bug caught: 156(a)(ii) was merged INTO the headroom block, so the
+    same drop that hid the headroom would have hidden the halt -- and a
+    halted-then-resumed leg would have recorded identically to a clean
+    one, wall_s silently spanning a pause that was not solve time. That
+    is exactly what 156(a)(ii) exists to prevent, and it would not have
+    surfaced until the first real halt.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    _mod.record_headroom_halt(
+        tmp_path / "quiet_gyre_headroom_halt.json",
+        tile="quiet_gyre",
+        watchdog=_mod.headroom_watchdog(mem_available_mib=1900.0, proc_vm_swap_mib=0.0),
+        windows_done=5,
+        window_id="w+00162.0+60",
+    )
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    kwargs = _row_kwargs("quiet_gyre")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    tracker = _mod.HeadroomTracker(10084.0)
+    kwargs["headroom"] = {**tracker.record(), **_mod._prior_halts_block("quiet_gyre")}
+
+    _mod.record_tile_leg(evidence_path=evid, **kwargs)
+
+    stored = json.loads(evid.read_text())["phase14"]["stage1"]["tiles"]["quiet_gyre"]
+    halt = stored["headroom"]["prior_headroom_halt"]
+    assert halt["kind"] == "HEADROOM_HALT"
+    assert halt["windows_completed"] == 5
+    assert "not solve time" in stored["headroom"]["wall_includes_a_halt"]

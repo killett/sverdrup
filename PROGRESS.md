@@ -1,12 +1,52 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-09-02. THIS IS THE ONLY BLOCK DESCRIBING NOW.
+> # ⬛ CURRENT STATE — 2026-09-10. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
-> **Everything below this block is TRAIL.** Owner pin 154: the banner had become a stack of
-> headline blocks whose top two contradicted each other — one saying leg 2 launches at
-> 9,146 MiB, one still saying leg 2 was held on pin 133 with the re-measure queued. A
-> headline block that outlives its body is the closure-map defect in another file, and the
-> fix is the same: **rewrite what went stale rather than layering over it.**
+> **Everything below this block is TRAIL.** Owner pin 154: rewrite what went stale rather
+> than layering over it.
+>
+> ## ⭐ T5 IS COMPLETE — ALL FOUR LEGS RECORDED
+>
+> | tile | λx | µ | coverage_1σ | χ² | leg wall |
+> |---|---|---|---|---|---|
+> | kuroshio | **232.53 km** | +0.285954 | 0.009778 | 416.678 | 19.67 h |
+> | southern | **141.95 km** | −0.617629 | 0.002581 | 1637.484 | 27.48 h |
+> | equatorial | **RECORDED ABSENT** | +0.765790 | 0.032632 | 40.311 | 25.54 h |
+> | quiet_gyre | **RECORDED ABSENT** | +0.847933 | 0.166670 | 11.638 | 26.03 h |
+>
+> **THE RESULT IS REGIME-CONDITIONAL.** The frozen config **resolves λx in the two
+> STRONG-signal regimes and records an absence in the two WEAK ones**, and ***f* is NOT the
+> discriminator** — quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the
+> strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED**:
+> long-scale dominance + weak signal leads and is **NOT established**.
+>
+> ## ⛔ PIN NUMBERING — READ BEFORE CITING ANYTHING ABOVE 183
+>
+> - **The FORKED advisory series 184–189 is AUTHORITATIVE.** `origin/main` carries
+>   **`5ce66e3` citing pin 188(a)**, so the numbering cannot be rewritten.
+> - **PART 44 IS OWED.** The ruling doc ends at **PART 43 (pins 180–183)**. 184–189 have NOT
+>   been landed. **Land them as PART 44 BEFORE anything else cites them** — that closes the
+>   pin-41 hole created when 188(a)'s work was committed without its ruling text.
+> - A PART 44 drafted in-session for pins 184–186 was **VOID and has been discarded**.
+> - **Pins 190 (resume-re-score hazard) and 191 (re-check `git log` before writing to shared
+>   state) land with PART 44.**
+>
+> ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
+>
+> `5ce66e3` was authored by the owner mid-session and was not visible to a session that ran
+> `resume_checks.sh` at hour zero. **`resume_checks.sh` at session start cannot see a commit
+> that lands at hour six.** Re-check `git log` / `git ls-remote` **before writing to shared
+> state after any long gap**, not only at session start.
+>
+> ## ⭐ HEADROOM: ONE RECORD, AND IT IS NOT THE ROWS
+>
+> **`phase14.stage1.headroom_minima_recovered` (`5ce66e3`) is the SINGLE headroom record** —
+> a separate **witnessed** node with the tile rows left untouched. That shape is correct and
+> required: the rows are witnessed, so they are never edited. A duplicate node and row-level
+> `headroom` keys written in-session were **discarded**; they were the store-vs-mirror drift.
+> ⚠ **The 151(b) drop is still LIVE for every FUTURE leg** — `record_tile_leg` accepted
+> `headroom` and never passed it on. **This recovery commit fixes that** and test-pins it by
+> reading the row back OUT of the store.
 >
 > ## Where the stage is
 >
@@ -14,7 +54,10 @@
 > |---|---|
 > | **Leg 1 — kuroshio** | ✅ **DONE.** 9/9 windows CONVERGED, `capped=False`, solve 19.57 h, leg 19.67 h. Recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**. µ 0.285954 · λx 232.53 km · **coverage_1σ 0.009778** · χ² 416.678 (the s\*/χ² identity, non-gating) · raw-σ 0.038187 and s\* 416.678 both `REFERENCE-ONLY, NOT CALIBRATED` |
 > | **Leg 2 — southern** | ✅ **DONE 2026-09-04.** 9/9 windows CONVERGED, `capped=False`, solve 27.37 h, leg 27.48 h — inside the 40 h ceiling, no trip. Recorded at `phase14.stage1.tiles.southern` and **witnessed in the mirror**. µ −0.617629 · σ 0.137723 · λx 141.95 km · **coverage_1σ 0.0025807** · χ² 1637.484 (the s\*/χ² identity, non-gating) · raw-σ 0.0349657 and s\* 1637.484 both `REFERENCE-ONLY, NOT CALIBRATED`. **It CLOSED the 3→9 projection — see below** |
-> | **Legs 3–4 — equatorial, quiet_gyre** | ✅ **AUTHORISED TOGETHER** by the E-16 §4 re-assessment (owner pin 157), conditional on 156(a) — **the watchdog is landed and tested, so the condition is MET**. Run **back to back, equatorial then quiet_gyre**; **no re-assessment between them** (157a). 40 h ceiling per leg unchanged (157c) |
+> | **Leg 3 — equatorial** | ✅ **DONE 2026-09-10.** 9/9 CONVERGED, `capped=False`, solve 25.42 h, leg 25.54 h. **λx RECORDED ABSENT** (fork F, pins 160a/161) — coherence max **0.003**, `psd_diff/psd_ref` **1.00047**, 12.77–996.34 km. µ +0.765790 · σ 0.059423 · **coverage_1σ 0.032632** · χ² 40.311 · n 100,299. The original leg DIED in scoring at 25.5 h; 161 landed, and the re-score from the store recorded it in **21 s** |
+> | **Leg 4 — quiet_gyre** | ✅ **DONE 2026-09-08.** 9/9 CONVERGED, `capped=False`, solve 25.93 h, leg 26.03 h. **λx RECORDED ABSENT** — coherence max **0.0026**, `psd_diff/psd_ref` **1.00054**. µ +0.847933 · σ 0.062576 · **coverage_1σ 0.166670** · χ² 11.638 · n 103,786. **It was the confound-breaking experiment** (pin 180) and its reading was **pre-registered before launch** at `b7fe656` |
+> | **⭐ THE T5 RESULT** | **REGIME-CONDITIONAL** (forked series 184-189, PART 44 OWED — see the banner). The frozen config **resolves λx in the two STRONG-signal regimes and not in the two WEAK ones** — and ***f* is NOT the discriminator**: quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED** — long-scale dominance + weak signal is the leading candidate and is **NOT established** |
+> | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 >
 > ## What holds the legs
@@ -48,12 +91,24 @@
 >   projection block (`TIER2_CEILING_BASIS_SPAN`) under pin 139.
 > - **An exclusion lock is held for the whole leg** (pin 151a): a second Stage-1 solve is
 >   refused by name. A dead holder's lock is taken over and **the takeover is recorded**.
-> - **Headroom is sampled DURING the run** (151b) — `headroom.min_mem_available_mib` lands
->   in the row beside the peak — **at 60 s, the external sampler's cadence** (pin 156c).
->   Leg 2's tracker ran at 300 s and recorded 1,382 while the 1-minute sampler caught
->   1,526: two clocks disagreeing about one run. A **resumed** leg carries its halt in the
->   row inside `headroom` (156a-ii); the row's top-level key set is pinned exactly, so
+> - **Headroom is sampled DURING the run** (151b) at **60 s, the external sampler's
+>   cadence** (156c), and — **since 2026-09-10 and not before** — `headroom` reaches the
+>   row. ⚠ **This block previously claimed it already did. That was FALSE for every leg**:
+>   `record_tile_leg` accepted the record, documented it as satisfying 151(b), and never
+>   passed it to `build_evidence_row`, so **no row carried it until the fix in this recovery commit closed the
+>   drop**. Test-pinned now by reading the row back OUT of the store — the only angle that
+>   could catch it. Legs 1–2 are **witnessed**, so their values are **BACKFILLED** into
+>   `phase14.stage1.headroom_backfill` with the mirror's amendment index pointing at it,
+>   and their rows are **not edited** (pin 60). A **resumed** leg carries its halt inside
+>   `headroom` (156a-ii) — which the same drop would have hidden, so it is now test-pinned
+>   too. The row's top-level key set is pinned exactly; `headroom` is optional, so
 >   nothing was added to the schema (156d).
+> - **⚠ A RESUME-ONLY RE-SCORE REWRITES `wall_s` AND `peak_rss_mib` WITH ITS OWN.** Found on
+>   equatorial: the re-score took 57 s and would have recorded **57.3 s / 3,804 MiB** for a
+>   leg that cost **91,945 s / 4,817 MiB** — a ~1,600× understatement on the two fields
+>   E-16 and T7/T8 price legs from. Restored from the original run's logs, with the
+>   replaced values kept at `headroom.restored_run_facts`. **The hazard is GENERAL and is
+>   not yet prevented** — it recurs on the next re-score of any leg.
 > - **Order: kuroshio → southern → equatorial → quiet_gyre**, commit per tile.
 >
 > ## What is measured and settled
@@ -288,30 +343,23 @@
 >
 > ## Next action
 >
-> **▶ RUN LEG 3 (equatorial), THEN LEG 4 (quiet_gyre), BACK TO BACK.**
+> **⛔ NOT DONE THIS SESSION, and deliberately so — the owner is clearing:**
+> the completion procedure, the lane-0 `WITNESS NOW` sync, and southern's 172 disposition.
 >
-> Pins 155–158 are landed (ruling doc **PART 39**), 155 is folded, and **156 is built and
-> tested** — so pin 157(b)'s condition is met and the legs are authorised together.
->
-> ```sh
-> sh scripts/stage1_leg_launcher.sh equatorial
-> ```
->
-> The launcher parks on the 9,902.33 MiB gate, launches, relaunches itself on a clean
-> headroom halt (exit 75), and **stops and reports on a crash**. Per leg on completion:
-> verify the row, `seal_run check`, mirror sync + push, commit
-> `feat: stage1 <tile> transfer reading recorded`. **No re-assessment between legs 3 and
-> 4** (157a) — go straight into quiet_gyre.
->
-> ⚖ **Equatorial carries things the other tiles do not.** The pin-12 **box election is
-> CLOSED** (2026-07-25, box KEPT, −4..11N) and no `box_election_pending` state exists or is
-> to be created — pin 90 discharged that criterion, so the leg is **not** gated on it. What
-> *is* live: the **lane-0 persistence bundle** with its `WITNESS NOW` step (96b/96c — the
-> manifest witnesses nothing until the mirror is synced AND pushed), and **pin 90's
-> `live_half`**, deferred to `_solve_leg`: `record_evidence_row` for tile `equatorial` gets
-> exercised on the REAL path for the first time by this leg, not at a stub.
->
-> **After leg 4:** T6/T7/T8 → T9, still behind T5. **T6–T9 and task 23 remain unopened.**
+> **In order:**
+> 1. **LAND PINS 184–189 AS PART 44** (owner re-supplies verbatim). **Nothing may cite them
+>    first** — `origin` already carries a commit citing 188(a) without its ruling text, and
+>    that is the pin-41 hole this closes. **Pins 190 and 191 land with it.**
+> 2. **Completion procedure for T5** — `seal_run check`, mirror **sync + push** (which is
+>    also the lane-0 bundle's `⛔ WITNESS NOW`; until that push lands the manifest witnesses
+>    nothing, 96b/96c), then the per-tile commits. Two nodes are **pending sync**:
+>    `tiles.equatorial` and `equatorial_lane0_manifest`.
+> 3. **172's disposition on southern** — the owner takes it now that both absences are
+>    recorded. Southern's row is still **UNAMENDED**: its map carries 0.084 of its track's
+>    power at 500–1000 km with `diff/ref` 0.988 there, measured through the scorer's own
+>    path. **Under-powered and correctly phased — a DIFFERENT failure class from the two
+>    absences.**
+> 4. **T6 / T7 / T8 → T9.** Still unopened. **T9 is the owner's walk.**
 >
 > ---
 > ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
