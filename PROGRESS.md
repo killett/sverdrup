@@ -456,6 +456,15 @@
 >    before the verdict. **Consistent, NOT established** — the same discipline that held on
 >    the geostrophic account until quiet gyre refuted it.
 > 4. **T6 / T7 / T8 → T9.** Still unopened. **T9 is the owner's walk.**
+>    📄 **Material for that walk is assembled at
+>    `docs/validation/phase14-stage1-assembled-view.md`** (owner pin 198) — the four rows
+>    side by side, the absences with their full evidence, the instrument-row absences and
+>    wedge-exclusion status, and every row-borne caveat, in one place.
+>    ⛔ **It is NOT the pack, not written as the pack, and not an evidence node (197b);
+>    opening it is not opening T9.** ⚠ **Read its §8 first** — ten things expected and not
+>    found, including **kuroshio's recorded peak RSS of 7,389 MiB against the 4,951 the
+>    launch gate's 2× is computed from**, and a **witnessed headroom record whose amending
+>    node is unreachable from the amendment index**.
 >
 > ---
 > ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
