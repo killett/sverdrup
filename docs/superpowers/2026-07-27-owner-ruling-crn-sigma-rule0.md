@@ -2620,6 +2620,16 @@ into a refusal, and ratifies the two measurements and the work around them.
   exclusion lock is held for the run, and **MemAvailable is sampled DURING the run with its
   minimum recorded beside the peak** (151b). Leg 1's survival was the box being free, not
   the gate working (151c).
+  - ⛔ **CORRECTION (pin 188e, 2026-09-10): "recorded beside the peak" was FALSE when
+    written and stayed false for every leg of T5.** `record_tile_leg` accepted the
+    `headroom` record, documented it as satisfying 151(b), and **never passed it to
+    `build_evidence_row`** (`phase14_stage1_run.py:5072`) — so **no tile row ever carried
+    one**, and the minima survived only in gitignored logs on a single box. The four were
+    recovered into the witnessed node `phase14.stage1.headroom_minima_recovered`
+    (pin 188a, commit `5ce66e3`); **the drop itself is closed** by the recovery commit,
+    which test-pins the claim by **reading the row back out of the evidence store** rather
+    than by checking that the tracker exists (188b). *A parameter accepted, documented and
+    never passed on is implemented from every angle except the output.*
 - **The re-keyed pin-42 check REFUSES** (152) — leaving it reporting would make it a check
   that cannot fail, inside the pin whose subject is checks that cannot fail.
 
@@ -3078,3 +3088,166 @@ gyre's cell in the (f, variance) plane is exactly the one no read-only test can 
   rise below wherever their signal drops through the same floor.
 - **177 RUNS WHILE LEG 4 SOLVES** (182) — read-only, no lock contention, and it is the
   characterisation leg 4's outcome gets interpreted against.
+
+---
+
+## PART 44 — 180(c) WITHDRAWN; THE DEFECT BRANCH CLOSED; THE REGIME-CONDITIONAL TRANSFER FINDING (verbatim), pins 184–189, 2026-09-09
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-10.**
+
+⛔ **NUMBERING NOTE — READ FIRST.** This series was issued on a **FORKED advisory thread**
+and is **AUTHORITATIVE**: `origin/main` already carries `5ce66e3` citing **pin 188(a)**, so
+the numbering cannot be rewritten. That commit landed 188(a)'s work **without its ruling text
+first — a pin-41 violation**, and the reason a later session met a commit citing a pin it had
+never seen. **This PART closes that hole.** A PART 44 drafted in-session for pins 184–186 was
+**VOID** and was discarded before this landed.
+
+⛔ **THREE ITEMS ARE ALREADY DISCHARGED OR STALE AND MUST NOT BE RE-EXECUTED:**
+
+- **188(a) is DONE**, committed at **`5ce66e3`** as `phase14.stage1.headroom_minima_recovered`.
+- **188(c) is STALE.** It assumes leg 4's row is not yet mirrored. **It IS mirrored** —
+  `tiles.quiet_gyre` was one of the three drifting nodes, and the recovery commit removed the
+  row-level headroom from it. Quiet gyre's minimum is carried by
+  `headroom_minima_recovered` with the other three. **Re-recording the row would recreate
+  exactly the drift the recovery just cleared.**
+- **188(d) is DONE** by the same commit — kuroshio's and southern's rows were never amended,
+  and the recovery removed the amendments a later session had added.
+
+> 184. 180(c) WITHDRAWN. It fires on a pattern all four tiles show — kuroshio carries
+>      study/ref 3.82 with diff/ref 4.70 at 70-95 km and resolves at 232.5 km. As written in
+>      absolute kilometres it could not discriminate.
+>      (a) RECORD WHY THE WITHDRAWAL IS LEGITIMATE, in the same entry: the objection was
+>          raised before the result, with kuroshio's numbers, and quiet gyre confirmed it. A
+>          stop criterion withdrawn on a pre-registered objection is not the same act as one
+>          withdrawn because it fired. Anyone reading this later must be able to tell.
+>      (b) It is NOT re-pinned to each tile's resolution limit. Your Ld-scaling account is
+>          refuted by quiet gyre — Ld ~40-50 km with its excess at 400-1000 km — so there is
+>          no defensible band to pin it to, and inventing one to preserve a trigger is worse
+>          than having none.
+>      (c) Third criterion of mine withdrawn here, after 159(b) and 170. Add all three to
+>          §7's instance list under my name.
+> 185. THE DEFECT BRANCH IS CLOSED, on evidence rather than by exhaustion: the pattern is
+>      universal in kind and orderly in degree; coefficients are ordinary at every rung; PCG
+>      converged with capped=False on all four; and the split sorts on signal strength across
+>      a 6.3x spread in f. Misalignment, sign or reference errors do not sort by regime.
+>      Record it as closed with those four reasons, so it is not silently reopened.
+> 186. THE RESULT — regime-conditional transfer, which is what the stage exists to measure.
+>      The frozen config resolves lambda_x where the along-track signal is strong and does not
+>      where it is weak, independently of latitude: failing tiles at f = 0.11x and 0.66x
+>      kuroshio with variance 0.034x and 0.021x; resolving tiles at f = 1.00x and 1.40x with
+>      variance 1.000x and 1.879x.
+>      (a) This is a TRANSFER FINDING, not four readings of which two failed. State it that
+>          way in the Gate-1 pack and in C1->2: box-scale behaviour transfers to strong-signal
+>          regimes and does not transfer to weak-signal ones, at this configuration.
+>      (b) THE MECHANISM STAYS OPEN AND FIREWALLED. Long-scale dominance plus weak signal is
+>          the surviving account and it is not established: both simple predictors weakened
+>          with the fourth tile (absolute variance -0.464 -> -0.254, |f| -0.322 -> -0.121,
+>          n=28), so the effect is at TILE level and not band level. Record that explicitly —
+>          it is the honest shape of the evidence and it tells Stage 2 where to look.
+>      (c) 180(b)'s pre-registration is cited as the reason this reading stands. The branch
+>          was written before the run; that is what distinguishes it from a fitted story.
+> 187. EQUATORIAL: 160 APPLIES, WITH ITS MECHANISM CORRECTED. Record the absence per fork F
+>      with all the evidence — coherence max, psd_diff/psd_ref, the band tables, the
+>      coefficient decomposition.
+>      (a) ⛔ THE GEOSTROPHIC ACCOUNT IS REFUTED and 160(c) must be corrected in the record,
+>          not merely left unwritten. I named an inference there — that equatorial's failure
+>          bears on fork-b pin 1's wave-increment business case — and instructed you not to
+>          write it. Quiet gyre kills it: healthy f, same failure. Record that the inference
+>          was considered, firewalled, and is now REFUTED. Had the firewall not held, Stage 1
+>          would be carrying a wrong conclusion about why the increment is needed.
+>      (b) Quiet gyre records the same way, same evidence shape, same absence.
+> 188. ⛔ PIN 151(b) — FIX, AND CAPTURE THE LOST DATA BEFORE IT GOES.
+>      A parameter accepted, documented, and never passed on is implemented from every angle
+>      except the output. Worse: 156(a)(ii)'s prior-halts merge rode the same path, so a
+>      halted-and-resumed leg would have recorded as identical to a clean one — the exact
+>      failure that pin was written to prevent.
+>      (a) URGENT AND FIRST: leg 1's and leg 2's headroom minima exist only in logs, which are
+>          gitignored and live on one box. Capture them into a witnessed record NOW, before a
+>          rotation or a box reset takes them. Leg 2's 1,382 MiB drove three pins and the
+>          entire watchdog design.
+>      (b) Fix the drop at phase14_stage1_run.py:5072 and test-pin that the RECORDED ROW
+>          carries headroom — not that the tracker exists. The distinction is the defect.
+>      (c) Leg 4's row is written but NOT yet committed or mirrored, so re-record it from the
+>          persisted data with headroom present. No re-solve, no supersession.
+>      (d) Kuroshio's and southern's rows ARE witnessed. Do not amend them. Append the
+>          recovered minima as a separate witnessed record with forward pointers through the
+>          pin-64 index.
+>      (e) Correct PROGRESS and the ruling docs that state it lands in the row. Some of that
+>          text is mine.
+> 189. RATIFIED: leg 4 as recorded; 161 proving itself by recording an absence with evidence
+>      after 26 h instead of dying as leg 3 did; the in-run watchdog holding through a squeeze
+>      to within 714 MiB of its floor without firing spuriously; refuting your own Ld-scaling
+>      account with the result that could have supported it; and flagging 180(c)'s defect
+>      before the data rather than after.
+
+### What PART 44 changes
+
+- **180(c) IS WITHDRAWN, AND THE ENTRY RECORDS WHY THAT IS LEGITIMATE** (184a): the objection
+  was raised **before the result**, with kuroshio's own numbers, and quiet gyre confirmed it.
+  **A stop criterion withdrawn on a pre-registered objection is not the same act as one
+  withdrawn because it fired**, and a later reader must be able to tell the two apart.
+- **It is NOT re-pinned** (184b). The Ld-scaling account is **refuted by quiet gyre** — Ld
+  ≈ 40–50 km with its excess at 400–1000 km — so there is no defensible band, and
+  *inventing one to preserve a trigger is worse than having none*.
+- **THE DEFECT BRANCH IS CLOSED ON EVIDENCE, NOT EXHAUSTION** (185), with four reasons
+  recorded so it cannot be silently reopened: the pattern is **universal in kind and orderly
+  in degree**; **coefficients are ordinary at every rung**; **PCG converged `capped=False` on
+  all four**; and **the split sorts on signal strength across a 6.3× spread in f**.
+  *Misalignment, sign or reference errors do not sort by regime.*
+- **THE RESULT IS A TRANSFER FINDING, not four readings of which two failed** (186a):
+  box-scale behaviour **transfers to strong-signal regimes and does not transfer to
+  weak-signal ones, at this configuration** — failing tiles at *f* 0.11× and 0.66× kuroshio
+  with variance 0.034× and 0.021×; resolving tiles at *f* 1.00× and 1.40× with variance
+  1.000× and 1.879×. **Independently of latitude.**
+- **THE EFFECT IS AT TILE LEVEL, NOT BAND LEVEL** (186b) — both predictors *weakened* with
+  the fourth tile (absolute variance −0.464 → −0.254, |f| −0.322 → −0.121, n=28). Recorded
+  explicitly, because *that is the honest shape of the evidence and it tells Stage 2 where to
+  look*. **180(b)'s pre-registration is what makes the reading stand** (186c).
+- **⛔ THE GEOSTROPHIC ACCOUNT IS REFUTED AND THE RECORD SAYS SO** (187a). The owner named an
+  inference at 160(c) — that equatorial's failure bears on fork-b pin 1's wave-increment
+  business case — and instructed that it not be written. **Quiet gyre kills it: healthy *f*,
+  same failure.** The inference was **considered, firewalled, and is now REFUTED**. *Had the
+  firewall not held, Stage 1 would be carrying a wrong conclusion about why the increment is
+  needed.*
+- **Three owner criteria are now withdrawn** (184c) — **159(b), 170, and 180(c)** — and all
+  three go to §7's instance list **under the owner's name**.
+
+---
+
+## PART 45 — THE RESUME-RESCORE HAZARD AND THE CONCURRENT-OWNER CHECK (verbatim), pins 190–191, 2026-09-10
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-10.** Issued with the recovery ruling after
+a session diverged from an owner commit it could not see.
+
+> 190. THE RESUME-RESCORE HAZARD — PIN IT, do not leave it as a hand-encoded special case.
+>      Any resume-only re-score rebuilds a row with the RE-SCORE's wall, peak and headroom,
+>      silently replacing facts about a leg that took 25 h with facts about a 57 s job.
+>      RESUME_RESCORED covers equatorial; nothing prevents the next one.
+>      (a) A row rebuilt from a resumed run must REFUSE to overwrite wall_s, peak_rss_mib or
+>          headroom unless the values are explicitly supplied, and must record which run each
+>          field describes.
+>      (b) Test-pin it by rebuilding a row from a resume and asserting the original facts
+>          survive. You found this by reading the row; the test must read the row too.
+> 191. RE-CHECK git log BEFORE WRITING TO SHARED STATE after any long gap, not only at
+>      session start. Your own diagnosis. resume_checks.sh at hour zero cannot see a commit
+>      that lands at hour six. Add it to the resume protocol as a pre-write check, and note
+>      in PROGRESS that the owner may work the same repo concurrently.
+
+### What PART 45 changes
+
+- **THE RESUME-RESCORE HAZARD IS A PIN, NOT A SPECIAL CASE** (190). A resume-only re-score
+  rebuilds a row with **its own** wall, peak and headroom — on equatorial that was **57.3 s
+  and 3,804 MiB against a real 91,945 s and 4,817 MiB**, a ~1,600× understatement on the
+  exact fields E-16 and T7/T8 price legs from. A rebuilt row must **REFUSE to overwrite
+  `wall_s`, `peak_rss_mib` or `headroom` unless the values are explicitly supplied**, and
+  must **record which run each field describes** (190a). **Test-pinned by reading the ROW**,
+  because that is how it was found (190b).
+- **`git log` IS A PRE-WRITE CHECK, NOT ONLY A SESSION-START CHECK** (191).
+  `resume_checks.sh` at hour zero **cannot see a commit that lands at hour six** — which is
+  exactly how a session wrote to shared state for hours without seeing `5ce66e3`. **The owner
+  may work this repo concurrently**, and PROGRESS now says so.
+
+⚖ **STATUS OF 190 AT THIS LANDING:** the equatorial row's facts are **restored and correct**
+(91,945 s / 4,817 MiB, with the replaced values preserved at
+`headroom.restored_run_facts`), but **190(a)/(b) are NOT YET IMPLEMENTED** — the refusal and
+its row-reading test are owed. The hazard is **recorded, not yet prevented**.

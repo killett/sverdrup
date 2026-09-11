@@ -14,22 +14,50 @@
 > | equatorial | **RECORDED ABSENT** | +0.765790 | 0.032632 | 40.311 | 25.54 h |
 > | quiet_gyre | **RECORDED ABSENT** | +0.847933 | 0.166670 | 11.638 | 26.03 h |
 >
-> **THE RESULT IS REGIME-CONDITIONAL.** The frozen config **resolves λx in the two
-> STRONG-signal regimes and records an absence in the two WEAK ones**, and ***f* is NOT the
-> discriminator** — quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the
-> strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED**:
-> long-scale dominance + weak signal leads and is **NOT established**.
+> **⭐ THIS IS A TRANSFER FINDING, NOT FOUR READINGS OF WHICH TWO FAILED** (pin 186a).
+> State it that way in the Gate-1 pack and in C1→2: **box-scale behaviour TRANSFERS to
+> strong-signal regimes and does NOT transfer to weak-signal ones, at this configuration.**
 >
-> ## ⛔ PIN NUMBERING — READ BEFORE CITING ANYTHING ABOVE 183
+> | | failing tiles | resolving tiles |
+> |---|---|---|
+> | *f* vs kuroshio | 0.11× · 0.66× | 1.00× · 1.40× |
+> | track variance vs kuroshio | 0.034× · 0.021× | 1.000× · 1.879× |
 >
-> - **The FORKED advisory series 184–189 is AUTHORITATIVE.** `origin/main` carries
->   **`5ce66e3` citing pin 188(a)**, so the numbering cannot be rewritten.
-> - **PART 44 IS OWED.** The ruling doc ends at **PART 43 (pins 180–183)**. 184–189 have NOT
->   been landed. **Land them as PART 44 BEFORE anything else cites them** — that closes the
->   pin-41 hole created when 188(a)'s work was committed without its ruling text.
-> - A PART 44 drafted in-session for pins 184–186 was **VOID and has been discarded**.
-> - **Pins 190 (resume-re-score hazard) and 191 (re-check `git log` before writing to shared
->   state) land with PART 44.**
+> **It sorts on signal strength, INDEPENDENTLY OF LATITUDE** — quiet gyre has healthy *f*
+> (0.66×) and failed; southern has the strongest *f* and resolved. **The spec did not
+> anticipate this.** The reading stands because **180(b) pre-registered it before the run**
+> (186c) — that is what distinguishes it from a fitted story.
+>
+> **⛔ THE DEFECT BRANCH IS CLOSED ON EVIDENCE, NOT EXHAUSTION** (185), for four reasons,
+> recorded so it is not silently reopened: the pattern is **universal in kind and orderly in
+> degree**; **coefficients are ordinary at every rung**; **PCG converged `capped=False` on
+> all four**; and **the split sorts on signal strength across a 6.3× spread in *f***.
+> *Misalignment, sign or reference errors do not sort by regime.*
+>
+> **MECHANISM OPEN AND FIREWALLED** (186b). Long-scale dominance + weak signal is the
+> surviving account and is **NOT established**: both predictors **weakened** with the fourth
+> tile (absolute variance −0.464 → −0.254, |f| −0.322 → −0.121, n=28), so **the effect is at
+> TILE level, not band level** — which is where Stage 2 should look.
+>
+> **⛔ THE GEOSTROPHIC ACCOUNT IS REFUTED, and the record says so** (187a). An inference was
+> named at 160(c) — that equatorial's failure bears on fork-b pin 1's wave-increment
+> business case — and deliberately not written. **Quiet gyre kills it: healthy *f*, same
+> failure.** Considered, firewalled, now **REFUTED**. *Had the firewall not held, Stage 1
+> would be carrying a wrong conclusion about why the increment is needed.*
+>
+> ## ✅ PIN NUMBERING — RESOLVED. THE SERIES IS LANDED.
+>
+> - **The FORKED advisory series 184–189 is AUTHORITATIVE** — `origin/main` carries
+>   **`5ce66e3` citing pin 188(a)**, so the numbering could not be rewritten.
+> - **✅ PART 44 (pins 184–189) and PART 45 (pins 190–191) are LANDED VERBATIM.** The
+>   **pin-41 hole is CLOSED**: 188(a)'s work had been committed without its ruling text.
+> - A PART 44 drafted in-session for pins 184–186 was **VOID and was discarded** before the
+>   authoritative one landed.
+> - ⛔ **THREE ITEMS OF 188 ARE DISCHARGED OR STALE — do not re-execute:** **188(a) DONE**
+>   at `5ce66e3`; **188(c) STALE** (quiet gyre IS mirrored — re-recording its row recreates
+>   the drift the recovery cleared); **188(d) DONE** by the same commit.
+> - ⚖ **190(a)/(b) are NOT YET IMPLEMENTED** — the resume-re-score refusal and its
+>   row-reading test are **owed**. The hazard is recorded, not prevented.
 >
 > ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
 >
@@ -56,7 +84,7 @@
 > | **Leg 2 — southern** | ✅ **DONE 2026-09-04.** 9/9 windows CONVERGED, `capped=False`, solve 27.37 h, leg 27.48 h — inside the 40 h ceiling, no trip. Recorded at `phase14.stage1.tiles.southern` and **witnessed in the mirror**. µ −0.617629 · σ 0.137723 · λx 141.95 km · **coverage_1σ 0.0025807** · χ² 1637.484 (the s\*/χ² identity, non-gating) · raw-σ 0.0349657 and s\* 1637.484 both `REFERENCE-ONLY, NOT CALIBRATED`. **It CLOSED the 3→9 projection — see below** |
 > | **Leg 3 — equatorial** | ✅ **DONE 2026-09-10.** 9/9 CONVERGED, `capped=False`, solve 25.42 h, leg 25.54 h. **λx RECORDED ABSENT** (fork F, pins 160a/161) — coherence max **0.003**, `psd_diff/psd_ref` **1.00047**, 12.77–996.34 km. µ +0.765790 · σ 0.059423 · **coverage_1σ 0.032632** · χ² 40.311 · n 100,299. The original leg DIED in scoring at 25.5 h; 161 landed, and the re-score from the store recorded it in **21 s** |
 > | **Leg 4 — quiet_gyre** | ✅ **DONE 2026-09-08.** 9/9 CONVERGED, `capped=False`, solve 25.93 h, leg 26.03 h. **λx RECORDED ABSENT** — coherence max **0.0026**, `psd_diff/psd_ref` **1.00054**. µ +0.847933 · σ 0.062576 · **coverage_1σ 0.166670** · χ² 11.638 · n 103,786. **It was the confound-breaking experiment** (pin 180) and its reading was **pre-registered before launch** at `b7fe656` |
-> | **⭐ THE T5 RESULT** | **REGIME-CONDITIONAL** (forked series 184-189, PART 44 OWED — see the banner). The frozen config **resolves λx in the two STRONG-signal regimes and not in the two WEAK ones** — and ***f* is NOT the discriminator**: quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED** — long-scale dominance + weak signal is the leading candidate and is **NOT established** |
+> | **⭐ THE T5 RESULT** | **A TRANSFER FINDING** (pin 186a) — not four readings of which two failed. The frozen config **resolves λx in the two STRONG-signal regimes and not in the two WEAK ones** — and ***f* is NOT the discriminator**: quiet gyre has healthy *f* (0.66× kuroshio) and failed; southern has the strongest *f* and resolved. **The spec did not anticipate this.** Mechanism **FIREWALLED** — long-scale dominance + weak signal is the leading candidate and is **NOT established** |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 > | **T6 / T7 / T8 → T9** | Behind T5. **T12 is CLOSED**; **task 23** (post-gate C-11 producer) is `blockedBy [9]` |
 >
@@ -95,7 +123,7 @@
 >   cadence** (156c), and — **since 2026-09-10 and not before** — `headroom` reaches the
 >   row. ⚠ **This block previously claimed it already did. That was FALSE for every leg**:
 >   `record_tile_leg` accepted the record, documented it as satisfying 151(b), and never
->   passed it to `build_evidence_row`, so **no row carried it until the fix in this recovery commit closed the
+>   passed it to `build_evidence_row`, so **no row carried it until the recovery commit closed the
 >   drop**. Test-pinned now by reading the row back OUT of the store — the only angle that
 >   could catch it. Legs 1–2 are **witnessed**, so their values are **BACKFILLED** into
 >   `phase14.stage1.headroom_backfill` with the mirror's amendment index pointing at it,
@@ -347,9 +375,10 @@
 > the completion procedure, the lane-0 `WITNESS NOW` sync, and southern's 172 disposition.
 >
 > **In order:**
-> 1. **LAND PINS 184–189 AS PART 44** (owner re-supplies verbatim). **Nothing may cite them
->    first** — `origin` already carries a commit citing 188(a) without its ruling text, and
->    that is the pin-41 hole this closes. **Pins 190 and 191 land with it.**
+> 1. **✅ DONE — pins 184–189 landed as PART 44, pins 190–191 as PART 45.** The pin-41 hole
+>    is closed. **190(a)/(b) remain OWED**: a row rebuilt from a resumed run must REFUSE to
+>    overwrite `wall_s` / `peak_rss_mib` / `headroom` unless explicitly supplied, and must
+>    record which run each field describes — **test-pinned by reading the ROW**.
 > 2. **Completion procedure for T5** — `seal_run check`, mirror **sync + push** (which is
 >    also the lane-0 bundle's `⛔ WITNESS NOW`; until that push lands the manifest witnesses
 >    nothing, 96b/96c), then the per-tile commits. Two nodes are **pending sync**:
