@@ -589,6 +589,8 @@ def build_evidence_row(
     wall_s: float,
     peak_rss_mib: float,
     headroom: dict[str, Any] | None = None,
+    resumed_rescore: bool = False,
+    original_run_facts: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -632,6 +634,15 @@ def build_evidence_row(
             launch reading (owner pin 151b). None on paths that do not
             sample it, in which case no field is recorded — an absent
             measurement must never serialize as a present one.
+        resumed_rescore: True when this row is rebuilt from a RESUMED
+            member store rather than from a solve (owner pin 190a). The
+            three cost fields then describe the re-score, so they are
+            REFUSED unless ``original_run_facts`` supplies the leg's.
+        original_run_facts: The ORIGINAL run's ``wall_s``,
+            ``peak_rss_mib``, ``headroom`` (explicitly None if it was
+            never recorded) and ``source``. Legal only together with
+            ``resumed_rescore`` — it restores facts, it does not override
+            a run that measured its own.
         pcg: Per-window PCG convergence rows (``iterations`` and
             ``final_rel_residual`` required per leg).
         pcg_rtol: The solver rtol ACTUALLY used (stamped per leg).
@@ -645,10 +656,20 @@ def build_evidence_row(
 
     Raises:
         KeyError: Unknown tile name.
+        ResumeRescoreRefusal: A resume-only re-score whose original facts
+            were not explicitly supplied, or facts supplied without one
+            (owner pin 190a).
     """
     spec = TILES.get(tile)
     if spec is None:
         raise KeyError(f"unknown tile {tile!r}; known: {sorted(TILES)}")
+    wall_s, peak_rss_mib, headroom = _resume_rescore_facts(
+        resumed_rescore=resumed_rescore,
+        original_run_facts=original_run_facts,
+        wall_s=wall_s,
+        peak_rss_mib=peak_rss_mib,
+        headroom=headroom,
+    )
     source = str(spec["source"])
     pcg_rows, capped = classify_pcg_legs(pcg, rtol=pcg_rtol, maxiter=pcg_maxiter)
     reference_row = (
@@ -1536,6 +1557,120 @@ class Stage1HeadroomHalt(RuntimeError):
         super().__init__(watchdog["reason"])
         self.watchdog = watchdog
         self.window_id = window_id
+
+
+class ResumeRescoreRefusal(RuntimeError):
+    """A resume-only re-score tried to restate a leg's cost (owner pin 190a).
+
+    A re-score reloads a FINISHED member store and rebuilds the row in
+    seconds, so every cost field it measures describes the re-score and
+    not the leg. On equatorial that was 57.31 s / 3,803.79 MiB against a
+    real 91,945 s / 4,817 MiB — a ~1,600× understatement on the two
+    fields E-16 and T7/T8 price legs from. It was caught by reading the
+    row; this refusal is what stops the next one.
+    """
+
+
+# The three fields a resume-only re-score silently rewrites (pin 190a).
+# `headroom` is in the list because the re-score's tracker records the
+# re-score's box, not the leg's — an honest measurement of the wrong run.
+RESUME_COST_FIELDS = ("wall_s", "peak_rss_mib", "headroom")
+
+ORIGINAL_RUN_FACTS_SUFFIX = "_original_run_facts.json"
+
+
+def load_original_run_facts(tile: str) -> dict[str, Any] | None:
+    """Read the operator-supplied facts of a re-scored leg's ORIGINAL run.
+
+    The refusal in :func:`build_evidence_row` must be SATISFIABLE, and
+    at a path it can name: this is that path. Absent is not an error
+    here — it is a refusal at row-build time, which is where the row
+    that would carry the wrong numbers is being assembled.
+
+    Args:
+        tile: Registry tile name.
+
+    Returns:
+        The parsed facts block, or None when no sidecar exists.
+    """
+    path = STAGE1_DIR / f"{tile}{ORIGINAL_RUN_FACTS_SUFFIX}"
+    if not path.exists():
+        return None
+    facts: dict[str, Any] = json.loads(path.read_text())
+    return facts
+
+
+def _resume_rescore_facts(
+    *,
+    resumed_rescore: bool,
+    original_run_facts: dict[str, Any] | None,
+    wall_s: float,
+    peak_rss_mib: float,
+    headroom: dict[str, Any] | None,
+) -> tuple[float, float, dict[str, Any] | None]:
+    """Apply owner pin 190(a) — refuse, or substitute and record the source.
+
+    Args:
+        resumed_rescore: True when the row is being rebuilt from a
+            resumed member store rather than from a solve.
+        original_run_facts: The ORIGINAL run's cost fields, explicitly
+            supplied. Every name in :data:`RESUME_COST_FIELDS` must be
+            present; ``headroom`` may be explicitly None, which records
+            as NOT AVAILABLE rather than as the re-score's own.
+        wall_s: What THIS process measured.
+        peak_rss_mib: What THIS process measured.
+        headroom: What THIS process sampled.
+
+    Returns:
+        ``(wall_s, peak_rss_mib, headroom)`` for the row.
+
+    Raises:
+        ResumeRescoreRefusal: On a resume with facts missing, or on
+            facts supplied without a resume.
+    """
+    if not resumed_rescore:
+        if original_run_facts is not None:
+            raise ResumeRescoreRefusal(
+                "original_run_facts supplied without resumed_rescore=True: this "
+                "block restores the facts of a run that already happened, and is "
+                "not a general override. A fresh leg measures its own cost "
+                "(owner pin 190a)."
+            )
+        return wall_s, peak_rss_mib, headroom
+
+    facts = original_run_facts or {}
+    missing = [name for name in RESUME_COST_FIELDS if name not in facts]
+    if missing or not str(facts.get("source", "")).strip():
+        want = ", ".join(missing) or "(none)"
+        raise ResumeRescoreRefusal(
+            "RESUME-ONLY RE-SCORE — refusing to record this process's cost as "
+            f"the leg's. Missing, and required to be explicitly supplied: {want}"
+            f"{'' if str(facts.get('source', '')).strip() else ' and source'}. "
+            f"This re-score measured wall_s={wall_s:.2f}s "
+            f"peak_rss_mib={peak_rss_mib:.2f}; the leg it rebuilds cost what it "
+            "cost. Supply the original run's wall_s, peak_rss_mib, headroom "
+            "(explicitly None if it was never recorded) and source — the "
+            f"sidecar at <STAGE1_DIR>/<tile>{ORIGINAL_RUN_FACTS_SUFFIX} is read "
+            "automatically (owner pin 190a; equatorial understated a 91,945 s "
+            "leg as 57.3 s)."
+        )
+
+    original_headroom = facts["headroom"]
+    refused: dict[str, Any] = {"wall_s": wall_s, "peak_rss_mib": peak_rss_mib}
+    if headroom is not None:
+        refused["headroom"] = headroom
+    block = {
+        "pin": "190(a) — a resume-only re-score must not restate the leg's cost",
+        "wall_s_describes": "ORIGINAL RUN",
+        "peak_rss_mib_describes": "ORIGINAL RUN",
+        "headroom_describes": (
+            "ORIGINAL RUN" if original_headroom is not None else "NOT AVAILABLE"
+        ),
+        "rescore_values_refused": refused,
+        "source": facts["source"],
+    }
+    merged = {**(original_headroom or {}), "resume_rescore": block}
+    return float(facts["wall_s"]), float(facts["peak_rss_mib"]), merged
 
 
 def headroom_watchdog(
@@ -5032,6 +5167,8 @@ def record_tile_leg(
     wall_s: float,
     peak_rss_mib: float,
     headroom: dict[str, Any] | None = None,
+    resumed_rescore: bool = False,
+    original_run_facts: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -5059,6 +5196,10 @@ def record_tile_leg(
             minimum SEEN beside the launch reading. None where the
             caller does not sample it, and then no field is recorded:
             an absent measurement must not serialize as a present one.
+        resumed_rescore: True when the row is rebuilt from a resumed
+            member store (owner pin 190a) — the cost fields are then
+            refused unless the original run's are supplied.
+        original_run_facts: The ORIGINAL run's cost fields (pin 190a).
         pcg: Per-window PCG convergence rows.
         pcg_rtol: The solver rtol actually used.
         pcg_maxiter: The solver iteration cap actually used.
@@ -5086,6 +5227,11 @@ def record_tile_leg(
         # signature, the docstring and both callers all looked correct;
         # only reading the row back out of the store could catch it.
         headroom=headroom,
+        # Owner pin 190(a): the refusal lives in the builder, and this is
+        # the path a real leg writes through — so it must carry the flag,
+        # not describe it.
+        resumed_rescore=resumed_rescore,
+        original_run_facts=original_run_facts,
         pcg=pcg,
         pcg_rtol=pcg_rtol,
         pcg_maxiter=pcg_maxiter,
@@ -5742,6 +5888,8 @@ def record_leg_evidence(
     wall_s: float,
     peak_rss_mib: float,
     headroom: dict[str, Any] | None = None,
+    resumed_rescore: bool = False,
+    original_run_facts: dict[str, Any] | None = None,
     pcg: Iterable[dict[str, Any]],
     pcg_rtol: float,
     pcg_maxiter: int,
@@ -5771,6 +5919,9 @@ def record_leg_evidence(
         peak_rss_mib: Measured peak RSS [MiB].
         headroom: In-run MemAvailable record (owner pin 151b);
             None where the caller does not sample it.
+        resumed_rescore: True when the row is rebuilt from a resumed
+            member store (owner pin 190a).
+        original_run_facts: The ORIGINAL run's cost fields (pin 190a).
         pcg: Per-window PCG convergence rows.
         pcg_rtol: The solver rtol actually used.
         pcg_maxiter: The solver iteration cap actually used.
@@ -5792,6 +5943,8 @@ def record_leg_evidence(
         wall_s=wall_s,
         peak_rss_mib=peak_rss_mib,
         headroom=headroom,
+        resumed_rescore=resumed_rescore,
+        original_run_facts=original_run_facts,
         pcg=pcg,
         pcg_rtol=pcg_rtol,
         pcg_maxiter=pcg_maxiter,
@@ -5942,6 +6095,15 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         resumed = store.exists()
         if resumed:
             _t5_echo(f"{tile}: RESUME from own member store {store}")
+            # Owner pin 190(a): from here on every cost this process
+            # measures describes the RE-SCORE. Say so at the top of the
+            # run rather than at the refusal 57 s later.
+            _t5_echo(
+                f"{tile}: ⛔ RESUME-ONLY RE-SCORE — wall_s, peak_rss_mib and "
+                "headroom will be REFUSED unless the ORIGINAL run's are "
+                f"supplied at {STAGE1_DIR / f'{tile}{ORIGINAL_RUN_FACTS_SUFFIX}'} "
+                "(pin 190a)"
+            )
             with np.load(store, allow_pickle=False) as z:
                 wids = [str(w) for w in np.asarray(z["window_ids"])]
                 etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
@@ -6115,6 +6277,11 @@ def _solve_leg(tile: str, m: int, days_stride: int, maxiter: int) -> None:
         # row. Inside `headroom` deliberately — the row's top-level key set is
         # pinned exactly, and 156(d) is bounded change: no schema edit.
         headroom={**headroom.record(), **_prior_halts_block(tile)},
+        # Owner pin 190(a): on a resume-only re-score the three fields above
+        # describe THIS 57 s process, not the leg. The builder refuses unless
+        # the original run's facts are supplied at the sidecar.
+        resumed_rescore=resumed,
+        original_run_facts=load_original_run_facts(tile) if resumed else None,
         pcg=pcg_rows,
         pcg_rtol=float(method.pcg_rtol),
         pcg_maxiter=int(method.pcg_maxiter),

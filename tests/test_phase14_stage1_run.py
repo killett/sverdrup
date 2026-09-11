@@ -4959,3 +4959,199 @@ def test_a_resumed_legs_halt_ALSO_reaches_the_recorded_row(
     assert halt["kind"] == "HEADROOM_HALT"
     assert halt["windows_completed"] == 5
     assert "not solve time" in stored["headroom"]["wall_includes_a_halt"]
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 190 — the resume-rescore hazard.
+#
+# A resume-only re-score reloads a finished member store and rebuilds the row
+# in seconds. Every cost field in the signature then describes the RE-SCORE:
+# on equatorial that was 57.31 s / 3,803.79 MiB against a real 91,945 s /
+# 4,817 MiB -- a ~1,600x understatement on the two fields E-16 and T7/T8 price
+# legs from. The values below are that leg's, from its recorded row and from
+# `headroom.restored_run_facts`; they are NOT re-derived from the code.
+_RESCORE_WALL_S = 57.31626430619508
+_RESCORE_PEAK_MIB = 3803.79296875
+_ORIGINAL_WALL_S = 91945.0
+_ORIGINAL_PEAK_MIB = 4817.0
+
+
+def test_a_resumed_rescore_REFUSES_to_restate_the_legs_cost() -> None:
+    """Owner pin 190(a): the refusal, not a hand-encoded special case.
+
+    Bug caught: the live one. A re-score resumed from a finished member
+    store measures ITSELF -- 57.3 s and 3,804 MiB -- and those values
+    reach `wall_s` and `peak_rss_mib` looking exactly like a leg that
+    cost 25.5 h. Equatorial was caught by hand; nothing stopped the
+    next one. The builder must refuse rather than record.
+    """
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    kwargs["wall_s"] = _RESCORE_WALL_S
+    kwargs["peak_rss_mib"] = _RESCORE_PEAK_MIB
+
+    with pytest.raises(_mod.ResumeRescoreRefusal) as excinfo:
+        _mod.build_evidence_row(resumed_rescore=True, **kwargs)
+
+    message = str(excinfo.value)
+    assert "wall_s" in message
+    assert "peak_rss_mib" in message
+    assert "headroom" in message
+
+
+def test_a_resumed_rescores_row_carries_the_ORIGINAL_runs_facts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 190(b): rebuild from a resume, read the ROW, originals survive.
+
+    Bug caught: the builder preferring the cost fields in its own
+    signature -- which on a re-score describe the 57 s job -- over the
+    explicitly supplied facts of the run that did the work. Read out of
+    the evidence store rather than off the return value, because that is
+    the angle the 151(b) drop survived every other check on.
+    """
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    # What the RE-SCORE measured -- the values that must not survive.
+    kwargs["wall_s"] = _RESCORE_WALL_S
+    kwargs["peak_rss_mib"] = _RESCORE_PEAK_MIB
+    kwargs["headroom"] = _mod.HeadroomTracker(9000.0).record()
+
+    _mod.record_tile_leg(
+        evidence_path=evid,
+        resumed_rescore=True,
+        original_run_facts={
+            "wall_s": _ORIGINAL_WALL_S,
+            "peak_rss_mib": _ORIGINAL_PEAK_MIB,
+            "headroom": {"min_mem_available_mib": 3468.0},
+            "source": "logs/leg_equatorial/launcher.log + vmhwm.log",
+        },
+        **kwargs,
+    )
+
+    stored = json.loads(evid.read_text())["phase14"]["stage1"]["tiles"]["equatorial"]
+    assert stored["wall_s"] == _ORIGINAL_WALL_S
+    assert stored["peak_rss_mib"] == _ORIGINAL_PEAK_MIB
+    assert stored["headroom"]["min_mem_available_mib"] == 3468.0
+    # ...and the row says WHICH RUN each field describes (190a), with the
+    # re-score's own numbers preserved rather than dropped.
+    block = stored["headroom"]["resume_rescore"]
+    assert block["wall_s_describes"] == "ORIGINAL RUN"
+    assert block["peak_rss_mib_describes"] == "ORIGINAL RUN"
+    assert block["headroom_describes"] == "ORIGINAL RUN"
+    assert block["rescore_values_refused"]["wall_s"] == _RESCORE_WALL_S
+    assert block["rescore_values_refused"]["peak_rss_mib"] == _RESCORE_PEAK_MIB
+    assert block["source"] == "logs/leg_equatorial/launcher.log + vmhwm.log"
+    assert set(stored) == _PINNED_KEYS | {"headroom"}
+
+
+def test_a_resumed_rescore_without_original_headroom_still_says_so() -> None:
+    """Owner pin 190(a): the provenance survives the thinnest case.
+
+    Bug caught: hanging the `resume_rescore` block off an existing
+    headroom record, so a re-score whose original run has NO recovered
+    headroom records no provenance at all -- the case where the reader
+    most needs to be told which run the wall and peak describe. Also
+    pins that an unavailable headroom is not fabricated into a number.
+    """
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    kwargs["wall_s"] = _RESCORE_WALL_S
+    kwargs["peak_rss_mib"] = _RESCORE_PEAK_MIB
+
+    row = _mod.build_evidence_row(
+        resumed_rescore=True,
+        original_run_facts={
+            "wall_s": _ORIGINAL_WALL_S,
+            "peak_rss_mib": _ORIGINAL_PEAK_MIB,
+            "headroom": None,
+            "source": "logs/leg_equatorial/launcher.log",
+        },
+        **kwargs,
+    )
+
+    assert row["wall_s"] == _ORIGINAL_WALL_S
+    block = row["headroom"]["resume_rescore"]
+    assert block["headroom_describes"] == "NOT AVAILABLE"
+    assert "min_mem_available_mib" not in row["headroom"]
+
+
+def test_a_PARTIAL_original_run_facts_block_REFUSES() -> None:
+    """Owner pin 190(a): partial facts are the likelier failure.
+
+    Bug caught: a block carrying `wall_s` only being accepted, so the
+    wall reads correct while `peak_rss_mib` silently remains the
+    re-score's 3,804 MiB. A half-restored row is worse than a refused
+    one: it looks checked.
+    """
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+
+    with pytest.raises(_mod.ResumeRescoreRefusal) as excinfo:
+        _mod.build_evidence_row(
+            resumed_rescore=True,
+            original_run_facts={"wall_s": _ORIGINAL_WALL_S, "source": "launcher.log"},
+            **kwargs,
+        )
+
+    message = str(excinfo.value)
+    assert "peak_rss_mib" in message
+    assert "headroom" in message
+    assert "wall_s" not in message.split("explicitly supplied")[0]
+
+
+def test_original_run_facts_WITHOUT_a_resume_REFUSES() -> None:
+    """Owner pin 190(a): the escape hatch is not a general override.
+
+    Bug caught: the facts block becoming a way for ANY run to restate
+    its own cost -- the same hazard inverted, and harder to spot because
+    the row would look restored rather than understated.
+    """
+    kwargs = _row_kwargs("equatorial")
+    kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+
+    with pytest.raises(_mod.ResumeRescoreRefusal, match="resumed_rescore"):
+        _mod.build_evidence_row(
+            original_run_facts={
+                "wall_s": _ORIGINAL_WALL_S,
+                "peak_rss_mib": _ORIGINAL_PEAK_MIB,
+                "headroom": None,
+                "source": "launcher.log",
+            },
+            **kwargs,
+        )
+
+
+def test_the_original_run_facts_sidecar_is_read_from_the_leg_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 190(a): the refusal must be SATISFIABLE, at a known path.
+
+    Bug caught: the loader reading a different filename than the one the
+    refusal names, which turns every future re-score into a refusal the
+    operator cannot clear -- or, worse, returns None where a sidecar
+    exists and the leg records the re-score's cost anyway.
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    assert _mod.load_original_run_facts("equatorial") is None
+
+    (tmp_path / "equatorial_original_run_facts.json").write_text(
+        json.dumps(
+            {
+                "wall_s": _ORIGINAL_WALL_S,
+                "peak_rss_mib": _ORIGINAL_PEAK_MIB,
+                "headroom": None,
+                "source": "logs/leg_equatorial/launcher.log",
+            }
+        )
+    )
+
+    facts = _mod.load_original_run_facts("equatorial")
+    assert facts is not None
+    assert facts["wall_s"] == _ORIGINAL_WALL_S
+    assert facts["peak_rss_mib"] == _ORIGINAL_PEAK_MIB

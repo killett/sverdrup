@@ -56,8 +56,10 @@
 > - ⛔ **THREE ITEMS OF 188 ARE DISCHARGED OR STALE — do not re-execute:** **188(a) DONE**
 >   at `5ce66e3`; **188(c) STALE** (quiet gyre IS mirrored — re-recording its row recreates
 >   the drift the recovery cleared); **188(d) DONE** by the same commit.
-> - ⚖ **190(a)/(b) are NOT YET IMPLEMENTED** — the resume-re-score refusal and its
->   row-reading test are **owed**. The hazard is recorded, not prevented.
+> - ✅ **190(a)/(b) ARE IMPLEMENTED (2026-09-10).** The resume-re-score refusal and its
+>   row-reading test are landed — see *The resume-rescore hazard is PREVENTED* below.
+>   **191's protocol half is landed too**: CLAUDE.md step **0b** now makes `git log` /
+>   `git ls-remote` a **pre-write** check, not only a session-start one.
 >
 > ## ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY
 >
@@ -131,12 +133,23 @@
 >   `headroom` (156a-ii) — which the same drop would have hidden, so it is now test-pinned
 >   too. The row's top-level key set is pinned exactly; `headroom` is optional, so
 >   nothing was added to the schema (156d).
-> - **⚠ A RESUME-ONLY RE-SCORE REWRITES `wall_s` AND `peak_rss_mib` WITH ITS OWN.** Found on
->   equatorial: the re-score took 57 s and would have recorded **57.3 s / 3,804 MiB** for a
->   leg that cost **91,945 s / 4,817 MiB** — a ~1,600× understatement on the two fields
->   E-16 and T7/T8 price legs from. Restored from the original run's logs, with the
->   replaced values kept at `headroom.restored_run_facts`. **The hazard is GENERAL and is
->   not yet prevented** — it recurs on the next re-score of any leg.
+> - **⭐ THE RESUME-RESCORE HAZARD IS PREVENTED (pin 190a/b, 2026-09-10) — it was
+>   RECORDED-not-prevented until then.** Found on equatorial: the re-score took 57 s and
+>   would have recorded **57.3 s / 3,804 MiB** for a leg that cost **91,945 s / 4,817 MiB**
+>   — a ~1,600× understatement on the two fields E-16 and T7/T8 price legs from. That row
+>   was restored by hand, with the replaced values kept at `headroom.restored_run_facts`.
+>   **Now the code refuses instead of recording.** `build_evidence_row` takes
+>   `resumed_rescore` + `original_run_facts` and raises **`ResumeRescoreRefusal`** unless
+>   the ORIGINAL run's `wall_s`, `peak_rss_mib`, `headroom` (explicitly `None` if never
+>   recorded) **and** `source` are supplied. Supplied facts **without** a resume are refused
+>   too — the block restores, it is **not a general override**. The refusal is
+>   **satisfiable at a named path**: `<STAGE1_DIR>/<tile>_original_run_facts.json`, read by
+>   `load_original_run_facts` and echoed at the top of the resume, not only at the refusal
+>   57 s later. Which run each field describes is recorded **inside `headroom`**
+>   (`headroom.resume_rescore`) — the row's top-level key set is pinned exactly, so no
+>   schema edit (same bounded shape as 156d), and it is emitted **even when the original
+>   headroom is unavailable**, which is when the reader most needs telling. **Test-pinned
+>   by READING THE ROW out of the store** (190b), the angle that found it.
 > - **Order: kuroshio → southern → equatorial → quiet_gyre**, commit per tile.
 >
 > ## What is measured and settled
@@ -371,18 +384,21 @@
 >
 > ## Next action
 >
-> **⛔ NOT DONE THIS SESSION, and deliberately so — the owner is clearing:**
-> the completion procedure, the lane-0 `WITNESS NOW` sync, and southern's 172 disposition.
->
 > **In order:**
 > 1. **✅ DONE — pins 184–189 landed as PART 44, pins 190–191 as PART 45.** The pin-41 hole
->    is closed. **190(a)/(b) remain OWED**: a row rebuilt from a resumed run must REFUSE to
->    overwrite `wall_s` / `peak_rss_mib` / `headroom` unless explicitly supplied, and must
->    record which run each field describes — **test-pinned by reading the ROW**.
-> 2. **Completion procedure for T5** — `seal_run check`, mirror **sync + push** (which is
->    also the lane-0 bundle's `⛔ WITNESS NOW`; until that push lands the manifest witnesses
->    nothing, 96b/96c), then the per-tile commits. Two nodes are **pending sync**:
->    `tiles.equatorial` and `equatorial_lane0_manifest`.
+>    is closed. **190(a)/(b) are now IMPLEMENTED** (refusal + row-reading test), and 191's
+>    protocol half is in CLAUDE.md step 0b.
+> 2. **✅ DONE 2026-09-10 — the completion procedure for T5 ran in full.** `seal_run check`
+>    PASS (seal sha `a17ea419…` re-derived), mirror **sync + push** landed at `5ec3171` and
+>    verified on origin by `ls-remote` — that push **is** the lane-0 bundle's
+>    `⛔ WITNESS NOW` (96b/96c), so `equatorial_lane0_manifest` now witnesses something.
+>    The two pending nodes — `tiles.equatorial` and `equatorial_lane0_manifest` — are
+>    **witnessed**; the mirror carries **42 nodes**, up from 40, with **zero digest changes
+>    on the 40 already there** and **no supersession spent** (owner ruling 192a: the other
+>    three tiles were NOT re-committed).
+>    ⚠ **`phase14.stage1.refresh_election` stays PENDING by owner ruling 193** — it is task
+>    23's node and cannot be written until the shipped-config election is ruled at Gate 1
+>    (pin 136). **Do not resolve it**; it is meant to keep printing.
 > 3. **172's disposition on southern** — the owner takes it now that both absences are
 >    recorded. Southern's row is still **UNAMENDED**: its map carries 0.084 of its track's
 >    power at 500–1000 km with `diff/ref` 0.988 there, measured through the scorer's own

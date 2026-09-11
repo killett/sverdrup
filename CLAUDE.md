@@ -20,6 +20,15 @@ mid-run. On **every** new or resumed session, before doing anything else:
    recurred on ordinary commits: a full suite described the pre-format
    tree, and the pre-commit hook then rewrote files underneath it. A second
    ordering discipline maintained by memory drifts from the mechanised one.
+0b. **`git log` / `git ls-remote` is a PRE-WRITE check, not only a
+   session-start check** (owner ruling pin 191, 2026-09-10). Re-run it
+   **immediately before writing to shared state** — before a commit, a push,
+   a mirror `sync`, or an evidence-store write — after **any long gap**
+   (a multi-hour suite, a leg, a long analysis). **The owner may work this
+   repo concurrently:** `resume_checks.sh` at hour zero cannot see a commit
+   that lands at hour six, and that is exactly how a session wrote to shared
+   state for hours without seeing `5ce66e3` and then spent a whole session
+   recovering from the divergence.
 1. Read `PROGRESS.md` at the repo root. It carries the index of the current
    active work AND the project's running notebook of deferred items,
    cross-cutting decisions, gotchas, and open questions. Read all of it.
