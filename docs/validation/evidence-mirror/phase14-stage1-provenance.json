@@ -28,6 +28,7 @@
     "c2_touch_tally": "the LOCKED-INSTRUMENT tally (see src/sverdrup/validation/locked_tier.py) — owner-named in pin 56. 'Tally byte-identical' is standing discipline and cannot be self-witnessed",
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.headroom_minima_recovered": "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a `headroom` argument and does not pass it to build_evidence_row, so no tile row has ever carried one. The legs are finished and the logs are gitignored on a single box, so this is the only item in the stage that re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; witnessing it is the whole point. Recovery is NOT repair — the 151(b) gap stands and is recorded as found",
+    "phase14.stage1.headroom_leg1_floor_unrecoverable": "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), so only a 5-minute heartbeat existed and a dip between beats is gone for good. Mirrored because the node it amends is witnessed and this one was not: a reader arriving at the witnessed minima could not learn that one of the four numbers is a bound, which is pin 64's failure mode exactly. It also carries an arithmetic correction to the text that ordered it (the supporting gaps are 0/360/74 MiB, median 74 — not the '306-328' that text states, which are heartbeat COUNTS). Registered together with the forward pointer; mirroring it without the pointer would leave it witnessed and still unreachable",
     "phase14.stage1.anchor_gate_artifact_shas": "pin 58(d). Check-1's mean, Gamma and variance routes recorded the comparison OUTCOME but no sha of the artifact compared against, so a later substitution would have re-passed. This node captures those shas. Witnessing it is the whole point — an unwitnessed sha record closes nothing",
     "phase14.stage1.gate5_mu_witness_scope": "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one of the three rests on phase13_lane0_mean.nc, witnessed forward-only",
     "phase14.stage1.equatorial_lane0_manifest": "pin 96. The lane-0 bundle's manifest — per-file shas of the FROZEN pre-increment baseline (fork-b pin 1), carrying the fork-b pin 2 policy sentence and the bundle's instrument composition. Mirrored because a local manifest is SELF-witnessing (96c, pin 56a): manifest and files sit on one box under one process's control. The MANIFEST is mirrored, never the maps (96e) — bulk stays out per pin 56(b) and the shas are the witness. Class: WITNESSED AT CREATION (96d), witnessed AT creation rather than at T9 so the interval from creation never opens (96b, pin 60's prospective guarantee)",
@@ -70,6 +71,13 @@
   },
   "READ_THIS_FIRST": "A node's caveats are current AS OF ITS OWN WRITING. `amendment_index` below is what tells you whether they still stand — read the manifest first, always (pin 64). Witnessed nodes are never edited to point at what amends them; that is why the index exists (pin 64b).",
   "amendment_index": {
+    "phase14.stage1.headroom_minima_recovered": [
+      {
+        "amended_by": "phase14.stage1.headroom_leg1_floor_unrecoverable",
+        "date": "2026-09-11",
+        "what": "Owner pin 200: kuroshio's 3,660 MiB in this node is an UPPER BOUND on leg 1's floor, NOT a measurement of it. Leg 1 predates pin 151(b) — no in-run tracker, no 1-minute sampler, only a 5-minute heartbeat — and the other three legs measure how much that cadence misses: gaps of 0 (southern), 360 (equatorial) and 74 (quiet_gyre) MiB, median 74. The leg is finished and the box state cannot be reproduced, so the true floor is UNRECOVERABLE. This node is not edited (64b); the amending record carries the bound, and the pointer is what makes it reachable from here"
+      }
+    ],
     "phase14.stage1.seam_sigma_diagnosis": [
       {
         "amended_by": "phase14.stage1.projection_declarations",
@@ -205,7 +213,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-11T03:39:34.709163+00:00",
+  "generated_utc": "2026-09-12T00:37:39.811196+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -2500,6 +2508,50 @@
         "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
         "statement": "Of the three mu values pin 29 disambiguates, ONE rests on an artifact whose witness is FORWARD-ONLY: 0.7695329827465144, the 'signed lane0 maps scored through the same scorer' row, is computed from phase13_lane0_mean.nc. That artifact has NO contemporaneous sha anywhere in the record — searched and absent, pin 60(a) — so its sha is witnessed only from 2026-07-28 forward. The number is not in doubt; what is absent is any record fixing the artifact's content between its creation and 2026-07-28. A reader meeting 0.76953 in the Gate-0 or Gate-1 pack should meet this sentence with it.",
         "why_separate_node": "phase14.stage1.gate5 is already WITNESSED in the provenance mirror and pin 64(b) forbids editing a witnessed node to carry a later pointer. The forward pointer lives in the mirror's amendment_index; this node carries the statement itself."
+      }
+    },
+    "phase14.stage1.headroom_leg1_floor_unrecoverable": {
+      "digest_sha256": "58f5ef89edc4b5f0596efdac5480361476733ea354425b5e6837f71befcabd97",
+      "value": {
+        "amends": "phase14.stage1.headroom_minima_recovered",
+        "arithmetic_correction": "⚖ the forked advisory text this node was written under (numbered 191 there; see citation_correction) states this evidence as '306-328 MiB'. Those three numbers are the HEARTBEAT COUNTS of the other three legs (southern 328, equatorial 306, quiet_gyre 312), not MiB margins. The measured margins are 0 (southern), 360 (equatorial) and 74 (quiet_gyre) MiB. The RULING IS UNAFFECTED — equatorial's 360 MiB gap alone establishes that a 5-minute cadence can miss several hundred MiB, so 3660 is an upper bound — but the supporting range is 0-360 MiB with a median of 74, which is wider and more variable than 306-328 implies. Corrected here rather than carried, per the standing discipline that a wrong number must not enter the record even when its conclusion is right",
+        "citation_correction": "⛔ FORK RESIDUE, CORRECTED 2026-09-11 under owner pin 202(a). This node previously cited `pin: \"191\"`. That number came from the SUPERSEDED forked advisory series; in the AUTHORITATIVE series (ruling doc PART 45) pin 191 is the concurrent-owner `git log`/`ls-remote` pre-write check, an unrelated ruling. The authoritative series contains NO pin ruling leg 1's floor unrecoverable, so this record stands under 188(a) — the capture that produced the four legs' minima — as a finding recorded under it. No pin number is minted here: pin 40 reserves numbering to the owner. Corrected BEFORE this node was mirrored, so the witnessed content carries the right citation and no supersession is spent on a mislabel. ⚖ WHY THE ORDER DIFFERED FROM THE RULING'S SEQUENCE (owner pin 203): the ruling ordered 200 (mirror this node) before 202(a) (correct this citation), and 202(a) says to forward-pointer rather than edit IF THE NODE IS WITNESSED. Mirroring first would have MADE it witnessed, so the correction would then have cost either the single authorised supersession or a permanent extra correction node — for a mislabel. The correction was therefore taken while it was still free, and the node was mirrored afterwards. Ratified at pin 203: take a free correction while it is free.",
+        "date": "2026-09-09",
+        "label": "STAGE1-EVIDENCE",
+        "leg1_recorded_upper_bound_mib": 3660,
+        "leg1_true_floor": null,
+        "not_a_substitute": "this does not recover leg 1's floor. It records that the floor is gone and bounds it from above",
+        "pin": "188(a) — the capture this record sits under. It is NOT a numbered ruling of its own in the authoritative series; see citation_correction",
+        "ruling": "leg 1's floor is UNRECOVERABLE and must not stand as a measurement. 3660 MiB is an UPPER BOUND on it, not the value",
+        "supporting_evidence_from_the_other_three_legs": {
+          "gap_median_mib": 74,
+          "gap_range_mib": [
+            0,
+            360
+          ],
+          "per_leg": {
+            "equatorial": {
+              "best_available_min_mib": 3468,
+              "gap_mib": 360,
+              "heartbeat_min_mib": 3828,
+              "n_heartbeats": 306
+            },
+            "quiet_gyre": {
+              "best_available_min_mib": 2704,
+              "gap_mib": 74,
+              "heartbeat_min_mib": 2778,
+              "n_heartbeats": 312
+            },
+            "southern": {
+              "best_available_min_mib": 1382,
+              "gap_mib": 0,
+              "heartbeat_min_mib": 1382,
+              "n_heartbeats": 328
+            }
+          },
+          "what_it_measures": "how far each leg's BEST-AVAILABLE minimum (1-minute sampler or in-run tracker) fell BELOW its own 5-minute heartbeat minimum — i.e. how much a 5-minute cadence misses"
+        },
+        "why": "leg 1 predates pin 151(b): no in-run tracker and no 1-minute external sampler existed, only a 5-minute heartbeat. A dip between beats is unrecorded and unrecoverable — the leg is finished and re-running cannot reproduce a box state"
       }
     },
     "phase14.stage1.headroom_minima_recovered": {
@@ -5402,29 +5454,276 @@
     "phase14.stage1.tiles.kuroshio": {
       "digest_sha256": "de6f3d946d79a8c79b4d836a76e4e2c7883519c99801359e5d05c35c9f028307",
       "value": {
-        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
-        "tile": "kuroshio",
-        "source": "cmems_my",
+        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
+        "convergence": "CONVERGED",
+        "date": "2026-09-02",
         "frame": {
+          "convention": "production-representative",
           "core": [
             132.0,
             147.0,
             28.0,
             43.0
           ],
-          "overlap_deg": 2.0,
           "halo_deg": 1.0,
           "missing_neighbors": [],
+          "overlap_deg": 2.0,
+          "resolution_deg": 0.2,
           "solve_bbox": [
             130.0,
             149.0,
             26.0,
             45.0
-          ],
-          "convention": "production-representative",
-          "resolution_deg": 0.2
+          ]
         },
+        "label": "STAGE1-EVIDENCE",
+        "m": 100,
+        "n_obs": 138518,
+        "pcg": [
+          {
+            "final_rel_residual": 9.393934453954656e-07,
+            "iterations": 442,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.770467100051643e-07,
+            "iterations": 480,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.53605456428922e-07,
+            "iterations": 424,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.990942210169987e-07,
+            "iterations": 485,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.657707977661222e-07,
+            "iterations": 415,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.452059398816652e-07,
+            "iterations": 477,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.501830389418321e-07,
+            "iterations": 418,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.331389878046697e-07,
+            "iterations": 477,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.815337100019746e-07,
+            "iterations": 462,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.569331156462303e-07,
+            "iterations": 502,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.974144469037457e-07,
+            "iterations": 466,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.89560286122603e-07,
+            "iterations": 505,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.612854132586188e-07,
+            "iterations": 447,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.826644844763278e-07,
+            "iterations": 476,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.084045957143479e-07,
+            "iterations": 387,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.732735915652476e-07,
+            "iterations": 417,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.871388015258108e-07,
+            "iterations": 375,
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          },
+          {
+            "final_rel_residual": 9.54582610661321e-07,
+            "iterations": 420,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "0aab7fc62d9416cf",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          }
+        ],
+        "peak_rss_mib": 7389.3359375,
+        "reference_row": {
+          "kind": "raw-sigma + scalar-s* transfer",
+          "label": "REFERENCE-ONLY, NOT CALIBRATED"
+        },
+        "scores": {
+          "capped_measurement": false,
+          "chi2_j3_validation": {
+            "gates": false,
+            "n": 89383,
+            "pin42": {
+              "fail_condition": null,
+              "kind": "recorded outcome, NOT a gate",
+              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap",
+              "null": "E[chi2_red] = 1 (calibrated)",
+              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
+              "pass_condition": null,
+              "pin": "95 (the split) + 98 (records, does not gate)",
+              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out"
+            },
+            "value": 416.67773570223335
+          },
+          "coverage_1sigma": {
+            "n": 89383,
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.009778145732409966
+          },
+          "lambda_x": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 232.5339108973938
+          },
+          "mu": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.28595412406032705
+          },
+          "n_scored_points": 89383,
+          "raw_sigma": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.03818711556869244
+          },
+          "s_star_chi2_identity": {
+            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
+            "fields": [
+              "scores.chi2_j3_validation.value",
+              "scores.scalar_s_star.value"
+            ],
+            "n": 89383,
+            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
+            "pin": "100(b) — the identity travels in the row",
+            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+            "same_by_construction": true,
+            "shared_expression": "mean((truth - mean)**2 / var)",
+            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
+            "supports_coincide": true
+          },
+          "scalar_s_star": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 416.67773570223335
+          },
+          "sigma": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.21861300514183998
+          },
+          "track": {
+            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_kuroshio_j3_phy_l3_2017_stage1.nc",
+            "sha256": "20e9c76287fbc672384a66f069746fc6d3035bde13b26fe7872db39f39dd1828"
+          }
+        },
+        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
+        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
+        "source": "cmems_my",
+        "superobs_cfg": {
+          "kind": "challenge-coarsen",
+          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources",
+          "n": 5
+        },
+        "tile": "kuroshio",
+        "wall_s": 70811.32452932594,
         "window_plan": {
+          "days_stride": 1,
+          "n_windows": 9,
           "starts": [
             -18.0,
             27.0,
@@ -5436,283 +5735,303 @@
             297.0,
             322.0
           ],
-          "w_days": 60.0,
-          "n_windows": 9,
-          "days_stride": 1
-        },
-        "m": 100,
-        "superobs_cfg": {
-          "kind": "challenge-coarsen",
-          "n": 5,
-          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources"
-        },
-        "n_obs": 138518,
-        "wall_s": 70811.32452932594,
-        "peak_rss_mib": 7389.3359375,
-        "pcg": [
-          {
-            "window": "w-00018.0+60",
-            "iterations": 442,
-            "final_rel_residual": 9.393934453954656e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w-00018.0+60",
-            "kind": "member-batch",
-            "iterations": 480,
-            "final_rel_residual": 9.770467100051643e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "iterations": 424,
-            "final_rel_residual": 9.53605456428922e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "kind": "member-batch",
-            "iterations": 485,
-            "final_rel_residual": 9.990942210169987e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "iterations": 415,
-            "final_rel_residual": 9.657707977661222e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "kind": "member-batch",
-            "iterations": 477,
-            "final_rel_residual": 9.452059398816652e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "iterations": 418,
-            "final_rel_residual": 9.501830389418321e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "kind": "member-batch",
-            "iterations": 477,
-            "final_rel_residual": 9.331389878046697e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "iterations": 462,
-            "final_rel_residual": 9.815337100019746e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "kind": "member-batch",
-            "iterations": 502,
-            "final_rel_residual": 9.569331156462303e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "iterations": 466,
-            "final_rel_residual": 9.974144469037457e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "kind": "member-batch",
-            "iterations": 505,
-            "final_rel_residual": 9.89560286122603e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "iterations": 447,
-            "final_rel_residual": 9.612854132586188e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "kind": "member-batch",
-            "iterations": 476,
-            "final_rel_residual": 9.826644844763278e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "iterations": 387,
-            "final_rel_residual": 9.084045957143479e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "kind": "member-batch",
-            "iterations": 417,
-            "final_rel_residual": 9.732735915652476e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "iterations": 375,
-            "final_rel_residual": 9.871388015258108e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "kind": "member-batch",
-            "iterations": 420,
-            "final_rel_residual": 9.54582610661321e-07,
-            "params_key_hash": "0aab7fc62d9416cf",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          }
-        ],
-        "convergence": "CONVERGED",
-        "scores": {
-          "mu": {
-            "value": 0.28595412406032705,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "sigma": {
-            "value": 0.21861300514183998,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "lambda_x": {
-            "value": 232.5339108973938,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "n_scored_points": 89383,
-          "coverage_1sigma": {
-            "value": 0.009778145732409966,
-            "n": 89383,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "chi2_j3_validation": {
-            "value": 416.67773570223335,
-            "n": 89383,
-            "gates": false,
-            "pin42": {
-              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-              "pin": "95 (the split) + 98 (records, does not gate)",
-              "kind": "recorded outcome, NOT a gate",
-              "null": "E[chi2_red] = 1 (calibrated)",
-              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
-              "pass_condition": null,
-              "fail_condition": null,
-              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out",
-              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap"
-            }
-          },
-          "raw_sigma": {
-            "value": 0.03818711556869244,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "scalar_s_star": {
-            "value": 416.67773570223335,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "s_star_chi2_identity": {
-            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-            "pin": "100(b) — the identity travels in the row",
-            "shared_expression": "mean((truth - mean)**2 / var)",
-            "fields": [
-              "scores.chi2_j3_validation.value",
-              "scores.scalar_s_star.value"
-            ],
-            "supports_coincide": true,
-            "same_by_construction": true,
-            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
-            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
-            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
-            "n": 89383
-          },
-          "track": {
-            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_kuroshio_j3_phy_l3_2017_stage1.nc",
-            "sha256": "20e9c76287fbc672384a66f069746fc6d3035bde13b26fe7872db39f39dd1828"
-          },
-          "capped_measurement": false
-        },
-        "reference_row": {
-          "kind": "raw-sigma + scalar-s* transfer",
-          "label": "REFERENCE-ONLY, NOT CALIBRATED"
-        },
-        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
-        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
-        "label": "STAGE1-EVIDENCE",
-        "date": "2026-09-02"
+          "w_days": 60.0
+        }
       }
     },
     "phase14.stage1.tiles.quiet_gyre": {
       "digest_sha256": "5e296193ef8be4b467fd94a06aea380ab742580f579cc50ec03a7efcf7d6b08a",
       "value": {
-        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
-        "tile": "quiet_gyre",
-        "source": "cmems_my",
+        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
+        "convergence": "CONVERGED",
+        "date": "2026-09-08",
         "frame": {
+          "convention": "production-representative",
           "core": [
             255.0,
             270.0,
             -30.0,
             -15.0
           ],
-          "overlap_deg": 2.0,
           "halo_deg": 1.0,
           "missing_neighbors": [],
+          "overlap_deg": 2.0,
+          "resolution_deg": 0.2,
           "solve_bbox": [
             253.0,
             272.0,
             -32.0,
             -13.0
-          ],
-          "convention": "production-representative",
-          "resolution_deg": 0.2
+          ]
         },
+        "label": "STAGE1-EVIDENCE",
+        "m": 100,
+        "n_obs": 168755,
+        "pcg": [
+          {
+            "final_rel_residual": 9.581057756310718e-07,
+            "iterations": 519,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.77136675243102e-07,
+            "iterations": 560,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.90914862344968e-07,
+            "iterations": 513,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.931609499073514e-07,
+            "iterations": 553,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.615657718391764e-07,
+            "iterations": 517,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.901802245066393e-07,
+            "iterations": 557,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.861252143773017e-07,
+            "iterations": 515,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.83051783039004e-07,
+            "iterations": 555,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.715902256090389e-07,
+            "iterations": 538,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.83250822396642e-07,
+            "iterations": 593,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.665910116484625e-07,
+            "iterations": 549,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.471463829733633e-07,
+            "iterations": 611,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.512441045189487e-07,
+            "iterations": 527,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.535183634579674e-07,
+            "iterations": 581,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.942104691966011e-07,
+            "iterations": 450,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.835332579525873e-07,
+            "iterations": 500,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.603925468252562e-07,
+            "iterations": 450,
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          },
+          {
+            "final_rel_residual": 9.926174846035026e-07,
+            "iterations": 504,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "81a880068588895d",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          }
+        ],
+        "peak_rss_mib": 4986.41796875,
+        "reference_row": {
+          "kind": "raw-sigma + scalar-s* transfer",
+          "label": "REFERENCE-ONLY, NOT CALIBRATED"
+        },
+        "scores": {
+          "capped_measurement": false,
+          "chi2_j3_validation": {
+            "gates": false,
+            "n": 103786,
+            "pin42": {
+              "fail_condition": null,
+              "kind": "recorded outcome, NOT a gate",
+              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap",
+              "null": "E[chi2_red] = 1 (calibrated)",
+              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
+              "pass_condition": null,
+              "pin": "95 (the split) + 98 (records, does not gate)",
+              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out"
+            },
+            "value": 11.637874900560991
+          },
+          "coverage_1sigma": {
+            "n": 103786,
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.16666987840363826
+          },
+          "lambda_x": {
+            "absence": {
+              "evidence": {
+                "coherence_crossing_sought": 0.5,
+                "coherence_max": 0.0026272918874187257,
+                "coherence_min": -18.210679843209853,
+                "n_wavenumbers": 79,
+                "psd_diff_over_ref_median": 1.0005386870350943,
+                "reading": "the residual PSD is compared against the reference at every wavenumber; a median ratio at or above 1.0 means the map removes no variance at any resolved scale",
+                "wavelength_km": {
+                  "max": 996.343608,
+                  "min": 12.773636000000002
+                }
+              },
+              "meaning": "the spectral coherence never crosses 0.5, so λx is UNDEFINED for this map — a RECORDED ABSENCE (owner pins 160a/161), not a scoring failure and not a value of zero",
+              "message": "map resolves no scale; λx undefined (no 0.5 coherence crossing)",
+              "pin": "161 — score_tile records the absence rather than crashing",
+              "reason": "UnresolvedScaleError"
+            },
+            "not_zero": "value is None because λx is UNDEFINED for this map, NOT zero — a zero would claim the map resolves every scale, the inverse of what was measured",
+            "recorded_absent": true,
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": null
+          },
+          "mu": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.847933297534206
+          },
+          "n_scored_points": 103786,
+          "raw_sigma": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.037721211719174724
+          },
+          "s_star_chi2_identity": {
+            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
+            "fields": [
+              "scores.chi2_j3_validation.value",
+              "scores.scalar_s_star.value"
+            ],
+            "n": 103786,
+            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
+            "pin": "100(b) — the identity travels in the row",
+            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+            "same_by_construction": true,
+            "shared_expression": "mean((truth - mean)**2 / var)",
+            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
+            "supports_coincide": true
+          },
+          "scalar_s_star": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 11.637874900560991
+          },
+          "sigma": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.06257644625873626
+          },
+          "track": {
+            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_quiet_gyre_j3_phy_l3_2017_stage1.nc",
+            "sha256": "721334f87340a684659ef695f1d383ee4f50cf836a3fbb2a29de4d325ef9395b"
+          }
+        },
+        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
+        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
+        "source": "cmems_my",
+        "superobs_cfg": {
+          "kind": "challenge-coarsen",
+          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources",
+          "n": 5
+        },
+        "tile": "quiet_gyre",
+        "wall_s": 93712.97317277198,
         "window_plan": {
+          "days_stride": 1,
+          "n_windows": 9,
           "starts": [
             -18.0,
             27.0,
@@ -5724,303 +6043,283 @@
             297.0,
             322.0
           ],
-          "w_days": 60.0,
-          "n_windows": 9,
-          "days_stride": 1
-        },
-        "m": 100,
-        "superobs_cfg": {
-          "kind": "challenge-coarsen",
-          "n": 5,
-          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources"
-        },
-        "n_obs": 168755,
-        "wall_s": 93712.97317277198,
-        "peak_rss_mib": 4986.41796875,
-        "pcg": [
-          {
-            "window": "w-00018.0+60",
-            "iterations": 519,
-            "final_rel_residual": 9.581057756310718e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w-00018.0+60",
-            "kind": "member-batch",
-            "iterations": 560,
-            "final_rel_residual": 9.77136675243102e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "iterations": 513,
-            "final_rel_residual": 9.90914862344968e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "kind": "member-batch",
-            "iterations": 553,
-            "final_rel_residual": 9.931609499073514e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "iterations": 517,
-            "final_rel_residual": 9.615657718391764e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "kind": "member-batch",
-            "iterations": 557,
-            "final_rel_residual": 9.901802245066393e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "iterations": 515,
-            "final_rel_residual": 9.861252143773017e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "kind": "member-batch",
-            "iterations": 555,
-            "final_rel_residual": 9.83051783039004e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "iterations": 538,
-            "final_rel_residual": 9.715902256090389e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "kind": "member-batch",
-            "iterations": 593,
-            "final_rel_residual": 9.83250822396642e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "iterations": 549,
-            "final_rel_residual": 9.665910116484625e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "kind": "member-batch",
-            "iterations": 611,
-            "final_rel_residual": 9.471463829733633e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "iterations": 527,
-            "final_rel_residual": 9.512441045189487e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "kind": "member-batch",
-            "iterations": 581,
-            "final_rel_residual": 9.535183634579674e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "iterations": 450,
-            "final_rel_residual": 9.942104691966011e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "kind": "member-batch",
-            "iterations": 500,
-            "final_rel_residual": 9.835332579525873e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "iterations": 450,
-            "final_rel_residual": 9.603925468252562e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "kind": "member-batch",
-            "iterations": 504,
-            "final_rel_residual": 9.926174846035026e-07,
-            "params_key_hash": "81a880068588895d",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          }
-        ],
-        "convergence": "CONVERGED",
-        "scores": {
-          "mu": {
-            "value": 0.847933297534206,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "sigma": {
-            "value": 0.06257644625873626,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "lambda_x": {
-            "value": null,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
-            "recorded_absent": true,
-            "absence": {
-              "reason": "UnresolvedScaleError",
-              "message": "map resolves no scale; λx undefined (no 0.5 coherence crossing)",
-              "evidence": {
-                "coherence_min": -18.210679843209853,
-                "coherence_max": 0.0026272918874187257,
-                "coherence_crossing_sought": 0.5,
-                "psd_diff_over_ref_median": 1.0005386870350943,
-                "wavelength_km": {
-                  "min": 12.773636000000002,
-                  "max": 996.343608
-                },
-                "n_wavenumbers": 79,
-                "reading": "the residual PSD is compared against the reference at every wavenumber; a median ratio at or above 1.0 means the map removes no variance at any resolved scale"
-              },
-              "meaning": "the spectral coherence never crosses 0.5, so λx is UNDEFINED for this map — a RECORDED ABSENCE (owner pins 160a/161), not a scoring failure and not a value of zero",
-              "pin": "161 — score_tile records the absence rather than crashing"
-            },
-            "not_zero": "value is None because λx is UNDEFINED for this map, NOT zero — a zero would claim the map resolves every scale, the inverse of what was measured"
-          },
-          "n_scored_points": 103786,
-          "coverage_1sigma": {
-            "value": 0.16666987840363826,
-            "n": 103786,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "chi2_j3_validation": {
-            "value": 11.637874900560991,
-            "n": 103786,
-            "gates": false,
-            "pin42": {
-              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-              "pin": "95 (the split) + 98 (records, does not gate)",
-              "kind": "recorded outcome, NOT a gate",
-              "null": "E[chi2_red] = 1 (calibrated)",
-              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
-              "pass_condition": null,
-              "fail_condition": null,
-              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out",
-              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap"
-            }
-          },
-          "raw_sigma": {
-            "value": 0.037721211719174724,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "scalar_s_star": {
-            "value": 11.637874900560991,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "s_star_chi2_identity": {
-            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-            "pin": "100(b) — the identity travels in the row",
-            "shared_expression": "mean((truth - mean)**2 / var)",
-            "fields": [
-              "scores.chi2_j3_validation.value",
-              "scores.scalar_s_star.value"
-            ],
-            "supports_coincide": true,
-            "same_by_construction": true,
-            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
-            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
-            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
-            "n": 103786
-          },
-          "track": {
-            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_quiet_gyre_j3_phy_l3_2017_stage1.nc",
-            "sha256": "721334f87340a684659ef695f1d383ee4f50cf836a3fbb2a29de4d325ef9395b"
-          },
-          "capped_measurement": false
-        },
-        "reference_row": {
-          "kind": "raw-sigma + scalar-s* transfer",
-          "label": "REFERENCE-ONLY, NOT CALIBRATED"
-        },
-        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
-        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
-        "label": "STAGE1-EVIDENCE",
-        "date": "2026-09-08"
+          "w_days": 60.0
+        }
       }
     },
     "phase14.stage1.tiles.southern": {
       "digest_sha256": "088719dceb49cc407e09ae71ec0cba95bc7db4705c144aa40ca676777de910df",
       "value": {
-        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
-        "tile": "southern",
-        "source": "cmems_my",
+        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
+        "convergence": "CONVERGED",
+        "date": "2026-09-04",
         "frame": {
+          "convention": "production-representative",
           "core": [
             215.0,
             230.0,
             -62.0,
             -47.0
           ],
-          "overlap_deg": 2.0,
           "halo_deg": 1.0,
           "missing_neighbors": [],
+          "overlap_deg": 2.0,
+          "resolution_deg": 0.2,
           "solve_bbox": [
             213.0,
             232.0,
             -64.0,
             -45.0
-          ],
-          "convention": "production-representative",
-          "resolution_deg": 0.2
+          ]
         },
+        "label": "STAGE1-EVIDENCE",
+        "m": 100,
+        "n_obs": 175059,
+        "pcg": [
+          {
+            "final_rel_residual": 9.98674855105522e-07,
+            "iterations": 505,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.810216255223707e-07,
+            "iterations": 551,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w-00018.0+60"
+          },
+          {
+            "final_rel_residual": 9.883335112037782e-07,
+            "iterations": 510,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.98277626641825e-07,
+            "iterations": 560,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00027.0+60"
+          },
+          {
+            "final_rel_residual": 9.356874496374649e-07,
+            "iterations": 493,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.862565491934598e-07,
+            "iterations": 556,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00072.0+60"
+          },
+          {
+            "final_rel_residual": 9.884890777001392e-07,
+            "iterations": 476,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.795118342968343e-07,
+            "iterations": 547,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00117.0+60"
+          },
+          {
+            "final_rel_residual": 9.451052321196346e-07,
+            "iterations": 520,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.720781990744535e-07,
+            "iterations": 606,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00162.0+60"
+          },
+          {
+            "final_rel_residual": 9.812762147228407e-07,
+            "iterations": 543,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.996035344252974e-07,
+            "iterations": 626,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00207.0+60"
+          },
+          {
+            "final_rel_residual": 9.577723314191024e-07,
+            "iterations": 519,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.93748636105056e-07,
+            "iterations": 580,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00252.0+60"
+          },
+          {
+            "final_rel_residual": 9.65238679955222e-07,
+            "iterations": 440,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.764322284233709e-07,
+            "iterations": 494,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00297.0+60"
+          },
+          {
+            "final_rel_residual": 9.644013791251477e-07,
+            "iterations": 438,
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          },
+          {
+            "final_rel_residual": 9.99971635024049e-07,
+            "iterations": 488,
+            "kind": "member-batch",
+            "maxiter": 1200,
+            "params_key_hash": "af90ae50390249be",
+            "rtol": 1e-06,
+            "window": "w+00322.0+60"
+          }
+        ],
+        "peak_rss_mib": 4951.1640625,
+        "reference_row": {
+          "kind": "raw-sigma + scalar-s* transfer",
+          "label": "REFERENCE-ONLY, NOT CALIBRATED"
+        },
+        "scores": {
+          "capped_measurement": false,
+          "chi2_j3_validation": {
+            "gates": false,
+            "n": 137174,
+            "pin42": {
+              "fail_condition": null,
+              "kind": "recorded outcome, NOT a gate",
+              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap",
+              "null": "E[chi2_red] = 1 (calibrated)",
+              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
+              "pass_condition": null,
+              "pin": "95 (the split) + 98 (records, does not gate)",
+              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out"
+            },
+            "value": 1637.4843984422607
+          },
+          "coverage_1sigma": {
+            "n": 137174,
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.0025806639742225203
+          },
+          "lambda_x": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 141.9472040873535
+          },
+          "mu": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": -0.6176286138883883
+          },
+          "n_scored_points": 137174,
+          "raw_sigma": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.0349657202307512
+          },
+          "s_star_chi2_identity": {
+            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
+            "fields": [
+              "scores.chi2_j3_validation.value",
+              "scores.scalar_s_star.value"
+            ],
+            "n": 137174,
+            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
+            "pin": "100(b) — the identity travels in the row",
+            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+            "same_by_construction": true,
+            "shared_expression": "mean((truth - mean)**2 / var)",
+            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
+            "supports_coincide": true
+          },
+          "scalar_s_star": {
+            "label": "REFERENCE-ONLY, NOT CALIBRATED",
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 1637.4843984422607
+          },
+          "sigma": {
+            "report_only": true,
+            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)",
+            "value": 0.137722694693016
+          },
+          "track": {
+            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_southern_j3_phy_l3_2017_stage1.nc",
+            "sha256": "76ea059873c378d2b78b709f30e46759a254f6917ffc2093af5d964431d6b171"
+          }
+        },
+        "seal_sha": "a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2",
+        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
+        "source": "cmems_my",
+        "superobs_cfg": {
+          "kind": "challenge-coarsen",
+          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources",
+          "n": 5
+        },
+        "tile": "southern",
+        "wall_s": 98929.75216705899,
         "window_plan": {
+          "days_stride": 1,
+          "n_windows": 9,
           "starts": [
             -18.0,
             27.0,
@@ -6032,255 +6331,8 @@
             297.0,
             322.0
           ],
-          "w_days": 60.0,
-          "n_windows": 9,
-          "days_stride": 1
-        },
-        "m": 100,
-        "superobs_cfg": {
-          "kind": "challenge-coarsen",
-          "n": 5,
-          "mission_relabel": "CMEMS-MY codes relabelled to CHALLENGE codes before the solve (h2ag -> h2g; all others identical), the CHALLENGE_TO_CMEMS inverse — the recorded interpretation the golden tile applies, so the frozen config's mission-keyed R deltas apply per instrument on both sources"
-        },
-        "n_obs": 175059,
-        "wall_s": 98929.75216705899,
-        "peak_rss_mib": 4951.1640625,
-        "pcg": [
-          {
-            "window": "w-00018.0+60",
-            "iterations": 505,
-            "final_rel_residual": 9.98674855105522e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w-00018.0+60",
-            "kind": "member-batch",
-            "iterations": 551,
-            "final_rel_residual": 9.810216255223707e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "iterations": 510,
-            "final_rel_residual": 9.883335112037782e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00027.0+60",
-            "kind": "member-batch",
-            "iterations": 560,
-            "final_rel_residual": 9.98277626641825e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "iterations": 493,
-            "final_rel_residual": 9.356874496374649e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00072.0+60",
-            "kind": "member-batch",
-            "iterations": 556,
-            "final_rel_residual": 9.862565491934598e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "iterations": 476,
-            "final_rel_residual": 9.884890777001392e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00117.0+60",
-            "kind": "member-batch",
-            "iterations": 547,
-            "final_rel_residual": 9.795118342968343e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "iterations": 520,
-            "final_rel_residual": 9.451052321196346e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00162.0+60",
-            "kind": "member-batch",
-            "iterations": 606,
-            "final_rel_residual": 9.720781990744535e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "iterations": 543,
-            "final_rel_residual": 9.812762147228407e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00207.0+60",
-            "kind": "member-batch",
-            "iterations": 626,
-            "final_rel_residual": 9.996035344252974e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "iterations": 519,
-            "final_rel_residual": 9.577723314191024e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00252.0+60",
-            "kind": "member-batch",
-            "iterations": 580,
-            "final_rel_residual": 9.93748636105056e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "iterations": 440,
-            "final_rel_residual": 9.65238679955222e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00297.0+60",
-            "kind": "member-batch",
-            "iterations": 494,
-            "final_rel_residual": 9.764322284233709e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "iterations": 438,
-            "final_rel_residual": 9.644013791251477e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          },
-          {
-            "window": "w+00322.0+60",
-            "kind": "member-batch",
-            "iterations": 488,
-            "final_rel_residual": 9.99971635024049e-07,
-            "params_key_hash": "af90ae50390249be",
-            "rtol": 1e-06,
-            "maxiter": 1200
-          }
-        ],
-        "convergence": "CONVERGED",
-        "scores": {
-          "mu": {
-            "value": -0.6176286138883883,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "sigma": {
-            "value": 0.137722694693016,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "lambda_x": {
-            "value": 141.9472040873535,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "n_scored_points": 137174,
-          "coverage_1sigma": {
-            "value": 0.0025806639742225203,
-            "n": 137174,
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "chi2_j3_validation": {
-            "value": 1637.4843984422607,
-            "n": 137174,
-            "gates": false,
-            "pin42": {
-              "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-              "pin": "95 (the split) + 98 (records, does not gate)",
-              "kind": "recorded outcome, NOT a gate",
-              "null": "E[chi2_red] = 1 (calibrated)",
-              "null_source": "src/sverdrup/eval/calibration.py reduced_chi2 docstring — \"1.0 is calibrated\"",
-              "pass_condition": null,
-              "fail_condition": null,
-              "why_not_gating": "the shipped record made this chi2 non-gating deliberately: harness.py:1145 names the jet-core post-fit chi2 as a recorded outcome (motivated the phase; coverage remains the only bar). Pin 42 requires the outcome conditions be RECORDED; it does not re-gate a bar an earlier ruling left out",
-              "not_to_be_completed": "adding a threshold here would re-gate chi2 behind that ruling's back (98b) — the absent failure condition is the record, not a gap"
-            }
-          },
-          "raw_sigma": {
-            "value": 0.0349657202307512,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "scalar_s_star": {
-            "value": 1637.4843984422607,
-            "label": "REFERENCE-ONLY, NOT CALIBRATED",
-            "report_only": true,
-            "report_only_note": "REPORT-ONLY: a reading with no expectation to compare against, so pin 42's gate fields do not apply and none are recorded here (pin 95)"
-          },
-          "s_star_chi2_identity": {
-            "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-            "pin": "100(b) — the identity travels in the row",
-            "shared_expression": "mean((truth - mean)**2 / var)",
-            "fields": [
-              "scores.chi2_j3_validation.value",
-              "scores.scalar_s_star.value"
-            ],
-            "supports_coincide": true,
-            "same_by_construction": true,
-            "not_corroboration": "agreement between these two fields is an IDENTITY, not independent confirmation: a consumer reading them as two witnesses is reading one number twice",
-            "support_basis": "s*'s support is what Stage 2G needs to inherit (100a); DISJOINT supports were REFUSED — independence manufactured by splitting the point set degrades one number to decorate the other",
-            "enforced_by": "build_scores_block raises when the two values differ (100c): divergence may be legitimate, but it is never silent",
-            "n": 137174
-          },
-          "track": {
-            "path": "data/2021a_ssh_mapping_ose/ours/phase14_stage1/dt_southern_j3_phy_l3_2017_stage1.nc",
-            "sha256": "76ea059873c378d2b78b709f30e46759a254f6917ffc2093af5d964431d6b171"
-          },
-          "capped_measurement": false
-        },
-        "reference_row": {
-          "kind": "raw-sigma + scalar-s* transfer",
-          "label": "REFERENCE-ONLY, NOT CALIBRATED"
-        },
-        "bridge_caveat": "cross-lineage reading; golden-tile bridge delta MEASURED ON THE ANCHOR BOX (mu -0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is unmeasured; interpretation WAITS on the owner attribution readout",
-        "sigma_caveat": "per-tile sigma level under THIS tile's own CRN origin; the deferred CRN production defect (phase14.stage1.crn_production_defect_deferred) is a property of the SHIPPED SYSTEM, not of an instrument; cross-tile sigma comparison is NOT supported and the boundary gradient is DEFERRED and unmeasured; the within-tile sigma level is NOT compromised - the four diverse tiles are pairwise disjoint and only seam_n/seam_s are adjacent",
-        "label": "STAGE1-EVIDENCE",
-        "date": "2026-09-04"
+          "w_days": 60.0
+        }
       }
     }
   }

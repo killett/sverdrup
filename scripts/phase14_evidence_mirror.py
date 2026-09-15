@@ -121,6 +121,20 @@ MIRRORED: dict[str, str] = {
         "witnessing it is the whole point. Recovery is NOT repair — the 151(b) "
         "gap stands and is recorded as found"
     ),
+    # ---- pin 200: the qualification on the record above, made reachable ----
+    "phase14.stage1.headroom_leg1_floor_unrecoverable": (
+        "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an "
+        "UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), "
+        "so only a 5-minute heartbeat existed and a dip between beats is gone "
+        "for good. Mirrored because the node it amends is witnessed and this "
+        "one was not: a reader arriving at the witnessed minima could not "
+        "learn that one of the four numbers is a bound, which is pin 64's "
+        "failure mode exactly. It also carries an arithmetic correction to "
+        "the text that ordered it (the supporting gaps are 0/360/74 MiB, "
+        "median 74 — not the '306-328' that text states, which are heartbeat "
+        "COUNTS). Registered together with the forward pointer; mirroring it "
+        "without the pointer would leave it witnessed and still unreachable"
+    ),
     "phase14.stage1.anchor_gate_artifact_shas": (
         "pin 58(d). Check-1's mean, Gamma and variance routes recorded the "
         "comparison OUTCOME but no sha of the artifact compared against, so "
@@ -333,6 +347,15 @@ NOT_MIRRORED: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 AMENDMENTS: dict[str, list[dict[str, str]]] = {
+    "phase14.stage1.headroom_minima_recovered": [
+        {
+            "amended_by": "phase14.stage1.headroom_leg1_floor_unrecoverable",
+            "date": "2026-09-11",
+            "what": (
+                "Owner pin 200: kuroshio's 3,660 MiB in this node is an UPPER BOUND on leg 1's floor, NOT a measurement of it. Leg 1 predates pin 151(b) — no in-run tracker, no 1-minute sampler, only a 5-minute heartbeat — and the other three legs measure how much that cadence misses: gaps of 0 (southern), 360 (equatorial) and 74 (quiet_gyre) MiB, median 74. The leg is finished and the box state cannot be reproduced, so the true floor is UNRECOVERABLE. This node is not edited (64b); the amending record carries the bound, and the pointer is what makes it reachable from here"
+            ),
+        }
+    ],
     "phase14.stage1.seam_sigma_diagnosis": [
         {
             "amended_by": "phase14.stage1.projection_declarations",
