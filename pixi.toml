@@ -117,6 +117,10 @@ scikit-sparse = ">=0.5.0,<0.6"
 pyinterp = ">=2026.6.0,<2027"
 paramiko = ">=5.0.0,<6"
 optuna = ">=4.9.0,<5"
+pymupdf = ">=1.28.0,<2"
+pdfplumber = ">=0.11.10,<0.12"
+pytesseract = ">=0.3.13,<0.4"
+pdf2image = ">=1.17.0,<2"
 
 [pypi-dependencies]
 
@@ -135,6 +139,29 @@ pypdf = ">=6.14.2, <7"
 # Empty section is valid TOML and pixi accepts it as "no extras".
 [target.linux-64.dependencies]
 
+
+# PDF extraction with docling lives in its OWN environment: `pixi run -e pdf ...`.
+# It is kept out of the default environment on purpose. docling pulls in torch
+# (several GB), and the default environment is the one every gate suite and
+# every cited result runs in, so it should not change for a document tool.
+# Why not a plain dependency (pixi lock, 2026-09-16):
+#   - every conda-forge docling build pins typer <0.13; the project needs 0.26
+#   - PyPI docling accepts typer <0.27, but needs torch, which has no current
+#     wheels for osx-64 (Intel macOS) — hence the platform list below
+[feature.pdf]
+platforms = ["linux-64", "osx-arm64"]
+
+[feature.pdf.dependencies]
+# conda-forge torch satisfies docling's torch requirement, so pixi does not
+# fetch the PyPI wheels (which on linux-64 bring the CUDA stack with them).
+pytorch = ">=2.13.0,<3"
+torchvision = ">=0.28.0,<0.29"
+
+[feature.pdf.pypi-dependencies]
+docling = ">=2.126.0,<3"
+
+[environments]
+pdf = ["pdf"]
 
 # Make `python -m <package>` work inside `pixi run` and `pixi shell` without an editable install. Avoids dragging uv + a build backend into the loop, which is fragile if any parent directory has a pyproject.toml that isn't PEP 621-valid.
 [activation.env]
