@@ -121,6 +121,21 @@ MIRRORED: dict[str, str] = {
         "witnessing it is the whole point. Recovery is NOT repair — the 151(b) "
         "gap stands and is recorded as found"
     ),
+    # ---- pin 201(d): the band tables — a MEASUREMENT, so it is mirrored ----
+    "phase14.stage1.band_spectra": (
+        "owner pin 201(d). The per-band study/ref and diff/ref tables for all "
+        "four tiles on the canonical SKILL_BANDS grid (205c), the fine-band "
+        "track PSDs behind 181(c), and the verification of every figure the "
+        "rulings quote — recomputed read-only from the PERSISTED maps through "
+        "the scorer's own path, no solve (201a, pin 114's class). Mirrored "
+        "because the THREE-CLASS finding rests on these numbers and until this "
+        "node existed they lived only in prose: the diagnostics printed and "
+        "exited, so pin 56(c) applied exactly — a re-typeable number in prose "
+        "is not the record. It carries 205(b)'s finding too: southern's "
+        "0.084/0.988 came from an ad-hoc cut no committed code produced. The "
+        "tables are a MEASUREMENT and belong here; the three-class READING is "
+        "an interpretation and stays in the pack (197b)"
+    ),
     # ---- pin 200: the qualification on the record above, made reachable ----
     "phase14.stage1.headroom_leg1_floor_unrecoverable": (
         "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an "

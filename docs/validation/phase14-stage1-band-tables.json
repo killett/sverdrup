@@ -1,0 +1,337 @@
+{
+ "all_ruling_quotes_reproduced": true,
+ "canonical_grid_km": [
+  [
+   400,
+   1000
+  ],
+  [
+   250,
+   400
+  ],
+  [
+   180,
+   250
+  ],
+  [
+   130,
+   180
+  ],
+  [
+   95,
+   130
+  ],
+  [
+   70,
+   95
+  ],
+  [
+   50,
+   70
+  ]
+ ],
+ "canonical_grid_rule": "owner pin 205(c): SKILL_BANDS is CANONICAL. A future quote comes from this grid or states its own cut explicitly in this same artifact. A number quoted from a cut nobody can reproduce is the prose-only failure wearing a decimal point",
+ "kind": "MEASUREMENT \u2014 read-only recomputation from the PERSISTED maps and tracks through the scorer's own path. No solve, no re-run, no recorded value changed (owner pin 201a; same class as pin 114's post-hoc recovery)",
+ "label": "STAGE1-EVIDENCE",
+ "naming_hazard_pin_178": "the vendored quantity called `coherence` elsewhere is 1 - psd_diff/psd_ref = 2*sqrt(r)*Re(gamma) - r and is NOT a coherence. The ratios here are the raw PSD ratios and carry no such relabelling",
+ "not_an_interpretation": "owner pin 197(b): these are measurements and belong in the store. The THREE-CLASS reading built on them is an interpretation and stays in the pack \u2014 the store holds measurements and firewalled hypotheses",
+ "pin": "201 (a)-(d), 205 (a)-(d)",
+ "produced_by": "scripts/diag_stage1_hypothesis_tests.py",
+ "ruling_quote_verification": [
+  {
+   "agrees": true,
+   "band_km": [
+    70,
+    95
+   ],
+   "computed": {
+    "diff_ref": 4.697371555763506,
+    "study_ref": 3.8228616191684
+   },
+   "on_canonical_grid": true,
+   "per_field_agrees": {
+    "diff_ref": true,
+    "study_ref": true
+   },
+   "quoted": {
+    "diff_ref": 4.697,
+    "study_ref": 3.823
+   },
+   "source": "owner pin 181; PROGRESS pathological-band table",
+   "tile": "kuroshio"
+  },
+  {
+   "agrees": true,
+   "band_km": [
+    250,
+    400
+   ],
+   "computed": {
+    "diff_ref": 5.169037852355476,
+    "study_ref": 4.29087528308122
+   },
+   "on_canonical_grid": true,
+   "per_field_agrees": {
+    "diff_ref": true,
+    "study_ref": true
+   },
+   "quoted": {
+    "diff_ref": 5.169,
+    "study_ref": 4.291
+   },
+   "source": "owner pin 181; PROGRESS pathological-band table",
+   "tile": "equatorial"
+  },
+  {
+   "agrees": true,
+   "band_km": [
+    400,
+    1000
+   ],
+   "computed": {
+    "diff_ref": 9.958519860126092,
+    "study_ref": 9.80392839553682
+   },
+   "on_canonical_grid": true,
+   "per_field_agrees": {
+    "diff_ref": true,
+    "study_ref": true
+   },
+   "quoted": {
+    "diff_ref": 9.959,
+    "study_ref": 9.804
+   },
+   "source": "owner pin 201(c)",
+   "tile": "quiet_gyre"
+  },
+  {
+   "agrees": true,
+   "band_km": [
+    500,
+    1000
+   ],
+   "computed": {
+    "diff_ref": 0.9879271783290573,
+    "study_ref": 0.08351378654693409
+   },
+   "on_canonical_grid": false,
+   "per_field_agrees": {
+    "diff_ref": true,
+    "study_ref": true
+   },
+   "quoted": {
+    "diff_ref": 0.988,
+    "study_ref": 0.084
+   },
+   "source": "owner pins 172/196(b) \u2014 the UNDER-powered class",
+   "tile": "southern"
+  }
+ ],
+ "skill_by_band": {
+  "equatorial": {
+   "130-180": {
+    "diff_ref": 1.2497372703581677,
+    "ref": 0.0644554958753841,
+    "study_ref": 0.21697560968721732
+   },
+   "180-250": {
+    "diff_ref": 1.9945252218663567,
+    "ref": 0.07069828153539107,
+    "study_ref": 1.0714431130293023
+   },
+   "250-400": {
+    "diff_ref": 5.169037852355476,
+    "ref": 0.06285636921566838,
+    "study_ref": 4.29087528308122
+   },
+   "400-1000": {
+    "diff_ref": 2.037714454863722,
+    "ref": 2.3261570087907053,
+    "study_ref": 2.1882984308312614
+   },
+   "50-70": {
+    "diff_ref": 1.0006625354874492,
+    "ref": 0.044454398013670404,
+    "study_ref": 0.0029200744103055278
+   },
+   "70-95": {
+    "diff_ref": 1.0127252822946664,
+    "ref": 0.05748440410832032,
+    "study_ref": 0.017559824644998303
+   },
+   "95-130": {
+    "diff_ref": 1.1052008548725878,
+    "ref": 0.0601775886767075,
+    "study_ref": 0.08723011552403323
+   }
+  },
+  "kuroshio": {
+   "130-180": {
+    "diff_ref": 0.7516268820447775,
+    "ref": 0.7400665324152974,
+    "study_ref": 0.37544920995575365
+   },
+   "180-250": {
+    "diff_ref": 0.48370433581242833,
+    "ref": 4.489383697691217,
+    "study_ref": 0.6093299743651494
+   },
+   "250-400": {
+    "diff_ref": 0.19059104764207457,
+    "ref": 9.975755326566656,
+    "study_ref": 0.8869673033951878
+   },
+   "400-1000": {
+    "diff_ref": 0.1106241755637723,
+    "ref": 70.95574638274255,
+    "study_ref": 0.8843500108477824
+   },
+   "50-70": {
+    "diff_ref": 2.5420135613651103,
+    "ref": 0.09662951352064915,
+    "study_ref": 1.417543364135022
+   },
+   "70-95": {
+    "diff_ref": 4.697371555763506,
+    "ref": 0.14533915700979247,
+    "study_ref": 3.8228616191684
+   },
+   "95-130": {
+    "diff_ref": 1.959228068385317,
+    "ref": 0.31088493512244186,
+    "study_ref": 1.15627861385038
+   }
+  },
+  "quiet_gyre": {
+   "130-180": {
+    "diff_ref": 1.2467025921658779,
+    "ref": 0.030419837197996943,
+    "study_ref": 0.46842366647734357
+   },
+   "180-250": {
+    "diff_ref": 2.552374909775984,
+    "ref": 0.047170825315856826,
+    "study_ref": 2.2750562063873474
+   },
+   "250-400": {
+    "diff_ref": 5.687566608320393,
+    "ref": 0.058228727019477663,
+    "study_ref": 5.803159651586821
+   },
+   "400-1000": {
+    "diff_ref": 9.958519860126092,
+    "ref": 0.3880680159580667,
+    "study_ref": 9.80392839553682
+   },
+   "50-70": {
+    "diff_ref": 1.0024050200585937,
+    "ref": 0.04309816868400997,
+    "study_ref": 0.003850511706339142
+   },
+   "70-95": {
+    "diff_ref": 1.010750599800299,
+    "ref": 0.0372096400924919,
+    "study_ref": 0.01885111044224232
+   },
+   "95-130": {
+    "diff_ref": 1.0380046323247278,
+    "ref": 0.03313282673979429,
+    "study_ref": 0.10991902506640149
+   }
+  },
+  "southern": {
+   "130-180": {
+    "diff_ref": 0.4232469851126621,
+    "ref": 0.80498430830774,
+    "study_ref": 0.44048118522572527
+   },
+   "180-250": {
+    "diff_ref": 0.3840018710411041,
+    "ref": 2.8278881010092176,
+    "study_ref": 0.5670469302696919
+   },
+   "250-400": {
+    "diff_ref": 0.46637626185302217,
+    "ref": 3.902532585486743,
+    "study_ref": 0.4640816684417257
+   },
+   "400-1000": {
+    "diff_ref": 0.9175242056456131,
+    "ref": 40.302922353507256,
+    "study_ref": 0.12486624755098492
+   },
+   "50-70": {
+    "diff_ref": 1.0088806223729303,
+    "ref": 0.08831978216654816,
+    "study_ref": 0.01704083845557666
+   },
+   "70-95": {
+    "diff_ref": 0.939509992956851,
+    "ref": 0.13566019931196988,
+    "study_ref": 0.10600055658539875
+   },
+   "95-130": {
+    "diff_ref": 0.6994454291230545,
+    "ref": 0.34485602057570186,
+    "study_ref": 0.24382404103659255
+   }
+  }
+ },
+ "track_psd_m2km": {
+  "equatorial": {
+   "13-25": 0.014156002576303651,
+   "130-180": 0.0068357126547287685,
+   "180-250": 0.00854258461261304,
+   "25-35": 0.005941963129905946,
+   "250-400": 0.009529632653656389,
+   "35-50": 0.006357869785443285,
+   "400-1000": 0.13599369710066395,
+   "50-70": 0.0045140866716114865,
+   "70-95": 0.005455362611153993,
+   "95-130": 0.006217373012415526
+  },
+  "kuroshio": {
+   "13-25": 0.05045687286939886,
+   "130-180": 0.11559198432271214,
+   "180-250": 0.4033554437855473,
+   "25-35": 0.02688190794098907,
+   "250-400": 0.7041815466697404,
+   "35-50": 0.03818650304717747,
+   "400-1000": 4.204489593688719,
+   "50-70": 0.03561726993412787,
+   "70-95": 0.053091066571235024,
+   "95-130": 0.0969879338772322
+  },
+  "quiet_gyre": {
+   "13-25": 0.01753041678642222,
+   "130-180": 0.00399672814735315,
+   "180-250": 0.007323067544653176,
+   "25-35": 0.006957572779545226,
+   "250-400": 0.008200989426850037,
+   "35-50": 0.006510469469564366,
+   "400-1000": 0.04286421622028999,
+   "50-70": 0.0041102623779232395,
+   "70-95": 0.003999515933235291,
+   "95-130": 0.004035005759741594
+  },
+  "southern": {
+   "13-25": 0.06966427462623856,
+   "130-180": 0.16016688289653974,
+   "180-250": 0.4184278871137149,
+   "25-35": 0.0361645946928968,
+   "250-400": 0.4352468949139732,
+   "35-50": 0.050800239950965595,
+   "400-1000": 3.8744978849762988,
+   "50-70": 0.04928549675171947,
+   "70-95": 0.0744801022779696,
+   "95-130": 0.11515010838345743
+  }
+ },
+ "track_segments": {
+  "equatorial": 690,
+  "kuroshio": 614,
+  "quiet_gyre": 716,
+  "southern": 944
+ },
+ "unrecorded_cut_finding": "\u26d4 FINDING (owner pin 205b), one level deeper than 201's defect: southern's 0.084 / 0.988 are quoted at 500-1000 km, a cut that is NOT on the canonical grid (SKILL_BANDS carries 400-1000) and that no committed code produces. The figures came from an unrecorded ad-hoc band cut, so until this artifact existed a quoted number that the UNDER-powered class rests on had no reproducible band definition behind it. It is recomputed here from its explicit cut and verified; the finding is that it needed one."
+}

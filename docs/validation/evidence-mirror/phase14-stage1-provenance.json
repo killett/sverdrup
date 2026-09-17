@@ -28,6 +28,7 @@
     "c2_touch_tally": "the LOCKED-INSTRUMENT tally (see src/sverdrup/validation/locked_tier.py) — owner-named in pin 56. 'Tally byte-identical' is standing discipline and cannot be self-witnessed",
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.headroom_minima_recovered": "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a `headroom` argument and does not pass it to build_evidence_row, so no tile row has ever carried one. The legs are finished and the logs are gitignored on a single box, so this is the only item in the stage that re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; witnessing it is the whole point. Recovery is NOT repair — the 151(b) gap stands and is recorded as found",
+    "phase14.stage1.band_spectra": "owner pin 201(d). The per-band study/ref and diff/ref tables for all four tiles on the canonical SKILL_BANDS grid (205c), the fine-band track PSDs behind 181(c), and the verification of every figure the rulings quote — recomputed read-only from the PERSISTED maps through the scorer's own path, no solve (201a, pin 114's class). Mirrored because the THREE-CLASS finding rests on these numbers and until this node existed they lived only in prose: the diagnostics printed and exited, so pin 56(c) applied exactly — a re-typeable number in prose is not the record. It carries 205(b)'s finding too: southern's 0.084/0.988 came from an ad-hoc cut no committed code produced. The tables are a MEASUREMENT and belong here; the three-class READING is an interpretation and stays in the pack (197b)",
     "phase14.stage1.headroom_leg1_floor_unrecoverable": "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), so only a 5-minute heartbeat existed and a dip between beats is gone for good. Mirrored because the node it amends is witnessed and this one was not: a reader arriving at the witnessed minima could not learn that one of the four numbers is a bound, which is pin 64's failure mode exactly. It also carries an arithmetic correction to the text that ordered it (the supporting gaps are 0/360/74 MiB, median 74 — not the '306-328' that text states, which are heartbeat COUNTS). Registered together with the forward pointer; mirroring it without the pointer would leave it witnessed and still unreachable",
     "phase14.stage1.anchor_gate_artifact_shas": "pin 58(d). Check-1's mean, Gamma and variance routes recorded the comparison OUTCOME but no sha of the artifact compared against, so a later substitution would have re-passed. This node captures those shas. Witnessing it is the whole point — an unwitnessed sha record closes nothing",
     "phase14.stage1.gate5_mu_witness_scope": "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one of the three rests on phase13_lane0_mean.nc, witnessed forward-only",
@@ -213,7 +214,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-12T00:37:39.811196+00:00",
+  "generated_utc": "2026-09-17T02:13:29.623292+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -1280,6 +1281,346 @@
             "sha256": "6955afb889ddfc943da8521dd4deafdc44713d7c5f768d245685ca2befda1f7f"
           }
         ]
+      }
+    },
+    "phase14.stage1.band_spectra": {
+      "digest_sha256": "9949ecaca718e1dfbb25cc7cf9f1635633830fe822d9a969fc1087f3131ed222",
+      "value": {
+        "label": "STAGE1-EVIDENCE",
+        "kind": "MEASUREMENT — read-only recomputation from the PERSISTED maps and tracks through the scorer's own path. No solve, no re-run, no recorded value changed (owner pin 201a; same class as pin 114's post-hoc recovery)",
+        "pin": "201 (a)-(d), 205 (a)-(d)",
+        "produced_by": "scripts/diag_stage1_hypothesis_tests.py",
+        "canonical_grid_km": [
+          [
+            400,
+            1000
+          ],
+          [
+            250,
+            400
+          ],
+          [
+            180,
+            250
+          ],
+          [
+            130,
+            180
+          ],
+          [
+            95,
+            130
+          ],
+          [
+            70,
+            95
+          ],
+          [
+            50,
+            70
+          ]
+        ],
+        "canonical_grid_rule": "owner pin 205(c): SKILL_BANDS is CANONICAL. A future quote comes from this grid or states its own cut explicitly in this same artifact. A number quoted from a cut nobody can reproduce is the prose-only failure wearing a decimal point",
+        "not_an_interpretation": "owner pin 197(b): these are measurements and belong in the store. The THREE-CLASS reading built on them is an interpretation and stays in the pack — the store holds measurements and firewalled hypotheses",
+        "naming_hazard_pin_178": "the vendored quantity called `coherence` elsewhere is 1 - psd_diff/psd_ref = 2*sqrt(r)*Re(gamma) - r and is NOT a coherence. The ratios here are the raw PSD ratios and carry no such relabelling",
+        "unrecorded_cut_finding": "⛔ FINDING (owner pin 205b), one level deeper than 201's defect: southern's 0.084 / 0.988 are quoted at 500-1000 km, a cut that is NOT on the canonical grid (SKILL_BANDS carries 400-1000) and that no committed code produces. The figures came from an unrecorded ad-hoc band cut, so until this artifact existed a quoted number that the UNDER-powered class rests on had no reproducible band definition behind it. It is recomputed here from its explicit cut and verified; the finding is that it needed one.",
+        "track_psd_m2km": {
+          "kuroshio": {
+            "400-1000": 4.204489593688719,
+            "250-400": 0.7041815466697404,
+            "180-250": 0.4033554437855473,
+            "130-180": 0.11559198432271214,
+            "95-130": 0.0969879338772322,
+            "70-95": 0.053091066571235024,
+            "50-70": 0.03561726993412787,
+            "35-50": 0.03818650304717747,
+            "25-35": 0.02688190794098907,
+            "13-25": 0.05045687286939886
+          },
+          "southern": {
+            "400-1000": 3.8744978849762988,
+            "250-400": 0.4352468949139732,
+            "180-250": 0.4184278871137149,
+            "130-180": 0.16016688289653974,
+            "95-130": 0.11515010838345743,
+            "70-95": 0.0744801022779696,
+            "50-70": 0.04928549675171947,
+            "35-50": 0.050800239950965595,
+            "25-35": 0.0361645946928968,
+            "13-25": 0.06966427462623856
+          },
+          "equatorial": {
+            "400-1000": 0.13599369710066395,
+            "250-400": 0.009529632653656389,
+            "180-250": 0.00854258461261304,
+            "130-180": 0.0068357126547287685,
+            "95-130": 0.006217373012415526,
+            "70-95": 0.005455362611153993,
+            "50-70": 0.0045140866716114865,
+            "35-50": 0.006357869785443285,
+            "25-35": 0.005941963129905946,
+            "13-25": 0.014156002576303651
+          },
+          "quiet_gyre": {
+            "400-1000": 0.04286421622028999,
+            "250-400": 0.008200989426850037,
+            "180-250": 0.007323067544653176,
+            "130-180": 0.00399672814735315,
+            "95-130": 0.004035005759741594,
+            "70-95": 0.003999515933235291,
+            "50-70": 0.0041102623779232395,
+            "35-50": 0.006510469469564366,
+            "25-35": 0.006957572779545226,
+            "13-25": 0.01753041678642222
+          }
+        },
+        "track_segments": {
+          "kuroshio": 614,
+          "southern": 944,
+          "equatorial": 690,
+          "quiet_gyre": 716
+        },
+        "skill_by_band": {
+          "kuroshio": {
+            "400-1000": {
+              "ref": 70.95574638274255,
+              "study_ref": 0.8843500108477824,
+              "diff_ref": 0.1106241755637723
+            },
+            "250-400": {
+              "ref": 9.975755326566656,
+              "study_ref": 0.8869673033951878,
+              "diff_ref": 0.19059104764207457
+            },
+            "180-250": {
+              "ref": 4.489383697691217,
+              "study_ref": 0.6093299743651494,
+              "diff_ref": 0.48370433581242833
+            },
+            "130-180": {
+              "ref": 0.7400665324152974,
+              "study_ref": 0.37544920995575365,
+              "diff_ref": 0.7516268820447775
+            },
+            "95-130": {
+              "ref": 0.31088493512244186,
+              "study_ref": 1.15627861385038,
+              "diff_ref": 1.959228068385317
+            },
+            "70-95": {
+              "ref": 0.14533915700979247,
+              "study_ref": 3.8228616191684,
+              "diff_ref": 4.697371555763506
+            },
+            "50-70": {
+              "ref": 0.09662951352064915,
+              "study_ref": 1.417543364135022,
+              "diff_ref": 2.5420135613651103
+            }
+          },
+          "southern": {
+            "400-1000": {
+              "ref": 40.302922353507256,
+              "study_ref": 0.12486624755098492,
+              "diff_ref": 0.9175242056456131
+            },
+            "250-400": {
+              "ref": 3.902532585486743,
+              "study_ref": 0.4640816684417257,
+              "diff_ref": 0.46637626185302217
+            },
+            "180-250": {
+              "ref": 2.8278881010092176,
+              "study_ref": 0.5670469302696919,
+              "diff_ref": 0.3840018710411041
+            },
+            "130-180": {
+              "ref": 0.80498430830774,
+              "study_ref": 0.44048118522572527,
+              "diff_ref": 0.4232469851126621
+            },
+            "95-130": {
+              "ref": 0.34485602057570186,
+              "study_ref": 0.24382404103659255,
+              "diff_ref": 0.6994454291230545
+            },
+            "70-95": {
+              "ref": 0.13566019931196988,
+              "study_ref": 0.10600055658539875,
+              "diff_ref": 0.939509992956851
+            },
+            "50-70": {
+              "ref": 0.08831978216654816,
+              "study_ref": 0.01704083845557666,
+              "diff_ref": 1.0088806223729303
+            }
+          },
+          "equatorial": {
+            "400-1000": {
+              "ref": 2.3261570087907053,
+              "study_ref": 2.1882984308312614,
+              "diff_ref": 2.037714454863722
+            },
+            "250-400": {
+              "ref": 0.06285636921566838,
+              "study_ref": 4.29087528308122,
+              "diff_ref": 5.169037852355476
+            },
+            "180-250": {
+              "ref": 0.07069828153539107,
+              "study_ref": 1.0714431130293023,
+              "diff_ref": 1.9945252218663567
+            },
+            "130-180": {
+              "ref": 0.0644554958753841,
+              "study_ref": 0.21697560968721732,
+              "diff_ref": 1.2497372703581677
+            },
+            "95-130": {
+              "ref": 0.0601775886767075,
+              "study_ref": 0.08723011552403323,
+              "diff_ref": 1.1052008548725878
+            },
+            "70-95": {
+              "ref": 0.05748440410832032,
+              "study_ref": 0.017559824644998303,
+              "diff_ref": 1.0127252822946664
+            },
+            "50-70": {
+              "ref": 0.044454398013670404,
+              "study_ref": 0.0029200744103055278,
+              "diff_ref": 1.0006625354874492
+            }
+          },
+          "quiet_gyre": {
+            "400-1000": {
+              "ref": 0.3880680159580667,
+              "study_ref": 9.80392839553682,
+              "diff_ref": 9.958519860126092
+            },
+            "250-400": {
+              "ref": 0.058228727019477663,
+              "study_ref": 5.803159651586821,
+              "diff_ref": 5.687566608320393
+            },
+            "180-250": {
+              "ref": 0.047170825315856826,
+              "study_ref": 2.2750562063873474,
+              "diff_ref": 2.552374909775984
+            },
+            "130-180": {
+              "ref": 0.030419837197996943,
+              "study_ref": 0.46842366647734357,
+              "diff_ref": 1.2467025921658779
+            },
+            "95-130": {
+              "ref": 0.03313282673979429,
+              "study_ref": 0.10991902506640149,
+              "diff_ref": 1.0380046323247278
+            },
+            "70-95": {
+              "ref": 0.0372096400924919,
+              "study_ref": 0.01885111044224232,
+              "diff_ref": 1.010750599800299
+            },
+            "50-70": {
+              "ref": 0.04309816868400997,
+              "study_ref": 0.003850511706339142,
+              "diff_ref": 1.0024050200585937
+            }
+          }
+        },
+        "ruling_quote_verification": [
+          {
+            "tile": "kuroshio",
+            "band_km": [
+              70,
+              95
+            ],
+            "on_canonical_grid": true,
+            "source": "owner pin 181; PROGRESS pathological-band table",
+            "quoted": {
+              "study_ref": 3.823,
+              "diff_ref": 4.697
+            },
+            "computed": {
+              "study_ref": 3.8228616191684,
+              "diff_ref": 4.697371555763506
+            },
+            "per_field_agrees": {
+              "study_ref": true,
+              "diff_ref": true
+            },
+            "agrees": true
+          },
+          {
+            "tile": "equatorial",
+            "band_km": [
+              250,
+              400
+            ],
+            "on_canonical_grid": true,
+            "source": "owner pin 181; PROGRESS pathological-band table",
+            "quoted": {
+              "study_ref": 4.291,
+              "diff_ref": 5.169
+            },
+            "computed": {
+              "study_ref": 4.29087528308122,
+              "diff_ref": 5.169037852355476
+            },
+            "per_field_agrees": {
+              "study_ref": true,
+              "diff_ref": true
+            },
+            "agrees": true
+          },
+          {
+            "tile": "quiet_gyre",
+            "band_km": [
+              400,
+              1000
+            ],
+            "on_canonical_grid": true,
+            "source": "owner pin 201(c)",
+            "quoted": {
+              "study_ref": 9.804,
+              "diff_ref": 9.959
+            },
+            "computed": {
+              "study_ref": 9.80392839553682,
+              "diff_ref": 9.958519860126092
+            },
+            "per_field_agrees": {
+              "study_ref": true,
+              "diff_ref": true
+            },
+            "agrees": true
+          },
+          {
+            "tile": "southern",
+            "band_km": [
+              500,
+              1000
+            ],
+            "on_canonical_grid": false,
+            "source": "owner pins 172/196(b) — the UNDER-powered class",
+            "quoted": {
+              "study_ref": 0.084,
+              "diff_ref": 0.988
+            },
+            "computed": {
+              "study_ref": 0.08351378654693409,
+              "diff_ref": 0.9879271783290573
+            },
+            "per_field_agrees": {
+              "study_ref": true,
+              "diff_ref": true
+            },
+            "agrees": true
+          }
+        ],
+        "all_ruling_quotes_reproduced": true
       }
     },
     "phase14.stage1.crn_production_defect_deferred": {
