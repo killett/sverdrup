@@ -3391,3 +3391,137 @@ calls raised at the PART 47 landing.
   was run and why*. **This is now a durability rule in CLAUDE.md**, not a habit maintained
   by memory (the same correction pin 131 applied to the format/suite ordering). **Evidence
   that states its own scope is pins 78, 83 and 134 compressed into one line.**
+
+## PART 49 — THE ASSEMBLED VIEW'S FINDINGS DISPOSED (verbatim), pins 199–205, 2026-09-11 → 2026-09-16
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-16.** Issued in two messages in answer to
+the ten items the assembled view (pin 198) could not find, and to the reports that followed.
+
+> 199. KUROSHIO'S 7,389 IS PRE-FIX — LABEL IT, DO NOT RE-PIN THE GATE.
+>      (a) Re-derived: 4,259 + 8 x 391.2 = 7,389, reproducing the recorded peak exactly from
+>          the retention slope. Leg 1 predates pin 133. The three post-fix legs are
+>          4,817 / 4,951 / 4,986 and the gate is 1.99x the worst.
+>      (b) LABEL kuroshio's peak_rss_mib in the assembled view and the pack as PRE-133, not
+>          comparable to the post-fix basis. A stale number sitting beside a live one in the
+>          same column is how the next reader computes 1.34x and re-raises this.
+>      (c) CLOSE THE COMPARABILITY QUESTION IN ONE LINE: confirm southern's row
+>          peak_rss_mib equals the boundary-trace peak used as the basis. If they agree, the
+>          two methods agree and the basis stands. If the row's ru_maxrss EXCEEDS the
+>          boundary maximum on any post-fix leg, the basis is under-set by whatever peaks
+>          inside a solve, and that comes to me.
+>      (d) Good catch. Recording it rather than adopting it was right.
+> 200. ⛔ MIRROR headroom_leg1_floor_unrecoverable AND INDEX IT — pin 64, live.
+>      The amended node is witnessed and the amending ruling is neither mirrored nor
+>      reachable. A reader at the witnessed record cannot learn that leg 1's 3,660 MiB is an
+>      upper bound. Mirror the node and add the forward pointer through the index. Do this
+>      before the pack; a pack citing headroom minima must not sit above an unreachable
+>      qualification.
+> 201. REGENERATE THE PER-BAND TABLES AS A RECORDED ARTIFACT — authorised, bounded.
+>      You were right to decline unprompted; I am authorising it. The three-class structure
+>      is the stage's headline finding and its evidence currently exists only in prose.
+>      (a) Read-only recomputation from the persisted maps via the committed
+>          diag_stage1_hypothesis_tests.py. No solve. Same class as pin 114's post-hoc
+>          recovery.
+>      (b) WRITE THE OUTPUT TO A FILE, in the tree. That the diagnostics wrote nothing is
+>          the defect; running them again without fixing it repeats it.
+>      (c) Reproduce the numbers the rulings quote — kuroshio 3.823/4.697 at 70-95, equatorial
+>          5.169 at 250-400, quiet gyre 9.804/9.959 at 400-1000, southern 0.084/0.988 at
+>          500-1000. ANY DISAGREEMENT STOPS and comes to me: the classes rest on them.
+>      (d) It is a measurement artifact, so it goes in the store and the mirror — unlike the
+>          three-class READING, which stays in the pack per 197(b). The distinction is
+>          numbers versus interpretation.
+> 202. THE OTHER SEVEN — fold, with three flagged.
+>      (a) THE PIN-191 COLLISION IN A STORE NODE is fork residue and must be corrected: a
+>          store node citing a 191 the authoritative series does not contain is the same
+>          provenance break 40 and 41 exist to prevent. Correct the citation; if the node is
+>          witnessed, forward-pointer it rather than editing.
+>      (b) TWO RECORDS OF THE SAME EQUATORIAL LOGS DISAGREEING ON SHA AND SAMPLE COUNT is not
+>          cosmetic. Establish which is right and why they differ before the pack cites
+>          either. A disagreement between two records of one artifact is exactly what the
+>          witness machinery is for.
+>      (c) scores.reduced_chi2 EMPTY WHILE EVERY QUOTED chi2 IS chi2_j3_validation — the pack
+>          must quote the populated field and say which it is. An empty field named
+>          reduced_chi2 beside a quoted chi-squared invites the wrong one being read.
+>      (d) The rest are corrections: PROGRESS's phantom headroom_backfill node, kuroshio's
+>          missing sigma, and the three rows without a headroom key (expected — 186(a) fixed
+>          forward, and headroom_minima_recovered carries them; say so where the absence
+>          shows).
+>      (e) 112(c) confirmed by the store as written is worth keeping in the assembled view.
+>          It is the one place a ruling can be checked against the record and match exactly.
+>
+> SEQUENCE: 200, then 201, then 199(b)/(c), then 202. STOP after — T9 opens on my word.
+>
+> 203. THE DEVIATION IS RATIFIED — correcting the citation before mirroring was right, and
+>      my sequence was wrong. 202(a)'s forward-pointer clause applies to nodes ALREADY
+>      witnessed; 200 would have made this one witnessed, so my ordering would have spent a
+>      supersession on a mislabel. Take a free correction while it is free. Record the
+>      reasoning beside the correction so the next reader sees why the order differed.
+> 204. 199(c) CLOSED, WITH THE CAVEAT AS THE ANSWER. No post-fix row exceeds its boundary
+>      maximum; TIER2_MEASURED_PEAK_MIB is exactly southern's row value; worst post-fix peak
+>      4,986.42 gives 1.986x.
+>      (a) YOUR CAVEAT IS RATIFIED AND SETTLES IT RATHER THAN LEAVING IT OPEN: ru_maxrss and
+>          VmHWM are one kernel high-water mark through two interfaces, so no independent
+>          instrument exists. Record that, not "corroborated."
+>      (b) Corroboration is not needed here and say why: a kernel high-water mark is not a
+>          derived statistic, it is monotone non-decreasing over the process lifetime, and it
+>          therefore errs conservatively for a launch threshold. Self-consistency is the
+>          relevant check and it passed.
+>      (c) That reasoning belongs in the record. It is the first time in this stage a
+>          single-instrument measurement has been ACCEPTED as sufficient, and the grounds
+>          matter more than the acceptance.
+> 205. 201 AS YOU PROPOSE, PLUS THE CAUSE.
+>      (a) Emit the ruling-quoted-bands verification table alongside the standard grid,
+>          computing my four (tile, band) pairs explicitly including (500, 1000). Any
+>          disagreement stops.
+>      (b) THE REAL FINDING IS THAT SOUTHERN'S NUMBERS CAME FROM AN UNRECORDED AD-HOC CUT.
+>          That is 201's defect one level deeper: not just that the tables went unwritten,
+>          but that a quoted figure has no reproducible band definition behind it. Record it
+>          as a finding, not as a band-grid inconvenience.
+>      (c) PIN THE STANDARD GRID AS CANONICAL. Future quotes come from SKILL_BANDS or state
+>          their own cut explicitly in the same artifact. A number quoted from a cut nobody
+>          can reproduce is the prose-only failure wearing a decimal point.
+>      (d) If a ruling-quoted figure cannot be reproduced even from its explicit cut, STOP.
+>          The three classes rest on these numbers and I would rather learn that now than in
+>          the pack.
+>
+> SEQUENCE: finish 200's commit; run 205; then 199(b) and the 202 remainder. STOP after —
+> T9 opens on my word, and 205(d) or 202(b) each stop it independently.
+
+Also received in this period, as plain owner instructions rather than numbered pins: the
+suite's live-network failures were to be handled by **re-running the full suite, then
+widening the offline guard as its own item**; and the owner's PDF dependencies were to be
+**pinned like the others**, with **docling in its own environment (option A)**.
+
+### What PART 49 changes
+
+- **✅ 200 DONE (`37b2d95`).** `headroom_leg1_floor_unrecoverable` is mirrored and reachable
+  through a forward pointer from `headroom_minima_recovered`. **202(a) was done first,
+  while the node was still unwitnessed** — `pin: "191"` corrected to `188(a)`, with a
+  `citation_correction` field recording both the fork residue and why the order differed
+  (203). No supersession spent.
+- **✅ 201/205 DONE (`d00f4e6`).** `scripts/diag_stage1_hypothesis_tests.py` now **writes**
+  `docs/validation/phase14-stage1-band-tables.json` and, with `--record`, the same payload to
+  `phase14.stage1.band_spectra` (mirrored). **All eight ruling-quoted figures reproduce
+  exactly at quoted precision**, and so do the n=28 correlations (−0.254 / −0.121) and
+  181(c)'s rise ratios in all four tiles. **205(d) did not fire.** `SKILL_BANDS` is
+  **CANONICAL** (205c). **205(b) is recorded in the artifact as a FINDING:** southern's
+  0.084 / 0.988 sit at a 500–1000 km cut that no committed code produced until now.
+- **✅ 199(c)/204 CLOSED.** Row `peak_rss_mib` equals the leg log's maximum heartbeat
+  `peak_rss` on all four legs, and `TIER2_MEASURED_PEAK_MIB` is exactly southern's row value.
+  **No post-fix row exceeds its boundary maximum; the basis stands at 1.986×.**
+  ⭐ **FIRST SINGLE-INSTRUMENT MEASUREMENT ACCEPTED AS SUFFICIENT IN THIS STAGE — and the
+  grounds are the record (204c):** `ru_maxrss` and `VmHWM` are **one kernel high-water mark
+  through two interfaces**, so **no independent instrument exists** and the agreement is
+  **self-consistency, NOT corroboration** (204a). Corroboration is not needed, because a
+  kernel high-water mark is **not a derived statistic**, is **monotone non-decreasing** over
+  the process lifetime, and therefore **errs conservatively for a launch threshold** (204b).
+- **⛔ 202(b) — ESTABLISHED, AND IT REACHES A WITNESSED ROW.** The node's hashes are exactly
+  the hashes of the current files **truncated to 418 of 427 lines** (`leg.log`) and **1,533
+  of 1,535** (`vmhwm.log`). The appended lines were written by the **equatorial re-score** at
+  2026-09-10T06:05Z **into the leg's own log files**. Both records hashed correctly at their
+  own moment; **the node describes the LEG, the row describes leg + re-score.** Minima and
+  the whole heartbeat block are unaffected. **The row's `sampler_log.sha256`, `n_samples`
+  (1,535 vs 1,533) and `max_mem_available_mib` (10,379 vs the leg's 9,953) include the
+  re-score.** This is pin 190's hazard arriving by a second route — **a shared log file** —
+  which 190's code fix does not cover. **The row is witnessed; its remedy is the owner's.**
+  Per the SEQUENCE line, this **blocks T9** until it is ruled.

@@ -1,0 +1,4785 @@
+# Phase 14 Stage 1 — PROGRESS trail archive
+
+**What this is.** The `[TRAIL — superseded by CURRENT STATE above; kept, not deleted]`
+blocks that sat between PROGRESS.md's CURRENT STATE block and its older phase sections,
+moved here **verbatim** on 2026-09-18 (from PROGRESS.md as of commit `f3c7aa0`, lines
+535–5302, blockquote preserved). Moved, not rewritten: the byte content below is exactly
+what PROGRESS.md carried, so the trail stays whole and readable in the tree, not only in
+git history. Owner pin 154 made the CURRENT STATE block the only block describing now;
+these blocks are history and must not be read as current.
+
+**Why moved.** PROGRESS.md reached 504,170 bytes and the repo's 500,000-byte large-file
+hook refused a commit. CLAUDE.md's durability rules say PROGRESS's Current work block is an
+index and its other sections hold canonical content — a 325 KB superseded trail is neither.
+Migrate, don't duplicate: nothing here is repeated in PROGRESS.md.
+
+---
+
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ THE LEG-1 GATE — FOUR ITEMS, ALL MUST BE TRUE (owner handoff H3, 2026-08-31)
+>
+> | # | Item | State |
+> |---|---|---|
+> | 1 | **121 — per-window persistence, BIT-IDENTICAL at ≥2 windows** | ✅ **DONE** — CI at 2 windows + production path on kuroshio (`starts=(0.0,45.0)`, m=2): both windows' η and anomaly digests IDENTICAL against a FRESH two-window monolithic baseline |
+> | 2 | **122 — atomic checkpoint write landed** | ✅ done (temp-and-rename + truncation refusal, mutation-checked) |
+> | 3 | **124 — the two residual sweep items folded** | ✅ done (attestation form verbatim; verifyCommand = the gate suite) |
+> | 4 | **THE OWNER DECLARES THE BOX BACK AND STABLE (R1)** | ✅ **DONE 2026-08-31** — *"box is stable"*, landed verbatim as ruling doc **PART 33** |
+>
+> **✅ ITEMS 1–3 RATIFIED AND CLOSED BY THE OWNER (pin 130, 2026-09-01).**
+> **✅ ITEM 4 DISCHARGED 2026-08-31 (PART 33). THE GATE IS FOUR-FOR-FOUR — R1 IS LIFTED
+> AND LEG 1 LAUNCHES.**
+>
+> **⚖ WHAT THE DECLARATION DOES NOT COVER:** pin 132's third carried item stands — a power
+> event still costs the window in flight (~3.44 h). Pin 121 capped the loss at ONE window;
+> it did not remove it. A stable box lowers the probability, not the cost.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 143–149 LANDED (PART 36). 144/145/146/148 DONE; 143 DONE; 147(a) RUNNING.
+>
+> **144 — NO EARLIER COLLAPSE.** The `AMENDMENTS` literal was reconstructed from the AST
+> at **every commit that ever touched it** (7 commits, 2026-07-29 → 09-01): keys 9 → 10,
+> pointers 14 → 16, **zero duplicate-key commits, zero pointers vanishing from a surviving
+> node.** Today's three were the first and never reached a commit. Widened, because the
+> failure belongs to the literal and not to that one variable: **every dict literal in the
+> repo** was swept for duplicate constant keys — **zero**.
+>
+> **148 — CHECK 2's CITATION IS NOT HOLLOW.** Both golden-tile legs FIRED:
+> **mu 6.23×** over its 0.002 tolerance (−0.012457) and **map RMS 4.10×** over its 0.010
+> (0.041034) — your figures exactly. The `mu_scale_check` is two-sided for a different
+> reason worth keeping: its discriminator is an **equality against an independent
+> artifact** (`phase13_lane0_mean.nc`, 1.43 cm rms; lane0 0.76953 vs mu_a 0.76941), so had
+> the generalized path drifted, the same check returns *drift* instead of *scale mismatch*.
+> **No finding; 148 does not stop.**
+>
+> **145 — THE SWEEP IS DOWN FROM 33 TO 9.** All **24 phase14 blocks are DECLARED** at
+> `phase14.stage1.reachability_declarations` (pass condition, fail condition, outcome
+> observed, per block). The **9 uncited prior-phase blocks are RECORDED AS FOUND** in that
+> same node with the citation test that cleared them — and they **stay in the sweep
+> output**, so they are visible on every run rather than quietly exempted.
+>
+> **⚖ THE APPEND-ONLY GATE FIRED ON ME, CORRECTLY.** Witnessing the node at pin 148's
+> two-block tranche and then growing it to 24 tripped `STORE HAS DRIFTED from the witnessed
+> mirror`. Resolved the deliberate way — `sync --supersede … --reason`, prior body
+> preserved — not by re-syncing reflexively. That is the mechanism working on its author.
+>
+> **143 — THE CONSUMER SIDE, THREE SUBJECTS DECLARED IN CODE.**
+> 1. **E-16 §2's launch gate** (`tier2_launch_gate`) now emits `basis_span`: cites the
+>    probe's `measured_one_window`, `measured_over` **1 window**, `application_range`
+>    **9 windows**, extrapolation declared, and **leg 1's outcome beside it (1.69×)** with
+>    the status stated plainly — *this gate's threshold is 1.18× the measured leg peak, not
+>    the 2× it names.*
+> 2. **The 40 h ceiling** — `40 = 31.0 × 1.3`, and the 31.0 is itself one window × 9.
+>    Declared, with leg 1's 19.67 h beside it. ⚖ Worth stating: **a ceiling set from a
+>    PESSIMISTIC projection is safe in the direction that matters**, which is why this one
+>    cost nothing while the RAM basis cost a margin asserted as 2×.
+> 3. **A third subject the sweep found: `STAGE1_PCG_MAXITER = 1200`**, derived as 2× the
+>    converged 19-degree probe's worst leg and applied at unmeasured geometries. One-sided
+>    in the safe direction, and **leg 1 exercised the margin for real — two member-batch
+>    legs took 502 and 505 iterations**, over the 500 default a smaller cap would impose.
+>
+> **146 — BOTH MECHANICAL.** (a) The declarations node's exemption is now pinned by a test
+> that drives the seal-run walker with a **malformed** node and asserts it FAILS — the
+> exemption is only safe because the stricter validator is wired, not described. (b) §7
+> discipline 11's instances are tagged `(i1)…(i8)` and the **count is derived**:
+> `tests/test_project_context_instances.py` asserts the tags are contiguous, unique and
+> complete, and **refuses any restated prose count**.
+>
+> **✅ 147(a) IS DONE — THE SLOPE IS FLAT. THE RETENTION IS GONE.** kuroshio, m=25, four
+> windows, fresh store, 2.6 h.
+>
+> | window | solved | peak at boundary | Δ | RSS at boundary |
+> |---|---|---|---|---|
+> | w+00000.0+60 | 00:58:18 | 3,226 MiB | — | 2,079 MiB |
+> | w+00045.0+60 | 01:39:01 | 3,226 MiB | **+0** | 2,101 MiB |
+> | w+00090.0+60 | 02:09:47 | 3,323 MiB | +97 | 2,231 MiB |
+> | w+00135.0+60 | 02:45:57 | 3,323 MiB | **+0** | 2,225 MiB |
+>
+> **Mean 32.3 MiB/window against the 93.4 MiB/window a failed fix would show** (489,920 ×
+> 25 × 8 B), and total growth **+97 MiB against +280**. The single +97 step is **not** at a
+> boundary: the peak trace puts it at **01:42:22, three minutes INTO window 3's solve**,
+> and windows 3→4 added **zero**. **Accumulation is monotone per window; this is not** —
+> and the RSS column falls at the last step (2,231 → 2,225), which retention cannot do.
+> ⛔ **147(d) does not trigger. 147(b) is not pointless and proceeds.**
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 150–153 LANDED (PART 37) AND FOLDED. LEG 2 LAUNCHES AT **9,146 MiB**.
+>
+> **150 — THE BASIS IS RE-PINNED.** `TIER2_MEASURED_PEAK_MIB = 4573.0`, threshold
+> **9,146 MiB**. The 4,365 one-window figure is **preserved, not overwritten**, at
+> `TIER2_MEASURED_PEAK_SUPERSEDED` with why it fell. **8,730 no longer admits** — pinned
+> in the test, because 1.909× is the "close enough" that produced the 1.18×.
+> The gate's `basis_span` now declares **3 windows measured → 9 applied**, bounded by the
+> flat-slope evidence, with leg 1's working-set variation **−170 to +236 MiB** recorded and
+> a nine-window peak near **~4,809 MiB** covered at **1.90×**. **Leg 2 closes the
+> projection (150c)** — nine windows at production scale, boundary peaks recorded, basis
+> re-pinned from the direct measurement afterward.
+>
+> **151 — THE GATE NOW HOLDS THE BOX.** `stage1_solve_lock` is taken at leg start and held
+> to the end (released in the same `finally` that stops the heartbeat): a second Stage-1
+> solve is **REFUSED by name** while it is held. A lock whose holder is **dead** is taken
+> over and **the takeover is recorded** — a leg killed by a power event must not block every
+> future leg, and a lock that vanishes without a trace teaches nothing. `HeadroomTracker`
+> samples MemAvailable **during** the run; the row now carries
+> `headroom.min_mem_available_mib` beside the peak, and the heartbeat prints it live.
+>
+> **152 — THE PIN-42 RE-KEY REFUSES.** `seal_run check` now FAILS on any undeclared
+> verdict- or threshold-bearing block. The **9 uncited prior-phase gates print every run**
+> under `NOTED (pin 145b, recorded as found — not reopened)` and are **not fatal**; a NEW
+> undeclared block **is**. Both halves test-pinned.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⚖ 147(b) — THE MEASUREMENT BEHIND THE 150 RE-PIN
+>
+> kuroshio, **m=100, three windows**, solve path, fresh store, **6.79 h** (2.264 h/window
+> vs leg 1's 2.174 — within variation while sharing the box for part of the run).
+>
+> | window | solved | peak at boundary | Δ | MemAvailable |
+> |---|---|---|---|---|
+> | w+00000.0+60 | 04:49:25 | 4,426 MiB | — | 6,441 MiB |
+> | w+00045.0+60 | 06:51:10 | 4,426 MiB | **+0** | 8,782 MiB |
+> | w+00090.0+60 | 08:59:48 | 4,573 MiB | +147 | 6,116 MiB |
+>
+> **FLAT at production scale.** Retention at m=100 would add **373.8 MiB at EVERY
+> boundary**; two boundaries produced **+147 total**. The peak changed exactly ONCE in the
+> whole run — at **06:56:08, five minutes INSIDE window 3's solve**, not at a boundary.
+> Same signature as 147(a) at m=25.
+>
+> **THE NUMBERS FOR THE BASIS RULING:**
+> - **Corrected peak: 4,573 MiB** (3 windows, m=100, solve path, fix in) — 141(a)'s
+>   requirement; the 1,235 MiB reassembly figure is 133(e)'s acceptance and is **not** this.
+> - Against leg 1's unfixed nine-window peak of 7,389 MiB, the fix removes **2,816 MiB**.
+> - **8,730 / 4,573 = 1.909×** — after the fix, **today's standing threshold is already
+>   close to the 2× it names**, so the basis change is small: **2 × 4,573 = 9,146 MiB**
+>   (+416 over today).
+> - Headroom during the run: **5,767–8,782 MiB**. 9,146 is reachable at the top of the
+>   cycle, not always — the same wait leg 2 already faces.
+> - **⚖ IT IS STILL A PROJECTION (pin 143a):** measured over **three** windows, applied to
+>   **nine**. The same 1→9 mistake one step smaller, and what bounds it is the slope
+>   evidence, not an assumption of linearity. Recorded in the gate's own `basis_span`.
+>
+> **⛔ RECORDED, NOT ADOPTED.** `TIER2_MEASURED_PEAK_MIB` still reads 4,365 — re-pinning it
+> is yours (pins 133c, 141). The gate record now carries the re-measure beside the old
+> basis so a reader meets both where the threshold is used.
+>
+> **⚖ TWO THINGS TO REPORT HONESTLY ABOUT THAT LAUNCH.**
+> 1. **It overlapped 147(a) for 34 minutes** (02:12–02:46). Peak RSS is per-process, so the
+>    basis number is unaffected, but the box was carrying two production-shaped jobs while
+>    a gate premised on 2× headroom for ONE had just passed. The gate measured the box, not
+>    the box's future.
+> 2. **⛔ THE SAMPLER TRACKED THE WRONG PROCESS.** `pgrep -f 'phase14_r5_resume_probe.py
+>    solve'` matched BOTH probes, so 147(b)'s sampler latched onto 147(a)'s pid and wrote
+>    `process gone` at 02:45 while 147(b) ran on — **the wrapper-vs-real failure family
+>    again, in a new guise: not wrapper vs real, but two legitimate matches.** Nothing was
+>    lost (VmHWM is a kernel high-water mark and no window boundary fell in the gap) and
+>    the trace is re-attached, keyed on `--m 100` with a guard that **REFUSES** a
+>    non-matching pid rather than sampling it.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ PINS 139–142 LANDED (ruling doc PART 35). 139 DONE; 140 SWEPT — REPORT BELOW.
+>
+> **139 — THE AUDIT NOW REFUSES, AND THE ELEVEN ARE DECLARED.**
+> `phase14.stage1.projection_declarations` records **12 blocks / 27 axes**, each with the
+> range **MEASURED** and the range **APPLIED** (139c — values, never a flag) and stated
+> **PER AXIS** (139d). **No witnessed node was edited (139b):** five nodes gained
+> forward pointers through the pin-64 index, now **21 pointers over 12 nodes**. `seal_run
+> check` **PASSES with the refusal live**.
+>
+> **⚖ 139(a)'s "expect that asymmetry again" — FOUND, and it is worse than the wall case.**
+> The probe's RAM projection was **never written as a projection at all**:
+> `measured_one_window.peak_rss_mib` became the launch-gate basis with **no derived
+> field**, so **no field name could catch it** — the shape-keyed audit is blind to it too.
+> The wall axis at least carried a prose caveat. It is declared by hand, and **the audit's
+> limit is recorded in the node**: a shape-keyed check reads what was written down, and
+> cannot see a projection that lives only in a reader's head. Both axes now carry leg 1's
+> measured outcome beside them — **wall 0.63×, RAM 1.69×**.
+>
+> **⚖ TWO DEFECTS FOUND WHILE LANDING IT, both fixed and test-pinned:**
+> 1. **The audit flagged its own remedy.** The declarations node quotes projected field
+>    names as keys, so the walker refused it. The node is now **exempt from the audit and
+>    validated by a STRICTER rule instead** (`validate_projection_declarations`) — the
+>    exemption is only safe because of that, or it would be a hole big enough to hide
+>    anything in.
+> 2. **⛔ THREE FORWARD POINTERS WERE SILENTLY DISCARDED.** `AMENDMENTS` is a dict
+>    literal; three of the five keys I added **already existed later in it**, so Python
+>    kept the later value and dropped mine — **and the index's own regression check
+>    passed, because from its side the pointers had never existed.** Fixed by appending to
+>    the existing lists, and **test-pinned by parsing the source AST**, since a dict cannot
+>    report a duplicate after it has collapsed.
+>
+> **140 — THE SWEEP, REPORTED BEFORE ANY REFUSAL (140c).** `verdict_audit` re-keys pin 42
+> on shape: a block recording a **verdict** or carrying a **threshold** is inspected
+> whether or not it volunteers; `gates: false` exempts it (pin 98 — recording is a
+> legitimate state). Vocabulary kept deliberately narrow: `rtol` rides all 68 pcg rows and
+> is not a verdict.
+>
+> **⛔ 33 BLOCKS GATE WITHOUT STATING REACHABILITY. NONE declares pin-42 fields. NONE is
+> marked `gates: false`.** By branch: **phase14 24**, phase13 3, phase8 3, stage_b 2,
+> phase10 1. **Nine are prior-phase records**, which is why this is a report and not yet a
+> refusal — retro-refusing them is heavier than the eleven, and it is your call.
+> **140(b) is folded:** §7 discipline 11 carries the instance in your words — *a schema
+> field that only inspects volunteers inspects nothing* — plus a bookkeeping note that the
+> list's stated count ("Six instances to date") has drifted from its own enumeration.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔ LEG 2 IS HELD ON PIN 133. Diagnosis DONE, fix LANDED, peak re-measure QUEUED.
+>
+> **✅ PINS 133–138 RULED AND LANDED 2026-09-01 (ruling doc PART 34, verbatim).**
+>
+> **133(a) — THE MECHANISM.** `merged_members` accumulates every window's member block
+> into the dicts it returns; `_save_window` writes the block to disk and the in-memory
+> copy stays live. A probe with **zero solving** (fake method, production-shaped arrays)
+> reproduces it exactly: **+377.5 MiB per window** (eta 3.7 + anom 373.8). Not the
+> solver, not fragmentation. Secondary and minor: `Miost._eta_cache` is **unbounded**
+> (3.7 MiB/window); `_s_cache` is correctly bounded at 2. The eta cache is LEFT ALONE —
+> 34 MiB over a leg, and bounding it risks re-solves.
+>
+> **⚖ ARITHMETIC CORRECTION, and it changes the ruling's numbers.** The reported "3,379
+> MiB after window 1" was the **first heartbeat at 0.09 h — inside window 1, before the
+> member batch**. Re-derived at window boundaries: `4259, 4873, 5377, 5666, 6063, 6555,
+> 6763, 7069, 7389`, so the slope is **(7389−4259)/8 = 391.3 MiB/window**, which the
+> retained arrays (377.5) plus the eta cache (3.7) account for. **Post-fix peak is
+> therefore ~4,259 MiB and 2× is ~8,518 MiB — not the ~6,758 the ruling estimated.**
+> Still inside the cycle, so **E-16 §2 stands unchanged (133b)** — with less room than
+> the estimate implied.
+>
+> **133(b) — THE FIX IS LANDED (`75684bd`).** With a window store, `merged_members`
+> returns a `WindowBackedAnoms` reader over the store (two blocks resident, loaded on
+> demand) and keeps only the cheap `eta`/`start` fields eager. The leg store is now
+> **streamed**, one window at a time, because `np.savez(**payload)` would pull all nine
+> back at the end of the leg and restore the peak **while producing a correct file**.
+>
+> **133(e) — ACCEPTANCE IS 121's, AT PRODUCTION SCALE, WITHOUT RE-SOLVING.** Leg 1 left
+> both halves on disk, so reassembling its store from its nine window files is the test:
+> **all 31 members bit-identical (sha256 over exact bytes), 1,235 MiB peak, 2 blocks
+> resident.** The pin-121 two-window bit-identity tests now run through the lazy path
+> unchanged; new tests pin the residency bound, the reload identity, and the streamed
+> writer's equivalence and atomicity.
+>
+> **⏳ THE PEAK RE-MEASURE IS QUEUED, NOT RUNNING — it is waiting for headroom.**
+> Three windows at production scale (kuroshio, m=100, FRESH store so every window really
+> solves), via the R5 probe's non-evidence-bearing path. **The driver holds at the SAME
+> gate a leg would (`MemAvailable ≥ 8730 MiB`)** and polls every 5 min; the box is at
+> ~5.9 GiB. Pin 133(d) refuses a margin that is asserted rather than held, and a
+> measurement that sneaked in under the gate would make that mistake one level down.
+> Log `logs/pin133/vmhwm.log`; VmHWM sampled every 60 s so the trajectory is measured.
+>
+> **✅ 135 RATIFIED** — the `tiles.*` mirror registration stands.
+> **✅ 136 DONE** — **task 23** added (`blockedBy [9]`): the post-gate C-11 producer,
+> recording the election outcome AND its scope to `phase14.stage1.refresh_election`
+> (pre-registered in the mirror now, the lane-0 precedent), with **a decline recorded as
+> an outcome** and **Stage 1 not closing while C-11 is outstanding (136c)** stated in the
+> contract table itself. T9's AC now says presenting with an empty decision cell does NOT
+> discharge the line (136b).
+> **✅ 137 DONE** — T9 pack item (10) carries the C1→2 table beside T11's.
+> **✅ 138 DONE** — `scripts/check_task_citations.py` resolves citations against the
+> **tracker**; both coverage docs' verify steps and T12's `verifyCommand` now use it.
+> **It is worse than the ruling assumed: ELEVEN tracker-only tasks, not two.** The plan
+> prose stops at Task 12, so **T13–T23** all read as phantoms to the old method. Drift is
+> reported as INFO; only an id no task carries fails.
+> **✅ 134 — WHY PIN 78 DID NOT FIRE. THE HOLE IS WORSE THAN "ONLY SEALED GATES".**
+> Pins 42 and 78 are enforced by `validate_gate_schema`, which examines a block **only
+> if the block says `kind: "gate"` or `kind: "validation"` about itself.** Swept over the
+> live store:
+> - **`kind: gate` appears ZERO times.** Pin 42's reachability refusal **has never fired
+>   on any block in this project.**
+> - **`kind: validation` appears exactly ONCE** — `phase14.stage1.rho_model_range_limitation`,
+>   the ρ-model node that motivated pin 78. The rule has only ever inspected its own
+>   instance.
+> - **`kind` is overloaded**: the store also uses it for `member-batch`, `poly`,
+>   `challenge-coarsen`, and free prose (`"recorded outcome, NOT a gate"`,
+>   `"DESIGN CONFLICT (pin 106)"`). The schema discriminator collides with domain use.
+>
+> So it is not that the refusal set covers only sealed gates — **it covers only blocks
+> that volunteer, and essentially nothing volunteers.** The pin-89 probe scaled ONE window
+> to nine in a field whose own name says `per_tile_wall_h_if_linear_in_windows`, with the
+> caveat **in prose, where no check reads it**. ⚖ And the asymmetry that actually cost us:
+> **the wall extrapolation carried a caveat; the RAM one carried none** — the launch gate
+> took `measured_one_window.peak_rss_mib` as a leg peak with nothing stated at all. The
+> caveat covered the axis they worried about, not the axis that broke.
+>
+> **THE FIX IS SHAPE, NOT SELF-DECLARATION:** `projection_audit()` keys on the block's own
+> field names (`if_linear|extrapolat|projected|predicted|implied|forecast|scaled_to`) and
+> passes it only when a machine-readable basis is present — `measured_over` (so a probe
+> can state its span without relabelling itself a validation), `validated_range`,
+> `application_range` or `extrapolation_declared`. Wired into `phase14_seal_run.py check`.
+>
+> **⛔ IT REPORTS; IT DOES NOT REFUSE — AND THAT IS AN OWNER DECISION, NOT A SOFTENING.**
+> It catches **11 already-recorded blocks** across 6 nodes (the two seam σ diagnosis
+> lines, both settling-measurement half-split reproductions, the pin-54 condition, the
+> shared-observation channel, both CRN-mechanism prediction blocks, and **both pin-89
+> probe blocks**). Turning the audit into a refusal **retro-refuses recorded evidence**,
+> which needs your ruling: (a) refuse now and declare the 11 by forward-pointer amendment
+> (the established mechanism — never a rewrite), (b) refuse for blocks recorded from here
+> on, or (c) keep it reported. `seal check` currently PASSes with the audit printed.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ LEG 1 IS DONE — kuroshio CONVERGED in 19.67 h. ⛔ LEG 2 DOES NOT LAUNCH YET.
+>
+> **The leg finished cleanly**: 9/9 windows, `CONVERGED`, `capped=False`, solve 19.57 h,
+> leg 19.67 h, recorded at `phase14.stage1.tiles.kuroshio` and **witnessed in the mirror**
+> (35 nodes, `check` PASS). Seal `check` PASS; `store vs mirror: PASS (no witnessed node
+> has changed)`.
+>
+> **The reading (REPORT-ONLY, numbers only — no interpretation is recorded anywhere):**
+> µ **0.285954**, σ **0.218613**, λx **232.53 km** on **89,383** scored points;
+> raw-σ **0.038187** and scalar-s\* **416.678**, both labelled `REFERENCE-ONLY, NOT
+> CALIBRATED`; **coverage_1σ 0.009778** (n=89,383); **χ²_j3_validation 416.678**, which is
+> the s\*/χ² **IDENTITY** (`same_by_construction`, `not_corroboration` — pin 100), recorded
+> and **non-gating** (pin 98). `bridge_caveat` verbatim, seal sha quoted.
+> Report block: SpectralFidelity `spec_slope −4.8330 ± 0.0204`; **four recorded absences**
+> (calibration, skill, **groundtrack**, insitu_gauges) — pin 106's named gap, exactly as
+> predicted. Land-mask exercise: framed **138,518** / scored **89,383** / calibration
+> **89,383**, gap **0**.
+>
+> **⛔⛔ E-16 ITEM 4 RE-ASSESSMENT — THE PROBE WAS WRONG IN BOTH DIRECTIONS, AND ONE OF
+> THEM IS AN OWNER DECISION.**
+>
+> | axis | pin-89 probe (1 window) | leg 1 (9 windows) | ratio |
+> |---|---|---|---|
+> | wall per window | 3.440 h | **2.174 h** | **0.63× — probe PESSIMISTIC** |
+> | leg wall | 31.0 h extrapolated | **19.67 h** | 0.63× |
+> | **peak RSS** | **4,365 MiB** | **7,389 MiB** | **1.69× — probe OPTIMISTIC** |
+>
+> **The RAM miss is STRUCTURAL, not tile variation — same tile, same m.** Peak RSS grows
+> monotonically with window count: 3,379 MiB after window 1 → 7,389 MiB at window 9
+> (+~500 MiB/window early, tapering). **A one-window probe cannot measure a nine-window
+> leg's peak**, and `MemAvailable` bottomed at **~3,660 MiB** during the run.
+>
+> **⚖ THE LAUNCH GATE'S BASIS IS NOW FALSE, AND ONLY THE OWNER CAN RE-PIN IT.** E-16 §2
+> sets the gate at **2 × the MEASURED peak**. On the probe's 4,365 MiB that gave 8,730 MiB.
+> On leg 1's measured **7,389 MiB**, the same rule demands **14,778 MiB** — **more than
+> this box's observed cycle top (~11.2 GiB), so the rule as written is UNSATISFIABLE and
+> legs 2–4 would never launch.** Keeping 8,730 silently would be worse: it is now **1.18×**
+> the true peak, not 2×, and the gate would be asserting a headroom margin it no longer
+> has. **This is an E-16 §2 basis change and it is not an executor call.** Three shapes,
+> priced: (a) hold 8,730 and accept ~1.18× — the box survived leg 1 at exactly that;
+> (b) 2 × 7,389 = 14,778 — correct by the rule, unreachable on this box, legs stop;
+> (c) re-pin the multiplier against the PRODUCTION peak (e.g. 1.3 × 7,389 ≈ **9,606 MiB**,
+> reachable at the top of the cycle).
+>
+> **The raised PCG cap EARNED ITSELF, with evidence:** member-batch legs recorded **502
+> and 505 iterations**. Against the library default of 500 those two windows would have
+> exited CAPPED, and a capped leg can only under-report. `maxiter=1200` is in every pcg
+> row. Achieved residuals all `< 1e-6` at rtol 1e-6.
+>
+> **⚖ WITNESSING GAP FOUND AND CLOSED — FLAGGED FOR RATIFICATION.** The T5 tile rows were
+> in **no** `MIRRORED` entry, and **no `NOT_MIRRORED` group names them** — omission by
+> absence, the pin-101(a) "incidental narrowness" shape. The store is gitignored, so
+> before this the kuroshio reading existed in exactly ONE place with no git history and no
+> mirror. All four `phase14.stage1.tiles.*` paths are now registered (kuroshio witnessed;
+> the other three PENDING, registered before their legs run — the lane-0 manifest
+> precedent), with the report-only siblings deliberately left out and the reason recorded
+> in-line. **This is a witnessing addition, not a change to any recorded value; the owner
+> should ratify or reverse it.**
+>
+> **NEXT ACTION: OWNER.** (1) the E-16 §2 launch-gate basis, above — leg 2 (southern) is
+> HELD on it; (2) ratify the mirror registration; (3) still owed from T12: Findings 1 and 5.
+>
+> ---
+>
+> ## [superseded — kept for the trail] LEG 1 LAUNCH BLOCK — kuroshio, launched 2026-08-31 22:44 PDT (05:44 UTC)
+>
+> **Command:** `pixi run python -u scripts/phase14_stage1_run.py run kuroshio --m 100
+> --maxiter 1200` (E-16 order: kuroshio first — riskiest path AND the de-risked one).
+> `setsid`-detached, `nohup`, stdin `/dev/null`.
+> - **log** `logs/t5_leg1_kuroshio.log` · **real pid** `904620` (`logs/t5_leg1_kuroshio.pid`)
+>   · pixi wrapper `904521` (`…wrapper.pid`). **The pid was captured from the launch, then
+>   RESOLVED against `pgrep -af 'phase14_stage1_run.py run kuroshio'`** — the wrapper-vs-real
+>   confusion is the named failure mode that produced three false completion reports.
+> - **Launch gate PASSED in-process, recorded in the log:** `mem_available_mib 10689.36`
+>   vs `threshold_mib 8730.0` (2 × the MEASURED 4365 MiB peak, pin 89 — not the model's
+>   5154, which over-predicts by 18%).
+> - **PCG cap 1200** = `STAGE1_PCG_MAXITER` (pin 26b), already the CLI default; E-16 item 5
+>   is satisfied without an override. The achieved residual is recorded per leg.
+> - **Framing done at +44 s:** `kuroshio: framed obs 138518, grid 96x97`.
+> - **Watcher armed** (E-16 item 6): completion on **pid exit**, stall on **log-growth age
+>   > 5 h** (one measured window is 3.44 h and the heartbeat is per-window, so a shorter
+>   threshold false-alarms), and a hard **40 h ceiling** trip. All three exit the watcher
+>   loudly rather than waiting.
+>
+> **⛔ STOP CONDITIONS ON THIS LEG (E-16, unchanged):** over 40 h → **STOP and report**, do
+> not run on. **RE-ASSESS AFTER LEG 1 BEFORE LAUNCHING LEG 2** — 31.0 h is ONE measured
+> window × 9, and this leg is the test of that extrapolation. Near 31 h → the remaining
+> three are predictable; high → stop and report at ~31 h, not after five days.
+>
+> **Crash durability:** per-window store `phase14_stage1/kuroshio_windows` (pin 121) +
+> the leg's own member store afterwards. A hard kill now costs ONE window, and resume is
+> automatic on relaunch (`RESUME from own member store` / per-window load).
+>
+> **NEXT ACTION: none for the executor while the leg runs.** On completion: verify the
+> evidence row, `seal_run check` PASS, tally byte-identical, commit
+> `feat: stage1 kuroshio transfer reading recorded`, then **re-assess before leg 2
+> (southern)**.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ✅ T12 IS DONE (2026-08-31) — and it TRIPPED ITS STOP CONDITION. TWO RULINGS OWED.
+>
+> `docs/superpowers/2026-08-31-phase14-stage1-c1to2-coverage.md`. The C1→2 contract
+> walked both directions: **C-01…C-11** segment spec §3.2's C1→2 sentence, **C-12…C-14**
+> are the owner-added lines (86a inheritance package, 37(c) contract line, 87 production
+> defect). T12 was the ONLY runnable Stage-1 work — T5 is stopped on gate item 4 (R1),
+> and T18/T19/T20 are `[STAGE 2]` under pin 88's halt.
+>
+> **⛔ FINDING 1 (STOP-condition trigger) — C-11 "the Gate-1 shipped-config election
+> OUTCOME with its scope" IS ASSIGNED TO NO TASK AC.** The plan produces the *question*:
+> T9 pack item (7) presents the presumptive rule (δ_j3 := δ_j2n, scope = Stage-2G
+> assembly onward) with the decision cell EMPTY, and T9's terminal AC is *"STOP after
+> posting — Gate 1 is the owner's."* **After the owner rules, nothing writes the outcome
+> or its scope anywhere.** Stage 2 would inherit a contract line discharged by a
+> presentation of an undecided question. Same shape as T11's Finding 1: the deliverable
+> is the *reading*, and only the machinery around it was assigned. *Remedy shape (owner's,
+> not the executor's): a post-gate recording AC on T9 — outcome + scope at e.g.
+> `phase14.stage1.refresh_election`, ruling cited by sha/section — or a one-AC closing
+> task after the Gate-1 walk.*
+>
+> **⛔ FINDING 5 — THIS TABLE HAS NO SLOT IN THE GATE-1 PACK.** T12's own AC requires it
+> posted *"beside the instrument table"*, but T9's pack list (items 1–13) names only
+> **item (10) the T11 table**. One AC edit, same ruling.
+>
+> **Carried, already ruled, and now written into the contract:** Finding 2 — C-06's
+> reading composition ships **INCOMPLETE** (no GroundTrack row at any of the four tiles,
+> pin 106; per-tile orbit geometry handed forward as named Stage-2 work with the
+> 0.410→0.331 context, 106d). Finding 3 — C-05's anisotropy input is **UNEVIDENCED** on
+> the directional axis (pin 108), so any kernel option resting on directional sampling is
+> unsupported and that is a **WAIT to the owner, not a T6 decision**. Finding 4 — C-03
+> **discharges on REPORTING, not on answering** (pin 84): two mean CLEAN + two σ
+> NOT_ESTABLISHED; Stage 1 has **no attributable σ-route seam verdict**. Finding 6 (LOW) —
+> T2/T7/T8/T11 discharge no C1→2 line and claim none.
+>
+> **⚖ TRACKER NOTE:** T13 and T22 exist only in `…spatial-2017.md.tasks.json` (ids 13,
+> 22), not as `### Task N:` headings in the plan prose — both were created by owner ruling
+> after the prose was written. T11's heading-only spot-check would read them as phantoms.
+>
+> **NEXT ACTION: the owner's.** Findings 1 and 5 want one ruling; T5 wants item 4 (R1).
+> **No executor work is unblocked on the Stage-1 critical path.** Remaining path is
+> unchanged: **T5 → {T6, T7, T8} → T9**, with T12 now closed.
+>
+> **⚖ CARRIED FORWARD — UNRESOLVED, AND NOT RESOLVABLE BY EXECUTOR WORK (owner pin 132):**
+> 1. **The four diverse tiles carry NO GroundTrack row** — pin 106's design conflict. The
+>    transfer readings are presented with their composition stated **INCOMPLETE**, in the
+>    transfer-readings section where the numbers are (106c), as a **real weakening** (106e).
+> 2. **T6's anisotropy axis is UNEVIDENCED** (108) — not "limited". Any kernel option whose
+>    case rests on directional sampling is **UNSUPPORTED BY STAGE-1 EVIDENCE**, and if the
+>    option set cannot be separated without it that is a **WAIT that comes to the owner**,
+>    not a decision T6 makes.
+> 3. **A power event still costs the window in flight (~3.44 h)** — the residual R5 could
+>    not remove. Pin 121 capped the loss at one window; it did not eliminate it.
+>
+> **✅ 121 MEASURED — the record is `docs/superpowers/2026-08-31-r5-resume-after-hard-kill.md` §7.**
+> Window 1 persisted at 640 s; the process GROUP was hard-killed 60 s later, mid-window-2;
+> the resume LOADED window 1 and SOLVED window 2 (532 s vs 1185 s) and reproduced BOTH
+> windows bit-identically. The decisive evidence that window 1 was loaded rather than
+> re-solved is the convergence log: **two** PCG rows on the resume `[430, 474]` where the
+> monolithic run recorded **four** `[437, 474, 430, 474]`. A hard kill now costs **one
+> window** instead of every completed one.
+>
+> **⛔ 121's ACCEPTANCE IS ≥2 WINDOWS (owner pin 127) — this is the thing a clear destroys.**
+> A fresh session told "test bit-identity" writes the ONE-window test, because it is the
+> obvious one, **and it cannot fail**: at one window, assembly IS the identity operation.
+> Precedent (127a): pin 43's replay failed its own check at **4.2e-17** because the member
+> axis must be fastest-varying — invisible at n=1, and exactly what per-window assembly can
+> reintroduce. Run it at **two windows, m=2**, against a **FRESH two-window monolithic
+> baseline** (127c). **⛔ `logs/r5/baseline.json` is RETIRED as 121's reference** — it is a
+> one-window digest and must not be quietly reused.
+>
+> **⛔ READY ≠ RUNNABLE (H4).** READY is `[5, 12, 18, 19, 20]`. **18, 19 and 20 are the
+> [STAGE 2] σ chain under pin 88's halt and MUST NOT BE STARTED.** Only **5 and 12** are
+> Stage-1 work.
+>
+> **⚖ RULED BUT UNFOLDED (H5, pin 124c)** — sweep rows 7–9 are RULED (pins 99a/b/c) with
+> their folds landing inside **T6/T7/T8**, which have not opened. This state is neither
+> "unruled" nor "done"; it is now marked **in the tracker itself**
+> (`…spatial-2017.md.tasks.json`, task ids 6/7/8), not left inferable from a checklist.
+>
+> **⚖ CARRY PIN 108 (H6):** T6's anisotropy axis is **UNEVIDENCED** at Stage 1 — not
+> "limited" — and 106's design conflict means **the southern tile's spectral slope stays a
+> degraded estimand regardless of 112's lookup fix**. The lookup fix recovered anchor and
+> the seam pair only.
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔⛔ START HERE — COLD BOX AFTER A PLANNED REBOOT (2026-08-01). READ THIS BLOCK FIRST.
+>
+> **THE BOX WAS REBOOTED DELIBERATELY BY THE OWNER.** If you are resuming on a cold box,
+> this block tells you what was lost (nothing) and what to do.
+>
+> **✅ WHAT WAS IN FLIGHT: NOTHING OF VALUE. NOTHING NEEDS RE-RUNNING.**
+> The R2 inventory was resolved from the pids captured at launch, not a scrape:
+> - `logs/gate.pid` = 1795155 → **already dead before the reboot**
+> - `logs/phase14_settling.pid` = 532474/532537/532886 → **already dead**
+> - **No** real `gate_suite`, `pytest` or phase14 worker process existed
+> - The 8 live processes were **stale watcher shells** spinning `sleep` with nothing behind
+>   them. One (`1695408`) was watching pid `1692440` — **itself another watcher shell**, so
+>   it would have spun forever and never seen the gate. That is the named failure mode from
+>   this session's three false completion reports, confirmed by resolution, not assumed.
+> - **No suite was mid-run**, so nothing was raced or killed mid-write. **Nothing to redo.**
+>
+> **✅ EVERYTHING IS ON ORIGIN.** A hook pushes on commit; verified against
+> `git ls-remote`, not the local ref. Working tree was clean at the reboot.
+>
+> **⛔ R4 — CORRECTED WHERE IT STANDS: `setsid` DOES NOT SURVIVE A REBOOT.** It protects
+> against the terminal or session closing, **not** against the machine going down. Any note
+> in this file implying the detach discipline gives reboot protection is **wrong** — it
+> gives none. Treat every long leg as lost on a power event.
+>
+> **⛔ R5 — A NEW PRECONDITION ON LEG 1: RESUME-AFTER-HARD-KILL IS UNVERIFIED.**
+> Per-window PCG checkpointing exists (`b71dc7f`, `efd515a`) and the anchor gate used a
+> leg-level crash resume, but **whether a T5 diverse leg can resume from checkpoint after a
+> hard kill has never been tested.** Verify it CHEAPLY — kill a short run mid-window and
+> resume it — **before** committing 31 h to a recovery path that is currently assumed.
+> Better to learn it now than during a power event in leg 3.
+>
+> **⛔⛔ R1 — LEG 1 DOES NOT LAUNCH WITHOUT THE OWNER SAYING THE BOX IS BACK AND STABLE.**
+> Regardless of RAM headroom. Regardless of whether T5b is finished. **Build only.**
+>
+> ---
+>
+> ## [TRAIL — superseded by CURRENT STATE above; kept, not deleted] ⛔ T5 IS AUTHORISED. **BUILD IT FIRST; LEG 1 IS STOP-CONDITIONED.**
+>
+> **✅ PINS 90–93 RULED AND LANDED 2026-08-01 (ruling doc PART 20, verbatim).**
+> **⛔⛔ HARD STOP CONDITION (91b): LEG 1 DOES NOT LAUNCH until the 91(a) stale-criteria
+> report is in front of the owner.** "A 31 h leg run against a stale criterion is 31 h
+> spent measuring the wrong thing."
+>
+> **SEQUENCE, owner-ordered:** land 90–93 ✅ (`c94c720`) → discharge criterion 8 per 90 ✅
+> (`5e65ecb`) → run 91(a) and report ✅ (`5469389`) → sweep RULED, pins 94–96 ✅
+> (`8d1bf0b`) → **build T5 (IN PROGRESS)** → launch leg 1 at the top of a RAM cycle.
+>
+> **✅ PINS 97–99 RULED AND FOLDED 2026-08-01 (ruling doc PART 22) — T9's OUTPUT SHAPE IS
+> SETTLED, deliberately BEFORE T5b hardens the rows that feed it.** All corrections are in
+> the plan (`6888e3a`).
+> - **97(a) "SIX transfer readings" → FOUR**, one per diverse tile, **test-pinned against
+>   the store** so it cannot drift back. The store settles it: `seam_n`/`seam_s` carry no
+>   `scores`/`reference_row`/`bridge_caveat` — solve records, not readings — and the
+>   artifact's own `non_transfer_note` says so. Anchor is the identity subject.
+> - **97(b) "anchor five-gate block" → the RULED ACCOUNTING**, citing
+>   `phase14_anchor_gate.py:164-177` as the discharge: TWO run and passed, TWO cited and
+>   pre-ratified at Gate 0, ONE proxy-passed with the era no-op DEFERRED.
+> - **97(c) "seam verdict" → TWO mean CLEAN + TWO σ NOT_ESTABLISHED**, stating that Stage 1
+>   has **NO attributable σ-route seam verdict**. **Pin 37(b)'s firewall HOLDS** — the
+>   diagnosis-derived bound must NOT sit adjacent to the UNMEASURED rows in any form a
+>   reader could take as a verdict.
+> - **97(d)** pack gains sections for **pins 61, 86, 87**.
+> - **98 — the χ² pin-42 field RECORDS, it does NOT GATE.** `harness.py:1145` made χ²
+>   non-gating deliberately ("coverage remains the only bar") and pin 42 does not reverse a
+>   decision. **The non-gating status is itself test-pinned** so a later reader cannot
+>   "complete" the bar that was deliberately left out.
+> - **99** — T6 collapses to `halo ≤ 2.0` (still COMPUTED from the frame, never typed);
+>   T7 rewritten against the live 40 h per-leg ceiling; T8 prices from the **CONVERGED**
+>   numbers (pin 89 + anchor gate), never the CAPPED T2 probe, basis stated in-row.
+>
+> **⚖ TWO SWEEP ITEMS REMAIN UNRULED — report-only still binds them (99d): do NOT fix.**
+> (i) T9's "**zero locked opens**" attestation vs pin 87's open production defect —
+> wording, not substance. (ii) T9's `verifyCommand` is bare `pytest`, which reproduces the
+> pre-format-tree defect **pin 83 exists to fix**; the gate suite is the correct command.
+>
+> **✅ PINS 100–102 RULED AND LANDED 2026-08-29 (ruling doc PART 23, verbatim).**
+> - **100 — the s\*/χ² identity is a SCHEMA FIELD** (`S_STAR_CHI2_IDENTITY`), not a
+>   docstring: shared expression named, `same_by_construction` asserted, and
+>   `not_corroboration` stated in the row so agreement can never be read as two
+>   witnesses. **Supports stay coincident (100a)** — splitting them to manufacture
+>   independence is REFUSED. **The identity is an INVARIANT (100c):**
+>   `build_scores_block` RAISES when the two values differ, so a future divergence
+>   fires loudly instead of serializing quietly. **Sixth instance of the
+>   unfailable-check family; §7 item 11's list now carries all six (100d).**
+> - **101 — the provenance-guard broadening is RATIFIED.** **101(a) CONFIRMED, with
+>   evidence, in both directions:** (i) the narrowness was INCIDENTAL, not a whitelist —
+>   the regex was born at `e4c7514` (Task 21), whose stated design is "attr-absent maps
+>   pass; a tagged map scored against an unidentifiable track fails loud"; there is no
+>   restrict-to-challenge-tracks clause anywhere, and at that time the only scoring
+>   targets in the repo WERE the gulfstream challenge files. (ii) **Nothing previously
+>   refused is now accepted.** Scanned all 2665 `.nc` names under `data/`: **zero** names
+>   the old regex resolved and the new one does not, **zero** whose mission token
+>   changed, 1900 newly resolved (the CMEMS dailies + the per-tile scheme). The newly
+>   resolved names move from *blanket refusal (unidentifiable)* to *checked against the
+>   assimilated list* — a leak can never be downgraded to a pass, because detection needs
+>   `mission ∈ assimilated` and the token is IDENTICAL wherever both patterns resolve.
+>   Non-scheme names still yield None and still fail loud (test-pinned). One corner is
+>   now STRICTER, not looser: `dt_gulfstream_<m>_phy…` without `_l3` used to resolve and
+>   now refuses — no such file exists in the repo.
+> - **102 — the push hook did not fire because THERE WAS NO HOOK.** `.git/hooks` held
+>   only `pre-commit`; nothing anywhere pushed on commit, and the belief that something
+>   did is what let origin sit at `ba35d80`. **102(a) folded:** `scripts/git_hooks/post-commit`
+>   pushes, then **confirms against `git ls-remote`, not the local ref (102b)**, and on
+>   any failure prints a stderr banner AND writes `.git/UNPUSHED_COMMITS` so a later
+>   session trips over it. Installed via `scripts/install_git_hooks.sh` (`.git/hooks` is
+>   not versioned — a fresh clone or rebuilt box starts with no hook and says nothing).
+>   Both paths exercised in a scratch repo: loud banner + marker with no remote, and
+>   `origin/main verified at <sha> (ls-remote)` with marker cleared on success.
+> - **⛔ STANDING FORM (102b): every report line verifies against the REMOTE.**
+>   `git ls-remote origin <branch>` — never `git rev-parse HEAD` alone.
+>
+> **✅ PINS 103–105 RULED AND LANDED 2026-08-30 (ruling doc PART 24, verbatim); 103 + 104
+> FOLDED.**
+> - **103 — the identity invariant fired too late.** `calibration_readings` returns the
+>   SAME object as both `reduced_chi2` and `scalar_s_star`, so the row-build raise is
+>   unreachable on the current path: only a future caller wiring them from separate paths
+>   can trip it, and that is a CONSTRUCTION error — present from the first line, found at
+>   the END of a leg. **(a) `preflight_scores_construction()` now exercises the whole
+>   construction on synthetic numbers before either gate in `run` AND at the top of
+>   `_solve_leg`** (so a programmatic caller gets it too); it records nothing and is
+>   test-pinned to record nothing. **(b) the row-build raise STAYS** — a divergent row is
+>   wrong and must not be written. **(c) the pinned invariant is SINGLE-SOURCE, not
+>   agreement:** `readings["reduced_chi2"] is readings["scalar_s_star"]` at the computation
+>   hop, and `scores_from_readings` (the one wiring point) proven by sentinel to read both
+>   fields from the same mapping — an equality test would have survived a refactor that
+>   computed them twice from drifting inputs. **(d) §7 gains discipline 12:** a check earns
+>   its placement by where the error it catches ORIGINATES.
+> - **104 — hook installation is PROTOCOL now, not a gotcha.** `sh scripts/resume_checks.sh`
+>   is step 0 in `CLAUDE.md` and the first step of `docs/project-context.md` §10's boot
+>   sequence; it makes "no hook" a REPORTED state (exit 1), alongside the marker check, the
+>   `ls-remote` comparison and tree state. Both report paths exercised in scratch repos.
+> - **105 — the both-directions sweep is RATIFIED as the standard for widening a guard**
+>   (what was gained, and that nothing previously refused is now accepted).
+>
+> **✅ T5c IS DONE — GroundTrack wiring landed, ZERO new surfaces.**
+> `build_tile_report_block` → `report_only_instruments_block` → `Registry.applicable` +
+> `build_report_rows` (the same call the calibration harness makes), recorded by
+> `record_tile_report_block` at **`phase14.stage1.report_rows.<tile>.<era>` — deliberately
+> NOT under `tiles`**, which is where T9 reads gate-bearing evidence. `record_leg_evidence`
+> records both sides in one action so the report side cannot silently stop happening while
+> the evidence row keeps landing (the recorded Phase-11 `track_power` drift). Every
+> registry evaluator is accounted for: a standing row OR a `recorded_absences` entry naming
+> the missing context — and the absence is CHECKABLE (`geometry_artifact_expected_at` /
+> `_present` say where it looked). Both branches test-pinned; rows proven ⊆ the registry's
+> own evaluator names, so no Stage-1 producer can sneak in.
+>
+> **✅ PINS 106–107 RULED AND LANDED 2026-08-30 (ruling doc PART 25, verbatim); 106 FOLDED.**
+> The GroundTrack absence is **ACCEPTED for Stage 1 as a NAMED GAP** — fork F working, no
+> Stage-1 producer (106a). The spec tension is recorded as a **DESIGN CONFLICT** in
+> Cross-cutting decisions (106b), T9 must state the incomplete composition **in the
+> transfer-readings section where the numbers are** (106c, folded), and T12's C1→2 table
+> carries **per-tile orbit geometry as named Stage-2 work** with the 0.410→0.331 context
+> (106d, folded). The record says plainly it is a **real weakening** (106e).
+> **107 ANSWERED BEFORE BUILDING: the lane-0 bundle has NO orbit-geometry dependency** —
+> maps, the frozen fold/eval frame and pin 12's in-band-coverage claim all turn on the box,
+> not on geometry; `groundtrack` reads ORBIT_GEOMETRY at evaluation time and contributes
+> nothing to what is persisted. **One coupling folded into T5d now:** the manifest records
+> the INSTRUMENT COMPOSITION (standing rows + recorded absences with reasons), so a future
+> wave-increment run under per-tile geometry cannot be compared blind against a baseline
+> with a different composition. Bundle shape unchanged; the baseline becomes
+> self-describing.
+>
+> **[superseded by pin 106 — kept for the trail] OWNER DECISION OWED — GroundTrack will be ABSENT for all four diverse tiles.**
+> The only orbit-geometry artifact that exists is derived over the CHALLENGE box
+> (`build_geometry_artifact` fixes `_LON_LO`/`_LON_HI` and φ0 = 38.1) from the dc_obs L3
+> files. Using Gulf-Stream geometry at a Pacific tile would be geometry from the wrong
+> place. Deriving per-tile geometry from the CMEMS dailies is a NEW PRODUCER, which
+> criterion 2 forbids — so it is **not** done, and the absence is recorded honestly
+> instead. If the owner wants standing GroundTrack rows at the diverse tiles, that is a
+> scoped new task (per-tile geometry derivation), not a T5 edit.
+>
+> **✅ T5d IS DONE — the three per-tile extras, each firing for its ELECTED tile only.**
+> - **Equatorial lane-0 bundle (fork-b pins 1/2, pin 96).** `persist_lane0_bundle` copies
+>   the maps, writes `evidence_pack.json` + `fold_eval_frame.json`, and emits
+>   `lane0_manifest.json` carrying **fork-b pin 2 VERBATIM**, the pin-67 class
+>   **WITNESSED_AT_CREATION**, per-file sha+size (never contents — 96e: the manifest is
+>   mirrored, the maps are not), and the **instrument composition** (the pin-107 coupling,
+>   so a later wave-increment run under per-tile geometry can never be compared blind).
+>   `record_lane0_manifest` writes its own node, and that node is now in the evidence
+>   mirror's `MIRRORED` set — **a local manifest alone is self-witnessing (96c)**. The leg
+>   echoes a ⛔ WITNESS NOW line: until `phase14_evidence_mirror.py sync` + push lands, the
+>   manifest witnesses nothing (96b, pin 60's prospective guarantee).
+> - **Southern anisotropy inputs for T6** at `anisotropy_inputs.southern.<era>`: grid
+>   anisotropy **computed from the tile's own axes** (`dy/dx ≈ 1.72` at ~54.5°S) + the
+>   SpectralFidelity row **cited** from the recorded report block. **⚖ The per-direction
+>   TRACK half is a RECORDED ABSENCE** — it needs ORBIT_GEOMETRY, which pin 106 establishes
+>   is challenge-box scoped — with the consequence stated for T6: its anisotropy evidence
+>   is grid geometry + the ISOTROPIC ring spectrum, and it must not present its arithmetic
+>   as though per-direction sampling were measured.
+> - **Kuroshio land-mask exercise** at `land_mask_exercise.kuroshio.<era>`: all three
+>   counts (framed obs / scored points / calibration points) **with their gap**, so
+>   coverage and χ² are never read as resting on `n_scored_points`. The record states the
+>   mechanism honestly — **there is no explicit land mask**; land appears as absent obs and
+>   absent track points — and names the refusal path: an empty core RAISES in both
+>   `score_tile` and `calibration_readings`, uncaught in the scoring leg (test-pinned).
+>
+> **✅ PINS 108–109 LANDED (PART 26); THE 109(a) SWEEP IS DONE — REPORT:**
+> `docs/superpowers/2026-08-30-phase14-stage1-orbit-geometry-consumer-sweep.md`.
+> - **109(b) holds for the KEY, and is one quantity too narrow for the SURFACE.**
+>   `EffectiveResolution` did drop its over-declared `ORBIT_GEOMETRY` (2026-07-15, never
+>   read) and `SpectralFidelity` genuinely does not read it — **but fidelity consumes the
+>   geometry-DERIVED `track_wedge_masks`**, so without geometry its slope carries
+>   `wedge_exclusion:false`: a **degraded estimand, not an absence**. One direct consumer,
+>   one indirect, one correctly pruned.
+> - **T7 and T8 have NO exposure** (verified, not assumed): lanes/bands are
+>   parameter-space boxes and the revisit's rows are score deltas; T8 is pricing.
+> - **⚖ THE THIRD CLASS EXISTS, AND IT RUNS OPPOSITE TO 106 — OWNER DECISION OWED.**
+>   `phase11_orbit_geometry.json` **exists** (v3, φ₀ = 38.1, missions `alg h2g j2g j2n
+>   s3a`) in `ours/` — but `report_only_instruments_block` looks for it **beside the maps**,
+>   and the Stage-1 maps live one directory below. `anchor_signed_maps.nc` and
+>   `seam_n_signed_maps.nc` both carry **exactly that mission set** and sit **inside the
+>   box at its own φ₀**. So at `anchor`/`seam_n`/`seam_s` GroundTrack is absent and
+>   fidelity degraded **for a placement reason, not the 106 conflict** — the inputs exist,
+>   in-box, matching. NOT fixed (109a is report-only, and placing a geometry artifact in
+>   the evidence directory raises a witness question of its own).
+> - The four diverse tiles stay squarely inside 106: CMEMS codes (`h2ag` ≠ `h2g`) would be
+>   dropped by the mission filter, and the derivation is box-and-φ₀ scoped regardless.
+> - **109(c) folded:** the report carries the full Stage-2 consumer list (groundtrack; the
+>   wedge-mask path into fidelity — invisible to a grep for the key; T6's anisotropy axis;
+>   `operative_halo_deg()`/±66 via fork-d pin 4 + pin 10; T9 policy (b); and the
+>   `h2g`/`h2ag` mapping) so per-tile geometry arrives as a package, not one missing row.
+>
+> **✅ PINS 110–113 LANDED (PART 27) AND 110/111/112 FOLDED, in the ruled order.**
+> - **111 FIRST (production path).** `build_tile_validation_track` concatenated with
+>   xarray's default attrs handling, so every T5 leg would have written an
+>   evidence-labeled track claiming the FIRST daily file's 2-day coverage span for a year
+>   built from ~365 files. Now `combine_attrs="drop"` + provenance describing the
+>   concatenation itself; the coverage span is **test-pinned against the actual min/max
+>   times**, with a decoy attr in the fixture, so the assertion is about the data.
+> - **110 — both strays DELETED, with the record.**
+>   `docs/superpowers/2026-08-30-stray-artifact-deletion-record.md` carries what they were,
+>   when, by which test, and the `.nc` sha256 **before** removal
+>   (`a8d32733d38a0ed0…`, 105 787 bytes, written 2026-08-29T22:48Z).
+>   **(a) Root cause fixed:** autouse fixture sandboxes `STAGE1_DIR`/`EVIDENCE`/`LANE0_DIR`,
+>   and `_solve_leg` now threads them EXPLICITLY into every recorder — default arguments
+>   bind at import, so monkeypatching the constant alone would not have stopped the writes.
+>   `test_no_test_write_reaches_the_real_data_tree` inventories the REAL tree and asserts
+>   it is unchanged. **(b) Reuse is provenance-gated:** `write_track_build_record` +
+>   `assert_track_reusable` refuse a missing record, a sha mismatch, or another tile's
+>   track. **§7's instance list now carries it as the SEVENTH instance.**
+> - **112 — the LOOKUP fixed, not the placement.** `geometry_artifact_for` resolves the
+>   CANONICAL artifact in `ours/` (no copy into the evidence directory) and admits a tile
+>   only when the artifact's own `box_lon`/`phi0` cover it — read from the artifact, never
+>   typed, because four of five CMEMS codes match and a mission-keyed lookup would have
+>   handed Gulf-Stream geometry to a Pacific tile. `report_only_instruments_block` gained
+>   an optional explicit path; every existing caller is unchanged.
+>   **(c) `wedge_exclusion:false` is never bare again:** every block carries
+>   `wedge_exclusion_status.kind` — `IN SCOPE` vs **`DESIGN CONFLICT (pin 106)`** — with
+>   the consequence spelled out. Recovery is anchor + seam pair ONLY; the four diverse
+>   tiles stay degraded and **108 stands for T6 unchanged**.
+>   **(d) ANSWERED BEFORE THE FIX: additive only, NO supersession.** The store holds no
+>   `report_rows` node at all (T3/T4 ran before the T5c wiring), and every recorded
+>   anchor/seam value comes from `score_tile`/`their_eval`/seam metrics — no instrument row
+>   feeds any of them. Nothing recorded changes.
+> - **113 — the 109 sweep is RATIFIED**, including its correction of 106's scope.
+>
+> **✅ PINS 114–116 LANDED (PART 28); 115 AND 114 FOLDED, in the ruled order.**
+> - **115 — the scope pin is BEHAVIOURAL now.** The string scan is gone (it would pass on
+>   `1295` or `2.95e2`). Replaced by: a synthetic artifact with `box_lon=[195,220]`,
+>   `phi0=3.5` that INVERTS which tiles are in scope (equatorial in, anchor out); the
+>   adversarial case — an artifact whose mission set covers `kuroshio` exactly but whose
+>   box does not, asserting refusal; and the absent-artifact path. **Mutation-checked:** a
+>   hardcoded variant fails three separate assertions.
+> - **114 — RECOVERY DONE, additive, no solve.** `recover_report_rows` computes from the
+>   STORED maps (`stored_mean_map` resolves each tile's own artifact) and appends at
+>   `phase14.stage1.report_rows.<tile>.2017` for **anchor, seam_n, seam_s**. Test-pinned
+>   that the loader and the solver both RAISE if touched (114c). All three came back
+>   **`wedge_exclusion:true`** — 112(c)'s predicted recovery, box tiles only.
+> - **⚖ THE 0.331 REPRODUCTION IS A DETERMINISM CHECK — labelled as one (owner pin 119).**
+>   The anchor's `track_excess_log10_max_repeat` = **0.331012884019381**, bit-identical to
+>   the Phase-13 Gate-1 pack's recorded winner figure
+>   (`2026-07-21-phase13-gate1-pack.md:49`). **It is NOT independent confirmation of the
+>   founding metric:** the anchor maps were already bit-identical to the phase-13 winner
+>   (check 1, max|Δ| = 0), so an identical score FOLLOWS from identical inputs. What it IS:
+>   a genuine end-to-end wiring test that could have failed — a wrong map, a wrong mission
+>   filter, a wrong geometry artifact or a broken lookup would each have moved it. Same
+>   distinction as s*/χ² under pin 100: agreement that could not have failed to hold must
+>   never be read as corroboration. 114(d) does not trip — nothing recorded changed.
+> - **114(d) guard hardened by its own first run:** the naive comparison would have raised
+>   a FALSE supersession, because groundtrack legitimately reports **NaN** for families
+>   beyond the grid's Nyquist (flagged `under_floor`) and `nan != nan`. The guard compares
+>   canonical TEXT; the idempotency test does the same.
+> - **114(b) forward pointers via the MIRROR'S AMENDMENT INDEX**, never by editing the
+>   witnessed node — pin 64(b) forbids that in as many words. `anchor_gate` and `seam_pair`
+>   now point at `report_rows`, and each entry says the amending node is derived and
+>   re-derivable so it stays OUTSIDE the mirrored subset (56b) — reachability, not a
+>   witness claim. **The append-only index gate caught my first attempt** (I inserted the
+>   pointer at the front; append-only means appended) — the gate working.
+> - **⚠ Mirror defect found and fixed:** registering `equatorial_lane0_manifest` in
+>   `MIRRORED` during T5d broke `sync` outright — `select_nodes` demands every registered
+>   path resolve, and that node cannot exist until the stop-conditioned equatorial leg
+>   runs. Registered-but-unwritten paths are now **PENDING**: reported by name on every
+>   `sync` and `check`, and recorded in the manifest as `registered_but_not_yet_written`,
+>   so the registration cannot be forgotten and its absence cannot be read as a decision
+>   not to witness it. Mirror re-synced: **34 nodes, check PASS, 16 forward pointers**.
+>
+> **✅ T5e IS DONE — THE BUILD SIDE OF T5 IS COMPLETE, AND THE STAGE NOW WAITS ON YOU.**
+> Gate suite run in pin 83's order (`format → mypy → stamp → suite → verify`) via
+> `scripts/phase14_gate_suite.py`, detached, watched on **pid exit**:
+> - **suite: 1543 passed, 21 skipped, 1 xfailed — exit 0, 44:22**, and the stamp records
+>   the tree was **unchanged across the run** (419 files).
+> - **`gate_suite verify`: PASS** — 419 files unchanged since the suite ran, against a
+>   stamp that records a COMPLETED suite, so the evidence describes the committed tree.
+> - **seal `check`: PASS** — sha `a17ea419f1d1ca11…`, **re-derived**, not compared.
+> - **tally: BYTE-IDENTICAL** — sha256 `34cd71893f5123a8…` before and after. Zero touches.
+> - **mirror `check`: PASS** — 34 nodes, no witnessed node changed, seal matches, 16
+>   forward pointers, `equatorial_lane0_manifest` correctly reported PENDING.
+>
+> **✅ R5 IS DONE — PASS ON THE RULED BAR (pin 117). Report:**
+> `docs/superpowers/2026-08-31-r5-resume-after-hard-kill.md`.
+> Baseline 876 s (kuroshio, m=2, one window, production path); hard `kill -9` on the
+> **process group** mid-window with the checkpoint at `it = 50` of the member-batch solve;
+> resume 653 s; **η and anomaly digests IDENTICAL, PCG [437, 474] on both sides.**
+> - **⚠ FINDING 1 — the checkpoint covers ONE SOLVE, not the leg.** Completed windows live
+>   in memory until the leg's member store is written at the END. This kill recovered ~10%
+>   of one solve (50 of 474 iterations) and the already-complete mean leg (437) was
+>   **re-solved**. **A power event at hour 30 of a 31 h leg costs ~30 h, not ~0.** Resume
+>   protects the tail of one solve; it does not protect a leg. R5 asked whether 31 h legs
+>   are safe to launch — "resume works" answers a narrower question than that.
+> - **⚠ FINDING 2 — the checkpoint write is NOT atomic.** `np.savez` writes straight to the
+>   final path (~23 MB, no temp+rename), so a kill inside that write truncates the ONLY
+>   checkpoint. This run's kill landed clean. **Not fixed** — it is shipped solver code and
+>   the owner's call whether to change it before leg 1.
+> - **⛔ ATTEMPT 1 WAS INVALID and is recorded as such.** `pgrep` returned the **pixi
+>   wrapper**; the solver survived, finished, and a concurrent "resume" overwrote the
+>   record — and the comparison printed `BIT-IDENTICAL` from a run that was never killed.
+>   **E-16 §6 records this exact trap** and it was walked into anyway. Attempt 2 fixed it
+>   structurally: `setsid` + process-group kill, a survivor check, and an assertion that the
+>   killed run's log carries no completed-record line.
+> - **⛔ A SEPARATE LAUNCH-BLOCKING DEFECT, found by R5's dry run and FIXED:** `RSpec`
+>   refuses any mission outside the five CHALLENGE codes (the j3/c2 leak guard, correct),
+>   while CMEMS-MY labels the same HY-2A geodetic stream **`h2ag`**. Unrelabelled, **every
+>   diverse leg would have died at window 0**, ~30 s into a 31 h run. `_tile_framed_obs`
+>   now applies the recorded interpretation the golden tile already applies
+>   (`CHALLENGE_TO_CMEMS` inverse, `h2ag → h2g`), refusing loudly on any code without a
+>   counterpart, and the row records `mission_relabel`. **Note: pin 89's Tier-2 probe never
+>   hit this** because `_probe_solve` builds `Miost` WITHOUT the frozen `rspec` — the probe
+>   path and the production path differ in exactly the component that refused.
+>
+> **⛔⛔ NEXT ACTION IS THE OWNER'S, NOT THE EXECUTOR'S.** Everything T5 can build without
+> running a leg is built and verified. **Leg 1 does not launch until BOTH hold:**
+> **(1) R1 — you declare the box back and stable** (the reboot precondition; `setsid` gives
+> no protection against a power event, R4), and **(2) 91(b) — the 91(a) stale-criteria
+> report is ruled**; its items outside 97–99 remain report-only.
+> **R5 also stands and is CHEAP: resume-after-hard-kill on a T5 diverse leg is UNVERIFIED.**
+> Kill a short run mid-window and resume it BEFORE committing 31 h to a recovery path that
+> is currently assumed.
+>
+> **What leg 1 will run when released:** `pixi run python scripts/phase14_stage1_run.py run
+> kuroshio` (the plan's own ordering — riskiest path first, and the one pin 89's probe
+> already converged on), detached, at the top of a RAM cycle: the Tier-2 gate demands
+> `MemAvailable ≥ 8730 MiB` and REFUSES below it, and the leg stops and reports past ~40 h.
+>
+> **[superseded — kept for the trail] NEXT ACTION WAS: T5d — per-tile extras: equatorial lane-0 persistence bundle (maps +
+> pack + FROZEN fold/eval frame + pin 96's MIRRORED `lane0_manifest.json`), southern
+> anisotropy inputs for T6, kuroshio land-mask path assertions. Then T5e (gate suite →
+> launch). Leg 1 remains STOP-CONDITIONED (R1 + 91b): build only.**
+>
+> **[superseded — kept for the trail] NEXT ACTION WAS: T5c — GroundTrack wiring (T5 criterion 2) through the EXISTING
+> `Registry.applicable` + `report_rows` machinery; zero new producers, absence RECORDED
+> as absence.** Then T5d (per-tile extras: equatorial lane-0 persistence incl. pin 96's
+> mirrored manifest, southern anisotropy inputs, kuroshio land-mask assertions), T5e
+> (gate suite → launch). **Leg 1 is still STOP-CONDITIONED (R1 + 91b): build only.**
+>
+> **✅ T5b IS DONE — `_solve_leg` IS THE REAL LEG** (`bcc08b7`, `fda691c`, `4096a2e`).
+> Built against Task 4's `_seam_tile_leg` (pin 92): own member store + member-batch PCG
+> checkpoints, maps written BEFORE scoring, one pcg classifier, per-tile CRN root.
+> - **pin 94** — `SIGMA_CAVEAT` attached in `build_evidence_row` exactly as
+>   `BRIDGE_CAVEAT` is; a raw-σ row cannot be built without it; verbatim test-pinned;
+>   None where no raw σ is reported, so the calibrated anchor row is never stamped.
+> - **pins 95+98** — `build_scores_block`: pin-42 fields on the χ² j3-validation row
+>   ONLY, everything else `report_only` test-pinned. The χ² field RECORDS (null stated,
+>   failure condition deliberately ABSENT per `harness.py:1145`, and that absence itself
+>   pinned so nobody "completes" the bar).
+> - **pin 90(c)** — `record_tile_leg` is the production write path and is driven for
+>   "equatorial" in test; `CRITERION_8_DISCHARGE.live_half_discharged_by` now cites it.
+> - **sweep item 3 (HIGH) CLEARED** — `run` routes the four Tier-2-cleared tiles through
+>   `tier2_launch_gate` on MEASURED headroom; `preflight`'s Tier-1 refusal still bites for
+>   seam/anchor. Both directions test-pinned.
+> - **Scoring is per-tile now:** each diverse tile gets its OWN j3 holdout track built
+>   from the CMEMS-MY dailies (they already carry the vendored L3 schema, so the scored
+>   quantity stays `sla_unfiltered + mdt - lwe`). `calibration_readings` drops
+>   un-interpolable / zero-variance points, reports `n_used`, and REFUSES on an all-land
+>   core rather than scoring a masked triple. The member-std map is evaluated at exactly
+>   the points `interp_on_alongtrack` returned, so mean/std/truth align by construction.
+> - **⚠ src change:** `provenance_guard.mission_from_track_path` was hard-wired to
+>   `dt_gulfstream_…`; every diverse-tile score would have raised "no recognizable
+>   mission id". Now matches the token before `_phy_l3` (loud failure retained). The
+>   alternative — naming a Pacific track "gulfstream" — was a lie in a filename.
+> - **T5 criterion 3 (structural withholding) MET:** row key set pinned, scores key set
+>   pinned, and the four-word serialization tripwire now fires on the tile-row path.
+>
+> **✅ T5a IS DONE (`7ce99e3`) — the Tier-2 production launch gate exists.**
+> `tier2_launch_gate` (MemAvailable ≥ 2 × the **MEASURED** 4365 MiB = **8730**, never the
+> model's 5154) and `tier2_wall_ceiling` (**PER LEG ~40 h**; the four-tile 123.8 h figure
+> is an expectation, NEVER a ceiling). It deliberately does **not** consult
+> `ladder.tier1_eligible` — task 22's clearance would otherwise be inert — and **`preflight`
+> is UNCHANGED for every other caller**: `seam_pair` and the anchor gate were never
+> Tier-2-cleared, and the clearance is T5-scoped. Both directions test-pinned.
+>
+> **✅ PINS 94–96 RULED AND LANDED 2026-08-01 (ruling doc PART 21, verbatim)** — the three
+> sweep findings that land inside the T5 build itself.
+> - **94 — `SIGMA_CAVEAT` IS A REQUIRED SCHEMA FIELD**, attached at `build_evidence_row`
+>   exactly as `BRIDGE_CAVEAT` is (line 512) — a row the σ side **cannot be built
+>   without**, never prose at write time. Cites
+>   `phase14.stage1.crn_production_defect_deferred` in pin 87's terms: a property of the
+>   **SHIPPED SYSTEM**, not of an instrument. **The σ row is NOT dropped** (94d — fork-d
+>   pin 6 pre-registered it; Stage 2G needs the per-tile σ levels for pin 86(a)'s
+>   inheritance package). **⛔ SCOPE IT HONESTLY (94f):** per-tile σ levels under per-tile
+>   CRN origins; **cross-tile σ comparison NOT supported**; boundary gradient deferred and
+>   named — and it must **NOT** imply the within-tile level is compromised. **It is not.**
+>   The four diverse tiles are pairwise disjoint; only `seam_n`/`seam_s` are adjacent
+>   (pin 68). Pack-level attachment was BARRED (94c): a row that must be paired with a
+>   document to be read correctly will eventually be read alone.
+> - **95 — SPLIT: pin-42 fields on the χ² j3-validation row ONLY**; everything else
+>   **report-only, test-pinned as such**. Extend `_PINNED_KEYS` (95d). What makes a gate is
+>   **comparison against an expectation**, not whether the word "verdict" appears — pin 42's
+>   five prior instances were all things nobody called gates at authorship time.
+> - **✅ 95(e) VERIFIED BEFORE BUILDING — THE SPLIT STANDS.** `reduced_chi2`
+>   (`src/sverdrup/eval/calibration.py:13-15`) is defined against an expectation in its own
+>   docstring: **"1.0 is calibrated"**. So it is NOT "no expectation at all" and Option 1
+>   does not collapse into place. **But the nuance is load-bearing:** the shipped record
+>   already made χ² deliberately non-gating —
+>   `harness.py:1145` states *"jet-core post-fit chi2 named as a recorded outcome
+>   (motivated the phase; **coverage remains the only bar**)"*. So the shipped χ² is an
+>   expectation-comparison **with no stated failure condition**, which is the exact object
+>   pin 42 refuses (95d). The pin-42 field therefore **records** the outcome conditions and
+>   **preserves** the non-gating status (null `E[χ²_red] = 1`; recorded, coverage is the
+>   bar) — it does NOT re-gate χ² behind the earlier ruling's back.
+> - **96 — MIRROR THE LANE-0 MANIFEST, NOT THE MAPS** (96e; maps are bulk, out per 56(b) —
+>   the shas are the witness). Pin-67 class: **WITNESSED AT CREATION** (96d), the first
+>   artifact in the stage that can claim it. **Witness at creation, not at T9** (96b, pin
+>   60: the guarantee is PROSPECTIVE) so the interval from creation never opens. A local
+>   manifest alone is **self-witnessing** and insufficient (96c, pin 56a).
+>
+> **✅ THE 91(a) SWEEP IS DONE — 13 LIVE STALE CRITERIA across T5–T9.** Report:
+> `docs/superpowers/2026-08-01-phase14-stage1-stale-criteria-sweep.md`. Pin 91(c)
+> predicted "more than one". **The owner has not yet ruled on it; leg 1 stays blocked.**
+> - **NINE share criterion 8's mechanism** — a criterion that named an open election or a
+>   current ceiling and **outlived the ruling that closed it**: T6's ±66 "either ruling"
+>   branch (pin 2 ruled production-representative, so only `halo ≤ 2.0` is live), T7's
+>   **"no new ceilings exist"** (task 22 + E-16 created one), T8's **Tier-1-only pricing
+>   off Task-2 actuals** (pin 23(a) ruled that probe CAPPED and un-usable; pin 89 is the
+>   live number).
+> - **⛔ FOUR describe an OUTPUT whose shape later evidence changed** — these would NOT
+>   have failed loudly, they would have been **assembled**:
+>   - **T9 "anchor FIVE-GATE block"** — the 2026-07-26 ruling says the gate is **NOT
+>     "five green"**; `phase14_anchor_gate.py:164-177` says so in those words.
+>   - **T9 "seam VERDICT" (singular)** — Stage 1 has **NO attributable σ-route seam
+>     verdict** (pins 45b, 84, 86).
+>   - **⛔⛔ T9 "SIX transfer readings" — THE COUNT IS WRONG, and checkable today.** The
+>     seam pair is recorded **NON-transfer** (`seam_pair.non_transfer_note`: "not a
+>     production-geometry seam reading … 10×5 halves inside the anchor footprint") and its
+>     sub-rows carry **no `scores`, no `reference_row`, no `bridge_caveat`**. Anchor is the
+>     identity subject. **Stage 1 can deliver FOUR.** It would have surfaced at
+>     pack-assembly time — after all four legs had run.
+>   - **T9 pack contents (1)–(10) omit content pins 61, 86, 87 REQUIRE** (61 is explicit:
+>     "58(d)'s RESULT GOES IN THE GATE-1 PACK, not only the fix log").
+> - Also flagged: T5's **uncaveated raw-σ row** against pins 45b/84/86/87, `build_evidence_row`'s
+>   pinned key set against **pin 42/78 required schema fields**, and the equatorial lane-0
+>   manifest against the **pin 56/58 mirror boundary**.
+>
+> - **90 — T5 CRITERION 8 IS DISCHARGED BY THE PIN-12 RULING**, recorded with TWO test
+>   citations, **never as "met" and never as "dropped"** (90d — the anchor-gate check-3
+>   treatment). **(a)** cite `tests/test_phase14_stage1_run.py:244`
+>   `test_run_equatorial_reaches_gated_stub_after_pin12_ruling` as the discharge — a test
+>   that fails if the fact stops holding beats a citation to prose. **(b)** ADD a POSITIVE
+>   pin: the equatorial frame IS the ruled `(200.0, 215.0, -4.0, 11.0)` box — 244 proves
+>   the gate is gone, NOT that the ruled box survived; a later frame edit passes 244
+>   silently. **(c)** the criterion's BREADTH half is still live: when `_solve_leg` lands,
+>   extend 244 to the programmatic path (`record_evidence_row` for "equatorial"). The
+>   REFUSAL half is dead.
+> - **⛔ NO `box_election_pending` STATE IS TO BE CREATED — pin 42 bars a gate that cannot
+>   fire.** A permanently-False flag is that exact object.
+> - **91 — THE T5–T9 STALE-CRITERIA SWEEP (report only).** Walk T5–T9's acceptance
+>   criteria against every ruling landed since `3264524` and report each criterion whose
+>   premise a later ruling changed. **NO edits, NO new tasks** — pin 88's halt lifted for
+>   the deliverable path, not for scope growth. Second stale artifact this session (the
+>   first understated T5 by an entire build); it is the T11 coverage-walk method pointed
+>   at criteria instead of rubric clauses, and that found four unassigned clauses.
+> - **92 — THE T5 BUILD FINDING IS RATIFIED.** `_solve_leg` is `NotImplementedError`; T5
+>   is a substantial BUILD before any leg starts. Build against Task 4's
+>   `_seam_pair_real_leg`. The E-16 preflight reconciliation (`tier1_eligible` → the
+>   ~8730 MiB measured-peak gate + the 40 h per-leg ceiling) is AUTHORISED work.
+>   **PCG cap needs NO change** — production default 1200 against the probe's measured 486
+>   at identical rtol 1e-6 (tolerance consistency verified).
+> - **93 — E-16 STAYS AT E-16. Do not renumber it.** Adoption authorises the work; it does
+>   not make the words the owner's (pin 40).
+>
+> **ON RESUME, IN THIS ORDER:**
+> 1. `pixi run python scripts/phase14_evidence_mirror.py check` — provenance mirror
+>    vs its own digests AND the live store (pin 56). Drift is a STOP, not a re-sync.
+> 2. Read T5's description in the tracker. **Its operating procedure IS the
+>    authorisation's shape, not advice.**
+> 3. Gate work uses `pixi run python scripts/phase14_gate_suite.py run` —
+>    **format → stamp → suite → verify → commit** (pin 83). Never format after the
+>    suite. `verify` refuses unless the stamp records a COMPLETED suite as well as an
+>    unchanged tree.
+>
+> **✅ THE TIER-2 CEILING IS CLEARED (owner ruling 2026-07-30, ruling doc PART 19).**
+> Task 22 is CLOSED. **T5 is READY and authorised — the next session RUNS IT.** The
+> operating plan is **E-16: executor-authored, OWNER-ADOPTED** — filed as E-16 and NOT
+> pinned, because a pin number asserts owner authorship (pin 40); renumbering is the
+> owner's.
+>
+> **⛔⛔ READY ≠ RUNNABLE. `READY = [5, 12, 18, 19, 20]` — but ONLY T5 AND T12 ARE
+> STAGE-1 WORK.** T18, T19, T20 are prefixed **`[STAGE 2]`** and are the σ chain:
+> **pin 88's halt STAYS IN FORCE for them.** They show ready because their blockers
+> cleared, NOT because they may run. **Do not start them.**
+>
+> **HOW TO RUN T5 (the authorised shape — full text in the task):**
+> - **Ceiling is PER LEG: ~40 h per tile, NOT 124 h for the stage.** A leg over 40 h
+>   **STOPS and reports.** Basis: 31.0 h/tile measured (3.440 h × 9 windows) + ×1.3
+>   residual.
+> - **Launch gate per leg: `MemAvailable ≥ ~8730 MiB`** = 2 × the MEASURED 4365 MiB
+>   peak, not the model's 5154. Headroom cycles ~4 → ~11.2 GiB — **start at the top of
+>   the cycle.**
+> - **Order: kuroshio → southern → equatorial → quiet_gyre. Commit per tile.**
+>   Kuroshio is both the riskiest path and the de-risked one (pin 89's probe converged
+>   on it, land-mask intact).
+> - **⛔ RE-ASSESS AFTER LEG 1 BEFORE LEG 2.** 31.0 h is ONE window × 9; leg 1 is the
+>   test of that extrapolation. High → stop after ~31 h, not after 5 days.
+> - **RAISE THE PCG CAP** — the probe used 486 of 500; a capped leg can only
+>   under-report.
+> - `setsid`-detached, checkpointed, completion AND stall watchers. **Watch the PID
+>   captured at launch** — `pgrep` returned a wrapper instead of the real process twice
+>   this session, and both times a watcher reported completion early.
+>   **⛔ R4 CORRECTION (2026-08-01): `setsid` gives NO reboot protection.** It survives the
+>   terminal or session closing, **not** the machine going down. A leg is lost on a power
+>   event no matter how it was detached — which is why **R5's resume verification is a
+>   precondition on leg 1**, not an optional nicety.
+>
+> **NOT AUTHORISED:** trimming tiles to fit Tier-1.
+>
+> **STANDING, UNCHANGED:** nothing sealed (seal at v1, the one sanctioned change still
+> UNSPENT); no σ factor adopted; the σ chain (T14–T21) is **Stage 2's**, moved intact
+> with pins and pre-registrations including 68(b)'s falsifier and 73(c)'s branch; the
+> **CRN production defect** is recorded as such at
+> `phase14.stage1.crn_production_defect_deferred` and **Stage 2G cannot close while it
+> stands.**
+>
+> **After T5: T6, T7, T8 → T9 (Gate-1 pack). T12 is ready in parallel.** That is the
+> whole remaining path to closing Stage 1.
+>
+> **✅ PIN 89's PROBE RAN 2026-07-30 — kuroshio, m=100, one window, PROBE, CONVERGED.**
+> `phase14.stage1.tier2_probe_kuroshio_m100`. **The 4× bracket is retired.**
+> - **wall 3.440 h for ONE window** → **31.0 h per tile** (×9) → **123.8 h (5.2 d) for
+>   four**. Prior bracket was 23.8–94.2 h/tile; the measurement lands in its lower
+>   third at an **implied exponent ≈1.28 — NOT linear.** The owner's linear anchor
+>   (21.8 h/tile, 87 h) was optimistic by **1.42×**, and the high end did need an
+>   exponent nothing supported.
+> - **peak RSS 4365 MiB against a model 5154 — the model OVER-predicts by 18%.**
+> - **CONVERGED at 441/486 iterations against a 500 cap**, so the wall is a true
+>   measurement, not cap-bounded. (Note: the member batch used 486 of 500 — a tighter
+>   production rtol would need a raised cap.)
+> - **⛔ THE BINDING AXIS IS WALL, NOT RAM — the reverse of what the model implied.**
+>   The ≥9431 MiB figure was a MODEL number; at the measured peak the 2× launch rule
+>   needs **~8730 MiB**, and **11,248 MiB was observed live during the probe itself**.
+>   RAM is achievable at the top of the co-tenant cycle. **Wall is the crossing: 31.0 h
+>   per tile against a 6.0 h ceiling, over by 5.2×.**
+> - **Residual span is now ~×1.3, not ×4.** One window measured; summing nine averages
+>   most window-to-window variation, with the host's ×1.70 drift on top.
+> - kuroshio was the riskiest path by the plan's own ordering: it **CONVERGED and the
+>   land-mask path did not fail** — a second result worth having before anyfour-tile
+>   authorisation.
+>
+> **⛔ NEXT: THE TIER-2 CEILING DECISION IS THE OWNER'S (task 22).** T5 does not
+> dispatch. Task 22 now opens with the measurement, not the bracket.
+>
+> **ON RESUME, RUN THIS FIRST:**
+> `pixi run python scripts/phase14_evidence_mirror.py check` (pin 56), then use
+> `pixi run python scripts/phase14_gate_suite.py run` for any gate work — the sequence
+> is **format → stamp → suite → verify → commit** (pin 83). **Never run a formatter
+> after the suite.** `verify` now refuses unless the stamp records a **COMPLETED**
+> suite as well as an unchanged tree: a green tree alone once returned PASS beside a
+> suite still at 5%, which is pin 83's own defect shape reappearing inside pin 83's
+> tooling. Tree-unchanged and suite-passed are different claims; the gate requires both.
+>
+> **✅ PINS 84-88 RULED AND FOLDED 2026-07-29 (ruling doc PART 17, verbatim).**
+> **BRANCH B IS ADOPTED.** "Measured seam behaviour — oracle+rubric verdicts"
+> **DISCHARGES** on two attributable CLEAN mean verdicts plus two σ cells
+> NOT_ESTABLISHED with the mechanism documented: *"the rubric was pre-registered with a
+> withholding cell so that 'looked and could not attribute' is a result; this is that
+> cell used as designed, not a blank."*
+> - **84 — T14 REMOVED from T5's blockers.** Remaining path: **T5 → {T6,T7,T8} → T9**,
+>   with **T12 READY NOW**.
+> - **⛔ 85 — T5's TIER-2 BLOCK REINSTALLED IN THE SAME EDIT** as userGate **task 22**.
+>   T5 is `blockedBy [3,4,22]` and **was never ready in between** — the replacement
+>   blocker was created BEFORE the old one was removed. **Fourth instance of that
+>   pattern.** Task 22 opens with the figures: wall **23.8–94.2 h/tile, 95–377 h for
+>   four** against a **6.0 h** `tier2_probe` ceiling (over by **4.0× at the LOW end**);
+>   RAM needs **MemAvailable ≥ 9431 MiB** against 5261 live (`tier1_eligible` **False**).
+> - **86 — THE DISCHARGE IS ON REPORTING, NOT ON ANSWERING.** T12 now carries the σ
+>   question as OPEN with the inheritance package NAMED (mechanism, both channels
+>   quantified, reachability + m requirement, pin 31(b)'s latitude non-uniformity, and
+>   the ρ model with its validated span declared), and **pin 37(c) becomes a CONTRACT
+>   LINE: Stage 2/2G MAY NOT ASSUME σ SEAMS ARE CLEAN.**
+> - **87 — ⛔ THE CRN DEFECT IS A PRODUCTION DEFECT**, recorded in those words at
+>   `phase14.stage1.crn_production_defect_deferred`: the manufactured σ gradient at tile
+>   boundaries is **a property of the shipped system, not of an instrument**, and
+>   **Stage 2G CANNOT CLOSE while it stands.** Deferral is honest because the defect
+>   travels forward named and costed, and the only Stage-1 surface it touches is the
+>   single registry adjacency, which T4 already measured.
+> - **86(c) — T14–T21 MOVE TO STAGE 2 INTACT**, subjects prefixed `[STAGE 2]`, pins and
+>   pre-registrations preserved including **68(b)'s falsifier** and **73(c)'s branch**.
+> - **88 — pin 82(e)'s halt LIFTS for the deliverable path (T5–T9) only; it STAYS in
+>   force for the σ chain, which is now Stage 2's.**
+>
+> **⛔ NEXT: T5's TIER-2 CEILING COMES TO THE OWNER as its own decision (task 22).**
+> It is the last thing standing between here and the stage's output, and it was
+> owner-held before any of this began. **T5 DOES NOT DISPATCH on the Branch-B ruling.**
+>
+> **Closure map:** `docs/superpowers/2026-07-29-phase14-stage1-closure-map.md`.
+>
+> **⛔ PIN 43'S SETTLING MEASUREMENT HAS RUN. RECORDED, NOT SEALED.** Full
+> write-up: `docs/superpowers/2026-07-27-phase14-pin43-settling-measurement.md`;
+> evidence node `phase14.stage1.ensemble_settling_measurement`. 200 disjoint
+> member partitions per tile per split size, both seam tiles, 50/50 and 25/25,
+> seed 20260727, **no solves**, ~22 min. The replay's identity with the
+> production evaluator is CHECKED at exact zero, not asserted: full-m σ from the
+> captured per-member fields reproduces BOTH the lineage `std_fields` and the map
+> T4 persisted at **0.0** on both tiles, and the ordered `[0:50]`/`[50:100]` split
+> reproduces the committed T4 half-split readings to 2.2e-16 / 0.0.
+>
+> **THE FIVE RESULTS, IN THE ORDER THEY MATTER:**
+> 1. **The null is tight:** pooled over both tiles, T has mean **0.99755** (50/50)
+>    and **0.99397** (25/25), **sd ≈ 0.006**; no draw out of 400 at 50/50 exceeded
+>    **1.016**.
+> 2. **m-invariance is REJECTED — but the departure has a closed form.** The two
+>    split sizes differ by **+5.7 / +5.8 naive SE** on the two tiles, same sign and
+>    size. It is NOT an N_eff effect: it is the exact-vs-asymptotic gap,
+>    `E[T] = √(2(m−1)(1−c4(m)²))`, which predicts 0.994672 / 0.997420 against
+>    measured 0.99397 / 0.99755. **T17 can correct it exactly instead of by
+>    margin.** Pin 43(b) asked; the answer is "no, and here is the formula".
+> 3. **The factor settles near 1.02–1.03** — already above every realized null
+>    draw. The withdrawn **1.07** (E-3) is ~11 sd above the null mean; pin 32's
+>    carried-over **3.0** is ~320 sd above it. **Pin 43(a)'s caveat travels with
+>    this: 200 partitions of the SAME 100 members share draws, so the spread is
+>    COMBINATORIAL and UNDERSTATES the truth.** And n=200 supports q95–q99 only —
+>    **a 0.999 quantile is NOT estimable from this sample.**
+> 4. **⛔ A SMALL FACTOR DOES NOT RESTORE A REACHABLE CLEAN CELL — the finding that
+>    outlives the factor.** `F_ens/D_int_σ = 1.1356` at m=100, so pin 36(c)'s
+>    condition `factor × F_ens < clean_max × D_int_σ` fails for **EVERY factor
+>    ≥ 1.00** (min m for CLEAN: 129 at factor 1.00, 137 at 1.03, 148 at 1.07,
+>    1151 at 3.0). Deriving the factor was necessary and is now done; **it is not
+>    sufficient.** The remedy must come from `m`, from the σ denominator, or from
+>    retiring the route — and pin 31 already ruled out the first two. **This is an
+>    owner decision, not an executor one.**
+> 5. **T4's cross-tile reading sits BELOW the measured null:** `T_cross = 0.97256`
+>    at m=100 against an extrapolated null centre of 0.99873, sd ≈ 0.006 — about
+>    **4.2 sd BELOW**. No excess whatever over pure ensemble MC noise, which
+>    corroborates the committed diagnosis from a direction it did not use. It also
+>    hints the independence premise is ALREADY violated in the recorded cross-tile
+>    pair (within-tile partitions land ON the independent prediction). **Flagged,
+>    not resolved** — pin 45(c)'s problem from the other side; T15/T17 owns it.
+>
+> **✅ PIN 83 RULED AND FOLDED 2026-07-29 (ruling doc PART 16, verbatim).**
+> - **⛔ THE GATE SEQUENCE IS REORDERED: `format → stamp → suite → verify → commit`.**
+>   The old order (`suite → pre-commit → commit`) produced gate evidence from a
+>   pre-format tree **structurally and every time**, because pre-commit REWRITES files.
+>   Pin 83(c) names why it earned a pin: a 70-minute suite was killed on exactly this
+>   principle earlier the same day, correctly — **and the workflow defeated the
+>   principle four steps later anyway.**
+> - **(83a) MECHANICAL, NOT REMEMBERED:** `scripts/phase14_gate_suite.py` runs the
+>   rewriting hooks FIRST, stamps a SHA-256 per covered file (419 files:
+>   `src/`, `scripts/`, `tests/`, `pyproject.toml`), runs the suite, and re-verifies.
+>   **`verify` refuses at commit time naming the changed paths**, the way the mirror
+>   gates do. Content-only digests — no mtime, no size shortcut, so an equal-length
+>   reformat is still caught. **Demonstrated live:** appending one line made `verify`
+>   FAIL naming `tests/test_gate_stamp.py`; reverted, green again. 5 tests, red-then-green.
+> - **(83b)** last round's disclosure stands as recorded; no re-run was needed.
+> - **Folded WITHOUT creating a tracker task, per pin 82(e)'s halt** — this is tooling
+>   and a sequence change, not a hardening task.
+>
+> **✅ PINS 80-82 RULED AND FOLDED 2026-07-28 (ruling doc PART 15, verbatim).**
+> - **⛔ PIN 82 CLARIFIED BY THE OWNER (PART 15 addendum, verbatim; NOT a new pin).**
+>   The structural claim was **verified independently on origin `38aa56c`**: `T5←14`
+>   is the ONLY edge from the σ chain into the deliverable path; T6/T7/T8/T9/T12 carry
+>   none. **The map's central question is NOT "does the C1→2 contract need σ output"** —
+>   that conflates **two different deferrals hiding under one edge**:
+>   the σ **MEASUREMENT** (seam route, Rule 0.b, ρ model — deferrable if nothing reads a
+>   σ seam verdict, and the graph says nothing does) versus the **FIX** (T14 is the CRN
+>   ORIGIN CORRECTION, not an instrument — deferring it means Stage 1 executes on
+>   per-tile origins and carries pin 31(c)'s **manufactured σ gradient at tile
+>   boundaries**). **They separate IF AND ONLY IF no Stage-1 deliverable depends on
+>   CROSS-TILE σ behaviour.** Within a tile the CRN guarantee holds; the defect appears
+>   at seams and in assembly.
+>   **The map must:** (a) enumerate EVERY Stage-1 output as per-tile or cross-tile,
+>   checking specifically **T5's χ², the raw-σ + scalar-s\* reference rows, T6's SO
+>   diagnostics and T8's pricing inputs** — the σ-bearing quantities most likely to
+>   carry an unlabelled cross-tile component; (b) if all per-tile, price the
+>   drop-`T5←14` branch against the alternative, with the CRN defect inherited by
+>   Stage 2G where seams are actually assembled; **(c) if ANY output is cross-tile,
+>   NAME IT — T14 then stays ahead of T5 regardless and pin 82(d) is OFF THE TABLE**;
+>   (d) either way the CRN record travels forward COMPLETE (mechanism, both correlation
+>   channels, reachability, pin 31(b)'s latitude non-uniformity, the ρ model and its
+>   validated span) — **"a deferral is not a gap if the successor inherits everything
+>   needed to act on it"**; (e) note whether the insulation is a property of the
+>   **fork-d pin-6 sub-design** (per-tile lanes chosen at plan review for an unrelated
+>   reason, long before any of this surfaced) — **a pre-registered design decision
+>   protecting the deliverable path is evidence; a convenient reading of the dependency
+>   graph is not.**
+> - **⛔⛔ 82(e) IS A HALT AND IT BINDS THE NEXT SESSION: NO NEW HARDENING TASK IS
+>   CREATED UNTIL THE CLOSURE MAP IS IN FRONT OF THE OWNER.** Findings still get
+>   RECORDED; **they do not automatically become tasks.** The owner's reason, in his
+>   words: open work is **5 deliverable against 9 hardening, and no deliverable task
+>   has moved since T4.** "The findings justified themselves; the trajectory needs a
+>   stated endpoint."
+> - **82 — THE CLOSURE MAP IS THE NEXT ACTION AFTER THE PUSH**, before anything else.
+>   It must answer: **(a)** what must be TRUE for Stage 1 to close — the minimum set,
+>   task by task, to the Gate-1 pack; **(b)** which open threads are REQUIRED for the
+>   C1→2 contract and which are honestly DEFERRABLE to Stage 2 with a recorded
+>   deferral — **Rule 0.b, the ρ model, the high-r validation and T5's Tier-2 crossing
+>   each get an explicit answer**; **(c)** total remaining spend against Tier-1,
+>   **including T5**, which has been WAITing since before this chain began and has not
+>   been revisited since pin 57 priced m=137 at +0.5% RAM and ×1.37 wall;
+>   **(d) ⛔ COST THE ALTERNATIVE ALONGSIDE — declare the σ route NOT ESTABLISHED for
+>   Stage 1 and move Rule 0.b, the ρ model and high-r validation WHOLESALE to Stage 2.**
+>   The mean route's two CLEAN verdicts stand; the σ question is recorded open with the
+>   mechanism, the correlation channels and the reachability finding already documented
+>   — **"which is a real deliverable, not a gap."** If that path closes Stage 1
+>   materially sooner it is probably the right one, and the owner wants it **priced
+>   rather than arrived at by exhaustion.**
+> - **80 — T14 IS EXPLICITLY BEHIND TASK 21** (`blockedBy [1,2,3,4,13,18,19,20,21]`).
+>   T18 had been an accidental backstop; that is luck, not a dependency. **Pin 73(b)
+>   governs any extension: anything validating the ρ model must precede T14**, so if
+>   task 21's price authorises high-r points, **T14 goes behind those too.**
+> - **81 — PIN 78 IS TURNED ON THE ARTIFACT THAT MOTIVATED IT.** T18's pack must
+>   declare its own extrapolation: section (b2)'s magnitude prediction uses `ρ = r²`
+>   **validated over [0, 0.2523], applied at r ≈ 0.9**, so the pack carries
+>   `kind/validated_range/application_range/extrapolation_declared` **or `seal_run`
+>   refuses it**. The **direction** prediction (68b) is NOT an extrapolation and stays
+>   separately labelled so the declaration does not weaken what stands on its own.
+>
+> **✅ PINS 77-79 RULED AND FOLDED 2026-07-28 (ruling doc PART 14, verbatim).**
+> - **77 — ⛔ THE PRE-REGISTERED SWEEP CANNOT REACH THE RANGE THAT MATTERS, and the
+>   owner is right.** `B'_k = α·B_k + √(1−α²)·B_perm(k)` with `B_perm` independent of
+>   tile A gives `corr = α·r0`, so it spans **[0, 0.2523]** — it can only REDUCE
+>   correlation. **Structural cause: `acc` is POST-SOLVE**, so the replay reweights
+>   members but **cannot re-pair ELEMENT draws** — and the element channel, which
+>   contributes nothing to r today, is exactly the one T14 pairs and the one that
+>   carries r toward 0.9. **Validating across [0, 0.2523] is pin 73's own failure mode
+>   wearing a sweep.**
+>   **(77a)** Task 20 KEPT, claim NARROWED: it validates the **FORM** as a statistical
+>   identity and runs 74's discriminator — **explicitly NOT the coefficient at applied
+>   r**. **(77b)** High-r needs solves → **new TASK 21: PRICE ONLY, NOTHING LAUNCHES**,
+>   ≥2 points at PARTIAL element pairing (what T15 says the production grid will
+>   actually contain), priced against Tier-1 on RAM and wall with the ×1.70 margin.
+>   **(77c) PRE-REGISTERED BEFORE THE ANSWER IS KNOWN:** if high-r validation is
+>   unaffordable, the floor is parameterized by **MEASURED ρ per pair, never by `ρ = r²`
+>   extrapolated** — so affordability cannot quietly select the convenient form.
+>   **(77d)** every sweep result states its reachable r span beside it.
+> - **78 — THE CHECK IS GENERALISED AND IT IS MECHANICAL, NOT PROSE.** Third instance
+>   of one family (3× could not pass; ±4 sd could not fail; the sweep could not
+>   disagree). A validation must now state `validated_range`, `application_range`, and
+>   `extrapolation_declared` when the second is not inside the first; **a validation
+>   stating no `validated_range` is REFUSED — silence is not compliance.** Landed as
+>   `sverdrup.validation.gate_schema.validate_gate_schema`, **wired into
+>   `phase14_seal_run.py check`'s refusal set**, keyed on self-declared `kind` so the
+>   **unspent seal is untouched and `check` stays GREEN. Demonstrated live:** injecting
+>   an undeclared `[0,0.2523]→[0,0.9]` extrapolation made `check` FAIL naming the path;
+>   store restored, seal re-derived green. §7 text drafted in the UNSEALED draft rubric
+>   and folded into T16. **6 new tests, red-then-green.**
+> - **79 — RATIFIED.** **Mirror now 32 nodes, 14 pointers over 9 nodes.** Note the new
+>   `rho_model_range_limitation` node is the first to pass pin 78's refusal **on
+>   disclosure** — it declares its own extrapolation rather than hiding it.
+>
+> **✅ PINS 73-76 RULED AND FOLDED 2026-07-28 (ruling doc PART 13, verbatim).**
+> - **73 — ⛔ `ρ = r²` MAY NOT PARAMETERIZE THE FLOOR UNTIL SWEPT. New TASK 20, and
+>   T14 now waits on it** (`blockedBy [1,2,3,4,13,18,19,20]`). The model is validated
+>   at r = 0.2523 **where `√(1−ρ)` is FLAT**, and is destined for r ≈ 0.9 where it is
+>   not. **The owner's arithmetic reproduced independently to 3 s.f.:** a 23% ρ error
+>   costs **1.008× at r=0.25, 1.133× at r=0.70, 7.166× at r=0.90**. So **the −0.63%
+>   agreement on `T_cross` is NOT evidence the model is good — it is evidence
+>   `T_cross` cannot see the error at this r.** Sweep design (73a): vary the paired
+>   fraction 0→1 by exact replay over the stored per-member `acc` — no solves —
+>   via `B'_k = α·B_k + √(1−α²)·B_perm(k)`, which moves r continuously while
+>   preserving each member's marginal variance. **(73b) must precede T14: T14 produces
+>   the high-r datum the model is meant to PREDICT, and a model calibrated on it has
+>   predicted nothing. (73c) PRE-REGISTERED AS ACCEPTABLE, not failure:** if the model
+>   fails at high r, the floor is parameterized by the **measured curve**.
+> - **74 — THE 23% RESIDUAL IS TO BE NAMED, NOT ABSORBED.** Discriminator recorded
+>   before Rule 0.b consumes it: **a THIRD CHANNEL shows as CURVATURE in ρ(r);
+>   higher-order terms and non-Gaussianity show as a STABLE OFFSET.**
+> - **75 — MY SEPARATION FIGURE WAS BUILT WRONG; CORRECTED.** The reported **155.6**
+>   divided by `sd_mismatched/√100` for a set with **N = 9900**. Correct SE of the
+>   difference gives **167.6**; per single pair **15.6**; **most conservative 12.8**,
+>   and the two distributions **do not overlap at all** (worst matched +0.20686 vs
+>   best mismatched +0.06544). **The mechanism conclusion is unchanged — only the cited
+>   number is.** Cite 167.6 with its construction, or 12.8 as the worst case; **never
+>   155.6.** Recorded with N and construction at
+>   `phase14.stage1.seam_crn_mechanism_separation_construction`.
+> - **76 — RATIFIED:** the mechanism identification, the member-aligned test design,
+>   69's fold, 70(b)'s magnitude prediction and falsifier, and task 19 with T14 behind
+>   it. **Mirror now 31 nodes, 13 forward pointers over 8 nodes.**
+>
+> **✅ PINS 69-72 RULED AND FOLDED 2026-07-28 (ruling doc PART 12, verbatim).**
+> - **69 — RULE 0.b IS DERIVED FOR CORRELATED ESTIMATES, STRUCTURALLY.** The rubric
+>   evaluates the pair route at overlap points, and the observation sets there are
+>   IDENTICAL — that is what an overlap strip IS, **so the independence premise fails
+>   for ANY tiling.** T17 derives the floor with **ρ as a MEASURED INPUT**; the
+>   independent form `σ/√(m−1)` survives ONLY as the ρ = 0 limit. Recorded as the
+>   REASON in `docs/validation/DRAFT-phase14_seam_rubric_v2.md` (UNSEALED — the seal
+>   is untouched) and in T17's criteria, **so a future reader cannot simplify it back.**
+> - **70 — ⛔ THE MECHANISM IS NAMED, AND THE OWNER'S FIRST GUESS WAS RIGHT.**
+>   `member_rhs_matrix` draws `eps = obs_noise(i, obs_identity, r, root)` — keyed on
+>   **OBSERVATION identity** — and `eta_t = coef_noise(i, els_identity, q, root)` on
+>   ELEMENT identity, and **both seam tiles run at the SAME root.** Identical strip
+>   observations therefore receive **identical ε′ realisations**. **The pair is ALREADY
+>   PARTLY PAIRED before T14 touches anything.**
+>   **Confirmed empirically by a test that can only come out one way if the mechanism
+>   is real:** a shared DRAW is member-aligned, a shared FIELD is not — so member k of
+>   `seam_n` vs member k of `seam_s` should correlate and member j vs k should not.
+>   **Matched +0.25226 ± 0.01511 (N=100); mismatched −0.00255 ± 0.01638 (N=9900);
+>   separation 167.6 sd correctly constructed — see pin 75 above; the two
+>   distributions do not overlap.**
+>   **THE MODEL (70a):** `ρ ≈ r²` where r is the matched-member field correlation.
+>   r = 0.2523 predicts ρ = 0.0637 against **0.0517** implied by the recorded
+>   `T_cross` — **no fitted parameter**, and `T_cross` itself predicted to −0.63%.
+>   **SHARPENED T14 PREDICTION (70b) — now with a MAGNITUDE, not just a direction:**
+>   `T_cross ≈ E[T](m)·√(1−r²)`. Re-measure r on the strip after T14 and predict
+>   `T_cross` from it BEFORE reading the σ rows. If r reaches ~0.9, `T_cross ≈ 0.44`.
+>   **Falsifier: predicted and observed diverge ⇒ the r² model is wrong and the floor
+>   cannot be parameterized by it.** 68(b)'s direction prediction still stands.
+> - **71 — DT RE-SCORE AUTHORISED, NARROWLY: new TASK 19, and T14 now waits on it**
+>   (`blockedBy [1,2,3,4,13,18,19]`). Read-only; **exactly one** witness node; gate-5,
+>   the tally and the seal **asserted** untouched, not merely intended; **a mismatch is
+>   a STOP, not a correction — the value of the task is entirely in its ability to
+>   fail**; runs BEFORE T14; carries pin 42's fields.
+> - **72 — RATIFIED:** the 7/1/2 split, the array-level witness on the anchor member
+>   store, 68(b)'s pre-registration and falsifier, and the amendment-index ordering fix.
+>   **Mirror now 29 nodes, 11 forward pointers over 7 nodes.**
+>
+> **✅ PINS 67-68 RULED AND FOLDED 2026-07-28 (ruling doc PART 11, verbatim).**
+> - **67 — THE "NO SHA" BUCKET OF 10 IS SPLIT THREE WAYS**
+>   (`phase14.stage1.artifact_witness_classes`). **CONSTRAINED BY REPRODUCTION (7):**
+>   both seam member stores (the pin-43 replay reproduced the committed T4
+>   half-split readings — 2.22e-16 and exactly 0.0 — and reproduced the persisted
+>   std maps at 0.0); both seam member-std maps and both seam signed maps (the
+>   diagnosis recomputes the committed `r_seam` 1.1044354829041465 and
+>   0.08273797661052507 EXACTLY from them); and `anchor_gate_member_store.npz`,
+>   which is **content-witnessed array by array** — 18 eta/anom shas over 9 windows,
+>   arguably stronger than a file digest. **VERIFIED BY RE-DERIVATION (1):** the seal
+>   file, whose integrity rests on `seal_run check` re-deriving it from
+>   `instrument_configs()`, not on a digest. **UNCONSTRAINED (2):**
+>   `screening_rows.json`, and the DT scoring track — which is constrainable in
+>   principle (the write-once gate-5 constants were computed from it against a sha'd
+>   map) but **no later run has reproduced them**, so it does not yet meet 67(a)'s
+>   test. A single re-score would move it; **not run here** — that is an
+>   evaluation-bearing execution and belongs to an approved task, not a witness sweep.
+> - **68 — ⛔ THE SECOND CHANNEL IS REAL AND MEASURED**
+>   (`phase14.stage1.seam_shared_observation_channel`). **On the evaluation strip the
+>   two tiles' observation sets are IDENTICAL: 14,876 each, 14,876 shared, Jaccard
+>   1.0000.** Whole-frame overlap 68% (the owner's 67% estimate, confirmed).
+>   **ρ ≈ 5.2% accounts for the ENTIRE ~4.15 sd deficit** — from
+>   `Var(σ_a−σ_b) = 2σ²(1−c4²)(1−ρ)`, so `ρ = 1 − (T_cross/E[T])²`.
+>   **Rule 0.b's independence premise was NEVER correct for the pair route ON ANY
+>   LATTICE:** both solve boxes span lon 295-305 and the strip at 36-40N lies wholly
+>   inside both, so the channel does not depend on the pavement origin and **T14
+>   cannot remove it.**
+>   **⛔ PRE-REGISTERED BEFORE T14 RUNS (68b), and witnessed in the mirror so it is a
+>   real pre-registration: T_cross should FALL further after T14, not rise toward
+>   1.0** — pairing the CRN adds a SECOND positive correlation on top of the shared
+>   data. **A fall is NOT evidence the seam improved and NOT evidence of repair;** it
+>   is `F_ens` becoming more mis-specified. Falsifier: T_cross RISING toward the
+>   independence null, or the within-tile partition null ceasing to match
+>   `expected_t(m)`.
+>   **68(c):** strongest evidence yet for pin 45(c) — the geometry predicts
+>   independence (0 coincident centres) and the measurement refuses it; a
+>   paired/unpaired binary cannot express this state.
+>   **68(d):** folded into T18 as section (b2). **Mirror now 28 nodes, 9 forward
+>   pointers over 6 nodes.**
+>
+> **✅ PINS 64-66 RULED AND FOLDED 2026-07-28 (ruling doc PART 10, verbatim).**
+> - **64 — THE MIRROR NOW CARRIES AN APPEND-ONLY AMENDMENT INDEX.** A witnessed
+>   node is never edited to point at what later amends it (64b), so the forward
+>   pointers live in the manifest: **7 pointers over 5 nodes**. **READING PATH:
+>   MANIFEST FIRST, ALWAYS** — a node's caveats are current as of its own writing;
+>   the index tells you whether they still stand. The index is itself append-only:
+>   entries may be added, never removed or rewritten, and `check` fails on a
+>   regression (test-pinned, 4 new tests).
+> - **65 — CAVEATS NOW ATTACH TO THE CLAIM, and the enumeration found MORE THAN
+>   THE PIN ANTICIPATED.** The pin-29 scope statement is recorded at
+>   `phase14.stage1.gate5_mu_witness_scope`: of the three µ values,
+>   **0.7695329827465144** rests on `phase13_lane0_mean.nc`, witnessed forward-only.
+>   The full sweep (`phase14.stage1.artifact_witness_inventory`) hashed every `data/`
+>   artifact cited under `phase14` and found three classes: **witnessed at creation
+>   (8)**; **forward-only (1)** — exactly the one the owner named; and **⛔ a
+>   STRICTLY WORSE class the pin did not name: 10 artifacts with NO sha recorded
+>   anywhere**, including **all six seam artifacts — the signed maps, the member-std
+>   maps, and the member STORES that pin 43's settling measurement replays** — plus
+>   `anchor_gate_member_store.npz`, `screening_rows.json`, the DT input track and the
+>   seal file. Their shas are captured now, which makes them forward-only from
+>   2026-07-28; **their intervals CANNOT be closed — no contemporaneous record exists
+>   to reconcile against.** The settling measurement's own identity checks are
+>   unaffected (exact 0.0 against the lineage evaluator and the persisted maps), but
+>   the artifacts it read are witnessed forward-only. **Mirror now 26 nodes / 104.6
+>   KiB.**
+> - **66 — T18's REQUIRED PACK CONTENTS ARE SPECIFIED IN THE TRACKER**, so it is
+>   built once rather than retrofitted: (a) the CONSTRUCTION, showing identity
+>   preserved BY DESIGN not by later check; **(b) ACCEPTANCE IS TWO-SIDED — check 1
+>   only proves the ANCHOR's lattice did not move, and nothing currently accepts the
+>   half that matters: that OTHER tiles' lattices DO move into alignment. A second
+>   acceptance is required — a measured RISE in coincident element centres against
+>   the pre-T14 baseline (0 between seam_n/seam_s, 148,352 between seam_s/anchor);**
+>   (c) blast radius; (d) the failure path, with a half-applied lattice change made
+>   IMPOSSIBLE not merely unlikely; (e) explicit confirmation that pin 58(a)'s
+>   pre-T14 witnessing is complete, and honest statement of what it does not reach;
+>   (f) everything beyond the σ rows that inherits pin 31(d)'s superseded status.
+>
+> **✅ PINS 60-63 RULED AND FOLDED 2026-07-28 (ruling doc PART 9, verbatim).**
+> - **60 — THE MIRROR'S GUARANTEE IS PROSPECTIVE, and now says so at the top.**
+>   Every node is closed against FUTURE alteration from the date it was first
+>   witnessed (**2026-07-28** for all 24); **"witnessed" does NOT mean "proven
+>   unaltered since creation"** — records written before that date are unwitnessed
+>   for the interval in between. Stated once at the head of the mirror JSON and in
+>   the README, not left to inference.
+> - **60(a) — THE INTERVAL IS NOW CLOSED FOR TWO OF THE THREE ARTIFACTS.** Phase 13
+>   DID sha its own acceptance artifacts at the time. Reconciled at
+>   `phase14.stage1.anchor_gate_artifact_sha_reconciliation`:
+>   **`phase13_winner_mean.nc` CLOSED** (exact match to
+>   `phase13.miost.provenance.mean_maps_sha256`, plus a second independent
+>   phase-13 record agreeing), **`phase13_winner_var.nc` CLOSED** (exact match to
+>   `…var_maps_sha256`), **`phase13_lane0_mean.nc` SEARCHED AND ABSENT** — all 30
+>   sha-shaped values under `phase13` checked, none is this artifact; its interval
+>   stays open and the capture closes future substitution only. Also confirmed
+>   double-witnessed: `phase13_winner_members.npz` and `phase13_field_miost.json`
+>   both match phase-13's provenance shas exactly. **Mirror now 24 nodes / 96.3
+>   KiB** (+ the reconciliation, + `phase13.miost.provenance`, which it cites —
+>   a reconciliation against an unwitnessed record closes nothing).
+> - **61 — 58(d)'s RESULT IS A REQUIRED GATE-1 PACK SECTION**, added to T9's
+>   acceptance criteria: the gap (three of four routes would have re-passed against
+>   a substituted reference; `gamma_route` recorded neither path nor sha), the two
+>   fixes, AND the capture caveat with its reconciliation — **including the
+>   searched-and-absent one, not only the closed ones.** Placed beside the anchor
+>   five-gate block, because it is about that block's foundation.
+> - **62 — CHECK-1's PIN-42 FIELDS, DISCHARGED EXACTLY.** Added to T14's criteria
+>   AND emitted by the gate script itself, so T14's re-run records it:
+>   **PASS iff the lattice is unmoved** (pin 31a makes the origin congruent modulo
+>   the rung spacing, so centres are unchanged by construction); **FAIL iff and
+>   only if the lattice MOVES**, breaking member sha-equality on the affected
+>   windows. Both outcomes reachable, the failing one precisely characterised, **no
+>   null and no alternative — the routes are bit-identical comparisons and `rtol`
+>   1e-12 is a guard, not the criterion.** First gate in the stage where pin 42
+>   discharges exactly rather than probabilistically.
+> - **63 — the 58(c) enumeration and the pin-59 seven-gate plan RATIFIED as
+>   reported.**
+>
+> **✅ PINS 58-59 RULED AND FOLDED 2026-07-28 (ruling doc PART 8, verbatim).**
+> - **58 — THE MIRROR BOUNDARY IS CORRECTED: CITATION, NOT STAGE.** A node is IN
+>   if a standing claim CITES it, wherever it lives. This OVERTURNS two of the
+>   three exclusions the first cut flagged and narrows the third. Reason, and it
+>   is load-bearing: **two of the five anchor-gate checks are discharged by
+>   CITATION to Stage-0 evidence**, so under the old stage-scoped rule the
+>   identity chain T14 threatens rested partly on unwitnessed records.
+>   **Mirror went to 22 nodes / 91.9 KiB** (was 9 / 66.6; now 24 after pin 60): + all 10
+>   `phase14.stage0` gate records (58a), + `phase14.stage1.seam_pair` (58b — the
+>   m=137 pricing quotes its wall/RSS and that pricing feeds T17),
+>   + `phase13.miost.members` (58c), + the new sha node (58d).
+>   **58(c) enumerated, not wholesale:** a full sweep of every prior-phase
+>   reference inside the phase14 evidence found **exactly ONE cited evidence
+>   node** — `phase13.miost.members`, whose `root_int` the anchor gate cites for
+>   the root deviation. Everything else prior-phase is a FILE artifact, closed by
+>   sha under 58(d) instead.
+> - **58(d) — THE SUBSTITUTION HOLE WAS REAL, and is closed.** Check-1's routes
+>   split two ways. **SAFE:** `member_sha` (both sides' shas, 9/9 windows),
+>   `obs_identity` (both sides' shas), `reference_store` (`member_store_sha`).
+>   **UNWITNESSED:** `mean_vs_acceptance` and `variance` recorded the reference
+>   PATH and the OUTCOME but no sha; `gamma_route` recorded neither, and compares
+>   against the same `phase13_winner_mean.nc`. **A later substitution would have
+>   re-passed with nothing to show it.** Two fixes: shas CAPTURED at
+>   `phase14.stage1.anchor_gate_artifact_shas` (mirrored), and
+>   `scripts/phase14_anchor_gate.py` now records `reference_sha256` inline so
+>   **T14's check-1 re-run witnesses what it compared against.**
+>   **CAVEAT RECORDED, NOT HIDDEN:** the shas were captured 2026-07-28, after the
+>   2026-07-26 gate run — they witness the artifacts AS OF CAPTURE and cannot
+>   prove they were unchanged in between. What they close is FUTURE substitution.
+> - **59 — THE TAMPER DEMONSTRATION IS TEST-PINNED** (`tests/
+>   test_evidence_mirror_gates.py`, pin-47 precedent): `check` STOPs naming the
+>   rewritten node, `sync` refuses and leaves the mirror byte-unchanged, the
+>   byte-identical restore clears the STOP without latching, `--supersede`
+>   preserves the prior digest AND body, `--supersede` without `--reason` is
+>   refused, and a new node syncs freely. **Verified by mutation:** stubbing
+>   `detect_changes` to `[]` kills five of them.
+>
+> **✅ PINS 56-57 RULED AND FOLDED 2026-07-28 (ruling doc PART 7, verbatim).**
+> - **56 — THE PROVENANCE-BEARING EVIDENCE IS NOW MIRRORED INTO THE TREE.** The
+>   store is gitignored, so every Stage-1 write-once surface had lived on one
+>   machine and had never been externally visible. Pin 56(a): *the issue is
+>   WITNESS, not backup* — write-once enforced by a file only its author can see
+>   is a convention. Mirror at **`docs/validation/evidence-mirror/`** (README
+>   there states the line): **9 nodes, 66.6 KiB**, plus the seal whole; run
+>   `pixi run python scripts/phase14_evidence_mirror.py check` **on resume**.
+>   **The store is NOT un-ignored wholesale (56b).**
+>   **It is a witness, not a copy:** canonical per-node SHA-256 (stable across key
+>   order, sensitive to values AND to list order — the settling ratios are stored
+>   in partition order), plus an **append-only gate** that REFUSES to rewrite a
+>   witnessed node. Adding is ordinary; changing is a STOP naming the node;
+>   superseding needs `--supersede <path> --reason <text>` and preserves the prior
+>   body. **Both gates were demonstrated live before landing** — editing
+>   `gate5.mu` in the store made `check` fail naming the node and made `sync`
+>   refuse; the store was then restored byte-identically and the seal re-derived.
+>   **The tamper-evidence comes from git**: once pushed, the digests sit in
+>   history the author cannot silently rewrite.
+>   **THE LINE — SUPERSEDED BY PIN 58 (citation, not stage); the original 56d
+>   report is kept for the record.** IN: `gate5`, `anchor_gate`,
+>   `seam_rows`, `seam_sigma_diagnosis`, `sigma_rows_not_established`,
+>   `rubric_v2_amendment_withdrawn`, `ensemble_settling_measurement` (ratios in
+>   FULL, not digested — 56c), `c2_touch_tally`, `acceptance_artifact_correction`,
+>   plus the seal. OUT, each named with its reason in the JSON: search/tuning
+>   history, operational config, prior phases, `stage0`, `seam_pair` telemetry,
+>   sizing/convergence probes. **Three exclusions are flagged as judgement calls
+>   for the owner, not settled:** `phase14.stage0` (a gate record, but Stage 0),
+>   `seam_pair` (telemetry — but the m=137 pricing quotes its wall/RSS), and
+>   phases 8-13 (including them is a wider ruling than 56).
+> - **57 — m=137 pricing NOTED against pin 53; DEFERRAL UNCHANGED.** That ~512 was
+>   the RAM knee and m=137 sits at 27% of it makes the option **live rather than
+>   nominal**. The decision still belongs after T14/T15 with Rule 0.b — T14
+>   collapses `F_ens`, the quantity the choice turns on.
+>
+> **⛔ NEXT ACTION IS THE OWNER'S WALK ON T18, NOT T14.** Per pin 56's sequence,
+> **T18 — the userGate blocking T14 — goes to the owner. It does not open without
+> that walk**, because T14 is the anchor-identity risk.
+>
+> **⛔ PIN 43 IS MEASURED and NOT SEALED. NO FACTOR IS ADOPTED. T14 IS BLOCKED
+> behind T18 pending the owner's walk. T17 is behind T15.** Nothing seals until
+> after T15. The seal is untouched and `seal_run check` is GREEN at v1.
+>
+> **PINS 51-55 RULED AND FOLDED (ruling doc PART 6, verbatim):**
+> - **51 — T13 tracker corrected.** Status flipped to `completed`, criteria
+>   REPLACED by what actually landed, and the withdrawn criteria pointed at T17.
+>   (It had sat `in_progress` with acceptance criteria describing the withdrawn
+>   amendment; flipping it green against those would have been the false green
+>   pin 40 exists to catch, so it went to the owner rather than being self-applied.)
+> - **52 — ⛔ T14 IS BLOCKED MECHANICALLY.** Flipping T13 made T14's other
+>   blockers all green — the T5 trap one task later, on the stage's highest-risk
+>   change, landing as the session clears. **New userGate task id 18** now blocks
+>   T14 (`blockedBy [1,2,3,4,13,18]`) and is released ONLY by an owner ruling that
+>   names T14. T14's description opens with the STOP. **A fresh session following
+>   the resume protocol hits a wall, not a green light.**
+> - **53 — PIN 31'S m-REJECTION IS SUPERSEDED, reopened not reversed.** It rested
+>   on ~512 members, from a 2× margin over the un-derived 3× factor pin 36
+>   overturned; the settled requirement is **m ≥ 137**. **PRICED, NOT CHOSEN** at
+>   `docs/superpowers/2026-07-27-phase14-m137-price.md`. The pricing found **~512
+>   was exactly the RAM knee** — the model's phase-max only starts tracking m at
+>   m ≈ 512 — so m=137 sits at 27% of it: **+0.5% RAM, ×1.37 wall, which is
+>   SMALLER than this box's own ×1.70 measured drift. m=137 is not the binding
+>   constraint on either axis and does not change T5's blocked status.** The
+>   remedy is NOT decided: T14 collapses `F_ens` by design, so it belongs to T17.
+> - **54 — the closed form is ENDORSED for exact use in T17**,
+>   `E[T] = √(2(m−1)(1−c4²))`, implemented as `ensemble_settling.expected_t` and
+>   **test-pinned at the m actually used** (published-c4 table with tolerance
+>   propagated from its own 4-decimal precision — the amplification is ~47× at
+>   m=25 — plus an independent Monte-Carlo check using no Gamma function, plus the
+>   two measured means). **BINDING: n=200 supports q95–q99 ONLY. q999 is NOT
+>   estimable from this sample and NO THRESHOLD MAY RELY ON A QUANTILE THE
+>   MEASUREMENT CANNOT REACH.** Recorded at
+>   `phase14.stage1.ensemble_settling_measurement.pin_54_condition`.
+> - **55 — result 5 SHARPENS pin 45(c).** Rule 0.b's conditional form must be
+>   parameterized by **MEASURED correlation** between the two σ fields, not by a
+>   binary paired/unpaired state — **there may be no clean unpaired limit to
+>   reduce to.** Added to T15's acceptance criteria as a named question: measure
+>   the correlation, do not infer it from lattice geometry alone.
+>
+> **You are resuming Phase 14, Stage 1 (spatial-at-2017). T13 is committed. It
+> deliberately does NOT include a rubric amendment: the owner DEFERRED the whole
+> amendment (Rule 0.a text AND Rule 0.b) to ONE sealed version authored after T14
+> and T15, against the CRN-paired configuration that will then exist — entered as
+> T17, blocked behind T15. The sealed record is at v1 and `seal_run check` is
+> GREEN. Read this block, then the ruling doc, then the plan.**
+>
+> **READ FIRST, IN ORDER:**
+> - `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` — the owner
+>   ruling. PART 1 = pins 31-35, PART 3 = pins 36-39, PART 4 = pins 40-47,
+>   PART 5 = pins 48-50. PART 2 is labelled session notes, NOT owner-ruled.
+> - `docs/validation/pin-registry.md` — **owner pins vs the executor E-series.**
+>   A pin number asserts OWNER authorship (pin 40); executor decisions are E-n and
+>   UNRATIFIED until the owner rules them. A pin is citable when its verbatim text
+>   is present in the ruling doc at HEAD as of the citing commit (pins 41 + 48).
+>   **Nine E-items are UNRATIFIED and go to the owner on the next walk (pin 50):
+>   until then they are cited as unratified or not at all, and none may acquire
+>   authority through a commit message, a signoff or an acceptance criterion.**
+> - `docs/superpowers/2026-07-27-t13-adversarial-reviews.md` — the pin-39 reviews
+>   that overturned the first attempt. Still live reading: most of its defect list
+>   is now carried by T17, not fixed.
+>
+> **WHAT T13 LANDED (all of it seal-free):**
+> - **The σ rows are WITHHELD, not verdicted (pin 45b).** Both σ cells now read
+>   `NOT_ESTABLISHED (ensemble MC artifact — see diagnosis)`, citing the committed,
+>   dual-reviewed, CONFIRMED diagnosis, under the firewall that already existed.
+>   Prior verdicts (pair ELEVATED, oracle CLEAN) preserved; every measured number
+>   untouched. **This never needed a seal — that was the whole error of the first
+>   two attempts.** Recorded at `phase14.stage1.sigma_rows_not_established`.
+> - **Rule 0.a BEHAVIOUR stays enforced while its words wait (pin 45a):**
+>   `FLOOR_RTOL = production_rtol x 1e-3` derived from a pinned decade count, the
+>   accuracy target and achieved residual on every floor block, and a RuntimeError
+>   on non-attainment.
+> - **The guard defect is fixed and the exploit is test-pinned (pin 47):** the
+>   one-shot guard now keys on the row's VERDICT, not on its own annotation block,
+>   so deleting the witness no longer lets a second marking overwrite the prior
+>   verdict. The demonstrated deletion attack has a regression test.
+> - **The derivation harness** (`ensemble_floor_null.py`,
+>   `phase14_ensemble_floor_factor.py`) and the `supersede` machinery land as
+>   machinery only — they change no sealed content.
+> - **`verify_current_seal(evidence_path)`** now honours the caller's store.
+>
+> **WHAT MOVED TO T17 (pin 46's line, reported not assumed).** SEAL SIDE, removed
+> from this commit: every amendment key in `instrument_configs()` (the seal
+> re-derives from it, so an unsealed key is a permanent tripwire failure); the
+> rubric v2 prose, now `docs/validation/DRAFT-phase14_seam_rubric_v2.md`
+> (UNSEALED); `ensemble_floor_block` and the `UNMEASURED (ensemble floor)` label;
+> the Rule-0.b row wiring, the σ-row correction path and the `amend-seam-rows`
+> command. NON-SEAL SIDE, landed: everything in the list above, plus
+> `ensemble_floor` / `sigma_level_rms` (pure arithmetic the diagnosis already
+> delegates to) and the `blend_strip` extraction.
+>
+> **PIN-40(a) AUDIT RESULT — the STOP condition of this step.** Swept every pin
+> citation in docs, code, tests, the plan, the tracker and the evidence keys.
+> **Numbers 1-30:** all carry their sub-namespace qualifier (fork-b, batch-1,
+> review pin, owner PIN) and match owner-issued text. **Numbers 31-39:** every
+> citation attributes genuinely owner-authored content; NO executor decision was
+> found numbered in the owner's series. **ONE VIOLATION, in the withdrawn
+> artifact (pin 40b):** the superseded seal v2 signoff asserted pins 36-38 were
+> "recorded verbatim" at a document that then held only 31-35 — the pins existed
+> in session prose alone. Both v2 files were deleted with the rollback, so the
+> text survives nowhere in the tree; it is recorded in the registry and at
+> `phase14.stage1.rubric_v2_amendment_withdrawn` so the wrong convention cannot be
+> learned from it. **What the audit found MISSING, not misnumbered:** executor
+> decisions were never marked as such at all — now enumerated as **E-1..E-15**,
+> two of them already ratified into the owner series (E-1 → pin 38, E-2 → pin 37)
+> and four OVERTURNED (E-3 the 1.07 factor, E-6 the N_eff estimator, E-7 the
+> ±4 sd acceptance, plus E-9 withdrawn with the amendment).
+>
+> **⛔ WHERE T13 STOPPED, AND WHAT HAS NOT HAPPENED.** T13 stopped AT THE PUSH, by
+> owner instruction. **Pin 43's settling measurement HAS NOT RUN** — it is the
+> fresh session's FIRST action, deliberately not this one's, because its number
+> will be sealed against later and a dying context is the wrong place to produce
+> it. **T14 HAS NOT STARTED** (it comes after pin 43's measurement, not before).
+> **T17 — the deferred rubric amendment, the only thing that spends the seal — is
+> BLOCKED BEHIND T15.** Nothing is sealed; the record is at v1 and green.
+>
+> **✅ PIN 43 IS DONE (2026-07-27) — see the top of this banner for its five
+> results.** It ran exactly as ruled: ~200 disjoint random member partitions per
+> tile replayed from the persisted member stores (NO solves), at TWO split sizes
+> (50/50 and 25/25) to test the assumed m-invariance rather than inherit it,
+> carrying the caveat that partitions of the same 100 members share draws and
+> therefore UNDERSTATE the true null spread. Result RECORDED, NOT SEALED.
+> **The owner STOPS here, before T14, with that measurement in hand.** Nothing
+> seals until after T15.
+>
+> **WHY THE FIRST TWO ATTEMPTS FAILED, for whoever reads this next:** both sealed
+> a rule against a configuration about to be replaced, and both put an executor's
+> number inside the owner's pin series. The second also shipped a gate that could
+> not fail (`±4 sd` on two samples) inside the amendment that cites pin 33 —
+> which is why pin 42 now demands per-outcome probabilities as a SEALED SCHEMA
+> FIELD, and why `seal_run` must refuse a gate that cannot reach both verdicts.
+>
+> **THE RULING (read it in full before touching anything):**
+> `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` — recorded
+> VERBATIM by owner instruction, because pin 31(a)'s identity constraint is the
+> reasoning behind the highest-risk change in the stage and a one-line
+> acceptance criterion would lose it. Part 2 of that doc is labelled
+> **session notes, NOT owner-ruled** — unratified pointers (candidate call
+> sites, lattice arithmetic, cost estimates, open questions); verify before
+> relying on any of it.
+>
+> **WHAT THE RULING SAYS, IN ONE PARAGRAPH.** T4's seam σ route read ELEVATED.
+> Investigation (dual-reviewed, then adversarially re-reviewed under a brief to
+> BREAK it) proved that reading is ensemble Monte-Carlo noise, not a seam
+> artifact, caused by a real defect: the CRN pavement lattice is keyed to EACH
+> TILE'S OWN solve-box origin, so tiles at different origins draw independent
+> random numbers and lose the pairing that common random numbers exist to
+> provide. The owner ruled: **fix the lattice, not the ensemble** — pin the
+> pavement to a GLOBAL origin (do NOT raise m, do NOT change the σ denominator,
+> do NOT retire the instrument). Two further amendments: the sealed rubric gains
+> an **ensemble floor** for σ verdicts (`F_ens = σ/√(m−1)`, 3×F_ens
+> attributability, else UNMEASURED), and Rule 0's floor probe is redefined **by
+> accuracy target rather than iteration budget**.
+>
+> **THE FOUR NEW TASKS (in the tracker with real edges — do not work from prose):**
+> - **T13** — the seal-free part: σ rows WITHHELD, Rule-0.a behaviour, guard fix,
+>   pin-40 audit, rulings landed. blockedBy [0, 10]. **✅ COMPLETE 2026-07-27.**
+>   The amendment itself is **T17**, blocked behind T15.
+> - **T14** — global lattice origin (pin 31a). **The check-1 re-run IS its
+>   acceptance, treated as a GATE, not a regression test.** blockedBy [1,2,3,4,13].
+>   **NOT STARTED. Comes after pin 43's settling measurement, not before. T14 pairs
+>   the CRN, which is exactly why the rubric amendment waits for it (pin 45).**
+> - **T15** — alignment-residual survey across the D1 roster (31b) + the
+>   product-consequence and superseded-σ recordings (31c/d). blockedBy [14].
+> - **T16** — pin 33 (two-sided gate discipline), pin 35 (coverage re-walk into
+>   T12), process minors. blockedBy [15].
+> - **T17** — **the DEFERRED rubric amendment: ONE sealed version, CRN-state-
+>   conditional, with pin 42's per-outcome probability fields and pin 44's oracle
+>   floor CONSTRUCTION as acceptance criteria.** blockedBy [15].
+> - **T12** (C1→2 contract coverage walk) is also READY and absorbs the
+>   amended-rubric re-walk per pin 35.
+>
+> **⛔ THE OWNER'S STOP CONDITION: STOP after T14** with the check-1 re-run and
+> the alignment survey together. **STOP IMMEDIATELY if check 1 degrades by ANY
+> margin** — the identity chain and the write-once gate-5 pins are downstream of
+> it. If the global origin cannot reproduce the anchor lattice exactly, the
+> change DOES NOT LAND, and the owner wants that result either way.
+>
+> **⛔⛔ T5 IS BLOCKED AND MUST NOT BE DISPATCHED.** It is the stage's largest
+> spend and it CROSSES TIER-2 on two independent axes (RAM binding: needs 9,431
+> MiB available, `tier1_eligible` False; wall: 95.1 h–15.7 d for four tiles
+> against a 6 h Tier-2 probe ceiling, and Stage 1 has NO pre-registered Tier-2
+> row). Priced at
+> `docs/superpowers/2026-07-26-phase14-stage1-t5-price-bracket.md`. The block is
+> now MECHANICAL (`blockedBy [3, 4, 14]`) and its task description opens with the
+> WAIT — but the WAIT is the owner's to lift, and **the CRN fix does not relieve
+> it**. Both must clear.
+>
+> **STAGE BOARD:** T0, T1, T2, T3, T4, T10, T11, **T13** COMPLETE. T12 ready.
+> **pin 43 MEASURED, NOT SEALED. T14 is BLOCKED behind userGate task 18 (pin 52,
+> owner-only) AND behind task 19 (pin 71, DT re-score)
+> and task 20 (pins 73/74/77, the narrowed ρ(r) sweep)**; then T14 → T15 → {T16, T17}. T5 blocked (above); T6, T7, T8 behind T5;
+> T9 (Gate-1 pack, userGate) behind everything.
+>
+> **STANDING DISCIPLINE, UNCHANGED:** zero locked opens; tally byte-identical;
+> **the seal's one sanctioned change is UNSPENT — the record is at v1 and
+> `check` is green.** T17 spends it, once, after T15. No evaluation-bearing
+> map outside an approved plan task; every long run `setsid`-detached with
+> completion AND stall watchers; nothing tuned on a seam signal.
+>
+> **Everything below this block is the historical record, newest first.**
+
+> **▶ T13 — TWO WITHDRAWN ATTEMPTS, THEN A SEAL-FREE LANDING (2026-07-27).**
+> The record below describes the WITHDRAWN attempts (rubric v2 sealed locally
+> twice, factor 3× then 1.07, both deleted before any commit). It is kept because
+> the mechanics are reusable and T17 will reuse them — but **nothing in it is
+> sealed, and its central constant was overturned.** What actually landed is in
+> the banner. Reviews: `docs/superpowers/2026-07-27-t13-adversarial-reviews.md`.
+>
+> **The instrument.** `docs/validation/phase14_seam_rubric.md` is now VERSION 2
+> and Rule 0 has two floors: **0.a** the solver floor, redefined by ACCURACY
+> TARGET (three decades below the production rtol is the pre-registered
+> construction; `maxiter` merely sized to reach it; the achieved residual
+> recorded beside the target; non-attainment is a STOP, never a looser `F`), and
+> **0.b** the ENSEMBLE floor for σ-route verdicts only
+> (`F_ens = σ/√(m−1)`, attributable iff `RMS(sigma_delta) > 1.07×F_ens` — the
+> factor DERIVED per pin 36, see the banner — else
+> **UNMEASURED (ensemble floor)**), plus the standing **reachability condition**
+> `factor × F_ens < clean_max × D_int_σ` that every future threshold/factor/floor
+> change is checked against BEFORE sealing (pin 36c, pin 33 made mechanical for
+> this instrument; test-pinned with the current status and the m ≥ 148 figure).
+> v1 is preserved VERBATIM at
+> `docs/validation/phase14_seam_rubric_v1.md` with a supersession header —
+> never silently edited. The reason clause is stated plainly in the doc: at
+> m=100 on the T4 geometry the MC floor is **1.136 × D_int_sigma** against a
+> sealed `clean_max` of 1.0, so a perfectly seamless solve reads ELEVATED; the σ
+> route was a gate that could not PASS.
+> **σ-level pooling (RATIFIED as pin 38):** the σ level entering `F_ens` is the
+> POOLED RMS (quadratic mean) of the two σ fields being differenced, because
+> `Var(σ_a − σ_b) = (σa² + σb²)/(2(m−1))`. The T4 diagnosis used the arithmetic
+> MEAN, so its `1.1356` reproduces under either form but its CONSTRUCTION is
+> superseded. **Why it matters despite agreeing to 4e-8 here:** the two forms
+> coincide when `σ_a ≈ σ_b` — the null — and diverge as the levels separate,
+> which is the signal regime. A construction validated only on the null is not
+> validated where it has to work.
+>
+> **The seal moved, then moved back.** (Mechanics verified by reviewer 2; the
+> seal produced was withdrawn, and both local v2 files were deleted.) Pins 32/34 are sealed
+> constants (`instrument_configs()["seam"]` gains `rubric_version: 2`,
+> `ensemble_floor`, `ensemble_floor_factor: 3.0`,
+> `floor_decades_below_production_rtol: 3`) — otherwise
+> `phase14_seal_run.py check`, which re-derives from LIVE artifacts, would have
+> reverted the amendment at the next re-seal. **A new `supersede` command** does
+> it: current seal must verify first, content re-assembled from live artifacts,
+> refuses without an owner signoff, refuses when content is unchanged (no
+> version inflation), writes `…_v2.json` (v1 file byte-untouched — write-once
+> holds), and moves the evidence pointer WITH a `supersedes` chain so Gate 0's
+> quotation of v1 stays resolvable. `check` now admits the supersession envelope
+> (`supersedes`/`signoff`/`date`) while still re-deriving everything else — it
+> FAILS on artifact drift, test-pinned in both directions.
+> `a17ea419…b725c5d2` → `44f36cfd…78160afc` (WITHDRAWN, deleted, never
+> committed; the tracked mirror was removed with it).
+>
+> **The correction (`amend-seam-rows`, NO solves).** σ levels measured from the
+> PERSISTED member-std maps on the same strip with the same blend; `m=100` from
+> the recorded block. Results:
+>
+> | route/σ | RMS(σΔ) | 1.07×F_ens applied | F_ens/D_int_σ | verdict it produced (now WITHDRAWN) |
+> |---|---|---|---|---|
+> | pair | 0.00360653 | 0.00396786 | 1.1356 | ELEVATED → UNMEASURED (ensemble floor) |
+> | oracle | 0.00209213 | 0.00395934 | 1.1475 | CLEAN → UNMEASURED (ensemble floor) |
+>
+> (Reviewer 1: the oracle threshold is wrong for that route — the weight-corrected
+> floor is `0.5845 × σ/√(m−1)`, giving 0.002314; the verdict is unchanged but the
+> recorded number is not the right one. Both σ verdicts read UNMEASURED under
+> every corrected factor either reviewer proposes.)
+>
+> The oracle/σ move is the consequence the ruling did not name (banner). Every
+> measured number, and the pre-registered `rubric_cell`, stand exactly as
+> recorded; each corrected row carries a `correction` block with
+> `prior_verdict`, `prior_seal_sha`, the ruling pointer and the rubric versions
+> — a verdict is never silently overwritten, and a row takes at most ONE
+> correction (re-running refuses, so `prior_verdict` cannot be overwritten with
+> an already-corrected value). Mean rows gained only the `ensemble_floor: null`
+> schema key, guarded by a refusal if a mean verdict would move.
+> **Pin 34's own record:** the executed T4 probes ALREADY conformed —
+> rtol 1e-9, converged, 635 / 629 / 678 iterations (seam_n / seam_s / anchor),
+> achieved residuals 9.72e-10 / 9.93e-10 / 9.62e-10, all ≤ the 1e-9 target —
+> so **the four T4 verdicts stand UNRECOMPUTED under pin 34**: it corrected
+> defective TEXT, not a defective implementation. Recorded at
+> `phase14.stage1.rubric_v2_amendment` with the conformance table.
+>
+> **Code + pins.** `seam_metrics` gained `ensemble_floor`, `sigma_level_rms`,
+> `ensemble_floor_block` (factor read from the SEALED config at CALL time, never
+> cached), and `UNMEASURED_ENSEMBLE_FLOOR`; the diagnosis script's `mc_floor`
+> now DELEGATES to it (one implementation of the arithmetic). Verdict precedence
+> is ONE function (`seam_verdict_from_floors`) shared by fresh rows and
+> corrections: WAIT → solver floor → ensemble floor → rubric cell, both blocks
+> always recorded so failing both gates hides neither. σ rows REFUSE without
+> their Rule-0.b block; mean rows REFUSE with one; a block records the reading
+> it judged, so pairing it to the wrong row refuses.
+>
+> **Deferred, deliberately:** the R-01..R-24 coverage re-walk against the v2
+> text (pin 35) is T12's, not T13's; the two-sided discipline wording (pin 33)
+> and the process minors are T16's.
+>
+> **Defects to fix before T13 is re-sealed** (full list with severities in the
+> reviews doc; these are the ones that touch the permanent record): the derived
+> factor's basis (owner item 1); the oracle floor value (owner item 2); Rule
+> 0.b's CRN-state premise (owner item 3); the `±4 sd on 2 samples` acceptance
+> criterion, which must become a real test; the one-correction guard, defeatable
+> by deleting the per-row `correction` key (add the `seal_sha` check); the stale
+> `3 x F_ens` string baked into the correction reason; `min_m_for_clean` treating
+> `D_int_sigma` as m-invariant when it is 42% MC noise; the unreachable mean-row
+> guard and the unreachable pin-34 STOP (which would also lose the evidence
+> block); `verify_current_seal()` ignoring `--evidence-path`; `check` never
+> resolving the superseded node; zero test coverage on `amend_seam_rows`; and
+> `ruff format` + `mypy` (1 error) not clean.
+
+> **▶ PHASE 14 — SCALING PROGRAM DESIGN COMMITTED 2026-07-22 (`f25042c`),
+> ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-21-phase14-scaling-program-design.md`
+> (owner-approved in-session: seven forks a–g ruled with pins + two design
+> batches approved with pins; §13 carries the full pin-coverage map — the
+> reviewer walks it). PROGRAM design, not capability design: five stages
+> (0 foundations / 1 spatial-at-2017 / 2 temporal / 2G global assembly /
+> 3 trend product), owner gates between, contracts C0→1, C1→2, C2→2G,
+> C2G→3 (the trend contract carries constraint 8 verbatim: published-budget
+> bias/drift terms via the Phase-13 augmentation machinery + era-keyed CRN
+> temporal coherence + gauge-trend/budget validation). Stages 0/1 fully
+> designed for writing-plans; 2/2G/3 contract-only, own specs later.
+> Named destination: per-gridpoint sea-level-trend error bars through the
+> 25+ year record. Key rulings: dual-source loader (CMEMS public evidence /
+> JPL adapter conformance-gated, synthetic third adapter in CI); Stage 1 =
+> mesoscale-only ("MIOST allsat-1" lineage), six-tile roster (GS anchor +
+> seam-pair ORACLE vs seamless signed truth + equatorial + Southern Ocean +
+> quiet gyre + Kuroshio), frozen five-mission config, zero touches;
+> role-split era validation (reference epochs fit+validate, sparse epochs
+> transfer-validated once, ±66° mask); hybrid era calibration (per-era
+> reference fits + gauged kernel-density covariate n_eff, identity at
+> n_eff₀ by construction); locked tier = gauges (universal spine) + c2
+> (2010→), first opened at Stage-2G's acceptance touch; compute ladder
+> Tier 0–3 with owner spend tables + honest two-tolerance determinism
+> contract. Phase-13 six-mission-refresh election fires at Gate 1 (named
+> trigger). Prereqs recorded: Phase 11 CLOSED (hard prereq), Phase 12
+> CLOSED (production convention), Phase 13 CLOSED (augmentation machinery
+> the trend stage requires). Anchor identity-gate set = FIVE gates (§10);
+> deferred-thread ledger with unlock stages + owner-election markers (§9).
+> **SPEC FILE-REVIEW APPROVED 2026-07-22 (no changes; coverage map audited
+> both directions on samples). OWNER PLAN RULING: Stage-0 plan ONLY (Stage-1
+> plan is written after Gate 0 — no-plans-on-unmeasured-constants rule);
+> plan-structure expectations recorded in the ruling (task groups per
+> workstream; 0a-6 seal last in 0a; Gate 0 userGate; 0a-7 first; gate
+> scheduling split Stage 0/1/2; owner spend inputs pre-registered-or-WAIT).
+> **STAGE-0 PLAN APPROVED 2026-07-22 (owner review; `8cfd16f` stands) WITH
+> FIVE PINS, folded same day: (1) SPEC §14 POSTSCRIPT added — gate 2
+> decomposes into loader-identity (byte-comparable, dc2021a-wrapped source,
+> runs Stage 0) + lineage-sensitivity (first golden-tile comparison,
+> dc2021a vs CMEMS-MY); (2) dc2021a wrapper = REAL adapter (conformance-
+> covered, content-manifested, never test-only; adapter census = synthetic
+> + CMEMS-MY + dc2021a + JPL-code); (3) golden-tile pre-registration
+> sharpened (anchor box × 2017 × frozen signed — "what would the signed
+> numbers have been on CMEMS-MY directly"; TABLES, never blocks Stage 1);
+> (4) STAGE-1 SOURCE MAP recorded (anchor + seam-pair on dc2021a lineage;
+> non-box tiles on CMEMS-MY; per-tile source in provenance; golden-tile
+> delta = the cross-lineage BRIDGE); (5) owner defaults RATIFIED as
+> owner-set (Tier-2 probe ≤ US$25 / 8 vCPU / 64 GiB / 6 h / one region;
+> CMEMS ≤ 50 GiB, egress $0; WAIT above any ceiling).
+> ▶ EXECUTION IN FLIGHT (2026-07-22, executing-plans, on main). OWNER
+> EXECUTION RIDERS (verbatim intent): T0 first; TDD red/green; dual review
+> per task; push as you go; zero evaluation-bearing maps; zero locked opens;
+> tally untouched; STOP at T20 (Gate 0) with the seal sha + full evidence
+> axes — the sealed evaluation set is the program's founding artifact, owner
+> walks it.
+> **T0 COMPLETE (`56b9f24`):** P0-2 stage-B evidence clobber path hardened —
+> `_write_evidence_guarded` refuses (RuntimeError naming P0-2) unless
+> `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"` exact-string, BEFORE any file open;
+> 8 tests (refusal-before-write, exact-string, opt-in unchanged, unguarded-
+> call source pin); dual review clean.
+> **T1 COMPLETE (`137c610`):** along-track contract (`adapters/altimetry/`)
+> — `SourceDescriptor` (frozen, sorted per-file-sha manifest, canonical-JSON
+> `manifest_sha`), `AlongTrackSource` Protocol, `apply_superobs` no-op hook
+> (refuses non-None cfg), `AltimetryConformance` suite (region/time/mission
+> clipping exact, descriptor stability, sha sensitivity, determinism) +
+> synthetic adapter (synA 10-day repeat / synB drifting, 500 obs/day/mission,
+> two-Gaussian SSH); 19 tests green, no skips; dual review clean.
+> **Recorded deviation:** Protocol gained `time_epoch()` — ObsWindow times
+> are float days, so each source declares its epoch; dc2021a declares
+> 2017-01-01 preserving gate-2 byte identity (spec-reviewer: serves intent).
+> **Note for T2:** conformance sha test is a descriptor-level proxy; dc2021a
+> subclass adds a real file-byte-mutation check (done).
+> **T2 COMPLETE (`a946778`) — GATE 2 LOADER-IDENTITY PASSED on this box:**
+> `Dc2021aSource` wraps the legacy path (load_mapping_obs imported, not
+> copied); per-mission byte identity vs legacy PASSED full-span AND
+> 2017-frame (five mapping missions + j3 track; float64 dtype pinned;
+> mission labels compared by value — numpy U2/U3 promotion note in test
+> docstring); c2 structurally absent (missions/manifest/refusal); real
+> byte-mutation manifest test; evidence recorded WRITE-ONCE at
+> `phase14.stage0.gate2_loader_identity` (pass, per-mission n_obs
+> alg 80812 / h2g 71293 / j2g 14639 / j2n 22504 / j3 87460 / s3a 82014,
+> manifest_sha c688b0d8…); 19 tests green; dual review: two evidence-write
+> defects found (hardcoded date, rewrite-every-run) → fixed (write-once +
+> real date, inode in sha cache key).
+> **⚖ T3 VINTAGE RULING NEEDED (owner input not covered by
+> pre-registration — WAIT semantics applied to the T3 chain):** the fork-A
+> pin "DT2021 pinned — the papers' lineage" cannot be satisfied: the
+> Copernicus Marine Data Store native buckets (all of mdl-native-01..14
+> scanned 2026-07-22, anonymous S3 listing works) carry ONLY
+> `_202411`-version datasets for `SEALEVEL_GLO_PHY_L3_MY_008_062`
+> (DT2024-lineage reprocessing; file production tag `_20240205`). DT2021
+> was removed upstream — an upstream version migration, exactly the fork-a
+> pin-5 event. OWNER OPTIONS: (a) ratify 202411 as the pinned vintage
+> (dataset_version records the 202411 tag; the golden-tile comparison
+> becomes an honest CROSS-DT lineage measurement dc2021a/DT2021 vs
+> CMEMS-MY/DT2024 — the instrument working as designed, divergence TABLES);
+> (b) owner supplies DT2021 L3 files from another archive (AVISO auth) as
+> a separate source_id; (c) HOLD the T3 chain. BLOCKED pending ruling:
+> T3→T4→T5→T7→T10(needs T5)→T15→T18→T19→T20. Access facts recorded: STAC
+> catalog public, per-mission datasets 29, daily global nc ~0.5 MB/file,
+> anonymous HTTPS GET confirmed — no credentials needed for the census or
+> scoped downloads.
+> **EXECUTION CONTINUES on the independent tasks meanwhile:**
+> T12→T13/T14, T8→T9, T11, T16, T17, T6.
+> **T12 COMPLETE (`494488b`):** `application/spatial_tiles.py` —
+> `TileFrame` (frozen; solve_bbox extends overlap ONLY toward existing
+> neighbors, obs framing delegates to the EXISTING `halo_obs`; obs_bbox
+> from GRID NODE extent ± halo, 43.2°N-sliver pinned byte-equal vs
+> legacy), `frame_grid` (verbatim arange construction — anchor grid
+> byte-equal `baseline_config`), `tile_plan` (row-major, ragged clip,
+> exhaustive missing-neighbor flags, fp-ceil guard, wraparound refusal),
+> `operative_halo_deg()` hook = 1.0; 12 tests green; dual review actioned
+> (fp zero-width tile bug fixed + guards + exhaustive flag map).
+> **GOTCHA RECORDED for T13:** per-tile `np.arange` node construction can
+> fp-shift overlap nodes across adjacent tiles (~1e-14) — the blend
+> `assemble` must not assume bit-shared node coordinates across tiles;
+> resolve at T13 (shared-lattice snap or coordinate-tolerant weights)
+> when the partition-of-unity tests land.
+> **T13 COMPLETE (`c348bb3`):** blend in `spatial_tiles.py` —
+> `blend_weight` (per-axis linear ramp over the actual 2·overlap region,
+> U2022 edges; separable product = our corner completion, papers-silent
+> gap noted in docstring), `assemble` (renormalizes by ACTUAL local
+> weight sum; NaN-outside-support never poisons; refuses count mismatch).
+> Partition of unity numeric to 1e-12: 2×1 edge, 2×2 corner (0.25×4 at
+> the four-tile point), domain edge, dropped-land tile (constant
+> recovered on covered region, NaN in uncovered core), degenerate anchor
+> ≡ 1; edge-reduction == 1-D rule. Dual review actioned: zero-overlap
+> multi-tile plans now REFUSE (double-count regime), tolerances tightened
+> to 1e-12. Note: seam fp-lattice gotcha did not bite (blend is
+> coordinate-based, not node-based); node-level assembly alignment
+> re-checked at T14/Stage-1.
+> **T14 COMPLETE (`84b4db4`):** `validation/pertile_scoring.py` —
+> `score_tile` (guard FIRST, core-only extraction via vendored
+> read_l3_dataset with frame.core bounds, vendored interp + compute_stats
+> + shared λx helper UNCHANGED, empty-core refusal, `n_scored_points`
+> honest post-interp count); unit tests: boundary off-by-one pinned
+> (305.0 in / 305.1 out / 306.9-in-solve-bbox out), lat clip, time
+> window, provenance refusal via write_map fixture. Gate-5 test lands
+> SKIP-GUARDED on `ours/phase14_stage1/anchor_signed_maps.nc`.
+> **ADVERSARIAL CATCH (load-bearing):** near-pinned
+> `phase13.lane0_reference.mu_score` 0.8641999994291494 as the gate-5
+> constant — WRONG LINEAGE: that number is `leaderboard_nrmse` at track
+> granularity; `compute_stats` µ is a different quantity (the two only
+> "track" each other, see eval/skill_score.py). Gate 5 now asserts
+> machinery identity (score_tile ≡ their_eval.score, rtol 1e-12, all
+> three) and the compute_stats-lineage value constants are pinned AT the
+> Stage-1 anchor run into `phase14.stage1.gate5`. λx tile-extent band
+> parameterization deferred to first non-anchor consumer (Stage 1) —
+> anchor identity requires box convention verbatim.
+> **T8 COMPLETE-MACHINERY (`05a4e3b`) — real-series leg PENDING epochs:**
+> `adapters/insitu/` — UHSLC rqds hourly→daily parser (validated on REAL
+> h057a; ≥12-valid-hours/day rule), PSMSL RLR catalog parser (XXX codes
+> tolerated), `LockedGaugeError` structural refusal (BEFORE any open,
+> exact-string env, canonical split path never bypassed by custom
+> data_dir), 5-criteria screening IN ORDER with visible per-gauge rows,
+> §4-F firewall sentence verbatim + no-map test, seeded stratified split
+> (8-box basin × era class, 30%/stratum, byte-equal rebuild);
+> `scripts/download_gauges.py` (httpx+stamina, sha manifest,
+> verify-and-skip, storage-ledgered, SINGLE-WRITER). REAL catalog leg
+> RUN: PSMSL 1618 rows + UHSLC 598 stations + h057a series
+> (ledger 0.018 GiB); evidence `phase14.stage0.gauges` =
+> catalog-leg-complete. Series screening + locked split WAIT on the
+> census epoch table (T4, blocked on the T3 vintage ruling) — recorded
+> in evidence `pending`. 19 tests green; dual review actioned.
+> **T9 COMPLETE (`581f9fb`):** `ContextKey.INSITU_GAUGES` added;
+> `eval/insitu.py` — `InSituGauges` (reference-based, required_context =
+> the provider key, in ALL_EVALUATORS + default_registry;
+> declared⇒consumed integrity fixture extended to FIVE keys); sealed
+> nulls (`InSituNullConfig` 15-day circular-boxcar doy climatology +
+> lag-1 persistence; NO scoring-time null choice — signature pinned);
+> `bilinear_wet` (wet-node renormalization, never extrapolates outside
+> grid); per_gauge_rows with ONE day population + ONE demeaning
+> convention (review fix: prior draft mixed populations/means across the
+> three RMSEs); graceful `{}` skip on non-gauge payloads (visible skip
+> row, never KeyError); wrong-null bug value-pinned at wrap day 171.33.
+> Builder gains `insitu=` provider param. 20 tests green.
+> **NOTE for Stage 1:** the pipeline payload contract for insitu maps is
+> `map_days/map_lon/map_lat/map_ssha` — the producer that assembles it
+> from product maps lands with the first Stage-1 consumer.
+> **T11 COMPLETE (`ddd8249`):** `docs/validation/phase14_seam_rubric.md`
+> — PRE-REGISTERED spatial seam rubric (Task-18 pattern): computable
+> `D_int` (pooled-interior one-grid-step increment RMS, perpendicular
+> axis), co-located `delta` definition, Rule-0 solver-floor validity gate
+> inherited, ONE-SIDED by design (R→0 = success, recorded), verdict
+> cells CLEAN ≤1.0 / ELEVATED ≤2.5 / STRUCTURAL-STOP >2.5 (2.5 recorded
+> HONESTLY as an a-priori anchor — midpoint of the phase-4 C∈[2,3]
+> range, different metric class; owner may re-pin at Gate 0), seam-
+> ORACLE clause (no published precedent, gap-register).
+> `validation/phase14_instruments.py` — `instrument_configs()` (four
+> families: GroundTrack per-tile×era, SpectralFidelity tile-extent band,
+> seam thresholds, T9 sealed nulls) + byte-deterministic canonical-JSON
+> serialization; doc↔code pinned on BOTH the machine comment AND the
+> prose cells. 4 tests green; review actioned (D_int ambiguity, 2.5
+> provenance, vacuous-pin, path anchor).
+> **T16 COMPLETE (`1bb329d` + review fixes `65ecea6`):**
+> `application/ladder.py` — Tier 0–3 (§4-G docstrings), STAGE0 spend
+> table (tier2_probe $25/8vCPU/64GiB/6h/1-region; cmems ≤50 GiB egress
+> 0; rest Tier 0/1 $0), `authorize` → Authorization|Wait ("executor-set
+> spend never happens" sentence pinned; unknown class WAITs; exact-
+> ceiling authorizes), `Authorization.__post_init__` refuses over-
+> ceiling on EVERY leg (review-refuted under-cost 999-vCPU bypass),
+> `tier1_eligible` reads MemAvailable AT CALL TIME (fake-meminfo flip
+> test), governance + audit-locality verbatim + test-pinned. **Review
+> catch honored (monied rule):** probe storage/egress were NOT
+> owner-registered → ceilings set 0 (any use WAITs; owner rules at T18)
+> — test-pinned. 14 tests green. Storage WAIT enforcement for downloads
+> lives in the T3 downloader per plan (recorded gap, planned).
+> **T17 COMPLETE (`db06c2b` + review fixes `129cc66`):**
+> `scripts/phase14_crossenv.py` — gate 4 decomposed: `crn`/`compare-crn`
+> (bit-exact half: sha256 of the PRODUCTION keyed-uniform streams per
+> consumed axis — recorded interpretation: randomness layer hashed,
+> ndtri/variance scaling = arithmetic priced in the solve half) +
+> `solve`/`compare-solve` (mean + member-0 anomaly maps + PCG
+> CONVERGENCE_LOG rows + BLAS recipe; compare REPORTS max-abs/RMS,
+> tolerance recorded at T18, never asserted before). Pinned subject:
+> signed box w0, dc2021a five-mission, `shipped_miost5` +
+> PHASE13_WINNER_PARAMS, signed root 4836134738817689931 (verified ==
+> derive_seed("miost","stage-b-winner","members",0)). REVIEW CATCHES
+> FIXED: window mask now THE PRODUCTION `_window_mask` [start−L_t,
+> end+L_t] inclusive (n_obs 9242→11041 — the L_t-halo obs the old rule
+> missed), coef axis → production "elem" key at native identity bytes,
+> single-window plan (no 9-window drift), golden synthetic-stream sha
+> pinned (db0e6423…) so a rebased randomness layer cannot silently agree
+> cross-host. **REAL SAME-HOST LEG RUN: two manifests EQUAL** (obs
+> 0d91d5505109…/11041, elem 27747e67d5eb…/187264; lane-D → no err axis,
+> recorded). Cross-host half runs at T18 (blocked chain). 7 CI tests
+> green.
+> **T6 COMPLETE (`8b6c732` + review fixes):** `adapters/altimetry/
+> jpl_ssha.py` — documented directory-layout contract (per-mission dirs;
+> time/latitude/longitude/ssha vars; lon normalized mod 360; non-finite
+> ssha DROPPED, documented), per-file sha256 AT INGEST, EPOCH 1992-10-01
+> declared; conformance subclass skip-guarded on `SVERDRUP_JPL_SSHA_DIR`
+> (7 SKIPPED in CI, reason names the env var); CI legs: parse, byte-flip
+> manifest sensitivity, clipping/normalization/NaN-drop, read-only
+> governance pin (source tripwire + STRUCTURAL locality note: all opens
+> come from the local glob — no URL reaches xarray backends). 4 CI
+> tests green.
+> **FULL SWEEP ON THE FINAL TREE: 1051 passed / 18 skipped / 1 xfailed
+> (33:55; non-validation tree; skips = data-gated JPL conformance +
+> gate-5 Stage-1 guard + standing data-gated legs — every skip reason
+> named).**
+> **⚖ DT-VINTAGE RULING (owner, 2026-07-22, verbatim intent) — OPTION
+> (a): RATIFY `_202411` (DT2024) as the pinned CMEMS-MY vintage.** The
+> Nov-2024 MY reprocessing replaced DT2021 upstream — the fork-a pin-5
+> migration event at first contact; the pin's own protocol applies.
+> Five recordings:
+> 1. Golden-tile comparison (anchor box × 2017 × frozen signed) = the
+>    CROSS-DT BRIDGE (dc2021a/DT2021-era vs CMEMS/_202411); divergence
+>    TABLES per the pin. CONFLATION recorded honestly: repackaging and
+>    DT-generation deltas inseparable in this one comparison. ⚖ OWNER-
+>    ELECTABLE LEDGER ROW: AVISO DT2021 (authed) as a decomposition
+>    source — elected ONLY if the measured bridge delta is material to a
+>    Stage-1 reading; no auth cost on an unmeasured need.
+> 2. PAPERS-FAITHFULNESS RE-ANCHORED: the papers-lineage claim attaches
+>    to the dc2021a-anchored signed records (DT2021-era); any future
+>    U2022/B2023 citation beside CMEMS-MY results carries the vintage
+>    caveat. Spec fork-a pin-5 text superseded-with-pointer (spec
+>    postscript 2) — never silently edited.
+> 3. Descriptor pins `_202411` exactly per dataset; any future DT change
+>    re-fires the pin-5 machinery as designed.
+> 4. STAGE-3 CONTRACT NOTE (inherited by the trend spec): vDT2024's
+>    TOPEX-A instrumental-drift correction NOT YET COMPUTED upstream
+>    (fill-valued) — the trend contract's published-budget prior for the
+>    TOPEX-A term comes from the LITERATURE, never the CMEMS variable,
+>    until upstream updates it; sits on the trend product's dominant
+>    1993–1998 systematic.
+> 5. Gate-5 constant deferral ENDORSED (validation-vs-acceptance
+>    constant class, caught pre-pin; value pins at the Stage-1 anchor
+>    run). Storage/egress ceilings SET: probe ephemeral VM disk
+>    ≤ 50 GiB, persistent cloud storage 0, cloud egress ≤ 1 GiB; WAIT
+>    semantics unchanged above.
+> **▶ EXECUTION RESUMED: T3 under the ratified vintage, through T20;
+> STOP at Gate 0 with the seal sha + full evidence axes. Zero
+> evaluation-bearing maps, zero locked opens, tally untouched.
+> **T3 MACHINERY + CENSUS DONE; SUBSET PULL IN FLIGHT:** `cmems_my.py`
+> (dataset_version `SEALEVEL_GLO_PHY_L3_MY_008_062_202411` + ruling
+> pointer; locked c2/c2n structurally excluded incl. the DOWNLOADER;
+> CHALLENGE_TO_CMEMS map h2g→h2ag recorded) +
+> `scripts/download_cmems_my.py` (STAC+anonymous-S3, sha manifest,
+> verify-and-skip, budget WAIT vs the 50-GiB ladder row). CENSUS RUN:
+> 29 missions, `data/cmems_my/census_raw.json` sha f7007b88… (evidence
+> `cmems_census_raw_sha`) — NOTE: predates schema v2 (dates lists);
+> RE-RUN census after the subset pull (single-writer). Six-mission
+> 14-month subset (alg,h2ag,j2g,j2n,s3a,j3 × 2016-12→2018-01,
+> ~1.3 GiB) downloading.
+> **T4 CODE COMPLETE (`f249939` + review fixes `05b6929`):** census
+> artifact (90-d gap split, content sha), partition (endpoint union,
+> 365-d Jaccard merge — FULL expected partition hand-pinned after
+> review; merge-loop fuzzed clean by reviewer), window-center rule,
+> net-of-locked candidates. Real-artifact leg waits on census re-run.
+> **T5 CODE COMPLETE (`7fd1e57`):** `epoch_table.py` (criteria chain
+> mechanical; ANCHOR exception j3 by construction; instrument-class +
+> drifting maps recorded; handicap columns; deterministic bytes).
+> Real draft table waits on census re-run.
+> **T10 COMPLETE (`9623b0f`):** `locked_tier.py` open_touch ceremony —
+> 8 refusal legs green, default verifier REFUSES pre-seal, tally
+> increments on clean completion only, LOCKED env set for child scope
+> only; "gate approval is NOT touch authorization" pinned.
+> **T15 CODE COMPLETE (`249a08d`):** `size_tile` (retained-store term
+> BY NAME, box-identity defaults, wall basis = phase-13 leg-B 253.4 s
+> at the 11041-obs pinned subject) + **BasisSpec DOMAIN GENERALIZATION**
+> (x0/y0/d_x/d_y pavement fields, defaults byte-identical — key()
+> suffix only when non-default; `_layouts`/`_axis_candidates` threaded;
+> 48-test miost identity sweep GREEN post-change) + `Miost(basis_domain=…)`
+> hook + `scripts/phase14_probe.py --tile-sizing` (pinned frame
+> [292,307]×[30,45], tier1_eligible FIRST, PROBE-labeled, ratios
+> recorded never retuned). Probe RUN waits on the CMEMS subset.
+> **T7 MACHINERY (`221ef39`):** `scripts/phase14_golden_tile.py` — the
+> cross-DT bridge comparison (frozen signed config both sides; CMEMS
+> missions RELABELED to challenge codes h2ag→h2g so mission-keyed R
+> applies identically — recorded; both sides score the SAME challenge j3
+> track; thresholds µ 0.002 / map RMS 1 cm pre-registered; tabled flag;
+> refusals). RUN waits on subset (~80 min detached when it goes).
+> **T19 MACHINERY (`cff0d66`):** `validation/phase14_seal.py` —
+> assemble/build (WRITE-ONCE)/verify (byte recompute, tamper + stale-sha
+> refusals)/supersede (v{n+1} + {supersedes, signoff, date}; v1 still
+> verifies) + `verify_current_seal` via the evidence pointer
+> `phase14.stage0.seal`; **T10 ceremony now wired to the REAL verifier**
+> (default refuses while no seal recorded; 20 tests green). REAL seal v1
+> build waits on T5/T8 real legs.
+> **T18 MACHINERY (`1d72cde`):** `assemble_tier2_report` (two tolerances
+> SEPARATE + per-key max envelope, formula recorded; CRN mismatch =
+> STOP-for-owner) + `--tier2-report` CLI + `sky/phase14_probe.yaml`
+> (pinned resources = the owner ceilings, teardown required).
+> **⚠ T18 CLOUD LEG WAITS: NO cloud credentials on this host** (no
+> ~/.aws, ~/.config/gcloud, ~/.azure, no env) — the Tier-2 launch is
+> blocked input only the owner can provide; recorded for the Gate-0
+> pack. T8 gauge series download (stations-all, ~0.5 GiB) queued behind
+> the CMEMS pull (single-writer ledger).
+> **EXECUTED SINCE (all committed+pushed):** CMEMS subset DONE (1899
+> files, 0.824 GiB ledgered); census RE-RUN schema v2 (29 missions, sha
+> 17ec736aa9cd…, evidence `cmems_census_raw_sha`); CMEMS conformance 12
+> passed on the real subset; **T4+T5 REAL LEGS DONE** — 15 epochs
+> 1992-10-13→2026-01-17, anchor row e10 holdout j3
+> signed-workhorse-by-construction, `census_sha` ea82b953… +
+> `epoch_table_draft_sha` ba1050be… in evidence, draft at
+> `data/cmems_my/epoch_table_draft.json`; **challenge-coarsen super-obs
+> step LANDED** (fork-a pin-4 transform: mean-of-COARSEN_TIME per
+> (mission, day) block, trim; daily-file chunking difference = recorded
+> repackaging delta; wired into probe + golden-tile CMEMS side, cfg in
+> provenance) — CMEMS raw 1-Hz was 15× the signed obs density; probe
+> model dropped 20.2→4.26 GiB peak, wall est 748 s.
+> **✅ GATE 0 CLOSED / APPROVED (owner ruling 2026-07-23) — seal v1
+> SIGNED as the program's founding artifact. ITEM RULINGS (verbatim
+> intent):**
+> 1. GOLDEN-TILE: tabled row accepted; **ATTRIBUTION BEFORE ELECTION** —
+>    addendum COMPUTED + APPENDED to the pack same day (per-mission
+>    n/mean/std deltas + spans): reference surface CONSISTENT (+0.36 mm
+>    overall), variance IDENTICAL (≤1.6 mm), **structural driver
+>    candidate = j2n coverage window (dc2021a j2n ends ~2017-04-01;
+>    _202411 carries it ~45 d longer; −27% n, +21.1 mm co-moving
+>    mean)**; others = +0.6–2.4% edge trims (repackaging). AVISO
+>    election DECISION waits on the owner's readout; option recorded:
+>    j2n-trimmed re-solve isolates the span effect for one box-solve
+>    (~7 min), no auth. Stage-1 cross-lineage readings carry the bridge
+>    caveat until the readout; Stage-1 interpretation language WAITS.
+> 2. T18: Gate 0 closed WITH the cloud leg open — restructured as a
+>    LADDER-ENFORCED PRECONDITION on first Tier-2 production use (WAIT
+>    machinery already refuses). C0→1 ships same-host tolerances +
+>    CRN-EQUAL now; cross-host slot marked pending-T18. Credentials
+>    owner-side; leg runs when supplied.
+> 3. Probe ratios accepted (0.513 wall / 0.785 RAM, PCG-cap caveat
+>    recorded); Stage 1 stays measured-first (task 1-0).
+> 4. Deferrals SIGNED with pinned readings: gate-5 µ pins at the
+>    Stage-1 anchor run; **PROXIMITY = SCORING-TIME FILTER, never a
+>    membership change** — locked/dev membership sealed + immutable; a
+>    locked gauge failing proximity is unscoreable but never leaves the
+>    set. (Code semantics confirmed to match: screening rows deferred
+>    pass-through, membership sealed, evaluator wet-node interp
+>    self-excludes at scoring time.)
+> 5. OFF-BOX EXECUTED (`5cca5be`): `sealed/` tracked home — seal v1
+>    copy (self-verifying, test-pinned) + Gate-0 evidence snapshot
+>    (phase14 subtree + tally, frozen at gate close). Third leg =
+>    `scripts/phase14_seal_run.py check`. NON-COMMITTABLE items (raw
+>    CMEMS/gauge data, golden-tile nc maps, live evidence store): the
+>    owner-side off-box copy is OWNER-NAMED when made — record the
+>    name here; until then re-derivation (verify-and-skip downloads +
+>    byte-equal rebuilds, reviewer-verified) is the recovery path.
+> **STAGE-1 PLAN: APPROVED FOR PARTIAL DISPATCH (owner rulings
+> 2026-07-25).** Plan `docs/superpowers/plans/2026-07-23-phase14-stage1-spatial-2017.md`
+> (+ `.tasks.json`). Review round 1: 14 pins — 1,3–11,13,14 folded
+> (`b4c7caa`, `4608504`); round 2: APPROVED T0 ∥ T1 dispatch + pins
+> 15–18 folded (this commit: §3/§10 of docs/project-context.md now
+> Claude-Code-maintained, read-from-clone, revisions arrive as ruling
+> pins; ±66 arithmetic derives from the ruled frame convention, never
+> typed; pack-level absence pin moved to T9 where the free prose
+> lives; this banner). **⚖ TWO OWNER ELECTIONS OUTSTANDING — decision
+> cells EMPTY, T2 onward DOES NOT DISPATCH until ruled:**
+> (pin 2) diverse-tile missing_neighbors convention
+> (isolated 76×77 vs production-representative 96×97 nodes, 1.59×;
+> sets T2's sizing bracket AND the SO ±66 halo headroom:
+> prod-repr breach at halo > 2.0°, isolated > 4.0°);
+> (pin 12) equatorial box keep −4…11°N vs shift −2…13°N.
+> **✅ T3 CLOSED — ANCHOR IDENTITY GATE: FIVE GATES GREEN (2026-07-26;
+> machinery `f201c09`+`b71dc7f`+`efd515a`, real leg recorded).** Evidence
+> `phase14.stage1.anchor_gate` (pass=true) + gate-5 constants PINNED
+> write-once at `phase14.stage1.gate5`: µ 0.7694588601958132 /
+> σ 0.2848175434425789 / λx 174.52106004917525 km / n 46,780
+> (compute_stats lineage on the j3 track, per the Gate-0 deferral;
+> `tests/test_phase14_gate5_score_identity.py` now LIVE and passing).
+> CHECK 1 (four routes vs the phase-13 acceptance artifacts): member
+> eta+anom SHA-EQUAL 9/9 windows vs phase13_winner_members.npz; mean
+> maps BIT-IDENTICAL (365 d) vs phase13_winner_mean.nc; variance
+> BIT-IDENTICAL vs phase13_winner_var.nc; Γ-route day-0 max|Δ| 1.44e-15
+> (last-ulp, the recorded S-vs-Γ summation-order behavior). Substrate
+> identities asserted PRE-solve: grid nodes ==, BasisSpec (km
+> basis_domain) ==, obs table byte-equal n=54,345 (dc2021a five-mission
+> vs legacy 6-file→split→halo). CHECK 2 cited (gate2 pass, manifest
+> c688b0d8… + golden-tile TABLED row). CHECK 3 = the RECORDED FALLBACK
+> READING (no era-keyed calibration instantiation exists yet): shipped
+> s(x) ≡ phase13_field_miost.json EXACTLY (cal_key byte-equal + surface
+> values == on 2652 nodes) — flagged for the owner walk. CHECK 4 cited:
+> T17 CRN manifests recomputed EQUAL; cross-host slot EXPLICIT
+> `pending-T18`. **PIN 23 CLEAN: all 18 pcg legs CONVERGED under the
+> 500 cap (mean 342–422 iters, member-batch 396–459; worst residual
+> 1.000e-06 ≤ rtol 1e-06) — no capped anchor leg** (contrast: the T2
+> probe's 19° legs were capped; the anchor box converges). Zero
+> touches: locked tally byte-identical (in-block). Artifacts:
+> anchor_signed_maps.nc (6955afb8…) + MEMBER-STD maps
+> anchor_member_std_maps.nc (694f2a40…; the T1-follow-on σ field kind
+> T4 consumes) + the leg's own member store (crash-resume substrate,
+> never a reference). **ROOT DEVIATION RECORDED for the owner walk:**
+> plan text names the stage-b-winner root, but the signed member store
+> pins the phase-13 acceptance root 7742201642112487637
+> (= shipped_miost5().member_root); the run used the latter — the
+> four-route reference set forces it; mean/Γ routes root-independent.
+> Wall 22,352 s (~6.2 h; the plan's 40–90 min estimate superseded by
+> the T11 precedent 24,780 s), peak RSS 3512 MiB. Ops trail: launch 1
+> killed by a harness process-group kill (hardened: setsid + own-store
+> resume); launch 2 OOM'd in the from_etas whole-grid dense evaluate
+> (the recorded phase-13 OOM class; fixed: 1×1-grid construction +
+> chunked mean_at). **T3 was the HARD BARRIER: owner walks the
+> five-check block TOGETHER with the pin-23(a) converged-probe ratio
+> before T4 dispatches.**
+> **(pre-T3 halt banner below, kept for the trail — resolved by the
+> dec16b2 rulings fold, pins 23–25)**
+> **✅ T3 RATIFIED (owner 2026-07-26) — WITH THE ACCOUNTING CORRECTED;
+> ⛔ T4 DOES NOT DISPATCH: PIN 26 (production-path convergence) IS THE
+> LIVE BLOCKER, and the next STOP is BEFORE T5 with the price bracket +
+> production-path convergence evidence together.**
+> RATIFIED: check 1 (four-route identity — "a genuine proof"), check 5
+> machinery reading + gate-5 pinning, the root deviation (correct AND
+> NECESSARY — the reference set forces `shipped_miost5().member_root`),
+> the mid-run hardening (script-only, falsifiable bit-identical check
+> that passed), and pin 23(a) ("this is what discharging a gate looks
+> like").
+> **RULED — THE GATE IS NOT "FIVE GREEN".** Check 3 is SPLIT (landed in
+> the evidence block + plan): **surface identity = PASS ON ITS OWN
+> TERMS** (cal_key byte-equal + values `==` on 2652 nodes; proves no
+> drift in the shipped calibration surface); **era no-op = DEFERRED**
+> to the stage introducing era-keyed code, reappearing in that stage's
+> coverage walk (T11 deferral discipline) — a proxy recorded as PASS
+> becomes "check 3 passed" three documents downstream. **The honest
+> accounting, used in the Gate-1 pack: TWO checks run and passed (1, 5),
+> TWO cited and pre-ratified at Gate 0 (2, 4), ONE proxy-passed with
+> the specified check deferred (3).**
+> **PIN 26 (blocks T4/T5):** the maxiter fix reached `probe` only —
+> `PCG_MAXITER = 500` is still the default and `run`/`_solve_leg` carry
+> no maxiter, so every T5 leg (4 tiles × 9 windows at 19°, where the
+> converged probe needed 524/554 iters) would cap un-converged and
+> could not report that it capped. In flight: (a) convergence fields in
+> the production row, (b) cap set FROM measurement (≥2× the measured
+> 19° requirement, wall consequence stated), (c) seam-frame convergence
+> MEASURED before T4 (`seam_read` refuses on residual > rtol — an
+> unmeasured cap costs the whole T4 spend after the fact), (d) recorded:
+> the MEMBER-BATCH leg is the worst-converging leg in every measurement
+> (554 vs 524 probe; 396–459 vs 342–422 anchor) and T10's σ field kind
+> rides it — margins are set by that leg, (e) the anchor's 459/500 is
+> **92% of budget — 8% headroom, not "clean"**.
+> **✅ PIN 26 COMPLETE (`c07f260` + `08ac9ee`, 75 tests, pre-commit
+> --all-files clean):** (a) ONE classifier `classify_pcg_legs` stamps
+> rtol/maxiter and the CAPPED verdict onto probe, tile AND seam rows —
+> a duplicated inline copy on either path fails a test; tile rows now
+> carry per-leg rtol/maxiter/iterations/residual + `convergence` +
+> `scores.capped_measurement`. (b) **`STAGE1_PCG_MAXITER = 1200`**,
+> derived: measured worst leg 554 → owner floor ≥1108 → 1200; wall
+> consequence stated in the same breath at the measured 0.56 s/iter
+> (m=1, 19°): a leg run to cap 672 s, a window ≈22 min, a fully-capping
+> T5 ≈13.4 h vs ≈6.0 h at measured iteration counts — **both floors**
+> (0.56 s/iter was measured at m=1; production member-batch solves 100
+> RHS per blocked iteration). Library default `PCG_MAXITER` LEFT at 500
+> and test-pinned there: the anchor gate re-solves at the SIGNED cap
+> read from the member store, so raising the library default would
+> change solver behaviour under the signed-identity paths without
+> evidence — the driver's explicit cap is the safe form.
+> **(c) SEAM FRAMES MEASURED — CONVERGED, no STOP:** `seam_n`, first
+> production window, m=1, maxiter 2000 → mean **365 iters** @ 8.69e-07,
+> member-batch **407 iters** @ 9.34e-07 (18%/20% of cap; 34% of the new
+> 1200 cap — and 81% of the old 500 default, i.e. 19% headroom, which
+> is why this was measured rather than assumed). Wall 85.4 s, peak
+> 1,429 MiB. Recorded `phase14.stage1.seam_convergence_probe`.
+> **`seam_s` NOT measured** — reported as unmeasured, not covered
+> (mirrored geometry, same node count, band 33–40N). Frame is 51×37 =
+> **1,887** nodes (the fp-overshoot extra lat node), not 1,836.
+> (d) MEMBER-BATCH is the worst-converging leg in EVERY measurement
+> (probe 554>524; anchor 396–459 > 342–422 across all 9 windows; seam
+> 407>365) and T10's σ field kind rides it — margins are set by that
+> leg (in the constant's comment + test-asserted). (e) The anchor's
+> **459/500 = 91.8% of budget, 8% headroom** — named as the margin it
+> is; at 1200 the same leg sits at 38%.
+> **⛔ T4 COMPLETE (`46a5bc9`/`e54e414`/`a86fb6c`/`35e8eef`, 15.3 h,
+> peak 2,573 MiB — SMALLER than the ratified T3 anchor leg on the
+> binding axis) — MACHINERY APPROVED, HEADLINE INTERPRETATION
+> REJECTED BY REVIEW. TWO OWNER ITEMS BELOW.**
+> **THE FOUR RUBRIC ROWS** (`phase14.stage1.seam_rows`; pair
+> `seam_n|seam_s`, era 2017, 0.2°, the 2·overlap strip lat 36–40 ×
+> lon 295–305; ALL FOUR reproduced BIT-EXACTLY by the reviewer from
+> the raw artifacts, strip geometry re-derived from the rubric text
+> alone):
+> | route | field | rms_delta | d_int | R | cell |
+> |---|---|---|---|---|---|
+> | pair | mean | 0.007156 | 0.086491 | 0.0827 | CLEAN |
+> | pair | sigma | 0.003607 | 0.003265 | **1.1044** | **ELEVATED** |
+> | oracle | mean | 0.009267 | 0.094466 | 0.0981 | CLEAN |
+> | oracle | sigma | 0.002092 | 0.003225 | 0.6488 | CLEAN |
+> All four ATTRIBUTABLE (margins 1457× / 12,600× / 2247× / 8424×
+> over 3×F). Pin 23 fully discharged: 36 production legs converged
+> (max 434/427 iters vs cap 1200), three floor probes converged
+> (635/629/678 @ ~9.6–9.9e-10 vs rtol 1e-9, 29–31% of cap).
+> **⚠ OWNER ITEM 1 — THE σ ELEVATED IS (almost certainly) MONTE-CARLO
+> NOISE, AND IT EXPOSES A CRN DEFECT WITH SCOPE BEYOND T4.** Review
+> found four independent lines: (1) magnitude matches the ensemble
+> sampling floor `σ/√(m−1)` = 0.003706 m to **2.7%** (observed
+> 0.003607); (2) ONE-SIDED — `RMS(σ_s − σ_anchor)` = 0.000253 m but
+> `RMS(σ_n − σ_anchor)` = 0.003599 m; (3) NO seam localisation (flat
+> ±7% across the strip, where the mean route is correctly V-shaped:
+> 0.0099 at edges → 0.0043 at the boundary); (4) **MECHANISM traced in
+> code:** `miost_crn.coef_noise` keys perturbations on pavement-lattice
+> indices `(ix, iy)` measured from `BasisSpec.(x0_km, y0_km)`, and the
+> driver sets `basis_domain` from EACH TILE'S OWN `solve_bbox` corner —
+> seam_s and the anchor share lat 33.0 (identical CRN draws) while
+> seam_n starts at lat 36.0 (334 km offset → independent draws). The
+> module's own docstring guarantee ("never of array position") holds
+> across WINDOWS but **breaks across TILES with different solve
+> origins** — i.e. nearly every D1 production tile. The pipeline's own
+> recorded `mc_error = sqrt(2/(m−1))` constant predicts the entire
+> reading (0.1005 × 0.036873 = 0.003706 m). **Consequence:** the σ
+> route has a SECOND floor five orders above Rule 0's solver floor —
+> the ENSEMBLE floor — which the rubric does not carry; under it
+> 3×F_ens = 0.0111 m > 0.0036 m and the row reads **UNMEASURED
+> (ensemble floor)**, not ELEVATED. Bounded true tiling effect on σ:
+> R ≈ 0.08–0.12 (CLEAN, same order as the mean route). **NOTHING was
+> tuned on this signal** (firewall); the decisive half-split
+> confirmation (m=100 → two halves of 50; predicted RMS ≈ 0.0053 m)
+> and a direct CRN origin demonstration are IN FLIGHT.
+> **✅ ITEM 1 CONFIRMED BY MEASUREMENT (`420c40f`,
+> `phase14.stage1.seam_sigma_diagnosis`, label DIAGNOSIS — recorded
+> BESIDE `seam_rows`, never inside; the block carries no
+> verdict/cell/score key anywhere in its tree, test-pinned
+> recursively).** THE DISCRIMINATOR: **within ONE tile — where there
+> is no seam at all — two disjoint 50-member halves disagree MORE
+> than the two tiles do**: seam_n **0.005182 m**, seam_s **0.005289 m**
+> against the predicted σ/√49 = 0.005272/0.005270 (obs/pred 0.983 and
+> 1.004), i.e. **1.44–1.47× the cross-tile 0.003607** — matching the
+> expected √(99/49) = 1.421 on both tiles. The full-m replay of each
+> store reproduces the persisted member-std maps BIT-EXACTLY (max|diff|
+> = 0.0), so the halves ride the identical evaluation path. **The
+> ELEVATED cell does not survive as a real signal.**
+> MECHANISM DEMONSTRATED (not asserted), with a positive control:
+> production specs are seam_n `y0_km = 333.96`, seam_s and anchor both
+> `y0_km = 0.0`. (A) one identity row draws the IDENTICAL number under
+> both origins while naming an element **333.96 km apart in physical
+> space** — CRN is pinned to the lattice index, not to the ocean;
+> (B) seam_n and seam_s share **ZERO** element centres (333.96 mod the
+> finest rung's 85.254 km = 78.199 km — the lattice is re-PLACED, not
+> merely re-indexed); (C) POSITIVE CONTROL: seam_s vs anchor share
+> (x0,y0) → **148,352 coincident element centres, draws bit-identical**
+> — which is exactly why σ_s nearly vanishes against the anchor while
+> σ_n sits at the MC floor. Reproducible:
+> `pixi run python scripts/phase14_sigma_diagnosis.py` (~4 min,
+> `--no-record` dry-runs). Zero solves, zero production behaviour
+> changed, nothing tuned on the signal.
+> **✅ ADVERSARIAL DUAL REVIEW OF THE DIAGNOSIS (briefed to BREAK it,
+> not confirm it): DIAGNOSIS CONFIRMED, high confidence — it got
+> stronger under attack.** Every named attack line closed with
+> measurement: (i) **√2 convention** re-derived AND simulated
+> (N=200k): empirical RMS(s₁−s₂) matches σ/√(n−1) to **0.4%** at both
+> n=50 and n=100; the σ/√(2(m−1)) alternative is off by 1.41×;
+> production `std_fields` uses `ddof=1`, the convention the floor
+> assumes — no slip. (ii) **Split-axis gaming REFUTED empirically**:
+> `coef_noise` derives its stream from `blake2b(root|member|elem)`, so
+> the member index enters through a cryptographic hash — member–member
+> correlations ~0 at every lag, and contiguous / even-odd / random
+> 50-50 splits give obs/pred **0.9947 / 0.9921 / 0.9891**. (iii) **No
+> separate half path exists** — `sigma_full`, `sigma_1`, `sigma_2` are
+> three calls to the SAME `std_fields` differing only in the anomaly
+> dict; divergent ddof/masking structurally impossible. (iv)
+> **One-sidedness alternative REFUTED quantitatively**: σ_s agrees
+> with the anchor **14.7× closer than the MC floor permits** for
+> independent ensembles — data-richness cannot beat a Monte-Carlo
+> floor; σ levels agree within 0.2%, so there is no level asymmetry
+> for geometry to exploit. (v) **Mechanism on REAL production specs**,
+> not a toy: 0 coincident centres (n↔s) vs 148,352 (s↔anchor), both
+> reproduced; nearest lattice miss 7.06 km ≈ 7 million × the 1 mm
+> centre-key quantum. **QUADRATURE BOUND (the strongest line):** the
+> observed 0.003607 is BELOW the predicted floor 0.003708 — there is
+> no room in quadrature for a seam artifact at all; even allowing the
+> floor to be 5% wrong, any hidden artifact contributes at most
+> **R = 0.24, deep inside CLEAN**. Reproducibility PASS (~4 min
+> `--no-record`, every headline number regenerated, `recomputed_t4_reads`
+> bit-for-bit). `seam_rows` verified UNTOUCHED against an independent
+> pre-diagnosis git record (`35e8eef`). Production behaviour unchanged
+> (`420c40f` touches no `src/` at all; `b208676` is 5 docstring lines,
+> zero code-bearing tokens).
+> **⚠⚠ OWNER ITEM 1c — NEW, FROM THE REVIEW, AND SHARPER THAN 1b: THE
+> σ ROUTE HAS NO CLEAN REGION AT m=100 ON THIS GEOMETRY.** MC floor
+> 0.0037083 ÷ `D_int_sigma` 0.0032655 = **1.136**, against sealed
+> `clean_max = 1.0`. A PERFECTLY SEAMLESS solve would read ELEVATED
+> here — the instrument structurally cannot return CLEAN at production
+> m, and the observed 1.1044 sits BELOW the zero-artifact expectation.
+> The diagnosis block's "comparable to D_int_sigma" wording
+> UNDERSTATES this; the floor EXCEEDS the denominator.
+> **⚠⚠ OWNER ITEM 1d — NEW: THE ORACLE/σ CLEAN CELL IS CONTAMINATED IN
+> THE FLATTERING DIRECTION.** The same CRN defect predicts the
+> untouched ORACLE/σ number: since σ_s ≈ σ_anchor (shared origin) and
+> σ_n is independent, blend − anchor ≈ w_n(σ_n − σ_anchor) → predicted
+> RMS **0.002078** vs recorded **0.002092** — agreement to **0.7%**, a
+> fifth independent corroboration the diagnosis never claimed. So
+> **ORACLE/σ R = 0.6488 CLEAN is an artifact of the shared origin, not
+> evidence of a good seam** — a verdict-bearing CLEAN cell resting on
+> the same defect. **Reviewer's reading, recorded: nothing here
+> justifies retiring the σ instrument — the defect is in the CRN
+> ORIGIN BINDING, not in the σ route's concept; fix the keying (or
+> raise m), don't weaken the instrument.**
+> **Review minors (actionable, not blocking):** the banned-key test
+> asserts against a STUB block rather than walking the real assembled
+> tree (would not catch `r_seam_sigma`-shaped keys — MEDIUM test
+> strength, LOW risk since no `verdict` key exists); the commit
+> message's "no verdict-, cell- or score-shaped key anywhere" is
+> slightly overclaimed (`recomputed_t4_reads.r_seam{,_sigma}` are bare
+> verdict-bearing names holding sealed-row values); split-axis
+> irrelevance and the `ddof=1` coupling are unpinned (both verified
+> empirically by the reviewer, neither test-pinned). Confirmation-bias
+> note recorded honestly: the MC hypothesis predated the script, but
+> the half-split was a PRE-REGISTERED falsifiable prediction that
+> could have come out the other way.
+> **⚠ OWNER ITEM 1b (the live consequence, recorded under
+> `not_established` — NOT a finding of this diagnosis):** at m=100 the
+> ensemble floor σ/√99 = 0.0037 m is COMPARABLE TO `D_int_sigma` =
+> 0.0033 m, so **R_seam_sigma at m=100 has little resolving power** —
+> a σ reading near 1 means "at the noise floor", not "seam". The σ
+> seam instrument as currently specified cannot resolve what it was
+> built to measure at production m. No threshold or tuning applied;
+> the owner's call.
+> **⚠ OWNER ITEM 2 — RULE 0'S TEXT IS DEFECTIVE FOR CONVERGED SOLVES
+> (reviewer ENDORSES the implementer's deviation).** The rubric's
+> literal "+1000 maxiter" floor construction is INERT here: PCG is
+> deterministic and Stage-1 solves are tolerance-limited (434/427 vs
+> cap 1200), so extra headroom returns the IDENTICAL iterate →
+> **F = 0 exactly, 3×F = 0, and Rule 0 licenses every verdict
+> vacuously — including a genuinely broken seam.** The text was
+> inherited from Task-18, where solves were truncation-limited
+> (cap-bound), and the regime changed without the text changing.
+> **Proposed amendment (owner's to ratify):** the floor probe must
+> tighten the STOPPING TOLERANCE by a stated number of decades, with
+> maxiter headroom sized so the tighter tolerance is actually reached;
+> "+1000 iterations" alone is a floor ONLY when the reference solve
+> exited AT the cap. T4 ran rtol 1e-9 (+3 decades) + maxiter 2200.
+> **Other review findings:** deviations (a) m=100 floor probe [SOUND —
+> σ has no floor at m=1, cost declared and sized], (c) uniform 2.0°
+> interior trim [SOUND — reviewer swept trim 0.0–2.4°, NO verdict
+> flips anywhere], (d) full scope [OK] all upheld; ORACLE blends σ
+> LINEARLY through `assemble` (exact only under perfectly correlated
+> members — which per item 1 does not hold), recorded; the pair floor
+> summary's `legs` array reports only the worst probe (per-tile detail
+> intact under `floor_probe.per_tile`); row `date` is the leg's start
+> date. One AC miss being fixed now: "seam line" wording not retired
+> from the T0 module docstrings. Final tree: **1345 passed / 21
+> skipped / 1 xfailed**, pre-commit --all-files clean, seal check
+> PASS, tally byte-identical, zero locked opens.
+> **⛔⛔ PIN 27 COMPLETE — T5 CROSSES TIER-2 ON TWO INDEPENDENT AXES:
+> WAIT FOR THE OWNER, no diverse-tile run may start** (`65908d1`,
+> `docs/superpowers/2026-07-26-phase14-stage1-t5-price-bracket.md`).
+> **RAM fails first and is BINDING:** T5's model peak 4,715.6 MiB needs
+> MemAvailable ≥ 9,431 MiB; `tier1_eligible` evaluates **False** at
+> live 5,261 MiB. The model peak is **m-insensitive by construction**
+> (m=1→m=100 moves it 1.4%: assembly-dominated, neither triplets nor
+> CSR depend on m) — and the ONLY m=100 measurement in existence, the
+> anchor, came in at **2.128× its model** (3,512.2 vs 1,650.8). Honest
+> expected T5 peak **6.6–10.0 GiB** against a box that has never shown
+> more than 11,900 MiB available. **WALL crosses every ceiling that
+> exists:** `authorize("tier2_probe", …, 23.78 h)` → Wait (23.78 > 6.0
+> h) — that is the LOW end, over by 4.0×; the high end by 15.7×. Stage
+> 1 has no pre-registered Tier-2 row.
+> **THE BRACKET** (work unit U = iterations × RHS columns × nnz;
+> anchor rate 1.4404e-9 s/U at m=100, three m=1 rates 3.45–4.40e-9):
+> LOW **23.78 h/tile = 95.1 h (3.96 d) for 4** (linear-in-nnz + the
+> anchor's m=100 batching gain carries unchanged to a 3.24×-larger
+> system; low iteration counts); MID 69.10 h/tile = 11.5 d (batching
+> gain does NOT carry — the 19° RHS block is 220 MiB vs the anchor's
+> 88); HIGH **94.16 h/tile = 376.7 h (15.7 d)** (MID + the pin-28
+> ×1.14 noise excursion). **The 4.0× width is ONE unmeasured quantity:
+> whether m=100 batching survives at 19°.** The collapsing measurement
+> (1 window, m=100, 19°) costs 2.6–10.5 h — and fails the same RAM
+> predicate, so it too WAITS.
+> **TWO MACHINERY GAPS SURFACED:** (i) `size_tile.wall_est_s` carries
+> NO n_windows and NO m factor — it prices one window at m=1 and
+> cannot price T5 (naive ×9 is off by ~2 orders); (ii)
+> `stage0_default` returns AUTHORIZED for a 15.7-day box run because
+> `max_wall_h` is unpopulated — **absence of a ceiling is not
+> authorization** (a governance hole in the ladder itself).
+> **✅ PIN 28 COMPLETE — cause NAMED, and the bracket fails pin 24 on
+> the wall leg.** All four candidates FALSIFIED with evidence (no
+> anchor overlap: converged probe 23:48–23:59Z, anchor launched
+> 00:02Z and its gate script did not yet exist; no maxiter
+> preallocation: peaks 40 KiB apart; output paths 160 B apart;
+> checkpointing never on the probe path and landed 01:04Z). Sharpened
+> bound: 78 extra iterations buy ≤36.5 s under any fixed overhead;
+> observed 135.1 s — the two runs had different THROUGHPUT. One cheap
+> discriminating measurement (300 s fixed-work SpMV on this Intel N95):
+> **1.70× slowdown WITHIN one run**, bucket CV 16.9%, cumulative-average
+> at 78%-of-run vs full = 1.0590. **CAUSE: non-stationary host
+> throughput** — +5.9 pp deterministic longer-is-slower ramp, residual
+> **12.9% uncontrolled variance**, corroborated by the **1.276× spread
+> across the three m=1 runs already in the store**. **VERDICT: the 1.3×
+> STOP bracket is INSIDE its own noise floor on the wall leg** (1.276×
+> observed spread = 98% of the 1.30× threshold). It has never
+> false-tripped only because readings sat at 0.513/0.570/0.734 — luck
+> of operating point, not design. Recommended replacements: gate on the
+> DETERMINISTIC work unit U (bit-reproducible, zero host noise); record
+> wall as ×[0.87, 1.15]; if wall must gate, widen to ≥1.7× or require
+> min-of-3. **KEEP the peak leg at 1.3× — peak RSS repeats to 0.001%.**
+> **(superseded in-flight note):** PIN 27 (in flight): T5 priced as a BRACKET from BOTH measured
+> anchors (anchor 22,352 s / 2,652 nodes / 9 windows / m=100; converged
+> probe ~603 s / 9,312 nodes / 1 window / m=1), each end labeled with
+> its scaling assumption, against the Tier-1 ceiling — **a Tier-2
+> crossing is a WAIT to the owner before any diverse-tile run**.
+> **PIN 28 (in flight):** reconcile the ~20% (wall grew 1.289× against
+> 1.078× in iterations) — "a gate whose noise approaches its threshold
+> is not a gate"; if the noise floor approaches 1.3×, the bracket needs
+> replacing.
+> **PIN 29 (landed):** three µ values on the their_eval scale — 0.76953
+> (signed lane0), 0.76941 (golden-tile side A), **0.7694588601958132
+> (gate-5, now canonical frozen)** — agree to four figures, differ by
+> up to 1.2e-4 because they are different SCOPES; scope recorded beside
+> the pin (pin-14 treatment).
+> **PIN 30 (landed):** plan root text corrected; member-route identity
+> recorded as CONDITIONAL on `shipped_miost5().member_root` (proves
+> reproduction under that root, never root-independence); mean and Γ
+> routes root-independent; variance inherits the member conditionality.
+> **✅ T4 COMPLETE — SEAM PAIR + PRIMARY PAIR READ + ORACLE (2026-07-27;
+> machinery `46a5bc9`+`e54e414`+`a86fb6c`, real leg recorded).** Rows at
+> `phase14.stage1.seam_rows` (4 = {pair, oracle} × {mean, σ}), run block
+> at `phase14.stage1.seam_pair`, every row seal-sha-quoted
+> (a17ea419…b725c5d2). **NO STRUCTURAL_STOP.**
+> **THE ROWS** (era 2017, resolution 0.2°, domain "the 2·overlap strip"
+> lat 36–40 × lon 295–305, all four attributable):
+> PAIR/mean rms_delta 0.0071561 m, D_int 0.0864911 m, **R_seam 0.0827
+> CLEAN**; PAIR/σ rms_delta 0.0036065 m, D_int 0.0032655 m,
+> **R_seam_sigma 1.1044 ELEVATED**; ORACLE/mean rms_delta 0.0092674 m,
+> D_int 0.0944661 m, **R 0.0981 CLEAN**; ORACLE/σ rms_delta 0.0020921 m,
+> D_int 0.0032248 m, **R 0.6488 CLEAN**.
+> **★ THE FINDING: the σ route is ELEVATED where the mean route is
+> CLEAN** (1.1044 vs 0.0827 — a 13× ratio gap on the SAME solves). A
+> mean-only seam reading would have reported "no seam artifact" here.
+> This is exactly the gap T10's second ratio was added to close, and it
+> is the first Stage-1 number that would have been MISSED without it.
+> Mechanism, stated without interpretation beyond the arithmetic: the
+> two routes' denominators differ by 26× (0.0865 m mean vs 0.00327 m σ)
+> while their numerators differ by only 2× — member-std is a far
+> smoother field than the mean, so the same absolute cross-tile
+> disagreement is a much larger fraction of σ's own seam-scale
+> variation. ELEVATED is report-only per the rubric: RECORDED, carried
+> to the consuming gate, the pair is NOT rerun or tuned on this signal
+> (skill-selection firewall analog).
+> **TWO D_int DENOMINATORS behaved as designed** (they are different by
+> construction, never to be unified): PAIR pooled both tiles' core
+> interiors (0.0864911 mean / 0.0032655 σ, rubric R-06/R-07); ORACLE
+> used the SEAMLESS anchor solve's interior alone (0.0944661 /
+> 0.0032248, R-19). Both recorded in-row as `d_int_source`.
+> **RULE 0 / PIN 23 DISCHARGED ON MEASUREMENT, not assumption.** All
+> three deeper-tolerance probes (rtol 1e-9, cap 2200 = production
+> 1200+1000, m=100, window w-00018.0+60) **CONVERGED**: seam_n 635 iters
+> @ 9.717e-10, seam_s 629 @ 9.930e-10, anchor 678 @ 9.616e-10 (29–31%
+> of cap). Floors: **F_pair 1.637e-06 m (mean) / 9.539e-08 m (σ)**;
+> **F_oracle 1.375e-06 / 8.279e-08** — its OWN, never shared: the
+> oracle's probe re-solves the SEAMLESS ANCHOR too (the pair's does
+> not), and its mean floor is dominated by the blended shift 1.375e-06
+> rather than the anchor's 1.108e-06. Every RMS clears 3×F by ≥3 orders
+> (smallest margin: PAIR/σ 0.0036 vs 2.86e-07 = 12,600×), so all four
+> rows are attributable and none is UNMEASURED.
+> **DEVIATION RECORDED (pin 20(a) invited it): the floor probe ran m=100,
+> not m=1.** Reason in-row and in the constant: the σ field kind has NO
+> floor at m=1 — member-std is taken about the sample mean with the
+> (m-1) denominator, undefined for one member — and σ is a
+> verdict-bearing route the rubric requires a floor for. Running at the
+> production m against the production solve's OWN window-0 coefficients
+> (same root, same window, same m; ONLY the tolerance differs) is also
+> the CHEAPEST way to get the σ floor: it adds one deeper window solve
+> per geometry and reuses the production solve as reference. Pin 20(a)'s
+> physics claim is untouched (m adds RHS columns to the same operator).
+> **A SECOND DEVIATION, deliberate: "deeper tolerance" is deeper on BOTH
+> axes (rtol 1e-9 AND maxiter+1000), not the rubric's "+1000" alone.**
+> The rubric's construction is inert here: the production seam solve
+> CONVERGES at ~407 iterations against a 1200 cap, so extra headroom
+> alone returns the identical answer, F would be exactly 0, and 3×F
+> would license every verdict vacuously. Tightening rtol is what makes
+> it a floor; the +1000 buys the iterations the tightening costs (635
+> observed vs 407 production).
+> **CONVERGENCE, both tiles, all 36 legs CONVERGED under the 1200 cap
+> at rtol 1e-6:** seam_n worst residual 9.996e-07, seam_s 9.980e-07 —
+> note both sit at ~99.9% of rtol, converged but with no residual
+> margin to spare; the member-batch leg remains the worst-converging
+> leg (pin 26(d) holds at the seam geometry too).
+> **WALL/PEAK:** total leg **55,201.7 s (15.3 h)**, peak RSS **2,573.5
+> MiB** (vs the T3 anchor's 3,512 MiB — strictly smaller on the binding
+> Tier-1 axis). Splits: seam_n solve 19,666 s / seam_s 22,154 s
+> (n_obs 40,897 / 41,298), floor probes 3,746 + 3,765 + 5,725 s,
+> compare phase <2 s off the persisted maps. **Per-window pace ranged
+> 1,656–3,480 s for the SAME geometry (2.1× spread within one run) —
+> fresh corroboration of pin 28's non-stationary-host finding, and a
+> reminder that any wall-based bracket at this scale is inside its own
+> noise.**
+> **GEOMETRY CAVEAT rides every row (review pin 13):** "10x5 halves
+> inside the anchor footprint — NOT D1 production geometry (15x15)" +
+> the non-transfer sentence naming the feasibility-frontier watch item
+> (worst-seam grew with TILE COUNT, PROGRESS 2026-07-01) as sitting on
+> the far side of that gap. **This is discipline 7 applied to a
+> positive result: three CLEAN cells and one ELEVATED at a 2-tile,
+> 10×5 geometry say NOTHING about D1's 15×15 many-tile seams.**
+> Artifacts: seam_{n,s}_signed_maps.nc + seam_{n,s}_member_std_maps.nc
+> (365×37×51, all finite, STAGE1-EVIDENCE labeled, five mapping
+> missions — j3 held out), both member stores (crash-resume substrate),
+> seam_floor_probe.npz (shift fields + summary). Zero touches: locked
+> tally byte-identical (asserted in-run), `seal_run check` PASS
+> unchanged. Ops: setsid-detached + `python -u` + log + stall/exit
+> watchers; the pair phase persists maps BEFORE the compare phase and
+> the floor phase resumes from its own store — so neither a
+> compare-phase death nor a probe-phase death can cost the solves.
+> **NEXT: the owner's call on the ELEVATED σ cell** (report-only by
+> rubric, carried to Gate 1); T5 remains WAITing on pin 27.
+> **(prior walk-request block, kept for the trail):**
+> **⛔ STOPPED FOR THE OWNER WALK AT T3'S COMPLETION (2026-07-26) — the
+> anchor identity gate is the stage's foundation; the owner walks the
+> five-check block + the pin-23 converged ratio TOGETHER (owner stop
+> condition).** T3 CLOSED, dual-reviewed **APPROVED-FOR-WALK**
+> (`f201c09`/`b71dc7f`/`efd515a`/`3dc25d1`):
+> **FIVE GATES GREEN** — (1) tiling identity four routes: member
+> sha-equal 9/9 windows, mean BIT-IDENTICAL (max|Δ|=0), Γ 1.44e-15
+> (rtol 1e-12), variance BIT-IDENTICAL — all vs the phase-13 signed
+> acceptance artifacts, reviewer-reverified; (2) loader identity CITED
+> (stage0 gate2 + golden-tile TABLED); (3) era no-op PASS as a
+> surface-identity proxy (shipped s(x) ≡ phase13_field_miost.json
+> EXACT, 2652 nodes — no era code exists yet; OWNER RATIFY the reading);
+> (4) cross-env CITED, cross-host slot pending-T18 EXPLICIT; (5) score
+> identity PASS + **GATE-5 CONSTANTS PINNED write-once** (µ
+> 0.7694588601958132 / σ 0.2848175434425789 / λx 174.52106004917525 /
+> n 46780; the flipped test pins MACHINERY identity per the Gate-0
+> deviation — OWNER RATIFY). PIN 23 CLEAN: all 18 legs converged under
+> cap (max 459 iters, worst residual 9.9997e-07). Member-std maps
+> persisted (T1 follow-on). Tally byte-identical, seal check passes,
+> zero touches. **PIN-23(a) CONVERGED PROBE RATIO (the sizing claim
+> that authorizes the stage): wall ratio 0.734** (converged 524/554
+> iters at maxiter 2000, residuals ~9.9e-07; up from the truncated
+> 0.570 exactly as the pin predicted), peak 0.787, 1.3× bracket NOT
+> tripped, capped_measurement=false. Deviations for the walk: plan
+> named the wrong root (stage-b-winner) — leg correctly ran the
+> phase-13 acceptance root 7742201642112487637 forced by the reference
+> store (serves intent); wall ~6.2 h vs the plan's 40-90 min estimate
+> (T11 precedent 24,780 s was the true prior); two dead launches
+> (harness pgroup kill → setsid; Γ compare-phase OOM → chunked +
+> own-store resume) — both hardened, mid-run changes SCRIPT-ONLY and
+> proven library-safe by bit-identical outcome. NEXT ACTION: owner
+> walks T3 + ratifies the two readings; then T4 (blockedBy [0,3,10,11],
+> all met). Zero locked opens, tally untouched, seal read-only.
+> **Prior halt (T11 findings, now RULED — kept for the trail):**
+> **⛔ STAGE HALTED BY THE T11 STOP CONDITION (2026-07-25): the
+> sealed-instrument coverage table found a THIRD unassigned normative
+> clause.** Table: `docs/superpowers/2026-07-25-phase14-stage1-instrument-coverage.md`
+> (`5fe405d`; 24 rubric clauses + 15 config keys, both directions).
+> FINDINGS: (1) CRITICAL — the rubric's PRIMARY pair read (R-04+R-09+
+> R-22: delta = field_A − field_B at overlap points, each tile's OWN
+> solve, BEFORE blending — "the blend hides exactly what this
+> measures") is assigned to NO task; T4 pins only the ORACLE read.
+> (2) HIGH — ORACLE denominator diverges: R-19 requires D_int from the
+> SEAMLESS solve; T4 pins the pooled-pair-interiors denominator.
+> (3) MEDIUM — recording schema unpinned vs the rubric's
+> `phase14.<stage>.seam_rows` row shape {pair, era, field_kind,
+> rms_delta, d_int, r_seam, verdict} + resolution-in-row.
+> (4) LOW-MED — GroundTrack standing-row breadth ambiguous (owner
+> sentence needed before T5). Per the owner's stop condition, T3 does
+> NOT dispatch; T2 (probe) + T10 (σ route) finish their in-flight
+> sanctioned work only. T4 remains blocked (blockedBy includes T11).
+> AWAITING OWNER RULING on remedies for findings 1–4.
+> **✅ T2 CLOSED (2026-07-25, dual-reviewed APPROVED — machinery
+> `0972d54` + real leg):** quiet_gyre probe at the ruled
+> production-representative 19° geometry — **wall ratio 0.570 / peak
+> ratio 0.787, 1.3× STOP bracket NOT tripped** (wall 468.0 s vs model
+> 821.7; peak 3662 MiB vs model 4652); Tier-1 predicate exercised for
+> real (refusal at ~9.9 GiB free, gated launch at 11.35 GiB free);
+> constants not retuned (diff vs 249a08d empty). **⚠ PCG-CAP WATCH
+> ITEM (T2-review MEDIUM, for the Gate-1 pack + T4/T5):** BOTH legs
+> exited at the 500-iter cap over rtol 1e-06 (mean 1.62e-06,
+> member-batch 2.84e-06) — worse than Stage-0's single-leg 1.02e-06
+> graze, at the first 19° solve; wall ratios embed cap timing (true at
+> Stage 0 too — comparability holds). Assessment: negligible for
+> tile-score legs (~2e-06 ≪ physical signal); the real exposure is
+> T4's Rule-0 floor probe (a raised solver floor F risks honest
+> UNMEASURED verdicts — the maxiter+1000 floor machinery is the
+> designed answer). Future probe rows should carry rtol/maxiter
+> in-row (T2-review LOW).
+> **Prior state (T0/T1 closure), kept below:**
+> **✅ T0 + T1 GREEN AND CLOSED (2026-07-25, both dual-reviewed to
+> APPROVED):** T0 seam metrics `75ed835`+`d201d4a` (20 tests; review
+> caught a NaN-residual gate hole — fixed; AND the plan gap that the
+> rubric's ACTUAL Rule 0 — 3×F floor-probe attributability +
+> UNMEASURED marking — was assigned to no task: now a T4 AC,
+> `be936a2`). T1 run driver `f9cfec4`+`2c4caa9` (22 tests; anchor
+> frame CONSUMED from anchor_frame(), seam frames + solve bboxes
+> pinned, pin-2/pin-12 refusals live and booby-trap-tested, 16-key
+> evidence schema + verbatim bridge caveat pinned, seal tripwire
+> first, ladder-before-load proven; review fixes: self-referential
+> purity test, canonical N_DIR import, cos-lat n_obs comment,
+> plan-verbatim job strings). T5 gained the pin-12
+> programmatic-path-gate note. **⛔ STOPPED at the T2 gate — the two
+> owner elections (pin 2 frame convention, pin 12 equatorial box) are
+> the only unblockers. Zero evaluation-bearing maps (none produced),
+> zero locked opens, tally untouched.**
+> **(pre-ruling record below, kept for the trail)**
+> ⛔ STOPPED AT GATE 0 (T20 userGate) 2026-07-23 — THE PACK WAS POSTED:
+> `docs/superpowers/2026-07-23-phase14-gate0-pack.md`.
+> Seal v1 sha `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2`
+> (re-derivable: `pixi run python scripts/phase14_seal_run.py check`).
+> FULL SWEEP on the final tree (`7ef555a`): 1167 passed / 22 skipped /
+> 1 xfailed, exit 0 — every skip named. T8/T19 review ACCEPT (split
+> rebuild byte-equal; minors actioned `41a40fa`); T15/T7 review ACCEPT
+> (µ-scale major resolved by measurement — mu rows are their_eval scale,
+> lane0 scores 0.76953 through the same scorer; `mu_scale_check` in the
+> node). One test made hermetic (`7ef555a`: missing-seal refusal was
+> time-dependent, flipped by the real seal's existence). T18 cloud leg
+> WAITS on credentials (owner input; pack item 1.5). Golden-tile row
+> TABLED (pack item 1.3; AVISO DT2021 decomposition now owner-electable
+> on a measured material delta). Next action: OWNER walks the pack;
+> on approval → Stage-1 plan writing (writing-plans, C0→1 contract).
+> **Session execution record below (kept for the trail):**
+> **✅ RESUME SEQUENCE EXECUTED 2026-07-23 (fresh session; steps 1–6
+> done, results below). Original sequence kept for the trail:**
+> 1. Gauge `stations-all` pull DIED at 516/716 files (ConnectTimeout,
+>    retries exhausted) — RE-RUN `pixi run python
+>    scripts/download_gauges.py stations-all` (verify-and-skip resumes;
+>    repeat until "stations-all done"; ledger row appends only for new
+>    bytes).
+> 2. `pixi run python scripts/phase14_probe.py tile-sizing` — the
+>    Tier-1 predicate REFUSED at MemAvailable 5.4 GiB (needs ≥ 8.5);
+>    retry when co-tenant pressure drops (hourly cycles); nohup+log.
+> 3. `pixi run python scripts/phase14_golden_tile.py --source-a dc2021a
+>    --source-b cmems_my` (~80 min, detached, AFTER the probe — RAM).
+> 4. `pixi run python scripts/phase14_gauge_run.py` (T8 series leg:
+>    screen+split vs the REAL epochs; writes locked_split.json +
+>    evidence phase14.stage0.gauges).
+> 5. Build REAL seal v1 (assemble_content from epoch_table_draft.json
+>    bytes + locked_split + screening config + instrument configs +
+>    c2 era windows [e05..e14 per table] + record
+>    `phase14.stage0.seal` {path, sha} in evidence — write-once).
+> 6. Dual review T3/T4-real/T5-real/T7-run/T8-series/T15-run/T19-seal.
+> 7. T20: assemble the Gate-0 pack (docs/superpowers/
+>    2026-XX-phase14-gate0-pack.md) — owner attention items FIRST:
+>    consumed pre-registered defaults + actuals; dc2021a gate-2
+>    substrate interpretation; golden-tile tabled state; probe ratios
+>    vs Phase-12 bracket; T18 CLOUD LEG WAITING on credentials;
+>    proximity-deferral interpretation; gate-5 µ-lineage deferral.
+>    STOP after posting.**
+> **EXECUTED RESULTS (2026-07-23, all committed+pushed):**
+> 1. Gauges: stations-all DONE (214 new 0.065 GiB + 501 verified-skipped
+>    = 715, matches the script's expected count; ledger row appended).
+> 2. T15 probe RUN (after mc_error fix `61c586c`: ensemble_provenance
+>    m=1 divided by zero — sqrt(2/(m-1)); mc_error now None at m=1,
+>    refusal m<1; the same latent bug would have killed the T18 cloud
+>    solve leg). Evidence `probe_tile`: wall 383.5 s / model 747.8
+>    (ratio 0.513), peak 3344.6 MiB / model 4259.7 (ratio 0.785) —
+>    model conservative both axes; member-batch PCG exited at the
+>    500-iter cap at 1.02e-06 vs rtol 1e-06 (surfaced + recorded;
+>    wall_s = mild lower bound — pack line).
+> 3. T7 golden tile RUN after TWO fixes: `a41d92e` (superobs cfg into
+>    the record — review minor, landed BEFORE evidence mint) and
+>    `6984e26` (OOM exit 137 root cause: CMEMS side loaded the GLOBE —
+>    ~100M 1-Hz samples; now loads grid-node extent ±1° halo region,
+>    clip-then-coarsen recorded as the transform semantic). RESULT:
+>    mu_a 0.76941 (dc2021a) / mu_b 0.78187 (cmems) / mu_delta −0.012457;
+>    map rms 4.10 cm / max_abs 83.7 cm / worst-day rms 8.58 cm; j2n obs
+>    delta −1696; **tabled_for_owner TRUE** (mu leg 6×, map leg 4× —
+>    tables, never blocks). **µ-SCALE CATCH (review major, resolved by
+>    measurement):** these µ are the their_eval.score scale, NOT the
+>    phase-13 leaderboard_nrmse scale — lane0 scores 0.76953 through the
+>    same scorer (side A ≡ signed solution, 1.43 cm rms from lane0
+>    maps); `mu_scale_check` amendment recorded in the evidence node.
+>    Max-abs delta verified interior jet-band (day ~2017-09-11,
+>    39.0°N 296.4°E), not an edge artifact. AVISO DT2021 decomposition
+>    ledger row now MATERIAL (bridge delta over thresholds — ruling
+>    item 1). PROBE label stamped INSIDE both nc maps (`dbff89f`).
+> 4. T8 series leg RUN: 563 candidates → 135 screened → 39 locked /
+>    96 dev (30%/stratum), split seed 2278306912366042270, locked_split
+>    + screening_rows written, evidence gauges = series-leg-complete
+>    (stale `pending` resolved in place, dated).
+> 5. **SEAL v1 BUILT + VERIFIED:** `phase14_evaluation_seal_v1.json`,
+>    sha `a17ea419f1d1ca119792e7a0ed0bf3d36ac6f48bc04bef2e82e1dd73b725c5d2`,
+>    evidence `phase14.stage0.seal` write-once; content = epoch-table
+>    bytes + locked/dev gauges + split seed + screening config +
+>    instrument configs + c2 era windows e05..e14 (c2∪c2n per table);
+>    verify_current_seal PASS — the T10 ceremony tripwire is armed
+>    against a real seal.
+> 6. Dual reviews: T3/T4/T5 real legs CLEAN (2 minors actioned in
+>    `a41d92e`); T15+T7 runs ACCEPT (µ-scale major resolved above;
+>    minors: PCG-cap pack line, clip-note recorded, PROBE nc stamp
+>    done, evidence-silent-skip latent hazard = pack line); T8+T19
+>    review in flight this session.
+> GOTCHA (this session): `pixi run` scripts SIGKILLed by OOM die with
+> ZERO output (buffered stdout lost) — always rerun with `python -u` +
+> RSS trace to diagnose; exit 137 + MemAvailable plunge = the signature.
+> Plan + tracker:**
+> `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`
+> (+ `.tasks.json`, 21 tasks 0–20; T0 = P0-2 precondition; T20 = Gate 0
+> userGate; deps mirror the spec's consumption order). Pre-registered owner
+> defaults IN the plan header: Tier-2 probe ceiling US$25 / 8 vCPU / 64 GiB /
+> 6 h / one region; CMEMS storage ≤ 50 GiB. Recorded interpretation flagged
+> for review: SPEC §10 gate 2 runs on a dc2021a-WRAPPED source (the current
+> box input path's actual files — byte-comparable testable today);
+> dc2021a-vs-CMEMS-MY becomes the FIRST golden-tile comparison (public both
+> sides). Next action: CLEAR, then execute in a fresh session:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md`**
+
+> **✅ README REFRESH — EXECUTED 2026-07-22, both tasks committed
+> (`c15551f` validation section: phase-11 instruments + phase-13
+> structured R; `1f6eac0` report-rows output shape, rspec clause,
+> extras + config rows). Net +41 lines vs `b4878a0` (budget ≤ ~45);
+> all eight spec deltas (D1–D8) verified in the diff; stale strings
+> ("neither elected", `miost5: 2`, 0.857 row, `requests`) grep-clean.
+> Spec: `docs/superpowers/specs/2026-07-22-readme-refresh-design.md`;
+> plan: `docs/superpowers/plans/2026-07-22-readme-refresh.md` (tracker
+> synced, both tasks completed). Next action: none — README current
+> through phase 13.**
+
+> **✅ PHASE 13 — structured observation error (per-mission R + error
+> modes): CLOSED 2026-07-21, BRANCH = SIGN-OFF (owner T14 ruling; flip
+> executed `e1eda16`; FULL external sweep on the flip tree 965 passed /
+> 14 skipped / 1 xfailed (44:54) — the standing rule's fourth
+> application). All 15 tasks resolved; every commit pushed.**
+>
+> **THE PRODUCT LINE:** `shipped_miost5()` → the phase-13 chain-lane-D
+> winner (per-mission R, five δ recorded as CONTRASTS-never-physical-
+> noise per the §4 gauge; refit s(x); m=100 at root 7742201642112487637)
+> — acceptance µ **0.8587600198136843** / λx **151.86 km** / coverage
+> **0.7361** in band at the field-calibrated referent / χ²_red
+> **0.98035**. The pre-flip signed scalar-era config preserved FOREVER
+> as `shipped_miost5_scalar_phase8()` (identity/artifact pins;
+> `shipped_miost6` — SHIPPED headline UNCHANGED — delegates to IT; the
+> factory-pin tests caught the delegate mid-flip exactly as designed).
+> Honest tally **{miost5: 3, miost6: 1}** c2 touches.
+>
+> **ELECTION (six-mission refresh on the R-winner): DEFERRED WITH A
+> BUNDLING RULE (owner T14 item 2, verbatim intent):** the refresh
+> requires a δ_j3 assignment the five-mission contrasts never fit —
+> presumptive rule recorded: instrument-class match, **δ_j3 := δ_j2n**
+> (Poseidon-series); it runs with its OWN chain + touch when the next
+> six-mission-relevant improvement can share the chain, or at the
+> global-domain transition — whichever first. Neither silent fold-in
+> nor flat decline.
+>
+> **LEDGER LINES (owner T14 item 3):**
+> (a) **validation→c2 Δ-transfer measured at FULL SIZE** (+0.00138 →
+> +0.00150) — the first recorded delta-transfer datum; future phases
+> citing transfer assumptions point HERE.
+> (b) **χ²_red 0.98035** = the project's strongest calibration
+> generalization.
+> (c) **August 0.629** — the seasonal limitation survives the R change:
+> one more candidate mechanism eliminated; the axis stays named future
+> work with n>1-years as its substrate.
+> (d) **§16 physics predictions scored:** λx CONFIRMED (−4.6 km);
+> GroundTrack CONFIRMED at gate 1 (0.410 → 0.331); flattening MISSED
+> (recorded at gate 1: ŝ dropped 8.738 → 5.106 but s(x) got MORE
+> informative, G −0.0544); µ EXCEEDED expectation (1.49× band,
+> transferred).
+>
+> **CLOSING LINE (owner):** Phase 13 closes with the SWOT capability
+> contract delivered as specified — structured error components proven
+> (extended duality oracle, mean AND variance), sampled consistently
+> (aug1 CRN "err" axis; m=100 row 0.068 vs 0.711), measured honestly
+> (the §8 triplet: real + persistent + compensating + window-local) —
+> and the MODE-LAYER REDESIGN note (cross-window-coherent pass modes,
+> one physical error per pass rather than nine window-local absorbers)
+> waiting in the residual-structure ledger for the geometry that needs
+> it. Owner verifies the flip tree on public HEAD post-close.
+
+> **[closed above] ▶ PHASE 13 DESIGN COMMITTED 2026-07-18, ⛔ STOPPED FOR OWNER FILE
+> REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-18-phase13-structured-r-design.md`
+> (owner-approved in-session: forks a–f ruled with riders + three review
+> batches with pins). Phase 13 = structured observation error for
+> flagship MIOST at box scale: per-mission σ²_m = R_REF·exp(δ_m)
+> (gauge mean(δ)=0, δ_s3a = −Σ balance) + per-pass {bias, tilt} error
+> modes in s-units via STATE AUGMENTATION ([G B], Q_aug = diag(Q, Λ);
+> field-block marginal ≡ solve under R_eff = diag(σ²_m)+BΛBᵀ — extended
+> duality oracle proves mean AND variance at rtol 1e-8). ONE 7-dim
+> parameterization, lanes as frozen restrictions {lane-0 signed / D
+> 5-dim / C 7-dim / modes-only probe-conditional}; ρ REOPENED
+> (α/q_slope/L_t frozen); PRIMARY = lane-C vs lane-0 under a NEW sealed
+> phase13 band artifact; winner-lane rule = simpler lane on tie;
+> negative path = "improvements within band," measured-not-shipped.
+> Fits at the FIVE-mission config (j3 validation; identity target =
+> signed miost5 artifacts, rtol 1e-12 four routes); SHIPPED["miost"]
+> (= miost6) UNCHANGED this phase — six-mission refresh = recorded
+> election. New CRN axis "err" (mission_hash, pass_time_int, mode_idx);
+> white-fed-ensemble hazard killed by construction + teeth-companion
+> test. Sizing re-derived: +0.24% cols / +0.05% nnz (~480 cols/window).
+> Prereqs verified: Phase 11 CLOSED (0.410 five-mission baseline
+> governs); Phase 12 CLOSED (recorded, ship-shape fork consumes it).
+> **SPEC FILE-REVIEW APPROVED 2026-07-18 (no changes; 07-18 date stands).
+> PLAN + TRACKER APPROVED 2026-07-18 (`b07a004` + gate-1 source-table
+> pin folded `1d38968`):**
+> `docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
+> (+ `.tasks.json`, 15 tasks 0–14; probe split T0/T5 accepted per
+> Phase-10 precedent; gates = Tasks 12/13/14, user-gates; branch
+> semantics: negative → T10, winner → T11–14; T13 tally arithmetic
+> miost5 2 → 3). **▶ EXECUTION TO BE DISPATCHED to a fresh session.
+> OWNER EXECUTION RIDERS (verbatim intent):** TDD red/green per
+> behavior (teeth test fails against the unextended path BEFORE the
+> sampler lands); dual review per task; push as you go; launch rule
+> WAITS for owner if estimate > 12 h default; zero c2 before Task 13;
+> no source edits during runs or gate suites; STOP at Task 12 with the
+> pack — the owner reads FIRST: GroundTrack direction vs 0.410, then
+> the saturation + lag-1 + field-correlation triplet (real / absorbed /
+> absent is the measurement this phase exists to make either way).
+> Gate-1 pack quotes the phase13_boxes.py source table verbatim; its
+> verify-at-review marks resolve at gate 1 before any touch
+> authorization.
+>
+> **▶ EXECUTION IN FLIGHT (2026-07-19, executing-plans, on main). Tasks
+> 0–5 COMPLETE (each committed + pushed, dual review per task):** T0
+> probe leg A `b4896f2` (wall 260.1 s; 320.9 passes/window measured vs
+> 240 analytic); T1 pass table + B-builder `3bdb70a`; T2 RSpec +
+> augmented assembly + extended duality oracle `bc54df6` (mean AND
+> variance rtol 1e-8; scalar params_key byte-identical); T3 identity
+> suite `5be6a65` — EXTERNAL FOUR-ROUTE IDENTITY vs signed miost5
+> PASSED (day-0 m=100: member arrays sha-bit-equal zeros≡scalar, mean
+> vs acceptance, Γ-route ≤1e-12, variance 2.2e-16; 2:50 h; three OOM
+> kills on this host produced two recorded hardenings — MiostSolver
+> PCG checkpoint/resume, bit-identical, and chunked Γ evaluation); T4
+> err CRN axis + augmented sampling `efa2c29` (teeth: white-fed
+> ensemble fails variance consistency, 0.77 median deficit vs 0.45
+> band, fixture tuned by analytic probe at Λ log10 (−2.6,−2.2);
+> ensemble kind versioned aug1); T5 probe leg B `48e6f29` (aug wall
+> 253.4 s = 0.974× scalar; PCG 221–273 < 302 baseline; **BUDGET:
+> n3=56 ≥ 8 → THREE lanes at n=56/lane, modes-only RUNS, no
+> screening**; equal-sharing reading recorded with the alternative
+> beside for gate 1); T6 pre-registration bundle `4766db9` (sealed
+> `phase13_band_artifact.json` sha `79e4e486…`; both degradation
+> criteria; source table with verify-at-review marks; lane-0 residual
+> arrays regenerated, µ 0.8641999994291494 EXACT — first attempt
+> missed at 4e-6, cause = five-file vs SIX-file MDT list, recorded);
+> T7 lane machinery + dev smokes `a03f98c` (lanes as frozen
+> restrictions, ONE Sobol engine + per-lane masking, anchors at Λ
+> box-floor, crash-durable checkpoints + resume-identity guard,
+> POINT-capability µ-only bars).
+>
+> **✅ TASK 8 SWEEPS COMPLETE (SWEEPS-DONE 2026-07-20 ~06:00Z). All
+> THREE lanes swept; winners recorded under `phase13.miost.lanes.<lane>`.
+> Next = Task 9 comparison read.**
+> WINNERS (all index 24; µ→λx point solves):
+> lane-0 quoted 0.8642 / 178.0 · D 0.8655 / 174.5 · C 0.8656 / 174.2 ·
+> modes-only 0.8657 / 174.2. All three sweeping lanes ~+0.0013–0.0015 µ /
+> ~−3.6 km λx vs lane-0 — the sealed degradation bands + refusal clock
+> decide the verdict at T9 (this is NOT the verdict).
+> - Wrapper: a retry loop (D → C → modes_only, sequential; per-lane
+>   retry on OOM kill) — its script is in the ORIGINATING session's
+>   scratchpad (path not portable). The DURABLE signals a resumed
+>   session reads instead:
+>   - LOG: `data/2021a_ssh_mapping_ose/ours/phase13_sweeps.log`
+>     (grep `WINNER` / `SWEEPS-DONE` / `HARD-FAIL`).
+>   - Winners + per-trial records land in the evidence JSON under
+>     `phase13.miost.lanes.<lane>` (gitignored; `jq '.phase13.miost.lanes|keys'`).
+>   - Launch rule PASSED and is recorded at `phase13.miost.lanes.launch`
+>     (est 11.83 h ≤ 12 h; monitor-flag 63856.8 s = 1.5×, never a kill;
+>     scoring overhead is a ledger row for the close).
+> - **LANE D DONE** (6.06 h wall): winner index 24, µ 0.8655 /
+>   λx 174.5 (lane-0 quoted 0.8642 / 178.0 — nominally better, bands
+>   decide at T9). **LANE C DONE** (scoring 25802 s): winner index 24,
+>   µ 0.8656 / λx 174.2.
+> - **NAME-MISMATCH BUG FOUND + FIXED (2026-07-20, owner-approved
+>   fix-then-run):** the wrapper's `modes_only` lane HARD-FAILED — the
+>   `LANES` dict keyed the conditional lane `"modes_only"` (underscore)
+>   while the probe budget, the sha-sealed `phase13_band_artifact.json`,
+>   and the boxes all spell it `"modes-only"` (hyphen). Runner draws
+>   `--lane` choices from `LANES` but checks membership vs
+>   `budget["lanes"]`, so neither spelling could launch the third lane.
+>   Fix `ebab4ac`: renamed the lone odd-one-out `LANES` key to the
+>   sealed hyphen name (NO sealed artifact altered; D/C evidence
+>   untouched); two red tests added (hyphen-name pin + cross-namespace
+>   choices⊇budget invariant), 38 phase13 tests green on the final tree.
+>   **modes-only RAN CLEAN** under `--lane modes-only` (n=56, anchors=0,
+>   scope=full; scoring 21027 s; attempt 1 exit 0, no OOM): winner
+>   index 24, µ 0.8657 / λx 174.2.
+> - Operational: this host OOM-kills long jobs under co-tenant pressure
+>   (~hourly; cgroup `oom_kill`). The retry wrapper + PCG
+>   checkpoint/resume + chunked-Γ eval make kills cost ≤1 trial. NO
+>   source edits during the run (standing memory — a fix voids affected
+>   trials).
+> - **If a resumed session finds the wrapper DEAD mid-sweep** (no
+>   pytest/lane_run process, no SWEEPS-DONE): relaunch the runner per
+>   lane — `pixi run python scripts/phase13_lane_run.py --lane <D|C|modes-only>`
+>   (HYPHEN — the sealed name; nohup + pid + log; watcher on pid-exit) —
+>   it resumes from the checkpointed records via the resume-identity
+>   guard. Run lanes SEQUENTIALLY (single-writer discipline on the
+>   evidence JSON).
+> **⚖ T9 GO (owner, 2026-07-20, verbatim intent) — three recordings:**
+> 1. **MISFIRE PROTOCOL, pre-registered for the T9 read:** if the read
+>    MISFIRES after its single execution (wrong arrays loaded, code
+>    defect discovered post-run, any Phase-8-defect-run-shaped event) —
+>    STOP + preserve the defective read under a dated defect key +
+>    owner adjudication for a corrected read. The touch-mechanics ethic
+>    applies to EVERY single-execution ceremony; never a silent
+>    re-execution.
+> 2. **Watch-rows clarification:** the owner watch rows (GroundTrack
+>    direction vs 0.410; saturation / lag-1 / field-correlation
+>    triplet) land at T11's diagnostics and are read at gate 1 — T8
+>    done means the substrate exists, not that the mandate is
+>    discharged.
+> 3. **Hyphen fix-and-relaunch ACCEPTED** as the standing rule
+>    correctly applied (disclosed, clean re-run of the affected lane).
+> **✅ T9 COMPLETE (read executed ONCE 2026-07-21T00:10Z; ~7 h wall;
+> verdict at `phase13.miost.lanes.verdict`). BRANCH = WINNER, CHAIN
+> LANE = D.** Machinery dual-reviewed BEFORE execution (spec PASS all
+> ACs; adversarial zero confirmed defects; findings actioned); verdict
+> dual-reviewed AFTER (spec: arithmetic recomputed EXACT, all 5 PASS;
+> adversarial: NO refutations — Δµ/band reproduce BITWISE under sealed
+> seed 271828; seal bytes unchanged since `4766db9`).
+>
+> ```
+> T9 VERDICT (protocol_sha 79e4e486…, n_segments 403, n=46780):
+> - PRIMARY C-vs-0: beats-mu POSITIVE. dmu +0.0013757179 vs band
+>   0.0009258590 (1.49x); dlx -3.82 km, band_lx 4.59 (informative,
+>   n_lambda_used 178/200; never consulted — mu decided).
+>   Wording pin: "C beats lane-0 beyond the measured band (beats-mu)".
+> - D-vs-0 (attribution, never claim-bearing): beats-mu, dmu
+>   +0.0012603 vs band 0.0012055 (1.046x — thin).
+> - modes-only-vs-0 (2x2 cell, never claim-bearing, NEVER ships):
+>   beats-mu, dmu +0.0015140 vs band 0.0009532 (1.59x) — the HIGHEST
+>   mu of all lanes (0.8657140).
+> - Winner-lane rule: C-vs-D dmu +0.0001154 vs band 0.0006190 (0.19x)
+>   WITHIN BAND -> chain lane D (simpler lane, spec §10 pin).
+> - BRANCH RECORDED: "WINNER: Tasks 11-14 proceed on lane D".
+> ```
+>
+> **CAVEATS PERSISTED (adversarial review, for the gate-1 pack):**
+> (1) within-lane winner-selection optimism (max-µ of 32 admissible /
+> 58 trials, selected on the scored track) is NOT priced by the pair
+> band and unadjudicated in any spec — read the 1.49x margin with
+> that in mind; mitigant IN the record: all three lanes' winners are
+> the SAME paired Sobol index 24 with Δµ ≈ +0.0013–0.0015 — a shared
+> real-effect signature, not selection noise. (2) ρ is released in
+> EVERY sweeping lane and gains are near-equal across lanes — the
+> attribution question (ρ vs δ vs modes) is exactly the 2x2 cell,
+> lands at T11 diagnostics, owner reads at gate 1.
+>
+> Design decision recorded: refusal clock covers the three WINNER
+> records; lane-0 is CO-SEALED — integrity = byte-level recomputed
+> residuals_sha256 (stronger than a clock, which is impossible by
+> construction for the co-sealed reference). Single-execution guard
+> live: any re-run refuses on the existing verdict key (misfire
+> protocol, owner 2026-07-20).
+> **⏳ T11 IN FLIGHT (2026-07-21).** Landed so far (each committed +
+> pushed): §8 diagnostics statistics (`scripts/phase13_diagnostics.py`,
+> 7 hand-fixture tests); c-block tap (`Miost(c_tap_dir=…)` — §8.5
+> window-tagged per-pass ĉ npz, field-chord mean from the FIELD block
+> only, observational-only proven by bit-equality test; 228-test miost+
+> phase13 regression green); winner-run modes in `phase13_lane_run.py`
+> (`--winner-ctap <C|modes-only>` + `--winner-ensemble` m=100 at the
+> chain-lane winner, root = derive_seed("miost","phase13-winner",
+> "members",0) EXACT INT, branch=winner guarded, retention slicing
+> verified, RAW member store = refit substrate).
+> **RUNS DETACHED (wrapper pid 724587, log
+> `data/2021a_ssh_mapping_ose/ours/phase13_t11.log`, grep
+> `T11-RUNS-DONE|HARD-FAIL`):** ctap C → ctap modes-only → m=100
+> ensemble (hours). Evidence keys: `phase13.miost.ctap.<lane>`,
+> `phase13.miost.members`.
+> ALL T11 MACHINERY NOW LANDED (committed + pushed): ctap runs DONE
+> (9 windows × 2 lanes); **§8 DIAGNOSTICS ASSEMBLED + RECORDED at
+> `phase13.miost.diagnostics`** (2233 deduped passes/lane; headline
+> rows, report-only: bias var-ratios 8–21× cross-mission (tilt < 1
+> everywhere), bias saturation 0.10–0.16 vs 0.05 null → fires the §4
+> q_slope table trigger, lag-1 persistence beyond null 9/10 families,
+> field-correlation 6/10 COMPENSATION + 4 clean + 0 absorption,
+> adjacent-window ĉ_bias corr 0.041 / rmse 0.036 m n=1073 — reading
+> shape: real persistent track-correlated structure, attribution
+> seesawing with the field, NOT clean absorption; owner reads at
+> gate 1); refit+readings glue (`scripts/phase13_refit_readings.py`,
+> frozen anchor-family frame, G_pre 0.13510401012055406 verified-or-
+> STOP, ŝ vs signed 8.737979722446696, direction row vs 0.410).
+> Registry AC-1 verified: lineage entry = `shipped_miost5()` factory,
+> clean, no migration; a win updates it at T14, SHIPPED untouched.
+> **PIPELINE ARMED:** wrapper A (pid 724587) finishing the m=100
+> ensemble (~08:00Z proj.); wrapper B (pid 750377) waits on
+> `T11-RUNS-DONE` then runs `--refit` → `--readings` (grep
+> `T11-ALL-DONE|HARD-FAIL` in phase13_t11.log).
+> **✅ T11 COMPLETE (2026-07-21). ⛔ T12 GATE-1 PACK ASSEMBLED + HELD
+> FOR OWNER REVIEW:** `docs/superpowers/2026-07-21-phase13-gate1-pack.md`
+> (committed). Owner reads FIRST: the source-table verify-at-review
+> marks (§0 — two marks resolve at this gate), then GroundTrack
+> direction (0.331 DOWN from 0.410), then the saturation/lag-1/
+> field-correlation triplet (§1b — reading shape: modes carry REAL
+> persistent structure, saturation 10–16% fires the §4 q_slope trigger,
+> attribution SEESAWS with the field (6/10 compensation, 0 absorption),
+> window-local ĉ). T11 numbers: refit ŝ 8.738→5.106 (pre-registered
+> LOWER direction), G shrinkage −0.0544 (s(x) MORE informative —
+> opposite Phase-10), m=100 ensemble at chain-lane-D winner (root
+> 7742201642112487637 EXACT, converged cap 500, variance row median
+> 0.068 vs rtol 0.711 PASS), suites: oracle/identity/teeth 21p/1s,
+> FULL 952/14/1 at 93% (57:04). Registry diff EMPTY; zero c2.
+> **✅ T12 GATE 1 APPROVED (owner, 2026-07-21, verbatim intent) — four
+> recordings at the gate close:**
+> 1. **SOURCE-TABLE MARKS RESOLVED by owner at this gate:** (a)
+>    alg-low/h2g-high ordering CONFIRMED (Ka-band vs Ku-band physics;
+>    HY-2A noisiest of the set); ×2 bracket ADEQUATE under
+>    contrasts-only semantics (4× spread between extreme pair). (b)
+>    cm-order residual reading CONFIRMED (DT2021 corrected-SLA lineage
+>    per the verified extraction; σ_mode 1–56 mm brackets generously).
+>    Marks cleared BEFORE touch authorization, per the pin.
+> 2. **SATURATION TRIGGER (§4 q_slope table): FIRED and DECLINED this
+>    phase.** Reasoning recorded: the shipping lane (D) carries no
+>    modes, so the entanglement the trigger guards is moot for the
+>    product; and the triplet's compensation + window-local evidence
+>    (6/10 seesaw, cross-window 0.041) says the MODE LAYER needs
+>    redesign — cross-window-coherent pass modes, one physical error
+>    per pass rather than nine window-local absorbers — before any
+>    prior dims are tuned around it. Routed to the residual-structure
+>    ledger for the global-domain revisit.
+> 3. **FINDINGS NAMED:** the triplet measurement (real + persistent +
+>    compensating + window-local; band-concordant at 0.19×); the
+>    flattening-direction MISS recorded honestly (pre-registered
+>    "flatter" not confirmed; G −0.0544, s(x) MORE informative post-R —
+>    interpretation recorded, report-only); GroundTrack 0.410 → 0.331
+>    (pre-registered direction confirmed; necessary-not-sufficient
+>    verbatim); ŝ 8.738 → 5.106.
+> 4. **PROCEED TO T13:** fresh authorization requested next message
+>    quoting the sealed pre-touch reading verbatim. Gate approval is
+>    NOT touch authorization; no new conditions at the authorization
+>    step.
+> **✅ T13 — THE ONE c2 TOUCH EXECUTED (owner-authorized fresh
+> 2026-07-21; ceremony clean: provenance tripwire bit-match on
+> mean/var/store/field sha256 + cal_key BEFORE the c2 open; window
+> tripwire n=44,844 PASS; 8 refusal tests green pre-touch; log
+> `phase13_c2_touch.log`). Reading at `phase13.miost.c2_acceptance`:**
+>
+> ```
+> PHASE-13 c2 ACCEPTANCE (chain-lane-D winner + refit s(x); n=44,844):
+> - mu      0.8587600198136843   (>= 0.85 floor; miost5 0.8572611954,
+>   delta +0.0014988 — the validation-side gain TRANSFERRED to c2 at
+>   full size; miost6 0.8677794 beside, different mission set)
+> - sigma   0.08120374647069982
+> - lambda_x 151.85557852669348 km (miost5 156.43 — FINER by 4.6 km;
+>   miost6 151.22 beside)
+> - coverage 0.7361073945232361 IN band 0.6827±0.10 (referent 0.7350
+>   field-calibrated: +0.0011, essentially AT the referent; 0.7481
+>   scalar-era beside)
+> - chi2_red 0.9803495648850493 (the honest generalization number);
+>   CRPS 0.0464072
+> - regional (vs miost5 0.7753/0.7528/0.7065/0.7050/0.6742):
+>   SW 0.7735 / SE 0.7524 / NW 0.7105 / NE 0.7076 / jet_core 0.6758
+>   — max |delta| ≈ 0.004, remarkably stable; jet_core still weakest,
+>   slightly improved
+> - monthly: August 0.629 weakest (the persisting seasonal limitation,
+>   in band); Dec 0.781 max
+> - tally {miost5: 3, miost6: 1}
+> ```
+>
+> **⛔ STOPPED — three-branch menu reported; T14 ruling is the OWNER'S
+> next message; no branch pre-committed.**
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-18-phase13-structured-r.md`
+
+> **✅ PHASE 12 — production configuration (six-mission MIOST): CLOSED
+> 2026-07-18, BRANCH = SIGN-OFF (owner three-branch ruling; flip
+> executed). All 10 tasks complete; every commit pushed; flip commit
+> `b4878a0`; FULL external sweep 848 passed / 9 skipped / 1 xfailed
+> (1:05:52) on the flip tree (standing rule, second application).**
+>
+> **THE PRODUCT LINE:** `SHIPPED["miost"]` → `shipped_miost6` (six
+> missions, j3 assimilated, leaderboard convention); `shipped_miost5`
+> retained as the named five-mission calibration-lineage reference.
+> Honest tally **{miost5: 2, miost6: 1}** c2 touches.
+>
+> ```
+> PHASE-12 ACCEPTANCE (the ONE c2 touch, owner-authorized fresh 2026-07-18,
+> n=44,844 full challenge year, window+provenance tripwires PASS):
+> - mu      0.8677794298228094   (miost5: 0.8572611954190728; floor 0.85)
+> - sigma   0.08229205674809689
+> - lambda_x 151.22280673169575 km (miost5: 156.43)
+> - coverage 0.7307332084559808 IN band 0.6827±0.10
+>   (referent 0.7350 field-calibrated; 0.7481 scalar-era beside)
+> - chi2_red 0.9906981743442226; CRPS 0.0427
+> - regional SW 0.7752 / SE 0.7468 / NW 0.6962 / NE 0.7043 /
+>   jet_core 0.6777 (max |Δ| vs miost5 = 0.011)
+> ```
+>
+> **OWNER RECORDINGS AT CLOSE:** (1) σ-transfer NEUTRAL within noise —
+> Δcoverage −0.0043 ≈ 0.6·SE (n_eff ≈ n/10.27, SE ≈ 0.0067); the
+> pre-registered mild-over-coverage expectation did not materialize;
+> direction-miss recorded in the §3 frame with the SE arithmetic.
+> (2) August 0.6364 / χ²_red 1.466 = the persisting seasonal
+> limitation (in band; fork-c lineage, unchanged by transfer);
+> jet_core 0.6777 still the weakest region, slightly improved.
+> (3) Tier-3 = cross-generation reproduction at ~1e-5 (0.047230 /
+> 0.76094 / 0.92997 vs anchor 0.0472 / 0.761 / 0.930) — the j3
+> increment is largely the increment CLS already carried; 0.047 m
+> stands as the method-family residual; max mean-delta 0.512 m
+> reproduces the Phase-7 attribution number. (4) GroundTrack: max
+> repeat DOWN 0.410 → 0.376 (s3a/desc) — j3 diluted the s3a-specific
+> structure, a secondary improvement signal from the reference-free
+> family; j2n ≡ j3 desc (0.13493626602935876) = geometry-derivation
+> consistency check. (5) σ-signature localization ratio 3.157 (the
+> pre-registered structural read, PRESENT). (6) GAP ACCOUNTING: +j3
+> closed +0.0105 of the 0.0327 gap to published MIOST 0.89; remainder
+> = settings/tuning at matched inputs; future levers (six-mission
+> re-tuning = the §8 decision, structured/per-mission R) named,
+> neither elected. (7) Task-22 ledger: peak model AND amended
+> measured-scaling both under-predicted (actual 3436.7 MiB; mechanism
+> = retained member store ≈1.42 GB, the accumulator both misses);
+> re-grounding queue entry carries the retained-store term BY NAME.
+> Wall leg validated at 0.84× (22,289.6 s vs amended 26,684.5 s).
+>
+> **CLOSE CHECKS (captured 2026-07-18):** zero j3-side evaluation of
+> miost6 (runner grep: `their_score` on the c2 track only; guard
+> refusal by test + smoke job 1); byte-untouched diff EMPTY vs
+> pre-phase `ffaf423` on the enumerated list —
+> `tests/validation/fixtures/stage_a_scope.json`,
+> `src/sverdrup/validation/input_adapter.py`,
+> `src/sverdrup/application/calibration/constants.py` (the P0-1
+> disarm `54db3e5` is the ONE deliberate legacy-script edit;
+> `stage_miost_gate_run.py` deliberately not in the check list);
+> seed-root exact-int test green (4836134738817689931); suite green
+> (848/9/1 external sweep).
+>
+> TASK RECORD: T1 disarm `54db3e5`; T2 scope cfg `64adf45`; T3 census
+> `44f8ca1`; T4 geometry `c7654a9` (j3 REPEAT 0.0235/0.0233 —
+> physically exact for the 10-day repeat, ~1/35 revisits; cleanest
+> classification yet); T5 schema+runner `8ba440d`; T6 smoke `c18505e`
+> (launch tabled); T7 adjudication `2b388bb` + run (6.19 h) + pack
+> approved `f079e7e`; T8 touch `15b09c3`; T9 flip `b4878a0`.
+> Evidence store: `phase12_miost6_results.json` (gitignored; numbers
+> quoted above); touch log `phase12_c2_touch.log`.
+> No further phase queued — the next milestone is the owner's call
+> (recorded levers: six-mission re-tuning §8, structured/per-mission
+> R, Task-22 peak-model re-grounding, hygiene P1-P4 queue).
+
+> **[closed above] ⛔ PHASE 12 EXECUTION PAUSED 2026-07-18 — LAUNCH DECISION TABLED FOR
+> OWNER (Tasks 1–6 COMPLETE, all pushed; head `c18505e`).** Dev smoke
+> 6/6 PASS; budget recorded under `phase12.miost6.budget`; but the
+> pre-registered LAUNCH rule fails on its own arithmetic, so the Task-7
+> full-year run WAITS (Phase-10 standing rule 3b: blocked input → wait,
+> never executor-set):
+> - MEASURED: smoke window w+27 = 12,828 obs, wall 3165.1 s, peak RSS
+>   2041.5 MiB (m=100, single covering window). Per-window obs across
+>   the full plan: 10,763–13,945 (near-uniform; total halo-framed load
+>   71,867 incl. 14-month file span).
+> - TIME LEG (fails): sealed template `t_full_est = t_window_smoke ×
+>   n_windows_full × (n_obs_full / n_obs_smoke)` = 3165.1 × 9 ×
+>   (71,867/12,828) = 159,588 s = **44.3 h > 12 h**. EXECUTOR ANALYSIS
+>   (for the ruling, not applied): the total-obs ratio triple-counts —
+>   t_window_smoke already paid the smoke window's obs, and window obs
+>   are near-uniform; per-window scaling `t_window_smoke ×
+>   Σ_w(n_obs_w/12,828)` = **≈7.3 h ≤ 12 h**.
+> - PEAK LEG (fails, marginal): model 2474.8 MiB (Task-22 × 1.11) vs
+>   0.5×MemAvailable = 2410.4 MiB (64 MiB over); measured smoke peak
+>   2041.5 MiB; windows solve sequentially (no accumulation).
+> - OWNER OPTIONS: (a) amend the budget formula to per-window scaling
+>   (recorded as a pre-registration amendment) → launch (est ≈7.3 h);
+>   (b) ratify a different wall ceiling; (c) rule on the peak leg
+>   (marginal; measured < half-avail); (d) HOLD.
+> Zero c2 phase-wide so far (T1 disarm + refusing --c2-touch stub, by
+> test). Task record: T1 disarm `54db3e5`; T2 scope cfg `64adf45`;
+> T3 census `44f8ca1`; T4 geometry `c7654a9` (j3 REPEAT, ratios
+> 0.0235/0.0233, gap rider not fired); T5 schema+runner `8ba440d`
+> (suite 837/13/1; CRN s3a bit-equal live); T6 smoke `c18505e`.
+>
+> **⚖ T7 LAUNCH ADJUDICATION (owner, 2026-07-18, verbatim intent) —
+> AMENDED AND RULED; LAUNCH AUTHORIZED. Tie-band recording protocol:
+> sealed verdicts preserved beside the amendment in
+> `phase12.miost6.budget` (`sealed_verdict` + `launch_ok_sealed`).**
+> 1. TIME LEG AMENDED (defect owner-owned: sealed formula conflated
+>    total halo-loaded obs with per-window obs; approved at plan review
+>    without re-derivation; the refusal design caught it):
+>    `t_full_est = t_smoke_wall × Σ_w(n_w)/n_smoke` over the NINE
+>    measured per-window counts = 3165.1 × 108,151/12,828 = 26,684 s
+>    = **7.41 h PASS**, sealed 44.3 h FAIL beside; precedent bracket
+>    quoted (five-mission ≈4.5 h, +20% ⇒ ≈5.4 h).
+> 2. PEAK LEG RULED on measured evidence (option c, sequential
+>    windows): 2041.5 × (13,945/12,828) ≈ **2219 MiB PASS** vs 2410.4
+>    ceiling (~8% headroom); model 2474.8 FAIL beside; model/measured
+>    ratio ≈1.21 logged to the Task-22 conservatism ledger (model
+>    unchanged this phase; re-grounding = its own future task,
+>    Phase-7 precedent).
+> 3. TWO SAFETIES wired into the runner: monitor FLAG (never kill) at
+>    1.5× amended estimate = 40,027 s, owner informed at the pack;
+>    per-window peak-RSS logged for the close's measured-vs-estimated
+>    ledger row.
+> 4. j3-ratio note for the record: 0.0235/0.0233 physically exact for
+>    a 10-day repeat (~1/35 revisits) — cleanest classification yet;
+>    rider armed, not fired, as designed.
+> **✅ T7 RUN + PACK COMPLETE, OWNER-APPROVED 2026-07-18 (ruling
+> verbatim-intent, bound to provenance mean_maps 34e764d032a5… /
+> member_store e410b81cb255…).** Run: wall 22,289.6 s (6.19 h, 0.84×
+> amended — wall leg VALIDATED), converged at first cap 500, flag never
+> tripped. σ signature PRESENT: on-track Δσ median 0.005948 vs
+> off-track 0.001884, localization ratio 3.157 (636 nodes at 0.15°).
+> **PACK RULING RECORDS:**
+> 1. Tier-3 (0.047230/0.76094/0.92997 vs anchor 0.0472/0.761/0.930) =
+>    cross-generation REPRODUCTION at ~1e-5 — the Phase-7 j3-variant
+>    was this configuration; common-mode reading: the j3 increment is
+>    largely the increment CLS already carried; 0.047 m stands as the
+>    method-family residual. Max mean-delta 0.512 m independently
+>    reproduces the Phase-7 attribution number (same comparison, two
+>    phases apart).
+> 2. PEAK MISS adjudicated (actual 3436.7 MiB > amended 2219.3 >
+>    ceiling 2410.4; host margin held): mechanism = RETAINED MEMBER
+>    STORE (197k × 9 × 100 × 8 B ≈ 1.42 GB, matching the 1.28 GB
+>    monotone per-window growth 1883.5→3159.4); reviewer's "peak ≈ max
+>    window" error owned (transient modeled, accumulator forgotten).
+>    **Task-22 re-grounding queue entry gains the retained-store term
+>    BY NAME; no model retune mid-phase; no further memory exposure
+>    this phase (touch = no solve).**
+> 3. GROUNDTRACK finding: six-mission max repeat = s3a 0.376, DOWN
+>    from the 0.410 five-mission baseline — adding j3 diluted the
+>    s3a-specific structure; a secondary improvement signal from the
+>    reference-free family. j2n ≡ j3 desc (0.13493626602935876)
+>    recorded as the geometry-derivation consistency check it is.
+> **▶ T8 AUTHORIZED FRESH (owner, same message): the ONE c2 touch.**
+> Ceremony verbatim: SVERDRUP_MIOST_C2 exact-string-"1"; provenance
+> tripwire recomputes ALL SIX fields, refuses BEFORE the c2 file
+> opens; window tripwire n=44,844 + year-span; one-invocation
+> mechanics (corrected = owner flag + dated defect key; third
+> refuses). Reading sealed: µ ≥ 0.85 hard floor; coverage bar
+> 0.6827±0.10, baseline 0.7350 (0.7481 scalar-era beside); (µ,σ,λx) +
+> chi2/CRPS + regional/monthly rows. Numbers back → three-branch
+> ruling is the OWNER'S next message; no branch pre-committed.
+> Next action: implement --c2-touch (TDD mechanics), execute the
+> authorized touch, report the reading + three-branch menu, STOP.
+
+> **📋 HYGIENE REGISTER OPEN (2026-07-16, between phases).** Whole-repo
+> hygiene audit ran post-Phase-11-close; the 71 behavior-preserving
+> FIX NOW items are APPLIED and pushed (suite 808/13/1 post-pass; the
+> +1 vs 807 predates the pass — collection identical at the baseline
+> commit). What remains is a prioritized owner-review queue:
+> **`docs/hygiene-priorities.md`** (P0-P4 with effort + trigger per
+> item; full findings in `docs/hygiene-notes.md`). ⚠ TWO P0
+> EVIDENCE-INTEGRITY ITEMS gate any future evidence/gate rerun: the
+> unguarded inline c2 touch (`stage_miost_gate_run.py:801-817`) —
+> P0-1 DISARMED in-phase 12 (`54db3e5`) — and the Stage-B evidence
+> clobber path (`tune_miost_inflation.py:117`) — **P0-2 HARDENED
+> 2026-07-22 (`56b9f24`, phase-14 T0): blocking precondition, write
+> refuses without `SVERDRUP_ALLOW_STAGEB_EVIDENCE="1"` exact-string.** Also flagged: Task-22
+> owner-ordered `PeakFeasibility` is wired nowhere (P3 item 21).
+
+> **[closed above] ▶ PHASE 12 DESIGN COMMITTED 2026-07-17 (`f0ef329`), ⛔ STOPPED FOR
+> OWNER FILE REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-17-phase12-production-config-design.md`
+> (owner-approved in-session: forks a–d ruled + three review batches).
+> Phase 12 = production configuration: shipped MIOST re-run with j3
+> ASSIMILATED (six missions, leaderboard convention), everything FROZEN
+> from the signed record (winner params verbatim; s(x) field cal_key;
+> m=100, root 4836134738817689931 EXACT INT — jq float-rounds it),
+> one acceptance chain, ONE c2 touch (closed-input-set hash tripwire,
+> no re-solve at touch). Ship shape: repoint SHIPPED["miost"] ON
+> SIGN-OFF only (three-branch owner ruling; miost5 = calibration-
+> lineage reference, miost6 = flagship; five-mission config stays the
+> calibration workhorse). Pre-registered coverage reading: bar
+> 0.6827±0.10, baseline 0.7350 (field-calibrated c2 aggregate; 0.7481
+> = scalar-era), expected mild over-coverage; ABOVE-band → HOLD, no
+> refit (no legal substrate — j3 assimilated ⇒ no validation track).
+> P0 ADJUDICATIONS IN SPEC §5: P0-1 inline-touch DISARM in-phase
+> before the evidence run (legacy branch OVERWRITES the signed
+> sb["c2_acceptance"] — worse than labeled); P0-2 leave-on-queue,
+> hardened to a blocking precondition.
+> **SPEC FILE-REVIEW APPROVED 2026-07-17 (no changes). PLAN + TRACKER
+> APPROVED 2026-07-17 (`93d050e`, no changes):**
+> `docs/superpowers/plans/2026-07-17-phase12-production-config.md`
+> (+ `.tasks.json`, 10 tasks; gates = Tasks 7/8, user-gates with
+> evidence axes; T9 executes ONLY on the owner's sign-off message).
+> **▶ EXECUTION DISPATCHED to a fresh session (this one stays
+> design/review context). OWNER EXECUTION RIDERS (verbatim intent):**
+> (1) T7 pack REPORT led by, in order: the σ-map STRUCTURAL SIGNATURE
+> read (j3-track-localized variance reduction — absence is a STOP, not
+> a footnote), the Tier-3 row vs the 0.0472 anchor, the j3-family
+> GroundTrack row beside s3a's 0.410, the smoke-derived budget
+> arithmetic. (2) T8 authorization comes FRESH from the owner after
+> that review. (3) T9 only on the sign-off message (three-branch
+> ruling). Standing discipline: TDD red/green per behavior, dual
+> review per task, push as you go, ZERO c2 before T8's fresh
+> authorization (T1 disarm + T5 no-c2-capability AC enforce it),
+> evidence verbatim from artifacts at both gates.
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-17-phase12-production-config.md`
+
+> **✅ PHASE 11 — evaluator wiring: CLOSED 2026-07-16 (Task-12 owner
+> ruling, all 12 tasks resolved; every commit pushed; suite 807/13/1 at
+> 92% coverage).** THE META-LINE: the reference-free metric conceived at
+> the project's founding was exercised for the FIRST time this phase and
+> discriminates products in the physically expected direction — the
+> architecture-audit debt is PAID: the reference-free family is wired
+> (Registry.applicable, three surfaces: pipeline, harness packs, retro
+> script), tested (two-directional declared⇒consumed integrity;
+> dormant-wiring), and producing product-relevant numbers; the Policy
+> seam consolidated the three lexicographic implementations behind three
+> green identity gates (i leaf-identical, ii verdict-reproduction,
+> iii sort-identity).
+>
+> ```
+> PHASE-11 RETRO NUMBERS (2026-07-16, evidence phase11.retro.*, geometry sha 4e1d0db12971 v3):
+> - MIOST stage-B means: track_excess_log10 max repeat=0.410 (s3a/desc),
+>   max drifting=-0.253 (j2g/desc); spec_slope=-7.60 (WLS SE 0.12, day IQR 1.88),
+>   band [100, 219] km
+> - OI regenerated means: track_excess_log10 max repeat=1.233 (s3a/desc),
+>   max drifting=-0.227 (j2g/desc); spec_slope=-7.77 (WLS SE 0.26, day IQR 1.96),
+>   band [100, 219] km
+> ```
+>
+> READING (NECESSARY-NOT-SUFFICIENT — a strong track signature proves a
+> problem; a clean map does not prove correctness): the regenerated OI
+> means carry ~17× s3a-oriented per-mode excess at the s3a track
+> spacing/orientation vs the same-|k| baseline; MIOST ~2.6×; drifting
+> probes clean on both products. spec_slope −7.6/−7.8 sits in the
+> sub-λx rolloff — descriptive, no verdict semantics. **MIOST's 0.410
+> is the STANDING BASELINE for future products.**
+>
+> **RATIFICATIONS (owner Task-12 ruling, 2026-07-16):**
+> 1. REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION bump. Basis:
+>    measured ratios s3a 0.064 / j2n ~0.095 vs h2g 0.438 / alg 0.464;
+>    geometric-mean placement, ≥1.75× margin each way; cluster-size
+>    medians 16 vs 2 as the corroborating second axis; single-linkage
+>    chaining named as the mechanism the pre-registered rationale
+>    missed. EPISTEMICS: the threshold is calibrated on the classified
+>    set; transferability = margins + physics, not pre-registration.
+>    **STANDING RIDER: a future mission whose ratio lands inside the
+>    measured gap TABLES an owner decision — never silently classified**
+>    (implemented: classify_orbit refuses on RATIO_GAP (0.14, 0.431) —
+>    lower edge = the ruling's 0.14 verbatim; upper edge pinned just
+>    inside the MEASURED drifting side 0.431953 = alg/desc, since the
+>    ruling's rounded 0.44 would table the very missions it ratified).
+>    Per-family ratios + cluster-size medians live IN the geometry
+>    artifact (v3 schema), not only the constants comment.
+> 2. Per-class maxima computed over non-flagged families only;
+>    under_floor/NaN rows remain visible and flagged (regression-tested).
+>    A max over NaN is meaningless; the rows stay honest.
+>
+> **ACCEPTED RECORDED DEVIATIONS:** (a) the synthetic-slope test pins
+> implementation-consistent WINDOWED E(k) behavior (the sketch's
+> bins-3-10 single-realization variant measures −2.44 on the q=3 fixture
+> by construction) — the spec-§3 −q+1 exponent relation remains the
+> documented ASYMPTOTIC IDEALIZATION; the test is never to be "fixed"
+> back toward −2.0 (distinction recorded in the test docstring);
+> (b) fidelity Lx = box extent 876 km (219 km upper edge) — the
+> FFT-length variant (223.4) is caught by test.
+>
+> DELIVERABLES: orbit-geometry provider (data-derived headings/spacings/
+> orbit-class, pinnable v3 artifact incl. classifier evidence);
+> map_spectrum shared prep (Parseval-exact half-plane, ring-integrated
+> E(k), recorded-vs-measured 2.25-bin mainlobe); GroundTrack rebuilt
+> (geometry-consumed oriented probes vs same-|k| baseline, widening +
+> under_floor); SpectralFidelity (descriptive WLS in-band slope, visible
+> wedge_exclusion flag, obs 1-D companion); optional_context protocol
+> extension (applicable() unchanged); declared⇒consumed integrity test +
+> EffectiveResolution over-declaration fix; eval_context builder
+> (field_kind single source, ONE mask derivation shared sha in both
+> consumer rows — owner pin 1b) + default_registry + report rows with
+> visible skip rows; pipeline migrated to report_rows; harness packs
+> carry report_only_instruments; retro one-shot with
+> refuse-before-scoring provenance; Policy seam + three site migrations.
+> Zero c2 phase-wide (refusal guards by test). No phase queued — the
+> next milestone is the owner's call.
+
+> **[closed above] ▶ PHASE 11 — evaluator wiring: EXECUTION IN FLIGHT (2026-07-15,
+> executing-plans, on main).** Spec:
+> `docs/superpowers/specs/2026-07-15-phase11-evaluator-wiring-design.md`;
+> plan + tracker:
+> `docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md(.tasks.json)`
+> (12 tasks; Task 12 = phase-close owner gate). **Tasks 1–5 COMPLETE**
+> (each committed + pushed, dual review per task):
+> T1 orbit-geometry provider `aa4cad4`; T2 map_spectrum shared prep
+> `4023a95` (DEVIATION recorded: plan's slope-test sketch contradicted
+> the spec's own mainlobe-clearance rule — test fits rings ≥4 on
+> ensemble power); T3 GroundTrack rebuild `de3fe60` (interim: pipeline's
+> two Registry sites drop GroundTrack + dead stub bag until T6;
+> vertical-slice pin updated per fork-d table); T4 SpectralFidelity +
+> optional_context `c851d83` (band [100.0, 219.0] km — Lx = BOX EXTENT
+> 876 km pinned by test; Registry.run collision note pulled forward);
+> T5 integrity test + EffectiveResolution fix `e3a6f82` (suite
+> 785/13/1). T6 COMPLETE: eval_context builder (field_kind single
+> source; geometry filtered by assimilated_missions; ONE mask
+> derivation, wedge_masks_sha in BOTH consumer rows — pin 1b) +
+> default_registry (EffectiveResolution excluded, recorded decision) +
+> build_report_rows (full schema, visible skip rows, guards propagate)
+> + BOTH pipeline sites migrated (scores → report_rows; six enumerated
+> consumers on tests/helpers.row_metric) + harness packs gain
+> report_only_instruments (both return paths; dev-scope dormant-wiring
+> test 6.7 s) + fidelity empty-band {} skip guard for tiny grids.
+> Suite 799/13/1. T7 COMPLETE — retro one-shot RUN on the real
+> artifacts (script + 5 unit tests; provenance anchors verified on
+> rerun). **EXECUTOR-SET CORRECTION (disclosed, for owner ratification
+> at the Task-12 gate; Phase-10 wall-budget precedent):
+> REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION 2** — the plan's
+> pre-registered 0.5 misclassified the real dense DRIFTING missions
+> (alg = SARAL-DP since 2016-07, h2g = HY-2A geodetic since 2016-03;
+> measured ratios 0.464/0.438 vs true-repeat s3a 0.064, j2n ~0.14;
+> single-linkage chance chaining at ~170 crossings/10°). 0.25 =
+> geometric mean of the measured sides. Companion fix: per-class maxima
+> skip nan families (dense drifting probes below grid Nyquist → honest
+> under_floor rows). Geometry sha 84e8a19bfe4e (v2).
+>
+> ```
+> PHASE-11 RETRO NUMBERS (2026-07-16, evidence phase11.retro.*, geometry sha 84e8a19bfe4e):
+> - MIOST stage-B means: track_excess_log10 max repeat=0.410 (s3a/desc),
+>   max drifting=-0.253 (j2g/desc); spec_slope=-7.60 (WLS SE 0.12, day IQR 1.88),
+>   band [100, 219] km
+> - OI regenerated means: track_excess_log10 max repeat=1.233 (s3a/desc),
+>   max drifting=-0.227 (j2g/desc); spec_slope=-7.77 (WLS SE 0.26, day IQR 1.96),
+>   band [100, 219] km
+> ```
+>
+> READING (necessary-not-sufficient caveat applies): the regenerated OI
+> means carry a STRONG s3a-oriented signature at the s3a track spacing
+> (1.233 log10 ≈ 17× per-mode excess vs the same-|k| baseline; MIOST
+> 0.410 ≈ 2.6×); drifting probes show no signature on either product.
+> spec_slope ≈ −7.6/−7.8 sits in the sub-λx rolloff (λx 141–205 km lies
+> inside the [100, 219] band) — descriptive, no verdict semantics.
+> GOTCHAS: full suite ≈ 20–33 min (run in background); statistic
+> small-sample offset on steep isotropic nulls documented in fixtures.
+> **Tasks 8–11 COMPLETE (Policy-seam track):** T8 seam `fe45bdd`
+> (banded sort refused, semiorder documented); T9 objective.rank
+> `bee5c10` (gate iii: 200-list identity property green pre+post,
+> suite 806/13/1); T10 folds.select `0985918` (gate i: leaf-identical
+> external harness PASS pre- AND post-migration, independently
+> re-run); T11 lane_compare `6f25928` (gate ii: Phase-10 verdict
+> branch + wording reproduced string-equal from persisted records).
+> **⛔ TASK 12 — PHASE-CLOSE OWNER GATE: EVIDENCE PACK ASSEMBLED,
+> HELD FOR OWNER REVIEW (2026-07-16).** All criteria re-validated on
+> the final tree with captured output: retro numbers + provenance
+> (jq), gates i/ii/iii PASS, integrity + dormant-wiring PASS, full
+> suite w/ coverage 807/13/1 (92%), mean-map shas MATCH recorded,
+> registry METHODS/SHIPPED untouched (empty diff vs ad6d853), zero c2
+> re-checked. TWO EXECUTOR-SET ITEMS AWAIT RATIFICATION:
+> (1) REPEAT_RATIO_MAX 0.5 → 0.25 + DERIVATION_VERSION 2 (measured
+> basis in phase11_constants.py); (2) per-class maxima skip
+> nan-flagged families. Owner approval closes the phase.
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-15-phase11-evaluator-wiring.md`
+
+> **✅ PHASE 10 — lat-varying OI parameters (invariant-12 B): CLOSED
+> 2026-07-15 with the PRE-REGISTERED NEGATIVE RESULT. PRIMARY verdict:
+> "improvements within band" (pinned wording) — the lat-varying
+> parameters do not beat the tuned-constant lane. NO c2 touch spent
+> phase-wide (phase-10 OI product tally: 0; gate 2 never armed).
+> Tasks 10–15 CLOSED AS SUPERSEDED per the plan's branch semantics
+> (Phase-8 Task-13 precedent); owner gates 1/2 never executed —
+> nothing they gate occurred (no ship, no c2 touch, registry "oi"
+> unchanged).**
+> - VERDICT (evidence: `phase10.oi.lanes.verdict`, 2026-07-15T14:07Z,
+>   protocol_sha 9982aad9…): VL winner vs lane-0 winner Δµ=+0.000124
+>   vs band 0.000373 (0.33× band); Δλx=+0.42 km vs band 18.97 km,
+>   direction against VL; branch=within-band. L-only lane NOT run
+>   (sealed budget: four-lane n=5 < floor 8). Stage-1 + stage-2 blocks
+>   below carry the full numbers; dual review passed on both (spec 6/6,
+>   adversarial 5/5 incl. selection-suppression void).
+> - THE INSTRUMENT FINDING STANDS INDEPENDENTLY: under the frozen
+>   phase-9 frame, the V winner moved structure INTO the prior —
+>   G_pre_oi 0.27086964 → G_post 0.21518 (shrinkage +0.0557, ~20.6%)
+>   — while product skill stayed within band. Lat-varying variance is
+>   real but the s(x) calibration field was already absorbing it;
+>   invariant-12 is RESOLVED as "option B measured, not shipped".
+> - DELIVERABLES THAT STAND (all merged, suite 741/13/1 at close):
+>   `LatitudeField` + `LatitudeVaryingProvider` (typed field dispatch);
+>   `PaciorekGaussianDegrees` (PD-proven nonstationary kernel);
+>   OI kernel-factory dispatch seam (byte-identical baseline gate);
+>   registry METHODS/SHIPPED role-split; sealed-band read-time
+>   adjudication machinery (`lane_compare`, reusable); lane runner +
+>   flattening reader with the frozen-frame discipline.
+> - **SEPARATE OWNER ITEM (flagged, NO recommendation): tuned-constant
+>   election.** The lane-0 (stationary, tuned constants) winner:
+>   trial c0=−0.4380, log_L0=−0.1304 (L0≈0.878°), Lt=12.78 d →
+>   µ=0.8607234, λx=205.30 km, coverage 0.6764 — vs the current
+>   signed constants. Electing it would be a NEW product decision with
+>   its own acceptance chain; recorded here only.
+> - **TWO STANDING OWNER ITEMS (were queued for gate-1; gate
+>   superseded, so surfacing at close): (1) sealed extra constant
+>   n_lambda_resamples=200 (spectral cost rationale in the artifact);
+>   (2) wall_budget_h=12.0 EXECUTOR-SET (owner absent; provenance
+>   recorded; drove the screening contingency and the L-only skip).**
+> - Deferred-items hygiene: the invariant-12 deferral entry (below)
+>   retired → resolution recorded there by pointer to this banner.
+> - MIOST-B next-decision pointer (owner item): with lat-varying OI
+>   measured-not-shipped, the flagship question returns to MIOST-B
+>   representation (representation-dominated per the phase-9 OI
+>   contrast finding: MIOST under-disperses ~10× jet-concentrated; OI
+>   over-disperses ~34% with spatial structure winning selection).
+
+> **⚖ PHASE-10 POST-CLOSE OWNER RULINGS (2026-07-15, verbatim intent;
+> all four items from the close banner adjudicated):**
+> 1. **TUNED-CONSTANT ELECTION: DECLINED.** Rationale recorded:
+>    validation-vs-c2 incomparability (the one measured offset, MIOST
+>    0.8642→0.8573, puts the winner ≈0.854 on c2 — adjacent to the
+>    signed 0.853) + the resolution cliff (λx 205.3 vs 140.9 km;
+>    Lt 12.78 d + variance ×0.645 = smoothing trades resolution for
+>    µ). No touch, no chain; lane-0's winner stands as the
+>    tuned-constant REFERENCE MEASUREMENT; the OI product question
+>    re-opens at the global domain.
+> 2. **n_lambda_resamples=200: RATIFIED.** Ratification note:
+>    bootstrap-SE precision ≈ 1/√(2·199) ≈ 5% (ample for a 2×SE band);
+>    the λx tie-break was settled by SIGN (Δλx against VL), never by
+>    band width. RECORDING NOTE (executor): the protocol artifact is
+>    sha-SEALED — every recorded band carries the protocol_sha of the
+>    sealed bytes and the tamper test refuses a modified artifact — so
+>    this ratification note lives HERE, bound to that artifact's sha
+>    9982aad9…, NOT inside phase10_band_artifact.json (editing it
+>    would void the phase's own evidence chain).
+> 3. **12 h WALL BUDGET: RATIFIED as disclosed.** Two riders:
+>    (a) the negative result is SCOPED — "no lat-varying gain beyond
+>    the measured band UNDER THIS SEARCH (recorded n_sobol_per_lane:
+>    7 full-year equivalent / 30 screening per lane, 12 h wall,
+>    screening contingency active)" — a search-scoped negative, never
+>    a physics disproof (consistent with the recorded
+>    expectation-setter); (b) **STANDING RULE (project-wide):
+>    execution-blocking owner inputs get a pre-registered default in
+>    the plan, or the task WAITS — executor-set values remain a
+>    disclosed deviation, not a convention.**
+> 4. **MIOST-B: DECLINED** — the §0.2 post-reading owner decision, now
+>    made with the reading in hand: on OI (prior-side variance's best
+>    case) V relocated ~20.6% of structure with zero skill movement
+>    and l1 bought nothing; MIOST's deficit is
+>    representation-dominated per its own record. Revisit only at the
+>    global domain. **CLOSING LINE, invariant-12 (thread opened in
+>    Phase 5): deferral honored, vehicle built, measurement clean,
+>    answer = "the calibration layer already had it."**
+> No further phase queued — the next milestone (global domain,
+> production integration, or elsewhere) is the owner's call.
+
+> **🔍 ARCHITECTURE-AUDIT FINDING (owner, 2026-07-15, recorded
+> verbatim-intent): the evaluator flexibility commitment
+> (`evaluate(result, context)`, `required_context`,
+> `Registry.applicable`, reference-based + reference-free families,
+> vector scores + bars-as-data) was implemented faithfully in
+> `core/evaluation.py` + `eval/` — and then Phases 4b–10 built the
+> acceptance spine BESIDE it: no gate or tuning path consults the
+> registry; GroundTrack has produced zero numbers in any evidence
+> pack; the reference-free family is unexercised. Withheld-data
+> became the only OPERATIVE test by wiring drift, not by design.**
+> WHAT REMAINS (a small standalone phase, if/when elected — no method
+> work, no c2):
+> 1. Rebuild GroundTrack to earn its declaration: derive oriented
+>    probe wavevectors FROM the ORBIT_GEOMETRY it already requires
+>    (per-mission inter-track spacing + ascending/descending
+>    orientations); score power against a LOCAL spectral baseline,
+>    not total power; document necessary-not-sufficient in the class.
+>    Its current declared-but-unread context is an integrity smell —
+>    required_context must mean consumed.
+> 2. Build the missing spectral-FIDELITY evaluator (wavenumber-slope
+>    sanity vs expected cascade); note `eval/spectral.py` is λx
+>    infrastructure, not this.
+> 3. Wire both into the STANDING report-only instrument pattern
+>    (evidence packs consume `Registry.applicable` for report rows;
+>    bars unchanged; promotion path = the existing pre-registration
+>    mechanism). MEAN maps only — σ maps legitimately carry track
+>    pattern (posterior variance tracks sampling geometry; Phase-8
+>    theorem) and must not be scored by it.
+> 4. RETROACTIVE one-shot: run the rebuilt metric on the shipped
+>    MIOST and signed OI mean maps; record the numbers (directly
+>    relevant to the product conversation).
+> 5. Extract the selection-Policy seam (lexicographic logic now
+>    triplicated: objective sort, folds.select, lane_compare — rule
+>    of three met).
+> 6. Reviewer's note for the record: six phases of gate reviews
+>    checked rubric compliance and never asked why track_power was
+>    absent — pre-registered-rubric auditing catches deviations from
+>    the plan, not omissions from the vision. Periodic architecture
+>    audits against founding commitments are the countermeasure; this
+>    was the first.
+>
+> **▶ PHASE 10 DESIGN COMMITTED 2026-07-13, ⛔ STOPPED FOR OWNER FILE
+> REVIEW before writing-plans.** Spec:
+> `docs/superpowers/specs/2026-07-13-phase10-latvarying-params-design.md`
+> (owner-approved in-session: forks a–e + three review batches, eleven
+> batch folds). Lat-varying OI parameters (invariant-12 option B):
+> variance(lat) = exp(c0+c1v+c2v²) + shared-lx/ly L0·exp(l1·v) via
+> `LatitudeVaryingProvider` superseded in place; Paciorek–Schervish
+> nonstationary kernel (PD + constant-reduction tests before stage-2);
+> one-core lanes-as-restrictions {lane-0, V, VL-joint}; lexicographic
+> µ→λx lane comparison with measured bands, PRIMARY = VL vs lane-0;
+> mean-changing acceptance template (determinism content-hash tripwire);
+> flattening readings under the FROZEN phase-9 OI frame (G_pre_oi
+> expected 0.27086964, anchor at `phase10.g_pre_oi_anchor` — NOT
+> `phase9.g_pre_anchor`, that is MIOST's); registry role-split
+> (METHODS/SHIPPED, miost factory migrates). ZERO c2 touches until owner
+> gate 2. **SPEC FILE-REVIEW APPROVED 2026-07-13 (one-line fix `7cd7164`).
+> PLAN REVIEW APPROVED 2026-07-13 after two corrections (`c9086e5`: band
+> PROTOCOL — sealed procedure, values computed per consulted pair at
+> read time, protocol_sha-bound, probe pair demoted to reference;
+> tasks.json names + explicit blockedBy):**
+> `docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
+> (+ `.tasks.json`, 16 tasks 0–15; gates 11/13 = user-gates with
+> evidence axes; negative branch = Task 9). **EXECUTION IN FLIGHT
+> (2026-07-13, executing-plans, on main): Tasks 0–1 COMPLETE** — Task 0
+> signed probe measured (365-day train-only OI re-solve: wall 2173.4 s,
+> peak RSS 1230 MiB, host 4 cpu / 5.5 GiB avail; `phase10.oi.probe.signed`
+> + budget TEMPLATE written; probe maps kept as band side A); Task 1
+> registry role-split landed (SHIPPED table; miost migrated; census'd
+> consumers migrated incl. two POSITIONAL `run_challenge_map("miost",…)`
+> hits in stage_miost_gate_run.py the census regex missed — spec-review
+> catch; `shipped: bool` escape added to run_challenge_map per plan
+> clause). Task 2 COMPLETE: `LatitudeField` (exp-quad / exp-linear-mult,
+> v=(lat−38)/5 hull-clamped, `__float__` raises per dispatch contract) +
+> `LatitudeVaryingProvider(core, varied)` superseded in place; Protocol
+> return widened to `ScalarOrField | LatitudeField`; three consumer test
+> files migrated (tiling halo tests keep invariant-5 falsifiability via a
+> local cos-blend stub — plan's empty-varied hint would have made them
+> vacuous). Suite 689/13/1. Task 3 COMPLETE: `gaussian_kernel_from_params`
+> factory in validation/run.py (scalar path np.array_equal-identical to
+> baseline_kernel on points AND 3-day maps; LatitudeField routes
+> NotImplementedError until Task 4); `oi_gaussian_kernel_from_params` flag
+> on both runners, both-flags ValueError guard. Suite 694/13/1. Task 4
+> COMPLETE — **PACIOREK GATE GREEN, stage-2 tasks unblocked**:
+> `PaciorekGaussianDegrees` (PS prefactor L(x)L(y)/L̄² verified against
+> the determinant form; constant reduction BIT-IDENTICAL to
+> baseline_kernel at L0=1 — no short-circuit needed; prior_var_at exact;
+> _stationary False). Factory contract: lx_deg = SCALAR base L0,
+> multiplier under `lx_mult` (field), TypeError on field-valued base —
+> the plan's Task-3 sketch (field under lx_deg) had no L0 slot; Task 6's
+> provider_for_trial MUST emit l1 as `lx_mult` and omit it at l1=0
+> (see gaussian_kernel_from_params docstring). GOTCHA (spec-review
+> finding): the spec-§3 pinned PD geometry does NOT discriminate the
+> naive constructions (bands ~9° apart, cross-band cov ≈ 0; every wrong
+> variant passes there) — teeth added as a dense 80-pt lat-sweep PD test
+> (row-substitution form measurably indefinite there, min eig ≈ −1e-3)
+> + a hand-computed cross-band entry (kills dropped/inverted prefactor
+> + wrong denominator). Suite 704/13/1 (clean re-run after a mid-run-edit
+> getsource artifact; lesson recorded).
+> Task 5 COMPLETE (ONE commit): Paciorek probe measured (full-year
+> factory-path re-solve at the pinned config: wall 1918.3 s, RSS 1833
+> MiB; maps kept as band side B); band PROTOCOL SEALED at
+> `phase10_band_artifact.json` sha256 9982aad9… (seed 271828,
+> n_resamples 2000, contiguous day/pass blocks, λ rule ≤25 km per
+> computed pair, single-execution rule, refusal clock on artifact
+> created_utc; demoted probe-pair shakedown: Δµ=−0.00096 band 0.00246,
+> Δλx=+0.14 band 6.69 km, 403 segments); contingency constants
+> co-sealed (91-day screening list = days 1,5,…,361; k=3). BUDGET:
+> t_trial=1918 s, wall 12.0 h → n_full=7 < 8 → **SCREENING CONTINGENCY
+> ACTIVE** (n_screening=30/lane). **TWO ITEMS FLAGGED FOR THE GATE-1
+> PACK (owner confirms): (1) sealed extra constant n_lambda_resamples
+> =200 (spectral cost; rationale in artifact); (2) wall_budget_h=12.0
+> EXECUTOR-SET (owner absent; provenance recorded; drives the
+> contingency).** Task-6 obligations from reviews: selection layer must
+> guard n_lambda_used (λ band on too-few successful resamples → degrade
+> to µ-primary + note); consumers pass expected_sha from
+> `phase10.oi.band_protocol`; provider_for_trial emits the multiplier
+> as `lx_mult` (NEVER a field under lx_deg) and OMITS it at l1=0.
+> Task 6 COMPLETE: `validation/phase10_lanes.py` (pre-registered boxes
+> with in-code rationale; lanes-as-restrictions frozen AT 0.0; paired
+> Sobol = ONE shared 6-dim engine `derive_seed("oi","phase10-lanes",
+> "sobol",0)` with per-lane masking — the plan's per-lane-engine clause
+> was stale text, fold-2a governs; anchors; bars_for(SAMPLES) +
+> SIGMA_OBS2 coverage convention with the ≈0.78 live-bar expectation)
+> + selection layer in lane_compare.py (lexicographic µ→λx, read-time
+> top-2 adjudication bands, degradation branches incl. the
+> n_lambda_used≥50% floor, refusal clock FIRST, wording pin). Scorer
+> gained THREE additive default-off seams (plan said one; all three
+> load-bearing, spec-review-endorsed): oi_gaussian_kernel_from_params,
+> provider_factory (trial dicts aren't kernel params), coverage_extra_var
+> (SIGMA_OBS2 convention). Task-7 note: use power-of-2 Sobol batches
+> where possible (scipy balance warning at n=30; benign, budget n=30
+> sealed). Suite 733/13/1. Task 7 machinery COMMITTED `f2e3e01`
+> (lane runner with crash-durable per-trial checkpoints; flatten reader;
+> spectral empty-PSD hardening; G_pre_oi ANCHOR WRITTEN:
+> 0.27086964275496783 exact, OI pre-B companions std_log_s 0.6444 /
+> range 1.7138 / clip 0.3299; dev smokes green both lanes incl.
+> secondary row — LIVE bars tripped both arbitrary dev points exactly
+> as pre-registered).
+>
+> **⚖ STAGE-2 PRIMARY VERDICT 2026-07-15 (Task 8 COMPLETE): NEGATIVE —
+> "improvements within band" (pinned wording). The lat-varying
+> parameters do NOT beat the tuned-constant lane on the pre-registered
+> claim-bearing comparison.**
+> - VL lane: 30 Sobol + 2 warm-start anchors (lane-0 winner idx30, V
+>   winner idx31 — trials verified equal to the embedded winners at
+>   full precision), k=3, 7/32 admissible, screening 18092 s + 3 full
+>   re-scores. VL WINNER = idx31, the V-winner anchor re-evaluated
+>   FRESH (residuals npz sha256-identical to V's winner npz, computed
+>   8 h apart — determinism proven, not a copy; mtimes + inodes
+>   distinct): µ=0.8608470, λx=205.72 km. Released l1 bought nothing;
+>   no VL Sobol trial beat the warm start.
+> - PRIMARY VL-vs-lane0 (single seeded execution at read on the
+>   persisted pair; refusal clock first; protocol_sha 9982aad9…):
+>   Δµ=+0.000124 vs band 0.000373 (0.33× band); Δλx=+0.42 km vs band
+>   18.97 km — λ informative but the delta runs AGAINST VL (positive =
+>   coarser; the tie-break could never fire). Branch=within-band,
+>   positive=false. Verdict at `phase10.oi.lanes.verdict` (created
+>   2026-07-15T14:07:16Z) with the stage-1 secondary row COPIED
+>   verbatim (single-execution rule, provenance note) + L-only
+>   decision: NOT run — sealed budget four-lane n=5 < floor 8 (probe
+>   t_trial 1918.3 s, wall 12.0 h).
+> - DUAL REVIEW: spec-compliance 6/6 PASS (anchor equality, dev smoke
+>   precedence, protocol sha recomputed match, wording pin, k-slot
+>   accounting, full-precision number fidelity). Adversarial review
+>   all 5 angles HOLD — selection suppression EMPIRICALLY VOID (k=3
+>   set was exactly the top-3 admissible by screening µ; best excluded
+>   trial needs a +3.2e-3 screening→full shift while all 9 observed
+>   shifts are negative, range [−5.6e-3,−1.3e-3]); verdict arithmetic
+>   recomputed exact; timestamp scan clean (nothing postdates the
+>   verdict write); admissibility patterns near-identical across lanes
+>   (bar-driven exclusions only).
+> - **BRANCH RECORDED: NEGATIVE → Task 9 executes; Tasks 10–15 close
+>   as superseded (Phase-8 Task-13 branch-semantics precedent). NO c2
+>   touch spent — tally for the phase-10 OI product stays at 0.**
+> - Suite green at Task-8 close (counts in the close commit).
+>
+> **✅ STAGE-1 CLOSED 2026-07-15 (Task 7 COMPLETE). Fork-a mod-1
+> sentence: the outcome is STRUCTURE MOVED INTO THE PRIOR (G_post <
+> G_pre under the frozen frame); the product did NOT materially improve
+> (V within band of lane-0 on the validation track). Two facts, never
+> conflated.**
+> - OPERATIONS: the original chain (pid 1140532) was killed by a host
+>   crash 2026-07-14 mid-V-lane — lane0 had finished (winner written
+>   2026-07-14T10:24Z); V screening had finished but no winner. Per the
+>   recorded protocol the V lane was re-run WHOLE (no resume-skip;
+>   records overwritten by design) + flatten read; relaunched chain ran
+>   2026-07-14T23:43:20Z → 2026-07-15T06:58:16Z "chain: DONE".
+> - lane-0 WINNER: index 7, µ=0.8607234, λx=205.30 km, coverage
+>   0.6764, 6/30 admissible; within-lane adjudication branch=mu-clear
+>   (Δµ=0.004449 vs band 0.000753); λ NON-informative for that pair
+>   (band 46.13 km > 25 → µ-primary degradation branch fired exactly
+>   as pre-registered); protocol_sha 9982aad9…, written_utc inside the
+>   record (2026-07-14T10:24:47Z).
+> - V WINNER: index 7 (same Sobol index as lane-0 — paired draws),
+>   µ=0.8608470, λx=205.72 km, coverage 0.6696, 7/31 admissible
+>   (30 Sobol + lane-0 anchor); branch=mu-leader-tie-held (band_µ
+>   0.000373); λ informative (band 18.97 km ≤ 25); n_lambda_used
+>   186/403 ≥ 50% floor; protocol_sha 9982aad9…, written_utc
+>   2026-07-15T06:20:02Z. Winner trial: c0=−0.4380, c1=+0.6022,
+>   c2=−0.4800, log_L0=−0.1304, l1=0 (frozen), Lt=12.78.
+> - SECONDARY V-vs-lane0 (attribution, NEVER claim-bearing):
+>   Δµ=+0.000124 within band 0.000373; Δλx=+0.42 km within band
+>   18.97 km; branch=within-band; wording pin honored ("improvements
+>   within band"); positive=false.
+> - FLATTENING STAGE-1 (frozen pre-B frame; frame_differences EMPTY;
+>   mask sha 0deefcb9… asserted; tuple (oi,phase9,s-folds); s_salt 4,
+>   redraws [0,1,2,3]): G_pre_oi anchor 0.27086964275496783 recomputed
+>   EXACT → **G_post = 0.21517882, shrinkage +0.05569 (~20.6% of
+>   G_pre)**; s(x) selection winner still poly (structure remains,
+>   smaller); lane-0 S-stat 0.2939. Maps kept:
+>   `phase10_stage1_Vwinner_{mean,var}.nc`; top-k residual arrays
+>   persisted both lanes (lane0: 7,17,18; V: 7,18,30).
+> - READING: the lat-varying variance prior absorbed ~1/5 of the
+>   spatial structure the s(x) calibration field previously carried,
+>   without moving validation-track skill — the spec's
+>   modest-gains-here expectation-setter realized at stage 1. The
+>   claim-bearing comparison remains Task-8's PRIMARY (VL vs lane-0).
+> - DUAL REVIEW (results): spec-compliance PASS on every quoted value
+>   incl. refusal clock (protocol sealed 03:41Z < earliest record
+>   09:33Z) + protocol_sha == sha256(artifact). Adversarial integrity
+>   review: NO contamination — crash-restart cleanliness proven by V's
+>   anchor re-evaluation reproducing the pre-crash lane-0 winner
+>   BIT-EXACTLY (µ 0.8607234482058996, fresh 2024 s solve); all 31 V
+>   records post-relaunch; code identical across both runs (last
+>   src/scripts commit f2e3e01, 17 s before lane0 start). TWO NOTES
+>   CARRIED FORWARD: (i) evidence JSON is untracked — lane-0
+>   non-overwrite rests on internal timestamps + the bit-exact anchor,
+>   not git history; (ii) top-k=3 full re-scores INCLUDE anchors, so
+>   in V the anchor displaced screening rank-4 from full scoring
+>   (protocol-consistent; remember when reading Task-8's VL lane,
+>   which carries TWO anchors → only ONE Sobol candidate beyond the
+>   screening leader gets a full re-score... verify k vs anchor count
+>   at VL read time).
+> - c2 untouched — grep gate both scripts: ZERO code hits; the one
+>   textual match is the flatten reader's docstring line ASSERTING the
+>   property (spec-review finding, recorded as-is). Suite green at
+>   close (counts in the close commit message).
+> **NEXT: Task 8 — VL lane via the same chain pattern (VL warm-starts:
+> stage-1 V winner + l1=0, and lane-0 winner — anchors_for handles
+> it); L-only decision: budget four-lane n=5 < 8 → L-only NOT run,
+> record the probe number as the reason; write
+> `scripts/phase10_compare.py` (refusal clock → winners →
+> primary_verdict VL-vs-lane0 → `phase10.oi.lanes.verdict`).**
+> GOTCHAS STANDING: (a) pre-commit-check-tasks hook ACTIVE — commits
+> blocked while any native task is in_progress; workaround: mark
+> completed → commit → re-open. (b) NEVER edit source while a chain or
+> gate suite runs (paired lanes must execute identical code). (c) Two
+> standing gate-1 owner items: sealed n_lambda_resamples=200 +
+> executor-set 12 h wall budget. (d) evidence lives in
+> `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`
+> (gitignored — numbers quoted into PROGRESS at close, as above).
+> (e) chain scripts live in session scratchpad (/tmp) — a host crash
+> deletes them; rebuild from the two-command pattern (lane run →
+> flatten read), log appends to the same chain log.
+> Resume:
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-13-phase10-latvarying-params.md`
+> Standing discipline: dual review per task; push as you go; ZERO c2
+> before Task 13; gates stop for owner with evidence verbatim from
+> artifacts; bring the Task-11 evidence pack to the owner when the
+> lanes land.
+
+> **✅ PHASE 9 — method-generic calibration: CLOSED 2026-07-13 (owner
+> ruling below; all 8 tasks resolved, dual review per task, every
+> commit pushed).** DELIVERABLES: (1) `distributions/calibration.py` —
+> CalibrationField classes (verbatim move, cal_key byte-stable, PIN C)
+> + `CalibratedDistribution` capability-aware wrapper (pins A/B;
+> enumerated surface, no `__getattr__`; chain-preserving composition
+> provenance; scalar-1.0 identity-skip); (2) MIOST migrated onto the
+> wrapper — identity-proven (in-process 6+2 zero-behavioral-edit;
+> external pins green; PIN-D sequence fixture; no dual mechanisms);
+> (3) `application/calibration/harness.py` — ProductDescriptor +
+> generalized fit harness, harness-on-MIOST LEAF-IDENTICAL to the
+> Phase-8 evidence (449 leaves, 0 mismatches; field artifact
+> byte-exact); generalized mask build (deterministic, phase8 cells
+> reproduced); (4) **G_pre = 0.13510401012055406** anchored at
+> `phase9.g_pre_anchor` (definition verbatim, frame pinned, companions:
+> std_log_s 0.6018, range 1.6039, clip 0.37181, NLL 3572.78 demoted);
+> (5) OI maps at the signed config (train-only; j3-inclusive
+> matched-day audit BIT-IDENTICAL 12/12 — config proven by
+> construction); (6) **OI DEMONSTRATION FINDING (the Phase-10 targeting
+> evidence is a CONTRAST, not a point): MIOST under-disperses ~10×
+> jet-concentrated (s*=10.06); OI OVER-disperses ~34% (ŝ_OI=0.6621)
+> with spatial structure still winning selection (poly S=0.0448 vs
+> lane-0 0.3156; bars 1–4 in band; Jaccard vs p8 = 1.0) — two opposite
+> prior pathologies, one instrument.** Demonstration-only, no ship, no
+> registry change. **FULL EXTERNAL SWEEP at HEAD post-fix: 678 passed /
+> 9 skipped / 1 xfailed (1:05:12) — externals part of green per the new
+> spec-§6 standing rule.** ZERO c2 touches phase-wide (no new c2 keys;
+> tally unchanged at 2). PHASE 10 (lat-varying method parameters,
+> invariant-12): owner-initiated brainstorm in a fresh session,
+> consuming **spec §7's contract by reference** — g_pre anchor, both
+> field artifacts, frozen-frame rider, invariant-12 resolution shape,
+> modest-gains-here expectation-setter. Post-close hygiene follow-up
+> (owner-ordered, small reviewed commit): delete the inert vendor-path
+> shim from harness `load_track`.
+
+> **⚖ PHASE-9 TASK-8 OWNER RULING (2026-07-13): PHASE 9 CLOSED —
+> APPROVED.** Adjudications (verbatim intent): (1) zero-edit relaxation
+> `e9f0575` ACCEPTED — confined to type evidence, which the replacement
+> STRENGTHENS (wrapper + underlying both pinned); every numeric/bit
+> assertion untouched. **PRINCIPLE RECORDED for future identity gates:
+> behavioral pins (rtol/bit values) are inviolable; structural asserts
+> that encode implementation shape may track a reviewed shape change,
+> disclosed exactly as done here.** (2) Phase-8 stale-pin incident
+> `b5b44a1` ACCEPTED as a Phase-8 close oversight surfaced by this
+> phase; three orders: (a) dated ERRATUM appended to the Phase-8 close
+> entry below; (b) STANDING RULE added to spec §6 beside the touch
+> mechanics: any commit changing shipped-product semantics — capability
+> flips above all — re-runs the FULL external/artifact-gated suite
+> before close; externals are part of "green"; (c) full external sweep
+> at HEAD post-fix confirmed, count in the close banner. (3) Plan
+> wording "their_eval never imported" = plan erratum ("no c2 access
+> capability" was the intent; the moved shim is reviewer-verified
+> inert); POST-CLOSE HYGIENE FOLLOW-UP (small reviewed commit, not a
+> gate condition): delete the inert vendor-path shim from load_track so
+> the zero-c2 invariant reads literally true.
+
+> **[superseded 2026-07-13 by the close banner above] ▶ PHASE 9 —
+> method-generic calibration: IN PROGRESS. Tasks 1–3
+> COMPLETE (Task 3 truly closed at `b5b44a1`; an earlier `cb55add`
+> banner claimed close prematurely — before reviews and the external
+> gate — and is superseded by this entry). Next: Task 4
+> (ProductDescriptor + generalized harness; leaf-identical gate).**
+> Spec: `docs/superpowers/specs/2026-07-12-phase9-generic-calibration-design.md`
+> Plan + tracker: `docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md(.tasks.json)`
+> (8 tasks; owner review addition folded: Task-6 map-level config audit —
+> regenerated OI means vs the signed artifact on matched days, STOP on
+> mismatch, dev smoke first). **Standing discipline for execution:** dual
+> review per task; push as you go; identity gate green BEFORE Task 4
+> starts (PASSED); Task 8 = owner gate with evidence verbatim from
+> artifacts; ZERO c2 touches phase-wide (no task is capable of
+> touching it).
+> **Task 3 close evidence (commits `eb308c6`→`d6004f0`→`59857c7`→
+> `e9f0575`→`b5b44a1`):** raw class stripped of ALL calibration (spec
+> review round 1 caught retained dual mechanisms — deleted in
+> `d6004f0`); Miost.sample_members/solve return the wrapper (required
+> by the zero-edit gate's with_calibration call sites); wrapper gained
+> scalar-1.0 identity-skip (matches pre-migration construction
+> provenance) + chain-preserving composition provenance (`59857c7`,
+> re-review follow-ups, both red-first). Identity gate: in-process
+> **6 passed 2 skipped** (behavioral pins byte-untouched); external
+> pins **2 passed** (v_raw reconstruction identity, mean bit-identity,
+> poly-factory identity, rtol 1e-9). Full suite **645/11/1** at
+> `59857c7` (+3 new tests; the two later commits touched only the
+> identity test file, re-proven green in the gate + external runs).
+> PIN-D sequence fixture pinned; mechanism pointer in shipped_miost()
+> docstring; mypy override narrowed to disable_error_code
+> [return-value, attr-defined] on the one zero-edit gate module.
+> **TWO OWNER FLAGS FOR TASK 8:** (1) zero-edit criterion relaxed for
+> the external fixture's TYPE assert only (+7/−2, `e9f0575`) — the
+> plan's zero-edit + external-pass criteria were unsatisfiable
+> together post-migration; every rtol/bit assertion untouched.
+> (2) STALE-PIN INCIDENT: Phase-8's capability flip (`baa7d9b`) never
+> updated the T5 external factory pin (still scalar-era `S_STAR ×`)
+> and externals were never re-run post-flip — surfaced here as a
+> failure with exact ratio 0.32121 = e^1.1731/s*; pin updated to the
+> signed clipped-poly field, cal_key-asserted + factory-drift assert
+> (`b5b44a1`). Pre-migration HEAD would fail identically — a Phase-8
+> close oversight, not a migration defect.
+> PHASE 10 = lat-varying METHOD parameters (invariant-12) — deferred TO
+> Phase 10, owner-committed (spec §0); the Phase-10 brainstorm consumes
+> `phase9.g_pre_anchor` by reference after Phase-9 close.
+> **RESUME:** `/superpowers-extended-cc:subagent-driven-development docs/superpowers/plans/2026-07-12-phase9-generic-calibration.md`
+
+> **✅ PHASE 8 — spatially varying uncertainty calibration: CLOSED
+> 2026-07-12 on the capability-flip commit (`baa7d9b`). ALL 13 plan
+> tasks resolved** (1–12 executed; 13 = negative-result branch CLOSED
+> AS SUPERSEDED by the Task-10 PROCEED-TO-TOUCH ruling + Task-11
+> sign-off — never executed, per the plan's branch semantics).
+> **CAPABILITY FLIP LANDED:** registry `"miost"` ships the
+> field-calibrated product — clipped low-order polynomial s(x) (5 dof,
+> coeffs (2.6284, 0.6473, −2.2371, −0.1485, 0.5330), clip [1.1731,
+> 2.9291] log-s, cal_key byte-identical to `phase8_field.json`) at the
+> query-time √s(x) anomaly layer; mean maps bit-unchanged (proven on
+> c2: triplet bit-identity); σ-semantics paragraph carries the owner
+> riders verbatim (clipped-poly framing, raw-poly-gradient footnote,
+> August 0.691→0.655 limitation, jet-core residual 0.674/1.29
+> recorded). **Evidence:** j3 selection S/T 0.0439/0.0509 vs lane-0
+> 0.1790/0.1679 (all lanes eligible; ABSOLUTE ±0.01 tie band per owner
+> ruling); bars 1–4 PASS; c2 touch 2 SIGN-OFF (aggregate 0.7350,
+> chi2_red 0.9746, crps 0.04697, n=44,844; jet_core 0.674 vs
+> scalar-era 0.643). **HONEST c2 TALLY: 2 touches** (touch 1 =
+> partial-window DEFECT-RUN, disclosed, preserved under
+> `phase8.c2_defect_run_20260712`; touch 2 = accepted). Suite
+> 619/11/1 green post-flip. Review process caught four real defects
+> pre-gate (Newton Hessian, dead external tests, numpy cal_key,
+> partial-window touch runner) — all fixed + regression-pinned.
+> Scalar STAGE_B_INFLATION_S retained for the signed Stage-B record.
+> **ERRATUM (owner-ordered, 2026-07-13, Phase-9 Task-8 ruling):** this
+> close's "suite green" EXCLUDED the post-flip external pins — the
+> opt-in external factory pin was left scalar-era by the capability
+> flip and never re-run against the flipped product. Surfaced at the
+> Phase-9 migration gate as an exact-ratio failure (0.32121 =
+> e^1.1731/s*); pin updated to the signed clipped-poly field,
+> cal_key-asserted, factory-drift assert added — see `b5b44a1`.
+> Standing rule now in Phase-9 spec §6: semantics-changing commits
+> re-run the full external suite before close.
+
+> **✅ PHASE-8 c2 TOUCH 2 (CORRECTED) — SIGN-OFF 2026-07-12 (Task 11
+> CLOSED; pre-registered reading applied mechanically).** Window
+> tripwire PASSED (n=44,844 == Task-19 full-year count; loaded span
+> 2017-01-01..2017-12-30). **Triplet BIT-IDENTICAL to signed Stage-A**
+> (0.8572611954190728 / 0.07998859332412292 / 156.42996684578844;
+> `reproduces_stage_a: true`). **Aggregate c2 coverage 0.7350 ∈
+> 0.6827±0.10 → SIGN-OFF.** Report-only: chi2_red 0.9746 (honest
+> generalization number; scalar-era 1.0463), crps 0.04697 (scalar-era
+> 0.0479); regional coverage SW 0.775 / SE 0.753 / NW 0.707 / NE 0.705
+> / **jet_core 0.674** (scalar-era 0.643) — no severe local
+> mis-calibration; the phase's motivating defect is fixed ON C2.
+> Defect run preserved under `phase8.c2_defect_run_20260712` (context,
+> never evidence). **HONEST TALLY: 2 c2 touches for this product**
+> (touch 1 = partial-window DEFECT-RUN, disclosed; touch 2 = this
+> accepted touch). Zombie-aware watcher (scripts/watch_pid.sh) used on
+> first run — exited correctly. NEXT: Task 12 capability-flip commit
+> (clipped-poly σ-semantics + riders 2/3 language + tally=2).
+
+> **▶ PHASE-8 CORRECTED c2 TOUCH — OWNER-AUTHORIZED 2026-07-12 (touch 2
+> for this product; fresh authorization, six riders verbatim):**
+> (1) STRUCTURAL fix — one window/track source for the whole runner
+> (full-scope convention the triplet path uses; fixture only behind the
+> dev flag; fourth convention-divergence of the project, same remedy).
+> (2) WINDOW TRIPWIRE asserted BEFORE any verdict computation:
+> n_points == 44,844 (Task-19 full-year count) AND date range spans
+> the challenge year; mismatch = loud defect-STOP exit nonzero — the
+> silent partial-window class becomes a refusal, as bit-identity did
+> for the framing class. (3) LABELING per Phase-7 precedent: defect run
+> preserved under `phase8.c2_defect_run_20260712` (context, never
+> evidence); corrected run writes `phase8.c2_acceptance`; one-touch
+> refusal UPGRADED: corrected invocation needs
+> SVERDRUP_PHASE8_CORRECTED_TOUCH=1, valid only while the defect key
+> exists and c2_acceptance is absent; third invocation refuses.
+> (4) **HONEST TALLY = 2 c2 touches for this product** (defects spend
+> touches; disclose, never launder) — Task-12 flip text corrected from
+> tally=1. (5) Reading otherwise verbatim incl. the triplet clause
+> (proven once; defect rule stays armed). NO-CONTAMINATION rationale
+> recorded: field frozen, verdict mechanical, no decision forks on the
+> partial numbers — seeing them opens no selection channel; touch 2
+> clean. (6) Zombie-watcher Z-check promoted from PROGRESS lore into a
+> shared watcher helper (bitten twice). FIRE when 1–3 committed.
+
+> **⛔ PHASE-8 c2 TOUCH EXECUTED 2026-07-12 → DEFECT-RUN (disclosed;
+> STOPPED FOR OWNER; superseded by the corrected-touch authorization
+> above).** Owner authorized the touch (preconditions met:
+> push `6b8a20b..6ffeea6`, tie-band fix, cal_key asserted). Runner ran
+> to VERDICT: SIGN-OFF and wrote `phase8.c2_acceptance` — **but the
+> calibration block is PARTIAL-TRACK**: `load_c2_track()` took
+> `time_min/time_max` from `tests/validation/fixtures/stage_a_scope.json`
+> (2017-02-25..2017-03-18, the ~21-day dev window) → **n = 2,353 c2
+> points, not the full-year ~44,844** the Task-19 record and the
+> pre-registered reading imply. What IS valid: the (µ, σ, λx) triplet
+> path (`their_score` on the whole track) — **BIT-IDENTICAL to the
+> signed Stage-A values, `reproduces_stage_a: true`** (full-precision
+> 0.8572611954190728 / 0.07998859332412292 / 156.42996684578844); the
+> refusal discipline; provenance guards; atomic write. What is NOT
+> valid as gate evidence: aggregate coverage 0.7718 (in band), chi2
+> 0.7515, crps 0.0407, and the regional table — all computed on the
+> 21-day window. The SIGN-OFF verdict is therefore NOT honored;
+> defect-STOP per the standing discipline (Phase-7 DEFECT-RUN
+> precedent). NO re-run performed — a corrected evaluation is a SECOND
+> c2 touch and needs fresh owner adjudication (this run's touch is
+> spent + disclosed; no selection occurred: field frozen, nothing
+> refit, verdict mechanical). Runner defect to fix before any
+> authorized re-run: full-scope c2 time bounds (mirror
+> stage_miost_gate_run.py's SVERDRUP_MIOST_SCOPE=full config, NOT the
+> test fixture). OPERATIONAL note: the touch process ended as a ZOMBIE
+> and the pid-watcher missed it — the Task-18 gotcha (`kill -0`
+> succeeds on zombies; watch `ps -o stat` for Z) struck again; fix any
+> future watcher accordingly.
+
+> **⛔ phase-8 j3-evidence ruling — PROCEED-TO-TOUCH (owner, 2026-07-11,
+> Task 10 CLOSED).** Evidence: `phase8.fit_run` block in the gate results
+> JSON (bit-reproducible; poly winner S=0.0439/T=0.0509 vs lane-0
+> 0.1790/0.1679; bars 1–4 PASS; jet-core 0.643→0.690). Ruling riders
+> (owner verbatim intent, all three recorded as binding):
+> 1. **TIE-BAND CORRECTED: canonical reading is ABSOLUTE ±0.01** on the
+>    selection statistic (rationale is statistical — pooled coverage
+>    SE ≈ 0.005, band ≈ 2·SE; a relative band is inside noise). T8's
+>    relative reading REJECTED for the record. Verified
+>    OUTCOME-INVARIANT in this run: all consulted gaps clear both
+>    readings; the only within-band pair (poly-vs-piecewise secondary,
+>    0.0088) was never consulted (primary decisive) — hence safe to
+>    correct now. Fix TIE_BAND semantics + selection code + docstring
+>    BEFORE Task 11. **PRINCIPLE RECORDED: an outcome-relevant
+>    ambiguity would have required owner adjudication with both
+>    outcomes disclosed.**
+> 2. **CLIP ROLE: the shipped field is a CLIPPED polynomial** — floor
+>    active on 37.2% of box+halo nodes (max excursion 2.11 log-s),
+>    mostly far-south/corners where the raw poly wants s < 1; working
+>    as designed (evidence-anchored bounds; held-out selection judged
+>    the CLIPPED field). Task 12's σ-semantics paragraph + README must
+>    say "clipped low-order polynomial"; footnote the off-track bound
+>    as the RAW-poly gradient (clipped plateaus have zero gradient).
+> 3. **AUGUST: monthly instrument records the trade** — Aug 0.691 →
+>    0.655 (floored convention), in band, decision aid NOT triggered;
+>    enters §10 as the named residual limitation with both numbers.
+>    Seasonal axis stays out per fork (c).
+> Task 11 next: fresh authorization REQUIRED (PROCEED does not
+> pre-authorize); pre-registered reading quoted verbatim at request
+> time (triplet bit-identical to 0.8572612/0.0799886/156.42997 — any
+> deviation = defect-STOP; aggregate c2 coverage at s(x)·v + SIGMA_OBS2
+> ∈ 0.6827±0.10 → sign-off; regional breakdown + chi2/CRPS report-only).
+
+> **▶ PHASE 8 — EXECUTION IN FLIGHT (2026-07-11, subagent-driven, on main).**
+> Plan: `docs/superpowers/plans/2026-07-10-phase8-spatial-calibration.md`
+> (+ `.tasks.json` tracker, native IDs 1:1). **Tasks 1–8 COMPLETE**, each
+> with spec + quality review and committed: T1 covariate diag `4530712`+
+> `7ef81b9` (r_primary=0.8533 → **PROMOTED**, covariate lane in play;
+> r_deficit=−0.6538); T2 field hierarchy `8933e52`+`370c3f3`; T3 seam
+> `8583184` (suite 511/9/1); T6 regions/mask `1c62486`+`3f88ccb` (jet
+> mask = rows 2(1,2)+3(0–4), 7/25 cells); T7 fitters `709fa17`+`21e1ec6`
+> (review caught+fixed a wrong Newton Hessian: h=0.5·Σ[p(1−p)(1−q)+p²q];
+> CHI2_1_MEDIAN re-pinned to live scipy); T8 folds `c79feed`+`e22ce9b`;
+> T4 persistence/factory `edb060a` (FIELD_INFLATION, incremental
+> provenance, byte-compat fixture, suite 564/9/1); T5 identity net
+> `7c4da24`+`3193847` — four routes ×s* at rtol 1e-12 AND the external
+> pins RUN AND PASSED against the SIGNED artifacts (mean BIT-IDENTICAL
+> to the acceptance map through the shipped path under a non-constant
+> field; var maps raw==signed + factory==s*×signed at rtol 1e-9; 39 min,
+> 1.9 GB, opt-in `SVERDRUP_PHASE8_EXTERNAL=1`). **NEXT: Task 9
+> (phase8_fit_run.py — fold fits, selection, winner refit, evidence
+> JSON; c2 untouched) → Task 10 OWNER GATE (j3-evidence ruling).**
+> GOTCHAS this phase: (a) pre-commit-check-tasks hook blocks MY commits
+> while a native task is in_progress in MY transcript — subagent commits
+> unaffected; mark task completed before controller-side commits.
+> (b) Long verifications run DETACHED, controller-owned — subagent-held
+> background runs die with session restarts (9 h stall on 2026-07-11,
+> root-caused). (c) The signed `stage_b_var_maps.nc` is RAW member
+> variance — s\* was DERIVED from it, never baked in; the plan's Task-5
+> "written at s\*" wording was wrong (postscript in the plan; the Task-5
+> external test pins raw==signed AND factory==s\*×signed — leave it).
+> (d) Owner attention at Task 10: T8's relative reading of the ±1% tie
+> band ("beyond" = < baseline×0.99) is a documented choice worth an
+> owner nod alongside the evidence review. c2 UNTOUCHED.
+> Owner gates ahead: Task 10 (j3 evidence), Task 11 (single c2 touch).
+
+> **[superseded 2026-07-11 — plan written + owner-reviewed (`eb2496d`,
+> `6b8a20b`); execution above] ▶ PHASE 8 DESIGN COMMITTED
+> 2026-07-10, ⛔ STOPPED FOR OWNER FILE REVIEW before writing-plans.**
+> Spec: `docs/superpowers/specs/2026-07-10-phase8-spatial-calibration-design.md`
+> (owner-approved in-session: forks a–e + three review batches; s(x) field on
+> member anomalies at query time, two fit lanes + lane-0 control, MLE-in-log-s
+> with obs-noise floor, T+S fold protocol, pre-registered regions/bars incl.
+> jet-core mask, one c2 touch pre-registered, raw-anoms one-convention
+> persistence). Next action: owner reviews the spec file → then
+> `/superpowers-extended-cc:writing-plans` on it. No code, no fits yet;
+> c2 untouched.
+
+> **✅ PHASE 7 — MIOST: CLOSED 2026-07-07 on the capability-flip commit.
+> TASK 19 SIGNED OFF (owner pre-registered reading, touch 3):** c2
+> triplet (0.8572612, 0.0799886, 156.42997) reproduces Stage A
+> **BIT-IDENTICALLY** (`reproduces_stage_a: true`); c2 calibration at
+> frozen s* = 10.0628: coverage_1sigma **0.7481** (in 0.6827±0.10 →
+> sign-off), chi2_red 1.0463 (the honest generalization number,
+> recorded), crps 0.0479, n=44,844. **CAPABILITY FLIP LANDED:** registry
+> `"miost"` → `shipped_miost()` (SAMPLES-native, m=100,
+> root=4836134738817689931, s*=10.062847634082484) with the σ-semantics
+> paragraph in its docstring (calibrated predictive σ via one global
+> scalar s — includes representation error + unresolved scales, NOT raw
+> posterior spread; √s preserves correlation structure; coverage/CRPS
+> are the evidence, chi2_red(s*)=1 an identity) + pointer to the
+> jet-core scalar-s limitation and the localized-calibration table.
+> Suite 450/9/1 green post-flip. Honest c2 tally: 3 touches (Stage-A
+> winner; Stage-B DEFECT-RUN framing sliver — disclosed; Stage-B
+> accepted). Tuning note recorded: future sweeps must search a
+> POINT-configured `Miost()` — the registered miost is the shipped
+> product. **TASK 22 CLOSED 2026-07-07 (all 22 plan tasks now closed):**
+> `PeakFeasibility` predicate lands the validated component-sum peak
+> model (budget = measured MemAvailable × 0.8 at construction, recorded
+> in `explain()`; m-scaled — a member-gen sweep reprices vs mean-only);
+> the SEARCH rewire is in: registry `"miost-point"` (POINT) +
+> `run_stage_miost` searches it — the shipped SAMPLES miost is never
+> instantiated per trial. Suite 455/9/1 green. Task 20 stays closed
+> (windowed ships). Tier-3 two-row correction + anchor caveat
+> committed. **PUSHED 2026-07-08 (owner, manually): origin/main =
+> `7d5b837` — the complete Phase-7 trail (gate evidence, defect
+> disclosure, Tier-3 correction, capability flip, Task-22 wiring) is
+> public. NOTE for future sessions (updated 2026-07-10): pushes from
+> inside the container WORK now — write-access deploy key + pinned
+> known_hosts + repo-local `core.sshCommand` all live under
+> `/workspace/.git/` (on the mount, survives container rebuild).
+> First verified push: `5ee25f0..2a898ec`. If auth ever fails again,
+> check the deploy key still exists in the GitHub repo settings.**
+
+> **▶ PHASE-7 EXECUTION IN FLIGHT: Tasks 1–12 COMPLETE + committed; Task-11
+> gate CLOSED by owner 2026-07-05 (accept-with-recorded-cost; close entry
+> below). Task 13 (STAGE-A GATE, USER GATE) — **CLOSED: OWNER SIGN-OFF
+> GRANTED 2026-07-06** for the WINDOWED Stage-A gate (c2 µ=0.8573 ≥ 0.85;
+> evidence below). **REPRESENTATION DECIDED 2026-07-06: WINDOWED SHIPS**
+> (Task 20 closed; see "Representation decision" block). **STAGE B
+> LAUNCHED — Task 14 first; Task 21 (provenance train/score hardening)
+> BLOCKS Task 19; Task 22 (predicate re-grounding) due before the NEXT
+> tuning gate.**
+> BO(rounds=4) ran and lost to Sobol at n=16 — noted for the record, no
+> action. HYGIENE (owner-ordered, going forward): only the SIGNED winner
+> is scored on c2 at acceptance — retire the per-strategy acceptance
+> touches before the next gate run (this run's extra touches disclosed;
+> selection was validation-side; no contamination).**
+>
+> **§7.4 STAGE-A EVIDENCE (2026-07-06):**
+> - **WINNER (sobol): acceptance c2 (µ,σ,λx) = (0.8573, 0.0800, 156.4) —
+>   µ ≥ 0.85 PASS** (`mu_ge_0p85: true`). Winner params α=1.0657,
+>   log10_ρ=−1.5991, q_slope=1.4518, L_t=6.006 d; validation µ=0.8642,
+>   λx=178.0. BO acceptance (0.8536, 0.0793, 152.8) — sobol wins.
+>   Anchor context: BASELINE floor 0.85 (hard, PASSED); MIOST leaderboard
+>   row 0.89/0.08/139 = aspirational, not a gate.
+> - **Solver honesty:** winner's 9 window solves ALL genuinely converged —
+>   max 280 iters (< 500 cap), final rres ≤ 9.9e-07 (cap never bound at the
+>   winner); budgeted-solve semantics + per-window residuals in results
+>   JSON (`solver_budget`, `winner_achieved_residuals`).
+> - **Winner-point windowing cost (Task-11 close condition 2) —
+>   CORRECTED 2026-07-06: Δµ = −0.0022, Δλx = +0.57 km** (windowed 0.8642
+>   vs single-window 0.8664 / 177.4, TRAIN-ONLY protocol, j3 excluded,
+>   same protocol as the winner scores; 425-d solve converged: 286 iters,
+>   rres 9.8e-07). The first measurement (Δµ = −0.0652 / +62.5 km,
+>   2026-07-05) was CROSS-PROTOCOL — the single-window side ASSIMILATED
+>   j3 and was scored on j3 (leak); preserved in the results JSON as
+>   `winner_point_windowing_cost_CROSS_PROTOCOL_20260705`, never a
+>   windowing cost. `_winner_point_windowing_cost` fixed to train-only.
+>   The untuned D4 localization point (−0.0066) was 6-mission/j3-
+>   assimilating on BOTH sides — also not same-protocol (caveat added to
+>   `miost_equivalence_localization.md`). The corrected number is the
+>   ONLY clean windowing cost on record: at the tuned winner, windowing
+>   costs ~0.002 µ and ~0.6 km λx.
+> - **Diagnostics (report-only), regenerated from the sobol winner:**
+>   Tier-3 vs pinned CLS maps — mean RMS diff 0.0471 m (field std 0.431),
+>   coherence 0.76@100 km / 0.93@200 km (`miost_tier3_similarity.md`);
+>   12-dir — µ 0.8655 vs 0.8642, λx 175.6 vs 178.0: negligible, 8-dir
+>   adequate (`miost_ndir12_sensitivity.md`).
+> - **Suite green post-run: 388 passed / 9 skipped / 1 xfailed** (full, no
+>   deselect). Calibration recorded N/A-for-POINT. Feasibility exclusions:
+>   0 (predicate active but non-binding — every in-box α prices ≤ 3.6 GB
+>   with n_obs_max=16,066).
+> - **c2 honesty:** c2 was scored at each strategy's acceptance (sobol +
+>   bo) in this run, plus the dead run's sobol acceptance — the gate's
+>   "once" = the signed-off winner's single acceptance touch (standing
+>   interpretation from the relaunch note below).
+> - Gotchas found assembling evidence: (1) `acceptance_map_out` is SHARED
+>   between strategies — BO's acceptance overwrote the sobol winner's map;
+>   regenerated at winner params (map production only, c2 untouched)
+>   before Tier-3. (2) `diag_miost_ndir12.py` passed OI's ±14 d half-window
+>   to the scorer — crashed on real window plans; fixed to
+>   MIOST_HALF_WINDOW_DAYS (committed with the reports).
+>
+> **OOM post-mortem (2026-07-05):** run died at BO trial 27 (α=0.510) after
+> 35 measured trials. StoredGFeasibility passed it CORRECTLY per its own
+> arithmetic (G = 3.41 GB < 8 GB paper budget; predicate prices stored-G
+> only) — but the box had only ~3.9 GB actually available (~11.8 GB held
+> OUTSIDE the container, swap 2/2 GB exhausted). Crash boundary measured:
+> Sobol α=0.560 (G≈2.8 GB) survived; α=0.510 (3.41 GB) died. Deterministic
+> seed ⇒ a blind relaunch re-proposes the same point and dies again.
+> CORRECTION: the old claim "finished-strategy rows persist ⇒ only the dead
+> strategy restarts" was WRONG — `main()` re-runs BOTH strategies; the
+> replay cache (below) is the real recovery mechanism.
+> **Owner decisions (2026-07-05):** (1) owner frees host RAM to ≥10 GB
+> available (≥6 GB = bare minimum for the α∈[0.5,1.5] box; ≥10 GB keeps the
+> winner-point single-window re-measurement feasible), THEN relaunch with
+> the 8e9 budget unmodified; (2) replay cache APPROVED as a launch-state
+> amendment — relaunch replays the 35 already-measured trials from the dead
+> run's log+JSON (deterministic seed ⇒ identical proposals; kill-switch
+> `SVERDRUP_MIOST_REPLAY=0`); only new proposals + acceptance maps +
+> winner-point re-measurement actually solve. Sobol acceptance already
+> measured µ=0.8573 ≥ 0.85 on c2; Sobol winner validation µ=0.8642.
+>
+> **Representation decision (Task 20) — OWNER DECIDED 2026-07-06:
+> WINDOWED SHIPS for this box. Task 20 CLOSED; Tasks 14–19 UNBLOCKED (no
+> plan amendment — plan is windowed-native).** Close record:
+> - Clean windowing cost at the winner (same-protocol, train-only,
+>   validation track): **Δµ = −0.0022, Δλx = +0.57 km** — the ONLY clean
+>   windowing-cost number on record. Single-window contingency closes
+>   **NOT TAKEN**: triggered by a contaminated measurement
+>   (assimilate-j3-score-j3), immaterial once corrected, and ~2× Stage-B
+>   cost (9–13 GB chunked vs ~2 GB comfortable).
+> - RECORD CORRECTIONS: the sign-off presentation's claim "single-window
+>   would beat leaderboard MIOST µ (0.9294 > 0.89)" was LEAK-INFLATED —
+>   see `winner_point_windowing_cost_CROSS_PROTOCOL_20260705` in the
+>   results JSON; not repeated anywhere as a capability claim. The
+>   reviewer's ρ-dependence mechanism inference is STRUCK (built on the
+>   leaked number; NO clean param-dependence data exists). WHAT STANDS:
+>   all D4 MAP-SPACE findings (deltas, boundary profile, mid-ladder
+>   attribution) leaked identically on both sides → deltas + localization
+>   valid; only skill numbers were inflated (caveat + ruling recorded in
+>   `miost_equivalence_localization.md`).
+> - AUDIT (owner item 4, CONFIRMED 2026-07-06): tuning-path scorer — all
+>   35 trials — built maps TRAIN-ONLY (`stage_a.py:172–179`:
+>   make_splits(locked c2, validation j3) → `_subset(obs, split.train_idx)`
+>   → `_build_scorer`); 12-dir diagnostic likewise
+>   (`diag_miost_ndir12.py`: `_subset(obs, split.train_idx)`). Only the
+>   winner-point single-window probe had the leak (fixed `3f35dae`).
+> - HARDENING ordered: (i) Task 21 — provenance-enforced train/score
+>   separation (maps carry assimilated-mission list; every track-scoring
+>   path asserts scored ∉ assimilated; test that the assert fires on a
+>   deliberately-leaked map) — BLOCKS Task 19 (Stage-B gate scores
+>   validation/c2, same leak class); (ii) Task 22 — predicate re-grounding
+>   BEFORE THE NEXT TUNING GATE (not before Stage B): miost_sizing gains a
+>   component-sum peak model (G + S + RHS-batch vectors + obs arrays),
+>   validated against one instrumented WINDOWED trial, budget set from
+>   measured available RAM; no bare 2.7× fudge (that multiplier was
+>   measured on the 425-d path, overstates windowed).
+> - Stage-B standing scope unchanged: members re-decide the solver budget
+>   via the §6.5 under-convergence test (winner's solves converged ≤286
+>   iters — cap likely never binds; test confirms cheaply); s tuned on
+>   validation calibration only; ONE c2 touch at Stage-B acceptance per
+>   the hygiene order.
+>
+> **Evidence 1–3 as assembled (kept for the trail):**
+> 1. **Protocol:** confirmed VIOLATED in the first winner-point measurement
+>    (single side assimilated j3); fixed + re-measured train-only →
+>    Δµ = −0.0022 / Δλx = +0.57 km (see corrected bullet above).
+> 2. **Single-window cost at winner α=1.0657 (MEASURED, instrumented):**
+>    wall 485 s; peak RSS 7.08 GB (process baseline 0.21 GB); predicted
+>    stored-G 2.61 GB train / 3.45 GB full ⇒ real peak ≈ 2.7× predicted-G
+>    (assembly transients + S + workspace). Box: 15.8 GB total, ~10.8 GB
+>    available post-cleanup. The 8 GB predicate constant prices G ONLY —
+>    with the ×2.7 multiplier an 8 GB-G config needs ~21 GB real; the
+>    predicate constant needs re-grounding if it is meant to bound REAL
+>    peak on this box (owner flagged; no change made).
+> 3. **Stage-B m=100 member-gen pricing (measured solve times + sizing;
+>    batched-PCG scaling iters×m matvecs, batching efficiency 2–5×):**
+>    WINDOWED: 9×60-d windows, G 0.78 GB/window, N_coef 197k, X+workspace
+>    (m=100) ~1.0 GB ⇒ peak ~2 GB; wall ~1.5–4 h (naive ×100 bound 7.5 h).
+>    SINGLE: one 425-d window, G 2.61 GB, N_coef 1.40 M, X+workspace
+>    (m=100) ~5.6–6.7 GB ⇒ peak ~9–13 GB — TIGHT vs 10.8 GB avail;
+>    m-chunking (4×25) drops workspace to ~1.4 GB ⇒ ~8.5–9 GB feasible;
+>    wall ~3–7 h (naive bound 13.5 h). Neither infeasible; windowed is
+>    ~2× cheaper and memory-comfortable; single needs chunking on this box.
+> Owner notes recorded (verbatim intent): windowing machinery RETAINED
+> regardless (temporal-scaling capability; decision is box-scoped); if
+> single-window ships → small Stage-B plan amendment (identity-keyed
+> perturbations stay; cross-window CRN coherence + seam-dispersion tasks
+> trivialize/drop; MiostEnsembleDistribution holds a single η) and the
+> single-window product takes ITS OWN acceptance with ONE c2 touch — the
+> windowed winner's c2 record stands as the windowed product's number.
+>
+> **STAGE-B PROGRESS (2026-07-06): Tasks 14–17 COMPLETE + committed**
+> (`5ab7097` T14 CRN, `1b19ee7` T15 members+ensemble, `8522d21` T16
+> whitened oracle — see the Task-16 deviation entry, `b0de2c8` T17
+> s-inflation). Suite 411+/9/1 green at T17. Then Task 21
+> (provenance hardening) MUST land before Task 19 (Stage-B gate,
+> USER GATE: needs the tune_miost_inflation.py full run at the winner,
+> capability flip to SAMPLES, ONE c2 touch winner-only per hygiene).
+>
+> **▶ TASK-18 CLOSED (2026-07-07): full-year run COMPLETE (11h34,
+> EXIT clean); doc + PRE-REGISTERED RUBRIC APPLIED →
+> `docs/validation/miost_seam_dispersion.md` (+ `_rubric.md`).
+> OUTCOMES (both metrics MEASURED — solver floor 0.003 m cleared >10×):
+> (a) seam ratio R=1.305 → rubric FLAG over-dispersion, BUT post-hoc
+> context shows blend/interior distributions coincide (blend worst 0.4257
+> < interior worst 0.4353; medians 0.331/0.326) — flag is max-vs-median
+> asymmetry under ±30% day-to-day spatial-max variability, not a seam
+> excess; (b) variance equivalence EXCEEDED — worst-day max|Δstd| 0.2066 m
+> vs scale 0.3499 m at the D4 point, mixed mechanism (uniform year-pooling
+> component + 1.7× blend-localized extra), does NOT reopen Task 20; both
+> transfer to the Task-19 gate. Member residuals 2–3.2e-4 at cap 2000
+> (D4 point; winner re-decides). TASK-22 MODEL VALIDATED: windowed 1.24
+> vs 1.12 GB measured (1.11×), single 4.48 vs 4.15 GB (1.08×) — in band,
+> constants stand; ONLY predicate wiring remains (before next TUNING
+> gate). **TASK-19 DEV SMOKE: PASSED 2026-07-07 (18 min, m=4, 12-day
+> scope, `stage_b_dev_smoke.json`): members CONVERGED at the FIRST cap
+> (500; max 299 iters, worst residual 9.9e-7 — winner point behaves as
+> predicted, no escalation), s* identity check exact (chi2_red(s*)=1.0),
+> coverage bar PASS (0.750 in 0.6827±0.10), mean-unchanged bit-identical
+> ×3 days, seam verdict attached, c2 UNTOUCHED, status READY. NOTE:
+> smoke s*=17.2 is meaningless (m=4 variance floor + 12 days) — the
+> full m=100 run gives the real s*. **FULL EVIDENCE RUN: READY
+> 2026-07-07 (4h12; c2 UNTOUCHED). ⛔ TASK-19 GATE STOPPED FOR OWNER —
+> evidence in the gate results JSON under `stage_b`:**
+> - members m=100 root=4836134738817689931: ALL 9 windows CONVERGED at
+>   the FIRST cap (max 302 iters, worst residual 9.95e-7 ≤ 1e-6) —
+>   §6.5 satisfied, budget NOT inherited blindly, no escalation needed.
+> - **s* = 10.049** on validation (46,780 j3 track points; m=100 MC
+>   error ~14% on variance). Reading: the exact-posterior ensemble
+>   under-disperses vs real residuals ~10× in variance (~3.2× in σ) —
+>   representation error + unmodeled signal beyond R_REF; the D6
+>   s-rescale is the designed mechanism for exactly this. chi2_red(s*)
+>   = 1.0 (identity exact).
+> - **Calibration bars at s*: coverage_1sigma = 0.7483 ∈ 0.6827±0.10
+>   PASS; crps = 0.0474 m reported.**
+> - **mean-unchanged: bit-identical** on days {0, 121, 242} (D6 holds
+>   through the full runner path).
+> - Seam-dispersion verdict + rubric outcome attached (both FLAGs carry
+>   the recorded context; see the Task-18 close block above).
+> **OWNER PROTOCOL (2026-07-07) — c2 TOUCH AUTHORIZED under these
+> terms (verbatim intent):**
+> 1. **s* = 10.049 FROZEN from validation** — nothing refit on c2; c2
+>    evaluates at the frozen s* (read from the evidence JSON, not
+>    recomputed). µ/σ/λx expected to reproduce Stage A
+>    (0.8573/0.0800/156.4) bit-identically; ANY deviation = defect →
+>    STOP. The NEW c2 information is calibration at s*: coverage,
+>    chi2_red (expect ≠1 — the honest generalization number), CRPS.
+> 2. **PRE-REGISTERED READING:** c2 coverage ∈ 0.6827±0.10 → SIGN OFF
+>    Task 19; outside → HOLD, record, no refit, bring to owner. NO
+>    standing pre-authorization — every future c2 touch stays
+>    owner-gated.
+> 3. **REPORT-ONLY localized calibration** (validation-side, existing
+>    maps; not a bar, attach to evidence): coverage at s* split by
+>    blend/interior days, spatial quadrants, month. Severe local
+>    mis-calibration = recorded scalar-s limitation + future work
+>    (spatially-varying s OUT of scope), not a gate-blocker.
+> 4. Task-18 flags: seam 1.305 = RESOLVED-WITH-CONTEXT (metric
+>    artifact, no blend-specific excess); variance exceedance recorded,
+>    does not reopen Task 20.
+> 5. **Capability-flip commit (after sign-off) carries the σ-semantics
+>    paragraph:** shipped σ = calibrated predictive uncertainty vs
+>    along-track residuals via ONE global scalar s (includes
+>    representation error + unresolved scales) — NOT raw posterior
+>    spread; correlation structure is the raw posterior's (√s preserves
+>    it); chi2_red(s*)=1 is a mechanism identity, coverage/CRPS are the
+>    evidence. Record m=100, seed root, s*.
+> **⛔ C2 TOUCH EXECUTED 2026-07-07 → DEFECT (pre-registered rule
+> fired; STOPPED). Root cause FOUND: obs-framing mismatch.**
+> - c2 scores (0.8573192, 0.0799697, 156.42748) vs signed Stage-A
+>   (0.8572612, 0.0799886, 156.42997): Δµ +5.8e-5 — small but NOT
+>   bit-identical → DEFECT per owner protocol item 1. Calibration at
+>   frozen s* (recorded with the defect): coverage 0.7479 (IN band),
+>   chi2_red 1.047 (the honest generalization number), crps 0.0478,
+>   n=44,844.
+> - **ROOT CAUSE (empirically confirmed):** the baseline grid's lat
+>   axis runs to **43.2°N** (52 nodes), not 43.0. The production
+>   scorer/acceptance path (`run_challenge_map`) cuts obs at GRID
+>   NODES ±1.0° → 54,345 train obs; the Stage-B runner (and the
+>   Task-11/18 diagnostics) cut at the BOX ±1.0° → 53,583 (missing 762
+>   obs in the 44.0–44.2°N sliver). Field effect ~2.3e-3 m (day-0
+>   regen via run_challenge_map vs stage_b map), score effect 6e-5.
+>   Stage-B code is internally consistent (its own mean-unchanged
+>   check passed) but framed differently from the signed acceptance.
+> - Task-11/18 diagnostics UNAFFECTED in their conclusions (both sides
+>   of each comparison shared the same framing).
+> - ALSO FOUND: the on-disk `stage_miost_acceptance.nc` differs from
+>   BOTH paths (0.16 m at day 0; no provenance attr) — it is the
+>   post-hoc Tier-3 regeneration, NOT the scored acceptance map (which
+>   BO overwrote). The signed triplet was scored live and is not in
+>   question; the disk artifact must not be treated as the scored map.
+> - **OWNER GO (2026-07-07) — remedy EXECUTED per the 5-point order:**
+>   (1) STRUCTURAL framing fix: shared `halo_obs(obs, grid, halo_deg)`
+>   in `validation/run.py` (region = GRID NODES ± halo; the 43.2°N
+>   endpoint recorded as the known quirk the framing derives from),
+>   called by run_challenge_map + run_mean_var_maps + the Stage-B
+>   runner; framing-parity test pins both paths to identical obs sets
+>   (`tests/validation/test_obs_framing.py`). Future n_obs_max
+>   predicate sizings slightly exceed the Stage-A-recorded 16,066
+>   (box-framed) — disclosed, Task 22 re-grounds.
+>   (2) DEFECT-RUN labeled in the results JSON. **HONEST c2 TALLY:
+>   touch 1 = Stage-A winner acceptance (signed); touch 2 = Stage-B
+>   DEFECT-RUN (framing sliver — spent, disclosed, no selection: s*
+>   frozen, params fixed); touch 3 = Stage-B accepted touch, PENDING
+>   fresh owner authorization.**
+>   (3) `--regen-acceptance` mode: stale artifact renamed
+>   `stage_miost_acceptance_tier3_regen.nc` + annotated; TRUE
+>   acceptance map regenerated deterministically at the winner with
+>   provenance attrs; 0.16 m offset attributed via the
+>   j3-assimilating variant (bit-compare); Tier-3 diagnostic re-run
+>   from the true map.
+>   (4) Evidence re-run at corrected framing with a HARD STOP unless
+>   the Stage-B mean maps are BIT-IDENTICAL to the regenerated
+>   acceptance map. (5) Localized calibration recomputed from the
+>   re-run's maps and attached.
+>
+> **⛔ CORRECTED-FRAMING EVIDENCE: READY 2026-07-07 — GATE STOPPED FOR
+> OWNER (touch 3 needs fresh authorization). The arbiter PASSED:
+> `acceptance_map_bit_identical: true` — Stage-B mean maps are
+> bit-identical to the regenerated Stage-A acceptance map (the point of
+> the fix, proven).** Evidence (train obs 54,345 corrected framing;
+> m=100, root recorded): members ALL converged at the first cap (302
+> iters max, 9.98e-7); **s* = 10.0628** (was 10.0494 box-framed —
+> +0.13%, the 762 sliver obs, immaterial as predicted);
+> coverage_1sigma 0.7481 PASS (0.6827±0.10); crps 0.0475;
+> mean-unchanged bit-identical ×3; seam verdict + rubric attached;
+> localized calibration (frozen s*): blend 0.742 / interior 0.752 (no
+> seam hole), south quadrants 0.79–0.83 vs jet-core north 0.685–0.695
+> at chi2 ~1.3 (recorded scalar-s limitation, future work:
+> spatially-varying s OUT of scope), months 0.663–0.816 (worst Aug,
+> chi2 1.49) — no severe local mis-calibration. Tier-3 two-row
+> correction + anchor caveat committed. Expect touch 3 to land
+> ~identically to the DEFECT-RUN c2 numbers (coverage 0.7479,
+> chi2 1.047) with µ/σ/λx now BIT-IDENTICAL to Stage A.
+> Original launch command:**
+> `SVERDRUP_MIOST_SCOPE=full nohup pixi run python
+> scripts/stage_miost_gate_run.py --stage-b > <log> 2>&1 &`
+> (expect READY in hours; member solves ~9×; then owner reviews
+> `stage_b` block in the gate results JSON → rerun with
+> SVERDRUP_MIOST_C2=1 for the single touch → sign-off →
+> capability-flip commit).
+>
+> **[record] ▶ TASK-18 launch state (2026-07-06): step 1 COMMITTED (`06b03ea`) —
+> script + tests green (suite 420/9/1, pre-commit clean); FULL-YEAR RUN
+> LAUNCHED DETACHED** (pid file + log
+> `…/scratchpad/seam_full.{pid,log}`; config: m=50, root=1, rtol 1e-6,
+> **DIAG_MAXITER=2000 — deliberate, NOT the Stage-A 500 cap** (member
+> generation must not inherit it silently per the Task-11 gate decision;
+> the D4 point stalls ~5e-4 at 500); floor probe at +1000. Smoke (m=4,
+> 50 iters) EXIT=0 end-to-end; peak RSS 3.85 GB at m=4, budget est.
+> ~5–6 GB at m=50 vs 8 GB avail; ETA ~4–6 h. `sample_members` now logs
+> member-batch achieved residuals to CONVERGENCE_LOG (kind =
+> "member-batch"). If the session dies: check the pid (ZOMBIE = dead);
+> if dead pre-doc, relaunch the same command (solves not resumable);
+> if `docs/validation/miost_seam_dispersion.md` exists, review it,
+> commit doc + PROGRESS as Task-18 steps 2/3, close Task 18. NOTE: a
+> pre-commit hook blocks commits while a native task is in_progress —
+> keep the umbrella task pending/completed around commits.**
+>
+> **▶ FRONT-LOADED DESIGN WORK (2026-07-06, done while the Task-18 run
+> was in flight — owner asked to pull Fable-level work forward):**
+> 1. **Task-18 verdict rubric PRE-REGISTERED + committed BEFORE the
+>    run's numbers existed** — `docs/validation/miost_seam_dispersion_rubric.md`.
+>    Post-run close of Task 18 = apply it mechanically (Rules 0–4), no
+>    new judgment needed.
+> 2. **Capability-flip machinery LANDED + tested:**
+>    `Miost(members=m, member_root=r, inflation_s=s)` → SAMPLES-native,
+>    `solve()` returns the s*-inflated ensemble, mean bit-identical to
+>    POINT; `member_root` mandatory. Ensemble GRID queries
+>    (`marginal_variance` / `to_grid_ensemble`) now use the sparse
+>    S-path — the dense-evaluate OOM-#3 trap is dead at the root
+>    (pinned by `test_grid_queries_never_dense_evaluate`). Registry
+>    default stays POINT until the gate's capability-flip commit.
+> 3. **TASK-19 RUNNER — IMPLEMENTED + TESTED (steps (a)–(f) below are
+>    CODE now; committed as Task-19 step 1).** `stage_b_main()` in
+>    `scripts/stage_miost_gate_run.py`, dispatched by `--stage-b`.
+>    Helpers pinned by `tests/test_stage_b_runner.py` (budget escalation
+>    never accepts biased draws; s-inflated calibration triplet by hand
+>    arithmetic). Env: `SVERDRUP_MIOST_STAGE_B_M` (default 100),
+>    `SVERDRUP_MIOST_C2=1` REQUIRED for the single c2 touch (default =
+>    evidence-only, c2 untouched), dev scope writes
+>    `stage_b_dev_smoke.json` — NEVER the gate-evidence JSON. NEXT
+>    SESSION: (i) dev smoke
+>    `SVERDRUP_MIOST_SCOPE=dev SVERDRUP_MIOST_STAGE_B_M=4 pixi run
+>    python scripts/stage_miost_gate_run.py --stage-b` (expect READY,
+>    c2 untouched); (ii) full run detached WITHOUT the c2 env; (iii)
+>    owner reviews evidence; (iv) ONLY THEN rerun the c2 step with
+>    SVERDRUP_MIOST_C2=1 (members replay from eta cache? NO — fresh
+>    process re-solves; acceptable, or run (ii) with the env set once
+>    owner pre-authorizes); (v) sign-off → capability-flip commit
+>    (registry "miost" factory with tuned members/root/s* — flip test
+>    already in-tree). Original blueprint kept below for the record:
+>    (a) load winner params from the Stage-A results JSON; obs =
+>    box+halo TRAIN-ONLY (same `make_splits`/`_subset` as
+>    `tune_miost_inflation.py`); root =
+>    `derive_seed("miost", "stage-b-winner", "members", 0)`; m=100
+>    (spec 6.1 default).
+>    (b) MEMBER BUDGET (§6.5 + rubric Rule 3): solve members via
+>    `merged_members` at (rtol 1e-6, maxiter 500); if ANY member-batch
+>    final residual > rtol (CONVERGENCE_LOG kind="member-batch"),
+>    RE-SOLVE that config at maxiter 2000, then 8000; if still
+>    unconverged STOP for owner (biased draws are not acceptable at the
+>    gate). Record (target, cap, achieved) per window in the results
+>    JSON. Winner-point Stage-A solves converged ≤286 iters, so
+>    escalation is unlikely to trigger.
+>    (c) full-year mean/var maps via `mean_fields`/`std_fields`**2
+>    (S-path, one solve per window — NEVER per-day sample_members,
+>    NEVER dense evaluate); mean map + MDT; maps written with
+>    `assimilated_missions` provenance.
+>    (d) s* on VALIDATION track only: interp mean+var maps on j3 track
+>    (guard asserts), `s* = reduced_chi2(mu, var, ssh)` (scalar-R
+>    precondition asserted, `assert_scalar_r` pattern); calibration
+>    bars at s*: reduced_chi2(s*·var)≈1 identity, coverage_1sigma in
+>    0.6827±0.10, crps reported. If coverage bar FAILS at s* → STOP,
+>    assemble evidence, owner call (s* is the chi2 minimizer; coverage
+>    failure means non-Gaussian/shape mismatch — do not hunt a second
+>    knob without the owner).
+>    (e) mean-unchanged non-regression: regenerate the Stage-A
+>    acceptance map under Stage-B code (ensemble-mode mean), assert
+>    bit-identical to the recorded Stage-A map.
+>    (f) THE ONE c2 TOUCH (hygiene: winner-only, once): score the
+>    s*-inflated product on c2 — µ/σ/λx via their_eval + calibration
+>    triplet on c2; write everything into the results JSON under
+>    "stage_b"; attach the Task-18 doc verdict + rubric outcome.
+>    (g) full suite green (§7.3 inventory now in-tree); present
+>    evidence; on owner sign-off: capability-flip commit = registry
+>    "miost" constructed with the tuned (members, root, s*) — one-line
+>    factory change + the flip test already exists
+>    (`test_ensemble_mode_capability_and_routing`).
+> 4. **TASK-22 PHASE 2 (mechanical):** peak model landed
+>    (`miost_sizing.peak_model`, phase-max, no fudge). Validate against
+>    the Task-18 run telemetry: model `total` for the windowed member
+>    leg (α=1.5, m=50, n_obs from the run log, retained = accumulated
+>    anoms bytes) must satisfy `measured_peak ≤ total ≤ 2×measured_peak`
+>    (VmHWM lines in the run log). Outside that band → recalibrate the
+>    NAMED byte constants with a stated reason, never a bare
+>    multiplier. Then wire `PeakFeasibility` (composes like
+>    StoredGFeasibility; budget = MemAvailable read at construction ×
+>    0.8, recorded in `explain()`) — required BEFORE the next TUNING
+>    gate, not before Task 19.
+>
+> **▶ TASK-18 HANDOFF (owner cleared session here 2026-07-06; brief
+> kept for the record — RAM analysis done, do not redo it):**
+> - **THE TRAP (would be OOM #3): `BasisSpec.evaluate` is DENSE — "small
+>   inputs only" (`miost_basis.py:113`).** All MiostEnsembleDistribution
+>   grid queries (`_anoms_at` / `to_grid_ensemble` / `marginal_variance`)
+>   route through it; on the production 101×101 grid that is a dense
+>   gamma of 10,201 × ~99k elements ≈ **8 GB PER WINDOW**. The Task-18
+>   script MUST evaluate member fields via the SPARSE path instead:
+>   `build_s_spatial` + `time_contract` per member — the same 85×-smaller
+>   factoring Task 11 forced for day maps. Small test grids are fine
+>   either way; only production-grid evaluation is affected.
+> - **RAM budget (α=1.5, m=50, TRAIN-ONLY obs; estimated from measured
+>   anchors, S-path assumed):** windowed leg (9×60-d, sequential):
+>   G 0.3–0.4 GB (~2× assembly transient), N_coef ~99k/window, 50-member
+>   PCG workspace ~0.2 GB → **peak ~1.5–2 GB**. Single-window 425-d leg
+>   (variance-equivalence reference): G ~1.3 GB (transient ~2.6 GB),
+>   N_coef ~450k, workspace ~1.1 GB → **peak ~4.5–5.5 GB**. Anchors:
+>   measured 7.08 GB single-RHS 425-d at α=1.066 (G 2.61 GB); α=1.5
+>   halves the G-driven parts ((1.066/1.5)²≈0.5). Box had ~10.8 GB
+>   available at handoff → fits IF the S-path rule is honored.
+>   INSTRUMENT the run (rusage pattern from the Task-13 windowing-cost
+>   rerun in the git history of `scripts/stage_miost_gate_run.py`
+>   sessions) — the measurement doubles as the validation datapoint
+>   Task 22's component-sum peak model needs.
+> - **Task-18 spec recap (plan governs):**
+>   `scripts/diag_miost_seam_dispersion.py` →
+>   `docs/validation/miost_seam_dispersion.md`. (a) per-output-day member
+>   std field; HEADLINE = ratio (blend-day worst / interior-day median),
+>   worst-case-localized, never averaged away; (b) variance-field
+>   windowed-vs-single-window at α=1.5 on member std — Task-11 harness
+>   pattern (`scripts/diag_miost_equivalence.py`); single window =
+>   `Miost(plan=WindowPlan(starts=(-30.0,), w_days=425.0))`; SAME m=50 +
+>   SAME CRN root on both sides (identity-keyed CRN makes the comparison
+>   sharp — that is its purpose); (c) verdict line for the Task-19 gate.
+>   Params = D4 diagnostic point (α=1.5, log10_rho=1, q_slope=2, L_t=10);
+>   obs TRAIN-ONLY (post-leak protocol: make_splits locked c2 /
+>   validation j3 → `_subset(obs, split.train_idx)`); c2 never touched.
+>   Launch DETACHED (nohup, pid file); watcher must treat ZOMBIE as dead
+>   (`ps -o stat` = Z; `kill -0` returns success on zombies).
+> - **Efficiency constraint:** `sample_members` re-solves the member
+>   batch on EVERY call (only eta_a is cached) — for 365 output days do
+>   NOT call it per day. Either evaluate all per-day fields from ONE
+>   member solve per window via the S-path (preferred for this
+>   diagnostic: 9 windowed + 1 single batched solves total), or first add
+>   a member-batch cache keyed (window_id, pk, fp, m, root).
+> - **Latent Task-19 constraint (fix BEFORE the gate run):**
+>   `tune_miost_inflation.py` main() currently calls sample_members per
+>   day AND `marginal_variance()` on the production grid — correct but
+>   infeasible on the full year (per-day member re-solves + the dense-
+>   gamma trap). Needs the same S-path + one-solve-per-window treatment.
+>
+> **RESUME PROTOCOL (one command):**
+> `/superpowers-extended-cc:executing-plans docs/superpowers/plans/2026-07-03-phase7-miost.md`
+> (tracker: Tasks 1–17 + 20 completed; ACTIVE = Task 18).
+> 1. Tasks 13 + 20 are CLOSED — do NOT re-run the gate or the
+>    representation evidence. Artifacts: results JSON,
+>    `miost_tier3_similarity.md`, `miost_ndir12_sensitivity.md`,
+>    `miost_equivalence_localization.md` (protocol caveat + ruling),
+>    dead-run log snapshot `…/.log.oom-20260705`, replay cache JSON.
+> 2. Resume at the first unchecked Stage-B task (14–18 per plan). Task 21
+>    (provenance train/score assert + leak test) must land BEFORE Task 19.
+>    Task 22 (peak-model predicate re-grounding) before the NEXT tuning
+>    gate. c2 hygiene: ONE touch, Stage-B acceptance only, winner-only.
+> 3. PUSH still blocked — container has no GitHub credentials; owner must
+>    install a deploy key (sign-off asked for the trail to be public).
+>
+> Launch state for the record: budgeted-solve 1e-6/500 (owner-decided,
+> Stage-A-scoped), CompositeFeasibility(StoredG n_obs_max=16,066 +
+> Coherence), bars_for(POINT), seed 1, temporal_half_window_days=425;
+> §7.2 inventory green pre-launch (382 passed / 9 skipped / 1 xfailed);
+> dev smoke EXIT=0 end-to-end (incl. c2 smoke touch + winner-point
+> re-measurement path). PUSH STILL BLOCKED (no deploy key in container —
+> owner must install; local history is complete).
+>
+> **▶ RESUME (if the user says "resume"):** active work is **Phase 7 — MIOST** (banner above).
+> **Phase 5 — autotune loop / Stage-C redesign: COMPLETE + SIGNED OFF.** Plan
+> `docs/superpowers/plans/2026-07-01-stagec-redesign.md` Tasks 1–5 `completed` + committed
+> (`45bb41f`, `a4a940f`, `ae9020b`, `299d268`, `52ed96e`); Task 6 (DoD user gate) signed off —
+> the one condition (offline-skip gap) was fixed, closing the gate.
+> **Tuner-debt-cleanup plan (the two carried Task-14 follow-ups) COMPLETE 2026-07-01** — BO now
+> genuinely multi-round (`rounds` threaded through the stage runners, `6e418fa`) + Stage-B gate skips
+> instead of ERRORing on no-admissible (`d7376b8`). See the follow-ups block below.
+> **▶ ACTIVE PLAN (2026-07-01) — Phase 6: FEM/triangulation SPDE (grid-agnosticism falsification) —
+> ALL 6 TASKS COMPLETE + committed (`81992d0` T1, `851e5a2` T2, `03b60fe` T3, `5fec4a8` T4, `305b84d` T5,
+> `b838396` T6).** Design `docs/superpowers/specs/2026-07-01-phase6-fem-discretization-design.md`; plan +
+> tracker `docs/superpowers/plans/2026-07-01-phase6-fem-discretization.md(.tasks.json)` (all `completed`).
+> **The point is agnosticism, not FEM** — proved no hidden grid dependency by running the full pipeline on
+> a maximally-irregular mesh vs dense linear-algebra ground truth. Shipped: `methods/fem_mesh.py` (Mesh +
+> Delaunay `build_mesh` + sliver guard), `methods/fem.py` (`fem_precision` P1 SPDE α=2, `FEMBasisProjection`,
+> `FEMMatern.solve`), `"fem"` in `registry.METHODS`. Tests: `test_fem_{mesh,precision,projection,
+> agnosticism_path,boundary_payoff,multitile}.py`. AGNOSTICISM #1 (headline) selective-inverse exact on the
+> adversarial mesh (diag/edge rel-err 4.4e-10 at cond 1.6e8); #2 whole-path grid-shortcut audit
+> (bilinear_weights raise-guard passes, field_shape `(n_nodes,)`, end-to-end marginal-var exact rtol 1e-9);
+> C7 boundary-ring mechanism beats Neumann-edge grid; C6 multi-tile via live tree driver + agnostic envelope.
+> **PLAN DEVIATIONS (3, all necessary — the plan's *code* was faithful; two *fixtures* + one *guard* were
+> not):** (1) T1 sliver fixture rewritten — a near-collinear *hull* triple lets Delaunay flip to a clean
+> diagonal (min-angle 29.7°, no sliver); an *interior* point ~1e-3 off the base forces an unavoidable 0.06°
+> sliver so the guard is actually exercised. (2) T2 removed the plan's unconditional `assert_mesh_quality(5°)`
+> from `fem_precision` — it rejected the adversarial fixture (0.38° sliver), contradicting the committed probe
+> (`p1_assembly` never guards); exactness holds WITH the sliver present, so the sliver guard stays a standalone
+> `fem_mesh` diagnostic, not baked into assembly. (3) T5 `build_mesh` now drops coincident nodes
+> (order-preserving) — overlapping boundary rings repeat corner nodes → Delaunay orphans them → zero lumped
+> mass → singular Q (divide-by-zero); a mesh builder should not emit coincident vertices. **Next action =
+> Phase 6 DONE; finishing-a-development-branch (on main, per owner's workspace choice). Then owner's call on
+> the next milestone.** NOTE: all Phase-6 commits (+ `aa5812e`/`8ca6e03`) are LOCAL-only — `git push origin
+> main` blocked on SSH host-key verification (owner must `ssh-keyscan github.com >> ~/.ssh/known_hosts`, push).
+> **Prior next action (Phase 5, still open) = owner reviews the both-tiers frontier
+> (`docs/validation/phase5_feasibility_resolution_frontier.md`) for the deferred redesign decision.**
+> What shipped: capability-conditional tile-count `CoherenceFeasibility`
+> (`feasibility.py`, retires core/range≥25); Stage-C loop wiring `stage_c.py` (multi-tile joint
+> barrier hard — scorer never called at n_tiles≥2); worst-case-localized reduction `coherence_gate.py`
+> (strict-max adjacent-seam corr-err); both-tiers frontier `tuning/tradeoff.py` (joint region EMPTY,
+> marginal SHIPS); concrete strict-xfail `test_acceptance_multi_tile_joint_feasible`; frontier doc.
+> **Gate evidence:** full suite (no deselect) 296 passed / 9 skipped / 1 xfailed / 0 failed;
+> typecheck+lint+pre-commit(--all-files) clean. **External-skip gap FIXED:** the 2 `@external`
+> download tests (`test_download_dc2021a/dc2023`) used to fail on `httpx.ConnectTimeout` OFFLINE;
+> new `tests/validation/_net.py::skip_if_unreachable` (short-timeout HEAD probe → `pytest.skip` on
+> `httpx.TransportError`) now makes them SKIP offline per the marker's "skipped offline" contract,
+> while still running + verifying when the mirror is reachable. **Coarse-correction / default-sampler stay
+> owner-deferred** (§6), decoupled via `RelaxedCoherenceFeasibility`. Source of truth:
+> `docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`.
+>
+> **[superseded — kept for trail]** Next action WAS `writing-plans` to REWRITE Stage-C plan Tasks 15–18
+> against the approved design; that plan was written (`docs/superpowers/plans/2026-07-01-stagec-redesign.md`,
+> Tasks 1–6) and is now executed. The OLD Tasks 15–18 in the phase5 plan remain SUPERSEDED. Read, in
+> order: (1) **`docs/superpowers/specs/2026-07-01-stagec-redesign-design.md`** (the approved design);
+> (2) the **DECISION 1–5** blocks below (owner decisions + measurements); (3) `phase5_scope_spec.md`
+> §5.2/§7 + the phase5 design doc §4/§11 (already amended to match).
+> **Task 14 (Stage-B gate) SIGNED OFF ON SMOKE** — GMRF prior bug fixed (`6cce45b`), method-agnostic
+> loop drives GMRF end-to-end, c2 acceptance `(µ,σ,λx)=(0.835,0.054,308)` via BO (BASELINE-µ-ish, ~2×
+> coarser λx than OI). The conda item further below is a passive watch item, NOT the active task.
+

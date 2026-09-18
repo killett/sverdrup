@@ -12,7 +12,9 @@
 > **Sources.** `S` = the evidence store,
 > `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`, under `phase14.stage1`.
 > `R` = the ruling doc, `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md`.
-> `P` = `PROGRESS.md`. Store state as read at commit `d64f49c`; mirror at **42 nodes**.
+> `P` = `PROGRESS.md`. First assembled at `d64f49c` (mirror 42 nodes); **updated
+> 2026-09-16 under pins 199–205** (mirror **44 nodes**) — §2 now carries the recorded band
+> tables, and §8 records how each of its ten items was disposed.
 >
 > ⚠ **Section 8 (what I expected to find and could not) is the part to read first.** Per
 > 198(h) it is the more useful half, and one item in it bears on the launch gate.
@@ -35,18 +37,34 @@ source **cmems_my**, super-obs `challenge-coarsen n=5`. All four `CONVERGED` wit
 | µ [m] | +0.28595412 | −0.61762861 | +0.76578991 | +0.84793330 |
 | σ [m] | 0.21861301 | 0.13772269 | 0.05942276 | 0.06257645 |
 | coverage_1σ | 0.00977815 | 0.00258066 | 0.03263243 | 0.16666988 |
-| χ² (`chi2_j3_validation`) | 416.6777 | 1637.4844 | 40.3115 | 11.6379 |
+| χ² — `scores.chi2_j3_validation` ⚠ `scores.reduced_chi2` is **null** in all four (202c) | 416.6777 | 1637.4844 | 40.3115 | 11.6379 |
 | n scored points | 89,383 | 137,174 | 100,299 | 103,786 |
 | n_obs (framed) | 138,518 | 175,059 | 167,579 | 168,755 |
 | raw σ | 0.03818712 | 0.03496572 | 0.03798931 | 0.03772121 |
 | s\* (`scalar_s_star`) | 416.6777 | 1637.4844 | 40.3115 | 11.6379 |
 | leg wall [s] | 70,811.32 | 98,929.75 | 91,945.0 | 93,712.97 |
 | leg wall [h] | 19.67 | 27.48 | 25.54 | 26.03 |
-| peak RSS [MiB] | **7,389.34** | 4,951.16 | 4,817.0 | 4,986.42 |
-| headroom min in the ROW | **absent** | **absent** | 3,468 (BACKFILLED) | **absent** |
+| peak RSS [MiB] | 7,389.34 **PRE-133 — not comparable** | 4,951.16 | 4,817.0 | 4,986.42 |
+| headroom min in the ROW | no key — see below | no key — see below | 3,468 (BACKFILLED) | no key — see below |
 | PCG worst iterations | 505 | **626** | 579 | 611 |
 | PCG legs recorded | 18 | 18 | 18 | 18 |
 | converged / capped | CONVERGED / false | CONVERGED / false | CONVERGED / false | CONVERGED / false |
+
+**Peak RSS, read correctly (pins 199, 204).** Kuroshio's **7,389 MiB predates pin 133's
+retention fix** and is **not comparable** to the three post-fix legs. The owner's arithmetic
+reproduces it exactly from the retention slope: **4,259 + 8 × 391.2 = 7,389**. A stale
+number beside a live one in the same column is how a reader computes 1.34× and re-raises
+a closed question. Against the **post-fix** peaks (4,817 / 4,951 / 4,986) the launch gate
+is **1.986×** the worst. Each row's `peak_rss_mib` equals the maximum heartbeat `peak_rss`
+in its own leg log, and `TIER2_MEASURED_PEAK_MIB` is exactly southern's row value. ⚖ That
+agreement is **self-consistency, not corroboration**: `ru_maxrss` and `VmHWM` are **one
+kernel high-water mark through two interfaces**. It is accepted as sufficient — the
+stage's first single-instrument acceptance — because a high-water mark is not derived, is
+**monotone non-decreasing**, and so **errs conservatively for a launch threshold** (204).
+
+**Rows without a `headroom` key (202d).** Kuroshio's, southern's and quiet gyre's rows
+carry none. **This is expected**: pin 186(a) fixed the recording drop *forward*, the rows
+are witnessed and not edited, and their minima live in the node below.
 
 **Caveats that travel with every cell above** — see §5 for the verbatim text:
 `reference_row = {raw-sigma + scalar-s* transfer, REFERENCE-ONLY, NOT CALIBRATED}` on all
@@ -69,35 +87,85 @@ recording path** (pin 188a). It is **not** the rows:
 ⚠ **Leg 1's floor is UNRECOVERABLE and 3,660 MiB is an UPPER BOUND on it, not the value**
 — [S `headroom_leg1_floor_unrecoverable`], which also corrects an arithmetic statement in
 the ruling that cited it (the supporting per-leg gaps are **0 / 360 / 74 MiB**, median 74,
-not "306–328 MiB" — those three are heartbeat *counts*). **That node is neither mirrored
-nor reachable from the amendment index — see §8, item 3.**
+not "306–328 MiB" — those three are heartbeat *counts*). **Mirrored and indexed at pin 200**
+(`37b2d95`): a reader at the node above now reaches it.
+
+⛔ **Equatorial's row `headroom.sampler_log` includes the RE-SCORE (202b), and T9 is blocked
+on it.** The re-score wrote into the leg's own log files. Proof: the node's hashes equal
+today's files truncated to 418 of 427 and 1,533 of 1,535 lines. **The minima above are
+unaffected**, but the row's `sampler_log` records **1,535** samples and a **max of 10,379
+MiB**, where the leg alone gives **1,533** and **9,953**. **Cite the node's figures for the
+leg**, not that block. The remedy for the witnessed row is the owner's.
 
 ---
 
-## 2. Per-band spectra (198b) — ⛔ NOT RECORDED AS TABLES
+## 2. Per-band spectra (198b) — RECORDED (pins 201, 205)
 
-**The per-band `study/ref` and `diff/ref` tables for all four tiles do not exist as a
-recorded artifact.** `scripts/diag_stage1_coherence.py` and
-`scripts/diag_stage1_hypothesis_tests.py` write no file; their output survives only as the
-**selected rows quoted in the rulings**. Assembling the full four-tile × all-bands table
-would require re-running them, which is a measurement, not a read — so it is **not done
-here** (198g) and is flagged in §8, item 1.
+**Source:** `docs/validation/phase14-stage1-band-tables.json` = S `band_spectra` (mirrored),
+written by `scripts/diag_stage1_hypothesis_tests.py`. It is a read-only recomputation from
+the persisted maps through the scorer's own path, with no solve. **`SKILL_BANDS` is the
+CANONICAL grid** (205c): a band figure comes from it, or states its own cut in that
+artifact. Tables below are rendered from the artifact, not retyped. **These are
+measurements; the three-class READING built on them stays in the pack** (197b).
 
-**Everything that IS recorded, verbatim in scope:**
+**`study/ref`, canonical grid:**
 
-| tile | band | study/ref | diff/ref | source |
+| band [km] | kuroshio | southern | equatorial | quiet_gyre |
 |---|---|---|---|---|
-| kuroshio | 70–95 km | 3.823 | 4.697 | R pin 181 / P |
-| equatorial | 250–400 km | 4.291 | 5.169 | R pin 181 / P |
-| southern | 50–70 km (opposite sign) | 0.017 | 1.009 | R pin 181 / P |
-| southern | **500–1000 km** | **0.084** | **0.988** | R pin 196b / P |
-| southern | 150–300 km | — | **0.355–0.405** | R pin 196a |
-| equatorial | 12.8–996.3 km | — | median `psd_diff/psd_ref` **1.0005** | S row + R pin 160 |
+| 400–1000 | 0.884 | 0.125 | 2.188 | 9.804 |
+| 250–400 | 0.887 | 0.464 | 4.291 | 5.803 |
+| 180–250 | 0.609 | 0.567 | 1.071 | 2.275 |
+| 130–180 | 0.375 | 0.440 | 0.217 | 0.468 |
+| 95–130 | 1.156 | 0.244 | 0.087 | 0.110 |
+| 70–95 | 3.823 | 0.106 | 0.018 | 0.019 |
+| 50–70 | 1.418 | 0.017 | 0.003 | 0.004 |
+
+**`diff/ref`, canonical grid:**
+
+| band [km] | kuroshio | southern | equatorial | quiet_gyre |
+|---|---|---|---|---|
+| 400–1000 | 0.111 | 0.918 | 2.038 | 9.959 |
+| 250–400 | 0.191 | 0.466 | 5.169 | 5.688 |
+| 180–250 | 0.484 | 0.384 | 1.995 | 2.552 |
+| 130–180 | 0.752 | 0.423 | 1.250 | 1.247 |
+| 95–130 | 1.959 | 0.699 | 1.105 | 1.038 |
+| 70–95 | 4.697 | 0.940 | 1.013 | 1.011 |
+| 50–70 | 2.542 | 1.009 | 1.001 | 1.002 |
+
+**Absolute reference band variance [m²], same grid:**
+
+| band [km] | kuroshio | southern | equatorial | quiet_gyre |
+|---|---|---|---|---|
+| 400–1000 | 7.096e+01 | 4.030e+01 | 2.326e+00 | 3.881e-01 |
+| 250–400 | 9.976e+00 | 3.903e+00 | 6.286e-02 | 5.823e-02 |
+| 180–250 | 4.489e+00 | 2.828e+00 | 7.070e-02 | 4.717e-02 |
+| 130–180 | 7.401e-01 | 8.050e-01 | 6.446e-02 | 3.042e-02 |
+| 95–130 | 3.109e-01 | 3.449e-01 | 6.018e-02 | 3.313e-02 |
+| 70–95 | 1.453e-01 | 1.357e-01 | 5.748e-02 | 3.721e-02 |
+| 50–70 | 9.663e-02 | 8.832e-02 | 4.445e-02 | 4.310e-02 |
+
+**Every figure the rulings quote, recomputed — all eight agree at quoted precision:**
+
+| tile | band | study/ref | diff/ref | grid |
+|---|---|---|---|---|
+| kuroshio | 70–95 km | 3.823 | 4.697 | canonical |
+| equatorial | 250–400 km | 4.291 | 5.169 | canonical |
+| quiet_gyre | 400–1000 km | 9.804 | 9.959 | canonical |
+| southern | **500–1000 km** | **0.084** | **0.988** | **explicit cut** |
+
+⚠ **205(b), a FINDING:** southern's 500–1000 km figures came from an **ad-hoc cut no
+committed code produced**, so until 205 a number the UNDER-powered class rests on had no
+reproducible band definition behind it. It is now recomputed from its explicit cut.
+
+**Still quoted only in rulings, not on the canonical grid:** southern `diff/ref`
+**0.355–0.405** at 150–300 km (196a) — the canonical 130–180 and 180–250 bands give 0.423
+and 0.384 — and equatorial's median `psd_diff/psd_ref` **1.0005** over 12.8–996.3 km, which
+is in the row itself (§3).
 
 **Within-tile latitude gradients (sign check, pin 177a):** equatorial and kuroshio improve
 polewards; **southern WORSENS** — `diff/ref` **0.482** at |lat| 50 against **0.716** at 58.
 
-**Common-floor test (pin 181c), the one all-four comparison that is recorded:** all four
+**Common-floor test (pin 181c) — reproduced from the artifact at 205:** all four
 turn upward at **35–50 km** — ratios **1.07 / 1.03 / 1.41 / 1.58** (kuroshio / southern /
 equatorial / quiet_gyre) — and again below 25 km — **1.88 / 1.93 / 2.38 / 2.52**. Recorded
 reading: the rise is **not** a weak-tile property, it occurs at the same wavelength in all
@@ -106,7 +174,8 @@ four rather than where each signal drops through a fixed level, and the levels d
 
 **Cross-tile correlations (pin 181a, n=21, three tiles):** `corr(log10 absolute band
 variance, diff/ref)` = **−0.464**; `corr(log10 |f|, diff/ref)` = **−0.322**.
-**With the fourth tile (pin 186b, n=28) BOTH WEAKENED: −0.254 and −0.121.** Recorded
+**With the fourth tile (pin 186b, n=28) BOTH WEAKENED: −0.254 and −0.121** — both
+reproduced exactly at 205. Recorded
 consequence: **the effect is at TILE level, not band level.**
 
 **Coherence maxima, measured on the persisted maps, read-only (R, 2026-09-06):**
@@ -196,7 +265,7 @@ was evaluated for applicability and could not run here (fork F)"*:
 | seam_n | **IN SCOPE — wedge exclusion available** | 1.0 | true |
 | seam_s | **IN SCOPE — wedge exclusion available** | 1.0 | true |
 
-**This is exactly what pin 112(c) said to expect: restoration at anchor and the seam pair
+⭐ **A RULING CHECKED AGAINST THE RECORD, MATCHING EXACTLY (202e).** **This is exactly what pin 112(c) said to expect: restoration at anchor and the seam pair
 only.** Each diverse tile's row carries the reason in-row, as 112(c) requires — *tile core
 lies OUTSIDE the derivation's box [295.0, 305.0] (φ₀ = 38.1); this is pin 106's design
 conflict, not a lookup gap: applying this geometry here would be geometry that does not
@@ -323,6 +392,22 @@ and was ratified at pin 195.**
 ---
 
 ## 8. ⚠ What I expected to find and could not (198h)
+
+**DISPOSITION (pins 199–205, 2026-09-16).** The ten items below are kept **as found on
+2026-09-11**. This table records what became of each:
+
+| # | item | disposition |
+|---|---|---|
+| 1 | band tables not recorded | ✅ **RECORDED** — `band_spectra` + tree artifact (201/205, `d00f4e6`); all eight quoted figures reproduce. §2 |
+| 2 | kuroshio 7,389 MiB vs the gate basis | ✅ **PRE-133**, not comparable; basis stands at 1.986× (199, 204). §1 |
+| 3 | floor node unmirrored and unreachable | ✅ **MIRRORED AND INDEXED** (200, `37b2d95`) |
+| 4 | pin-191 collision in that node | ✅ **CORRECTED** to 188(a) before mirroring (202a, 203) |
+| 5 | three rows without a `headroom` key | ✅ **EXPECTED** — 186(a) fixed forward; the node carries them. Said where it shows (202d). §1 |
+| 6 | PROGRESS's phantom `headroom_backfill` | ✅ **CORRECTED** in PROGRESS (202d) |
+| 7 | two equatorial log records disagree | ⛔ **ESTABLISHED, AND IT REACHES A WITNESSED ROW** — the row's `sampler_log` includes the re-score. **T9 blocked pending the owner's ruling** (202b). §1 |
+| 8 | `reduced_chi2` empty | ✅ the populated field is named wherever χ² appears (202c). §1 |
+| 9 | no GroundTrack at the diverse tiles | ✅ unchanged and correct — pin 106, recorded in-row |
+| 10 | kuroshio σ missing from PROGRESS | ✅ **ADDED** (202d) |
 
 Ordered by how much it bears on the walk.
 
