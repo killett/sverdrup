@@ -5487,3 +5487,61 @@ def test_the_render_command_prints_the_same_section(
 
     assert result.exit_code == 0, result.output
     assert result.output == _mod.render_transfer_readings(evidence_path=evid)
+
+
+def test_the_66_attestation_is_made_on_the_obs_edge_and_can_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 210: the ±66 breach lives on the OBS EDGE, and the check must trip.
+
+    Bug caught: the attestation the Gate-1 pack shipped with — "every
+    diverse tile's solve bbox lies inside ±66". A solve bbox is always
+    inside its own obs frame, so that quantity cannot breach: true and
+    unfailable, which is pin 42's shape and §7 discipline 11 instance
+    (i9). The margin is computed from the store here, and the second
+    half of the test drives a breaching frame through the same code so
+    the check is known to fail when it should.
+    """
+    # The solve_bbox values the four rows actually carry (S tiles.<t>.frame),
+    # used as fixture data so the test is hermetic: it pins the DERIVATION and
+    # the breach, not the contents of whatever store this host happens to hold.
+    recorded = {
+        "kuroshio": [130.0, 149.0, 26.0, 45.0],
+        "southern": [213.0, 232.0, -64.0, -45.0],
+        "equatorial": [198.0, 217.0, -6.0, 13.0],
+        "quiet_gyre": [253.0, 272.0, -32.0, -13.0],
+    }
+
+    def _store(boxes: dict[str, list[float]]) -> Path:
+        from sverdrup.validation import phase14_seal
+
+        monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+        evid = tmp_path / f"evidence_{abs(hash(str(boxes)))}.json"
+        evid.write_text(json.dumps({"phase13": {"kept": True}}))
+        for tile in _mod.TRANSFER_TILES:
+            kwargs = _row_kwargs(tile)
+            kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+            kwargs["frame"] = {
+                **kwargs["frame"],
+                "solve_bbox": boxes[tile],
+                "halo_deg": 1.0,
+            }
+            _mod.record_tile_leg(evidence_path=evid, **kwargs)
+        return evid
+
+    edges = _mod.poleward_obs_edges(evidence_path=_store(recorded))
+
+    assert set(edges) == set(_mod.TRANSFER_TILES)
+    # Southern is the tile this attestation is about: 1.0 degree of margin.
+    assert edges["southern"] == pytest.approx(-65.0)
+    assert min(66.0 - abs(e) for e in edges.values()) == pytest.approx(1.0)
+    # The poleward edge is NOT always lat_min - halo: kuroshio's is its north edge.
+    assert edges["kuroshio"] == pytest.approx(46.0)
+
+    # ...and the same code reports a breach when the frame breaches.
+    breached = _mod.poleward_obs_edges(
+        evidence_path=_store({**recorded, "southern": [213.0, 232.0, -66.5, -45.0]})
+    )
+
+    assert breached["southern"] == pytest.approx(-67.5)
+    assert min(66.0 - abs(e) for e in breached.values()) < 0

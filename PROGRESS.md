@@ -81,7 +81,8 @@
 >   status. **A restored cost with no stated origin is unauditable**: 190 stops a row
 >   restating a leg's cost *silently*, `source` stops it restating one *anonymously*.
 > - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46; PIN 196 as PART 47; PIN 197 as
->   PART 48; PINS 199–205 as PART 49.**
+>   PART 48; PINS 199–205 as PART 49 PINS 206–208 fold into PART 49's
+>   successor; **PINS 209–214 as PART 50.**
 >
 > ## ✅ 202(b) DISPOSED (pin 206, `2530bb2`) — forward-pointer node `equatorial_sampler_log_scope`; row untouched; re-scores now log to their own directory. THE BLOCK BELOW IS THE FINDING AS ESTABLISHED (2026-09-16)
 >
@@ -519,19 +520,38 @@
 >    is **CONSISTENT WITH** a reference offset; per-segment detrending removes constants
 >    before the verdict. **Consistent, NOT established** — the same discipline that held on
 >    the geostrophic account until quiet gyre refuted it.
-> 4. **⛔ STOP — T9 IS POSTED (owner pin 208, 2026-09-18). GATE 1 IS THE OWNER'S WALK.**
->    The pack is `docs/superpowers/2026-09-18-phase14-gate1-pack.md`: owner items first,
->    the transfer-readings section **assembled from row fields** (`render-transfer-readings`,
->    no free-text parameter; count pinned to four against the store), the **absence check
->    PASS over the rendered file**, the sweep with every skip named, mirror + seal checks,
->    per-leg ratifications. **It presents Stage 1; it does not close it** — C-11 is
->    OUTSTANDING and task 23 is its producer, behind the gate.
->    **Next action is the owner's:** walk the pack; rule the election (item 7 — a decline
->    is an outcome); open T6/T7/T8 on your word. Nothing seals; `refresh_election`
->    PENDING; tasks 18–20 halted (pin 88).
->    ⚠ Stated in the pack, for the walk: **no two-reviewer dual-review document exists for
->    the four Stage-1 legs**; the AC is met in the owner-ratification form only.
+> 4. **⛔ GATE 1 IS NOT CLOSED — and that is the honest state (owner pin 209).**
+>    The pack is POSTED and **ACCEPTED AS A PRESENTATION**:
+>    `docs/superpowers/2026-09-18-phase14-gate1-pack.md`. **Three of the spec's six Gate-1
+>    items do not exist** (T6/T7/T8 unopened) and **C-11 is outstanding** — a gate cannot
+>    close on items that were never produced.
+>    **✅ RATIFIED AND STANDING (209a):** the anchor accounting as ruled · the seam result in
+>    its ruled shape · the four transfer readings as recorded · the three-class reading ·
+>    the σ question open with its package · the CRN defect as a production defect.
+>    **⏳ REMAINING FOR GATE 1 (209b):** T6's kernel decision · T7's revisit verdict · T8's
+>    OSSE decision · the refresh election, with **task 23** recording its outcome.
+>    ⛔ **The pack is SUPERSEDED, NOT REWRITTEN, when those land (209c)** — 197(a) applies to
+>    it as to T12's table. The 210–212 corrections are folded in; nothing else is retro-edited.
 >
+> 5. **▶ T6 IS OPEN — ALONE, AND IT REPORTS BEFORE T7 OPENS (pin 213d).** *Three decision
+>    packs assembled in parallel is how a reasoning error in one propagates into the others'
+>    framing.* T6 is the high-latitude kernel decision pack (options 1–4), and:
+>    - **Pin 108 stands unchanged (213a): the anisotropy axis is UNEVIDENCED.** An option
+>      resting on directional sampling is **UNSUPPORTED BY STAGE-1 EVIDENCE**, and **if the
+>      option set cannot be separated without it, that is a WAIT to the owner — not a
+>      decision T6 makes.**
+>    - **⛔ 212(b) BINDS HERE: T6 needs pin 39's FULL two-reviewer form** — two reviewers,
+>      named attack surfaces authored by the requester, verdict CONFIRMED / OVERTURNED /
+>      UNDER-EVIDENCED. The owner-ratification substitution accepted for the four legs
+>      (§7 discipline 15) **does NOT extend to decision packs**.
+>    - The decision cell stays **EMPTY**: T6 assembles and STOPs. **T6's pack comes to the
+>      owner.**
+>    Then, in order and not before: **T7** (band provenance pinned to `phase10_lanes`, pin 9;
+>    lanes Tier-1-or-WAIT against the LIVE ceiling, 99b — not the dead "no new ceilings"
+>    premise), then **T8** (priced from the CONVERGED wall/RAM numbers, never the capped T2
+>    probe, basis stated in-row, 99c). Rows 7–9 of the stale-criteria sweep fold as each
+>    opens (124c).
+
 > ---
 > ## 📦 TRAIL ARCHIVED — `docs/progress-archive/phase14-stage1-trail.md`
 >

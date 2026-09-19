@@ -97,6 +97,14 @@ verdicts. [S `seam_rows`, 4 rows; `sigma_rows_not_established.consequence`]
 - ⛔ **FIREWALL (37b, 208b):** the diagnosis-derived bound is a bound under the
   not_established firewall, **not a verdict**, and **it is not reproduced anywhere in this
   pack.** No rubric verdict supports it.
+- ⚠ **AND THE TWO MUST NOT BE CONFLATED (owner pin 211b).** The pair route's **mean**
+  `R_seam = 0.082738` above is a **recorded, verdict-bearing ratio** — measured on
+  `delta = field_A − field_B` pre-blend, floor-checked attributable, verdict **CLEAN**. It
+  **bears no relation whatever to the withheld σ bound**, which is a different field kind
+  (σ, not mean), from a different source (the diagnosis, not the rubric read), and carries
+  **no verdict**. A reader who knows the bound from the diagnosis might notice the mean
+  ratio falls in its numeric range; **that coincidence is meaningless** — same number line,
+  different quantities.
 - Floor probe (Rule 0): pair roster re-solved deeper at rtol 1e-9, maxiter 2200 (production
   1200), converged 629/679 iterations, `capped = false`.
 
@@ -312,9 +320,27 @@ in Stage 1. The cross-host slot (`pending-T18`, credentials owner-side) is **Sta
   selection), touch 3 **PENDING fresh owner authorization**; Stage 1 opened none.
 - **Tally byte-identical:** `c2_touch_tally` is a witnessed mirror node; `phase14_evidence_mirror.py
   check` → *store vs mirror: PASS (no witnessed node has changed)* (§2.2).
-- **±66° respected under the ruled convention:** every diverse tile's solve bbox lies inside
-  it — southern's is the widest at −64…−45; kuroshio 26…45; equatorial −6…13; quiet gyre
-  −32…−13 (`S tiles.<tile>.frame.solve_bbox`).
+- **±66° respected, attested ON THE OBS EDGE** (owner pin 210; pins 10/16 define the breach
+  there, not on the solve bbox). The edges are **derived, not typed**:
+  `edge_south = frame.solve_bbox.lat_min − frame.halo_deg`, `edge_north = lat_max + halo_deg`,
+  and the quantity that can breach is the **poleward** edge, `max(|edge_south|, |edge_north|)`.
+  From `S tiles.<tile>.frame` (halo = 1.0° on all four):
+
+  | tile | obs edges [south, north] | poleward | margin to ±66 |
+  |---|---|---|---|
+  | **southern** | **−65.0**, −44.0 | **−65.0** | **1.0°** |
+  | quiet_gyre | −33.0, −12.0 | −33.0 | 33.0° |
+  | kuroshio | +25.0, **+46.0** | **+46.0** | 20.0° |
+  | equatorial | −7.0, **+14.0** | **+14.0** | 52.0° |
+
+  **Southern's 1.0° is the margin the attestation is about**; the other three are nowhere
+  near it. ⚠ **Why this replaces the previous wording (210a):** it read *"every diverse
+  tile's solve bbox lies inside ±66"*, which is **true but could not have failed** — a solve
+  bbox is always inside its own obs frame, so the quantity cited cannot breach. That is pin
+  42's shape in an attestation, inside the pack that carries pin 42's own instance list; it
+  is now catalogued as instance **(i9)** of §7 discipline 11 and **test-pinned** against the
+  store (`test_the_66_attestation_is_made_on_the_obs_edge_and_can_fail`), so the margin is
+  computed, not asserted.
 - **Seal `check` PASS:** `phase14_seal_run.py check` re-derives
   `phase14_evaluation_seal_v1.json` sha `a17ea419…` (§2.2); the 9 uncited prior-phase gates
   print as NOTED (pin 145b), non-fatal, not reopened.
@@ -396,10 +422,20 @@ confirmation of the founding metric** — the s\*/χ² distinction under pin 100
 ## 2 · Evidence, provenance, reviews
 
 ### 2.1 The witnessed record
-45 mirrored nodes under `phase14.stage1` (`docs/validation/evidence-mirror/`), the four tile
-rows among them; 24 forward pointers over 14 amended nodes; `refresh_election` registered and
-unwritten (task 23's). The lane-0 bundle is WITNESSED AT CREATION. No supersession spent in
-Stage 1's T5 phase.
+**45 mirrored nodes in total** (`docs/validation/evidence-mirror/`), of which **31 are under
+`phase14.stage1`** — the four tile rows among them (owner pin 211a: the earlier wording gave
+45 as the Stage-1 count). The other **14** are **10 `phase14.stage0.*`** (seal, golden tile,
+census shas, gauges, probe tile, epoch-table draft, n_epochs, storage ledger, gate-2 loader
+identity), **2 `phase13.miost.*`** (members, provenance), `c2_touch_tally` and
+`acceptance_artifact_correction`. ⚠ **Both figures in 211(a) are corrected here against the
+mirror rather than carried:** the Stage-1 count is **31, not 41**, and the enumeration of the
+remainder omitted the ten Stage-0 nodes. The ruling's point stands unchanged — 45 is the
+total and not the Stage-1 count — and the standing discipline is that a wrong number must not
+enter the record even when its conclusion is right.
+
+24 forward pointers over 14 amended nodes; `refresh_election` registered and unwritten
+(task 23's). The lane-0 bundle is WITNESSED AT CREATION. No supersession spent in Stage 1's
+T5 phase.
 
 ### 2.2 Checks on the final tree (captured)
 Captured 2026-09-18 on the posting tree, before the sweep:
@@ -442,6 +478,20 @@ Stage-1 legs.** What exists, and is cited above, is the owner's per-leg ratifica
 ruling series, each issued after a report that stated its own scope. The AC line "all
 Stage-1 real legs dual-reviewed" is therefore **met in the owner-ratification form and NOT in
 the two-reviewer form**; the pack does not claim otherwise.
+
+✅ **RULED (owner pin 212) — a substitution, accepted with its limit, and NOT the standard.**
+- **(212a) ACCEPTED for the four legs, on evidence.** A retroactive two-reviewer document
+  would produce *paperwork, not scrutiny*: **every defect that mattered in this stage was
+  caught by verification against an artifact, not by review** — `h2ag` by R5's dry run, the
+  headroom drop by reading the row back out of the store, the attrs bug and the unrecorded
+  band cut by sweeps. **The pack states the substitution plainly instead of claiming the
+  stronger form, which is why it is acceptable.**
+- **(212b) IT BINDS AT T6, T7 AND T8**, which produce **DECISION packs** — *where reasoning
+  errors hide, and where the adversarial review earned its keep at T13*. The form is pin
+  39's: **two reviewers, named attack surfaces authored by the requester, verdict as
+  CONFIRMED / OVERTURNED / UNDER-EVIDENCED.**
+- Recorded together, with the limit, at `docs/project-context.md` §7 discipline **15**, so a
+  successor does not read the substitution as the standard.
 
 ### 2.4 The absence check over this rendered file (review pin 17)
 Run over THIS file after the transfer-readings section was assembled; scope is the marked section only (review pin 17):

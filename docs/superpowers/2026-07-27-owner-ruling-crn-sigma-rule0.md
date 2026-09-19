@@ -3525,3 +3525,127 @@ widening the offline guard as its own item**; and the owner's PDF dependencies w
   re-score.** This is pin 190's hazard arriving by a second route — **a shared log file** —
   which 190's code fix does not cover. **The row is witnessed; its remedy is the owner's.**
   Per the SEQUENCE line, this **blocks T9** until it is ruled.
+
+## PART 50 — GATE 1 NOT CLOSED; THE PACK ACCEPTED AS A PRESENTATION (verbatim), pins 209–214, 2026-09-19
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-19.** Issued after the owner walked the
+Gate-1 pack posted at `f9981d1`.
+
+> 209. GATE 1 IS NOT CLOSED, AND THE PACK IS ACCEPTED AS A PRESENTATION.
+>      The spec's Gate 1 requires six items: anchor identity, seam verdicts, per-tile transfer
+>      readings, the kernel decision, the revisit verdict, the refresh election. THREE do not
+>      exist — T6, T7, T8 are unopened — and C-11 is outstanding. A gate cannot close on items
+>      that have not been produced, and the pack presenting them as unopened rather than as
+>      thin is the honest state (208d).
+>      (a) What I am ratifying now: the anchor accounting as ruled; the seam result in its
+>          ruled shape; the four transfer readings as recorded; the three-class reading; the
+>          σ question open with its package; the CRN defect as a production defect. Those six
+>          are walked and stand.
+>      (b) What remains for Gate 1: T6's kernel decision, T7's revisit verdict, T8's OSSE
+>          decision, and the refresh election with task 23 recording its outcome.
+>      (c) The pack is the standing presentation and is superseded, not rewritten, when those
+>          land. Do not retro-edit it — 197(a)'s rule applies to it as much as to T12's table.
+> 210. THE ±66 ATTESTATION CITES THE WRONG QUANTITY — correct it.
+>      §1.11 attests that every diverse tile's SOLVE BBOX lies inside ±66. Pins 10/16 defined
+>      the breach on the OBS EDGE (solve_bbox.lat_min − halo). Re-derived: southern's obs edge
+>      is −65.0 with 1.0° of margin; the others −33.0, −7.0, +25.0.
+>      (a) The attestation is TRUE but unfailable as written: a solve bbox is always inside its
+>          own obs frame, so the quantity cited cannot breach. Pin 42's shape, in an
+>          attestation, in the pack that carries pin 42's own instance list.
+>      (b) Restate it on the obs edge, with southern's 1.0° margin named, and keep the derived
+>          form (edge = solve_bbox.lat_min − halo) rather than typing the number.
+> 211. TWO DOCUMENTARY CORRECTIONS.
+>      (a) "45 mirrored nodes under `phase14.stage1`" — 45 is the TOTAL; 41 are under
+>          phase14.stage1 (the rest are c2_touch_tally, the phase-13 provenance nodes and the
+>          acceptance correction). State both counts.
+>      (b) The pair route's mean R = 0.082738 falls inside the range of the firewalled σ bound.
+>          The firewall holds and the bound is absent — but a reader who knows the bound from
+>          the diagnosis could conflate them. Add one clause at §1.3 saying the mean R is a
+>          recorded verdict-bearing ratio and bears no relation to the withheld σ bound.
+> 212. THE DUAL-REVIEW GAP — accepted in the owner-ratification form, on evidence, and
+>      TIGHTENED going forward.
+>      (a) ACCEPTED for the four legs. A retroactive two-reviewer document would produce
+>          paperwork, not scrutiny: every defect that mattered was caught by verification
+>          against an artifact, not by review — h2ag by R5's dry run, the headroom drop by
+>          reading the row back, the attrs bug and the unrecorded band cut by sweeps. The
+>          pack states the substitution plainly instead of claiming the stronger form, which
+>          is why it is acceptable.
+>      (b) IT BINDS AT T6, T7 AND T8. Those produce DECISION packs, which is where reasoning
+>          errors hide and where the adversarial review earned its keep at T13. Two reviewers,
+>          named attack surfaces authored by the requester (the standing form from pin 39),
+>          verdict as CONFIRMED / OVERTURNED / UNDER-EVIDENCED.
+>      (c) Record (a) and (b) together in §7 as a ruled substitution with its limit, so a
+>          successor does not read it as the standard.
+> 213. T6, T7 AND T8 OPEN. Their data exists: southern's anisotropy inputs, the four diverse
+>      rows, and the converged wall/RAM figures T8 must price from (99c — never the capped T2
+>      probe). Rows 7–9 of the stale-criteria sweep fold as they open (124c).
+>      (a) T6 carries pin 108 unchanged: the anisotropy axis is UNEVIDENCED, an option resting
+>          on directional sampling is UNSUPPORTED BY STAGE-1 EVIDENCE, and if the option set
+>          cannot be separated without it that is a WAIT to me, not a decision T6 makes.
+>      (b) T7's band provenance stays pinned to phase10_lanes (pin 9), and its lanes are
+>          Tier-1-or-WAIT against the live ceiling (99b) — not the dead "no new ceilings"
+>          premise.
+>      (c) T8 prices from the converged numbers and states its basis in-row (99c).
+>      (d) OPEN THEM ONE AT A TIME, T6 first, and report before opening the next. Three
+>          decision packs assembled in parallel is how a reasoning error in one propagates
+>          into the others' framing.
+> 214. RATIFIED as reported: the pack's assembly from row fields by a renderer with no
+>      free-text parameter; the absence check with its output captured; the sweep with all 21
+>      skips named and none a Stage-1 test; the T12 table left unedited with current state
+>      beside it (197a); and the three things stated plainly rather than smoothed — the
+>      dual-review form, the stale table cells, and that the pack presents without closing.
+>
+> SEQUENCE: fold 210-212 into the pack and §7; then T6 alone, with 212(b)'s review.
+>
+> STOP CONDITION: T6's pack comes to me. Nothing seals. Tasks 18-20 halted. refresh_election
+> PENDING until task 23, post-gate.
+
+### What PART 50 changes
+
+- **⛔ GATE 1 IS NOT CLOSED, AND THE PACK IS ACCEPTED AS A PRESENTATION** (209). Three of the
+  spec's six Gate-1 items **do not exist** — T6, T7, T8 unopened — and **C-11 is
+  outstanding**. *A gate cannot close on items that have not been produced*, and presenting
+  them as **unopened rather than as thin** is the honest state.
+  **RATIFIED AND STANDING (209a):** the anchor accounting as ruled; the seam result in its
+  ruled shape; the four transfer readings as recorded; the three-class reading; the σ
+  question open with its package; the CRN defect as a production defect.
+  **REMAINING (209b):** T6's kernel decision, T7's revisit verdict, T8's OSSE decision, and
+  the refresh election with **task 23** recording its outcome.
+  **The pack is SUPERSEDED, NOT REWRITTEN, when those land (209c)** — 197(a) applies to it as
+  it does to T12's table.
+- **AN ATTESTATION THAT CANNOT FAIL IS NOT AN ATTESTATION** (210). The ±66 line cited the
+  **solve bbox**, which is always inside its own obs frame. Restated on the **poleward obs
+  edge**, derived not typed, with **southern's 1.0° margin** named; catalogued as §7
+  discipline 11 instance **(i9)** — *pin 42's shape, in the pack that carries pin 42's own
+  instance list* — and **test-pinned**, so the margin is computed and the check is known to
+  trip on a breaching frame.
+- **A DUAL REVIEW MAY BE SUBSTITUTED BY OWNER RATIFICATION — WITH ITS LIMIT** (212), now §7
+  discipline **15**. Accepted for the four legs **on evidence**: every defect that mattered
+  was caught by **verification against an artifact, not by review**, and *a retroactive
+  two-reviewer document would produce paperwork, not scrutiny*. **The condition of accepting
+  it is that the pack states the substitution instead of claiming the stronger form.**
+  ⛔ **IT DOES NOT EXTEND TO DECISION PACKS: T6, T7 and T8 each require pin 39's full
+  two-reviewer form** — *reasoning is where errors hide, and no artifact check stands in for
+  review there*.
+- **T6, T7, T8 OPEN — ONE AT A TIME, T6 FIRST, REPORTING BETWEEN** (213d), *because three
+  decision packs assembled in parallel is how a reasoning error in one propagates into the
+  others' framing*. T6 carries **pin 108 unchanged** (213a): the anisotropy axis is
+  **UNEVIDENCED**, any option resting on directional sampling is **UNSUPPORTED BY STAGE-1
+  EVIDENCE**, and **if the option set cannot be separated without it, that is a WAIT to the
+  owner, not a decision T6 makes**.
+- ⚖ **TWO FIGURES IN 211(a) DID NOT SURVIVE THE MIRROR, and are corrected in the pack rather
+  than carried.** Measured against `phase14-stage1-provenance.json`: **31** nodes are under
+  `phase14.stage1`, **not 41**; and the remaining 14 are **10 `phase14.stage0.*`** plus the
+  two `phase13.miost.*`, `c2_touch_tally` and `acceptance_artifact_correction` — the
+  enumeration omitted the Stage-0 nodes. **The ruling's point stands unchanged** (45 is the
+  total, not the Stage-1 count), and the standing discipline is the one
+  `headroom_leg1_floor_unrecoverable` applied to the text that ordered it: *a wrong number
+  must not enter the record even when its conclusion is right.*
+- ⚖ **THE DERIVED FORM IN 210(b) IS THE POLEWARD EDGE, NOT ALWAYS `lat_min − halo`.**
+  `lat_min − halo` is the poleward edge for southern (−65.0) and quiet gyre (−33.0), but for
+  the two northern-reaching tiles it is the **equatorward** one: kuroshio's poleward edge is
+  `lat_max + halo` = **+46.0** (not +25.0) and equatorial's is **+14.0** (not −7.0).
+  Attesting on `lat_min − halo` alone would still be unfailable for a northern tile, which is
+  the defect 210(a) is correcting, so the pack and the test use
+  **`max(|lat_min − halo|, |lat_max + halo|)`**. Southern's 1.0° margin — the number the
+  attestation is about — is unchanged either way.

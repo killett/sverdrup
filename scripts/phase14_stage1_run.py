@@ -5498,6 +5498,33 @@ def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
     return "\n".join(out) + "\n"
 
 
+def poleward_obs_edges(evidence_path: Path = EVIDENCE) -> dict[str, float]:
+    """Each diverse tile's POLEWARD observation edge, derived from its frame.
+
+    Owner pin 210: pins 10/16 define the ±66 breach on the obs edge, not
+    on the solve bbox — a solve bbox is always inside its own obs frame,
+    so attesting on it cannot fail (§7 discipline 11, instance i9). The
+    edge that can breach is the poleward one, which is ``lat_min - halo``
+    in the southern hemisphere and ``lat_max + halo`` in the northern.
+
+    Args:
+        evidence_path: The evidence store.
+
+    Returns:
+        ``{tile: poleward_edge_deg}`` for the four diverse tiles.
+    """
+    doc = json.loads(evidence_path.read_text())
+    tiles = doc["phase14"]["stage1"]["tiles"]
+    edges: dict[str, float] = {}
+    for tile in TRANSFER_TILES:
+        frame = tiles[tile]["frame"]
+        halo = float(frame["halo_deg"])
+        south = float(frame["solve_bbox"][2]) - halo
+        north = float(frame["solve_bbox"][3]) + halo
+        edges[tile] = south if abs(south) > abs(north) else north
+    return edges
+
+
 @app.command("render-transfer-readings")
 def render_transfer_readings_cmd() -> None:
     """Print the pack's transfer-readings section — the whole output, nothing else."""
