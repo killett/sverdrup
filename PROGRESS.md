@@ -1,6 +1,15 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-09-10. THIS IS THE ONLY BLOCK DESCRIBING NOW.
+> # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
+>
+> T6 POSTED AND RULED. Kernel decision = WAIT, cell EMPTY (pin 219). No option electable as
+> the code stands: options 2/3 inert at the SO tile (hull-clamped latitude field, pin 216);
+> option 1 breaches ±66 at the tile's poleward reach (−66.13 at the core edge). Two named
+> resolutions, both Stage 2: a smaller km scale, or a latitude-aware halo.
+> operative_halo_deg() UNTOUCHED.
+> NEXT: T7 opens on the owner's word, with pin 212(b)'s two-reviewer review binding and pin
+> 99(b)'s live-ceiling premise. Then T8. Then task 23 (C-11). Gate 1 does not close until
+> T6's WAIT resolves or the owner rules without it.
 >
 > **Everything below this block is TRAIL.** Owner pin 154: rewrite what went stale rather
 > than layering over it.
@@ -533,31 +542,45 @@
 >    ⛔ **The pack is SUPERSEDED, NOT REWRITTEN, when those land (209c)** — 197(a) applies to
 >    it as to T12's table. The 210–212 corrections are folded in; nothing else is retro-edited.
 >
-> 5. **⛔ STOP — T6'S PACK IS POSTED AND COMES TO THE OWNER (pins 213d, 212b).**
->    `scripts/phase14_kernel_pack.py` renders it; `phase14.stage1.kernel_pack` is
->    recorded and **mirrored (46 nodes)**; **the decision cell is EMPTY**. Review:
->    `docs/superpowers/2026-09-19-t6-adversarial-reviews.md`.
->    ⭐ **THE TWO-REVIEWER FORM EARNED ITSELF ON ITS FIRST USE.** Both reviewers
->    **OVERTURNED** parts of the first draft; the reviews did not tidy the pack, they
->    **inverted its central cell**. Three findings, each confirmed by RUNNING the code:
->    - **F-1** — options 2 and 3 are the **same dispatch** (`validation/run.py:41`); the
->      draft priced one kernel at two cost classes.
->    - **F-2** — `LatitudeField.at` **clamps to the anchor hull [33, 43]**, so the
->      multiplier is **CONSTANT over the SO core**. The draft's ±66 BREACH row priced a
->      `1/cos φ` form the shipped field **cannot express**. **Corrected: no option, as
->      the code stands, breaches ±66.**
->    - **F-3** — the obs halo is a **single scalar**; no option can widen zonally and
->      leave the meridional halo alone. The km-space row spends **0.7179° of 1.0°**.
->    Plus a typed `-64.0`, a typed live bound, a **dead** `rests_on_directional_sampling`
->    field, a missing evidence block, and **a vacuous assertion of my own** — instance
->    (i9)'s shape, written in the session that catalogued (i9).
->    **⏳ OWNER'S, NOT ACTED ON:** (a) the **posted Gate-1 pack's §1.11 carries +46.0 for
->    kuroshio; the real obs north edge is +46.2** (margin 19.8°) — `obs_bbox` derives from
->    the grid-node extent and `np.arange` overshoots at the max end. Same class as pin
->    210, other side; **209(c) reserves retro-editing to the owner.** (b) **F-2's hull is
->    a shipped, signed component** — widening it is what electing options 2/3 requires at
->    this tile: a producer question, not a T6 decision.
->    **T7 DOES NOT OPEN until the owner reports on T6** (213d).
+> 5. **⛔ T6 IS RULED — KERNEL DECISION = WAIT, CELL EMPTY (pins 219/220).** The pack is
+>    `scripts/phase14_kernel_pack.py` → `phase14.stage1.kernel_pack` (mirrored); the review
+>    is `docs/superpowers/2026-09-19-t6-adversarial-reviews.md`.
+>    **NO OPTION IS ELECTABLE AS THE CODE STANDS** — *a measured result about the machinery,
+>    not a failure of T6* (219b):
+>    - **Options 2/3 are INERT at the SO tile** — `LatitudeField.at` hull-clamps to
+>      [33, 43], so the multiplier is CONSTANT across that core. Deferred to Stage 2 with
+>      its reason at `phase14.stage1.kernel_hull_deferred` (pin 216). **Inert ≠ refused on
+>      merit; re-openable if the hull widens** (217b).
+>    - **Option 1 BREACHES ±66** carrying the box-equivalent 111.195 km scale: obs
+>      **−66.1301** at the core edge, **−66.2812** at the solve-bbox edge. The pack priced
+>      it at φ0 (+0.2821° margin) — the tile's *middle*, not its poleward reach.
+>    - ⭐ **STRUCTURAL, FOR STAGE 2 (219b): a single scalar halo cannot express a km-space
+>      kernel.** The degree footprint varies with latitude, so the scalar must be set at the
+>      poleward reach — and there it breaches.
+>    - **THE WAY OUT IS NAMED (219c), which is why this is a WAIT and not a refusal:** the
+>      breach belongs to the 111.195 km scale, not to km-space kernels. **Two resolutions,
+>      both Stage 2 — a smaller km scale, or a latitude-aware halo** under fork-d pin 4's
+>      single point of change.
+>    - **`operative_halo_deg()` IS UNTOUCHED** (219d). **D4 inherits this; Stage 2G cannot
+>      decide pole handling without it** (217e).
+>
+> 6. **✅ 215/216 FOLDED.** The ±66 attestation now reads the poleward edge from
+>    **`TileFrame.obs_bbox` itself** — `max(|grid.min − halo|, |grid.max + halo|)`, signed —
+>    and refuses a frame that cannot rebuild its own `solve_bbox`. Test-pinned on a
+>    **synthetic northern tile whose overshoot flips the verdict** (215b), which the four
+>    real tiles could not expose. **§1.11 of the posted pack is corrected, and only §1.11**
+>    (215d): kuroshio **+46.0 → +46.2**, margin **20.0° → 19.8°**.
+>    ⚖ **Measured while applying it: the `np.arange` overshoot is FLOATING-POINT DEPENDENT,
+>    not a uniform rule** — present at southern (−43.8) and kuroshio (+46.2), absent at
+>    quiet_gyre (−12.0) and equatorial (+14.0). That is the argument for reading the edge
+>    from the framing code rather than from any expression.
+>
+> 7. **▶ NEXT — T7, on the owner's word, and not before.** Band provenance pinned to
+>    `phase10_lanes` (pin 9); lanes **Tier-1-or-WAIT against the LIVE 40 h ceiling** (99b),
+>    not the dead "no new ceilings" premise; **pin 212(b)'s two-reviewer review binds** it
+>    as a decision pack. Then **T8** (priced from the CONVERGED numbers, never the capped T2
+>    probe, basis in-row — 99c). Then **task 23** (C-11). **Gate 1 does not close until T6's
+>    WAIT resolves or the owner rules without it.**
 
 > ---
 > ## 📦 TRAIL ARCHIVED — `docs/progress-archive/phase14-stage1-trail.md`

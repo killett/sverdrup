@@ -136,6 +136,17 @@ MIRRORED: dict[str, str] = {
         "tables are a MEASUREMENT and belong here; the three-class READING is "
         "an interpretation and stays in the pack (197b)"
     ),
+    # ---- pin 216: the hull widening, deferred to Stage 2 with its reason ----
+    "phase14.stage1.kernel_hull_deferred": (
+        "owner pin 216. Widening the latitude field's hull is a PRODUCER decision "
+        "with its own chain and touch, not something a decision pack elects, so it "
+        "travels to Stage 2 alongside T14-T21. Mirrored because it carries the "
+        "finding that made it live and that Stage 2 must not rediscover: options 2 "
+        "and 3 of the kernel decision are INERT at the SO tile as the code stands, "
+        "because LatitudeField.at clamps to the anchor-box hull [33, 43] and the "
+        "multiplier is therefore CONSTANT across that core. Pin 217(b): inert is "
+        "not refused-on-merit — they are re-openable in Stage 2 if the hull widens"
+    ),
     # ---- T6 (owner pins 213/212b): the kernel DECISION pack, decision EMPTY ----
     "phase14.stage1.kernel_pack": (
         "T6's high-latitude kernel decision pack (spec 1-4; owner pins 99a, 108, "

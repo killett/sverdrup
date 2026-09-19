@@ -29,6 +29,7 @@
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.headroom_minima_recovered": "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a `headroom` argument and does not pass it to build_evidence_row, so no tile row has ever carried one. The legs are finished and the logs are gitignored on a single box, so this is the only item in the stage that re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; witnessing it is the whole point. Recovery is NOT repair — the 151(b) gap stands and is recorded as found",
     "phase14.stage1.band_spectra": "owner pin 201(d). The per-band study/ref and diff/ref tables for all four tiles on the canonical SKILL_BANDS grid (205c), the fine-band track PSDs behind 181(c), and the verification of every figure the rulings quote — recomputed read-only from the PERSISTED maps through the scorer's own path, no solve (201a, pin 114's class). Mirrored because the THREE-CLASS finding rests on these numbers and until this node existed they lived only in prose: the diagnostics printed and exited, so pin 56(c) applied exactly — a re-typeable number in prose is not the record. It carries 205(b)'s finding too: southern's 0.084/0.988 came from an ad-hoc cut no committed code produced. The tables are a MEASUREMENT and belong here; the three-class READING is an interpretation and stays in the pack (197b)",
+    "phase14.stage1.kernel_hull_deferred": "owner pin 216. Widening the latitude field's hull is a PRODUCER decision with its own chain and touch, not something a decision pack elects, so it travels to Stage 2 alongside T14-T21. Mirrored because it carries the finding that made it live and that Stage 2 must not rediscover: options 2 and 3 of the kernel decision are INERT at the SO tile as the code stands, because LatitudeField.at clamps to the anchor-box hull [33, 43] and the multiplier is therefore CONSTANT across that core. Pin 217(b): inert is not refused-on-merit — they are re-openable in Stage 2 if the hull widens",
     "phase14.stage1.kernel_pack": "T6's high-latitude kernel decision pack (spec 1-4; owner pins 99a, 108, 213a). The f-range and cos-phi arithmetic, the SO tile's recorded anisotropy inputs, the option table, and the +/-66 column computed from the ruled frame — with the DECISION CELL EMPTY, because the election is the owner's at Gate 1. Mirrored because it is the material a gate decision will be made from and it must not be editable after that decision; it carries the three code findings its two-reviewer review produced (owner pin 212b) — options 2 and 3 are one dispatch, the shipped latitude field is hull-clamped to [33,43] and therefore CONSTANT over the SO tile, and the obs halo is a single scalar — each verified by running the code and test-pinned against it. The anisotropy axis is UNEVIDENCED (pin 108a) and the pack says so where the numbers are",
     "phase14.stage1.equatorial_sampler_log_scope": "owner pin 206(a), disposing 202(b). The witnessed equatorial row's sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 re-score, because the re-score appended to the leg's own log files; headroom_minima_recovered hashed the same files before it and describes the leg alone. This node carries the truncation proof (1,533 of 1,535 and 418 of 427 lines reproduce the node's shas), the leg-only figures, and what is and is not affected (every minimum unaffected). Mirrored because it qualifies a WITNESSED row and the row is not edited (206b: the supersession is for a wrong value, and the row's sha is correct for the file it names); registered together with the forward pointer from tiles.equatorial, as at 200. Pin 190's hazard by a second route — both routes now closed (206d)",
     "phase14.stage1.headroom_leg1_floor_unrecoverable": "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), so only a 5-minute heartbeat existed and a dip between beats is gone for good. Mirrored because the node it amends is witnessed and this one was not: a reader arriving at the witnessed minima could not learn that one of the four numbers is a bound, which is pin 64's failure mode exactly. It also carries an arithmetic correction to the text that ordered it (the supporting gaps are 0/360/74 MiB, median 74 — not the '306-328' that text states, which are heartbeat COUNTS). Registered together with the forward pointer; mirroring it without the pointer would leave it witnessed and still unreachable",
@@ -223,7 +224,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-19T10:14:17.448372+00:00",
+  "generated_utc": "2026-09-19T18:08:11.288252+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -3029,6 +3030,34 @@
         "reading": "the launch gate measured a box that did not stay measured: leg 2 cleared at 10771 MiB and reached 1382; leg 4 cleared at 10084 and reached 2762",
         "why_it_matters": "leg 2's 1382 MiB floor is the measurement behind pins 151(b), 156(a)(i) and 156(c), and behind the watchdog's 2048 MiB floor and its swap-onset arm. Losing it would leave the watchdog's calibration unsupported by any record",
         "why_this_exists": "owner pin 188(a). Pin 151(b) specified that each leg's in-run MemAvailable minimum lands in its evidence row. It never did: record_tile_leg accepts a `headroom` argument, documents it as the 151(b) record, and does not pass it to build_evidence_row (phase14_stage1_run.py:5072). No tile row has ever carried it. These minima therefore existed ONLY in gitignored logs on one box, and the legs are finished — they cannot be reproduced by re-running"
+      }
+    },
+    "phase14.stage1.kernel_hull_deferred": {
+      "digest_sha256": "6dbddcc3b9d387426914e3a92ea31d2d6f447c333ee86508247506410a44ee11",
+      "value": {
+        "label": "STAGE1-EVIDENCE",
+        "date": "2026-09-19",
+        "pin": "216 — the hull widening is STAGE 2, with the finding that made it live",
+        "kind": "DEFERRED TO STAGE 2 — a signed-component change, named and costed, not a decision pack's to elect",
+        "ruling": "widening the latitude field's hull is a PRODUCER decision with its own chain and touch (standing discipline 4: elections are named triggers, never silent fold-ins). A decision pack does not elect a change to a shipped, signed component",
+        "the_finding_that_made_it_live": "options 2 and 3 of the T6 kernel decision are INERT at the Southern Ocean tile as the code stands. `LatitudeField.at` clamps latitude to the anchor-box hull [33.0, 43.0] before evaluating (src/sverdrup/core/parameters.py:17,53 — constant continuation off-box, the PolyCalibration convention), so across the SO core the multiplier m(lat) is a SINGLE CONSTANT. The vehicle for latitude variation cannot vary at the latitudes a high-latitude kernel decision is about",
+        "measured": {
+          "method": "LatitudeField('exp-linear-mult', (1.0,)).at over each tile's core, 7 samples",
+          "constant_over_core": {
+            "southern": true,
+            "equatorial": true,
+            "quiet_gyre": true,
+            "kuroshio": false
+          },
+          "why_kuroshio_differs": "its core (28..43) OVERLAPS the hull, so part of it varies; the other three lie wholly outside",
+          "hull": [
+            33.0,
+            43.0
+          ]
+        },
+        "consequence_for_stage_2": "until the hull is widened, options 2/3 cannot deliver latitude variation at any diverse tile except kuroshio. Pin 217(b): they are NOT refused on merit — they are inert, and re-openable in Stage 2 if the hull is widened. Recorded so Stage 2 does not rediscover it",
+        "travels_with": "T14-T21 (pin 86c), alongside the CRN production defect at phase14.stage1.crn_production_defect_deferred",
+        "found_by": "T6's two-reviewer adversarial review (owner pin 212b), then confirmed by running the code"
       }
     },
     "phase14.stage1.kernel_pack": {

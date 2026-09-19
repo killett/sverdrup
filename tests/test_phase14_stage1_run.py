@@ -5489,59 +5489,121 @@ def test_the_render_command_prints_the_same_section(
     assert result.output == _mod.render_transfer_readings(evidence_path=evid)
 
 
+def _frames_store(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    frames: dict[str, tuple[list[float], list[float]]],
+) -> Path:
+    """A store whose four rows carry the given (core, solve_bbox) frames."""
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / f"frames_{abs(hash(str(sorted(frames.items()))))}.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    for tile, (core, solve) in frames.items():
+        kwargs = _row_kwargs(tile)
+        kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+        kwargs["frame"] = {
+            "core": core,
+            "solve_bbox": solve,
+            "overlap_deg": 2.0,
+            "halo_deg": 1.0,
+            "resolution_deg": 0.2,
+            "missing_neighbors": [],
+        }
+        _mod.record_tile_leg(evidence_path=evid, **kwargs)
+    return evid
+
+
 def test_the_66_attestation_is_made_on_the_obs_edge_and_can_fail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Owner pin 210: the ±66 breach lives on the OBS EDGE, and the check must trip.
+    """Owner pins 210/215: the breach lives on the REAL obs edge, and this trips.
 
-    Bug caught: the attestation the Gate-1 pack shipped with — "every
-    diverse tile's solve bbox lies inside ±66". A solve bbox is always
-    inside its own obs frame, so that quantity cannot breach: true and
-    unfailable, which is pin 42's shape and §7 discipline 11 instance
-    (i9). The margin is computed from the store here, and the second
-    half of the test drives a breaching frame through the same code so
-    the check is known to fail when it should.
+    Bug caught, twice over. First the attestation the Gate-1 pack shipped
+    with — "every diverse tile's solve bbox lies inside +/-66" — where a
+    solve bbox is always inside its own obs frame, so the quantity cited
+    could not breach (section 7 discipline 11, instance i9). Then pin
+    210's own correction, `lat_min - halo`, exact only where the poleward
+    end is the MIN end: `np.arange` overshoots at the max end, so a
+    northern tile's poleward edge was understated by up to one cell. The
+    edge now comes from `TileFrame.obs_bbox` itself.
     """
-    # The solve_bbox values the four rows actually carry (S tiles.<t>.frame),
-    # used as fixture data so the test is hermetic: it pins the DERIVATION and
-    # the breach, not the contents of whatever store this host happens to hold.
+    # The frames the four rows actually carry, as fixture data so the test is
+    # hermetic: it pins the DERIVATION, not this host's store.
     recorded = {
-        "kuroshio": [130.0, 149.0, 26.0, 45.0],
-        "southern": [213.0, 232.0, -64.0, -45.0],
-        "equatorial": [198.0, 217.0, -6.0, 13.0],
-        "quiet_gyre": [253.0, 272.0, -32.0, -13.0],
+        "kuroshio": ([132.0, 147.0, 28.0, 43.0], [130.0, 149.0, 26.0, 45.0]),
+        "southern": ([215.0, 230.0, -62.0, -47.0], [213.0, 232.0, -64.0, -45.0]),
+        "equatorial": ([200.0, 215.0, -4.0, 11.0], [198.0, 217.0, -6.0, 13.0]),
+        "quiet_gyre": ([255.0, 270.0, -30.0, -15.0], [253.0, 272.0, -32.0, -13.0]),
     }
 
-    def _store(boxes: dict[str, list[float]]) -> Path:
-        from sverdrup.validation import phase14_seal
-
-        monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
-        evid = tmp_path / f"evidence_{abs(hash(str(boxes)))}.json"
-        evid.write_text(json.dumps({"phase13": {"kept": True}}))
-        for tile in _mod.TRANSFER_TILES:
-            kwargs = _row_kwargs(tile)
-            kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
-            kwargs["frame"] = {
-                **kwargs["frame"],
-                "solve_bbox": boxes[tile],
-                "halo_deg": 1.0,
-            }
-            _mod.record_tile_leg(evidence_path=evid, **kwargs)
-        return evid
-
-    edges = _mod.poleward_obs_edges(evidence_path=_store(recorded))
-
-    assert set(edges) == set(_mod.TRANSFER_TILES)
-    # Southern is the tile this attestation is about: 1.0 degree of margin.
-    assert edges["southern"] == pytest.approx(-65.0)
-    assert min(66.0 - abs(e) for e in edges.values()) == pytest.approx(1.0)
-    # The poleward edge is NOT always lat_min - halo: kuroshio's is its north edge.
-    assert edges["kuroshio"] == pytest.approx(46.0)
-
-    # ...and the same code reports a breach when the frame breaches.
-    breached = _mod.poleward_obs_edges(
-        evidence_path=_store({**recorded, "southern": [213.0, 232.0, -66.5, -45.0]})
+    edges = _mod.poleward_obs_edges(
+        evidence_path=_frames_store(tmp_path, monkeypatch, recorded)
     )
 
-    assert breached["southern"] == pytest.approx(-67.5)
-    assert min(66.0 - abs(e) for e in breached.values()) < 0
+    assert set(edges) == set(_mod.TRANSFER_TILES)
+    # Southern is the tile the attestation is about: its poleward end is the
+    # MIN end, where arange does not overshoot, so 1.0 degree of margin stands.
+    assert edges["southern"] == pytest.approx(-65.0)
+    assert min(66.0 - abs(e) for e in edges.values()) == pytest.approx(1.0)
+    # Kuroshio's poleward end is its MAX end, where arange overshoots a cell:
+    # the nominal lat_max + halo says +46.0; the real obs frame says +46.2.
+    assert edges["kuroshio"] == pytest.approx(46.2)
+    assert edges["kuroshio"] != pytest.approx(46.0)
+
+
+def test_a_max_edge_northern_tile_whose_OVERSHOOT_flips_the_verdict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 215(b): the case the four real tiles cannot expose.
+
+    Bug caught: the defect pin 215 corrects, in the only shape that can
+    show it. This tile's NOMINAL poleward edge clears +/-66 while its REAL
+    obs edge breaches, because `np.arange` overshoots at the max end. The
+    prior pin passed on three tiles whose poleward end is their min end
+    and on one with 19.8 degrees of margin -- none of which could expose
+    it, and that absence of coverage was the defect, not the tiles.
+    """
+    frames = {
+        # solve_bbox lat_max 64.9 + halo 1.0 = 65.9 nominally CLEAR;
+        # arange overshoots one cell to 65.1, + 1.0 = 66.1 -> BREACH.
+        "kuroshio": ([132.0, 147.0, 60.9, 62.9], [130.0, 149.0, 58.9, 64.9]),
+        "southern": ([215.0, 230.0, -62.0, -47.0], [213.0, 232.0, -64.0, -45.0]),
+        "equatorial": ([200.0, 215.0, -4.0, 11.0], [198.0, 217.0, -6.0, 13.0]),
+        "quiet_gyre": ([255.0, 270.0, -30.0, -15.0], [253.0, 272.0, -32.0, -13.0]),
+    }
+
+    edge = _mod.poleward_obs_edges(
+        evidence_path=_frames_store(tmp_path, monkeypatch, frames)
+    )["kuroshio"]
+
+    nominal = 64.9 + 1.0  # what pin 210's expression would have said
+    assert nominal < 66.0, "the fixture must CLEAR on the nominal expression"
+    assert edge > 66.0, "...and BREACH on the real obs frame"
+    assert edge == pytest.approx(66.1, abs=1e-9)
+
+
+def test_the_attestation_REFUSES_a_frame_that_cannot_rebuild_itself(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The store and the framing code must agree about the geometry.
+
+    Bug caught: a recorded `solve_bbox` the framing code would not produce
+    from the same core and overlap. The attestation would then be computed
+    through a frame the leg never ran under, and would look authoritative
+    while describing different geometry.
+    """
+    frames = {
+        t: ([215.0, 230.0, -62.0, -47.0], [213.0, 232.0, -64.0, -45.0])
+        for t in _mod.TRANSFER_TILES
+    }
+    frames["southern"] = (
+        [215.0, 230.0, -62.0, -47.0],
+        [213.0, 232.0, -99.0, -45.0],  # not what core +/- overlap gives
+    )
+
+    with pytest.raises(RuntimeError, match="does not rebuild its own solve_bbox"):
+        _mod.poleward_obs_edges(
+            evidence_path=_frames_store(tmp_path, monkeypatch, frames)
+        )

@@ -5499,29 +5499,70 @@ def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
 
 
 def poleward_obs_edges(evidence_path: Path = EVIDENCE) -> dict[str, float]:
-    """Each diverse tile's POLEWARD observation edge, derived from its frame.
+    """Each diverse tile's POLEWARD observation edge, from the REAL obs frame.
 
-    Owner pin 210: pins 10/16 define the ±66 breach on the obs edge, not
-    on the solve bbox — a solve bbox is always inside its own obs frame,
-    so attesting on it cannot fail (§7 discipline 11, instance i9). The
-    edge that can breach is the poleward one, which is ``lat_min - halo``
-    in the southern hemisphere and ``lat_max + halo`` in the northern.
+    Owner pin 215, correcting pin 210. Pins 10/16 put the ±66 breach on the
+    obs edge, and the obs frame derives from the GRID NODE EXTENT, not from
+    the nominal box: ``frame_grid`` builds ``np.arange(min, max + res, res)``,
+    whose first element is the start bit-exactly but whose last **overshoots**
+    by up to one cell (the recorded 43.2°N quirk). So
+
+        poleward_obs_edge = the signed edge of
+            ``max(|grid.min − halo|, |grid.max + halo|)``
+
+    and it is taken from ``TileFrame.obs_bbox`` itself rather than
+    recomputed here, so this can never drift from the framing the legs ran
+    under. Pin 210's ``lat_min − halo`` is exact for a southern-hemisphere
+    tile — its poleward end is the min end — which is why it looked right on
+    three tiles and was wrong on kuroshio, whose poleward end is its max.
 
     Args:
         evidence_path: The evidence store.
 
     Returns:
-        ``{tile: poleward_edge_deg}`` for the four diverse tiles.
+        ``{tile: poleward_edge_deg}``, signed.
+
+    Raises:
+        RuntimeError: A recorded frame does not reproduce its own
+            ``solve_bbox`` when rebuilt — the store and the framing code
+            would then disagree about the geometry the leg ran under.
     """
+    from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
+    from sverdrup.application.spatial_tiles import TileFrame  # noqa: PLC0415
+
     doc = json.loads(evidence_path.read_text())
     tiles = doc["phase14"]["stage1"]["tiles"]
     edges: dict[str, float] = {}
     for tile in TRANSFER_TILES:
-        frame = tiles[tile]["frame"]
-        halo = float(frame["halo_deg"])
-        south = float(frame["solve_bbox"][2]) - halo
-        north = float(frame["solve_bbox"][3]) + halo
-        edges[tile] = south if abs(south) > abs(north) else north
+        recorded = tiles[tile]["frame"]
+        core = recorded["core"]
+        frame = TileFrame(
+            core=BBox(
+                lon_min=float(core[0]),
+                lon_max=float(core[1]),
+                lat_min=float(core[2]),
+                lat_max=float(core[3]),
+            ),
+            overlap_deg=float(recorded["overlap_deg"]),
+            halo_deg=float(recorded["halo_deg"]),
+            missing_neighbors=frozenset(recorded.get("missing_neighbors", [])),
+        )
+        rebuilt = frame.solve_bbox
+        if [
+            rebuilt.lon_min,
+            rebuilt.lon_max,
+            rebuilt.lat_min,
+            rebuilt.lat_max,
+        ] != [float(v) for v in recorded["solve_bbox"]]:
+            raise RuntimeError(
+                f"{tile}: the recorded frame does not rebuild its own solve_bbox "
+                f"({recorded['solve_bbox']} vs rebuilt {rebuilt}). The ±66 "
+                "attestation reads the obs frame through the framing code, so a "
+                "disagreement here means the store and the code differ about the "
+                "geometry the leg ran under."
+            )
+        obs = frame.obs_bbox(resolution_deg=float(recorded["resolution_deg"]))
+        edges[tile] = max((obs.lat_min, obs.lat_max), key=abs)
     return edges
 
 

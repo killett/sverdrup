@@ -3649,3 +3649,114 @@ Gate-1 pack posted at `f9981d1`.
   the defect 210(a) is correcting, so the pack and the test use
   **`max(|lat_min − halo|, |lat_max + halo|)`**. Southern's 1.0° margin — the number the
   attestation is about — is unchanged either way.
+
+## PART 51 — THE KERNEL ELECTION WITHDRAWN; NO OPTION ELECTABLE AS THE CODE STANDS (verbatim), pins 215–220, 2026-09-19
+
+**Status: RECEIVED AND RECORDED VERBATIM 2026-09-19.** Pins 215–218 answered T6's posting;
+219–220 withdrew the election issued at 217 after the 217(c) clarification was answered.
+
+> 215. PIN 210 IS DEFECTIVE FOR MAX-EDGE TILES — my error, corrected here.
+>      Re-derived: the pole-ward obs edge must come from the GRID NODE EXTENT, not the
+>      nominal bbox. `grid.max + halo` for a tile whose pole-ward edge is its max;
+>      `grid.min − halo` for one whose pole-ward edge is its min. arange overshoots only at
+>      the max end, which is why 210 looked right on three tiles and is wrong on the fourth.
+>      (a) Restate as: poleward_obs_edge = max(|grid.min − halo|, |grid.max + halo|) with its
+>          sign, computed from frame_grid, never from the nominal box.
+>      (b) TEST-PIN IT ON A MAX-EDGE CASE — a synthetic northern tile whose overshoot would
+>          change the verdict. The current pin passes on three tiles that cannot expose it,
+>          which is the defect, not the coverage.
+>      (c) Kuroshio: +46.2, margin 19.8° — no breach, and the correction changes no decision.
+>          The reason it is worth fixing is the latent case, not this one.
+>      (d) 209(c) reserved retro-editing the posted pack to me, and I am authorising exactly
+>          this: §1.11's four numbers, nothing else, with a dated correction note naming 215
+>          and stating that the conclusion is unchanged. Do not rewrite the pack otherwise.
+> 216. F-2's HULL — Stage 2, and you were right not to act.
+>      Widening a shipped, signed component is a producer decision with its own chain and
+>      touch, not something a decision pack elects. It goes to Stage 2 alongside T14-T21,
+>      with the finding that made it live: options 2 and 3 are INERT at the SO tile as the
+>      code stands, because the latitude field is hull-clamped to [33, 43] and is therefore
+>      constant across that core. Record that as the reason, so Stage 2 does not rediscover it.
+> 217. THE KERNEL DECISION — OPTION 1 (km-space) ELECTED, conditionally, with its basis named.
+>      (a) BASIS IS METRIC GEOMETRY, NOT SAMPLING. The cos-φ anisotropy is measured and
+>          reproduces; pin 108's UNEVIDENCED marking is about DIRECTIONAL SAMPLING, which no
+>          option's case rests on. So 213(a)'s WAIT is not owed, and the pack's separability
+>          claim — strike the cosine column and option 1 still parts on metric and anchor
+>          identity — is what discharges it. Confirmed.
+>      (b) OPTIONS 2/3 ARE NOT REFUSED ON MERIT. They are inert at the tile that motivated the
+>          decision, and making them operative requires 216's signed-component change. Record
+>          the election as "option 1 now; 2/3 re-openable in Stage 2 if the hull is widened,"
+>          not as a verdict against them.
+>      (c) ⛔ CONDITIONAL ON ONE CLARIFICATION, folded not blocked: state unambiguously what
+>          "the km-space row spends 0.7179° of the 1.0° available" means — whether the
+>          operative halo under option 1 becomes 0.7179° (more margin than today) or consumes
+>          0.7179° of the existing 1.0° (less). The election binds the halo auto-follow under
+>          fork-d pin 4 and the halo sets the ±66 margin; I will not elect an option whose
+>          halo consequence I have read in the wrong direction. If it turns out to REDUCE the
+>          margin below southern's current 1.0°, stop and bring it to me before the fold.
+>      (d) The halo auto-follows via operative_halo_deg() per fork-d pin 4 — the single point
+>          of change, no second constant. Re-run the 215(a) attestation after the halo moves,
+>          and record both the pre- and post-election obs edges.
+>      (e) D4 (pole handling) remains Stage 2G's, informed by this election and by the SO
+>          tile's measured metric anisotropy — not by the unevidenced sampling axis.
+> 218. RATIFIED: the pack's arithmetic (frame-derived, not typed); the 1/cos(54.4) structural
+>      pin at 1e-9 making the UNEVIDENCED marking unsoftenable without a test failing; the
+>      two-reviewer review and its three code-confirmed findings; and reporting both owner
+>      items without acting on either.
+>
+> 219. PIN 217's ELECTION IS WITHDRAWN. Option 1 as scaled breaches ±66.
+>      (a) Evaluated at the latitudes the tile SOLVES — core edge −62° gives obs −66.1301,
+>          solve-bbox edge −64° gives −66.2812 — not at φ0, which is the tile's middle and not
+>          its poleward reach. The pack's own row priced the consequence where it is smallest:
+>          the same defect class its review already caught once, now twice in one task.
+>      (b) THE STRUCTURAL FINDING, which is what Stage 2 needs: a SINGLE SCALAR halo cannot
+>          express a km-space kernel. A km scale's degree-footprint varies with latitude across
+>          the tile, so the scalar must be set at the poleward reach to be safe — and there it
+>          breaches. Options 2/3 are inert at this tile (216). So NO OPTION IS ELECTABLE AS THE
+>          CODE STANDS. That is a measured result about the machinery, not a failure of T6.
+>      (c) THE DEPENDENCY YOU FLAGGED IS THE WAY OUT, and it is why this is a WAIT rather than
+>          a refusal: the breach is a property of carrying the box-equivalent 111.195 km scale,
+>          not of km-space kernels. Two resolutions exist — a smaller km scale, or a
+>          latitude-aware halo (a code change under fork-d pin 4's single point of change).
+>          Both are Stage 2; neither is T6's to choose.
+>      (d) operative_halo_deg() IS NOT TOUCHED. The decision cell stays EMPTY. D4 inherits
+>          this, and Stage 2G cannot decide pole handling without it.
+>      (e) PRICING A CONSEQUENCE AT A DISTRIBUTION'S CENTRE RATHER THAN ITS RELEVANT EXTREME
+>          goes in §7 as its own instance — distinct from the unfailable-check family. Both
+>          T6 instances are named: the draft's multiplier, and the φ0 halo row.
+> 220. RATIFIED: stopping the fold as 217(c) directed rather than proceeding on the reading
+>      that fit; naming the km-scale dependency, which is what turns a dead end into a WAIT;
+>      and continuing only with the three items that do not depend on the election.
+
+### What PART 51 changes
+
+- **⛔ THE KERNEL DECISION IS A WAIT, AND THE CELL STAYS EMPTY** (219). **No option is
+  electable as the code stands** — and that is *"a measured result about the machinery, not
+  a failure of T6"*. Options 2/3 are **inert** at the SO tile (216); option 1, carrying the
+  box-equivalent scale, **breaches ±66 at the latitudes the tile solves**: obs **−66.1301**
+  at the core edge, **−66.2812** at the solve-bbox edge. `operative_halo_deg()` is **not
+  touched** (219d), and **D4 inherits this — Stage 2G cannot decide pole handling without
+  it**.
+- **⭐ THE STRUCTURAL FINDING FOR STAGE 2** (219b): **a single scalar halo cannot express a
+  km-space kernel.** A km scale's degree footprint varies with latitude across the tile, so
+  the scalar must be set at the **poleward reach** to be safe — and there it breaches.
+- **THE WAY OUT IS NAMED, WHICH IS WHY THIS IS A WAIT AND NOT A REFUSAL** (219c): the breach
+  belongs to **carrying the 111.195 km box-equivalent scale**, not to km-space kernels.
+  **Two resolutions, both Stage 2: a smaller km scale, or a latitude-aware halo** under
+  fork-d pin 4's single point of change. Neither is T6's to choose.
+- **PIN 210 IS CORRECTED AT 215** — the poleward obs edge comes from the **grid node
+  extent**, `max(|grid.min − halo|, |grid.max + halo|)` with its sign, read from
+  `TileFrame.obs_bbox` itself. ⚖ **Measured while applying it: the overshoot is
+  FLOATING-POINT DEPENDENT, not a uniform rule** — it appears at southern (−43.8) and
+  kuroshio (+46.2) but **not** at quiet_gyre (−12.0) or equatorial (+14.0), because
+  `np.arange`'s accumulation differs with the start value. That is the argument for reading
+  the edge from the framing code rather than from any expression at all.
+- **§1.11 OF THE POSTED PACK IS CORRECTED, AND ONLY §1.11** (215d): kuroshio **+46.0 → +46.2,
+  margin 20.0° → 19.8°**, southern's north edge −44.0 → −43.8, with a dated note naming 215.
+  **Southern's −65.0 / 1.0° is unchanged and so is the conclusion.**
+- **THE HULL TRAVELS TO STAGE 2 WITH ITS REASON** (216), recorded at
+  `phase14.stage1.kernel_hull_deferred` and mirrored, so Stage 2 does not rediscover that
+  options 2/3 are inert.
+- **A NEW §7 DISCIPLINE (219e), DISTINCT FROM THE UNFAILABLE-CHECK FAMILY: pricing a
+  consequence at a distribution's CENTRE rather than at its relevant EXTREME.** Both T6
+  instances are named — the draft's multiplier, and the φ0 halo row that survived one review
+  and was caught only when the owner asked which direction it ran.

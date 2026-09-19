@@ -742,7 +742,15 @@ def render(evidence_path: Path = EVIDENCE) -> str:
         "",
         f"### T6.6 Scope\n\nExplicitly: {BOX_SCALE_SENTENCE}.",
         "",
-        "**Decision:** _(empty — owner, at Gate 1)_",
+        "**Decision:** _(EMPTY — owner, at Gate 1)_ · **RULED A WAIT at owner pin 219:** "
+        "no option is electable as the code stands. Options 2/3 are INERT at this tile "
+        "(hull-clamped latitude field, pin 216); option 1 carrying the box-equivalent "
+        "111.195 km scale BREACHES ±66 at the latitudes the tile solves (obs −66.1301 at "
+        "the core edge, −66.2812 at the solve-bbox edge) — priced above at φ0, which is "
+        "the tile's middle and not its poleward reach (§7 discipline 16, instance p2). "
+        "**Two named resolutions, both Stage 2: a smaller km scale, or a latitude-aware "
+        "halo under fork-d pin 4's single point of change.** `operative_halo_deg()` is "
+        "UNTOUCHED (219d); D4 inherits this.",
         "",
     ]
     return "\n".join(out) + "\n"

@@ -328,12 +328,29 @@ in Stage 1. The cross-host slot (`pending-T18`, credentials owner-side) is **Sta
 
   | tile | obs edges [south, north] | poleward | margin to ±66 |
   |---|---|---|---|
-  | **southern** | **−65.0**, −44.0 | **−65.0** | **1.0°** |
+  | **southern** | **−65.0**, −43.8 | **−65.0** | **1.0°** |
   | quiet_gyre | −33.0, −12.0 | −33.0 | 33.0° |
-  | kuroshio | +25.0, **+46.0** | **+46.0** | 20.0° |
+  | kuroshio | +25.0, **+46.2** | **+46.2** | 19.8° |
   | equatorial | −7.0, **+14.0** | **+14.0** | 52.0° |
 
-  **Southern's 1.0° is the margin the attestation is about**; the other three are nowhere
+  > **⚖ CORRECTION, 2026-09-19 — owner pin 215, authorised at 215(d); §1.11's figures
+  > only, nothing else in this pack rewritten (209c).** As posted, this table gave
+  > kuroshio **+46.0 / 20.0°** and southern's north edge **−44.0**, computed as
+  > `lat_max + halo`. **Pin 210's expression is exact only where the poleward end is the
+  > MIN end.** `frame_grid` builds `np.arange(min, max + res, res)`: its first element is
+  > the start bit-exactly, but its last **overshoots by up to one cell** (the recorded
+  > 43.2°N quirk). Kuroshio's poleward end is its **max** end, so its edge was understated
+  > by 0.2° — **+46.2, margin 19.8°**.
+  > ⚠ **And the overshoot is floating-point dependent, not a uniform rule:** it appears at
+  > southern (−43.8) and kuroshio (+46.2) but **not** at quiet_gyre (−12.0) or equatorial
+  > (+14.0), because `np.arange`'s accumulation differs with the start value. That is
+  > precisely why the edges are now read from **`TileFrame.obs_bbox` itself** (215a) rather
+  > than from any expression, and test-pinned on a synthetic northern tile whose overshoot
+  > flips the verdict (215b).
+  > **Southern's −65.0 / 1.0° — the number this attestation is about — is unchanged, and so
+  > is the conclusion: no tile breaches ±66** (215c).
+
+    **Southern's 1.0° is the margin the attestation is about**; the other three are nowhere
   near it. ⚠ **Why this replaces the previous wording (210a):** it read *"every diverse
   tile's solve bbox lies inside ±66"*, which is **true but could not have failed** — a solve
   bbox is always inside its own obs frame, so the quantity cited cannot breach. That is pin
