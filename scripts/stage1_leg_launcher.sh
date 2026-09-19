@@ -19,8 +19,12 @@ cd /workspace
 TILE=${1:?usage: stage1_leg_launcher.sh <tile> [m] [maxiter]}
 M=${2:-100}
 MAXITER=${3:-1200}
-OUT="logs/leg_${TILE}"
-mkdir -p "$OUT"
+# OUT is decided PER ATTEMPT inside the loop, by `log-dir` (owner pin 206c):
+# a leg still solving logs under logs/leg_<tile>; once its member store
+# exists the solve is finished, and any further launch is a resume-only
+# re-score that gets its own stamped directory. The equatorial re-score of
+# 2026-09-10 appended to the leg's own log files, and a witnessed row then
+# hashed leg + re-score. A leg's logs close when the leg does.
 
 # Pin 155: 2 x the MEASURED nine-window peak (4951.16 MiB) = 9902.33, and
 # the leg re-reads it itself at start. GATE parks ABOVE that by GATE_MARGIN
@@ -45,6 +49,8 @@ log() { printf '%s %s\n' "$(date -Iseconds)" "$1" >> "$OUT/launcher.log"; }
 
 while :; do
   ATTEMPT=$((ATTEMPT + 1))
+  OUT=$(pixi run python scripts/phase14_stage1_run.py log-dir "$TILE")
+  mkdir -p "$OUT"
 
   # Park until the box clears the launch gate.
   while :; do

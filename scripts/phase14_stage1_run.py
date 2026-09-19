@@ -4515,6 +4515,50 @@ def tile_member_store(tile: str) -> Path:
     return STAGE1_DIR / f"{tile}_member_store.npz"
 
 
+def _utcnow() -> datetime:
+    """The clock behind :func:`leg_log_dir` — one seam, so tests can pin it."""
+    return datetime.now(UTC)
+
+
+def leg_log_dir(tile: str, *, now: datetime | None = None) -> Path:
+    """Where the launcher sends a leg's logs — and where it does NOT (pin 206c).
+
+    A leg still solving (no member store yet, including a leg halted and
+    relaunched from its window store) logs under ``logs/leg_<tile>``. Once
+    the member store exists the solve is finished, so any further launch
+    is a RESUME-ONLY RE-SCORE, and it gets a directory of its own, stamped
+    to the second: a leg's logs close when the leg does. The equatorial
+    re-score of 2026-09-10 appended to ``logs/leg_equatorial/`` instead,
+    and the witnessed row's ``sampler_log`` sha then described leg PLUS
+    re-score while the recovered minima described the leg — pin 190's
+    hazard by a second route, one layer down from the row's fields.
+
+    Args:
+        tile: Registry tile name.
+        now: The launch instant; defaults to the wall clock.
+
+    Returns:
+        A path relative to the repo root.
+    """
+    if not tile_member_store(tile).exists():
+        return Path("logs") / f"leg_{tile}"
+    stamp = (now or _utcnow()).strftime("%Y%m%dT%H%M%SZ")
+    return Path("logs") / f"leg_{tile}_rescore_{stamp}"
+
+
+@app.command("log-dir")
+def log_dir(tile: Annotated[str, typer.Argument(help="Registry tile name")]) -> None:
+    """Print the log directory for the NEXT launch of ``tile`` — nothing else.
+
+    The launcher captures this into ``OUT``, so the path is the whole
+    output (pin 206c).
+
+    Args:
+        tile: Registry tile name.
+    """
+    typer.echo(str(leg_log_dir(tile)))
+
+
 def tile_validation_track(tile: str) -> Path:
     """The tile's j3 holdout track, in the L3 naming scheme.
 

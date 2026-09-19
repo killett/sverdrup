@@ -136,6 +136,21 @@ MIRRORED: dict[str, str] = {
         "tables are a MEASUREMENT and belong here; the three-class READING is "
         "an interpretation and stays in the pack (197b)"
     ),
+    # ---- pin 206(a): the scope of a witnessed row's log shas, made reachable ----
+    "phase14.stage1.equatorial_sampler_log_scope": (
+        "owner pin 206(a), disposing 202(b). The witnessed equatorial row's "
+        "sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 "
+        "re-score, because the re-score appended to the leg's own log files; "
+        "headroom_minima_recovered hashed the same files before it and describes "
+        "the leg alone. This node carries the truncation proof (1,533 of 1,535 "
+        "and 418 of 427 lines reproduce the node's shas), the leg-only figures, "
+        "and what is and is not affected (every minimum unaffected). Mirrored "
+        "because it qualifies a WITNESSED row and the row is not edited (206b: "
+        "the supersession is for a wrong value, and the row's sha is correct "
+        "for the file it names); registered together with the forward pointer "
+        "from tiles.equatorial, as at 200. Pin 190's hazard by a second route "
+        "— both routes now closed (206d)"
+    ),
     # ---- pin 200: the qualification on the record above, made reachable ----
     "phase14.stage1.headroom_leg1_floor_unrecoverable": (
         "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an "
@@ -362,6 +377,15 @@ NOT_MIRRORED: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 AMENDMENTS: dict[str, list[dict[str, str]]] = {
+    "phase14.stage1.tiles.equatorial": [
+        {
+            "amended_by": "phase14.stage1.equatorial_sampler_log_scope",
+            "date": "2026-09-18",
+            "what": (
+                "Owner pin 206(a): this row's headroom.sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 resume-only re-score, which appended to the leg's own log files (1,535 sampler lines and 427 heartbeat-log lines, against the leg's 1,533 and 418 — the first 1,533 / 418 lines hash to exactly what headroom_minima_recovered recorded for the leg). Every minimum and the whole heartbeat block are unaffected; sampler_log.n_samples, sampler_log.max_mem_available_mib (10,379 — a re-score sample; the leg's max is 9,953) and the two shas include the re-score. The row is NOT edited (64b, 206b); cite the amending node's leg-only figures for the leg"
+            ),
+        }
+    ],
     "phase14.stage1.headroom_minima_recovered": [
         {
             "amended_by": "phase14.stage1.headroom_leg1_floor_unrecoverable",

@@ -29,6 +29,7 @@
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.headroom_minima_recovered": "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a `headroom` argument and does not pass it to build_evidence_row, so no tile row has ever carried one. The legs are finished and the logs are gitignored on a single box, so this is the only item in the stage that re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; witnessing it is the whole point. Recovery is NOT repair — the 151(b) gap stands and is recorded as found",
     "phase14.stage1.band_spectra": "owner pin 201(d). The per-band study/ref and diff/ref tables for all four tiles on the canonical SKILL_BANDS grid (205c), the fine-band track PSDs behind 181(c), and the verification of every figure the rulings quote — recomputed read-only from the PERSISTED maps through the scorer's own path, no solve (201a, pin 114's class). Mirrored because the THREE-CLASS finding rests on these numbers and until this node existed they lived only in prose: the diagnostics printed and exited, so pin 56(c) applied exactly — a re-typeable number in prose is not the record. It carries 205(b)'s finding too: southern's 0.084/0.988 came from an ad-hoc cut no committed code produced. The tables are a MEASUREMENT and belong here; the three-class READING is an interpretation and stays in the pack (197b)",
+    "phase14.stage1.equatorial_sampler_log_scope": "owner pin 206(a), disposing 202(b). The witnessed equatorial row's sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 re-score, because the re-score appended to the leg's own log files; headroom_minima_recovered hashed the same files before it and describes the leg alone. This node carries the truncation proof (1,533 of 1,535 and 418 of 427 lines reproduce the node's shas), the leg-only figures, and what is and is not affected (every minimum unaffected). Mirrored because it qualifies a WITNESSED row and the row is not edited (206b: the supersession is for a wrong value, and the row's sha is correct for the file it names); registered together with the forward pointer from tiles.equatorial, as at 200. Pin 190's hazard by a second route — both routes now closed (206d)",
     "phase14.stage1.headroom_leg1_floor_unrecoverable": "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), so only a 5-minute heartbeat existed and a dip between beats is gone for good. Mirrored because the node it amends is witnessed and this one was not: a reader arriving at the witnessed minima could not learn that one of the four numbers is a bound, which is pin 64's failure mode exactly. It also carries an arithmetic correction to the text that ordered it (the supporting gaps are 0/360/74 MiB, median 74 — not the '306-328' that text states, which are heartbeat COUNTS). Registered together with the forward pointer; mirroring it without the pointer would leave it witnessed and still unreachable",
     "phase14.stage1.anchor_gate_artifact_shas": "pin 58(d). Check-1's mean, Gamma and variance routes recorded the comparison OUTCOME but no sha of the artifact compared against, so a later substitution would have re-passed. This node captures those shas. Witnessing it is the whole point — an unwitnessed sha record closes nothing",
     "phase14.stage1.gate5_mu_witness_scope": "pin 65. The CLAIM-level witness scope for the pin-29 mu values: one of the three rests on phase13_lane0_mean.nc, witnessed forward-only",
@@ -72,6 +73,13 @@
   },
   "READ_THIS_FIRST": "A node's caveats are current AS OF ITS OWN WRITING. `amendment_index` below is what tells you whether they still stand — read the manifest first, always (pin 64). Witnessed nodes are never edited to point at what amends them; that is why the index exists (pin 64b).",
   "amendment_index": {
+    "phase14.stage1.tiles.equatorial": [
+      {
+        "amended_by": "phase14.stage1.equatorial_sampler_log_scope",
+        "date": "2026-09-18",
+        "what": "Owner pin 206(a): this row's headroom.sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 resume-only re-score, which appended to the leg's own log files (1,535 sampler lines and 427 heartbeat-log lines, against the leg's 1,533 and 418 — the first 1,533 / 418 lines hash to exactly what headroom_minima_recovered recorded for the leg). Every minimum and the whole heartbeat block are unaffected; sampler_log.n_samples, sampler_log.max_mem_available_mib (10,379 — a re-score sample; the leg's max is 9,953) and the two shas include the re-score. The row is NOT edited (64b, 206b); cite the amending node's leg-only figures for the leg"
+      }
+    ],
     "phase14.stage1.headroom_minima_recovered": [
       {
         "amended_by": "phase14.stage1.headroom_leg1_floor_unrecoverable",
@@ -214,7 +222,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-17T02:13:29.623292+00:00",
+  "generated_utc": "2026-09-18T22:18:41.184392+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -2800,6 +2808,73 @@
         "tile": "equatorial",
         "witness_class": "WITNESSED_AT_CREATION",
         "witness_class_basis": "pin 67 as extended by pin 96(d): the strongest class available, and the first Stage-1 artifact that can claim it because it is being MADE now rather than reconciled after the fact. Pin 96(b): witnessing at T9 would leave the interval from creation open"
+      }
+    },
+    "phase14.stage1.equatorial_sampler_log_scope": {
+      "digest_sha256": "ebc465e9d954919a2329eb8a8ba313d4617ff27ea2baa798c753877259ea3969",
+      "value": {
+        "label": "STAGE1-EVIDENCE",
+        "pin": "206(a) — 202(b) disposed by forward-pointer node; the witnessed row is NOT edited and no supersession is spent (206b)",
+        "date": "2026-09-18",
+        "amends": "phase14.stage1.tiles.equatorial",
+        "kind": "SCOPE QUALIFICATION of a witnessed row's provenance block — a read-only finding, no recorded value is wrong for the file it names",
+        "finding": "the witnessed equatorial row's headroom.sampler_log and headroom.heartbeat_log sha256 values describe the leg PLUS the 2026-09-10T06:05Z resume-only re-score, because that re-score was launched by the same launcher and APPENDED to the leg's own log files (logs/leg_equatorial/leg.log and vmhwm.log). The node headroom_minima_recovered hashed the same files BEFORE the re-score and describes the leg alone",
+        "what_each_record_describes": {
+          "phase14.stage1.headroom_minima_recovered.legs.equatorial": "THE LEG ONLY — 1,533 sampler lines, 418 heartbeat-log lines",
+          "phase14.stage1.tiles.equatorial.headroom.sampler_log / heartbeat_log": "LEG + RE-SCORE — 1,535 sampler lines, 427 heartbeat-log lines"
+        },
+        "truncation_proof": {
+          "method": "sha256 over the current file truncated to its first N lines equals the node's recorded sha; N found by scanning prefixes",
+          "vmhwm.log": {
+            "path": "logs/leg_equatorial/vmhwm.log",
+            "lines_now": 1535,
+            "leg_only_lines": 1533,
+            "sha256_first_1533_lines": "dd036ba99502a3e77d162c9ba08caf19b2f5516b745edceeceafa9eb2ccbe2e9",
+            "equals": "headroom_minima_recovered.legs.equatorial.sampler_log_sha256",
+            "sha256_whole_file": "255ad285517f92e03443410f26e780d2aec12d52877a07cd49b2032f698464a8",
+            "equals_row": "tiles.equatorial.headroom.sampler_log.sha256"
+          },
+          "leg.log": {
+            "path": "logs/leg_equatorial/leg.log",
+            "lines_now": 427,
+            "leg_only_lines": 418,
+            "sha256_first_418_lines": "078e7da7c52488d3e72b5fa7f68c0db42a00f57b8f774940a3a2d8d3c60bca89",
+            "equals": "headroom_minima_recovered.legs.equatorial.source_log_sha256",
+            "sha256_whole_file": "888c5ae0d6dae0970a87c5cd0fb4cf788611195f38529f70c69ee829911ba776",
+            "equals_row": "tiles.equatorial.headroom.heartbeat_log.sha256"
+          },
+          "appended_by_the_rescore": {
+            "vmhwm.log": "2 sampler lines (2026-09-09T23:04:59 and 23:05:59 local; the second carries mem_avail=10379MiB, the row's max)",
+            "leg.log": "9 lines — the re-score's own RESUME / RECORDED ABSENT / lane-0 / WITNESS NOW / recorded lines, 2026-09-10T06:05Z"
+          }
+        },
+        "figures": {
+          "leg_only": {
+            "sampler_n": 1533,
+            "sampler_min_mib": 3601,
+            "sampler_max_mib": 9953,
+            "sampler_first_mib": 9938,
+            "max_proc_vm_swap_mib": 243,
+            "heartbeat_n": 306,
+            "heartbeat_min_mib": 3828,
+            "heartbeat_max_mib": 9051,
+            "in_run_tracker_min_mib": 3468
+          },
+          "row_as_recorded": {
+            "sampler_n": 1535,
+            "sampler_min_mib": 3601,
+            "sampler_max_mib": 10379,
+            "heartbeat_n": 306,
+            "heartbeat_min_mib": 3828,
+            "heartbeat_max_mib": 9051
+          },
+          "unaffected": "every MINIMUM (sampler 3,601; heartbeat 3,828; in-run tracker 3,468) and the WHOLE heartbeat block — the re-score's 9 leg.log lines carry no heartbeat. Only sampler_log.n_samples, sampler_log.max_mem_available_mib and the two shas include the re-score",
+          "cite_for_the_leg": "the leg-only figures above (= headroom_minima_recovered)"
+        },
+        "second_route_of_pin_190": "pin 190 guarded the row's cost FIELDS against a resume-only re-score. The shared log file is the same restatement one layer down: the re-score did not restate wall or peak, it appended to the artifact the row hashes. Both routes are now closed — 190(a)/(b) at 7fa106d for the fields, and 206(c) for the logs: a re-score logs to its own stamped directory (leg_log_dir / `log-dir`), test-pinned so a resumed run writes nothing under the original leg's log path",
+        "why_not_a_supersession": "206(b): the supersession is for a WRONG recorded value. The row's sha is correct for the file it names; what was missing was the SCOPE of what that file contains, and scope is a qualification, which is this node",
+        "why_not_pack_only": "206(b): a qualification that lives only in the pack is prose where a record should be",
+        "witness": "FORWARD-ONLY (pin 60): the witnessed row is NOT edited; the mirror's amendment index points from tiles.equatorial to this node (pin 64, as at 200)"
       }
     },
     "phase14.stage1.gate5": {

@@ -12,6 +12,7 @@ import inspect
 import json
 import os
 import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -5155,3 +5156,113 @@ def test_the_original_run_facts_sidecar_is_read_from_the_leg_directory(
     assert facts is not None
     assert facts["wall_s"] == _ORIGINAL_WALL_S
     assert facts["peak_rss_mib"] == _ORIGINAL_PEAK_MIB
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 206(c) — a re-score logs to its OWN directory.
+#
+# Pin 190 guarded the row's fields against a resume-only re-score. The same
+# restatement arrived one layer down: the equatorial re-score (2026-09-10)
+# was launched by the same launcher and APPENDED to logs/leg_equatorial/, so
+# the row's sampler_log sha described leg + re-score while the recovered
+# minima node described the leg. The log directory must close when the leg
+# does.
+_STAMP = datetime(2026, 9, 10, 6, 5, 37, tzinfo=UTC)
+
+
+def test_a_fresh_or_halted_leg_logs_under_its_own_leg_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No member store means the leg is still solving: logs stay put.
+
+    Bug caught: minting a new directory on every launch, which would
+    fragment a halted-and-resumed leg's logs across attempts and break
+    the one-file sampler the headroom recovery reads (pin 188a).
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+
+    assert _mod.leg_log_dir("equatorial", now=_STAMP) == Path("logs/leg_equatorial")
+
+
+def test_a_resume_only_rescore_writes_NOTHING_under_the_legs_log_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 206(c): the member store exists, so this is a re-score.
+
+    Bug caught: the live one. The launcher's OUT was a constant
+    logs/leg_${TILE}, so the equatorial re-score appended 9 lines to
+    leg.log and 2 samples to vmhwm.log and the witnessed row hashed the
+    grown files (202b).
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    _mod.tile_member_store("equatorial").write_bytes(b"finished store")
+
+    out = _mod.leg_log_dir("equatorial", now=_STAMP)
+
+    leg = Path("logs/leg_equatorial")
+    assert out != leg
+    assert leg not in out.parents, "a re-score must not nest under the leg's path"
+    assert out == Path("logs/leg_equatorial_rescore_20260910T060537Z")
+
+
+def test_two_rescores_get_two_directories(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A second re-score must not append to the first's logs either.
+
+    Bug caught: a stamp coarser than the launch cadence (a date, say)
+    collapsing two re-scores into one directory and recreating the
+    shared-file problem one level down.
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    _mod.tile_member_store("equatorial").write_bytes(b"finished store")
+
+    first = _mod.leg_log_dir("equatorial", now=_STAMP)
+    second = _mod.leg_log_dir("equatorial", now=_STAMP + timedelta(seconds=1))
+
+    assert first != second
+
+
+def test_the_log_dir_command_prints_exactly_the_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The launcher captures stdout into OUT; anything extra breaks it.
+
+    Bug caught: a banner, a warning or a trailing note on stdout being
+    captured into the shell variable, so mkdir creates a directory named
+    after a sentence.
+    """
+    monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
+    _mod.tile_member_store("quiet_gyre").write_bytes(b"finished store")
+    monkeypatch.setattr(
+        _mod, "_utcnow", lambda: datetime(2026, 9, 18, 1, 2, 3, tzinfo=UTC)
+    )
+
+    result = runner.invoke(_mod.app, ["log-dir", "quiet_gyre"])
+
+    assert result.exit_code == 0, result.output
+    assert result.output == "logs/leg_quiet_gyre_rescore_20260918T010203Z\n"
+
+
+def test_the_launcher_takes_its_log_directory_from_log_dir() -> None:
+    """The helper is only a fix if the shell actually calls it.
+
+    Bug caught: the 151(b) family — a correct function in Python and a
+    launcher still assigning OUT="logs/leg_${TILE}" beside it, so every
+    re-score keeps appending to the leg's logs while the tests above
+    stay green.
+    """
+    launcher = (
+        Path(__file__).resolve().parents[1] / "scripts/stage1_leg_launcher.sh"
+    ).read_text()
+
+    assert re.search(r'^OUT="logs/leg_\$\{?TILE\}?"', launcher, re.MULTILINE) is None
+    assert re.search(
+        r'^\s*OUT=\$\(.*phase14_stage1_run\.py log-dir "\$TILE"\)',
+        launcher,
+        re.MULTILINE,
+    ), "the launcher must obtain OUT from `phase14_stage1_run.py log-dir`"
+    # Decided per ATTEMPT, inside the loop: a leg that finishes solving and
+    # then dies in scoring is relaunched as a re-score by the same launcher.
+    loop = launcher.index("while :; do")
+    assert launcher.index('log-dir "$TILE"') > loop
