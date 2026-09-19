@@ -533,24 +533,31 @@
 >    ⛔ **The pack is SUPERSEDED, NOT REWRITTEN, when those land (209c)** — 197(a) applies to
 >    it as to T12's table. The 210–212 corrections are folded in; nothing else is retro-edited.
 >
-> 5. **▶ T6 IS OPEN — ALONE, AND IT REPORTS BEFORE T7 OPENS (pin 213d).** *Three decision
->    packs assembled in parallel is how a reasoning error in one propagates into the others'
->    framing.* T6 is the high-latitude kernel decision pack (options 1–4), and:
->    - **Pin 108 stands unchanged (213a): the anisotropy axis is UNEVIDENCED.** An option
->      resting on directional sampling is **UNSUPPORTED BY STAGE-1 EVIDENCE**, and **if the
->      option set cannot be separated without it, that is a WAIT to the owner — not a
->      decision T6 makes.**
->    - **⛔ 212(b) BINDS HERE: T6 needs pin 39's FULL two-reviewer form** — two reviewers,
->      named attack surfaces authored by the requester, verdict CONFIRMED / OVERTURNED /
->      UNDER-EVIDENCED. The owner-ratification substitution accepted for the four legs
->      (§7 discipline 15) **does NOT extend to decision packs**.
->    - The decision cell stays **EMPTY**: T6 assembles and STOPs. **T6's pack comes to the
->      owner.**
->    Then, in order and not before: **T7** (band provenance pinned to `phase10_lanes`, pin 9;
->    lanes Tier-1-or-WAIT against the LIVE ceiling, 99b — not the dead "no new ceilings"
->    premise), then **T8** (priced from the CONVERGED wall/RAM numbers, never the capped T2
->    probe, basis stated in-row, 99c). Rows 7–9 of the stale-criteria sweep fold as each
->    opens (124c).
+> 5. **⛔ STOP — T6'S PACK IS POSTED AND COMES TO THE OWNER (pins 213d, 212b).**
+>    `scripts/phase14_kernel_pack.py` renders it; `phase14.stage1.kernel_pack` is
+>    recorded and **mirrored (46 nodes)**; **the decision cell is EMPTY**. Review:
+>    `docs/superpowers/2026-09-19-t6-adversarial-reviews.md`.
+>    ⭐ **THE TWO-REVIEWER FORM EARNED ITSELF ON ITS FIRST USE.** Both reviewers
+>    **OVERTURNED** parts of the first draft; the reviews did not tidy the pack, they
+>    **inverted its central cell**. Three findings, each confirmed by RUNNING the code:
+>    - **F-1** — options 2 and 3 are the **same dispatch** (`validation/run.py:41`); the
+>      draft priced one kernel at two cost classes.
+>    - **F-2** — `LatitudeField.at` **clamps to the anchor hull [33, 43]**, so the
+>      multiplier is **CONSTANT over the SO core**. The draft's ±66 BREACH row priced a
+>      `1/cos φ` form the shipped field **cannot express**. **Corrected: no option, as
+>      the code stands, breaches ±66.**
+>    - **F-3** — the obs halo is a **single scalar**; no option can widen zonally and
+>      leave the meridional halo alone. The km-space row spends **0.7179° of 1.0°**.
+>    Plus a typed `-64.0`, a typed live bound, a **dead** `rests_on_directional_sampling`
+>    field, a missing evidence block, and **a vacuous assertion of my own** — instance
+>    (i9)'s shape, written in the session that catalogued (i9).
+>    **⏳ OWNER'S, NOT ACTED ON:** (a) the **posted Gate-1 pack's §1.11 carries +46.0 for
+>    kuroshio; the real obs north edge is +46.2** (margin 19.8°) — `obs_bbox` derives from
+>    the grid-node extent and `np.arange` overshoots at the max end. Same class as pin
+>    210, other side; **209(c) reserves retro-editing to the owner.** (b) **F-2's hull is
+>    a shipped, signed component** — widening it is what electing options 2/3 requires at
+>    this tile: a producer question, not a T6 decision.
+>    **T7 DOES NOT OPEN until the owner reports on T6** (213d).
 
 > ---
 > ## 📦 TRAIL ARCHIVED — `docs/progress-archive/phase14-stage1-trail.md`
