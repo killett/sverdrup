@@ -29,6 +29,7 @@
     "acceptance_artifact_correction": "a standing correction record: which acceptance map was the artifact and how it differed from the true map",
     "phase14.stage1.headroom_minima_recovered": "pin 188(a). The four legs' in-run MemAvailable minima, RECOVERED FROM LOGS because pin 151(b)'s wiring never worked — record_tile_leg takes a `headroom` argument and does not pass it to build_evidence_row, so no tile row has ever carried one. The legs are finished and the logs are gitignored on a single box, so this is the only item in the stage that re-running cannot reproduce. Leg 2's 1382 MiB is the measurement behind pins 151(b), 156(a)(i) and 156(c) and behind the watchdog's floor; witnessing it is the whole point. Recovery is NOT repair — the 151(b) gap stands and is recorded as found",
     "phase14.stage1.band_spectra": "owner pin 201(d). The per-band study/ref and diff/ref tables for all four tiles on the canonical SKILL_BANDS grid (205c), the fine-band track PSDs behind 181(c), and the verification of every figure the rulings quote — recomputed read-only from the PERSISTED maps through the scorer's own path, no solve (201a, pin 114's class). Mirrored because the THREE-CLASS finding rests on these numbers and until this node existed they lived only in prose: the diagnostics printed and exited, so pin 56(c) applied exactly — a re-typeable number in prose is not the record. It carries 205(b)'s finding too: southern's 0.084/0.988 came from an ad-hoc cut no committed code produced. The tables are a MEASUREMENT and belong here; the three-class READING is an interpretation and stays in the pack (197b)",
+    "phase14.stage1.kernel_pack": "T6's high-latitude kernel decision pack (spec 1-4; owner pins 99a, 108, 213a). The f-range and cos-phi arithmetic, the SO tile's recorded anisotropy inputs, the option table, and the +/-66 column computed from the ruled frame — with the DECISION CELL EMPTY, because the election is the owner's at Gate 1. Mirrored because it is the material a gate decision will be made from and it must not be editable after that decision; it carries the three code findings its two-reviewer review produced (owner pin 212b) — options 2 and 3 are one dispatch, the shipped latitude field is hull-clamped to [33,43] and therefore CONSTANT over the SO tile, and the obs halo is a single scalar — each verified by running the code and test-pinned against it. The anisotropy axis is UNEVIDENCED (pin 108a) and the pack says so where the numbers are",
     "phase14.stage1.equatorial_sampler_log_scope": "owner pin 206(a), disposing 202(b). The witnessed equatorial row's sampler_log and heartbeat_log shas describe the leg PLUS the 2026-09-10 re-score, because the re-score appended to the leg's own log files; headroom_minima_recovered hashed the same files before it and describes the leg alone. This node carries the truncation proof (1,533 of 1,535 and 418 of 427 lines reproduce the node's shas), the leg-only figures, and what is and is not affected (every minimum unaffected). Mirrored because it qualifies a WITNESSED row and the row is not edited (206b: the supersession is for a wrong value, and the row's sha is correct for the file it names); registered together with the forward pointer from tiles.equatorial, as at 200. Pin 190's hazard by a second route — both routes now closed (206d)",
     "phase14.stage1.headroom_leg1_floor_unrecoverable": "owner pin 200. It QUALIFIES the node above: leg 1's 3,660 MiB is an UPPER BOUND on its floor, not the floor — leg 1 predates pin 151(b), so only a 5-minute heartbeat existed and a dip between beats is gone for good. Mirrored because the node it amends is witnessed and this one was not: a reader arriving at the witnessed minima could not learn that one of the four numbers is a bound, which is pin 64's failure mode exactly. It also carries an arithmetic correction to the text that ordered it (the supporting gaps are 0/360/74 MiB, median 74 — not the '306-328' that text states, which are heartbeat COUNTS). Registered together with the forward pointer; mirroring it without the pointer would leave it witnessed and still unreachable",
     "phase14.stage1.anchor_gate_artifact_shas": "pin 58(d). Check-1's mean, Gamma and variance routes recorded the comparison OUTCOME but no sha of the artifact compared against, so a later substitution would have re-passed. This node captures those shas. Witnessing it is the whole point — an unwitnessed sha record closes nothing",
@@ -222,7 +223,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-18T22:18:41.184392+00:00",
+  "generated_utc": "2026-09-19T10:14:17.448372+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -3028,6 +3029,159 @@
         "reading": "the launch gate measured a box that did not stay measured: leg 2 cleared at 10771 MiB and reached 1382; leg 4 cleared at 10084 and reached 2762",
         "why_it_matters": "leg 2's 1382 MiB floor is the measurement behind pins 151(b), 156(a)(i) and 156(c), and behind the watchdog's 2048 MiB floor and its swap-onset arm. Losing it would leave the watchdog's calibration unsupported by any record",
         "why_this_exists": "owner pin 188(a). Pin 151(b) specified that each leg's in-run MemAvailable minimum lands in its evidence row. It never did: record_tile_leg accepts a `headroom` argument, documents it as the 151(b) record, and does not pass it to build_evidence_row (phase14_stage1_run.py:5072). No tile row has ever carried it. These minima therefore existed ONLY in gitignored logs on one box, and the legs are finished — they cannot be reproduced by re-running"
+      }
+    },
+    "phase14.stage1.kernel_pack": {
+      "digest_sha256": "4a26ac5dddb08b6cedba99b76264e805386df7e2b9cd346577f5f7f770b25453",
+      "value": {
+        "label": "STAGE1-EVIDENCE",
+        "date": "2026-09-19",
+        "consumer": "T9 / Gate 1 — the owner's kernel election",
+        "pin": "spec 1-4; owner pins 99(a), 108; review pins 10/16",
+        "decision": null,
+        "decided_by": "owner, at Gate 1",
+        "gates": false,
+        "anisotropy_axis": {
+          "status": "UNEVIDENCED at Stage 1 (owner pin 108a)",
+          "cause": "pin 106 — per-direction track diagnostics need ORBIT_GEOMETRY, whose provider is challenge-box scoped; deriving per-tile geometry is a new producer, named Stage-2 work",
+          "may_not_decide": "owner pin 108(b) — the decision may not be made on this axis; an option set that cannot be separated without it is a WAIT to the owner, not a decision T6 makes",
+          "propagation": "owner pin 108(c) — the kernel election drives operative_halo_deg(), which sets the SO obs-frame edge and the ±66 margin (pin 10). An under-evidenced kernel choice becomes a geometry fact"
+        },
+        "code_findings": [
+          {
+            "id": "F-1",
+            "headline": "options 2 and 3 are the SAME shipped code path — the option set is two, not three",
+            "evidence": "`gaussian_kernel_from_params` (src/sverdrup/validation/run.py:41) dispatches ON TYPE: a LatitudeField in EITHER `variance` or `lx_mult` routes `PaciorekGaussianDegrees`; only all-scalar resolution builds the stationary kernel. Confirmed live — both a varied `lx_mult` and a varied `variance` return PaciorekGaussianDegrees. Pinned already at tests/test_oi_dispatch.py:47-77 and test_phase10_lanes.py:89-99",
+            "consequence": "electing \"latitude-varying degree scales\" IS electing the Paciorek kernel, with its Paciorek–Schervish prefactor and its PD argument. They cannot carry different cost classes, and a reader choosing 2 over 3 because its row looked simpler would be choosing the same thing"
+          },
+          {
+            "id": "F-2",
+            "headline": "the shipped latitude-varying vehicle is CONSTANT over the tile this decision is about",
+            "evidence": "`LatitudeField.at` clamps latitude to the anchor-box hull [33, 43] before evaluating (src/sverdrup/core/parameters.py:17, 53 — constant continuation off-box, the PolyCalibration convention). Measured over each diverse tile's core: constant at southern, equatorial and quiet_gyre; varying only at kuroshio, which overlaps the hull",
+            "consequence": "at the SO tile the multiplier m(lat) is a single number — the field's value at the hull's southern edge — so the shipped vehicle delivers NO latitude variation where the high-latitude decision needs it. A 1/cos φ multiplier is not expressible: widening the hull changes a shipped, signed component, which is an owner question and a new-producer question, not a T6 decision"
+          },
+          {
+            "id": "F-3",
+            "headline": "the obs halo is a single SCALAR, applied to both axes",
+            "evidence": "`TileFrame.halo_deg: float` and `obs_bbox` apply the same value to lon and lat (src/sverdrup/application/spatial_tiles.py:62, 101-104); `operative_halo_deg() -> float` (:41-48). There is no per-axis halo anywhere in the tree",
+            "consequence": "no option can widen its ZONAL footprint while leaving the MERIDIONAL halo alone: the scalar halo must cover the wider axis, so any zonal widening moves the SO obs south edge and eats ±66 margin. Every halo row below is computed that way"
+          }
+        ],
+        "arithmetic": {
+          "cos_phi": {
+            "33": 0.838670567945424,
+            "38.1": 0.7869350219613372,
+            "43": 0.7313537016191705,
+            "47": 0.6819983600624985,
+            "54.4": 0.5821229701572913
+          },
+          "aspect": {
+            "38.1": 1.2707529492176177,
+            "47": 1.466279185639625,
+            "54.4": 1.7178500957105285,
+            "62": 2.1300544681895124
+          },
+          "in_box_cos_decrease": 0.12796069210960692,
+          "so_within_tile_cos_decrease": 0.31162361923734183,
+          "abs_f": {
+            "38.1": 8.998974610227707e-05,
+            "55": 0.00011946677244319514,
+            "66": 0.0001332332966335122,
+            "pole": 0.000145842
+          },
+          "f_ratio_55S_over_box": 1.3275598345106587,
+          "measured_grid_aspect": {
+            "value": 1.7178500957106504,
+            "phi0_deg": -54.399999999999864,
+            "one_over_cos_phi0": 1.7178500957105285,
+            "is_a_coordinate_property": true,
+            "pin_108": "the recorded aspect IS 1/cos(phi0) — a coordinate-grid property that perfectly isotropic sampling would also produce. It is NOT measured directional sampling",
+            "cited_from": "phase14.stage1.anisotropy_inputs.southern.2017"
+          },
+          "isotropic_row": {
+            "spec_slope": -4.157496757622111,
+            "note": "the RING spectrum — isotropic BY CONSTRUCTION (pin 108)"
+          },
+          "per_direction_sampling": "NOT AVAILABLE — RECORDED ABSENCE"
+        },
+        "options": [
+          {
+            "name": "1 — km-space kernels",
+            "code": "sverdrup.methods.kernel.Matern32SpaceTime (exists; ONE km length_scale, cos-lat corrected separation — isotropic in km)",
+            "what_changes": "the distance metric becomes physical: separation in km with a cos-lat zonal correction, so one scale means the same distance at every latitude. Parameters move from degrees to km (1° ≈ 111.195 km)",
+            "what_stays_identical": "the solver, the windowing, the blend and the evidence-row schema. ⚠ NOT the obs framing: see the halo row",
+            "anchor_identity": "NOT preserved by construction — a different kernel family AND a different metric from the shipped GaussianSpaceTimeDegrees, so the anchor solve changes and check 1's bit-identity against the phase-13 winner would have to be re-established",
+            "halo_consequence": "the obs halo is a SINGLE SCALAR (finding F-3), so it must cover the wider axis: an isotropic-in-km scale has a degree footprint of 1° meridional × 1.7179° zonal at the SO φ0, so the operative halo is 1.7179°, the SO obs south edge moves and the ±66 margin falls from 1.0000° to 0.2821°. An earlier draft of this row claimed the meridional halo was unaffected; F-3 refutes that — there is no per-axis halo to hold fixed",
+            "cost_class": "MEDIUM — the class exists and is tested; the cost is re-establishing anchor identity, re-tuning scales in km, and a change to operative_halo_deg",
+            "rests_on_directional_sampling": false
+          },
+          {
+            "name": "2 — latitude-varying degree scales",
+            "code": "sverdrup.core.parameters.LatitudeVaryingProvider + LatitudeField → dispatches PaciorekGaussianDegrees. ⛔ SAME CODE PATH AS THE OTHER DEGREE-SPACE OPTION (finding F-1): any LatitudeField in `variance` or `lx_mult` dispatches `PaciorekGaussianDegrees` (validation/run.py:41). Electing either elects this kernel",
+            "what_changes": "the scale becomes L(lat) = L0·exp(l1·v) — ONE multiplier shared by lx and ly (there is no independent ly; a field-valued base is refused outright), so the kernel stays 1:1 in degrees and only its SIZE varies",
+            "what_stays_identical": "the solver and the blend. ⛔ NOT the kernel family or its PD argument — the dispatch routes Paciorek, whose PD rests on the Paciorek–Schervish prefactor",
+            "anchor_identity": "preserved in the constant limit, but the condition is NARROWER than 'constant scales': bit-identity holds at L0 = 1 AND variance = 1 exactly. Off those values the two forms differ at ~1e-16 — enough to move a sha. VERIFIED in session against baseline_kernel; ⚠ pinned by NO test (option 3's citation does not cover this path)",
+            "halo_consequence": "the obs halo is a SINGLE SCALAR (finding F-3), so it must cover the wider axis: the multiplier scales BOTH axes, so any widening moves the meridional halo too. ⛔ And at this tile the shipped field is HULL-CLAMPED (F-2): m is a single constant across the whole SO core, so the vehicle cannot make the halo follow latitude here at all",
+            "cost_class": "MEDIUM-HIGH — the same cost class as option 3, because it is the same kernel (F-1); plus electing a form whose hull would have to be widened to vary at this tile (F-2)",
+            "rests_on_directional_sampling": false
+          },
+          {
+            "name": "3 — Paciorek nonstationary kernel",
+            "code": "sverdrup.methods.kernel.PaciorekGaussianDegrees (exists, PD-proven). ⛔ SAME CODE PATH AS THE OTHER DEGREE-SPACE OPTION (finding F-1): any LatitudeField in `variance` or `lx_mult` dispatches `PaciorekGaussianDegrees` (validation/run.py:41). Electing either elects this kernel",
+            "what_changes": "the kernel becomes nonstationary: L(x) = lx_deg_base · m(lat) with the Paciorek–Schervish normalisation that keeps it PD (a naive L(x) substitution is NOT PD), plus a σ(lat) variance field",
+            "what_stays_identical": "the temporal factor (stationary, spec fork b), the solver and the blend; and in the constant limit the shipped arithmetic exactly",
+            "anchor_identity": "preserved in the constant limit at L0 = 1 AND variance = 1. ⚠ The citation — tests/test_paciorek_kernel.py::test_constant_reduction_identity_full_spacetime — proves KERNEL-MATRIX identity at sampled pairs (it does hold bit-exactly), NOT that the anchor SOLVE stays bit-identical, which is what check 1 compares. The stronger claim is unproven",
+            "halo_consequence": "the obs halo is a SINGLE SCALAR (finding F-3), so it must cover the wider axis: the halo follows L0·m(lat), and at this tile m is hull-clamped to a constant (F-2). A 1/cos φ multiplier — the form that would breach ±66 — is NOT expressible with the shipped field",
+            "cost_class": "MEDIUM-HIGH — PD-proven and shipped, but it adds two fields to elect and to tune, and its constant-limit anchor identity is conditional on L0 = variance = 1",
+            "rests_on_directional_sampling": false
+          }
+        ],
+        "breach_table": {
+          "halo_breach_deg": 2.0,
+          "derivation": "66 + southern.frame.solve_bbox.lat_min",
+          "edge_derivation": "southern.frame.solve_bbox.lat_min − halo",
+          "live_branch": "halo ≤ 2° only — the bound IS the computed threshold above (owner pin 99a collapsed the 'isolated' branch; pin 2 ruled the frame production-representative 2026-07-25). Rows beyond it are priced and flagged, not in scope",
+          "boundary_convention": "breach is STRICT: halo == 2° puts the obs edge at exactly ∓66° and is recorded clear",
+          "rows": [
+            {
+              "label": "current constant halo (operative_halo_deg)",
+              "halo_deg": 1.0,
+              "so_obs_south_edge": -65.0,
+              "margin_deg": 1.0,
+              "breach": false,
+              "expressible_with_shipped_code": "YES — this is the shipped value",
+              "flag": "clear"
+            },
+            {
+              "label": "km-space kernel: scalar halo must cover the ZONAL footprint (1/cos φ0) of an isotropic-in-km scale",
+              "halo_deg": 1.7178500957105285,
+              "so_obs_south_edge": -65.71785009571053,
+              "margin_deg": 0.2821499042894686,
+              "breach": false,
+              "expressible_with_shipped_code": "YES — but only via a change to operative_halo_deg (fork-d pin 4); the kernel itself is shipped",
+              "flag": "clear"
+            },
+            {
+              "label": "degree-space nonstationary, SHIPPED field at the SO tile (m is hull-clamped, hence constant)",
+              "halo_deg": 1.0,
+              "so_obs_south_edge": -65.0,
+              "margin_deg": 1.0,
+              "breach": false,
+              "expressible_with_shipped_code": "YES at m = 1 (l1 = 0). Any other l1 scales this row by a CONSTANT over the whole tile — see finding F-2",
+              "flag": "clear"
+            },
+            {
+              "label": "hypothetical 1/cos φ multiplier at the core's pole edge (62°)",
+              "halo_deg": 2.1300544681895124,
+              "so_obs_south_edge": -66.13005446818951,
+              "margin_deg": -0.13005446818951327,
+              "breach": true,
+              "expressible_with_shipped_code": "NO — NOT EXPRESSIBLE with the shipped LatitudeField (F-2). Priced because the ±66 column asks for it, not because an option offers it",
+              "flag": "±66 BREACH — owner ruling required"
+            }
+          ]
+        },
+        "box_scale_negative": "**the box-scale negative (Phase 10) is NOT cited as transferring** to the tile scale this decision is about (standing discipline 7)"
       }
     },
     "phase14.stage1.projection_declarations": {

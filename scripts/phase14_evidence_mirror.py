@@ -136,6 +136,21 @@ MIRRORED: dict[str, str] = {
         "tables are a MEASUREMENT and belong here; the three-class READING is "
         "an interpretation and stays in the pack (197b)"
     ),
+    # ---- T6 (owner pins 213/212b): the kernel DECISION pack, decision EMPTY ----
+    "phase14.stage1.kernel_pack": (
+        "T6's high-latitude kernel decision pack (spec 1-4; owner pins 99a, 108, "
+        "213a). The f-range and cos-phi arithmetic, the SO tile's recorded "
+        "anisotropy inputs, the option table, and the +/-66 column computed from "
+        "the ruled frame — with the DECISION CELL EMPTY, because the election is "
+        "the owner's at Gate 1. Mirrored because it is the material a gate "
+        "decision will be made from and it must not be editable after that "
+        "decision; it carries the three code findings its two-reviewer review "
+        "produced (owner pin 212b) — options 2 and 3 are one dispatch, the "
+        "shipped latitude field is hull-clamped to [33,43] and therefore CONSTANT "
+        "over the SO tile, and the obs halo is a single scalar — each verified by "
+        "running the code and test-pinned against it. The anisotropy axis is "
+        "UNEVIDENCED (pin 108a) and the pack says so where the numbers are"
+    ),
     # ---- pin 206(a): the scope of a witnessed row's log shas, made reachable ----
     "phase14.stage1.equatorial_sampler_log_scope": (
         "owner pin 206(a), disposing 202(b). The witnessed equatorial row's "
