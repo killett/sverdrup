@@ -83,7 +83,7 @@
 > - ✅ **PINS 194–195 LANDED VERBATIM as ruling doc PART 46; PIN 196 as PART 47; PIN 197 as
 >   PART 48; PINS 199–205 as PART 49.**
 >
-> ## ⛔ T9 IS BLOCKED ON 202(b) — A WITNESSED ROW DESCRIBES A RE-SCORE (2026-09-16)
+> ## ✅ 202(b) DISPOSED (pin 206, `2530bb2`) — forward-pointer node `equatorial_sampler_log_scope`; row untouched; re-scores now log to their own directory. THE BLOCK BELOW IS THE FINDING AS ESTABLISHED (2026-09-16)
 >
 > **Established exactly, not inferred.** The equatorial re-score (2026-09-10T06:05Z) wrote
 > into **the leg's own log files**, `logs/leg_equatorial/{leg,vmhwm}.log`. The node
@@ -519,17 +519,18 @@
 >    is **CONSISTENT WITH** a reference offset; per-segment detrending removes constants
 >    before the verdict. **Consistent, NOT established** — the same discipline that held on
 >    the geostrophic account until quiet gyre refuted it.
-> 4. **T6 / T7 / T8 → T9.** Still unopened. **T9 is the owner's walk.**
->    📄 **Material for that walk is assembled at
->    `docs/validation/phase14-stage1-assembled-view.md`** (owner pin 198) — the four rows
->    side by side, the absences with their full evidence, the instrument-row absences and
->    wedge-exclusion status, and every row-borne caveat, in one place.
->    ⛔ **It is NOT the pack, not written as the pack, and not an evidence node (197b);
->    opening it is not opening T9.** Its §8 lists the ten things it expected and could not
->    find; **all ten are now disposed under pins 199–205** (§8 records how).
->    ⛔ **T9 IS BLOCKED ON 202(b)** — the equatorial row's `sampler_log` block describes
->    leg + re-score (see the block near the top). **Next action is the owner's ruling on
->    its remedy.** T9 opens on the owner's word, not before.
+> 4. **⛔ STOP — T9 IS POSTED (owner pin 208, 2026-09-18). GATE 1 IS THE OWNER'S WALK.**
+>    The pack is `docs/superpowers/2026-09-18-phase14-gate1-pack.md`: owner items first,
+>    the transfer-readings section **assembled from row fields** (`render-transfer-readings`,
+>    no free-text parameter; count pinned to four against the store), the **absence check
+>    PASS over the rendered file**, the sweep with every skip named, mirror + seal checks,
+>    per-leg ratifications. **It presents Stage 1; it does not close it** — C-11 is
+>    OUTSTANDING and task 23 is its producer, behind the gate.
+>    **Next action is the owner's:** walk the pack; rule the election (item 7 — a decline
+>    is an outcome); open T6/T7/T8 on your word. Nothing seals; `refresh_election`
+>    PENDING; tasks 18–20 halted (pin 88).
+>    ⚠ Stated in the pack, for the walk: **no two-reviewer dual-review document exists for
+>    the four Stage-1 legs**; the AC is met in the owner-ratification form only.
 >
 > ---
 > ## 📦 TRAIL ARCHIVED — `docs/progress-archive/phase14-stage1-trail.md`

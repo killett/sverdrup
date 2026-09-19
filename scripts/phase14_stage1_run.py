@@ -5296,6 +5296,215 @@ def record_tile_leg(
 
 
 # ---------------------------------------------------------------------------
+# T9 — the Gate-1 pack's transfer-readings section, ASSEMBLED from recorded
+# row fields (review pin 17). The assembler has no free-text parameter: the
+# only way a sentence reaches this section is as a row field or as one of the
+# pinned constants below, each of which cites its ruling. The rendered section
+# is wrapped in markers and scripts/phase14_pack_absence_check.py scans exactly
+# that span before the pack posts (owner pin 208a).
+#
+# Owner pin 97(a): FOUR readings, one per diverse tile — seam_n/seam_s carry no
+# scores, no reference_row and no bridge_caveat (solve records, not readings),
+# and the anchor is the identity subject. The count is pinned against the
+# store: a store with any other set of scored diverse tiles is REFUSED.
+TRANSFER_TILES: tuple[str, ...] = ("kuroshio", "southern", "equatorial", "quiet_gyre")
+TRANSFER_BEGIN = "<!-- TRANSFER-READINGS: BEGIN -->"
+TRANSFER_END = "<!-- TRANSFER-READINGS: END -->"
+# Owner pin 199(b): a stale number beside live ones in the same column must
+# say so, or the next reader computes 1.34x and re-raises a closed question.
+PEAK_RSS_LABELS: dict[str, str] = {
+    "kuroshio": (
+        "PRE-133 — recorded before pin 133's retention fix (4,259 + 8 x 391.2 = "
+        "7,389 reproduces it from the retention slope); NOT comparable to the "
+        "post-fix legs (owner pin 199b)"
+    ),
+}
+# Owner pin 106(c)/(e): the composition statement lives where the reader meets
+# the numbers. Built from the tile's recorded absence rows; the fixed words
+# are the ruling's own.
+COMPOSITION_INCOMPLETE = (
+    "INCOMPLETE — the instrument composition policy (b) pins is NOT satisfied at "
+    "this tile (owner pin 106c). A REAL WEAKENING of the deliverable, accepted "
+    "because absence honestly recorded beats geometry that does not belong to the "
+    "tile, not because the gap is small (106e)."
+)
+HEADROOM_RECORD_NODE = "phase14.stage1.headroom_minima_recovered"
+
+
+def _fmt(value: object, digits: int = 6) -> str:
+    """Render a number for the pack without inventing precision.
+
+    Args:
+        value: A float, int, None or anything else the row may carry.
+        digits: Decimals for floats.
+
+    Returns:
+        The rendered value; ``None`` renders as ``null`` (never as 0).
+    """
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, int):
+        return f"{value:,}"
+    if isinstance(value, float):
+        return f"{value:.{digits}f}"
+    return str(value)
+
+
+def _lambda_x_cell(scores: dict[str, Any]) -> str:
+    """λx as a reading or as a RECORDED ABSENCE with its evidence — never a zero.
+
+    Args:
+        scores: The row's ``scores`` block.
+
+    Returns:
+        The table cell.
+    """
+    block = scores["lambda_x"]
+    if block.get("value") is not None:
+        return f"**{_fmt(block['value'], 4)} km**"
+    ev = block.get("absence", {}).get("evidence", {})
+    band = ev.get("wavelength_km", {})
+    return (
+        "**RECORDED ABSENT** (`recorded_absent: true`, pins 160a/161 — the map "
+        "resolves no scale; not a scoring failure and not a value of zero): "
+        f"coherence max {_fmt(ev.get('coherence_max'), 7)}, min "
+        f"{_fmt(ev.get('coherence_min'), 6)}; `psd_diff_over_ref_median` "
+        f"{_fmt(ev.get('psd_diff_over_ref_median'), 7)}; n_wavenumbers "
+        f"{_fmt(ev.get('n_wavenumbers'))}; band {_fmt(band.get('min'), 2)}–"
+        f"{_fmt(band.get('max'), 2)} km"
+    )
+
+
+def _composition_lines(tile: str, stage1: dict[str, Any]) -> list[str]:
+    """The 106(c) statement for one tile, from its recorded absence rows.
+
+    Args:
+        tile: Registry tile name.
+        stage1: The ``phase14.stage1`` node.
+
+    Returns:
+        Markdown lines.
+    """
+    block = stage1.get(STAGE1_REPORT_ROWS_NODE, {}).get(tile, {}).get(STAGE1_ERA)
+    if not block:
+        return [
+            f"**Instrument composition (`report_rows.{tile}.{STAGE1_ERA}`):** "
+            "no report_rows recorded for this tile."
+        ]
+    absences = block.get("recorded_absences", [])
+    absent = "; ".join(
+        f"`{a.get('evaluator')}` ABSENT (missing {', '.join(a.get('missing_context', []))})"
+        for a in absences
+    )
+    wedge = block.get("wedge_exclusion_status", {}).get("kind", "not recorded")
+    return [
+        f"**Instrument composition (`report_rows.{tile}.{STAGE1_ERA}`): "
+        f"{COMPOSITION_INCOMPLETE}** Recorded absences: {absent or 'none'}. "
+        f"Wedge exclusion: {wedge}."
+    ]
+
+
+def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
+    """The pack's transfer-readings section, from recorded row fields only.
+
+    Args:
+        evidence_path: The evidence store.
+
+    Returns:
+        Markdown between :data:`TRANSFER_BEGIN` and :data:`TRANSFER_END`.
+
+    Raises:
+        RuntimeError: The store's set of scored diverse tiles is not exactly
+            :data:`TRANSFER_TILES` (owner pin 97a — the count must not drift).
+    """
+    doc = json.loads(evidence_path.read_text())
+    stage1 = doc.get("phase14", {}).get("stage1", {})
+    tiles = stage1.get("tiles", {})
+    scored = {
+        t for t, row in tiles.items() if isinstance(row, dict) and "scores" in row
+    }
+    if scored != set(TRANSFER_TILES):
+        raise RuntimeError(
+            "owner pin 97(a): the pack carries FOUR transfer readings, one per "
+            f"diverse tile {sorted(TRANSFER_TILES)}; the store's scored tiles are "
+            f"{sorted(scored)} — missing {sorted(set(TRANSFER_TILES) - scored)}, "
+            f"unexpected {sorted(scored - set(TRANSFER_TILES))}. Refusing to render."
+        )
+    out = [TRANSFER_BEGIN, ""]
+    for tile in TRANSFER_TILES:
+        row = tiles[tile]
+        sc = row["scores"]
+        frame = row.get("frame", {})
+        plan = row.get("window_plan", {})
+        pcg = row.get("pcg", [])
+        worst = max((int(leg.get("iterations", 0)) for leg in pcg), default=0)
+        hours = float(row["wall_s"]) / 3600.0
+        peak = _fmt(row["peak_rss_mib"], 2)
+        if tile in PEAK_RSS_LABELS:
+            peak = f"{peak} — **{PEAK_RSS_LABELS[tile]}**"
+        headroom = row.get("headroom")
+        headroom_cell = (
+            f"present — `min_mem_available_mib` {_fmt(headroom.get('min_mem_available_mib'))}"
+            f"{' (' + str(headroom.get('status')) + ')' if headroom.get('status') else ''}"
+            if isinstance(headroom, dict)
+            else f"no `headroom` key — the record is `{HEADROOM_RECORD_NODE}`"
+        )
+        identity = sc.get("s_star_chi2_identity", {})
+        ref = row.get("reference_row") or {}
+        cov = sc.get("coverage_1sigma", {})
+        chi2 = sc.get("chi2_j3_validation", {})
+        out += [
+            f"### {tile} — recorded {row.get('date')} (`phase14.stage1.tiles.{tile}`, "
+            f"source `{row.get('source')}`)",
+            "",
+            "| field | value |",
+            "|---|---|",
+            f"| `frame.core` [lon0, lon1, lat0, lat1] | {frame.get('core')} |",
+            f"| `n_obs` / `m` / windows | {_fmt(row.get('n_obs'))} / {_fmt(row.get('m'))} / "
+            f"{_fmt(plan.get('n_windows'))} x {_fmt(plan.get('w_days'), 1)} d |",
+            f"| `scores.lambda_x` | {_lambda_x_cell(sc)} |",
+            f"| `scores.mu.value` [m] | {_fmt(sc['mu']['value'], 8)} |",
+            f"| `scores.sigma.value` [m] | {_fmt(sc['sigma']['value'], 8)} |",
+            f"| `scores.coverage_1sigma.value` (n) | {_fmt(cov.get('value'), 8)} "
+            f"({_fmt(cov.get('n'))}) |",
+            f"| `scores.chi2_j3_validation.value` — `gates: {_fmt(chi2.get('gates'))}`; "
+            f"`scores.reduced_chi2` = {_fmt(sc.get('reduced_chi2'))} | "
+            f"{_fmt(chi2.get('value'), 4)} |",
+            f"| `scores.n_scored_points` | {_fmt(sc.get('n_scored_points'))} |",
+            f"| `scores.raw_sigma.value` — {sc['raw_sigma'].get('label')} | "
+            f"{_fmt(sc['raw_sigma']['value'], 8)} |",
+            f"| `scores.scalar_s_star.value` — {sc['scalar_s_star'].get('label')}; "
+            f"`s_star_chi2_identity.same_by_construction` = "
+            f"{_fmt(identity.get('same_by_construction'))} | "
+            f"{_fmt(sc['scalar_s_star']['value'], 4)} |",
+            f"| `reference_row` | {ref.get('kind')} — {ref.get('label')} |",
+            f"| `convergence` / `scores.capped_measurement` / PCG worst iterations | "
+            f"{row.get('convergence')} / {_fmt(sc.get('capped_measurement'))} / {worst} |",
+            f"| `wall_s` | {_fmt(row['wall_s'], 2)} s ({hours:.2f} h) |",
+            f"| `peak_rss_mib` | {peak} |",
+            f"| `headroom` | {headroom_cell} |",
+            f"| `scores.track.sha256` | `{sc.get('track', {}).get('sha256')}` |",
+            "",
+            f"**`bridge_caveat` (verbatim):** {row.get('bridge_caveat')}",
+            "",
+            f"**`sigma_caveat` (verbatim):** {row.get('sigma_caveat')}",
+            "",
+            *_composition_lines(tile, stage1),
+            "",
+        ]
+    out.append(TRANSFER_END)
+    return "\n".join(out) + "\n"
+
+
+@app.command("render-transfer-readings")
+def render_transfer_readings_cmd() -> None:
+    """Print the pack's transfer-readings section — the whole output, nothing else."""
+    typer.echo(render_transfer_readings(evidence_path=EVIDENCE), nl=False)
+
+
+# ---------------------------------------------------------------------------
 # T5d part A — the equatorial lane-0 persistence bundle (fork-b pins 1/2).
 #
 # Fork-B.1: the Stage-1 run persists everything the eventual wave-increment

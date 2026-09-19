@@ -5266,3 +5266,224 @@ def test_the_launcher_takes_its_log_directory_from_log_dir() -> None:
     # then dies in scoring is relaunched as a re-score by the same launcher.
     loop = launcher.index("while :; do")
     assert launcher.index('log-dir "$TILE"') > loop
+
+
+# ---------------------------------------------------------------------------
+# T9 — the transfer-readings section of the Gate-1 pack is ASSEMBLED from
+# recorded row fields (review pin 17): the assembler has no free-text
+# parameter, the count is pinned against the store (owner pin 97a), and the
+# rendered section is what the absence check runs over.
+_BANNED_IN_TRANSFER_SECTION = ("suggests", "consistent with", "attributable", "implies")
+
+
+def _transfer_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A store with the four diverse rows, two seam SOLVE records, and report rows."""
+    from sverdrup.validation import phase14_seal
+
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    evid = tmp_path / "evidence.json"
+    evid.write_text(json.dumps({"phase13": {"kept": True}}))
+    for tile in ("kuroshio", "southern", "equatorial", "quiet_gyre"):
+        kwargs = _row_kwargs(tile)
+        if tile in ("equatorial", "quiet_gyre"):
+            kwargs["scores"] = _mod.build_scores_block(
+                **{**_SCORE_KWARGS, "lambda_x": None},
+                lambda_x_absence={
+                    "reason": "UnresolvedScaleError",
+                    "message": "map resolves no scale; λx undefined",
+                    "evidence": {
+                        "coherence_max": 0.0030273113,
+                        "coherence_min": -4.169037852,
+                        "psd_diff_over_ref_median": 1.0004655677,
+                        "n_wavenumbers": 79,
+                        "wavelength_km": {"min": 12.773636, "max": 996.343608},
+                    },
+                },
+            )
+        else:
+            kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+        _mod.record_tile_leg(evidence_path=evid, **kwargs)
+    doc = json.loads(evid.read_text())
+    stage1 = doc["phase14"]["stage1"]
+    # Seam SOLVE records: no scores, no reference_row, no bridge_caveat (pin 97a).
+    stage1["tiles"]["seam_n"] = {
+        "tile": "seam_n",
+        "label": "SOLVE RECORD",
+        "wall_s": 1.0,
+    }
+    stage1["tiles"]["seam_s"] = {
+        "tile": "seam_s",
+        "label": "SOLVE RECORD",
+        "wall_s": 1.0,
+    }
+    stage1["report_rows"] = {
+        tile: {
+            "2017": {
+                "recorded_absences": [
+                    {"evaluator": "groundtrack", "missing_context": ["ORBIT_GEOMETRY"]},
+                    {
+                        "evaluator": "insitu_gauges",
+                        "missing_context": ["INSITU_GAUGES"],
+                    },
+                ],
+                "wedge_exclusion_status": {"kind": "DESIGN CONFLICT (pin 106)"},
+            }
+        }
+        for tile in ("kuroshio", "southern", "equatorial")
+        # quiet_gyre deliberately has NO report block: the renderer must say so.
+    }
+    evid.write_text(json.dumps(doc))
+    return evid
+
+
+def test_transfer_readings_count_is_pinned_to_the_STORE_not_a_constant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 97a: four readings, one per diverse tile, from the store.
+
+    Bug caught: "six transfer readings" drifting back — seam_n/seam_s are
+    solve records (no `scores`, no `reference_row`, no `bridge_caveat`)
+    and must not be counted; the anchor is the identity subject.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid)
+
+    headings = re.findall(r"^### .*", text, re.MULTILINE)
+    assert len(headings) == 4
+    assert [h.split()[1] for h in headings] == list(_mod.TRANSFER_TILES)
+    # (the sigma_caveat legitimately NAMES seam_n/seam_s; no reading is rendered for them)
+    assert re.search(r"^### seam_", text, re.MULTILINE) is None
+    assert set(_mod.TRANSFER_TILES) == {
+        t for t, spec in _mod.TILES.items() if spec["source"] == "cmems_my"
+    }
+    # And a store missing one of the four must REFUSE rather than render three.
+    doc = json.loads(evid.read_text())
+    del doc["phase14"]["stage1"]["tiles"]["quiet_gyre"]
+    evid.write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match="quiet_gyre"):
+        _mod.render_transfer_readings(evidence_path=evid)
+
+
+def test_the_assembler_has_NO_free_text_parameter() -> None:
+    """Review pin 17: withholding is structural, not a habit.
+
+    Bug caught: an `extra=`/`note=` parameter appearing on the renderer,
+    which is the one door through which interpretation could re-enter the
+    section the absence check guards.
+    """
+    params = inspect.signature(_mod.render_transfer_readings).parameters
+    assert set(params) == {"evidence_path"}
+
+
+def test_the_rendered_section_is_wrapped_in_the_markers_the_check_scans(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The absence check is only as good as its scope.
+
+    Bug caught: markers missing or misspelt, so the check silently scans
+    an empty section and reports PASS over nothing.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid)
+
+    lines = text.strip().splitlines()
+    assert lines[0] == _mod.TRANSFER_BEGIN
+    assert lines[-1] == _mod.TRANSFER_END
+
+
+def test_an_absent_lambda_x_renders_as_RECORDED_ABSENT_with_its_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pins 160a/161: an absence is a reading, and never a zero.
+
+    Bug caught: `None` formatted as 0, blank, or "nan" — a zero would
+    claim the map resolves every scale, the inverse of what was measured.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid)
+    section = text.split("### equatorial")[1].split("### quiet_gyre")[0]
+
+    assert "RECORDED ABSENT" in section
+    assert "0.0030273" in section and "1.0004656" in section and "79" in section
+    assert re.search(r"λx[^\n]*\b0\.0\b", section) is None
+    kuroshio = text.split("### kuroshio")[1].split("### southern")[0]
+    assert "141.5" in kuroshio and "RECORDED ABSENT" not in kuroshio
+
+
+def test_kuroshios_peak_rss_carries_the_PRE_133_label_and_no_other_tile_does(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 199(b): a stale number beside live ones must say so.
+
+    Bug caught: the label omitted (a reader computes 1.34x again) or
+    applied to every tile (the post-fix peaks read as suspect too).
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid)
+
+    per_tile = re.split(r"^### ", text, flags=re.MULTILINE)[1:]
+    labelled = [t.split()[0] for t in per_tile if "PRE-133" in t]
+    assert labelled == ["kuroshio"]
+
+
+def test_the_rendered_section_contains_none_of_the_banned_words(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review pin 17 / 208(a): the readout has not ruled, so no interpretation.
+
+    Bug caught: a row-borne caveat or a fixed sentence in the renderer
+    carrying one of the words the absence check bans — the check would
+    then fail on the assembler's own output, or worse, the words would
+    ship if the check were skipped.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid).lower()
+
+    assert _mod.BRIDGE_CAVEAT in _mod.render_transfer_readings(evidence_path=evid)
+    for word in _BANNED_IN_TRANSFER_SECTION:
+        assert re.search(rf"\b{re.escape(word)}\b", text) is None, word
+
+
+def test_composition_INCOMPLETE_is_stated_beside_the_numbers_from_the_absence_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 106(c): where a reader meets the numbers, not in a row they never open.
+
+    Bug caught: four readings presented as though the instrument
+    composition were satisfied; or a tile with no report block rendered
+    as complete by omission.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+
+    text = _mod.render_transfer_readings(evidence_path=evid)
+    kuroshio = text.split("### kuroshio")[1].split("### southern")[0]
+    quiet = text.split("### quiet_gyre")[1]
+
+    assert "INCOMPLETE" in kuroshio
+    assert "groundtrack" in kuroshio and "ORBIT_GEOMETRY" in kuroshio
+    assert "DESIGN CONFLICT (pin 106)" in kuroshio
+    assert "no report_rows recorded" in quiet
+    # No absence rows were recorded for quiet_gyre, so none may be invented.
+    assert "groundtrack" not in quiet
+
+
+def test_the_render_command_prints_the_same_section(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The pack is spliced from the command's stdout.
+
+    Bug caught: the CLI wrapping the function with a banner or a summary
+    line, which would land inside the pack between the markers.
+    """
+    evid = _transfer_store(tmp_path, monkeypatch)
+    monkeypatch.setattr(_mod, "EVIDENCE", evid)
+
+    result = runner.invoke(_mod.app, ["render-transfer-readings"])
+
+    assert result.exit_code == 0, result.output
+    assert result.output == _mod.render_transfer_readings(evidence_path=evid)
