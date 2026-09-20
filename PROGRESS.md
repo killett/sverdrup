@@ -2,6 +2,12 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
+> T8 OPEN (OSSE pricing). Deliverable is a STANDALONE doc + witnessed node (pin 232) — the
+> posted Gate-1 pack is NOT retro-edited (209c). N_epoch-classes = 15, DERIVED from the sealed
+> epoch table, all distinct so no deduplication exists (pin 234). Truth-field cost is part of
+> the price, not an omission (234e). Pin 212(b)'s review binds with surfaces at 235. Decision
+> cell stays EMPTY — the OSSE run decision is the owner's. Next stop: the price table.
+>
 > T7 CLOSED as a ruled WAIT (pins 224/230). The refusal is IN THE EVIDENCE STORE at
 > phase14.stage1.revisit.<tile>, witnessed — four rows carrying the sizing, the per-lane RUN
 > verdicts, the refused aggregate (68 solves / 69.9 days; 252 / 259.1 on the screening path),
@@ -27,6 +33,13 @@
 > a machine-readable `userGate` fence, not prose. ⚠ But the blocker hook guards only
 > `in_progress` and reads the TRANSCRIPT, not `.tasks.json`, so the edge is **declarative,
 > not enforced** (pins 221d/229) — ratified as a plugin change, outside this repo.
+>
+> ✅ **SWEEP ROWS 7-9 ARE NOW ALL FOLDED** (pins 227/233). Row 9 folded at task 8 with its
+> Files/Verify/verifyCommand retargeted off the posted pack. ⚠ **Row 7 was NOT folded when
+> 233 was written** — task 6 still carried *'RULED BUT UNFOLDED ... inside a task that has
+> not opened'* **after T6 had opened, delivered and closed**. The ruling was never lost (pin
+> 108 is in `phase14_kernel_pack.py` and the witnessed node); **only the header was stale**,
+> the same laxer-copy defect. Header corrected; **T6's status and ruling untouched**.
 >
 > **Everything below this block is TRAIL.** Owner pin 154: rewrite what went stale rather
 > than layering over it.

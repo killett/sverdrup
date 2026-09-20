@@ -3966,3 +3966,87 @@ clause reads *"real rows present for all four tiles OR WAIT rows with sizing num
 the second branch is what was satisfied. **No lane, no anchor and no leg ran** (224d).
 Reopening T7 would re-propose a spend already refused; the two continuations are **Stage
 2's** — the anchors-only entry point, and whatever Stage 2 rules about the Sobol search.
+
+---
+
+## PART 54 — T8 OPENED AS PRICING WORK; ITS DELIVERABLE REHOMED; SWEEP ROW 9 FOLDED (verbatim), pins 232–235, 2026-09-19
+
+**Landed verbatim under pin 40/41/48.**
+
+> **232. T8's DELIVERABLE HOME — standalone document + witnessed node, the T6/T7 shape.**
+> (a) You are right that its AC points at a door 209(c) closed. Write
+> docs/superpowers/<date>-phase14-t8-osse-pricing.md plus a witnessed node
+> phase14.stage1.osse_pricing. A successor pack cites them; the posted pack is not
+> touched.
+> (b) Fold T8's Files/Verify/verifyCommand to match — the grep against the posted pack
+> must go, or it becomes an instruction to retro-edit.
+> (c) Same precedent as T6's pack and T7's WAIT rows: the artifact is the deliverable and
+> the store carries the numbers.
+>
+> **233. SWEEP ROW 9 — FOLD IT, same fix as 227.** The tracker's T8 body still carries the dead
+> "Task 2/5 actuals … Tier 1, no cloud" with 99(c) only as a header note, and the tracker
+> is the laxer copy. Rewrite the clause in .tasks.json, do not layer (pin 154). This is
+> the second instance; after it, sweep rows 7-9 are all folded.
+>
+> **234. N_EPOCH-CLASSES IS 15, DERIVED** — not invented and not left open.
+> (a) Verified against sealed/phase14_evaluation_seal_v1.json: 15 epochs, 15 distinct
+> mission sets, still 15 distinct after removing locked c2/c2n. Derive it in the
+> producer from the sealed table rather than typing 15, so it recomputes.
+> (b) RECORD THAT NO DEDUPLICATION EXISTS. Every epoch's constellation is unique, so the
+> price has no cheap reduction available. That is a real property of the census and a
+> reader will otherwise assume one.
+> (c) PRESENT THE UNIT COST AND THE FULL PRICE: one class = one tile-solve, 15 classes =
+> the full sweep, with the tile named and its measured wall stated in-row (they range
+> 19.67-27.48 h, so "a tile solve" is not one number).
+> (d) NAME SUBSETS AS SCOPE OPTIONS WITH THEIR LIMITS, in 225(b)'s form — e.g. reference
+> epochs only, or post-±66-lift only — each with what it can and cannot establish.
+> Do not elect one; that is the owner's at the decision cell.
+> (e) ⛔ THE TRUTH-FIELD COST IS PART OF THE PRICE. The spec records GLORYS12/LLC4320-class
+> truth fields as heavy downloads, and this box's network is allowlisted. If the
+> download cost or feasibility cannot be measured, say so as an open input — do not
+> omit it and do not estimate it.
+>
+> **235. PIN 212(b) BINDS T8, narrowly.** It is a decision pack with an empty cell. Attack
+> surfaces, authored here:
+> (a) BASIS PURITY: every figure traces to a CONVERGED measurement, and nothing traces to
+> the capped T2 probe (99c). The reviewer should try to find one that does.
+> (b) OMITTED COST: does the price cover truth-field generation/download, or only the
+> re-solves? An OSSE priced at re-solves alone understates it, and that is the most
+> likely error in the document.
+> (c) THE VALUE-CASE STRING: verbatim from the spec, and does it overstate? "The only
+> ground-truth test of the era-transfer claim" must be checked against what fork-e
+> level 1 already validates against fitted s.
+> (d) WHICH TILE: the price must name the tile whose wall it uses and state the 19.67-27.48
+> h spread, not collapse to a single "tile solve."
+> (e) VACUITY: can the empty decision cell be read as "not priced" rather than "priced,
+> owner to decide"? If so the document has failed its purpose.
+> Verdict as CONFIRMED / OVERTURNED / UNDER-EVIDENCED with the settling measurement named.
+
+### What the fold changed, and one correction to 233's closing sentence
+
+**Sweep row 9 is folded at task 8.** The dead clause — *"tile solve wall from Task 2/5
+actuals … a table in compute-hours on Tier 1, no cloud"* — is **rewritten, not layered**
+(pin 154); the only surviving occurrence is the quotation that marks it dead. Pin 99(c)'s
+basis now sits **in the ACs** rather than in a header above them.
+
+**232(b) is applied: the retro-edit instruction is gone.** T8's `verifyCommand` was
+`rg 'OSSE' docs/superpowers/2026-*phase14-gate1-pack.md` — a grep against the **posted**
+pack, which 209(c) freezes. Left in place it would have read as an instruction to write into
+it. Files, Verify and `verifyCommand` now name the standalone document, the witnessed node,
+and a mirror `check`; **and the Verify line requires confirming the posted pack is
+UNCHANGED.**
+
+⚠ **ONE CORRECTION TO 233, ON THE FACTS.** 233 closes *"this is the second instance; after
+it, sweep rows 7-9 are all folded."* **Row 7 was NOT folded when that was written.** Task 6
+still carried the full *"RULED BUT UNFOLDED … inside a task that has not opened"* header —
+**after T6 had opened, delivered and closed.** The header outlived the task it described.
+
+**The ruling was never lost; only the header was stale.** Verified by file content, not by
+history: pin 108 is stated in `scripts/phase14_kernel_pack.py` (*"the anisotropy axis is
+UNEVIDENCED … never 'limited', which would invite a reader to weigh it"*) and carried in the
+witnessed node `phase14.stage1.kernel_pack`, which refuses a pack whose
+`anisotropy_inputs.southern` lacks `grid_anisotropy`. So this is the **third** instance of
+the laxer-copy defect, not the second — and the one where the stale header survived the
+task's own completion. Header corrected, with row 7's ruling (99a + 108) retained in place
+as the record. **T6's status and ruling are untouched and `operative_halo_deg()` is
+untouched.** With that, **sweep rows 7-9 are all folded in fact as well as in claim.**
