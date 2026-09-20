@@ -147,3 +147,45 @@ def test_the_frame_discipline_records_that_the_surfaces_were_confirmed() -> None
     assert "All five were confirmed." in text
     assert "the requester is the one who chose the frame" in text
     assert "OWNER's** blind spot" in text
+
+
+def test_unit_of_account_instance_tags_are_contiguous_and_unique() -> None:
+    """Discipline 18's (uN) tags run u1..uN with no gaps or repeats.
+
+    Bug caught: the drift pin 146(b) corrected, arriving on the newest
+    list. Owner pin 248 asked for the instances tagged and the count
+    derived, so the tags are the count here too.
+    """
+    numbers = _tagged(_discipline("18. **A price is stated in a UNIT"), "u")
+
+    assert numbers, "discipline 18 carries no instance tags"
+    assert len(set(numbers)) == len(numbers), f"duplicate tags: {numbers}"
+    assert numbers == list(range(1, len(numbers) + 1)), f"gap in tags: {numbers}"
+
+
+def test_the_unit_discipline_keeps_the_owner_authored_instance() -> None:
+    """(u3) is present and is marked as the owner's own.
+
+    Bug caught: recording only the executor's two instances. Pin 248 is
+    explicit that the owner's ratification is one of the three and is
+    tagged as the owner's — a list that quietly drops it would teach the
+    wrong lesson about where this failure comes from.
+    """
+    text = _discipline("18. **A price is stated in a UNIT")
+    assert "owner-authored, pin 244" in text
+    assert "only point at which the two" in text
+    assert "not 'check the arithmetic'" in text
+
+
+def test_the_withdrawn_ordering_claim_is_not_asserted_in_section_7() -> None:
+    """Discipline 17 no longer repeats the false "every exponent" claim.
+
+    Bug caught (owner pin 244b): the withdrawn claim surviving in §7 after
+    being struck from the document and the node. §7 is the standing list a
+    future reader consults, so a claim left live here outlives its
+    withdrawal everywhere else.
+    """
+    text = _discipline("17. **Under pin 212(b)")
+    assert "dearer at every exponent above zero" not in text
+    assert "ITSELF WITHDRAWN AND FALSE" in text
+    assert "f CONVEX" in text

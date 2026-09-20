@@ -229,7 +229,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-20T19:13:22.713939+00:00",
+  "generated_utc": "2026-09-20T22:07:59.690525+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -3219,24 +3219,66 @@
       }
     },
     "phase14.stage1.osse_pricing": {
-      "digest_sha256": "0d4c5d203fd1a8ae94e3b8fb955849a9d7f087cf37fdf29626006d3833021ad5",
+      "digest_sha256": "4f81c44200492c6f2bac30168b0a7a851035ddf85c3743b9889e28606670e911",
       "value": {
         "decision": null,
         "decision_cell": "EMPTY",
-        "decision_is_the_owners": "PRICED, OWNER TO DECIDE — NOT 'not priced'. Every figure below is a measurement or a declared projection from one. What is absent is the owner's election, and only that (owner pin 235e).",
+        "decision_is_the_owners": "PRICED, OWNER TO DECIDE — NOT 'not priced'. Every figure below is a measurement, a declared diagnostic, or an explicit refusal to estimate. What is absent is the owner's election (pin 235e).",
         "report_only": true,
-        "no_run_in_this_plan": "pricing work only — no legs, no solves, no spend",
-        "rebuilt_under_pin_239": "v1 was OVERTURNED by a two-reviewer review: it priced one class = one tile solve, which treats wall as independent of observation count. See obs_scaling and scope_subsets.",
+        "version": "v3",
+        "rebuilt_under_pin_245": "v1 and v2 were both OVERTURNED on the UNIT OF ACCOUNT. v3 is SIMPLER than v1: the headline is the BAND ACROSS MODELS with no exponent in it, because every defensible model lands inside it and that was always sufficient for a go/no-go.",
         "value_case_verbatim": "constellation varied over FIXED model truth is the only ground-truth test of the era-transfer claim (fork-e level 1 validates against fitted s; OSSE against truth)",
+        "headline_band_h": [
+          295.04718553885806,
+          470.3848086389649
+        ],
+        "model_survey": {
+          "rows": [
+            {
+              "model": "flat — one class = one leg (v1)",
+              "exponent": 0.0,
+              "leg_equivalents": 15.0,
+              "h_at_lowest_tile": 295.04718553885806,
+              "h_at_highest_tile": 412.20730069607913
+            },
+            {
+              "model": "linear in missions",
+              "exponent": 1.0,
+              "leg_equivalents": 15.8,
+              "h_at_lowest_tile": 310.78303543426387,
+              "h_at_highest_tile": 434.19169006653675
+            },
+            {
+              "model": "5-point refit (legs + anchor_gate)",
+              "exponent": 1.2627438569167941,
+              "leg_equivalents": 16.33395133531598,
+              "h_at_lowest_tile": 321.2857580142435,
+              "h_at_highest_tile": 448.8649326421145
+            },
+            {
+              "model": "raw wall-vs-n_obs fit (diagnostic)",
+              "exponent": 1.4146473461065867,
+              "leg_equivalents": 16.710859105674217,
+              "h_at_lowest_tile": 328.6994631377051,
+              "h_at_highest_tile": 459.2225416174976
+            },
+            {
+              "model": "upper 95% CI on the 4-leg fit",
+              "exponent": 1.5587309068474515,
+              "leg_equivalents": 17.117047945705117,
+              "h_at_lowest_tile": 336.68912140759915,
+              "h_at_highest_tile": 470.3848086389649
+            }
+          ],
+          "band_low_h": 295.04718553885806,
+          "band_high_h": 470.3848086389649,
+          "band_statement": "EVERY DEFENSIBLE MODEL PUTS THE FULL SWEEP IN 295-470 h. That band is sufficient for a go/no-go, and it always was.",
+          "why_no_exponent_in_the_headline": "The models disagree by less than the TILE axis does (1.40x). Two rounds of review were spent on the smallest term in the price (owner pin 245a)."
+        },
         "epoch_classes": {
           "n_epochs": 15,
           "n_classes": 15,
           "n_classes_without_locked": 15,
-          "locked_removed": [
-            "c2",
-            "c2n"
-          ],
-          "deduplication_available": false,
           "mission_counts": [
             3,
             3,
@@ -3254,157 +3296,177 @@
             8,
             9
           ],
+          "classes_above_leg_size": 6,
+          "deduplication_available": false,
           "source": "phase14_evaluation_seal_v1.json content.epoch_table",
-          "no_deduplication_note": "EVERY epoch's constellation is UNIQUE — 15 epochs, 15 distinct mission sets, still 15 after removing the locked c2/c2n. THE PRICE HAS NO CHEAP REDUCTION AVAILABLE. A reader will otherwise assume one exists (owner pin 234b)."
+          "no_deduplication_note": "EVERY epoch's constellation is UNIQUE — 15 epochs, 15 distinct mission sets, still 15 after removing the locked c2/c2n. THE PRICE HAS NO CHEAP REDUCTION AVAILABLE (owner pin 234b)."
         },
-        "obs_scaling": {
+        "open_axes": [
+          {
+            "axis": "which tile",
+            "not_a_default": true,
+            "spread": "1.40x",
+            "detail": "measured legs run 19.67-27.48 h"
+          },
+          {
+            "axis": "constellation size",
+            "not_a_default": true,
+            "spread": "~4.7x",
+            "detail": "classes run 3-9 missions; the legs ran 5"
+          },
+          {
+            "axis": "platform convention (labels vs platforms)",
+            "not_a_default": true,
+            "spread": "~1.28x",
+            "detail": "j2g and j2n are time-disjoint orbit phases of ONE Jason-2, so the legs ran 4 PLATFORMS under 5 LABELS. The same over-count appears in epochs 0 (e1+e1g), 8 (al+alg), 9 (j2+j2n) and 14 (j3g+j3n). Which convention a price uses moves it ~1.28x and v2 disclosed neither."
+          },
+          {
+            "axis": "RAM",
+            "not_a_default": true,
+            "spread": "UNMODELLED",
+            "detail": "no measurement at any constellation size but five; the one recorded RAM projection in this project missed by 1.69x"
+          }
+        ],
+        "per_class_walls": {
+          "ceiling_h": 40.0,
+          "ceiling_authority": "owner pin 99(b) + E-16 — the PER-LEG WAIT ceiling",
+          "rows": [
+            {
+              "n_missions": 3,
+              "n_classes_at_this_size": 2,
+              "wall_h_at_kuroshio": 9.549100680165223,
+              "wall_h_at_southern": 13.340947510674006,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 4,
+              "n_classes_at_this_size": 6,
+              "wall_h_at_kuroshio": 14.345203862908885,
+              "wall_h_at_southern": 20.04153251441832,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 5,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 19.669812369257205,
+              "wall_h_at_southern": 27.480486713071944,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 6,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 25.45738301844596,
+              "wall_h_at_southern": 35.566240422373994,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 7,
+              "n_classes_at_this_size": 3,
+              "wall_h_at_kuroshio": 31.660652061760512,
+              "wall_h_at_southern": 44.232761959145186,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "WAIT"
+            },
+            {
+              "n_missions": 8,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 38.243533233900656,
+              "wall_h_at_southern": 53.42963558400326,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "WAIT"
+            },
+            {
+              "n_missions": 9,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 45.177353793035955,
+              "wall_h_at_southern": 63.11680291275488,
+              "verdict_at_kuroshio": "WAIT",
+              "verdict_at_southern": "WAIT"
+            }
+          ],
+          "classes_breaching_at_cheapest_tile": 1,
+          "classes_breaching_at_dearest_tile": 5,
+          "finding": "BETWEEN 1 AND 5 OF THE 15 CLASSES BREACH THE 40 h PER-LEG CEILING depending on the tile. A breach is a WAIT under pin 99(b), not a line in a total — and v2 reported only totals (owner pin 245c).",
+          "note_on_the_scale": "the per-class scaling uses the DIAGNOSTIC exponent because the ceiling question needs SOME per-class figure; it inherits that diagnostic's collinearity caveat and is not a measurement"
+        },
+        "ram_axis": {
+          "modelled": false,
+          "declaration": "⛔ RAM IS UNMODELLED AT CONSTELLATION SIZES OTHER THAN THE LEGS' FIVE. This is a NAMED AXIS carrying an explicit refusal to estimate, not an omission (owner pin 245d).",
+          "measured_peaks_mib": {
+            "kuroshio": 7389.3359375,
+            "equatorial": 4817.0,
+            "quiet_gyre": 4986.41796875,
+            "southern": 4951.1640625
+          },
+          "peak_basis_missions": 5,
+          "launch_gate_mib": 9902.33,
+          "launch_gate_rule": "MemAvailable >= 2 x the MEASURED peak (owner pin 155)",
+          "why_it_is_not_estimated": "no measurement exists at any constellation size but five, and the one recorded RAM projection in this project MISSED BY 1.69x while its wall projection was 0.63x — the asymmetry pin 139(a) predicted. Estimating here would repeat that.",
+          "recorded_incidents": [
+            "the equatorial leg was REFUSED by the launch gate at 9891.58 MiB against a 9902.33 MiB gate — a margin of 11 MiB — and relaunched at 9907.33 MiB, clearing by 5 MiB",
+            "leg 2 bottomed at 1382 MiB mid-run with swap exhausted and survived by owner intervention, which is not a property the remaining legs can rely on"
+          ],
+          "what_would_settle_it": "predicted peak RSS at 9 missions against the 9902.33 MiB gate — a go/no-go, not a magnitude"
+        },
+        "wall_diagnostic": {
           "legs": [
             {
               "tile": "kuroshio",
               "n_obs": 138518,
-              "wall_h": 19.669812369257205
-            },
-            {
-              "tile": "southern",
-              "n_obs": 175059,
-              "wall_h": 27.480486713071944
+              "sum_pcg_iterations": 8075,
+              "wall_h": 19.669812369257205,
+              "microseconds_per_obs_iteration": 63.30732667290544
             },
             {
               "tile": "equatorial",
               "n_obs": 167579,
-              "wall_h": 25.540277777777778
+              "sum_pcg_iterations": 9178,
+              "wall_h": 25.540277777777778,
+              "microseconds_per_obs_iteration": 59.78062748277099
             },
             {
               "tile": "quiet_gyre",
               "n_obs": 168755,
-              "wall_h": 26.031381436881105
+              "sum_pcg_iterations": 9592,
+              "wall_h": 26.031381436881105,
+              "microseconds_per_obs_iteration": 57.89404539236707
+            },
+            {
+              "tile": "southern",
+              "n_obs": 175059,
+              "sum_pcg_iterations": 9452,
+              "wall_h": 27.480486713071944,
+              "microseconds_per_obs_iteration": 59.78865240846845
             }
           ],
-          "controlled": "identical solve bbox (19x19 deg), identical m=100, identical 9x60 d window plan, identical 5-mission constellation — n_obs is the only varying input",
-          "exponent": 1.4146473461065867,
-          "r_squared": 0.9988805532232099,
-          "leg_missions": [
-            "alg",
-            "h2ag",
-            "j2g",
-            "j2n",
-            "s3a"
+          "microseconds_per_obs_iteration_span": [
+            57.89404539236707,
+            63.30732667290544
           ],
-          "n_missions_leg": 5,
-          "independent_corroboration": "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall.implied_exponent = 1.28, whose verdict_on_the_anchors already recorded 'NOT linear ... optimistic by 1.42x'. v1's flat model was FLATTER THAN LINEAR, which this project's own pinned evidence had already rejected once.",
-          "projection_declaration": {
-            "pin": 139,
-            "quantity": "solve wall as a function of observation count",
-            "measured_over": {
-              "n_legs": 4,
-              "n_missions": 5,
-              "n_obs_span": [
-                138518,
-                175059
-              ]
-            },
-            "application_range": {
-              "n_missions": [
-                3,
-                9
-              ],
-              "note": "3- and 4-mission classes are BELOW the measured span"
-            },
-            "within_measured_span": false,
-            "what_it_may_be_used_for": "MAGNITUDES ONLY, declared as projected. The DIRECTION of the subset ordering does NOT rest on this fit — it is a counting fact (owner pin 239a/b)."
-          }
+          "fit_ci_95": [
+            1.270563785365722,
+            1.5587309068474515
+          ],
+          "refit_with_anchor_gate": 1.2627438569167941,
+          "anchor_gate_was_not_below_anything_measured": "phase14.stage1.anchor_gate is a MEASURED m=100, 9-window, CONVERGED solve at n_obs 54,345 — BELOW the four legs' span. v2 declared the small classes 'below anything measured'; that was false. Including it drops the exponent to 1.2627. It is a smaller domain and a dc2021a source, so excluding it from the headline is defensible — but the reason for excluding it (a domain change) is the SAME confound that disqualifies the four-leg fit as a clean observation contrast. It cannot be had both ways, so the fit is a diagnostic only.",
+          "spread_pct": 4.496628834577495,
+          "reading": "wall is essentially LINEAR in (observations x iterations): the per-iteration cost is constant to about +/-4.5% across four legs spanning 1.26x in observations.",
+          "raw_wall_vs_nobs_exponent": 1.4146473461065867,
+          "is_a_diagnostic_not_a_basis": "RECORDED AS A DIAGNOSTIC (owner pin 245a). It is NOT the pricing basis: about 60% of it is the iteration term, and the iteration term runs OPPOSITE to the observation term for sparse constellations (owner pin 245e).",
+          "collinearity_caveat": "⛔ THE 'CONTROLLED EXPERIMENT' PREMISE IS STRUCK (owner pin 245f). With n=4 and ONE POINT PER TILE, observation count is PERFECTLY COLLINEAR with tile identity — the regression measures WHICH TILE, not HOW MANY OBSERVATIONS. There is no measurement in this repository where n_obs varies at a FIXED domain, which is the only contrast an OSSE produces.",
+          "domain_confound_searched_and_absent": "n_coef (the basis dimension) varies with latitude through miost_sizing.n_coefficients' d_x_km/d_y_km, so a domain confound is PLAUSIBLE. It is NOT QUANTIFIED here: only kuroshio's n_coef is recorded anywhere (297600 at tier2_probe_kuroshio_m100.model_at_probe_geometry), and the other three tiles' values are SEARCHED AND ABSENT from the store and the logs (pin 60a's form). A reviewer reported per-tile values; they could not be reproduced, so they are not restated here (owner pin 247)."
         },
         "probe_cross_check": {
           "role": "CROSS-CHECK ONLY — NOT A PRICE (owner pin 236b)",
-          "tile": "kuroshio",
           "source": "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall",
-          "h_per_window": 3.4398840666791592,
           "projected_tile_h": 30.958956600112433,
           "measured_same_tile_h": 19.669812369257205,
           "overprediction_factor": 1.573932481862385,
-          "four_tile_projected_h": 123.83582640044973,
-          "four_tile_measured_h": 98.72195829698803,
-          "four_tile_overprediction_factor": 1.2543898899159895,
-          "admissible_under_99c": true,
-          "why_not_the_price": "CONVERGED and admissible, but it is a ONE-WINDOW PROJECTION of the thing the legs then MEASURED, and the measurement supersedes it. Its value now is as a RECORD OF HOW A ONE-WINDOW PROJECTION PERFORMED.",
-          "projection_declaration": {
-            "pin": 139,
-            "quantity": "per-tile solve wall",
-            "measured_over": {
-              "n_windows": 1,
-              "tile": "kuroshio",
-              "m": 100
-            },
-            "application_range": {
-              "n_windows": 9
-            },
-            "within_measured_span": false,
-            "outcome_when_tested": "OVER-PREDICTED by 1.574x against the direct nine-window measurement of the same tile"
-          }
-        },
-        "per_tile_price": {
-          "kuroshio": {
-            "measured_leg_wall_h": 19.669812369257205,
-            "basis": "phase14.stage1.tiles.kuroshio — MEASURED, 9/9 CONVERGED",
-            "flat_model_full_sweep_h": 295.04718553885806,
-            "obs_scaled_full_sweep_h": 328.6994631377051
-          },
-          "southern": {
-            "measured_leg_wall_h": 27.480486713071944,
-            "basis": "phase14.stage1.tiles.southern — MEASURED, 9/9 CONVERGED",
-            "flat_model_full_sweep_h": 412.20730069607913,
-            "obs_scaled_full_sweep_h": 459.2225416174976
-          },
-          "equatorial": {
-            "measured_leg_wall_h": 25.540277777777778,
-            "basis": "phase14.stage1.tiles.equatorial — MEASURED, 9/9 CONVERGED",
-            "flat_model_full_sweep_h": 383.1041666666667,
-            "obs_scaled_full_sweep_h": 426.7999834642266
-          },
-          "quiet_gyre": {
-            "measured_leg_wall_h": 26.031381436881105,
-            "basis": "phase14.stage1.tiles.quiet_gyre — MEASURED, 9/9 CONVERGED",
-            "flat_model_full_sweep_h": 390.47072155321655,
-            "obs_scaled_full_sweep_h": 435.0067475177834
-          }
-        },
-        "full_sweep_range": {
-          "n_classes": 15,
-          "measured_leg_spread_h": [
-            19.669812369257205,
-            27.480486713071944
-          ],
-          "low_tile": "kuroshio",
-          "high_tile": "southern",
-          "flat_low_h": 295.04718553885806,
-          "flat_high_h": 412.20730069607913,
-          "obs_scaled_low_h": 328.6994631377051,
-          "obs_scaled_high_h": 459.2225416174976,
-          "why_a_range": "A SINGLE NUMBER WOULD HIDE A 1.4x SPREAD THAT IS A PROPERTY OF THE TILES, NOT OF THE OSSE (owner pin 236c). 'A tile solve' is not one number: the four measured legs run 19.67-27.48 h.",
-          "which_tile_is_an_open_input": "WHICH TILE AN OSSE WOULD USE IS NOT DEFAULTED HERE (236d). The choice belongs with the run decision."
-        },
-        "constellation_size_is_an_open_input": {
-          "not_a_default": true,
-          "statement": "⛔ WHICH CONSTELLATION AN OSSE RE-SOLVE RUNS IS AN OPEN INPUT, NOT A DEFAULT — and it is the LARGER axis. The epoch classes run 3 to 9 missions against the legs' 5, a per-class spread of roughly 4.7x, against the tile axis's 1.40x.",
-          "v1_defect": "v1 declared the SMALLER axis open while collapsing the BIGGER one (owner pin 239d).",
-          "class_mission_counts": [
-            3,
-            3,
-            4,
-            4,
-            4,
-            4,
-            4,
-            4,
-            5,
-            7,
-            6,
-            7,
-            7,
-            8,
-            9
-          ],
-          "leg_missions": 5
+          "note_on_1_28": "⛔ the node's implied_exponent 1.28 is an exponent on GRID NODES (its anchors are labelled nodes^1.25 / nodes^1.5). v2 cited it as 'independent corroboration' of an OBSERVATION exponent. It is not: they are exponents of different variables, and the four legs hold nodes FIXED. THE CORROBORATION CLAIM IS WITHDRAWN (owner pin 246)."
         },
         "scope_subsets": {
           "rows": [
@@ -3412,90 +3474,104 @@
               "subset": "full_sweep",
               "n_classes": 15,
               "total_missions": 79,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                5,
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
               "elected": false,
-              "flat_model_leg_equivalents": 15.0,
-              "obs_scaled_leg_equivalents": 16.710859105674217,
-              "flat_h_at_kuroshio": 295.04718553885806,
-              "obs_scaled_h_at_kuroshio": 328.6994631377051,
-              "flat_h_at_southern": 412.20730069607913,
-              "obs_scaled_h_at_southern": 459.2225416174976,
               "cannot_establish": ""
             },
             {
               "subset": "fit+validate",
               "n_classes": 10,
               "total_missions": 61,
+              "mission_counts": [
+                4,
+                4,
+                4,
+                5,
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
               "elected": false,
-              "flat_model_leg_equivalents": 10.0,
-              "obs_scaled_leg_equivalents": 13.552017944272558,
-              "flat_h_at_kuroshio": 196.69812369257204,
-              "obs_scaled_h_at_kuroshio": 266.56565018864796,
-              "flat_h_at_southern": 274.80486713071946,
-              "obs_scaled_h_at_southern": 372.4160490528946,
               "cannot_establish": "CANNOT establish transfer into the 5 validate-only epochs, which is where transfer is actually claimed"
             },
             {
               "subset": "pre_lift_mask66",
               "n_classes": 9,
               "total_missions": 35,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                5
+              ],
               "elected": false,
-              "flat_model_leg_equivalents": 9.0,
-              "obs_scaled_leg_equivalents": 6.34674264113254,
-              "flat_h_at_kuroshio": 177.02831132331485,
-              "obs_scaled_h_at_kuroshio": 124.83923690704097,
-              "flat_h_at_southern": 247.3243804176475,
-              "obs_scaled_h_at_southern": 174.4115768209299,
               "cannot_establish": "CANNOT establish anything about the 6 modern post-lift constellations"
             },
             {
               "subset": "post_lift_mask66",
               "n_classes": 6,
               "total_missions": 44,
+              "mission_counts": [
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
               "elected": false,
-              "flat_model_leg_equivalents": 6.0,
-              "obs_scaled_leg_equivalents": 10.364116464541675,
-              "flat_h_at_kuroshio": 118.01887421554324,
-              "obs_scaled_h_at_kuroshio": 203.8602262306641,
-              "flat_h_at_southern": 164.88292027843167,
-              "obs_scaled_h_at_southern": 284.8109647965677,
               "cannot_establish": "CANNOT establish era-transfer across the 1992-2009 boundary — the era gap the claim is weakest at"
             },
             {
               "subset": "validate_only",
               "n_classes": 5,
               "total_missions": 18,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4
+              ],
               "elected": false,
-              "flat_model_leg_equivalents": 5.0,
-              "obs_scaled_leg_equivalents": 3.1588411614016567,
-              "flat_h_at_kuroshio": 98.34906184628602,
-              "obs_scaled_h_at_kuroshio": 62.1338129490571,
-              "flat_h_at_southern": 137.40243356535973,
-              "obs_scaled_h_at_southern": 86.80649256460298,
               "cannot_establish": "CANNOT establish anything fitted; it tests only the transferred epochs"
             }
           ],
-          "ordering_is_a_counting_fact": {
-            "claim": "post_lift_mask66 is DEARER than pre_lift_mask66",
-            "pre_lift": {
-              "n_classes": 9,
-              "total_missions": 35
-            },
-            "post_lift": {
-              "n_classes": 6,
-              "total_missions": 44
-            },
-            "why_exponent_free": "post-lift has FEWER classes (6 vs 9) and MORE total missions (44 vs 35). Under ANY cost monotone in observation count it is dearer. ONLY the flat 'one class = one leg' model reverses it, and that model is what the review overturned.",
-            "magnitudes_are_projected": "the HOURS carry obs_scaling's pin-139 declaration; the DIRECTION does not depend on the fit (owner pin 239a/b)"
-          },
-          "v1_editorial_WITHDRAWN": {
-            "withdrawn_text": "The cheapest subsets are cheap precisely because they drop the epochs the era-transfer claim is weakest at. Cost and evidential value move together here.",
-            "why": "IT WAS AN ARTEFACT OF THE FLAT MODEL AND INVERTS WITH IT. The sparse historical constellations — exactly where era-transfer is weakest — carry the FEWEST observations and are therefore the CHEAPEST classes to solve.",
-            "not_replaced": "⛔ NOT replaced with the opposite editorial (owner pin 239c): that would be the same mistake with a different sign. The inversion is recorded as a FINDING; no claim is made about cost and value moving together or apart."
+          "ordering": null,
+          "ordering_is_WITHDRAWN": {
+            "withdrawn_claim": "post_lift_mask66 is DEARER than pre_lift_mask66, and this holds under ANY cost monotone in observation count",
+            "why_it_is_false": "cost is SUM f(m_i). post-lift has FEWER and LARGER classes (6 classes / 44 missions) than pre-lift (9 / 35), so the ordering requires f CONVEX, not merely MONOTONE. It REVERSES below p ~ 0.638: at p=0.5 pre-lift costs 17.70 and post-lift 16.22 leg-equivalents.",
+            "the_arithmetic_error_beneath_it": "the ratios that ratified it were (sum m_post / sum m_pre)**p — the exponent applied to the AGGREGATE. sum(m_i**p) is not (sum m_i)**p unless p == 1. ⭐ p=1 IS THE ONLY POINT WHERE THE TWO FORMULAS COINCIDE, and that lone agreeing figure was read as verification. THAT IS THE FINDING, not the slip (owner pin 244c).",
+            "not_re_derived": "⛔ NO ordering is re-derived (owner pin 244a). Convexity needs the conditioning term, which needs a measurement that does not exist. This is pin 239(c)'s discipline applied to the owner's claim as it was to the executor's: record that it is UNSETTLED; do not replace it with its opposite.",
+            "what_would_settle_it": "one solve, one tile, one window, at a 3-mission subset of PROBE_MISSIONS, recording n_obs and PCG iterations — roughly 1-2 h of compute"
           }
         },
         "truth_field": {
           "measured": true,
-          "searched_and_absent": false,
           "query": {
             "host": "stac.marine.copernicus.eu",
             "product": "GLOBAL_MULTIYEAR_PHY_001_030",
@@ -3512,390 +3588,136 @@
               "temporal_extent": "1993-01-01T00:00:00Z .. 2026-06-23T00:00:00Z"
             },
             "zos_item_size_bytes": 2,
-            "zos_dtype": "<i2",
-            "no_total_volume_field": "the STAC document carries NO total-size field; the volumes below are DERIVED from itemSize x grid geometry. That derivation rests on two typed geometry assumptions (the bbox and node-inclusive counting) and on the UNCOMPRESSED array size, so it is a bound on the wire volume rather than a wire measurement (reviewer defect 4)"
+            "zos_dtype": "<i2"
           },
           "variable": "zos (sea surface height) — the OSSE truth field",
-          "scope_assumption": "zos only. No MDT, mask or ancillary fields are costed — adequate for a nadir-SLA OSSE, stated as a scope choice, not an omission",
-          "solve_bbox_deg": 19.0,
-          "bbox_caveat": "this is the SOLVE box. Simulating observations needs truth over the OBS footprint (solve bbox + the 1.0 deg operative halo = 21 deg), which is (21/19)**2 = 1.22x larger. NOT applied here because the obs-footprint choice belongs with the run design; stated so the figure is read as the SOLVE-box volume it is",
+          "scope_assumption": "zos only; no MDT, mask or ancillary — a nadir-SLA scope choice",
           "grid_nodes_per_side": 229,
-          "grid_nodes_per_tile": 52441,
           "window_plan_span_days": 400.0,
-          "window_plan_shape": "9 windows x 60 d on a 45-d stride — OVERLAPPING by 15 d, NOT contiguous; 540 window-days over a 400-d union. The UNION is the download basis because each day is bought once",
-          "bytes_per_tile_per_day": 104882,
-          "bytes_per_tile_per_span": 41952800,
+          "window_plan_shape": "9 windows x 60 d, OVERLAPPING and on a NON-UNIFORM stride [25.0, 45.0] d — 540 window-days over a 400-d union. The UNION is the download basis because each day is bought once.",
           "mib_per_tile_per_span": 40.009307861328125,
-          "gib_per_tile_per_span": 0.03907158970832825,
           "mib_all_four_tiles": 160.0372314453125,
-          "global_zos_per_day_mib": 16.81732177734375,
           "global_zos_full_record_tib": 0.19609965645940974,
-          "does_not_scale_with_classes": "THE TRUTH FIELD IS BOUGHT ONCE PER TILE, NOT ONCE PER CLASS. An OSSE varies the CONSTELLATION over FIXED model truth, so N_epoch-classes multiplies the RE-SOLVES and not the truth download. It DOES scale with the number of tiles.",
+          "does_not_scale_with_classes": "THE TRUTH FIELD IS BOUGHT ONCE PER TILE, NOT ONCE PER CLASS — an OSSE varies the CONSTELLATION over FIXED truth. It DOES scale with the number of tiles.",
+          "epoch_span_reading_is_unstated": "⚠ OPEN: the 15 classes are DATE-RANGED in the sealed table (1992-2026) while this volume assumes ONE common 400-day truth span. Common-span means historical ground tracks must be SYNTHESISED (uncosted engineering); per-era means 15x the download (2.34 GiB for four tiles, still feasible) and the truth is no longer 'FIXED', which is the value case's own word. The run design must name which reading it takes.",
+          "bbox_caveat": "this is the SOLVE box; simulating observations needs the OBS footprint (+1.0 deg halo = 21 deg), 1.22x larger",
+          "encoding_caveat": "this is the UNCOMPRESSED array size — a BOUND on wire volume, not a wire measurement",
           "feasibility": {
             "cmems_storage_budget_gib": 50.0,
+            "budget_row": "ladder.STAGE0_SPEND_TABLE task_class=cmems_downloads (BOX_PRODUCTION)",
             "all_four_tiles_gib": 0.156286358833313,
             "fraction_of_budget": 0.0031257271766662598,
-            "disk_available_gib_at_measurement": 311,
             "verdict": "FEASIBLE",
-            "derived_not_asserted": "the verdict is computed from the volume against the budget, so shrinking the budget flips it",
-            "why": "the spec's 'heavy downloads' is true of the GLOBAL FULL RECORD (0.20 TiB of zos alone) and NOT of the tile-and-span subset an OSSE needs"
+            "derived_not_asserted": "computed from the volume against the budget"
           }
         },
         "lower_bound": {
-          "statement": "THE FIGURES HERE ARE A LOWER BOUND ON THE OSSE PRICE — INCLUDING THE COMPUTE FIGURE ITSELF.",
-          "compute_is_itself_a_lower_bound": "⛔ WIDENED UNDER OWNER PIN 239(e). v1 attributed the lower bound to uncosted ENGINEERING alone, so a reader concluded the compute band was sound. IT IS NOT: the flat model under-prices every class above 5 missions, and 7 of the 15 classes are above it.",
+          "statement": "THE FIGURES HERE ARE A LOWER BOUND ON THE OSSE PRICE.",
           "what_is_covered": "constellation-varied re-solves + the truth download, both at declared model assumptions",
           "what_is_not_costed": [
-            "truth-provider wiring: the TRUTH interface is DORMANT since 4b and re-arming it is unmeasured engineering time",
+            "truth-provider wiring: the TRUTH interface is DORMANT since 4b and re-arming it is unmeasured engineering time — the LARGEST open item, and it carries no number at all",
             "per-class observation simulation from the truth field",
             "scoring and analysis of 15 outputs",
-            "non-convergence retries: the legs ran 424-554 PCG iterations at 5 missions; the 3-mission classes are sparser, worse-conditioned and outside anything measured",
-            "calendar time and box occupancy: these are serial single-host hours, with a launch gate of 2x predicted peak RSS per class"
-          ],
-          "why_unmissable": "Owner pins 237(d) and 239(e): an OSSE priced at re-solves alone understates it, and pin 235(b) named that as the most likely error. The gap is BOUNDED on the download axis and OPEN on both the engineering and the compute-model axes."
+            "REPLICATION: 15 classes x 1 tile x 1 truth realisation gives no way to separate 'this constellation is worse' from 'these track positions over this tile were unlucky'",
+            "non-convergence retries; the legs ran 375-626 PCG iterations per window at 5 missions",
+            "calendar time and box occupancy: serial single-host hours",
+            "truth-field independence: GLORYS12V1 is a data-assimilative reanalysis that ingests along-track SLA from the very constellations being simulated — the fraternal-twin problem, first-order for an OSSE whose value case is 'against truth'"
+          ]
         },
         "recommendation_options": [
           {
             "option": "run at Stage-2 entry (when era-transfer is the live question)",
-            "cost": "same compute; the truth download is trivial either way",
-            "can_establish": "the era-transfer claim against truth at the point where it becomes load-bearing",
-            "cannot_establish": "anything for Gate 1 — it does not close a Stage-1 item"
+            "cost": "same compute; truth download trivial either way",
+            "can_establish": "the era-transfer claim against truth where it becomes load-bearing",
+            "cannot_establish": "anything for Gate 1 — it closes no Stage-1 item"
           },
           {
             "option": "run now",
-            "cost": "flat model 295.0-412.2 h; obs-scaled (projected) 328.7-459.2 h",
+            "cost": "295-470 h across all defensible models, + the truth download",
             "can_establish": "the same thing, earlier",
-            "cannot_establish": "any Stage-1 gate item — the OSSE is not a Gate-1 deliverable, and Gate 1 already carries two ruled WAITs"
+            "cannot_establish": "any Gate-1 item — the OSSE is not a Gate-1 deliverable, and Gate 1 already carries two ruled WAITs"
           }
         ],
         "citations": [
-          "owner pin 99(c) — price from the CONVERGED numbers, basis in-row",
+          "owner pin 99(c) — price from CONVERGED numbers, basis in-row",
           "owner pin 232 — standalone doc + witnessed node; posted pack untouched",
-          "owner pin 234 — N_epoch-classes derived; no deduplication; truth cost in",
-          "owner pin 236 — price from the legs; the probe is a declared cross-check",
+          "owner pin 234 — N_epoch-classes derived; no deduplication",
           "owner pin 237 — the STAC metadata query, authorised and recorded",
-          "owner pin 239 — REBUILT: the unit of account was wrong",
-          "fork-f pin 5 — the value case, verbatim"
+          "owner pin 244 — the direction claim WITHDRAWN, not re-derived",
+          "owner pin 245 — v3 simpler than v1: the band, every axis open",
+          "owner pin 247 — agent output is data, not fact"
         ]
       }
     },
     "phase14.stage1.projection_declarations": {
-      "digest_sha256": "a32fe7a1cf011495ec3e83550043cfcd50a5231f5c35444d6784e8c229bbcc52",
+      "digest_sha256": "fb3bdb3e69983bf768ae879c18745eedb56c6fa2a3afdc9ab310eee46ab37de8",
       "value": {
+        "label": "PROJECTION DECLARATIONS — owner pin 139",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "139 — refuse now, declare the eleven by forward-pointer amendment",
+        "gates": false,
+        "method": "Every block the pin-134 shape audit catches is declared here PER AXIS with the range measured and the range applied (139c/d). No amended node is edited: the amendment index carries the forward pointers (139b), and the audit resolves them",
+        "the_audits_limit": "A shape-keyed audit reads what was WRITTEN. The pin-89 probe's RAM projection was never written as one — measured_one_window.peak_rss_mib became the launch-gate basis with no derived field — so no field name could catch it. It is declared here by hand, and the limit is recorded rather than papered over",
         "declarations": {
-          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_n.recorded_half_split_reproduction": {
-            "amends": "phase14.stage1.ensemble_settling_measurement",
-            "axes": {
-              "abs_diff_predicted_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recomputed_observed_over_predicted": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recomputed_predicted_mc_floor_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recorded_observed_over_predicted": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recorded_predicted_mc_floor_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              }
-            }
-          },
-          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_s.recorded_half_split_reproduction": {
-            "amends": "phase14.stage1.ensemble_settling_measurement",
-            "axes": {
-              "abs_diff_predicted_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_s"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recomputed_observed_over_predicted": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_s"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recomputed_predicted_mc_floor_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_s"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recorded_observed_over_predicted": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_s"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              },
-              "recorded_predicted_mc_floor_m": {
-                "applied_to": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_s"
-                },
-                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches",
-                "quantity": "replay of the recorded half-split numbers",
-                "within_measured_span": true
-              }
-            }
-          },
-          "phase14.stage1.ensemble_settling_measurement.pin_54_condition.test_pinned_at": {
-            "amends": "phase14.stage1.ensemble_settling_measurement",
-            "axes": {
-              "m_100_predicted_not_measurable_by_splitting": {
-                "applied_to": {
-                  "m": 100
-                },
-                "extrapolation_declared": "EXTRAPOLATION on the m axis, and the field name says so: splitting a 100-member ensemble yields halves of 50, so m=100 is the one value the method cannot measure. The form is checked at m=25 and m=50 against pooled means and by an independent Monte-Carlo route, and applied at m=100 on that basis — a validated FORM, not a measured point",
-                "measured_over": {
-                  "m": [
-                    25,
-                    50
-                  ],
-                  "method": "half-splitting"
-                },
-                "quantity": "the c4(m) settling form"
-              },
-              "m_25_predicted": {
-                "applied_to": {
-                  "m": 25
-                },
-                "measured_over": {
-                  "m": 25
-                },
-                "quantity": "the c4(m) settling form",
-                "within_measured_span": true
-              },
-              "m_50_predicted": {
-                "applied_to": {
-                  "m": 50
-                },
-                "measured_over": {
-                  "m": 50
-                },
-                "quantity": "the c4(m) settling form",
-                "within_measured_span": true
-              }
-            }
-          },
-          "phase14.stage1.seam_crn_channel_mechanism.sharpened_t14_prediction_pin_70b.now": {
-            "amends": "phase14.stage1.seam_crn_channel_mechanism",
-            "axes": {
-              "predicted_T_cross": {
-                "applied_to": {
-                  "crn_state": "global pavement origin (post-T14)"
-                },
-                "extrapolation_declared": "EXTRAPOLATION on the CRN-STATE axis, which is the axis nobody wrote down: the number is computed at the pre-T14 measured r and used to predict behaviour after T14 pairs the draws by construction. r post-T14 is UNMEASURED — T14 has not run, and it is Stage 2's under pin 88's halt. Pin 68(b) already fixes the direction (T_cross must FALL, and a fall is NOT evidence of repair); the magnitude is what this axis cannot supply",
-                "measured_over": {
-                  "crn_state": "per-tile pavement origins (pre-T14)",
-                  "r": 0.25225741093173065
-                },
-                "quantity": "T_cross under rho = r^2, as the sharpened T14 prediction"
-              }
-            }
-          },
-          "phase14.stage1.seam_crn_channel_mechanism.the_model_pin_70a": {
-            "amends": "phase14.stage1.seam_crn_channel_mechanism",
-            "axes": {
-              "predicted_T_cross": {
-                "applied_to": {
-                  "m": 100,
-                  "r": 0.25225741093173065
-                },
-                "measured_over": {
-                  "m": 100,
-                  "r": 0.25225741093173065
-                },
-                "note": "evaluated AT the measured r, so this number crosses nothing. The r ~ 0.9 application of the same model IS an extrapolation and is declared at phase14.stage1.rho_model_range_limitation (validated_range [0, 0.2523], application_range [0, 0.9]) — the one block in this store that ever declared itself",
-                "quantity": "T_cross under rho = r^2 at the MEASURED r",
-                "within_measured_span": true
-              },
-              "rho_implied_by_T_cross": {
-                "applied_to": {
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "measured_over": {
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "quantity": "the same inversion as the shared-observation channel",
-                "within_measured_span": true
-              }
-            }
-          },
-          "phase14.stage1.seam_shared_observation_channel.does_it_account_for_the_deficit": {
-            "amends": "phase14.stage1.seam_shared_observation_channel",
-            "axes": {
-              "implied_correlation_rho": {
-                "applied_to": {
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "measured_over": {
-                  "domain": "the evaluation strip",
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "note": "an INVERSION of a measured T_cross, not a prediction: it restates the same measurement in rho units. It speaks for THIS pair on THIS domain and transfers to no other pair — the shared-observation fraction is a property of the geometry",
-                "quantity": "rho = 1 - (T_cross/E[T])^2, inverted from the measurement",
-                "within_measured_span": true
-              }
-            }
-          },
           "phase14.stage1.seam_sigma_diagnosis.line_1_magnitude": {
             "amends": "phase14.stage1.seam_sigma_diagnosis",
             "axes": {
-              "observed_over_predicted": {
-                "applied_to": {
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "measured_over": {
-                  "m": 100,
-                  "pair": "seam_n/seam_s"
-                },
-                "note": "a ratio of two quantities measured under the same configuration; it transfers to no other pair, m or geometry",
-                "quantity": "ratio of the observed sigma_delta RMS to the floor above",
-                "within_measured_span": true
-              },
               "predicted_mc_floor_sigma_over_sqrt_m_minus_1_m": {
-                "applied_to": {
-                  "m": 100,
-                  "n_windows": 9,
-                  "pair": "seam_n/seam_s"
-                },
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected",
                 "measured_over": {
                   "m": 100,
                   "n_windows": 9,
                   "pair": "seam_n/seam_s"
                 },
-                "note": "the floor is EVALUATED at the same m the observation was taken at; no m axis is crossed here. The m=100 floor that splitting cannot reach is a different claim, declared at ensemble_settling_measurement.pin_54_condition.test_pinned_at",
-                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected",
-                "within_measured_span": true
+                "applied_to": {
+                  "m": 100,
+                  "n_windows": 9,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "the floor is EVALUATED at the same m the observation was taken at; no m axis is crossed here. The m=100 floor that splitting cannot reach is a different claim, declared at ensemble_settling_measurement.pin_54_condition.test_pinned_at"
+              },
+              "observed_over_predicted": {
+                "quantity": "ratio of the observed sigma_delta RMS to the floor above",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a ratio of two quantities measured under the same configuration; it transfers to no other pair, m or geometry"
               }
             }
           },
           "phase14.stage1.seam_sigma_diagnosis.line_4_half_split.per_tile.seam_n": {
             "amends": "phase14.stage1.seam_sigma_diagnosis",
             "axes": {
-              "observed_over_predicted": {
+              "predicted_mc_floor_m": {
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
                 "applied_to": {
                   "m_half": 50,
                   "tile": "seam_n"
                 },
-                "measured_over": {
-                  "m_half": 50,
-                  "tile": "seam_n"
-                },
-                "quantity": "half1-minus-half2 RMS over the floor above",
                 "within_measured_span": true
               },
-              "predicted_mc_floor_m": {
+              "observed_over_predicted": {
+                "quantity": "half1-minus-half2 RMS over the floor above",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
                 "applied_to": {
                   "m_half": 50,
                   "tile": "seam_n"
                 },
-                "measured_over": {
-                  "m_half": 50,
-                  "n_windows": 9,
-                  "tile": "seam_n"
-                },
-                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
                 "within_measured_span": true
               }
             }
@@ -3903,30 +3725,348 @@
           "phase14.stage1.seam_sigma_diagnosis.line_4_half_split.per_tile.seam_s": {
             "amends": "phase14.stage1.seam_sigma_diagnosis",
             "axes": {
-              "observed_over_predicted": {
+              "predicted_mc_floor_m": {
+                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
                 "applied_to": {
                   "m_half": 50,
                   "tile": "seam_s"
                 },
-                "measured_over": {
-                  "m_half": 50,
-                  "tile": "seam_s"
-                },
-                "quantity": "half1-minus-half2 RMS over the floor above",
                 "within_measured_span": true
               },
-              "predicted_mc_floor_m": {
+              "observed_over_predicted": {
+                "quantity": "half1-minus-half2 RMS over the floor above",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
                 "applied_to": {
                   "m_half": 50,
                   "tile": "seam_s"
                 },
+                "within_measured_span": true
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_n.recorded_half_split_reproduction": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "recomputed_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
                 "measured_over": {
                   "m_half": 50,
-                  "n_windows": 9,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "abs_diff_predicted_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recomputed_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_n",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_n"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_s.recorded_half_split_reproduction": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "recomputed_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
                   "tile": "seam_s"
                 },
-                "quantity": "sigma_delta MC floor sigma*sqrt(2/(m-1))*c4-corrected, at the HALF ensemble",
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_predicted_mc_floor_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "abs_diff_predicted_m": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recomputed_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              },
+              "recorded_observed_over_predicted": {
+                "quantity": "replay of the recorded half-split numbers",
+                "measured_over": {
+                  "m_half": 50,
+                  "tile": "seam_s",
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "m_half": 50,
+                  "tile": "seam_s"
+                },
+                "within_measured_span": true,
+                "note": "a REPRODUCTION under the identical configuration — it crosses no axis, and its whole content is that it matches"
+              }
+            }
+          },
+          "phase14.stage1.ensemble_settling_measurement.pin_54_condition.test_pinned_at": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "axes": {
+              "m_25_predicted": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": 25
+                },
+                "applied_to": {
+                  "m": 25
+                },
                 "within_measured_span": true
+              },
+              "m_50_predicted": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": 50
+                },
+                "applied_to": {
+                  "m": 50
+                },
+                "within_measured_span": true
+              },
+              "m_100_predicted_not_measurable_by_splitting": {
+                "quantity": "the c4(m) settling form",
+                "measured_over": {
+                  "m": [
+                    25,
+                    50
+                  ],
+                  "method": "half-splitting"
+                },
+                "applied_to": {
+                  "m": 100
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the m axis, and the field name says so: splitting a 100-member ensemble yields halves of 50, so m=100 is the one value the method cannot measure. The form is checked at m=25 and m=50 against pooled means and by an independent Monte-Carlo route, and applied at m=100 on that basis — a validated FORM, not a measured point"
+              }
+            }
+          },
+          "phase14.stage1.seam_shared_observation_channel.does_it_account_for_the_deficit": {
+            "amends": "phase14.stage1.seam_shared_observation_channel",
+            "axes": {
+              "implied_correlation_rho": {
+                "quantity": "rho = 1 - (T_cross/E[T])^2, inverted from the measurement",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s",
+                  "domain": "the evaluation strip"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true,
+                "note": "an INVERSION of a measured T_cross, not a prediction: it restates the same measurement in rho units. It speaks for THIS pair on THIS domain and transfers to no other pair — the shared-observation fraction is a property of the geometry"
+              }
+            }
+          },
+          "phase14.stage1.seam_crn_channel_mechanism.the_model_pin_70a": {
+            "amends": "phase14.stage1.seam_crn_channel_mechanism",
+            "axes": {
+              "rho_implied_by_T_cross": {
+                "quantity": "the same inversion as the shared-observation channel",
+                "measured_over": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "applied_to": {
+                  "m": 100,
+                  "pair": "seam_n/seam_s"
+                },
+                "within_measured_span": true
+              },
+              "predicted_T_cross": {
+                "quantity": "T_cross under rho = r^2 at the MEASURED r",
+                "measured_over": {
+                  "r": 0.25225741093173065,
+                  "m": 100
+                },
+                "applied_to": {
+                  "r": 0.25225741093173065,
+                  "m": 100
+                },
+                "within_measured_span": true,
+                "note": "evaluated AT the measured r, so this number crosses nothing. The r ~ 0.9 application of the same model IS an extrapolation and is declared at phase14.stage1.rho_model_range_limitation (validated_range [0, 0.2523], application_range [0, 0.9]) — the one block in this store that ever declared itself"
+              }
+            }
+          },
+          "phase14.stage1.seam_crn_channel_mechanism.sharpened_t14_prediction_pin_70b.now": {
+            "amends": "phase14.stage1.seam_crn_channel_mechanism",
+            "axes": {
+              "predicted_T_cross": {
+                "quantity": "T_cross under rho = r^2, as the sharpened T14 prediction",
+                "measured_over": {
+                  "r": 0.25225741093173065,
+                  "crn_state": "per-tile pavement origins (pre-T14)"
+                },
+                "applied_to": {
+                  "crn_state": "global pavement origin (post-T14)"
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the CRN-STATE axis, which is the axis nobody wrote down: the number is computed at the pre-T14 measured r and used to predict behaviour after T14 pairs the draws by construction. r post-T14 is UNMEASURED — T14 has not run, and it is Stage 2's under pin 88's halt. Pin 68(b) already fixes the direction (T_cross must FALL, and a fall is NOT evidence of repair); the magnitude is what this axis cannot supply"
+              }
+            }
+          },
+          "phase14.stage1.osse_pricing.wall_vs_nobs_diagnostic": {
+            "amends": "phase14.stage1.osse_pricing",
+            "axes": {
+              "solve_wall_vs_observation_count": {
+                "quantity": "solve wall as a function of observation count, used to scale per-class walls against the 40 h per-leg ceiling",
+                "measured_over": {
+                  "n_legs": 4,
+                  "n_obs_span": [
+                    138518,
+                    175059
+                  ],
+                  "n_missions": 5,
+                  "m": 100,
+                  "n_windows": 9
+                },
+                "applied_to": {
+                  "n_obs_span": "UNKNOWN — per-class observation counts are NOT MEASURED; the scaling is applied on MISSION COUNT as a proxy, spanning 3 to 9 against the legs' 5",
+                  "axis_substitution_declared": "THE FIT IS MEASURED ON OBSERVATIONS AND APPLIED ON MISSIONS. n_obs is a function of (constellation, tile), not of constellation alone — the legs vary 1.26x in observations at a FIXED 5-mission constellation."
+                },
+                "extrapolation_declared": "EXTRAPOLATION on two axes at once — observation count and the mission-count proxy standing in for it. Owner pin 246: a declaration whose measured_over and applied_to name DIFFERENT axes bounds nothing, so both are named here.",
+                "why_it_is_a_diagnostic_not_a_basis": "the per-iteration cost wall/(n_obs x iterations) is constant to +/-4.5% across the four legs, so most of the apparent superlinearity is the ITERATION term, which runs OPPOSITE to the observation term for sparse constellations. v3's headline is a BAND ACROSS MODELS with no exponent in it (owner pin 245a); this axis survives only to scale per-class walls for the ceiling check.",
+                "collinearity": "with n=4 and ONE POINT PER TILE, observation count is PERFECTLY COLLINEAR with tile identity: the regression measures WHICH TILE, not HOW MANY OBSERVATIONS"
+              }
+            }
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "axes": {
+              "per_tile_wall_h_if_linear_in_windows": {
+                "quantity": "per-tile wall, one window scaled to nine",
+                "measured_over": {
+                  "n_windows": 1,
+                  "wall_h": 3.4398840666791592,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "applied_to": {
+                  "n_windows": 9,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
+                "extrapolation_declared": "EXTRAPOLATION on the WINDOW-COUNT axis, linear, with across-window scaling unmeasured at the time",
+                "measured_outcome_2026_09_01": {
+                  "projected_h": 30.958956600112433,
+                  "measured_leg_h": 19.67,
+                  "ratio_measured_over_projected": 0.635,
+                  "note": "leg 1 settled it: the projection was PESSIMISTIC by 1.58x. Windows are not equal in cost and the last two are short"
+                }
+              },
+              "four_tile_wall_h_if_linear_in_windows": {
+                "quantity": "four-tile wall, one window scaled to nine and one tile to four",
+                "measured_over": {
+                  "n_windows": 1,
+                  "n_tiles": 1,
+                  "tile": "kuroshio"
+                },
+                "applied_to": {
+                  "n_windows": 9,
+                  "n_tiles": 4
+                },
+                "extrapolation_declared": "TWO axes crossed at once — window count 1->9 AND tile count 1->4 — on a single tile's measurement. Tile-to-tile variation remains UNMEASURED: only kuroshio has run, and southern, equatorial and quiet_gyre differ in obs density, land fraction and latitude"
               }
             }
           },
@@ -3934,290 +4074,250 @@
             "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
             "axes": {
               "implied_exponent": {
+                "quantity": "the nodes-scaling exponent implied by the probe",
+                "measured_over": {
+                  "n_geometries": 1,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
                 "applied_to": {
                   "claim": "where the scaling sits among the anchors"
                 },
-                "extrapolation_declared": "ONE point cannot determine an exponent. 1.28 is the exponent that would place this single measurement between the nodes^1.25 and nodes^1.5 anchors; it LOCATES the measurement, and is not a fitted scaling law. A second geometry is what would make it one",
-                "measured_over": {
-                  "m": 100,
-                  "n_geometries": 1,
-                  "tile": "kuroshio"
-                },
-                "quantity": "the nodes-scaling exponent implied by the probe"
+                "extrapolation_declared": "ONE point cannot determine an exponent. 1.28 is the exponent that would place this single measurement between the nodes^1.25 and nodes^1.5 anchors; it LOCATES the measurement, and is not a fitted scaling law. A second geometry is what would make it one"
               }
             }
           },
           "phase14.stage1.tier2_probe_kuroshio_m100.measured_one_window": {
-            "added_axis_not_caught_by_the_audit": true,
             "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "added_axis_not_caught_by_the_audit": true,
             "axes": {
               "peak_rss_mib": {
+                "quantity": "peak RSS, taken as the LEG peak by E-16 section 2",
+                "measured_over": {
+                  "n_windows": 1,
+                  "tile": "kuroshio",
+                  "m": 100
+                },
                 "applied_to": {
                   "n_windows": 9,
                   "role": "the launch gate's 2x basis"
                 },
                 "extrapolation_declared": "EXTRAPOLATION on the WINDOW-COUNT axis that was NEVER WRITTEN DOWN. The wall axis at least carried a prose caveat; this one carried nothing, and no field name marks it as projected, so the shape-keyed audit cannot catch it either. It is declared here by hand (pin 139a: expect the asymmetry again)",
                 "measured_outcome_2026_09_01": {
-                  "measured_leg_peak_mib": 7389.3359375,
-                  "note": "OPTIMISTIC by 1.69x, and structurally so: peak RSS grew monotonically with window count (4259 MiB after window 1 to 7389 at window 9, ~391 MiB/window) because completed windows were retained. Pin 133 removed the retention; the corrected basis is the pin-133(b) three-window re-measure",
                   "projected_peak_mib": 4364.52734375,
-                  "ratio_measured_over_projected": 1.693
-                },
-                "measured_over": {
-                  "m": 100,
-                  "n_windows": 1,
-                  "tile": "kuroshio"
-                },
-                "quantity": "peak RSS, taken as the LEG peak by E-16 section 2"
-              }
-            }
-          },
-          "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d": {
-            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
-            "axes": {
-              "four_tile_wall_h_if_linear_in_windows": {
-                "applied_to": {
-                  "n_tiles": 4,
-                  "n_windows": 9
-                },
-                "extrapolation_declared": "TWO axes crossed at once — window count 1->9 AND tile count 1->4 — on a single tile's measurement. Tile-to-tile variation remains UNMEASURED: only kuroshio has run, and southern, equatorial and quiet_gyre differ in obs density, land fraction and latitude",
-                "measured_over": {
-                  "n_tiles": 1,
-                  "n_windows": 1,
-                  "tile": "kuroshio"
-                },
-                "quantity": "four-tile wall, one window scaled to nine and one tile to four"
-              },
-              "per_tile_wall_h_if_linear_in_windows": {
-                "applied_to": {
-                  "m": 100,
-                  "n_windows": 9,
-                  "tile": "kuroshio"
-                },
-                "extrapolation_declared": "EXTRAPOLATION on the WINDOW-COUNT axis, linear, with across-window scaling unmeasured at the time",
-                "measured_outcome_2026_09_01": {
-                  "measured_leg_h": 19.67,
-                  "note": "leg 1 settled it: the projection was PESSIMISTIC by 1.58x. Windows are not equal in cost and the last two are short",
-                  "projected_h": 30.958956600112433,
-                  "ratio_measured_over_projected": 0.635
-                },
-                "measured_over": {
-                  "m": 100,
-                  "n_windows": 1,
-                  "tile": "kuroshio",
-                  "wall_h": 3.4398840666791592
-                },
-                "quantity": "per-tile wall, one window scaled to nine"
+                  "measured_leg_peak_mib": 7389.3359375,
+                  "ratio_measured_over_projected": 1.693,
+                  "note": "OPTIMISTIC by 1.69x, and structurally so: peak RSS grew monotonically with window count (4259 MiB after window 1 to 7389 at window 9, ~391 MiB/window) because completed windows were retained. Pin 133 removed the retention; the corrected basis is the pin-133(b) three-window re-measure"
+                }
               }
             }
           }
-        },
-        "gates": false,
-        "label": "PROJECTION DECLARATIONS — owner pin 139",
-        "method": "Every block the pin-134 shape audit catches is declared here PER AXIS with the range measured and the range applied (139c/d). No amended node is edited: the amendment index carries the forward pointers (139b), and the audit resolves them",
-        "pin": "139 — refuse now, declare the eleven by forward-pointer amendment",
-        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-        "the_audits_limit": "A shape-keyed audit reads what was WRITTEN. The pin-89 probe's RAM projection was never written as one — measured_one_window.peak_rss_mib became the launch-gate basis with no derived field — so no field name could catch it. It is declared here by hand, and the limit is recorded rather than papered over"
+        }
       }
     },
     "phase14.stage1.reachability_declarations": {
       "digest_sha256": "c3b7b2cbd9dd6ff2861b96f69ba94df3854c176646b1411ce46cca3c4f915ee1",
       "value": {
+        "label": "VERDICT REACHABILITY DECLARATIONS — owner pins 148, 42",
+        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "pin": "148 — the two golden-tile blocks declare first",
+        "gates": false,
+        "method": "Pin 42 keyed on a self-declared `kind: gate` that appears ZERO times in this store, so it never inspected anything (pin 140). These declarations state, per block, the condition under which each verdict could occur and which one did — by forward pointer, so no witnessed node is edited",
+        "why_these_two_first": "anchor-gate check 2 RUNS NOTHING: it is discharged by citation to phase14.stage0.gate2_loader_identity and to the golden tile. A cited gate that could never have fired makes the citation hollow, and check 2 is one of two cited checks under the identity chain",
+        "finding": "NOT hollow. Both golden-tile legs FIRED — mu by 6.23x and map rms by 4.10x over their recorded tolerances — and the scale check's discriminator is an equality against an independent artifact (phase13_lane0_mean.nc), so its other verdict was reachable too",
         "declarations": {
-          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my": {
-            "amends": "phase14.stage0.golden_tile",
-            "both_outcomes_reachable": true,
-            "cited_by": "phase14.stage1.anchor_gate.checks.loader_identity — check 2 runs nothing and is discharged by citation to this block and to phase14.stage0.gate2_loader_identity",
-            "fail_condition": "either leg over its threshold; both legs are one-sided tolerances on a measured difference, so either verdict was available before the numbers existed",
-            "margins": {
-              "map_rms_m": 0.041034469767374786,
-              "map_rms_over_by": 4.103446976737479,
-              "map_rms_threshold_m": 0.01,
-              "mu_delta": -0.012457116394516077,
-              "mu_over_by": 6.228558197258039,
-              "mu_threshold": 0.002
-            },
-            "outcome_observed": "FAILED BOTH LEGS, which is why the bridge caveat exists",
-            "pass_condition": "|mu_delta| <= 0.002 AND map rms <= 0.010 m — the recorded thresholds",
-            "why_not_unfailable": "the two legs are independent tolerances on measured differences between two data lineages; a repackaging-only difference would have landed inside both. They did not, by 6.2x and 4.1x, and the failure is the finding the tabled row carries forward"
-          },
-          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my.mu_scale_check": {
-            "amends": "phase14.stage0.golden_tile",
-            "both_outcomes_reachable": true,
-            "cited_by": "the same check-2 citation; this sub-block is what rules out solver drift as the explanation of the mu delta above",
-            "fail_condition": "side A does NOT reproduce the signed solution -> solver drift, and the whole A-vs-B comparison becomes uninterpretable",
-            "outcome_observed": "scale mismatch CONFIRMED, no solver drift",
-            "pass_condition": "side A reproduces the SIGNED solution (mu_a 0.76941 vs lane0 0.76953 on the their_eval scale, 1.43 cm rms against phase13_lane0_mean.nc) -> the delta is a SCALE mismatch, not drift",
-            "why_not_unfailable": "the discriminator is an equality against an independent recorded artifact, not a property of the comparison itself: had the generalized path drifted, mu_a would not have matched lane0 and this check would have said so"
-          },
-          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_n.capture_identity_check": {
-            "amends": "phase14.stage1.ensemble_settling_measurement",
-            "both_outcomes_reachable": true,
-            "fail_condition": "any nonzero difference -> the partition sigmas below are an APPROXIMATION of the production arithmetic rather than the arithmetic itself, and the settling measurement rests on nothing",
-            "outcome_observed": "0.0 on both comparisons. The measurement is not vacuous: the same block records a member-selection fp gap of 4.16e-17 from summation order, so the machinery CAN produce a nonzero number here",
-            "pass_condition": "the captured per-member field reduced by std(axis=0, ddof=1) reproduces BOTH the lineage evaluator and the map T4 persisted, at max_abs_diff 0.0 against a tolerance of exactly 0.0"
-          },
-          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_s.capture_identity_check": {
-            "amends": "phase14.stage1.ensemble_settling_measurement",
-            "both_outcomes_reachable": true,
-            "fail_condition": "as seam_n's capture identity check",
-            "outcome_observed": "0.0 on both comparisons",
-            "pass_condition": "as seam_n's capture identity check"
-          },
-          "phase14.stage1.probe.stop_bracket": {
-            "amends": "phase14.stage1.probe",
-            "both_outcomes_reachable": true,
-            "fail_condition": "ratio > 1.3 -> STOP and surface to the owner BEFORE any full run; a mis-sized model at six tiles x nine windows is a spend decision, not an executor call",
-            "outcome_observed": "not tripped",
-            "pass_condition": "measured/model ratio <= 1.3 -> the sizing model stands"
-          },
-          "phase14.stage1.probe_converged.stop_bracket": {
-            "amends": "phase14.stage1.probe_converged",
-            "both_outcomes_reachable": true,
-            "fail_condition": "as probe.stop_bracket",
-            "outcome_observed": "not tripped",
-            "pass_condition": "as probe.stop_bracket, on the converged re-run (pin 23a)"
-          },
-          "phase14.stage1.rho_model_validation_preregistration.owner_arithmetic_independently_reproduced": {
-            "amends": "phase14.stage1.rho_model_validation_preregistration",
-            "both_outcomes_reachable": true,
-            "fail_condition": "it does not -> the owner's arithmetic, or this reproduction of it, is wrong, and the cost of a 23% rho error is not what the preregistration says",
-            "outcome_observed": "REPRODUCED at all three points",
-            "pass_condition": "an independent recomputation of sqrt(1-r^2)/sqrt(1-1.23 r^2) reproduces the owner's 1.01x / 1.13x / 7.17x to 3 significant figures"
-          },
-          "phase14.stage1.seam_convergence_probe.ram_gate": {
-            "amends": "phase14.stage1.seam_convergence_probe",
-            "both_outcomes_reachable": true,
-            "fail_condition": "below it, the leg REFUSES rather than launching into an OOM — the same predicate E-16 section 2 uses at leg scale, and it has refused in practice (the pin-133b re-measure is parked on it right now)",
-            "outcome_observed": "passed: 5189.6 MiB available against a 2457.1 MiB threshold",
-            "pass_condition": "MemAvailable >= the threshold computed for this solve"
-          },
-          "phase14.stage1.seam_crn_channel_mechanism.empirical_test": {
-            "amends": "phase14.stage1.seam_crn_channel_mechanism",
-            "both_outcomes_reachable": true,
-            "fail_condition": "matched and mismatched correlations indistinguishable -> the draws are independent and the pairing hypothesis is refuted",
-            "outcome_observed": "PAIRED: matched +0.2523 vs mismatched -0.0025, a separation of 155.6 sd of the mismatched distribution over 390,915 strip nodes",
-            "pass_condition": "member k of seam_n correlates with member k of seam_s while j != k does not -> the draws are PAIRED, which is what a shared draw predicts and a shared field does not"
-          },
           "phase14.stage1.seam_rows[0]": {
             "amends": "phase14.stage1.seam_rows",
-            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 1.6372260422947704e-06 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered",
-            "both_outcomes_reachable": true,
             "cited_by": "T9 pack item (2) — the seam result in its ruled shape (pin 97c)",
+            "both_outcomes_reachable": true,
+            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed",
             "fail_condition": "this pair/mean route measured R = 0.082738 against those cells, so a different dispersion would have landed in a different cell; the three-cell mapping is exhaustive and the boundaries are test-pinned at 1.0 and 1.0000001",
             "outcome_observed": "CLEAN",
-            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed"
+            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 1.6372260422947704e-06 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered"
           },
           "phase14.stage1.seam_rows[0].floor": {
             "amends": "phase14.stage1.seam_rows",
             "both_outcomes_reachable": true,
+            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable",
             "fail_condition": "RMS(delta) <= 3 x F -> the row is marked UNMEASURED (solver floor) and MUST NOT be interpreted; the rubric is one-sided, so smallness is never read as CLEAN",
-            "outcome_observed": "attributable (F = 1.6372260422947704e-06)",
-            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable"
+            "outcome_observed": "attributable (F = 1.6372260422947704e-06)"
           },
           "phase14.stage1.seam_rows[1]": {
             "amends": "phase14.stage1.seam_rows",
-            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 9.539364309585352e-08 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered",
-            "both_outcomes_reachable": true,
             "cited_by": "T9 pack item (2) — the seam result in its ruled shape (pin 97c)",
+            "both_outcomes_reachable": true,
+            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed",
             "fail_condition": "this pair/sigma route measured R = 1.104435 against those cells, so a different dispersion would have landed in a different cell; the three-cell mapping is exhaustive and the boundaries are test-pinned at 1.0 and 1.0000001",
             "outcome_observed": "NOT_ESTABLISHED",
-            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed"
+            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 9.539364309585352e-08 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered"
           },
           "phase14.stage1.seam_rows[1].floor": {
             "amends": "phase14.stage1.seam_rows",
             "both_outcomes_reachable": true,
+            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable",
             "fail_condition": "RMS(delta) <= 3 x F -> the row is marked UNMEASURED (solver floor) and MUST NOT be interpreted; the rubric is one-sided, so smallness is never read as CLEAN",
-            "outcome_observed": "attributable (F = 9.539364309585352e-08)",
-            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable"
+            "outcome_observed": "attributable (F = 9.539364309585352e-08)"
           },
           "phase14.stage1.seam_rows[2]": {
             "amends": "phase14.stage1.seam_rows",
-            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 1.3746386805707489e-06 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered",
-            "both_outcomes_reachable": true,
             "cited_by": "T9 pack item (2) — the seam result in its ruled shape (pin 97c)",
+            "both_outcomes_reachable": true,
+            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed",
             "fail_condition": "this oracle/mean route measured R = 0.098103 against those cells, so a different dispersion would have landed in a different cell; the three-cell mapping is exhaustive and the boundaries are test-pinned at 1.0 and 1.0000001",
             "outcome_observed": "CLEAN",
-            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed"
+            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 1.3746386805707489e-06 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered"
           },
           "phase14.stage1.seam_rows[2].floor": {
             "amends": "phase14.stage1.seam_rows",
             "both_outcomes_reachable": true,
+            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable",
             "fail_condition": "RMS(delta) <= 3 x F -> the row is marked UNMEASURED (solver floor) and MUST NOT be interpreted; the rubric is one-sided, so smallness is never read as CLEAN",
-            "outcome_observed": "attributable (F = 1.3746386805707489e-06)",
-            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable"
+            "outcome_observed": "attributable (F = 1.3746386805707489e-06)"
           },
           "phase14.stage1.seam_rows[3]": {
             "amends": "phase14.stage1.seam_rows",
-            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 8.278502339198468e-08 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered",
-            "both_outcomes_reachable": true,
             "cited_by": "T9 pack item (2) — the seam result in its ruled shape (pin 97c)",
+            "both_outcomes_reachable": true,
+            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed",
             "fail_condition": "this oracle/sigma route measured R = 0.648763 against those cells, so a different dispersion would have landed in a different cell; the three-cell mapping is exhaustive and the boundaries are test-pinned at 1.0 and 1.0000001",
             "outcome_observed": "NOT_ESTABLISHED",
-            "pass_condition": "R_seam <= 1.0 -> CLEAN (boundary inclusive); 1.0 < R <= 2.5 -> ELEVATED-RECORDED; R > 2.5 -> STRUCTURAL_STOP to the owner. The thresholds are SEALED (instrument_configs()['seam']) and were fixed at Gate 0 before any number existed"
+            "attributability": "Rule 0: a verdict is attributable ONLY if RMS(delta) > 3 x F, with F = 8.278502339198468e-08 measured by a deeper-tolerance re-solve of the pair roster. Below that the row reads UNMEASURED (solver floor) and is not interpreted — the failing branch of the attributability test, reachable and pre-registered"
           },
           "phase14.stage1.seam_rows[3].floor": {
             "amends": "phase14.stage1.seam_rows",
             "both_outcomes_reachable": true,
+            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable",
             "fail_condition": "RMS(delta) <= 3 x F -> the row is marked UNMEASURED (solver floor) and MUST NOT be interpreted; the rubric is one-sided, so smallness is never read as CLEAN",
-            "outcome_observed": "attributable (F = 8.278502339198468e-08)",
-            "pass_condition": "RMS(delta) > 3 x F -> the row's verdict is attributable"
-          },
-          "phase14.stage1.seam_shared_observation_channel.does_it_account_for_the_deficit": {
-            "amends": "phase14.stage1.seam_shared_observation_channel",
-            "both_outcomes_reachable": true,
-            "fail_condition": "the implied rho is too small to close the 4.2 sd deficit -> a further mechanism is required and the diagnosis is incomplete",
-            "outcome_observed": "YES at rho = 5.17%; the deficit is fully accounted for. The arithmetic could have left a residual and did not",
-            "pass_condition": "the implied rho accounts for the measured T_cross deficit -> the shared observation channel explains it"
+            "outcome_observed": "attributable (F = 8.278502339198468e-08)"
           },
           "phase14.stage1.sigma_rows_not_established.withheld[0]": {
             "amends": "phase14.stage1.sigma_rows_not_established",
             "both_outcomes_reachable": true,
+            "pass_condition": "an ATTRIBUTABLE sigma verdict: the sigma-route dispersion resolves into a rubric cell that is not explained by the ensemble MC floor",
             "fail_condition": "the dispersion is accounted for by the MC floor at the m actually run, so the cell reads NOT_ESTABLISHED — the pre-registered withholding cell, used as designed rather than as a blank",
-            "outcome_observed": "NOT_ESTABLISHED; the PRIOR verdict was ELEVATED at R_sigma 1.10443, which is the proof the other branch was reachable — it had been taken",
-            "pass_condition": "an ATTRIBUTABLE sigma verdict: the sigma-route dispersion resolves into a rubric cell that is not explained by the ensemble MC floor"
+            "outcome_observed": "NOT_ESTABLISHED; the PRIOR verdict was ELEVATED at R_sigma 1.10443, which is the proof the other branch was reachable — it had been taken"
           },
           "phase14.stage1.sigma_rows_not_established.withheld[1]": {
             "amends": "phase14.stage1.sigma_rows_not_established",
             "both_outcomes_reachable": true,
+            "pass_condition": "as withheld[0], on the oracle route",
             "fail_condition": "as withheld[0], on the oracle route",
-            "outcome_observed": "NOT_ESTABLISHED; PRIOR verdict CLEAN at R_sigma 0.64876 — the two withheld rows had OPPOSITE prior verdicts, so the withholding is not a one-way ratchet toward the safer answer",
-            "pass_condition": "as withheld[0], on the oracle route"
+            "outcome_observed": "NOT_ESTABLISHED; PRIOR verdict CLEAN at R_sigma 0.64876 — the two withheld rows had OPPOSITE prior verdicts, so the withholding is not a one-way ratchet toward the safer answer"
           },
-          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.convergence": {
-            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+          "phase14.stage1.probe.stop_bracket": {
+            "amends": "phase14.stage1.probe",
             "both_outcomes_reachable": true,
-            "fail_condition": "either leg exits AT the cap -> CAPPED, and the wall can only UNDER-report. The margin was thin and the record says so: the member batch used 486 of 500",
-            "outcome_observed": "CONVERGED at 441/486 against a 500 cap",
-            "pass_condition": "both legs finish under rtol before the iteration cap -> CONVERGED, and the wall is a true measurement"
+            "pass_condition": "measured/model ratio <= 1.3 -> the sizing model stands",
+            "fail_condition": "ratio > 1.3 -> STOP and surface to the owner BEFORE any full run; a mis-sized model at six tiles x nine windows is a spend decision, not an executor call",
+            "outcome_observed": "not tripped"
           },
-          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall": {
-            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+          "phase14.stage1.probe_converged.stop_bracket": {
+            "amends": "phase14.stage1.probe_converged",
             "both_outcomes_reachable": true,
-            "fail_condition": "it exceeds the linear anchor -> scaling is superlinear, which is what happened: 31.0 h/tile, an implied exponent near 1.28, with the linear anchor optimistic by 1.42x",
-            "outcome_observed": "NOT linear; between the nodes^1.25 and nodes^1.5 anchors",
-            "pass_condition": "the measured wall matches the owner's LINEAR anchor (21.8 h/tile) -> scaling is linear in nodes and the high anchors were unsupported"
+            "pass_condition": "as probe.stop_bracket, on the converged re-run (pin 23a)",
+            "fail_condition": "as probe.stop_bracket",
+            "outcome_observed": "not tripped"
           },
-          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall.vs_ceiling": {
-            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+          "phase14.stage1.seam_convergence_probe.ram_gate": {
+            "amends": "phase14.stage1.seam_convergence_probe",
             "both_outcomes_reachable": true,
-            "fail_condition": "above it -> the Tier-2 crossing goes to the owner (task 22)",
-            "outcome_observed": "over by 5.16x, and task 22 is where it went",
-            "pass_condition": "per-tile wall <= the 6.0 h tier2_probe ceiling"
+            "pass_condition": "MemAvailable >= the threshold computed for this solve",
+            "fail_condition": "below it, the leg REFUSES rather than launching into an OOM — the same predicate E-16 section 2 uses at leg scale, and it has refused in practice (the pin-133b re-measure is parked on it right now)",
+            "outcome_observed": "passed: 5189.6 MiB available against a 2457.1 MiB threshold"
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_n.capture_identity_check": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "both_outcomes_reachable": true,
+            "pass_condition": "the captured per-member field reduced by std(axis=0, ddof=1) reproduces BOTH the lineage evaluator and the map T4 persisted, at max_abs_diff 0.0 against a tolerance of exactly 0.0",
+            "fail_condition": "any nonzero difference -> the partition sigmas below are an APPROXIMATION of the production arithmetic rather than the arithmetic itself, and the settling measurement rests on nothing",
+            "outcome_observed": "0.0 on both comparisons. The measurement is not vacuous: the same block records a member-selection fp gap of 4.16e-17 from summation order, so the machinery CAN produce a nonzero number here"
+          },
+          "phase14.stage1.ensemble_settling_measurement.per_tile.seam_s.capture_identity_check": {
+            "amends": "phase14.stage1.ensemble_settling_measurement",
+            "both_outcomes_reachable": true,
+            "pass_condition": "as seam_n's capture identity check",
+            "fail_condition": "as seam_n's capture identity check",
+            "outcome_observed": "0.0 on both comparisons"
+          },
+          "phase14.stage1.seam_shared_observation_channel.does_it_account_for_the_deficit": {
+            "amends": "phase14.stage1.seam_shared_observation_channel",
+            "both_outcomes_reachable": true,
+            "pass_condition": "the implied rho accounts for the measured T_cross deficit -> the shared observation channel explains it",
+            "fail_condition": "the implied rho is too small to close the 4.2 sd deficit -> a further mechanism is required and the diagnosis is incomplete",
+            "outcome_observed": "YES at rho = 5.17%; the deficit is fully accounted for. The arithmetic could have left a residual and did not"
+          },
+          "phase14.stage1.seam_crn_channel_mechanism.empirical_test": {
+            "amends": "phase14.stage1.seam_crn_channel_mechanism",
+            "both_outcomes_reachable": true,
+            "pass_condition": "member k of seam_n correlates with member k of seam_s while j != k does not -> the draws are PAIRED, which is what a shared draw predicts and a shared field does not",
+            "fail_condition": "matched and mismatched correlations indistinguishable -> the draws are independent and the pairing hypothesis is refuted",
+            "outcome_observed": "PAIRED: matched +0.2523 vs mismatched -0.0025, a separation of 155.6 sd of the mismatched distribution over 390,915 strip nodes"
+          },
+          "phase14.stage1.rho_model_validation_preregistration.owner_arithmetic_independently_reproduced": {
+            "amends": "phase14.stage1.rho_model_validation_preregistration",
+            "both_outcomes_reachable": true,
+            "pass_condition": "an independent recomputation of sqrt(1-r^2)/sqrt(1-1.23 r^2) reproduces the owner's 1.01x / 1.13x / 7.17x to 3 significant figures",
+            "fail_condition": "it does not -> the owner's arithmetic, or this reproduction of it, is wrong, and the cost of a 23% rho error is not what the preregistration says",
+            "outcome_observed": "REPRODUCED at all three points"
           },
           "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d": {
             "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
             "both_outcomes_reachable": true,
+            "pass_condition": "the measured per-tile wall lands inside the prior 23.8-94.2 h bracket -> the bracket stands and the sizing question is closed",
             "fail_condition": "it lands outside -> the bracket was wrong and the spend question reopens. The measurement also had to be CONVERGED to count at all",
-            "outcome_observed": "inside, in the lower third (31.0 h/tile) — and leg 1 then measured 19.67 h, so the projection itself was pessimistic by 1.58x (declared as a projection at phase14.stage1.projection_declarations)",
-            "pass_condition": "the measured per-tile wall lands inside the prior 23.8-94.2 h bracket -> the bracket stands and the sizing question is closed"
+            "outcome_observed": "inside, in the lower third (31.0 h/tile) — and leg 1 then measured 19.67 h, so the projection itself was pessimistic by 1.58x (declared as a projection at phase14.stage1.projection_declarations)"
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "both_outcomes_reachable": true,
+            "pass_condition": "the measured wall matches the owner's LINEAR anchor (21.8 h/tile) -> scaling is linear in nodes and the high anchors were unsupported",
+            "fail_condition": "it exceeds the linear anchor -> scaling is superlinear, which is what happened: 31.0 h/tile, an implied exponent near 1.28, with the linear anchor optimistic by 1.42x",
+            "outcome_observed": "NOT linear; between the nodes^1.25 and nodes^1.5 anchors"
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall.vs_ceiling": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "both_outcomes_reachable": true,
+            "pass_condition": "per-tile wall <= the 6.0 h tier2_probe ceiling",
+            "fail_condition": "above it -> the Tier-2 crossing goes to the owner (task 22)",
+            "outcome_observed": "over by 5.16x, and task 22 is where it went"
+          },
+          "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.convergence": {
+            "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
+            "both_outcomes_reachable": true,
+            "pass_condition": "both legs finish under rtol before the iteration cap -> CONVERGED, and the wall is a true measurement",
+            "fail_condition": "either leg exits AT the cap -> CAPPED, and the wall can only UNDER-report. The margin was thin and the record says so: the member batch used 486 of 500",
+            "outcome_observed": "CONVERGED at 441/486 against a 500 cap"
+          },
+          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my": {
+            "amends": "phase14.stage0.golden_tile",
+            "cited_by": "phase14.stage1.anchor_gate.checks.loader_identity — check 2 runs nothing and is discharged by citation to this block and to phase14.stage0.gate2_loader_identity",
+            "both_outcomes_reachable": true,
+            "pass_condition": "|mu_delta| <= 0.002 AND map rms <= 0.010 m — the recorded thresholds",
+            "fail_condition": "either leg over its threshold; both legs are one-sided tolerances on a measured difference, so either verdict was available before the numbers existed",
+            "outcome_observed": "FAILED BOTH LEGS, which is why the bridge caveat exists",
+            "margins": {
+              "mu_delta": -0.012457116394516077,
+              "mu_threshold": 0.002,
+              "mu_over_by": 6.228558197258039,
+              "map_rms_m": 0.041034469767374786,
+              "map_rms_threshold_m": 0.01,
+              "map_rms_over_by": 4.103446976737479
+            },
+            "why_not_unfailable": "the two legs are independent tolerances on measured differences between two data lineages; a repackaging-only difference would have landed inside both. They did not, by 6.2x and 4.1x, and the failure is the finding the tabled row carries forward"
+          },
+          "phase14.stage0.golden_tile.dc2021a_vs_cmems_my.mu_scale_check": {
+            "amends": "phase14.stage0.golden_tile",
+            "cited_by": "the same check-2 citation; this sub-block is what rules out solver drift as the explanation of the mu delta above",
+            "both_outcomes_reachable": true,
+            "pass_condition": "side A reproduces the SIGNED solution (mu_a 0.76941 vs lane0 0.76953 on the their_eval scale, 1.43 cm rms against phase13_lane0_mean.nc) -> the delta is a SCALE mismatch, not drift",
+            "fail_condition": "side A does NOT reproduce the signed solution -> solver drift, and the whole A-vs-B comparison becomes uninterpretable",
+            "outcome_observed": "scale mismatch CONFIRMED, no solver drift",
+            "why_not_unfailable": "the discriminator is an equality against an independent recorded artifact, not a property of the comparison itself: had the generalized path drifted, mu_a would not have matched lane0 and this check would have said so"
           }
         },
-        "finding": "NOT hollow. Both golden-tile legs FIRED — mu by 6.23x and map rms by 4.10x over their recorded tolerances — and the scale check's discriminator is an equality against an independent artifact (phase13_lane0_mean.nc), so its other verdict was reachable too",
-        "gates": false,
-        "label": "VERDICT REACHABILITY DECLARATIONS — owner pins 148, 42",
-        "method": "Pin 42 keyed on a self-declared `kind: gate` that appears ZERO times in this store, so it never inspected anything (pin 140). These declarations state, per block, the condition under which each verdict could occur and which one did — by forward pointer, so no witnessed node is edited",
         "not_declared_uncited_prior_phase": {
+          "rule": "pin 58's boundary: a node is in scope if a standing claim CITES it, wherever it lives. These nine are cited by nothing in phase14",
+          "citation_test": "every string under evidence.phase14 was searched for each block path and for its root. The anchor gate's two CITED checks resolve elsewhere: check 2 (loader_identity) cites phase14.stage0.gate2_loader_identity and phase14.stage0.golden_tile (both DECLARED, pin 148), and check 4 (cross_env) cites the Stage-0 T17 CRN manifests. The 51 'phase13' mentions inside phase14 resolve to phase13.miost.provenance.*, members.root_int, lane0_reference, refit.report_only_instruments and file artifacts — not one of the three phase13 blocks below",
           "blocks": [
             "stage_b_defect_run_20260707.seam_dispersion",
             "stage_b.seam_dispersion",
@@ -4229,13 +4329,8 @@
             "phase13.miost.lanes.launch",
             "phase13.miost.c2_acceptance.window_tripwire"
           ],
-          "citation_test": "every string under evidence.phase14 was searched for each block path and for its root. The anchor gate's two CITED checks resolve elsewhere: check 2 (loader_identity) cites phase14.stage0.gate2_loader_identity and phase14.stage0.golden_tile (both DECLARED, pin 148), and check 4 (cross_env) cites the Stage-0 T17 CRN manifests. The 51 'phase13' mentions inside phase14 resolve to phase13.miost.provenance.*, members.root_int, lane0_reference, refit.report_only_instruments and file artifacts — not one of the three phase13 blocks below",
-          "rule": "pin 58's boundary: a node is in scope if a standing claim CITES it, wherever it lives. These nine are cited by nothing in phase14",
           "status": "RECORDED AS FOUND, NOT DECLARED. They remain in the pin-140a sweep output, so they are visible every time the check runs rather than quietly exempted"
-        },
-        "pin": "148 — the two golden-tile blocks declare first",
-        "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
-        "why_these_two_first": "anchor-gate check 2 RUNS NOTHING: it is discharged by citation to phase14.stage0.gate2_loader_identity and to the golden tile. A cited gate that could never have fired makes the citation hollow, and check 2 is one of two cited checks under the identity chain"
+        }
       }
     },
     "phase14.stage1.revisit.equatorial": {

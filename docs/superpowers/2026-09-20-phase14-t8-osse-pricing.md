@@ -1,6 +1,6 @@
-# Phase-14 Stage-1 T8 — the OSSE run decision, PRICED (v2)
+# Phase-14 Stage-1 T8 — the OSSE run decision, PRICED (**v3**)
 
-**Posted 2026-09-20. Owner pins 232 / 234 / 235 / 236 / 237 / 239.**
+**Posted 2026-09-20. Owner pins 232 / 234 / 235 / 236 / 237 / 244–249.**
 **Evidence node:** `phase14.stage1.osse_pricing` (mirrored and witnessed).
 **Producer:** `scripts/phase14_osse_pricing.py` — every figure recomputes.
 
@@ -8,255 +8,245 @@
 >
 > **PRICED, OWNER TO DECIDE. This is NOT "not priced."**
 >
-> Every figure below is a measurement, or a **declared projection** from one.
-> What is absent is the owner's election, **and only that**.
+> Every figure below is a measurement, a **declared diagnostic**, or an
+> **explicit refusal to estimate**. What is absent is the owner's election.
 >
-> ⛔ The posted Gate-1 pack's OSSE slot reads *"T8 is unopened; presented as
-> such."* **That is out of date and this document supersedes it** — the pack is
-> **NOT retro-edited** (pin 209c); a successor pack cites this.
+> ⛔ The posted Gate-1 pack's OSSE slot still reads *"T8 is unopened."* That is
+> out of date and this supersedes it; the pack is **NOT retro-edited** (209c).
 
-> ## ⛔ v1 WAS OVERTURNED. THIS IS THE REBUILD (owner pin 239).
+> ## ⛔ v1 AND v2 WERE BOTH OVERTURNED. v3 IS **SIMPLER THAN v1**.
 >
-> A two-reviewer adversarial review under pin 212(b) **overturned the first
-> version.** The defect was not an arithmetic slip — every number in v1
-> recomputed exactly. **The defect was the UNIT OF ACCOUNT.**
+> Two rounds of two-reviewer review, both overturning on the **unit of
+> account** — v1 priced *one class = one tile solve*; v2 fitted on
+> **observations** and applied on **missions**.
 >
-> v1 priced **one class = one tile solve**, treating solve wall as independent
-> of observation count. It is not, and an OSSE varies exactly that. The error
-> **inverted the subset price ordering** an owner would choose a scope from.
->
-> ⚖ **Reviewer A confirmed all five of the owner's authored attack surfaces.
-> Reviewer B, briefed to attack the FRAME rather than the list, found this.**
-> That split is recorded as §7 discipline 17.
+> ⭐ **The decisive point (pin 245): every defensible model puts the sweep in
+> 295–470 h, and that band was always sufficient for a go/no-go.** Two rounds
+> were spent moving the *smallest* term in the price. So the headline is the
+> **band across models, with no exponent in it**. The fit is a **diagnostic**.
 
 ---
 
-## 1 — The value case, verbatim
+## 1 — The headline: a BAND, not a number
 
-Fork-f pin 5 (`specs/2026-07-21-phase14-scaling-program-design.md` §5), quoted
-exactly:
+| model | leg-equivalents | at kuroshio | at southern |
+|---|---|---|---|
+| flat — one class = one leg (v1) | 15.00 | 295.0 h | 412.2 h |
+| linear in missions | 15.80 | 310.8 h | 434.2 h |
+| 5-point refit (legs + `anchor_gate`) | 16.33 | 321.3 h | 448.9 h |
+| raw wall-vs-n_obs fit *(diagnostic)* | 16.71 | 328.7 h | 459.2 h |
+| upper 95% CI on the 4-leg fit | 17.12 | 336.7 h | 470.4 h |
+
+### ⭐ **FULL SWEEP: 295 – 470 h under every defensible model.**
+
+The models disagree by less than the **tile** axis does (1.40×). No exponent
+appears in this headline.
+
+## 2 — ⛔ FOUR OPEN INPUTS. None is defaulted.
+
+| axis | spread | status |
+|---|---|---|
+| which **tile** | 1.40× (19.67 → 27.48 h) | ⛔ NOT A DEFAULT |
+| **constellation size** | ~4.7× (3–9 missions vs the legs' 5) | ⛔ NOT A DEFAULT |
+| **platform convention** | ~1.28× | ⛔ NOT A DEFAULT — *newly disclosed* |
+| **RAM** | **UNMODELLED** | ⛔ NOT A DEFAULT — an explicit refusal |
+
+**The platform convention was never disclosed by v1 or v2.** `j2g` and `j2n`
+are **time-disjoint orbit phases of one Jason-2**, so the legs ran **four
+platforms under five labels**. The same over-count sits in epochs 0 (`e1`+`e1g`),
+8 (`al`+`alg`), 9 (`j2`+`j2n`) and 14 (`j3g`+`j3n`). Which convention a price
+uses moves it ~1.28× — larger than the correction v2 was built to make.
+
+## 3 — ⛔ PER-CLASS WALLS AGAINST THE 40 h CEILING — the fact v2 omitted
+
+v2 reported **only sums**. Pin 99(b)'s ceiling is a **per-leg** rule, and a
+breach is a **WAIT**, not a line in a total. `TIER_CEILING_H = 40.0` sat in the
+v2 producer **unreferenced** — pin 99(b)'s own rule as dead code, while the
+same constant is used correctly one task over in the revisit rows.
+
+| missions | classes | at kuroshio | at southern | verdict (southern) |
+|---|---|---|---|---|
+| 3 | 2 | 9.5 h | 13.3 h | RUN |
+| 4 | 6 | 14.3 h | 20.0 h | RUN |
+| 5 | 1 | 19.7 h | 27.5 h | RUN |
+| 6 | 1 | 25.5 h | 35.6 h | RUN |
+| 7 | 3 | 31.7 h | **44.2 h** | **WAIT** |
+| 8 | 1 | 38.2 h | **53.4 h** | **WAIT** |
+| 9 | 1 | **45.2 h** | **63.1 h** | **WAIT** |
+
+**Between 1 and 5 of the 15 classes breach the 40 h per-leg ceiling**,
+depending on the tile. ⚠ These per-class figures use the **diagnostic**
+exponent — the ceiling question needs *some* per-class number — and inherit
+every caveat in §4. They are not measurements.
+
+## 4 — The wall diagnostic, and why it is not the pricing basis
+
+| tile | n_obs | Σ PCG iters | wall | µs per obs-iteration |
+|---|---|---|---|---|
+| kuroshio | 138,518 | 8,075 | 19.67 h | 63.3 |
+| equatorial | 167,579 | 9,178 | 25.54 h | 59.8 |
+| quiet_gyre | 168,755 | 9,592 | 26.03 h | 57.9 |
+| southern | 175,059 | 9,452 | 27.48 h | 59.8 |
+
+**The per-iteration cost is constant to ±4.5%.** So the wall is essentially
+**linear in (observations × iterations)** — and roughly **60% of the apparent
+superlinearity** in a raw wall-vs-n_obs fit is the **iteration term wearing an
+observation exponent**. ⚠ The iteration term runs **opposite** to the
+observation term for sparse constellations, which are worse-conditioned.
+
+### ⛔ The "controlled experiment" premise is STRUCK (pin 245f)
+
+v2 called these four legs a controlled experiment *"in which n_obs is the only
+varying input"*. With **n = 4 and one point per tile, observation count is
+perfectly collinear with tile identity** — the regression measures **which
+tile**, not how many observations. **There is no measurement in this repository
+where n_obs varies at a fixed domain**, which is the only contrast an OSSE
+produces.
+
+⚠ **A domain confound is plausible and UNQUANTIFIED.** `n_coef` varies with
+latitude through `miost_sizing.n_coefficients`. Only kuroshio's is recorded
+anywhere (297,600); the other three are **SEARCHED AND ABSENT** from the store
+and the logs. A reviewer reported per-tile values; they could not be
+reproduced, so they are **not restated here** (pin 247).
+
+⚠ **`anchor_gate` is a measured m=100, 9-window, CONVERGED solve at 54,345
+observations — below the legs.** v2's declaration claimed the small classes sat
+"below anything measured"; that was **false**. Including it drops the exponent
+to **1.2627**. Excluding it is defensible (smaller domain, `dc2021a` source) —
+but *the reason for excluding it is the same confound that disqualifies the
+four-leg fit as a clean observation contrast.* It cannot be had both ways,
+which is why the fit is a diagnostic only.
+
+## 5 — ⛔ RAM: a NAMED axis carrying an explicit refusal
+
+v2 gave RAM one clause in a list. It is the axis that has actually stopped work
+here:
+
+- The **equatorial leg was REFUSED** by the launch gate at 9,891.58 MiB against
+  a 9,902.33 MiB gate — **a margin of 11 MiB** — and relaunched at 9,907.33,
+  clearing by 5.
+- **Leg 2 bottomed at 1,382 MiB mid-run with swap exhausted** and survived by
+  owner intervention, which is not a property the remaining legs can rely on.
+
+**RAM IS UNMODELLED at any constellation size but the legs' five, by
+declaration.** The one recorded RAM projection in this project **missed by
+1.69× while its wall projection was 0.63×** — the asymmetry pin 139(a)
+predicted. Estimating here would repeat it.
+
+**What would settle it:** predicted peak RSS at 9 missions against the
+9,902.33 MiB gate. A go/no-go, not a magnitude.
+
+## 6 — Scope subsets: limits only. **NO ORDERING.**
+
+| subset | classes | total missions | CANNOT establish |
+|---|---|---|---|
+| full sweep | 15 | 79 | — |
+| `fit+validate` | 10 | 61 | transfer into the 5 validate-only epochs, where transfer is actually claimed |
+| pre-lift (`mask_66`) | 9 | 35 | anything about the 6 modern post-lift constellations |
+| post-lift | 6 | 44 | era-transfer across the 1992–2009 boundary — the era gap the claim is weakest at |
+| validate-only | 5 | 18 | anything fitted; it tests only the transferred epochs |
+
+**No hours column, and no ordering.** That is deliberate.
+
+### ⛔ v2's DIRECTION CLAIM IS WITHDRAWN AND NOT RE-DERIVED (pin 244)
+
+> ~~*"Post-lift is dearer than pre-lift, and this holds under **any** cost
+> monotone in observation count."*~~
+
+**It is false.** Cost is `Σ f(mᵢ)`. Post-lift has **fewer and larger** classes
+(6 / 44) than pre-lift (9 / 35), so the ordering requires **f CONVEX**, not
+merely monotone — and it **reverses below p ≈ 0.638**. At p = 0.5, pre-lift
+costs 17.70 and post-lift 16.22 leg-equivalents.
+
+⭐ **The arithmetic error beneath it, and the finding that matters more.** The
+ratios that ratified the claim were `(Σm_post / Σm_pre)^p` — the exponent
+applied to the **aggregate**. But `Σ(mᵢ^p) ≠ (Σmᵢ)^p` unless **p = 1**.
+**p = 1 is the only point where the two formulas coincide, and that lone
+agreeing figure was read as verification.** *That is the finding, not the
+slip* (pin 244c).
+
+⛔ **No ordering is re-derived.** Convexity needs the conditioning term, which
+needs a measurement that does not exist. This is pin 239(c)'s own discipline —
+*do not replace a withdrawn claim with its opposite* — applied here to the
+owner's claim as it was applied to the executor's.
+
+**What would settle it:** one solve, one tile, one window, at a 3-mission
+subset of `PROBE_MISSIONS`, recording n_obs and PCG iterations. Roughly 1–2 h.
+
+## 7 — The truth field
+
+Metadata-only STAC query (pin 237a), HTTP 200, `stac.marine.copernicus.eu` ·
+`GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1), **2026-09-20T06:58:29Z**.
+
+| quantity | value |
+|---|---|
+| `zos` itemSize / grid | 2 bytes · 2041 × 4320 @ 0.0833° |
+| tile bbox 19°, **node-inclusive** | **229** × 229 |
+| window-plan span | **400 days** |
+| **per tile** | **40.01 MiB** |
+| **all four tiles** | **160.04 MiB** |
+| global `zos`, full record | 0.20 TiB |
+
+⭐ **Bought ONCE PER TILE, not once per class** — an OSSE varies the
+constellation over fixed truth. ⚠ **It does scale with tiles.**
+
+**FEASIBLE** (derived): 160.04 MiB against the 50 GiB `cmems_downloads` budget
+(`ladder.STAGE0_SPEND_TABLE`, `Tier.BOX_PRODUCTION`) — 0.31%.
+
+⚠ **Declared limits:** it is the **solve** box (the obs footprint adds the 1.0°
+halo, 1.22× larger); it is the **uncompressed** array, so a **bound** on wire
+volume, not a wire measurement; and it is **`zos` only**.
+
+⚠ The window plan is **overlapping and non-uniform** — 9 × 60 d on strides of
+{25, 45} d; 540 window-days over a 400-day union. *(v2 said "a 45-d stride";
+a uniform 45 would span 420 days, contradicting its own 400.)*
+
+⚠ **OPEN — which epoch-span reading the design takes.** The 15 classes are
+date-ranged (1992–2026) while this volume assumes **one common 400-day span**.
+Common-span means historical ground tracks must be **synthesised** (uncosted
+engineering); per-era means **15× the download** (2.34 GiB for four tiles,
+still feasible) **and the truth is no longer "FIXED"**, which is the value
+case's own word.
+
+## 8 — The value case, verbatim
 
 > *constellation varied over FIXED model truth is the only ground-truth test of
 > the era-transfer claim (fork-e level 1 validates against fitted s; OSSE
 > against truth)*
 
-The parenthetical is part of the claim. The assertion is **not** that nothing
-else tests era-transfer — it is that fork-e level 1 validates against a
-**fitted s** and an OSSE validates against **truth**. The spec's sentence
-continues *"— the Stage-1 run decision must price that benefit, not just
-seam/kernel checks"*; that clause is the mandate this document discharges.
+The assertion is **not** that nothing else tests era-transfer — it is that
+fork-e level 1 validates against a **fitted s** and an OSSE against **truth**.
+The spec continues *"— the Stage-1 run decision must price that benefit, not
+just seam/kernel checks"*, which is the mandate this document discharges.
 
-## 2 — How many runs: N_epoch-classes = **15**, DERIVED
+## 9 — ⛔ LOWER BOUND, and what carries no number at all
 
-From the **sealed** epoch table (`phase14_evaluation_seal_v1.json` →
-`content.epoch_table`), derived in the producer, never typed.
-
-| quantity | value |
-|---|---|
-| epochs | **15** |
-| **distinct mission sets (= classes)** | **15** |
-| distinct after removing locked `c2`/`c2n` | **15** |
-| deduplication available | **NO** |
-
-⛔ **NO DEDUPLICATION EXISTS** (pin 234b). Every constellation is unique, before
-*and* after removing the locked instruments — the reduction a reader would most
-plausibly try. **The price has no cheap reduction available.**
-
-## 3 — ⛔ TWO OPEN INPUTS, NOT ONE. The larger one is the constellation.
-
-**v1 declared the smaller axis open while collapsing the bigger one** (pin
-239d). Both are open:
-
-| axis | spread | status |
-|---|---|---|
-| which **tile** | **1.40×** (19.67 → 27.48 h) | ⛔ OPEN INPUT, not a default |
-| which **constellation** | **~4.7×** (3 → 9 missions vs the legs' 5) | ⛔ **OPEN INPUT, not a default — and it is the larger** |
-
-Class mission counts, from the sealed table:
-`[3, 3, 4, 4, 4, 4, 4, 4, 5, 7, 6, 7, 7, 8, 9]`. The four legs all ran the
-**same 5-mission** constellation (`PROBE_MISSIONS`), so the legs hold
-constellation fixed and vary tile — the opposite of what an OSSE does.
-
-## 4 — Why "one class = one tile solve" is wrong
-
-The four legs are the cleanest controlled experiment this project has:
-**identical** 19°×19° solve bbox, **identical** `m=100`, **identical** 9×60 d
-window plan, **identical** 5-mission constellation. The only varying input is
-observation count.
-
-| tile | n_obs | measured wall |
-|---|---|---|
-| kuroshio | 138,518 | 19.67 h |
-| equatorial | 167,579 | 25.54 h |
-| quiet_gyre | 168,755 | 26.03 h |
-| southern | 175,059 | 27.48 h |
-
-**wall ∝ n_obs^1.4146, R² = 0.9989.**
-
-⚖ **Independently corroborated, and already on the record:**
-`tier2_probe_kuroshio_m100.derived_pin_89d.wall.implied_exponent = 1.28`, whose
-own verdict reads *"NOT linear. The linear point … was optimistic by 1.42×."*
-**v1's flat model was flatter than LINEAR — a model this project's own pinned
-evidence had already rejected once.**
-
-### ⚖ The fit is a PROJECTION and is declared as one (pin 139)
-
-`measured_over`: 4 legs, **5 missions**, n_obs 138,518–175,059 ·
-`application_range`: **3–9 missions** · `within_measured_span`: **false** —
-the 3- and 4-mission classes sit **below** anything measured.
-
-⛔ **It may be used for MAGNITUDES ONLY.** One point estimate is not swapped
-for another (pin 239b).
-
-## 5 — The price
-
-| tile | measured leg | flat model ×15 | **obs-scaled (projected)** |
-|---|---|---|---|
-| kuroshio | 19.67 h | 295.0 h | **328.7 h** |
-| equatorial | 25.54 h | 383.1 h | 426.8 h |
-| quiet_gyre | 26.03 h | 390.5 h | 435.0 h |
-| southern | 27.48 h | 412.2 h | **459.2 h** |
-
-**Full sweep: 295.0 – 412.2 h flat; 328.7 – 459.2 h obs-scaled (projected).**
-The measured leg spread is **19.67 – 27.48 h**.
-
-The range is stated at both ends with each tile named, because *"a tile solve"
-is not one number* and a single figure hides a 1.40× spread that is a property
-of the tiles, not of the OSSE (pin 236c).
-
-## 6 — Pin 89's probe: a CROSS-CHECK, and a record of how a projection performed
-
-All figures **derived** from `tier2_probe_kuroshio_m100.derived_pin_89d.wall`
-(v1 typed them while citing the node — a provenance claim nothing enforced).
-
-| | value |
-|---|---|
-| probe, kuroshio m=100 | 3.4399 h/window, CONVERGED (441/486 vs a 500 cap) |
-| projected ×9 | **30.96 h** |
-| **measured, same tile** | **19.67 h** |
-| **over-prediction** | **1.574×** |
-| four-tile projected / measured | 123.84 h / 98.72 h → **1.254×** |
-
-⚖ **The measurement supersedes the projection** (236a). Both CONVERGED, both
-admissible under 99(c) — but one is a one-window projection and the other is
-the thing it was projecting. **Its value now is as a record of how a one-window
-projection performed** (236b). It is not a price.
-
-⛔ **THE CAPPED T2 PROBE IS USED NOWHERE** (99c / pin 23a).
-
-## 7 — The truth field: MEASURED, and it scales with TILES, not classes
-
-Pin 237(a) authorised a **metadata-only** STAC query — no download, one host,
-read-only. HTTP 200.
-
-- `stac.marine.copernicus.eu` · `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) ·
-  `cmems_mod_glo_phy_my_0.083deg_P1D-m_202311` · **2026-09-20T06:58:29Z**
-- The STAC document carries **no total-size field**. Volumes are **derived**
-  from `itemSize` × grid geometry.
-
-| quantity | value |
-|---|---|
-| `zos` itemSize / dtype | 2 bytes / `<i2` |
-| grid | 2041 lat × 4320 lon, 0.0833°, 12,227 days |
-| tile bbox 19°, **node-inclusive** | **229** × 229 nodes |
-| window-plan span | **400 days** |
-| **per tile, whole span** | **40.01 MiB** |
-| **all four tiles** | **160.04 MiB** |
-| global `zos`, full record | 0.20 TiB |
-
-### ⭐ **THE TRUTH FIELD IS BOUGHT ONCE PER TILE, NOT ONCE PER CLASS.**
-
-An OSSE varies the **CONSTELLATION** over **FIXED** truth — that is what makes
-it a ground-truth test. So N_epoch-classes multiplies the **re-solves**, not
-the download. ⚠ **It DOES scale with the number of tiles**: four tiles is four
-buys, 160.04 MiB. *(v1's headline dropped "per tile".)*
-
-**FEASIBLE** — derived, not asserted: 160.04 MiB against a 50 GiB
-pre-registered CMEMS budget (0.31%), with 311 GiB free disk.
-
-⚠ **Three declared limits on this figure:**
-
-1. **It is the SOLVE box.** Simulating observations needs truth over the **obs
-   footprint** (solve bbox + the 1.0° operative halo = 21°), which is
-   **(21/19)² = 1.22× larger**. Not applied, because the obs-footprint choice
-   belongs with the run design.
-2. **It is the UNCOMPRESSED array size**, so it is a **bound** on wire volume,
-   not a wire measurement. GLORYS netCDF is deflate-compressed int16.
-3. **`zos` only** — no MDT, mask or ancillary. Adequate for a nadir-SLA OSSE;
-   stated as a scope choice.
-
-⚠ The window plan is **overlapping, not contiguous**: 9 × 60 d on a 45-d
-stride, so 540 window-days sit over a **400-day union**. The union is the
-download basis because each day is bought once.
-
-## 8 — ⛔ THE FIGURES ARE A LOWER BOUND — **INCLUDING THE COMPUTE FIGURE**
-
-**Widened under pin 239(e).** v1 attributed the lower bound to uncosted
-*engineering* alone, so a reader concluded the compute band was sound. **It is
-not:** the flat model under-prices every class above 5 missions, and **7 of the
-15 classes are above it.**
-
-**Covered:** constellation-varied re-solves and the truth download, both at
-declared model assumptions.
+**Covered:** the re-solves and the truth download, at declared assumptions.
 
 **NOT costed:**
 
-1. **Truth-provider wiring** — the `TRUTH` interface is **DORMANT since 4b**;
-   re-arming it is unmeasured engineering time and is the **largest open item**.
-2. Per-class observation simulation from the truth field.
+1. **Truth-provider wiring** — `TRUTH` is **DORMANT since 4b**. Called the
+   largest open item, and it **carries no number at all**, while a 160 MiB
+   download is priced to four figures.
+2. Per-class observation simulation.
 3. Scoring and analysis of 15 outputs.
-4. **Non-convergence retries** — the legs ran 424–554 PCG iterations at 5
-   missions; the 3-mission classes are sparser, worse-conditioned, and outside
-   anything measured.
-5. **Calendar time and box occupancy** — these are serial single-host hours,
-   with a launch gate of 2× predicted peak RSS per class.
+4. **REPLICATION.** 15 classes × 1 tile × 1 truth realisation cannot separate
+   *"this constellation is worse"* from *"these track positions over this tile
+   were unlucky"*. §7's once-per-tile truth forecloses repeats by construction.
+5. Non-convergence retries — the legs ran **375–626** PCG iterations per window
+   at 5 missions.
+6. Calendar time and box occupancy — serial single-host hours.
+7. **Truth-field independence.** GLORYS12V1 is a **data-assimilative reanalysis
+   that ingests along-track SLA from the very constellations being simulated** —
+   the fraternal-twin problem, first-order for an OSSE whose whole value case is
+   "against truth". §7's limits are all about volume; none is about validity.
 
-**The gap is BOUNDED on the download axis and OPEN on both the engineering and
-the compute-model axes.**
-
-## 9 — Scope subsets: the ORDERING is a counting fact
-
-⛔ **v1's ordering was WRONG.** Under the flat model post-lift looked cheaper
-than pre-lift because it has fewer classes. **It has more total observations.**
-
-| subset | classes | total missions | flat ×kuroshio | **obs-scaled ×kuroshio** | CANNOT establish |
-|---|---|---|---|---|---|
-| full sweep | 15 | 79 | 295.0 h | **328.7 h** | — |
-| `fit+validate` | 10 | 61 | 196.7 h | **266.6 h** | transfer into the 5 validate-only epochs, where transfer is actually claimed |
-| pre-lift (`mask_66`) | **9** | **35** | 177.0 h | **124.8 h** | anything about the 6 modern post-lift constellations |
-| post-lift | **6** | **44** | 118.0 h | **203.9 h** | era-transfer across the 1992–2009 boundary — the era gap the claim is weakest at |
-| validate-only | 5 | 18 | 98.3 h | **62.1 h** | anything fitted; it tests only the transferred epochs |
-
-### ⭐ **POST-LIFT IS DEARER THAN PRE-LIFT. This is a COUNTING FACT.**
-
-Post-lift has **fewer classes (6 vs 9) and more total missions (44 vs 35)**. So
-it is dearer under **any** cost monotone in observation count — the direction
-does **not** depend on the fitted exponent. Only the flat model reverses it,
-and that model is what the review overturned.
-
-**The magnitudes** above carry §4's pin-139 declaration. **The direction** does
-not (pin 239a/b).
-
-### ⛔ v1's §8 editorial is WITHDRAWN
-
-> ~~*"The cheapest subsets are cheap precisely because they drop the epochs the
-> era-transfer claim is weakest at. Cost and evidential value move together
-> here."*~~
-
-**It was an artefact of the flat model and inverts with it**: the sparse
-historical constellations — exactly where era-transfer is weakest — carry the
-**fewest** observations and are therefore the **cheapest** classes to solve.
-
-⛔ **It is NOT replaced with the opposite editorial** (pin 239c). That would be
-the same mistake with a different sign. The inversion is recorded as a
-**finding**; no claim is made about cost and value moving together or apart.
-
-## 10 — Recommendation: both options presented, neither elected
+## 10 — Recommendation: both options, neither elected
 
 | option | cost | CAN establish | CANNOT establish |
 |---|---|---|---|
-| **run at Stage-2 entry** | same compute; truth download trivial either way | the era-transfer claim against truth where it becomes load-bearing | anything for Gate 1 — it closes no Stage-1 item |
-| **run now** | flat 295.0–412.2 h; obs-scaled (projected) 328.7–459.2 h; + 160.04 MiB truth | the same thing, earlier | any Gate-1 item — the OSSE is not a Gate-1 deliverable, and Gate 1 already carries two ruled WAITs (219, 224) |
+| **run at Stage-2 entry** | same compute | the era-transfer claim against truth where it becomes load-bearing | anything for Gate 1 |
+| **run now** | 295–470 h across all models, + 160.04 MiB truth | the same thing, earlier | any Gate-1 item; Gate 1 already carries two ruled WAITs |
 
 > ## ⬛ DECISION CELL — **EMPTY.** The OSSE run decision is the owner's.
 
@@ -264,11 +254,12 @@ the same mistake with a different sign. The inversion is recorded as a
 
 | figure | source | status |
 |---|---|---|
-| four leg walls, n_obs | `phase14.stage1.tiles.<tile>` | MEASURED, 9/9 CONVERGED |
+| leg walls, n_obs, PCG iterations | `phase14.stage1.tiles.<tile>` | MEASURED, 9/9 CONVERGED |
 | N_epoch-classes, mission counts | sealed `content.epoch_table` | DERIVED from sealed evidence |
-| **obs-scaling exponent 1.4146** | fitted from the four legs | **PROJECTED — pin-139 declared, outside measured span** |
-| probe 3.4399 h/window, 123.84 h | `tier2_probe_kuroshio_m100` | CONVERGED; **declared projection**, cross-check only |
-| truth volume | STAC metadata query 2026-09-20T06:58:29Z | DERIVED from `itemSize` × geometry; a **bound** on wire volume |
-| window-plan span | `tiles.quiet_gyre.window_plan` | MEASURED |
-| leg constellation | `phase14_stage1_run.PROBE_MISSIONS` | test-pinned (rows carry no mission list) |
+| model band 295–470 h | the five models above | DERIVED; no single exponent |
+| wall-vs-n_obs exponent | fitted from four legs | **DIAGNOSTIC** — declared at `projection_declarations`, collinear with tile identity |
+| per-class walls / ceiling verdicts | diagnostic exponent × measured legs | PROJECTED; inherits §4's caveats |
+| RAM at other constellation sizes | — | **UNMODELLED by declaration** |
+| per-tile `n_coef` (3 of 4) | — | **SEARCHED AND ABSENT** |
+| truth volume | STAC query 2026-09-20T06:58:29Z | DERIVED; a bound on wire volume |
 | capped T2 probe | — | **NEVER USED** (99c / pin 23a) |

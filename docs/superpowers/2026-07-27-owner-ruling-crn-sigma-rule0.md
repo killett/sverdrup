@@ -4131,7 +4131,7 @@ axis and OPEN on the engineering axis.**
 
 ### The deliverable, and what it is not
 
-`docs/superpowers/2026-09-19-phase14-t8-osse-pricing.md`, with the node
+`docs/superpowers/2026-09-20-phase14-t8-osse-pricing.md` *[path corrected 2026-09-20 under pin 246: the 09-19 name never existed at HEAD — the document was posted at 09-20 because it cites a measurement stamped after the 09-19 date]*, with the node
 **`phase14.stage1.osse_pricing`** mirrored and witnessed (clean APPEND to 52 nodes; `check`
 PASS on all four surfaces without a re-sync; **no supersession spent**). Producer
 `scripts/phase14_osse_pricing.py`, test-pinned and mutation-checked. **The posted Gate-1 pack
@@ -4211,10 +4211,7 @@ controlled experiment (identical bbox, `m`, window plan and constellation; **onl
 varying**) and give **wall ∝ n_obs^1.4146, R² 0.9989**, against classes running **3–9
 missions** where the legs ran **5**.
 
-⭐ **THE INVERSION IS A COUNTING FACT** (239a/b). Post-lift carries **fewer classes (6 v 9)
-and more total missions (44 v 35)**, so it is dearer under **any** cost monotone in
-observations — at p = 0.5, 1.0, 1.4146 and 2.0 alike. Only the flat model reverses it. v1
-quoted post-lift as the cheap modern scope at **118 h** against roughly **204 h**.
+⛔ **THIS PARAGRAPH IS WITHDRAWN — see pin 244 and PART 57.** It read: *"THE INVERSION IS A COUNTING FACT (239a/b). Post-lift carries fewer classes (6 v 9) and more total missions (44 v 35), so it is dearer under any cost monotone in observations — at p = 0.5, 1.0, 1.4146 and 2.0 alike."* **That is FALSE.** Cost is Σ f(mᵢ); post-lift has FEWER and LARGER classes, so the ordering requires f **CONVEX**, not monotone, and it **reverses below p ≈ 0.638** (at p = 0.5, pre-lift 17.70 against post-lift 16.22). The four ratios quoted were `(Σm_post/Σm_pre)^p`, the exponent applied to the AGGREGATE; p = 1 is the only point where that equals the sum of per-class costs, and it was the only figure that agreed. **The ordering is withdrawn and NOT re-derived** (244a).
 
 **Direction asserted, magnitudes declared.** The obs-scaled hours carry a pin-139
 declaration: `measured_over` 4 legs at 5 missions, `application_range` 3–9 missions,
@@ -4246,3 +4243,113 @@ requires the **bold** form. ⚠ **Discipline 11's own test (pin 146b) still uses
 regex** and passes only because that entry happens to contain no back-references; adding one
 would fail it spuriously. Left as the owner's call rather than edited, since that test is
 pin 146(b)'s mechanism.
+
+---
+
+## PART 57 — THE DIRECTION CLAIM WITHDRAWN; T8 v3 IS SIMPLER THAN v1 (verbatim), pins 244–249, 2026-09-20
+
+**Landed verbatim under pin 40/41/48.**
+
+> **244. 239(a) IS WITHDRAWN. My arithmetic was wrong and the rebuild was ordered on it.**
+> Cost is Σ f(mᵢ), not f(Σ mᵢ). My figures were (44/35)^p; the true ratios are 0.916 /
+> 1.257 / 1.633 / 2.360 at p = 0.5 / 1.0 / 1.4146 / 2.0, with the crossover at 0.638.
+> The direction needs CONVEXITY, not monotonicity, and I asserted monotonicity.
+> (a) WITHDRAW THE DIRECTION CLAIM ENTIRELY — do not re-derive it. Convexity needs the
+> conditioning term, which needs a measurement that does not exist. §9 carries NO
+> ordering. That is 239(c)'s own discipline applied to my claim instead of yours.
+> (b) Strike it everywhere it propagated: document, node, the test named for it, PART 56,
+> PROGRESS, and §7 discipline 17. Record the withdrawal and the reason.
+> (c) RECORD THAT THE ONE AGREEING FIGURE WAS THE COINCIDENCE. p = 1 is the only point
+> where the two formulas coincide; I treated that agreement as verification. That is
+> the finding, not the arithmetic slip.
+>
+> **245. T8 v3 IS SIMPLER THAN v1, NOT MORE COMPLEX.** B's decisive point: every defensible model
+> puts the sweep in 295-470 h, and that band was always sufficient for a go/no-go.
+> (a) State the band as 295-470 h across all defensible models. No exponent in the
+> headline. The fit becomes a recorded diagnostic, not the pricing basis.
+> (b) DECLARE EVERY AXIS AS AN OPEN INPUT, none collapsed: tile (~1.40×), constellation
+> size, platform convention (~1.28× — j2g/j2n are time-disjoint phases of one Jason-2,
+> so the legs ran four platforms, and that convention was never disclosed), and RAM.
+> (c) ⛔ PER-CLASS FIGURES ARE THE DECISION-RELEVANT FACT, and the document reported only
+> sums. Three to six of the 15 classes breach the 40 h per-leg WAIT ceiling under your
+> own model. TIER_CEILING_H = 40.0 is defined in the producer and never referenced —
+> pin 99(b)'s rule as dead code, while the same constant is used correctly one task
+> over. Wire it, and report per-class WAIT status.
+> (d) RAM GETS A MODEL OR AN EXPLICIT "UNMODELLED" DECLARATION. It already refused the
+> equatorial leg by 11 MiB and nearly lost leg 2 at 1,382 MiB. B found this project
+> has pinned exactly this asymmetry before — wall 0.63×, RAM 1.69×, the RAM
+> projection never written down. Second instance; make it a named axis this time.
+> (e) B's decomposition is the honest model and it is simple: wall/(n_obs × Σiters) is
+> 63.3 / 59.8 / 57.9 / 59.8 µs, constant to ±4.5%. Record it as the diagnostic, note
+> that ~60% of the apparent superlinearity is an iteration term, and that the
+> iteration term runs OPPOSITE to the obs term for sparse constellations.
+> (f) THE "CONTROLLED EXPERIMENT" PREMISE IS FALSE and must be struck: at n = 4 with one
+> point per tile, n_obs is perfectly collinear with tile identity, so the regression
+> measures which tile, not how many observations. n_coef spans 1.50× and is
+> anti-correlated with n_obs.
+>
+> **246. A's FINDINGS: accepted except the budget row.** Your verification is right — there are
+> two 50 GiB rows and cmems_downloads (BOX_PRODUCTION, egress_gib 0.0, "public-data
+> egress $0") is a cost statement, not a byte ceiling. A read the cloud row. 0.31% stands.
+> Fix: the mixed-axis pin-139 declaration (it bounds nothing), 6 not 7 classes above 5
+> missions, 375-626 iterations, the 1.28 node-exponent non-corroboration, the non-uniform
+> stride, osse_pricing's absence from projection_declarations, §9's kuroshio-only column,
+> and the tracker's stale metadata.files path.
+>
+> **247. ⛔ AGENT OUTPUT IS DATA, NOT FACT — §7, and you named it yourself.**
+> "424-554" was lifted from a reviewer's report into the document unverified, and the
+> store says 375-626. A reviewer's finding is a claim to check, exactly like a
+> measurement that fits. You have verified reviewer claims correctly every other time
+> this session; the one that went in unchecked is the one that was wrong.
+>
+> **248. THE THREE-INSTANCE PATTERN GOES IN §7 AS ITS OWN DISCIPLINE:** a price is stated in a
+> unit, and the unit must be the thing that varies. v1 priced in classes when cost varies
+> with observations; v2 fitted on observations and applied to missions; 244 substituted
+> the aggregate for the sum. Tag all three, count derived per 146(b). Mine is one of them
+> and it is tagged as mine.
+>
+> **249. RATIFIED:** verifying B against my own ruling rather than deferring to either; committing
+> before dispatching so the reviewers read a clean tree; the RAM-gate diagnosis of the
+> four seam_pair failures; and flagging discipline 11's loose regex rather than editing
+> pin 146(b)'s own mechanism unasked.
+
+### What v3 changed, and the two things 245 asked for that the evidence would not support
+
+**The headline is a BAND: 295–470 h**, spanning flat (15.00 leg-equivalents), linear
+(15.80), the 5-point refit including `anchor_gate` (16.33), the raw fit (16.71) and the
+upper 95% CI (17.12). **No exponent appears in it.**
+
+**The direction claim is struck in all six places it reached** (244b): the document, the
+node, the test named for it, PART 56 (withdrawn in place, original text preserved),
+PROGRESS, and §7 discipline 17's `(f1)`. A test now fails if any hours column or ordering
+returns to the subset rows.
+
+**§7 gains discipline 18** with three tagged instances — `(u1)` v1's classes, `(u2)` v2's
+observations-fitted-missions-applied, and **`(u3)`, the owner's own aggregate-for-sum** —
+count derived per 146(b), tags test-pinned.
+
+⭐ **The lesson recorded at `(u3)` is 244(c)'s, not the arithmetic**: the check ran at four
+exponents and **p = 1 is the only one at which the two formulas can agree**. The agreeing
+figure was read as verification of the other three. *That is discipline 11's unfailable-check
+shape, arriving inside a VERIFICATION rather than inside a gate.*
+
+**`TIER_CEILING_H` is wired** (245c) and per-class walls are reported against it.
+
+⚠ **TWO CORRECTIONS TO 245, BOTH DOWNWARD ON MY OWN NUMBERS.**
+
+1. **245(c) says "three to six of the 15 classes breach".** Derived from the sealed counts
+   and the measured legs, it is **1 to 5** — one at kuroshio (the 9-mission class), five at
+   southern (three 7s, one 8, one 9). The document carries the derived figure.
+2. **245(f) cites "n_coef spans 1.50× and is anti-correlated with n_obs".** ⛔ **That could
+   not be reproduced and is NOT restated.** Only kuroshio's `n_coef` exists anywhere
+   (297,600, at `model_at_probe_geometry`); the other three tiles' values are **SEARCHED AND
+   ABSENT** from the store and the logs. The *collinearity* argument needs no `n_coef` and
+   stands on its own — n=4, one point per tile. This is **pin 247 applied to the reviewer
+   report that 245(f) quotes**, which is the pin's own test.
+
+⚠ **TWO SUPERSESSIONS SPENT.** `phase14.stage1.osse_pricing` (v2 was witnessed at
+`83622b8`) and `phase14.stage1.projection_declarations` (the register grew 12 → 13 blocks
+under 246, via the pin-64 forward-pointer form). Prior bodies and digests preserved in
+`supersessions.json`, which now holds three entries — the precedent being pin 148's
+`reachability_declarations`, superseded for the same reason: *the node grew, and the
+append-only gate correctly refuses growth without a stated reason.*

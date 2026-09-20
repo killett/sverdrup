@@ -231,6 +231,60 @@ DECLARATIONS: dict[str, dict[str, Any]] = {
             }
         },
     },
+    "phase14.stage1.osse_pricing.wall_vs_nobs_diagnostic": {
+        "amends": "phase14.stage1.osse_pricing",
+        "axes": {
+            "solve_wall_vs_observation_count": {
+                "quantity": (
+                    "solve wall as a function of observation count, used to "
+                    "scale per-class walls against the 40 h per-leg ceiling"
+                ),
+                "measured_over": {
+                    "n_legs": 4,
+                    "n_obs_span": [138518, 175059],
+                    "n_missions": 5,
+                    "m": 100,
+                    "n_windows": 9,
+                },
+                "applied_to": {
+                    "n_obs_span": (
+                        "UNKNOWN — per-class observation counts are NOT "
+                        "MEASURED; the scaling is applied on MISSION COUNT as "
+                        "a proxy, spanning 3 to 9 against the legs' 5"
+                    ),
+                    "axis_substitution_declared": (
+                        "THE FIT IS MEASURED ON OBSERVATIONS AND APPLIED ON "
+                        "MISSIONS. n_obs is a function of (constellation, "
+                        "tile), not of constellation alone — the legs vary "
+                        "1.26x in observations at a FIXED 5-mission "
+                        "constellation."
+                    ),
+                },
+                "extrapolation_declared": (
+                    "EXTRAPOLATION on two axes at once — observation count "
+                    "and the mission-count proxy standing in for it. Owner "
+                    "pin 246: a declaration whose measured_over and "
+                    "applied_to name DIFFERENT axes bounds nothing, so both "
+                    "are named here."
+                ),
+                "why_it_is_a_diagnostic_not_a_basis": (
+                    "the per-iteration cost wall/(n_obs x iterations) is "
+                    "constant to +/-4.5% across the four legs, so most of the "
+                    "apparent superlinearity is the ITERATION term, which "
+                    "runs OPPOSITE to the observation term for sparse "
+                    "constellations. v3's headline is a BAND ACROSS MODELS "
+                    "with no exponent in it (owner pin 245a); this axis "
+                    "survives only to scale per-class walls for the ceiling "
+                    "check."
+                ),
+                "collinearity": (
+                    "with n=4 and ONE POINT PER TILE, observation count is "
+                    "PERFECTLY COLLINEAR with tile identity: the regression "
+                    "measures WHICH TILE, not HOW MANY OBSERVATIONS"
+                ),
+            }
+        },
+    },
     "phase14.stage1.tier2_probe_kuroshio_m100.rederived_bracket_pin_89d": {
         "amends": "phase14.stage1.tier2_probe_kuroshio_m100",
         "axes": {

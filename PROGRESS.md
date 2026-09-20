@@ -2,21 +2,26 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
-> T8 IN PROGRESS — v1 OVERTURNED, REBUILT (pin 239). A two-reviewer review under 212(b)
-> split: **reviewer A CONFIRMED all five of the owner's authored surfaces; reviewer B,
-> briefed to attack the FRAME, OVERTURNED the pricing model.** v1 priced one class = one
-> tile solve; the four legs (identical bbox/m/window-plan/constellation, only n_obs varying)
-> give **wall ~ n_obs^1.4146, R2 0.9989**, and the classes run 3-9 missions against the legs'
-> 5. ⭐ **IT INVERTED THE SUBSET ORDERING** an owner picks a scope from: post-lift has FEWER
-> classes (6 v 9) and MORE missions (44 v 35), so it is DEARER — a COUNTING FACT, true at
-> every exponent above zero. v1 quoted it as the cheap option at 118 h against ~204 h.
-> Rebuilt: full sweep **295.0-412.2 h flat, 328.7-459.2 h obs-scaled (pin-139 declared)**;
-> direction asserted, magnitudes declared; v1's "cost and value move together" editorial
-> WITHDRAWN and NOT replaced with its opposite (239c); constellation size declared the
-> LARGER open input (~4.7x v the tile axis's 1.40x); the lower bound widened to include the
-> COMPUTE figure (239e). Truth field **40.01 MiB per tile, 160.04 MiB for four** (node-
-> inclusive 229 nodes, pin 237). Decision cell stays EMPTY. Deliverable is a standalone doc
-> + witnessed node; the posted Gate-1 pack is NOT retro-edited.
+> T8 v3 POSTED — v1 AND v2 BOTH OVERTURNED, both on the UNIT OF ACCOUNT (pins 244/245).
+> ⭐ **v3 IS SIMPLER THAN v1:** the headline is a **BAND ACROSS MODELS, 295-470 h**, with
+> **no exponent in it** — flat, linear, 5-point refit, the fit, and the 95% CI ceiling all
+> land inside it, and that band was always sufficient for a go/no-go. Two rounds were spent
+> moving the SMALLEST term in the price.
+> ⛔ **THE SUBSET DIRECTION CLAIM IS WITHDRAWN AND NOT RE-DERIVED (244).** "Post-lift is
+> dearer under ANY monotone cost" is FALSE: cost is Σ f(mᵢ), post-lift has FEWER and
+> LARGER classes (6/44 v 9/35), so it needs f **CONVEX** and reverses below p ≈ 0.638.
+> ⭐ **The ratifying arithmetic was (Σm_post/Σm_pre)^p — the exponent on the
+> AGGREGATE. Σ(mᵢ^p) ≠ (Σmᵢ)^p unless p = 1, and p = 1 was the only
+> checked point that agreed. A lone agreeing figure was read as verification — THAT is the
+> finding** (244c), now §7 discipline 18 with three tagged instances, one the owner's.
+> ⛔ **NEW IN v3:** per-class walls against the 40 h ceiling — **1 to 5 of the 15 classes
+> BREACH it** and v2 reported only sums, with `TIER_CEILING_H` sitting in the producer
+> UNREFERENCED; **RAM as a NAMED, explicitly UNMODELLED axis** (it refused the equatorial
+> leg by 11 MiB and nearly lost leg 2 at 1,382 MiB); the **platform convention** disclosed
+> (~1.28x — j2g/j2n are one Jason-2); and the **controlled-experiment premise STRUCK** (n=4,
+> one point per tile, n_obs collinear with tile identity).
+> ⚠ Two supersessions spent: `osse_pricing` and `projection_declarations` (the register
+> grew by one block under 246). Prior bodies preserved. Decision cell stays EMPTY.
 >
 > **✅ 237 IS CLOSED, NOT DECLARED OPEN.** The authorised metadata-only query returned HTTP
 > 200: GLORYS12V1 `zos` at 2 bytes/item on a 2041×4320 grid — so **39.66 MiB for one tile
