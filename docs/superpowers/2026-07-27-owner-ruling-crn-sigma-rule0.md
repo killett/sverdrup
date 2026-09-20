@@ -3901,3 +3901,68 @@ screening scores every 4th day (91/365) at 478.25 s/trial versus 1,918.26 s full
 cheaper **at phase-10 scale**. The Stage-1 leg is a **9-window solve, not a 365-day score**,
 so scaling by 91/365 has **no valid basis here**. *If that lever is ever wanted, it is a
 MEASUREMENT, not arithmetic.*
+
+---
+
+## PART 53 — T7's REFUSAL WRITTEN INTO THE EVIDENCE STORE; T7 CLOSED (verbatim), pins 230–231, 2026-09-19
+
+**Landed verbatim under pin 40/41/48.**
+
+> **230. OPTION 2 — WRITE THE WAIT ROWS, THEN CLOSE T7.**
+> (a) Four rows at phase14.stage1.revisit.<tile>, each carrying: verdict WAIT (owner pin
+> 224); the per-lane sizing (lane set from phase10_lanes.LANES, trials+anchors per
+> lane, predicted wall and peak against that tile's measured leg); the per-lane
+> verdict RUN under the 40 h ceiling; and the aggregate that was refused.
+> (b) EACH ROW STATES WHY IT IS A WAIT DESPITE EVERY LANE PASSING — that is the finding,
+> and a row showing only RUN verdicts would read as an unexplained non-run.
+> (c) 225(b)'s LIMIT TRAVELS IN THE ROW, verbatim: anchors-only at 296.2 h can establish
+> that the lane's DESIGNATED configuration does not beat lane-0 in that regime, and
+> cannot establish that no configuration in the lane does.
+> (d) The rows cite pin 224 and the sizing table. No interpretation beyond what 224 and
+> 225 already rule.
+> (e) A MIRROR APPEND IS NOT A SUPERSESSION — nothing witnessed changes and the
+> authorised gate is not spent. Sync, verify store-vs-mirror PASS without a re-sync,
+> push.
+> (f) THEN T7 → completed, with the reason in the subject line as you did for T5/T6.
+>
+> **231.** RATIFIED: 227's fold, with the only surviving "no new ceilings exist" being the
+> quotation that marks it dead — that is exactly what rewrite-not-layer means; and
+> rewriting T7's Steps, which had left a 70-day instruction in the task a fresh session
+> opens first. Also the PART 52 labelling of the sizing table as measured-not-projected
+> with its reason (two measured quantities multiplied owes no projection block).
+
+### What landed, and how it is witnessed
+
+**Four rows at `phase14.stage1.revisit.{kuroshio,southern,equatorial,quiet_gyre}`**, built
+by `scripts/phase14_revisit_wait_rows.py` and test-pinned at
+`tests/test_phase14_revisit_wait_rows.py`.
+
+⭐ **THE ROWS ARE DERIVED, NEVER HAND-PASTED.** Every number is recomputed from two measured
+sources — the T5 legs at `phase14.stage1.tiles.<tile>` and the sealed budget at
+`phase10.oi.probe.budget` — so the refusal can be re-derived rather than merely re-read.
+Per-tile totals reproduce the PART 52 table exactly: **334.4 / 467.2 / 434.2 / 442.5 h**.
+
+⛔ **EACH ROW CARRIES THE ASYMMETRY IN ITS OWN BODY (230b)**, at
+`why_wait_despite_all_lanes_run`. Both misreadings are pinned by mutation-checked tests:
+a builder that marked the lanes WAIT would **invert** the finding — claiming the lanes were
+unaffordable, which is false and would send a reader hunting for a cheaper per-lane
+configuration that already fits — and a row showing only RUN cells with no explanation reads
+as an **unexplained non-run**.
+
+⛔ **225(b)'s LIMIT IS IN EVERY ROW, VERBATIM (230c)**, at `anchors_only_option.limit`. The
+row records a 12.3-day option that is 5.7× cheaper than the refused one; *recording that
+price without the limit is how the cheap option gets adopted for the expensive one's
+purpose.*
+
+**Witness (230e): `sync` was a CLEAN APPEND — 51 nodes — and `check` returned PASS on all
+four surfaces WITHOUT a re-sync:** mirror self-check PASS (digests match), store-vs-mirror
+PASS (no witnessed node changed), seal-vs-mirror PASS, amendment index PASS. **No
+supersession was written; `supersessions.json` is untouched and the single authorised
+supersession remains UNSPENT.** `phase14.stage1.refresh_election` stays correctly PENDING —
+that is task 23's node, and task 23 sits behind task 24.
+
+**T7 → completed (230f), CLOSED AS A REFUSAL, NOT AS DELIVERED LANES.** Its AC's Verify
+clause reads *"real rows present for all four tiles OR WAIT rows with sizing numbers"*, and
+the second branch is what was satisfied. **No lane, no anchor and no leg ran** (224d).
+Reopening T7 would re-propose a spend already refused; the two continuations are **Stage
+2's** — the anchors-only entry point, and whatever Stage 2 rules about the Sobol search.

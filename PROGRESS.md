@@ -2,11 +2,12 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
-> T7 = WAIT (pin 224). Measured: 68 solves / 69.9 days full-scope, 252 / 259.1 days screening.
-> Per-lane guard passes every solve; the AGGREGATE is refused. Anchors-only priced at 12.3
-> days as the STAGE-2 entry point, NOT elected — its claim is strictly weaker (the lane's
-> designated config, not "no config in the lane"). Gate 1 now carries TWO ruled WAITs (kernel
-> 219, revisit 224) and does not close. NEXT: T8 (OSSE pricing) on the owner's word.
+> T7 CLOSED as a ruled WAIT (pins 224/230). The refusal is IN THE EVIDENCE STORE at
+> phase14.stage1.revisit.<tile>, witnessed — four rows carrying the sizing, the per-lane RUN
+> verdicts, the refused aggregate (68 solves / 69.9 days; 252 / 259.1 on the screening path),
+> and the anchors-only option at 12.3 days with its weaker-claim limit. Gate 1 carries TWO
+> ruled WAITs (kernel 219, revisit 224) and does not close. NEXT: T8 (OSSE pricing) on the
+> owner's word — it opens on nothing else.
 >
 > T6 POSTED AND RULED. Kernel decision = WAIT, cell EMPTY (pin 219). No option electable as
 > the code stands: options 2/3 inert at the SO tile (hull-clamped latitude field, pin 216);
@@ -613,6 +614,18 @@
 >    ⚖ **The screening lever is NAMED and DELIBERATELY UNPRICED** (226): phase-10 screens
 >    91/365 days, but the Stage-1 leg is a **9-window solve, not a 365-day score**, so that
 >    ratio has no valid basis here. **If it is ever wanted, it is a MEASUREMENT.**
+>    ✅ **T7 IS CLOSED (pin 230f), AS A REFUSAL AND NOT AS DELIVERED LANES.** The AC's
+>    Verify clause reads *"real rows present for all four tiles OR WAIT ROWS WITH SIZING
+>    NUMBERS"*, and four WAIT rows with sizing numbers are what landed:
+>    **`phase14.stage1.revisit.<tile>`**, mirrored and **witnessed** — `sync` a clean
+>    APPEND, `check` PASS at 51 nodes **without a re-sync**, and **no supersession spent**
+>    (230e). Producer `scripts/phase14_revisit_wait_rows.py`, test-pinned; the rows are
+>    DERIVED from the measured legs and the sealed budget, never hand-pasted.
+>    ⛔ **EACH ROW STATES WHY IT IS A WAIT DESPITE EVERY LANE PASSING** (230b) — a row
+>    showing only RUN cells would read as an unexplained non-run, and one showing WAIT cells
+>    would invert the finding by claiming the lanes were unaffordable. **225(b)'s limit
+>    travels IN the row, verbatim**, so the cheap option cannot be pulled from the store
+>    without its weaker claim.
 >    **▶ NEXT — T8, on the owner's word, and not before** (priced from the CONVERGED
 >    numbers, never the capped T2 probe, basis in-row — 99c). Then **task 23** (C-11),
 >    which sits **behind task 24**. **Gate 1 carries TWO ruled WAITs (219, 224) and does not

@@ -43,6 +43,10 @@
     "phase14.stage1.tiles.southern": "the C1->2 transfer reading for the southern tile — same basis as tiles.kuroshio above. Registered BEFORE its leg runs, the lane-0 manifest precedent: registration lands with the wiring so the witness cannot be forgotten after the expensive part is done",
     "phase14.stage1.tiles.equatorial": "the C1->2 transfer reading for the equatorial tile — same basis as tiles.kuroshio above; registered before its leg runs",
     "phase14.stage1.tiles.quiet_gyre": "the C1->2 transfer reading for the quiet-gyre tile — same basis as tiles.kuroshio above; registered before its leg runs",
+    "phase14.stage1.revisit.kuroshio": "pin 230. T7's revisit WAIT row (owner pin 224): the per-lane sizing, every solve's RUN verdict under the 40 h ceiling, and the AGGREGATE that was refused anyway. A refusal that lives only in a ruling document is not evidence; this is the Gate-1 entry",
+    "phase14.stage1.revisit.southern": "pin 230. As tiles above — priced from THIS tile's measured leg, never a shared basis",
+    "phase14.stage1.revisit.equatorial": "pin 230. As tiles above — priced from THIS tile's measured leg",
+    "phase14.stage1.revisit.quiet_gyre": "pin 230. As tiles above. Carries pin 225(b)'s limit on the anchors-only option VERBATIM, like every revisit row: the cheap option must not travel without its weaker claim",
     "phase14.stage1.artifact_witness_classes": "pin 67. Splits the 'no sha' bucket by what ELSE constrains each artifact: 7 constrained by reproduction, 1 verified by re-derivation, 2 unconstrained. The class assignment is a standing claim, so it is witnessed",
     "phase14.stage1.seam_crn_mechanism_separation_construction": "pin 75. Records N and the SE construction beside the cited separation, and supersedes the 155.6 figure with 167.6 — the number will be cited, so its construction is witnessed with it",
     "phase14.stage1.rho_model_range_limitation": "pin 77. The sweep's REACHABLE span [0, 0.2523] against the applied r ~ 0.9, the structural cause, and 77(c)'s pre-registered branch. It declares its own extrapolation, so it is the first block to pass pin 78's refusal on disclosure rather than on silence",
@@ -224,7 +228,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-19T18:08:11.288252+00:00",
+  "generated_utc": "2026-09-20T06:41:38.465125+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -3870,6 +3874,431 @@
         "pin": "148 — the two golden-tile blocks declare first",
         "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
         "why_these_two_first": "anchor-gate check 2 RUNS NOTHING: it is discharged by citation to phase14.stage0.gate2_loader_identity and to the golden tile. A cited gate that could never have fired makes the citation hollow, and check 2 is one of two cited checks under the identity chain"
+      }
+    },
+    "phase14.stage1.revisit.equatorial": {
+      "digest_sha256": "6b16e848b7e59237a8efb018d3a530dab6d11d802afbab5dcbba010ee36a71e9",
+      "value": {
+        "tile": "equatorial",
+        "verdict": "WAIT",
+        "verdict_authority": "owner pin 224, 2026-09-19 — ruling PART 52 of docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "report_only": true,
+        "measured_leg": {
+          "wall_h": 25.540277777777778,
+          "peak_rss_mib": 4817.0,
+          "source": "phase14.stage1.tiles.equatorial"
+        },
+        "lane_set": {
+          "source": "sverdrup.validation.phase10_lanes.LANES",
+          "lanes": {
+            "lane0": [],
+            "V": [
+              "c1",
+              "c2"
+            ],
+            "VL": [
+              "c1",
+              "c2",
+              "l1"
+            ]
+          },
+          "lane0_excluded_reason": "the T5 leg IS lane-0 at the frozen config (owner pin 226); re-solving it would measure the solver, not the lane"
+        },
+        "per_lane": [
+          {
+            "lane": "V",
+            "released_dims": [
+              "c1",
+              "c2"
+            ],
+            "n_sobol": 7,
+            "anchors": 1,
+            "solves": 8,
+            "per_solve_wall_h": 25.540277777777778,
+            "per_solve_peak_rss_mib": 4817.0,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 204.32222222222222
+          },
+          {
+            "lane": "VL",
+            "released_dims": [
+              "c1",
+              "c2",
+              "l1"
+            ],
+            "n_sobol": 7,
+            "anchors": 2,
+            "solves": 9,
+            "per_solve_wall_h": 25.540277777777778,
+            "per_solve_peak_rss_mib": 4817.0,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 229.8625
+          }
+        ],
+        "tile_totals": {
+          "solves": 17,
+          "wall_h": 434.1847222222222,
+          "basis": "this tile's own measured leg, never a shared basis"
+        },
+        "aggregate_refused": {
+          "scope": "four diverse tiles, lanes V and VL",
+          "full_scope": {
+            "n_sobol_per_lane": 7,
+            "solves": 68,
+            "note": "wall totals are the sum of the four tiles' own legs"
+          },
+          "screening": {
+            "n_sobol_per_lane": 30,
+            "solves": 252,
+            "contingency_active": true
+          },
+          "budget_source": "phase10.oi.probe.budget",
+          "refused_by": "owner pin 224(a)"
+        },
+        "why_wait_despite_all_lanes_run": "EVERY LANE AT equatorial PASSES THE PER-LANE GUARD AND THE TOTAL IS REFUSED ANYWAY. Each solve is priced at this tile's measured leg, which sits under the 40 h per-leg ceiling, so owner pin 99(b) marks NOT ONE LANE a WAIT. The refusal is owner pin 224 and it is about the AGGREGATE, which pin 222(c) reserves to the owner: '99(b) governs whether a lane that CAN run must be recorded as a WAIT; it does not authorise the aggregate.' The per-lane guard was not wrong and was not overridden — it has no opinion on the total, by design. A phase-10 LANE IS NOT ONE LEG: it is n_sobol_per_lane Sobol trials plus anchors, and at Stage-1 tile scale each trial is a full leg. That is what makes an affordable lane an unaffordable revisit.",
+        "anchors_only_option": {
+          "elected": false,
+          "authority": "owner pin 225 — priced, presented, NOT elected",
+          "solves_per_tile": 3,
+          "solves_total": 12,
+          "tile_wall_h": 76.62083333333334,
+          "role": "STAGE 2's entry point, so Stage 2 inherits a priced option rather than a refusal",
+          "limit": "ITS CLAIM IS STRICTLY WEAKER AND THAT LIMIT TRAVELS WITH IT: anchors-only can say \"the lane's designated configuration does not beat lane-0 in this regime.\" It CANNOT say \"no configuration in the lane does.\" A negative result needs the second, and the sobol search is what buys it.",
+          "not_elected_reason": "12 days for a report-only result whose strong form is unreachable, on a memory-constrained box, where the box-scale negative is already never cited as transferring (discipline 7). The cost does not buy a Gate-1 item."
+        },
+        "screening_lever": {
+          "priced": false,
+          "reason": "phase-10 screens every 4th day (91/365) at 478.25 s/trial versus 1918.26 s full-year, ~4x cheaper AT PHASE-10 SCALE. The Stage-1 leg is a 9-window solve, not a 365-day score, so scaling by 91/365 has NO VALID BASIS here (owner pin 226). If it is ever wanted, it is a MEASUREMENT."
+        },
+        "citations": [
+          "owner pin 224 — T7 WAIT, aggregate refused",
+          "owner pin 225 — anchors-only priced, not elected",
+          "owner pin 226 — lane-0 exclusion and the unpriced screening lever",
+          "owner pin 222(c) — 99(b) governs the lane, never the aggregate",
+          "owner pin 99(b) — a lane under the live ceiling is not a WAIT",
+          "ruling PART 52 — pins 221-229 and the sizing table"
+        ]
+      }
+    },
+    "phase14.stage1.revisit.kuroshio": {
+      "digest_sha256": "37758fc325121ae3f9344c43c5c276ae83c54a613f9afecdeaf66a9cec78ecdb",
+      "value": {
+        "tile": "kuroshio",
+        "verdict": "WAIT",
+        "verdict_authority": "owner pin 224, 2026-09-19 — ruling PART 52 of docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "report_only": true,
+        "measured_leg": {
+          "wall_h": 19.669812369257205,
+          "peak_rss_mib": 7389.3359375,
+          "source": "phase14.stage1.tiles.kuroshio",
+          "peak_caveat": "PRE-133 measurement — NOT comparable to the post-fix peak basis (owner pin 199). Wall is comparable; peak is not."
+        },
+        "lane_set": {
+          "source": "sverdrup.validation.phase10_lanes.LANES",
+          "lanes": {
+            "lane0": [],
+            "V": [
+              "c1",
+              "c2"
+            ],
+            "VL": [
+              "c1",
+              "c2",
+              "l1"
+            ]
+          },
+          "lane0_excluded_reason": "the T5 leg IS lane-0 at the frozen config (owner pin 226); re-solving it would measure the solver, not the lane"
+        },
+        "per_lane": [
+          {
+            "lane": "V",
+            "released_dims": [
+              "c1",
+              "c2"
+            ],
+            "n_sobol": 7,
+            "anchors": 1,
+            "solves": 8,
+            "per_solve_wall_h": 19.669812369257205,
+            "per_solve_peak_rss_mib": 7389.3359375,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 157.35849895405764
+          },
+          {
+            "lane": "VL",
+            "released_dims": [
+              "c1",
+              "c2",
+              "l1"
+            ],
+            "n_sobol": 7,
+            "anchors": 2,
+            "solves": 9,
+            "per_solve_wall_h": 19.669812369257205,
+            "per_solve_peak_rss_mib": 7389.3359375,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 177.02831132331485
+          }
+        ],
+        "tile_totals": {
+          "solves": 17,
+          "wall_h": 334.3868102773725,
+          "basis": "this tile's own measured leg, never a shared basis"
+        },
+        "aggregate_refused": {
+          "scope": "four diverse tiles, lanes V and VL",
+          "full_scope": {
+            "n_sobol_per_lane": 7,
+            "solves": 68,
+            "note": "wall totals are the sum of the four tiles' own legs"
+          },
+          "screening": {
+            "n_sobol_per_lane": 30,
+            "solves": 252,
+            "contingency_active": true
+          },
+          "budget_source": "phase10.oi.probe.budget",
+          "refused_by": "owner pin 224(a)"
+        },
+        "why_wait_despite_all_lanes_run": "EVERY LANE AT kuroshio PASSES THE PER-LANE GUARD AND THE TOTAL IS REFUSED ANYWAY. Each solve is priced at this tile's measured leg, which sits under the 40 h per-leg ceiling, so owner pin 99(b) marks NOT ONE LANE a WAIT. The refusal is owner pin 224 and it is about the AGGREGATE, which pin 222(c) reserves to the owner: '99(b) governs whether a lane that CAN run must be recorded as a WAIT; it does not authorise the aggregate.' The per-lane guard was not wrong and was not overridden — it has no opinion on the total, by design. A phase-10 LANE IS NOT ONE LEG: it is n_sobol_per_lane Sobol trials plus anchors, and at Stage-1 tile scale each trial is a full leg. That is what makes an affordable lane an unaffordable revisit.",
+        "anchors_only_option": {
+          "elected": false,
+          "authority": "owner pin 225 — priced, presented, NOT elected",
+          "solves_per_tile": 3,
+          "solves_total": 12,
+          "tile_wall_h": 59.00943710777162,
+          "role": "STAGE 2's entry point, so Stage 2 inherits a priced option rather than a refusal",
+          "limit": "ITS CLAIM IS STRICTLY WEAKER AND THAT LIMIT TRAVELS WITH IT: anchors-only can say \"the lane's designated configuration does not beat lane-0 in this regime.\" It CANNOT say \"no configuration in the lane does.\" A negative result needs the second, and the sobol search is what buys it.",
+          "not_elected_reason": "12 days for a report-only result whose strong form is unreachable, on a memory-constrained box, where the box-scale negative is already never cited as transferring (discipline 7). The cost does not buy a Gate-1 item."
+        },
+        "screening_lever": {
+          "priced": false,
+          "reason": "phase-10 screens every 4th day (91/365) at 478.25 s/trial versus 1918.26 s full-year, ~4x cheaper AT PHASE-10 SCALE. The Stage-1 leg is a 9-window solve, not a 365-day score, so scaling by 91/365 has NO VALID BASIS here (owner pin 226). If it is ever wanted, it is a MEASUREMENT."
+        },
+        "citations": [
+          "owner pin 224 — T7 WAIT, aggregate refused",
+          "owner pin 225 — anchors-only priced, not elected",
+          "owner pin 226 — lane-0 exclusion and the unpriced screening lever",
+          "owner pin 222(c) — 99(b) governs the lane, never the aggregate",
+          "owner pin 99(b) — a lane under the live ceiling is not a WAIT",
+          "ruling PART 52 — pins 221-229 and the sizing table"
+        ]
+      }
+    },
+    "phase14.stage1.revisit.quiet_gyre": {
+      "digest_sha256": "d3672be19c620b4b7e1a8bcca008a449f152e166c3a5bbf657e01e387371327b",
+      "value": {
+        "tile": "quiet_gyre",
+        "verdict": "WAIT",
+        "verdict_authority": "owner pin 224, 2026-09-19 — ruling PART 52 of docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "report_only": true,
+        "measured_leg": {
+          "wall_h": 26.031381436881105,
+          "peak_rss_mib": 4986.41796875,
+          "source": "phase14.stage1.tiles.quiet_gyre"
+        },
+        "lane_set": {
+          "source": "sverdrup.validation.phase10_lanes.LANES",
+          "lanes": {
+            "lane0": [],
+            "V": [
+              "c1",
+              "c2"
+            ],
+            "VL": [
+              "c1",
+              "c2",
+              "l1"
+            ]
+          },
+          "lane0_excluded_reason": "the T5 leg IS lane-0 at the frozen config (owner pin 226); re-solving it would measure the solver, not the lane"
+        },
+        "per_lane": [
+          {
+            "lane": "V",
+            "released_dims": [
+              "c1",
+              "c2"
+            ],
+            "n_sobol": 7,
+            "anchors": 1,
+            "solves": 8,
+            "per_solve_wall_h": 26.031381436881105,
+            "per_solve_peak_rss_mib": 4986.41796875,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 208.25105149504884
+          },
+          {
+            "lane": "VL",
+            "released_dims": [
+              "c1",
+              "c2",
+              "l1"
+            ],
+            "n_sobol": 7,
+            "anchors": 2,
+            "solves": 9,
+            "per_solve_wall_h": 26.031381436881105,
+            "per_solve_peak_rss_mib": 4986.41796875,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 234.28243293192995
+          }
+        ],
+        "tile_totals": {
+          "solves": 17,
+          "wall_h": 442.5334844269788,
+          "basis": "this tile's own measured leg, never a shared basis"
+        },
+        "aggregate_refused": {
+          "scope": "four diverse tiles, lanes V and VL",
+          "full_scope": {
+            "n_sobol_per_lane": 7,
+            "solves": 68,
+            "note": "wall totals are the sum of the four tiles' own legs"
+          },
+          "screening": {
+            "n_sobol_per_lane": 30,
+            "solves": 252,
+            "contingency_active": true
+          },
+          "budget_source": "phase10.oi.probe.budget",
+          "refused_by": "owner pin 224(a)"
+        },
+        "why_wait_despite_all_lanes_run": "EVERY LANE AT quiet_gyre PASSES THE PER-LANE GUARD AND THE TOTAL IS REFUSED ANYWAY. Each solve is priced at this tile's measured leg, which sits under the 40 h per-leg ceiling, so owner pin 99(b) marks NOT ONE LANE a WAIT. The refusal is owner pin 224 and it is about the AGGREGATE, which pin 222(c) reserves to the owner: '99(b) governs whether a lane that CAN run must be recorded as a WAIT; it does not authorise the aggregate.' The per-lane guard was not wrong and was not overridden — it has no opinion on the total, by design. A phase-10 LANE IS NOT ONE LEG: it is n_sobol_per_lane Sobol trials plus anchors, and at Stage-1 tile scale each trial is a full leg. That is what makes an affordable lane an unaffordable revisit.",
+        "anchors_only_option": {
+          "elected": false,
+          "authority": "owner pin 225 — priced, presented, NOT elected",
+          "solves_per_tile": 3,
+          "solves_total": 12,
+          "tile_wall_h": 78.09414431064332,
+          "role": "STAGE 2's entry point, so Stage 2 inherits a priced option rather than a refusal",
+          "limit": "ITS CLAIM IS STRICTLY WEAKER AND THAT LIMIT TRAVELS WITH IT: anchors-only can say \"the lane's designated configuration does not beat lane-0 in this regime.\" It CANNOT say \"no configuration in the lane does.\" A negative result needs the second, and the sobol search is what buys it.",
+          "not_elected_reason": "12 days for a report-only result whose strong form is unreachable, on a memory-constrained box, where the box-scale negative is already never cited as transferring (discipline 7). The cost does not buy a Gate-1 item."
+        },
+        "screening_lever": {
+          "priced": false,
+          "reason": "phase-10 screens every 4th day (91/365) at 478.25 s/trial versus 1918.26 s full-year, ~4x cheaper AT PHASE-10 SCALE. The Stage-1 leg is a 9-window solve, not a 365-day score, so scaling by 91/365 has NO VALID BASIS here (owner pin 226). If it is ever wanted, it is a MEASUREMENT."
+        },
+        "citations": [
+          "owner pin 224 — T7 WAIT, aggregate refused",
+          "owner pin 225 — anchors-only priced, not elected",
+          "owner pin 226 — lane-0 exclusion and the unpriced screening lever",
+          "owner pin 222(c) — 99(b) governs the lane, never the aggregate",
+          "owner pin 99(b) — a lane under the live ceiling is not a WAIT",
+          "ruling PART 52 — pins 221-229 and the sizing table"
+        ]
+      }
+    },
+    "phase14.stage1.revisit.southern": {
+      "digest_sha256": "8c492b6fc9f18e098f42384b2f32ecde20dd850e5d54fa31ea7e5f8c5f5b3397",
+      "value": {
+        "tile": "southern",
+        "verdict": "WAIT",
+        "verdict_authority": "owner pin 224, 2026-09-19 — ruling PART 52 of docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "report_only": true,
+        "measured_leg": {
+          "wall_h": 27.480486713071944,
+          "peak_rss_mib": 4951.1640625,
+          "source": "phase14.stage1.tiles.southern"
+        },
+        "lane_set": {
+          "source": "sverdrup.validation.phase10_lanes.LANES",
+          "lanes": {
+            "lane0": [],
+            "V": [
+              "c1",
+              "c2"
+            ],
+            "VL": [
+              "c1",
+              "c2",
+              "l1"
+            ]
+          },
+          "lane0_excluded_reason": "the T5 leg IS lane-0 at the frozen config (owner pin 226); re-solving it would measure the solver, not the lane"
+        },
+        "per_lane": [
+          {
+            "lane": "V",
+            "released_dims": [
+              "c1",
+              "c2"
+            ],
+            "n_sobol": 7,
+            "anchors": 1,
+            "solves": 8,
+            "per_solve_wall_h": 27.480486713071944,
+            "per_solve_peak_rss_mib": 4951.1640625,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 219.84389370457555
+          },
+          {
+            "lane": "VL",
+            "released_dims": [
+              "c1",
+              "c2",
+              "l1"
+            ],
+            "n_sobol": 7,
+            "anchors": 2,
+            "solves": 9,
+            "per_solve_wall_h": 27.480486713071944,
+            "per_solve_peak_rss_mib": 4951.1640625,
+            "tier_verdict_per_solve": "RUN",
+            "tier_ceiling_h": 40.0,
+            "lane_total_h": 247.3243804176475
+          }
+        ],
+        "tile_totals": {
+          "solves": 17,
+          "wall_h": 467.16827412222307,
+          "basis": "this tile's own measured leg, never a shared basis"
+        },
+        "aggregate_refused": {
+          "scope": "four diverse tiles, lanes V and VL",
+          "full_scope": {
+            "n_sobol_per_lane": 7,
+            "solves": 68,
+            "note": "wall totals are the sum of the four tiles' own legs"
+          },
+          "screening": {
+            "n_sobol_per_lane": 30,
+            "solves": 252,
+            "contingency_active": true
+          },
+          "budget_source": "phase10.oi.probe.budget",
+          "refused_by": "owner pin 224(a)"
+        },
+        "why_wait_despite_all_lanes_run": "EVERY LANE AT southern PASSES THE PER-LANE GUARD AND THE TOTAL IS REFUSED ANYWAY. Each solve is priced at this tile's measured leg, which sits under the 40 h per-leg ceiling, so owner pin 99(b) marks NOT ONE LANE a WAIT. The refusal is owner pin 224 and it is about the AGGREGATE, which pin 222(c) reserves to the owner: '99(b) governs whether a lane that CAN run must be recorded as a WAIT; it does not authorise the aggregate.' The per-lane guard was not wrong and was not overridden — it has no opinion on the total, by design. A phase-10 LANE IS NOT ONE LEG: it is n_sobol_per_lane Sobol trials plus anchors, and at Stage-1 tile scale each trial is a full leg. That is what makes an affordable lane an unaffordable revisit.",
+        "anchors_only_option": {
+          "elected": false,
+          "authority": "owner pin 225 — priced, presented, NOT elected",
+          "solves_per_tile": 3,
+          "solves_total": 12,
+          "tile_wall_h": 82.44146013921583,
+          "role": "STAGE 2's entry point, so Stage 2 inherits a priced option rather than a refusal",
+          "limit": "ITS CLAIM IS STRICTLY WEAKER AND THAT LIMIT TRAVELS WITH IT: anchors-only can say \"the lane's designated configuration does not beat lane-0 in this regime.\" It CANNOT say \"no configuration in the lane does.\" A negative result needs the second, and the sobol search is what buys it.",
+          "not_elected_reason": "12 days for a report-only result whose strong form is unreachable, on a memory-constrained box, where the box-scale negative is already never cited as transferring (discipline 7). The cost does not buy a Gate-1 item."
+        },
+        "screening_lever": {
+          "priced": false,
+          "reason": "phase-10 screens every 4th day (91/365) at 478.25 s/trial versus 1918.26 s full-year, ~4x cheaper AT PHASE-10 SCALE. The Stage-1 leg is a 9-window solve, not a 365-day score, so scaling by 91/365 has NO VALID BASIS here (owner pin 226). If it is ever wanted, it is a MEASUREMENT."
+        },
+        "citations": [
+          "owner pin 224 — T7 WAIT, aggregate refused",
+          "owner pin 225 — anchors-only priced, not elected",
+          "owner pin 226 — lane-0 exclusion and the unpriced screening lever",
+          "owner pin 222(c) — 99(b) governs the lane, never the aggregate",
+          "owner pin 99(b) — a lane under the live ceiling is not a WAIT",
+          "ruling PART 52 — pins 221-229 and the sizing table"
+        ]
       }
     },
     "phase14.stage1.rho_model_range_limitation": {

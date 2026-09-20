@@ -268,6 +268,25 @@ MIRRORED: dict[str, str] = {
         "the C1->2 transfer reading for the quiet-gyre tile — same basis as "
         "tiles.kuroshio above; registered before its leg runs"
     ),
+    # ---- pin 230: T7's refusal, recorded rather than left in prose ----
+    "phase14.stage1.revisit.kuroshio": (
+        "pin 230. T7's revisit WAIT row (owner pin 224): the per-lane "
+        "sizing, every solve's RUN verdict under the 40 h ceiling, and the "
+        "AGGREGATE that was refused anyway. A refusal that lives only in a "
+        "ruling document is not evidence; this is the Gate-1 entry"
+    ),
+    "phase14.stage1.revisit.southern": (
+        "pin 230. As tiles above — priced from THIS tile's measured leg, "
+        "never a shared basis"
+    ),
+    "phase14.stage1.revisit.equatorial": (
+        "pin 230. As tiles above — priced from THIS tile's measured leg"
+    ),
+    "phase14.stage1.revisit.quiet_gyre": (
+        "pin 230. As tiles above. Carries pin 225(b)'s limit on the "
+        "anchors-only option VERBATIM, like every revisit row: the cheap "
+        "option must not travel without its weaker claim"
+    ),
     "phase14.stage1.artifact_witness_classes": (
         "pin 67. Splits the 'no sha' bucket by what ELSE constrains each "
         "artifact: 7 constrained by reproduction, 1 verified by "
