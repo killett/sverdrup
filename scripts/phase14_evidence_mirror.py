@@ -268,6 +268,16 @@ MIRRORED: dict[str, str] = {
         "the C1->2 transfer reading for the quiet-gyre tile — same basis as "
         "tiles.kuroshio above; registered before its leg runs"
     ),
+    # ---- pin 232: T8's OSSE price, the Gate-1 entry ----
+    "phase14.stage1.osse_pricing": (
+        "pin 232. T8's OSSE pricing: N_epoch-classes DERIVED from the sealed "
+        "epoch table (15, no deduplication available), the full sweep as a "
+        "RANGE across the four measured legs, pin 89's probe as a DECLARED "
+        "projection and cross-check only (it over-predicted its own tile by "
+        "1.574x), and the truth-field volume measured by an authorised "
+        "metadata-only STAC query. The decision cell is EMPTY and stays the "
+        "owner's. A standing claim the owner decides from, so it is witnessed"
+    ),
     # ---- pin 230: T7's refusal, recorded rather than left in prose ----
     "phase14.stage1.revisit.kuroshio": (
         "pin 230. T7's revisit WAIT row (owner pin 224): the per-lane "

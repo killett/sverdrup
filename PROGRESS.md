@@ -2,11 +2,31 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
-> T8 OPEN (OSSE pricing). Deliverable is a STANDALONE doc + witnessed node (pin 232) — the
-> posted Gate-1 pack is NOT retro-edited (209c). N_epoch-classes = 15, DERIVED from the sealed
-> epoch table, all distinct so no deduplication exists (pin 234). Truth-field cost is part of
-> the price, not an omission (234e). Pin 212(b)'s review binds with surfaces at 235. Decision
-> cell stays EMPTY — the OSSE run decision is the owner's. Next stop: the price table.
+> T8 IN PROGRESS — v1 OVERTURNED, REBUILT (pin 239). A two-reviewer review under 212(b)
+> split: **reviewer A CONFIRMED all five of the owner's authored surfaces; reviewer B,
+> briefed to attack the FRAME, OVERTURNED the pricing model.** v1 priced one class = one
+> tile solve; the four legs (identical bbox/m/window-plan/constellation, only n_obs varying)
+> give **wall ~ n_obs^1.4146, R2 0.9989**, and the classes run 3-9 missions against the legs'
+> 5. ⭐ **IT INVERTED THE SUBSET ORDERING** an owner picks a scope from: post-lift has FEWER
+> classes (6 v 9) and MORE missions (44 v 35), so it is DEARER — a COUNTING FACT, true at
+> every exponent above zero. v1 quoted it as the cheap option at 118 h against ~204 h.
+> Rebuilt: full sweep **295.0-412.2 h flat, 328.7-459.2 h obs-scaled (pin-139 declared)**;
+> direction asserted, magnitudes declared; v1's "cost and value move together" editorial
+> WITHDRAWN and NOT replaced with its opposite (239c); constellation size declared the
+> LARGER open input (~4.7x v the tile axis's 1.40x); the lower bound widened to include the
+> COMPUTE figure (239e). Truth field **40.01 MiB per tile, 160.04 MiB for four** (node-
+> inclusive 229 nodes, pin 237). Decision cell stays EMPTY. Deliverable is a standalone doc
+> + witnessed node; the posted Gate-1 pack is NOT retro-edited.
+>
+> **✅ 237 IS CLOSED, NOT DECLARED OPEN.** The authorised metadata-only query returned HTTP
+> 200: GLORYS12V1 `zos` at 2 bytes/item on a 2041×4320 grid — so **39.66 MiB for one tile
+> over the 400-day window-plan span**, FEASIBLE against a 50 GiB budget and 311 GiB free.
+> ⭐ **AND THE TRUTH FIELD DOES NOT SCALE WITH N_epoch-classes** — an OSSE varies the
+> CONSTELLATION over FIXED truth, so 15 multiplies the RE-SOLVES and not the download. The
+> spec's "heavy downloads" is true of the GLOBAL FULL RECORD (0.20 TiB of `zos` alone) and
+> not of the tile-and-span subset. ⛔ The re-solve figures remain a **LOWER BOUND**: the
+> DORMANT-since-4b TRUTH interface is unmeasured engineering time and is the largest open
+> item.
 >
 > T7 CLOSED as a ruled WAIT (pins 224/230). The refusal is IN THE EVIDENCE STORE at
 > phase14.stage1.revisit.<tile>, witnessed — four rows carrying the sizing, the per-lane RUN

@@ -4050,3 +4050,199 @@ the laxer-copy defect, not the second — and the one where the stale header sur
 task's own completion. Header corrected, with row 7's ruling (99a + 108) retained in place
 as the record. **T6's status and ruling are untouched and `operative_halo_deg()` is
 untouched.** With that, **sweep rows 7-9 are all folded in fact as well as in claim.**
+
+---
+
+## PART 55 — PRICE FROM THE LEGS; THE TRUTH-FIELD COST CLOSED BY MEASUREMENT (verbatim), pins 236–238, 2026-09-20
+
+**Landed verbatim under pin 40/41/48.**
+
+> **236. PRICE FROM THE LEGS. The probe is a CROSS-CHECK, declared as a projection.**
+> (a) Verified: 3.440 × 9 = 30.96 h against kuroshio's measured 19.67 h — 1.574× on the
+> same tile; 123.8 h against 98.72 h — 1.254× across four. Both converged, both
+> admissible under 99(c), but one is a projection of one window and the other is the
+> thing it was projecting. The measurement supersedes it.
+> (b) The probe row carries a pin-139 projection declaration with its measured_over (1
+> window) and application_range (9 windows) and its 1.574× outcome beside it. Its
+> value is now as a RECORD OF HOW A ONE-WINDOW PROJECTION PERFORMED, which is worth
+> keeping and is not a price.
+> (c) State the full sweep as a RANGE ACROSS TILES — 295.0 to 412.2 h, 12.3 to 17.2 days
+> *[295.1 → 295.0, corrected by the owner at pin 240: "I multiplied the rounded leg."
+> 15 × (70811.32452932594/3600) = 295.047. The correction is the owner's own, applied
+> inside the verbatim block because 240 directs it "wherever 295.1 appears, including
+> 236(c)"; the original figure is preserved in this note.]*
+> — with each tile's wall named. A single number would hide a 1.4× spread that is a
+> property of the tiles, not of the OSSE.
+> (d) Which tile an OSSE would actually use is an open input, not a default. Do not pick
+> one; present the range and say the choice belongs with the run decision.
+>
+> **237. THE TRUTH-FIELD COST — CLOSE IT. Make the STAC metadata query.**
+> (a) AUTHORISED: metadata only, no download, one host (stac.marine.copernicus.eu),
+> read-only. An open input that can be closed by a single read should be closed; 234(e)
+> said do not estimate it, not do not measure it.
+> (b) If the query returns a volume, record it with its date and the collection queried,
+> and state whether the download is feasible under this box's allowlist and disk.
+> (c) IF IT FAILS OR THE VOLUME CANNOT BE ESTABLISHED, that is the answer: record
+> SEARCHED AND ABSENT with the query recorded, per 60(a)'s form. Do not retry around
+> a refusal and do not substitute a figure from memory.
+> (d) EITHER WAY the document states that the re-solve figures are a LOWER BOUND on the
+> OSSE price, unmissably — not in a footnote. It is 235(b)'s predicted failure mode
+> and the reviewer will look for it.
+>
+> **238. ROW 7 RATIFIED**, and 233's claim is corrected: this was the THIRD instance of the
+> laxer-copy defect, not the second. Correcting a header that outlived its task, rather
+> than letting PART 54 assert something the tracker contradicted, was the right call and
+> is exactly the scope creep I would authorise. Record the count as three in §7.
+> Also ratified: replacing T8's verifyCommand — a grep against the frozen pack read as an
+> instruction to retro-edit it — and adding "confirm the posted pack is unchanged" to
+> Verify, which is better than what 232(b) asked for.
+
+### 237 IS CLOSED BY MEASUREMENT, NOT DECLARED OPEN
+
+The authorised query ran once, metadata only, and returned **HTTP 200**:
+
+- **Host / product / dataset:** `stac.marine.copernicus.eu` ·
+  `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) ·
+  `cmems_mod_glo_phy_my_0.083deg_P1D-m_202311`
+- **Queried:** 2026-09-20T06:58:29Z
+- The STAC document carries **NO total-size field**, so the volume is **DERIVED** from
+  `itemSize` × grid geometry — exact for the uncompressed array, and a **measurement, not
+  an estimate**. `zos` is 2 bytes/item on a 2041 × 4320 grid at 0.0833°.
+
+**40.01 MiB for one tile over the 400-day window-plan span** — *[corrected 2026-09-20 under pin 239(f): 39.66 → 40.01 MiB, the grid being NODE-INCLUSIVE (229 nodes, not 228); and the windows are **OVERLAPPING, not contiguous** — 9 × 60 d on a 45-d stride, 540 window-days over a 400-d union, which is the download basis because each day is bought once. Four tiles = 160.04 MiB.]* **FEASIBLE**: 0.077% of the 50 GiB pre-registered CMEMS budget, against 311 GiB
+free disk.
+
+⭐ **THE FINDING THE QUERY PRODUCED, WHICH THE PRICING STRUCTURE HAD NOT ANTICIPATED: THE
+TRUTH FIELD DOES NOT SCALE WITH N_epoch-classes.** An OSSE varies the **CONSTELLATION** over
+**FIXED** model truth — *that is what makes it a ground-truth test* — so 15 classes multiply
+the **RE-SOLVES** and **not** the truth download. The AC's own phrasing invites the error by
+placing the truth term beside "N_epoch-classes × tile solve wall"; a reader who scales it
+would report ~595 MiB and would have misunderstood the instrument. Test-pinned.
+
+⚖ **BOTH STATEMENTS ABOUT "HEAVY DOWNLOADS" ARE TRUE, AND THEY DESCRIBE DIFFERENT OBJECTS.**
+The spec's characterisation holds of the **GLOBAL FULL RECORD** — 0.20 TiB of `zos` alone —
+and **not** of the tile-and-span subset an OSSE needs.
+
+⛔ **THE RE-SOLVE FIGURES REMAIN A LOWER BOUND** (237d), stated in the document's own §6 and
+not in a footnote. What is *not* costed: the **TRUTH interface, DORMANT since 4b**, whose
+re-arming is unmeasured engineering time and is **the largest open item**; per-class
+observation simulation; and scoring of 15 outputs. **The gap is now BOUNDED on the download
+axis and OPEN on the engineering axis.**
+
+### The deliverable, and what it is not
+
+`docs/superpowers/2026-09-19-phase14-t8-osse-pricing.md`, with the node
+**`phase14.stage1.osse_pricing`** mirrored and witnessed (clean APPEND to 52 nodes; `check`
+PASS on all four surfaces without a re-sync; **no supersession spent**). Producer
+`scripts/phase14_osse_pricing.py`, test-pinned and mutation-checked. **The posted Gate-1 pack
+is NOT touched** (209c) — a successor pack cites these.
+
+**The decision cell is EMPTY and says what that means**: *"PRICED, OWNER TO DECIDE — NOT
+'not priced'."* Pin 235(e) named the vacuity risk, and the posted pack's own OSSE slot
+currently reads *"T8 is unopened; presented as such"* — which is exactly the misreading this
+document must not invite about itself.
+
+---
+
+## PART 56 — T8 REBUILT AFTER ITS REVIEW OVERTURNED IT; THE SECOND REVIEWER ATTACKS THE FRAME (verbatim), pins 239–243, 2026-09-20
+
+**Landed verbatim under pin 40/41/48.**
+
+> **239. B's FINDING ACCEPTED. T8 REBUILDS — the document is not safe to spend from.**
+> (a) Verified: post-lift is dearer at every p > 0 (1.121 at 0.5, 1.257 at 1.0, 1.382 at
+> 1.4146, 1.580 at 2.0). The DIRECTION is exponent-free; only the size depends on the
+> fit. That distinction governs the rebuild.
+> (b) STATE THE DIRECTION FIRMLY, DECLARE THE MAGNITUDES. Post-lift dearer than pre-lift
+> is a counting fact (44 missions vs 35) and can be asserted. The obs-scaled numbers
+> are a projection from n = 4 with the 3-mission classes outside the measured range,
+> so they carry a pin-139 declaration with measured_over and application_range — the
+> same discipline 236(b) applied to the probe, one level up. Do not swap one point
+> estimate for another.
+> (c) WITHDRAW §8's EDITORIAL OUTRIGHT. "Cost and evidential value move together" was an
+> artefact of the flat model and inverts with it: the sparse historical
+> constellations, where era-transfer is weakest, are the cheapest. Record the
+> withdrawal and the inversion as a finding; do not replace it with the opposite
+> editorial, which would be the same mistake with a different sign.
+> (d) CONSTELLATION SIZE IS AN OPEN INPUT in §3, in the ⛔ NOT A DEFAULT form the tile
+> axis already has. It is the larger axis — ~4.7× against the tile's 1.40× — and the
+> document declared the smaller one while collapsing the bigger. Say that plainly.
+> (e) §6's LOWER BOUND IS WIDENED: it currently attributes the bound to uncosted
+> engineering alone, so a reader concludes the compute band is sound. It is not. The
+> compute figure is itself a lower bound under the flat model.
+> (f) Close the four test gaps; derive the two typed probe constants; fix 229 nodes /
+> 40.01 MiB, "overlapping" not "contiguous" (in PART 55 too), and "per tile"; move
+> the filename to 2026-09-20, since it cites a measurement stamped after its own date.
+>
+> **240. 295.0 IS CORRECT AND MY BANNER WAS WRONG.** Align PROGRESS to the document, not the
+> reverse: 15 × 19.6698 = 295.0. I multiplied the rounded leg. Correct it wherever 295.1
+> appears, including 236(c).
+>
+> **241. ⛔ NEW DISCIPLINE — THE SECOND REVIEWER ATTACKS THE FRAME, NOT THE LIST.**
+> A's brief was my five surfaces and A confirmed all five correctly. B was briefed to
+> hunt what a surface-by-surface review would miss, and found a critical defect none of
+> my surfaces covered. A checklist gets a checklist's answer, however rigorous.
+> (a) §7: under pin 212(b), reviewer A works the requester's named surfaces; reviewer B
+> is briefed to attack the FRAME — the pricing model, the unit of account, the
+> assumption the named surfaces all sit on top of. The requester does not author B's
+> targets, because the requester is the one who chose the frame.
+> (b) This is distinct from discipline 15. That one says owner ratification cannot
+> substitute for dual review. This one says a well-authored surface list is itself a
+> blind spot, and it is the OWNER's blind spot, not the executor's.
+> (c) Record that the surfaces I authored at 235 were all confirmed. That is the evidence
+> for the discipline, not against it.
+>
+> **242. 238's "RECORD THE COUNT AS THREE" IS WITHDRAWN** — you are right and 146(b) governs.
+> Tag the instances and let the count derive, extending the existing
+> test_project_context_instances.py to the new tags. A restated count that drifts from
+> its own enumeration is the instance family's own shape, and I just wrote one.
+>
+> **243. RATIFIED:** the truth-field non-scaling finding — an OSSE varies the constellation over
+> FIXED truth, so 15 multiplies the re-solves and not the download, and the AC's own
+> phrasing invited the error; resetting the unpushed mirror rather than forcing a
+> supersession; verifying B's decision-changing claims yourself rather than accepting
+> them; and holding the tree still while the reviewers read it.
+
+### What the rebuild changed
+
+**The defect was the UNIT OF ACCOUNT, not an arithmetic slip** — every figure in v1
+recomputed exactly, which is why reviewer A's surface-by-surface pass confirmed all five
+authored surfaces. v1 priced *one epoch class = one tile solve*. The four legs are a
+controlled experiment (identical bbox, `m`, window plan and constellation; **only n_obs
+varying**) and give **wall ∝ n_obs^1.4146, R² 0.9989**, against classes running **3–9
+missions** where the legs ran **5**.
+
+⭐ **THE INVERSION IS A COUNTING FACT** (239a/b). Post-lift carries **fewer classes (6 v 9)
+and more total missions (44 v 35)**, so it is dearer under **any** cost monotone in
+observations — at p = 0.5, 1.0, 1.4146 and 2.0 alike. Only the flat model reverses it. v1
+quoted post-lift as the cheap modern scope at **118 h** against roughly **204 h**.
+
+**Direction asserted, magnitudes declared.** The obs-scaled hours carry a pin-139
+declaration: `measured_over` 4 legs at 5 missions, `application_range` 3–9 missions,
+`within_measured_span` **false**. *One point estimate was not swapped for another.*
+
+**v1's editorial is WITHDRAWN and NOT replaced with its opposite** (239c). The inversion is
+recorded as a finding; no claim is made about cost and value moving together or apart.
+
+**Both open inputs now declared** (239d): the tile axis at 1.40× and the **constellation
+axis at ~4.7×**, the larger one v1 collapsed. **The lower bound is widened to include the
+compute figure itself** (239e) — the flat model under-prices every class above 5 missions,
+and 7 of 15 are.
+
+**Reviewer A's four defects are all closed** (239f): the probe constants are **derived**
+from `tier2_probe_kuroshio_m100` instead of typed; the grid is **node-inclusive** (229
+nodes → **40.01 MiB**, and **160.04 MiB for four tiles**); the window plan is **overlapping,
+not contiguous** (9 × 60 d on a 45-d stride, 540 window-days over a 400-d union) — corrected
+in PART 55 too; and **"per tile"** is restored to the truth headline.
+
+⚖ **EVERY MUTANT THE REVIEWERS FOUND SURVIVING IS NOW CAUGHT.** Ten between them, including
+the window plan never being read (§11 claimed that value MEASURED), a typed "FEASIBLE" that
+could not say otherwise, a typed probe constant mutable to 200.0 unnoticed, and two of the
+five subset rows entirely unasserted. Restoring the flat model now fails three tests.
+
+⚠ **ONE CORRECTION MADE WHILE APPLYING 242.** Extending the tag test to discipline 16
+reported a duplicate `(p2)`. It is **not** a duplicate: the third occurrence is a **prose
+back-reference** — *"(p2) survived a two-reviewer adversarial review"*. The matcher now
+requires the **bold** form. ⚠ **Discipline 11's own test (pin 146b) still uses the loose
+regex** and passes only because that entry happens to contain no back-references; adding one
+would fail it spuriously. Left as the owner's call rather than edited, since that test is
+pin 146(b)'s mechanism.

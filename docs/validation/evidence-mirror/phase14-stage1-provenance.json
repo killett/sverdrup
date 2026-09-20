@@ -43,6 +43,7 @@
     "phase14.stage1.tiles.southern": "the C1->2 transfer reading for the southern tile — same basis as tiles.kuroshio above. Registered BEFORE its leg runs, the lane-0 manifest precedent: registration lands with the wiring so the witness cannot be forgotten after the expensive part is done",
     "phase14.stage1.tiles.equatorial": "the C1->2 transfer reading for the equatorial tile — same basis as tiles.kuroshio above; registered before its leg runs",
     "phase14.stage1.tiles.quiet_gyre": "the C1->2 transfer reading for the quiet-gyre tile — same basis as tiles.kuroshio above; registered before its leg runs",
+    "phase14.stage1.osse_pricing": "pin 232. T8's OSSE pricing: N_epoch-classes DERIVED from the sealed epoch table (15, no deduplication available), the full sweep as a RANGE across the four measured legs, pin 89's probe as a DECLARED projection and cross-check only (it over-predicted its own tile by 1.574x), and the truth-field volume measured by an authorised metadata-only STAC query. The decision cell is EMPTY and stays the owner's. A standing claim the owner decides from, so it is witnessed",
     "phase14.stage1.revisit.kuroshio": "pin 230. T7's revisit WAIT row (owner pin 224): the per-lane sizing, every solve's RUN verdict under the 40 h ceiling, and the AGGREGATE that was refused anyway. A refusal that lives only in a ruling document is not evidence; this is the Gate-1 entry",
     "phase14.stage1.revisit.southern": "pin 230. As tiles above — priced from THIS tile's measured leg, never a shared basis",
     "phase14.stage1.revisit.equatorial": "pin 230. As tiles above — priced from THIS tile's measured leg",
@@ -228,7 +229,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-20T06:41:38.465125+00:00",
+  "generated_utc": "2026-09-20T19:13:22.713939+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -3215,6 +3216,367 @@
           ]
         },
         "box_scale_negative": "**the box-scale negative (Phase 10) is NOT cited as transferring** to the tile scale this decision is about (standing discipline 7)"
+      }
+    },
+    "phase14.stage1.osse_pricing": {
+      "digest_sha256": "0d4c5d203fd1a8ae94e3b8fb955849a9d7f087cf37fdf29626006d3833021ad5",
+      "value": {
+        "decision": null,
+        "decision_cell": "EMPTY",
+        "decision_is_the_owners": "PRICED, OWNER TO DECIDE — NOT 'not priced'. Every figure below is a measurement or a declared projection from one. What is absent is the owner's election, and only that (owner pin 235e).",
+        "report_only": true,
+        "no_run_in_this_plan": "pricing work only — no legs, no solves, no spend",
+        "rebuilt_under_pin_239": "v1 was OVERTURNED by a two-reviewer review: it priced one class = one tile solve, which treats wall as independent of observation count. See obs_scaling and scope_subsets.",
+        "value_case_verbatim": "constellation varied over FIXED model truth is the only ground-truth test of the era-transfer claim (fork-e level 1 validates against fitted s; OSSE against truth)",
+        "epoch_classes": {
+          "n_epochs": 15,
+          "n_classes": 15,
+          "n_classes_without_locked": 15,
+          "locked_removed": [
+            "c2",
+            "c2n"
+          ],
+          "deduplication_available": false,
+          "mission_counts": [
+            3,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            5,
+            7,
+            6,
+            7,
+            7,
+            8,
+            9
+          ],
+          "source": "phase14_evaluation_seal_v1.json content.epoch_table",
+          "no_deduplication_note": "EVERY epoch's constellation is UNIQUE — 15 epochs, 15 distinct mission sets, still 15 after removing the locked c2/c2n. THE PRICE HAS NO CHEAP REDUCTION AVAILABLE. A reader will otherwise assume one exists (owner pin 234b)."
+        },
+        "obs_scaling": {
+          "legs": [
+            {
+              "tile": "kuroshio",
+              "n_obs": 138518,
+              "wall_h": 19.669812369257205
+            },
+            {
+              "tile": "southern",
+              "n_obs": 175059,
+              "wall_h": 27.480486713071944
+            },
+            {
+              "tile": "equatorial",
+              "n_obs": 167579,
+              "wall_h": 25.540277777777778
+            },
+            {
+              "tile": "quiet_gyre",
+              "n_obs": 168755,
+              "wall_h": 26.031381436881105
+            }
+          ],
+          "controlled": "identical solve bbox (19x19 deg), identical m=100, identical 9x60 d window plan, identical 5-mission constellation — n_obs is the only varying input",
+          "exponent": 1.4146473461065867,
+          "r_squared": 0.9988805532232099,
+          "leg_missions": [
+            "alg",
+            "h2ag",
+            "j2g",
+            "j2n",
+            "s3a"
+          ],
+          "n_missions_leg": 5,
+          "independent_corroboration": "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall.implied_exponent = 1.28, whose verdict_on_the_anchors already recorded 'NOT linear ... optimistic by 1.42x'. v1's flat model was FLATTER THAN LINEAR, which this project's own pinned evidence had already rejected once.",
+          "projection_declaration": {
+            "pin": 139,
+            "quantity": "solve wall as a function of observation count",
+            "measured_over": {
+              "n_legs": 4,
+              "n_missions": 5,
+              "n_obs_span": [
+                138518,
+                175059
+              ]
+            },
+            "application_range": {
+              "n_missions": [
+                3,
+                9
+              ],
+              "note": "3- and 4-mission classes are BELOW the measured span"
+            },
+            "within_measured_span": false,
+            "what_it_may_be_used_for": "MAGNITUDES ONLY, declared as projected. The DIRECTION of the subset ordering does NOT rest on this fit — it is a counting fact (owner pin 239a/b)."
+          }
+        },
+        "probe_cross_check": {
+          "role": "CROSS-CHECK ONLY — NOT A PRICE (owner pin 236b)",
+          "tile": "kuroshio",
+          "source": "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall",
+          "h_per_window": 3.4398840666791592,
+          "projected_tile_h": 30.958956600112433,
+          "measured_same_tile_h": 19.669812369257205,
+          "overprediction_factor": 1.573932481862385,
+          "four_tile_projected_h": 123.83582640044973,
+          "four_tile_measured_h": 98.72195829698803,
+          "four_tile_overprediction_factor": 1.2543898899159895,
+          "admissible_under_99c": true,
+          "why_not_the_price": "CONVERGED and admissible, but it is a ONE-WINDOW PROJECTION of the thing the legs then MEASURED, and the measurement supersedes it. Its value now is as a RECORD OF HOW A ONE-WINDOW PROJECTION PERFORMED.",
+          "projection_declaration": {
+            "pin": 139,
+            "quantity": "per-tile solve wall",
+            "measured_over": {
+              "n_windows": 1,
+              "tile": "kuroshio",
+              "m": 100
+            },
+            "application_range": {
+              "n_windows": 9
+            },
+            "within_measured_span": false,
+            "outcome_when_tested": "OVER-PREDICTED by 1.574x against the direct nine-window measurement of the same tile"
+          }
+        },
+        "per_tile_price": {
+          "kuroshio": {
+            "measured_leg_wall_h": 19.669812369257205,
+            "basis": "phase14.stage1.tiles.kuroshio — MEASURED, 9/9 CONVERGED",
+            "flat_model_full_sweep_h": 295.04718553885806,
+            "obs_scaled_full_sweep_h": 328.6994631377051
+          },
+          "southern": {
+            "measured_leg_wall_h": 27.480486713071944,
+            "basis": "phase14.stage1.tiles.southern — MEASURED, 9/9 CONVERGED",
+            "flat_model_full_sweep_h": 412.20730069607913,
+            "obs_scaled_full_sweep_h": 459.2225416174976
+          },
+          "equatorial": {
+            "measured_leg_wall_h": 25.540277777777778,
+            "basis": "phase14.stage1.tiles.equatorial — MEASURED, 9/9 CONVERGED",
+            "flat_model_full_sweep_h": 383.1041666666667,
+            "obs_scaled_full_sweep_h": 426.7999834642266
+          },
+          "quiet_gyre": {
+            "measured_leg_wall_h": 26.031381436881105,
+            "basis": "phase14.stage1.tiles.quiet_gyre — MEASURED, 9/9 CONVERGED",
+            "flat_model_full_sweep_h": 390.47072155321655,
+            "obs_scaled_full_sweep_h": 435.0067475177834
+          }
+        },
+        "full_sweep_range": {
+          "n_classes": 15,
+          "measured_leg_spread_h": [
+            19.669812369257205,
+            27.480486713071944
+          ],
+          "low_tile": "kuroshio",
+          "high_tile": "southern",
+          "flat_low_h": 295.04718553885806,
+          "flat_high_h": 412.20730069607913,
+          "obs_scaled_low_h": 328.6994631377051,
+          "obs_scaled_high_h": 459.2225416174976,
+          "why_a_range": "A SINGLE NUMBER WOULD HIDE A 1.4x SPREAD THAT IS A PROPERTY OF THE TILES, NOT OF THE OSSE (owner pin 236c). 'A tile solve' is not one number: the four measured legs run 19.67-27.48 h.",
+          "which_tile_is_an_open_input": "WHICH TILE AN OSSE WOULD USE IS NOT DEFAULTED HERE (236d). The choice belongs with the run decision."
+        },
+        "constellation_size_is_an_open_input": {
+          "not_a_default": true,
+          "statement": "⛔ WHICH CONSTELLATION AN OSSE RE-SOLVE RUNS IS AN OPEN INPUT, NOT A DEFAULT — and it is the LARGER axis. The epoch classes run 3 to 9 missions against the legs' 5, a per-class spread of roughly 4.7x, against the tile axis's 1.40x.",
+          "v1_defect": "v1 declared the SMALLER axis open while collapsing the BIGGER one (owner pin 239d).",
+          "class_mission_counts": [
+            3,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            5,
+            7,
+            6,
+            7,
+            7,
+            8,
+            9
+          ],
+          "leg_missions": 5
+        },
+        "scope_subsets": {
+          "rows": [
+            {
+              "subset": "full_sweep",
+              "n_classes": 15,
+              "total_missions": 79,
+              "elected": false,
+              "flat_model_leg_equivalents": 15.0,
+              "obs_scaled_leg_equivalents": 16.710859105674217,
+              "flat_h_at_kuroshio": 295.04718553885806,
+              "obs_scaled_h_at_kuroshio": 328.6994631377051,
+              "flat_h_at_southern": 412.20730069607913,
+              "obs_scaled_h_at_southern": 459.2225416174976,
+              "cannot_establish": ""
+            },
+            {
+              "subset": "fit+validate",
+              "n_classes": 10,
+              "total_missions": 61,
+              "elected": false,
+              "flat_model_leg_equivalents": 10.0,
+              "obs_scaled_leg_equivalents": 13.552017944272558,
+              "flat_h_at_kuroshio": 196.69812369257204,
+              "obs_scaled_h_at_kuroshio": 266.56565018864796,
+              "flat_h_at_southern": 274.80486713071946,
+              "obs_scaled_h_at_southern": 372.4160490528946,
+              "cannot_establish": "CANNOT establish transfer into the 5 validate-only epochs, which is where transfer is actually claimed"
+            },
+            {
+              "subset": "pre_lift_mask66",
+              "n_classes": 9,
+              "total_missions": 35,
+              "elected": false,
+              "flat_model_leg_equivalents": 9.0,
+              "obs_scaled_leg_equivalents": 6.34674264113254,
+              "flat_h_at_kuroshio": 177.02831132331485,
+              "obs_scaled_h_at_kuroshio": 124.83923690704097,
+              "flat_h_at_southern": 247.3243804176475,
+              "obs_scaled_h_at_southern": 174.4115768209299,
+              "cannot_establish": "CANNOT establish anything about the 6 modern post-lift constellations"
+            },
+            {
+              "subset": "post_lift_mask66",
+              "n_classes": 6,
+              "total_missions": 44,
+              "elected": false,
+              "flat_model_leg_equivalents": 6.0,
+              "obs_scaled_leg_equivalents": 10.364116464541675,
+              "flat_h_at_kuroshio": 118.01887421554324,
+              "obs_scaled_h_at_kuroshio": 203.8602262306641,
+              "flat_h_at_southern": 164.88292027843167,
+              "obs_scaled_h_at_southern": 284.8109647965677,
+              "cannot_establish": "CANNOT establish era-transfer across the 1992-2009 boundary — the era gap the claim is weakest at"
+            },
+            {
+              "subset": "validate_only",
+              "n_classes": 5,
+              "total_missions": 18,
+              "elected": false,
+              "flat_model_leg_equivalents": 5.0,
+              "obs_scaled_leg_equivalents": 3.1588411614016567,
+              "flat_h_at_kuroshio": 98.34906184628602,
+              "obs_scaled_h_at_kuroshio": 62.1338129490571,
+              "flat_h_at_southern": 137.40243356535973,
+              "obs_scaled_h_at_southern": 86.80649256460298,
+              "cannot_establish": "CANNOT establish anything fitted; it tests only the transferred epochs"
+            }
+          ],
+          "ordering_is_a_counting_fact": {
+            "claim": "post_lift_mask66 is DEARER than pre_lift_mask66",
+            "pre_lift": {
+              "n_classes": 9,
+              "total_missions": 35
+            },
+            "post_lift": {
+              "n_classes": 6,
+              "total_missions": 44
+            },
+            "why_exponent_free": "post-lift has FEWER classes (6 vs 9) and MORE total missions (44 vs 35). Under ANY cost monotone in observation count it is dearer. ONLY the flat 'one class = one leg' model reverses it, and that model is what the review overturned.",
+            "magnitudes_are_projected": "the HOURS carry obs_scaling's pin-139 declaration; the DIRECTION does not depend on the fit (owner pin 239a/b)"
+          },
+          "v1_editorial_WITHDRAWN": {
+            "withdrawn_text": "The cheapest subsets are cheap precisely because they drop the epochs the era-transfer claim is weakest at. Cost and evidential value move together here.",
+            "why": "IT WAS AN ARTEFACT OF THE FLAT MODEL AND INVERTS WITH IT. The sparse historical constellations — exactly where era-transfer is weakest — carry the FEWEST observations and are therefore the CHEAPEST classes to solve.",
+            "not_replaced": "⛔ NOT replaced with the opposite editorial (owner pin 239c): that would be the same mistake with a different sign. The inversion is recorded as a FINDING; no claim is made about cost and value moving together or apart."
+          }
+        },
+        "truth_field": {
+          "measured": true,
+          "searched_and_absent": false,
+          "query": {
+            "host": "stac.marine.copernicus.eu",
+            "product": "GLOBAL_MULTIYEAR_PHY_001_030",
+            "dataset": "cmems_mod_glo_phy_my_0.083deg_P1D-m_202311",
+            "url": "https://stac.marine.copernicus.eu/metadata/GLOBAL_MULTIYEAR_PHY_001_030/cmems_mod_glo_phy_my_0.083deg_P1D-m_202311/dataset.stac.json",
+            "queried_utc": "2026-09-20T06:58:29Z",
+            "http_status": 200,
+            "authorisation": "owner pin 237(a) — metadata only, no download, one host",
+            "grid": {
+              "latitude_len": 2041,
+              "longitude_len": 4320,
+              "time_len": 12227,
+              "step_deg": 0.08333333333333333,
+              "temporal_extent": "1993-01-01T00:00:00Z .. 2026-06-23T00:00:00Z"
+            },
+            "zos_item_size_bytes": 2,
+            "zos_dtype": "<i2",
+            "no_total_volume_field": "the STAC document carries NO total-size field; the volumes below are DERIVED from itemSize x grid geometry. That derivation rests on two typed geometry assumptions (the bbox and node-inclusive counting) and on the UNCOMPRESSED array size, so it is a bound on the wire volume rather than a wire measurement (reviewer defect 4)"
+          },
+          "variable": "zos (sea surface height) — the OSSE truth field",
+          "scope_assumption": "zos only. No MDT, mask or ancillary fields are costed — adequate for a nadir-SLA OSSE, stated as a scope choice, not an omission",
+          "solve_bbox_deg": 19.0,
+          "bbox_caveat": "this is the SOLVE box. Simulating observations needs truth over the OBS footprint (solve bbox + the 1.0 deg operative halo = 21 deg), which is (21/19)**2 = 1.22x larger. NOT applied here because the obs-footprint choice belongs with the run design; stated so the figure is read as the SOLVE-box volume it is",
+          "grid_nodes_per_side": 229,
+          "grid_nodes_per_tile": 52441,
+          "window_plan_span_days": 400.0,
+          "window_plan_shape": "9 windows x 60 d on a 45-d stride — OVERLAPPING by 15 d, NOT contiguous; 540 window-days over a 400-d union. The UNION is the download basis because each day is bought once",
+          "bytes_per_tile_per_day": 104882,
+          "bytes_per_tile_per_span": 41952800,
+          "mib_per_tile_per_span": 40.009307861328125,
+          "gib_per_tile_per_span": 0.03907158970832825,
+          "mib_all_four_tiles": 160.0372314453125,
+          "global_zos_per_day_mib": 16.81732177734375,
+          "global_zos_full_record_tib": 0.19609965645940974,
+          "does_not_scale_with_classes": "THE TRUTH FIELD IS BOUGHT ONCE PER TILE, NOT ONCE PER CLASS. An OSSE varies the CONSTELLATION over FIXED model truth, so N_epoch-classes multiplies the RE-SOLVES and not the truth download. It DOES scale with the number of tiles.",
+          "feasibility": {
+            "cmems_storage_budget_gib": 50.0,
+            "all_four_tiles_gib": 0.156286358833313,
+            "fraction_of_budget": 0.0031257271766662598,
+            "disk_available_gib_at_measurement": 311,
+            "verdict": "FEASIBLE",
+            "derived_not_asserted": "the verdict is computed from the volume against the budget, so shrinking the budget flips it",
+            "why": "the spec's 'heavy downloads' is true of the GLOBAL FULL RECORD (0.20 TiB of zos alone) and NOT of the tile-and-span subset an OSSE needs"
+          }
+        },
+        "lower_bound": {
+          "statement": "THE FIGURES HERE ARE A LOWER BOUND ON THE OSSE PRICE — INCLUDING THE COMPUTE FIGURE ITSELF.",
+          "compute_is_itself_a_lower_bound": "⛔ WIDENED UNDER OWNER PIN 239(e). v1 attributed the lower bound to uncosted ENGINEERING alone, so a reader concluded the compute band was sound. IT IS NOT: the flat model under-prices every class above 5 missions, and 7 of the 15 classes are above it.",
+          "what_is_covered": "constellation-varied re-solves + the truth download, both at declared model assumptions",
+          "what_is_not_costed": [
+            "truth-provider wiring: the TRUTH interface is DORMANT since 4b and re-arming it is unmeasured engineering time",
+            "per-class observation simulation from the truth field",
+            "scoring and analysis of 15 outputs",
+            "non-convergence retries: the legs ran 424-554 PCG iterations at 5 missions; the 3-mission classes are sparser, worse-conditioned and outside anything measured",
+            "calendar time and box occupancy: these are serial single-host hours, with a launch gate of 2x predicted peak RSS per class"
+          ],
+          "why_unmissable": "Owner pins 237(d) and 239(e): an OSSE priced at re-solves alone understates it, and pin 235(b) named that as the most likely error. The gap is BOUNDED on the download axis and OPEN on both the engineering and the compute-model axes."
+        },
+        "recommendation_options": [
+          {
+            "option": "run at Stage-2 entry (when era-transfer is the live question)",
+            "cost": "same compute; the truth download is trivial either way",
+            "can_establish": "the era-transfer claim against truth at the point where it becomes load-bearing",
+            "cannot_establish": "anything for Gate 1 — it does not close a Stage-1 item"
+          },
+          {
+            "option": "run now",
+            "cost": "flat model 295.0-412.2 h; obs-scaled (projected) 328.7-459.2 h",
+            "can_establish": "the same thing, earlier",
+            "cannot_establish": "any Stage-1 gate item — the OSSE is not a Gate-1 deliverable, and Gate 1 already carries two ruled WAITs"
+          }
+        ],
+        "citations": [
+          "owner pin 99(c) — price from the CONVERGED numbers, basis in-row",
+          "owner pin 232 — standalone doc + witnessed node; posted pack untouched",
+          "owner pin 234 — N_epoch-classes derived; no deduplication; truth cost in",
+          "owner pin 236 — price from the legs; the probe is a declared cross-check",
+          "owner pin 237 — the STAC metadata query, authorised and recorded",
+          "owner pin 239 — REBUILT: the unit of account was wrong",
+          "fork-f pin 5 — the value case, verbatim"
+        ]
       }
     },
     "phase14.stage1.projection_declarations": {
