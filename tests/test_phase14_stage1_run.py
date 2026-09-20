@@ -10,6 +10,7 @@ from __future__ import annotations
 import functools
 import inspect
 import json
+import math
 import os
 import re
 from datetime import UTC, datetime, timedelta
@@ -5607,3 +5608,182 @@ def test_the_attestation_REFUSES_a_frame_that_cannot_rebuild_itself(
         _mod.poleward_obs_edges(
             evidence_path=_frames_store(tmp_path, monkeypatch, frames)
         )
+
+
+# ---------------------------------------------------------------------------
+# T7 (Phase-10 revisit) — CONFIG PINS ONLY (owner pin 222a).
+#
+# These pin the revisit's lane/band CONFIG and its tier guard. They do not
+# exercise a `revisit` command; none exists yet, and none is authorised until
+# the owner rules the aggregate spend (pin 222b/222c).
+#
+# Review pin 9 is a LIVE confound, not a hypothetical: `phase10_lanes` and
+# `phase13_lanes` both export `BOXES`, `LANES` and `ALL_DIMS`, with different
+# dimensions (6 vs 7) and different numeric values. An import swap is silent
+# at the name level, which is why these pin VALUES as literals.
+# ---------------------------------------------------------------------------
+
+# Hand-read from src/sverdrup/validation/phase10_lanes.py, NOT computed by
+# importing it — a literal is what makes the pin independent of the module a
+# later edit might point at.
+_PHASE10_BOX_LITERALS: dict[str, tuple[float, float]] = {
+    "c0": (-1.5, 1.5),
+    "c1": (-1.0, 1.0),
+    "c2": (-1.5, 1.5),
+    "log_L0": (math.log(0.5), math.log(2.0)),
+    "l1": (-0.5, 0.3),
+    "Lt": (3.0, 14.0),
+}
+_PHASE10_LANE_LITERALS: dict[str, frozenset[str]] = {
+    "lane0": frozenset(),
+    "V": frozenset({"c1", "c2"}),
+    "VL": frozenset({"c1", "c2", "l1"}),
+}
+
+
+def test_revisit_boxes_are_the_phase10_values_as_literals() -> None:
+    """The revisit's band values are phase-10's, pinned as numbers.
+
+    Bug caught: `scripts/phase14_stage1_run.py` importing `BOXES` from
+    `phase13_lanes` instead of `phase10_lanes` — or the phase-13 band
+    protocol arriving through the phase-13 lane RUNNER, which Task 7's
+    Files note says may be imported for its runner machinery. Both modules
+    export a `BOXES` of the same name, so the swap raises no NameError and
+    changes nothing a reader would notice; it silently re-designs the
+    revisit, which is the confound the sub-design forbids.
+
+    The expected values are hand-read literals, so this cannot pass
+    vacuously by both the runner and this test being re-pointed together.
+    """
+    assert _mod.REVISIT_BOXES == _PHASE10_BOX_LITERALS
+
+
+def test_revisit_boxes_match_phase10_module_and_not_phase13() -> None:
+    """The literals above are phase-10's, and are NOT phase-13's.
+
+    Bug caught: the literals drifting out of step with
+    `phase10_lanes.BOXES` (a phase-10 box edit that the revisit silently
+    stops tracking), and — the other direction — anyone "fixing" the pin by
+    pasting phase-13's values into it. The dimension names alone settle the
+    second: phase-13's cube is delta/rho/lambda, phase-10's is c0/log_L0/Lt,
+    so the two share no dimension at all.
+    """
+    from sverdrup.validation import phase10_lanes, phase13_lanes
+
+    assert _mod.REVISIT_BOXES == phase10_lanes.BOXES
+    assert _mod.REVISIT_DIMS == phase10_lanes.ALL_DIMS
+
+    # The confound is real: same names, different content.
+    assert set(_mod.REVISIT_BOXES) & set(phase13_lanes.BOXES) == set()
+    assert _mod.REVISIT_BOXES != phase13_lanes.BOXES
+    assert _mod.REVISIT_DIMS != phase13_lanes.ALL_DIMS
+
+
+def test_revisit_lane_set_is_phase10s_with_lane0_frozen() -> None:
+    """Lanes are phase-10's three, lane-0 releasing nothing.
+
+    Bug caught: phase-13's lane set ({lane0, D, C, modes-only}) arriving by
+    import — it would run the wrong restrictions on the wrong dims — or a
+    lane being added to the revisit, which changes both its scope and its
+    cost without the owner having priced it.
+
+    lane-0 releasing nothing is the load-bearing half: it is the FROZEN
+    config the deltas are measured against. A lane-0 that released a coord
+    would make every delta a comparison against a re-tuned baseline.
+    """
+    assert _mod.REVISIT_LANES == _PHASE10_LANE_LITERALS
+    assert _mod.REVISIT_LANES["lane0"] == frozenset()
+
+    from sverdrup.validation import phase10_lanes
+
+    assert _mod.REVISIT_LANES == phase10_lanes.LANES
+
+
+def test_revisit_tiles_are_the_four_diverse_tiles_only() -> None:
+    """The revisit runs on the four diverse tiles, never the anchor or seams.
+
+    Bug caught: lanes being added at `anchor`, `seam_n` or `seam_s`. Those
+    are the identity and seam subjects; a lane there measures nothing new
+    and spends a real leg to do it. Reusing TRANSFER_TILES rather than
+    re-listing the names also stops the two lists drifting apart.
+    """
+    assert _mod.REVISIT_TILES == _mod.TRANSFER_TILES
+    assert set(_mod.REVISIT_TILES) == {
+        "kuroshio",
+        "southern",
+        "equatorial",
+        "quiet_gyre",
+    }
+    assert {"anchor", "seam_n", "seam_s"}.isdisjoint(_mod.REVISIT_TILES)
+
+
+def test_revisit_lane_config_is_per_tile_and_not_shared() -> None:
+    """Each tile's lane config is its own object, sharing no mutable state.
+
+    Bug caught: the cross-tile shared field fork-d pin 6 forbids, in the
+    form it would actually arrive — not as a deliberate global fit, but as
+    aliasing. Building the config with one dict (or one list of trials)
+    reused across tiles means a later per-tile write lands on all four, and
+    the per-regime contrast the revisit exists to measure silently becomes
+    a single coupled fit. The label would still read "per-tile".
+    """
+    cfg = _mod.revisit_lane_config()
+
+    assert set(cfg) == set(_mod.REVISIT_TILES)
+
+    # No two tiles may share a config object, at either level.
+    ids = [id(cfg[t]) for t in _mod.REVISIT_TILES]
+    assert len(set(ids)) == len(ids)
+    for lane in _PHASE10_LANE_LITERALS:
+        lane_ids = [id(cfg[t][lane]) for t in _mod.REVISIT_TILES]
+        assert len(set(lane_ids)) == len(lane_ids), lane
+
+    # And mutating one tile's config must not reach another's.
+    cfg["kuroshio"]["V"]["released"] = frozenset({"SENTINEL"})
+    assert cfg["southern"]["V"]["released"] == frozenset({"c1", "c2"})
+
+
+def test_revisit_tier_guard_runs_a_lane_inside_the_live_ceiling() -> None:
+    """A lane affordable under the 40 h per-leg ceiling is RUN, not WAIT.
+
+    Bug caught: the DEAD premise returning. The original clause read
+    "Tier 0/1 only; if any lane's sizing demands Tier 2 -> that lane WAITS
+    (no new ceilings exist)". Owner pin 99(b) killed that premise: task 22
+    cleared the Tier-2 crossing and E-16 set an explicit ceiling. A guard
+    that still refuses Tier-2 work would mark every real lane WAIT and the
+    revisit would produce nothing, while looking conservative and correct.
+
+    30.0 h is over any Tier-1 wall and under the live ceiling, so it is
+    exactly the case the two premises disagree about.
+    """
+    assert _mod.revisit_tier_verdict(predicted_wall_h=30.0) == "RUN"
+
+
+def test_revisit_tier_guard_waits_only_above_the_ceiling() -> None:
+    """The ceiling boundary sits where TIER2_MAX_LEG_WALL_H says.
+
+    Bug caught: an off-by-one on the comparison. `>=` instead of `>` would
+    WAIT a lane priced at exactly the ceiling, and the runner's own
+    `tier2_wall_ceiling` uses `elapsed_h > TIER2_MAX_LEG_WALL_H` — the two
+    must not disagree about the same number, or a lane is refused before
+    launch that the post-hoc check would have passed.
+    """
+    ceiling = _mod.TIER2_MAX_LEG_WALL_H
+    assert ceiling == 40.0
+
+    assert _mod.revisit_tier_verdict(predicted_wall_h=ceiling) == "RUN"
+    assert _mod.revisit_tier_verdict(predicted_wall_h=ceiling + 0.01) == "WAIT"
+
+
+def test_revisit_tier_guard_refuses_a_non_finite_prediction() -> None:
+    """An unpriced lane is refused, never silently run.
+
+    Bug caught: NaN propagating out of a sizing model. Every IEEE
+    comparison against NaN is False, so a bare `wall_h > ceiling` returns
+    RUN for a lane whose cost is unknown — the one case where running is
+    least defensible. A leg launched on a NaN prediction is how the
+    aggregate the owner must rule on gets spent without a number.
+    """
+    for bad in (float("nan"), float("inf"), -1.0):
+        with pytest.raises(ValueError, match="predicted_wall_h"):
+            _mod.revisit_tier_verdict(predicted_wall_h=bad)

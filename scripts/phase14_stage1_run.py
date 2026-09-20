@@ -39,6 +39,14 @@ from typing import TYPE_CHECKING, Annotated, Any
 
 import typer
 
+# Review pin 9 — band/lane provenance, EAGER and at module level so it is
+# greppable: the revisit's lanes and bands come from PHASE-10. Importing
+# these from phase13_lanes would resolve (same names) and silently
+# re-design the revisit. Aliased so a swap cannot hide behind the name.
+from sverdrup.validation.phase10_lanes import ALL_DIMS as _p10_ALL_DIMS
+from sverdrup.validation.phase10_lanes import BOXES as _p10_BOXES
+from sverdrup.validation.phase10_lanes import LANES as _p10_LANES
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
     from types import ModuleType
@@ -5308,6 +5316,92 @@ def record_tile_leg(
 # and the anchor is the identity subject. The count is pinned against the
 # store: a store with any other set of scored diverse tiles is REFUSED.
 TRANSFER_TILES: tuple[str, ...] = ("kuroshio", "southern", "equatorial", "quiet_gyre")
+
+# ---------------------------------------------------------------------------
+# T7 — Phase-10 revisit: CONFIG ONLY (owner pin 222a).
+#
+# There is deliberately NO `revisit` command here. The config and its tier
+# guard land first so the aggregate can be PRICED; the runner half waits on
+# the owner's spend ruling (pin 222b/222c).
+#
+# Review pin 9 — a LIVE confound. `phase10_lanes` and `phase13_lanes` both
+# export `LANES`, `BOXES` and `ALL_DIMS`. They are NOT interchangeable: the
+# phase-10 cube is 6-dim {c0, c1, c2, log_L0, l1, Lt}, the phase-13 cube is
+# 7-dim {delta x4, rho, lambda x2}. An import swap is silent at the name
+# level, so the revisit's bands come from phase-10 BY IMPORT and are pinned
+# BY VALUE in tests/test_phase14_stage1_run.py. The phase-13 lane RUNNER's
+# machinery may be reused; its lanes and bands may not.
+# ---------------------------------------------------------------------------
+REVISIT_TILES: tuple[str, ...] = TRANSFER_TILES
+REVISIT_LANES: dict[str, frozenset[str]] = dict(_p10_LANES)
+REVISIT_BOXES: dict[str, tuple[float, float]] = dict(_p10_BOXES)
+REVISIT_DIMS: tuple[str, ...] = _p10_ALL_DIMS
+
+
+def revisit_lane_config() -> dict[str, dict[str, dict[str, Any]]]:
+    """Build the per-tile revisit lane config.
+
+    Per-tile and NOT a shared cross-tile field (fork-d pin 6): the Stage-1
+    question is whether box-scale behaviour transfers PER REGIME, which is a
+    per-tile contrast. A shared field couples the tiles through a global fit
+    nobody pre-registered. Every tile therefore gets freshly-built objects —
+    no dict, set or list is reused across tiles, so a later per-tile write
+    cannot reach another tile.
+
+    Returns:
+        ``{tile: {lane: {"released": frozenset, "boxes": dict}}}``, with
+        lane-0 releasing nothing (it is the frozen reference the deltas are
+        measured against).
+    """
+    return {
+        tile: {
+            lane: {
+                "released": frozenset(released),
+                "boxes": {dim: tuple(REVISIT_BOXES[dim]) for dim in REVISIT_DIMS},
+            }
+            for lane, released in REVISIT_LANES.items()
+        }
+        for tile in REVISIT_TILES
+    }
+
+
+def revisit_tier_verdict(*, predicted_wall_h: float) -> str:
+    """Decide whether a revisit lane RUNs or WAITs, against the LIVE ceiling.
+
+    ⚖ OWNER PIN 99(b), and pin 222(c) clarifying its reach. The original
+    clause read "Tier 0/1 only; any lane demanding Tier 2 WAITS (no new
+    ceilings exist)". That premise DIED: task 22 cleared the Tier-2 crossing
+    and E-16 set an explicit ceiling. **A lane affordable under the 40 h
+    per-leg ceiling is NOT a WAIT.**
+
+    Pin 222(c): this governs only whether a lane that CAN run must be
+    recorded as a WAIT. It does NOT authorise the aggregate — the total
+    spend across tiles and lanes is a separate decision, and it is the
+    owner's.
+
+    Args:
+        predicted_wall_h: Predicted per-leg wall clock, hours. Must be
+            finite and non-negative.
+
+    Returns:
+        ``"RUN"`` if at or under :data:`TIER2_MAX_LEG_WALL_H`, else
+        ``"WAIT"``.
+
+    Raises:
+        ValueError: If ``predicted_wall_h`` is NaN, infinite or negative. A
+            bare comparison would return RUN for a NaN, launching a leg
+            whose cost is unknown.
+    """
+    if not math.isfinite(predicted_wall_h) or predicted_wall_h < 0.0:
+        raise ValueError(
+            "predicted_wall_h must be finite and non-negative, got "
+            f"{predicted_wall_h!r} — an unpriced lane is refused, not run"
+        )
+    # Same boundary as tier2_wall_ceiling's post-hoc check: OVER the ceiling
+    # stops, AT the ceiling does not.
+    return "WAIT" if predicted_wall_h > TIER2_MAX_LEG_WALL_H else "RUN"
+
+
 TRANSFER_BEGIN = "<!-- TRANSFER-READINGS: BEGIN -->"
 TRANSFER_END = "<!-- TRANSFER-READINGS: END -->"
 # Owner pin 199(b): a stale number beside live ones in the same column must
