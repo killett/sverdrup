@@ -2,14 +2,30 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
+> T7 = WAIT (pin 224). Measured: 68 solves / 69.9 days full-scope, 252 / 259.1 days screening.
+> Per-lane guard passes every solve; the AGGREGATE is refused. Anchors-only priced at 12.3
+> days as the STAGE-2 entry point, NOT elected — its claim is strictly weaker (the lane's
+> designated config, not "no config in the lane"). Gate 1 now carries TWO ruled WAITs (kernel
+> 219, revisit 224) and does not close. NEXT: T8 (OSSE pricing) on the owner's word.
+>
 > T6 POSTED AND RULED. Kernel decision = WAIT, cell EMPTY (pin 219). No option electable as
 > the code stands: options 2/3 inert at the SO tile (hull-clamped latitude field, pin 216);
 > option 1 breaches ±66 at the tile's poleward reach (−66.13 at the core edge). Two named
 > resolutions, both Stage 2: a smaller km scale, or a latitude-aware halo.
 > operative_halo_deg() UNTOUCHED.
-> NEXT: T7 opens on the owner's word, with pin 212(b)'s two-reviewer review binding and pin
-> 99(b)'s live-ceiling premise. Then T8. Then task 23 (C-11). Gate 1 does not close until
-> T6's WAIT resolves or the owner rules without it.
+>
+> **T7's config pins and per-lane tier guard LANDED; no lane command, no legs (224b/224d).**
+> `revisit_tier_verdict` stays exactly as built — it passes every solve and has no opinion
+> on the total, which is pin 222(c) demonstrated rather than asserted. Sweep row 8 is FOLDED
+> (pin 227): the tracker carried the dead "no new ceilings exist" premise verbatim while the
+> ruling was only a header note. Pins 221–229 landed as ruling PART 52, with the sizing
+> table beside 224 as its basis.
+>
+> ⛔ **TASK 23 IS BEHIND TASK 24** (pin 221c) — a userGate wall for the election ruling,
+> which *"does not yet exist"*. Fifth instance of that trap; it is an EDGE IN THE GRAPH with
+> a machine-readable `userGate` fence, not prose. ⚠ But the blocker hook guards only
+> `in_progress` and reads the TRANSCRIPT, not `.tasks.json`, so the edge is **declarative,
+> not enforced** (pins 221d/229) — ratified as a plugin change, outside this repo.
 >
 > **Everything below this block is TRAIL.** Owner pin 154: rewrite what went stale rather
 > than layering over it.
@@ -575,12 +591,32 @@
 >    quiet_gyre (−12.0) and equatorial (+14.0). That is the argument for reading the edge
 >    from the framing code rather than from any expression.
 >
-> 7. **▶ NEXT — T7, on the owner's word, and not before.** Band provenance pinned to
->    `phase10_lanes` (pin 9); lanes **Tier-1-or-WAIT against the LIVE 40 h ceiling** (99b),
->    not the dead "no new ceilings" premise; **pin 212(b)'s two-reviewer review binds** it
->    as a decision pack. Then **T8** (priced from the CONVERGED numbers, never the capped T2
->    probe, basis in-row — 99c). Then **task 23** (C-11). **Gate 1 does not close until T6's
->    WAIT resolves or the owner rules without it.**
+> 7. **⛔ T7 IS RULED — THE AGGREGATE IS REFUSED (pin 224). A WAIT WITH A MEASUREMENT.**
+>    Band provenance IS pinned to `phase10_lanes` (pin 9) — three ways: hand-read literals,
+>    equality to the module, and **asserted unequal to `phase13_lanes`**, because the two
+>    export `BOXES`/`LANES`/`ALL_DIMS` with **no shared dimension name and no error on a
+>    swap** (ratified 226). The per-tile config is pinned **non-aliased**, which is how the
+>    fork-d pin 6 confound would actually arrive.
+>    **⭐ A PHASE-10 LANE IS NOT ONE LEG** — it is `n_sobol_per_lane` trials plus anchors,
+>    and at tile scale each trial is a full leg. **68 solves / 1,678.2 h / 69.9 days**
+>    full-scope; **252 / 6,219.4 h / 259.1 days** screening. Table and basis: ruling PART 52.
+>    **⭐ THE PER-LANE GUARD AND THE AGGREGATE ARE DEMONSTRABLY SEPARATE QUESTIONS (224b).**
+>    Every solve is **RUN** — 26.03 h against 40 h, 14 h of margin — so **99(b) marks NOT
+>    ONE LANE a WAIT**, and the total is refused anyway. The guard was not wrong and was not
+>    overridden; **it has no opinion on the total, by design**. That is **pin 222(c)
+>    demonstrated, not asserted**, and why `revisit_tier_verdict` stays as built.
+>    **ANCHORS-ONLY IS PRICED AND NOT ELECTED (225): 12 solves / 296.2 h / 12.3 d, 5.7×
+>    cheaper — STAGE 2's entry point.** ⛔ **Its claim is STRICTLY WEAKER and the limit
+>    travels with it:** it can say *"the lane's designated configuration does not beat lane-0
+>    in this regime"*; it **cannot** say *"no configuration in the lane does"*. **A negative
+>    result needs the second, and the Sobol search is what buys it.**
+>    ⚖ **The screening lever is NAMED and DELIBERATELY UNPRICED** (226): phase-10 screens
+>    91/365 days, but the Stage-1 leg is a **9-window solve, not a 365-day score**, so that
+>    ratio has no valid basis here. **If it is ever wanted, it is a MEASUREMENT.**
+>    **▶ NEXT — T8, on the owner's word, and not before** (priced from the CONVERGED
+>    numbers, never the capped T2 probe, basis in-row — 99c). Then **task 23** (C-11),
+>    which sits **behind task 24**. **Gate 1 carries TWO ruled WAITs (219, 224) and does not
+>    close until they resolve or the owner rules without them.**
 
 > ---
 > ## 📦 TRAIL ARCHIVED — `docs/progress-archive/phase14-stage1-trail.md`

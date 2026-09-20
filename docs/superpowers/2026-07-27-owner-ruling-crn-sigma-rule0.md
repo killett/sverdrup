@@ -3760,3 +3760,144 @@ Gate-1 pack posted at `f9981d1`.
   consequence at a distribution's CENTRE rather than at its relevant EXTREME.** Both T6
   instances are named — the draft's multiplier, and the φ0 halo row that survived one review
   and was caught only when the owner asked which direction it ran.
+
+---
+
+## PART 52 — THE TRACKER RECONCILED; T7's AGGREGATE REFUSED ON A MEASUREMENT (verbatim), pins 221–229, 2026-09-19
+
+**Landed verbatim under pin 40/41/48.** Pins 221–229 as the owner wrote them, followed by
+the sizing table that is pin 224's basis.
+
+> **221. ⛔ RECONCILE THE TRACKER FIRST — before T7, as its own commit.**
+> (a) T5 → completed (four legs recorded and witnessed). T6 → completed (pack posted,
+> decision ruled a WAIT — the task's AC was to assemble and post, and it did).
+> (b) T9's blockedBy [6, 7, 8] IS OBSOLETE BY PIN 209, not wrongly satisfied: the pack
+> presents T6/T7/T8 as unopened, which is what I ruled. Correct it to [3, 4, 5, 10,
+> 11, 12] with a note citing 209, so the graph states the dependency the pack
+> actually has.
+> (c) ⛔ T23 MUST NOT BE READY. It is C-11's producer and needs my election ruling, which
+> does not exist as a task. Create a userGate task for the election ruling and put
+> T23 behind it, description opening with "the owner's election outcome does not yet
+> exist." Fifth instance of this trap; make it mechanical, not prose.
+> (d) HOW A COMPLETION PASSED ITS OWN BLOCKERS is the finding. Either the tracker has no
+> such check or it was bypassed. Report which, and pin it: a task cannot be marked
+> completed while a blocker is unmet, or the check is decoration.
+> (e) T18/19/20 stay READY-not-RUNNABLE under pin 88. Unchanged.
+>
+> **222. T7 SCOPE — your first move is approved exactly as proposed, and nothing beyond it.**
+> (a) TDD config pins only: band VALUES against phase10_lanes.BOXES (pin 9), per-tile
+> lane config, tier guard. No runner command, no legs, nothing detached, nothing
+> committed until I have seen it.
+> (b) THEN STOP AND SHOW ME THE SIZING NUMBERS — lane count from phase10_lanes.LANES,
+> per-lane predicted wall and peak against the measured 26 h/leg and 4,986 MiB, and
+> the four-tile total. Pin 99(b) removed a dead premise; it did not authorise a
+> multi-day fan-out. The Tier-1-vs-WAIT call is made on that table, by me.
+> (c) 99(b) CLARIFIED, since it is being read as a licence: "affordable under the 40 h
+> per-leg ceiling is not a WAIT" governs whether a lane that CAN run must be recorded
+> as a WAIT. It does not authorise the aggregate. The aggregate is a spend decision
+> and it is mine.
+>
+> **223. PIN 212(b)'s ATTACK SURFACES FOR T7 — authored now, so the review is not blocked later.**
+> (a) Band provenance: prove the pinned values came from phase10_lanes and NOT from
+> phase13_lanes or phase13_band_artifact.json. The reviewer should attempt to make
+> the pin pass against the phase-13 values and report if it can.
+> (b) Whether "per-tile lanes" is actually per-tile in the shipped config, or shares any
+> fitted quantity across tiles — the confound fork-d pin 6 forbade. Same class as the
+> hull clamp: check the code, not the label.
+> (c) Whether any lane delta can be non-zero for a reason other than the lane — CRN
+> reuse, window-plan drift, or the s*/chi2 aliasing. A revisit that cannot distinguish
+> its own signal from machinery is not a revisit.
+> (d) The promotion sentence (fork-f pin 6) and the box-scale-negative absence pin: both
+> verbatim, both test-pinned, and the reviewer should try to make each pass vacuously.
+> (e) Verdict as CONFIRMED / OVERTURNED / UNDER-EVIDENCED with the settling measurement
+> named.
+>
+> **224. T7 — WAIT. THE AGGREGATE IS REFUSED, and the measurement is the deliverable.**
+> (a) Verified: 68 solves / 1,678.2 h / 69.9 days at the sealed full-scope budget;
+> 252 solves / 6,219.4 h / 259.1 days on the screening path. Not a Stage-1 task and
+> not a Tier-1 spend, on a box whose legs have parked 16 h waiting for a RAM window.
+> (b) THE PER-LANE GUARD IS CORRECT AND STAYS. Every solve is RUN under the 40 h ceiling
+> with 14 h to spare, and the guard has no opinion on the total — by design, as you
+> built it. 222(c) is now demonstrated, not asserted: the two questions are
+> genuinely separate and only the second is mine.
+> (c) Same shape as pin 219. The revisit's Gate-1 entry is a measured WAIT with its cost
+> and its exits named, not an empty row. Gate 1 now carries two WAITs, which is the
+> honest state of a gate that does not close.
+> (d) Nothing runs. No lanes, no anchors, nothing detached.
+>
+> **225. THE ANCHORS-ONLY PATH — priced, presented, NOT elected. It is Stage 2's entry point.**
+> (a) 3 solves/tile (V anchor 1, VL anchors 2), 12 total, 296.2 h / 12.3 days — 5.7x
+> cheaper. Record it so Stage 2 inherits a priced option rather than a refusal.
+> (b) ⛔ ITS CLAIM IS STRICTLY WEAKER AND THAT LIMIT TRAVELS WITH IT: anchors-only can
+> say "the lane's designated configuration does not beat lane-0 in this regime." It
+> CANNOT say "no configuration in the lane does." A negative result needs the second,
+> and the sobol search is what buys it. State that wherever the option appears.
+> (c) NOT ELECTED FOR STAGE 1: 12 days for a report-only result whose strong form is
+> unreachable, on a memory-constrained box, where the box-scale negative is already
+> never cited as transferring (discipline 7). The cost does not buy a Gate-1 item.
+>
+> **226.** RATIFIED, both judgement calls: excluding lane-0 (the T5 legs ARE lane-0 at frozen
+> config — re-solving it would measure the solver, not the lane), and REFUSING to price
+> the screening lever. "Scaling by 91/365 has no valid basis here; I'd be inventing a
+> number" is the correct instinct and the one this project has been built on. If it is
+> ever wanted, it is a measurement.
+> Also ratified: pinning the boxes as hand-read literals AND against phase10_lanes AND
+> asserted unequal to phase13's. Two modules exporting BOXES/LANES/ALL_DIMS with no
+> shared dimension name and no error on a swap is worse than the plan stated, and the
+> three-way pin is what stops 223(a) passing vacuously.
+>
+> **227. FLAG 1 — FOLD SWEEP ROW 8 IN THE TRACKER.** Task 7's description still carries "no new
+> ceilings exist" verbatim with 99(b) only as a header note. The tracker is the laxer
+> copy and the tracker is what a fresh session reads. Same defect class 221 just fixed.
+> Rewrite the clause in .tasks.json, do not layer over it (pin 154).
+>
+> **228. FLAG 2 — LAND 221-227 AS THE NEXT RULING PART, now, despite the stop.** You are right
+> that pins live verbatim in the tree under 41/48 and that 223's five attack surfaces are
+> unlanded. Commit them with the sizing table recorded beside 224 as its basis.
+>
+> **229. THE HOOK FINDING (221d) IS RATIFIED AND ITS SCOPE ACCEPTED.** A blocker check that guards
+> only in_progress and rebuilds state from the session transcript rather than
+> .tasks.json is decoration in a multi-session project — which is this project's normal
+> mode, not an edge case. Recording it in task 24 as "declarative, not enforced" is the
+> right disposition; it is a plugin change, outside this repo, and it stays flagged.
+
+### Pin 224's basis — THE T7 SIZING TABLE (measured, not projected)
+
+**Every number below is MEASURED.** Per-leg walls and peaks are the T5 legs as recorded at
+`phase14.stage1.tiles.<tile>`; the trial counts are the sealed phase-10 budget at
+`phase10.oi.probe.budget`. **No projection block is needed because nothing is projected** —
+the aggregate is a multiplication of two measured quantities.
+
+**A phase-10 LANE IS NOT ONE LEG.** It is `n_sobol_per_lane` Sobol trials plus anchors, and
+each trial at Stage-1 tile scale is a full leg. *That is the whole finding.* Lane count from
+`phase10_lanes.LANES` = **3** — `lane0` (frozen), `V` {c1,c2}, `VL` {c1,c2,l1}. Anchors from
+`anchors_for`: **V = 1, VL = 2**. **Lane-0 is excluded: the T5 legs ARE lane-0 at the frozen
+config** (ratified 226 — re-solving it would measure the solver, not the lane).
+
+| tile | measured wall | measured peak RSS | per-leg guard |
+|---|---|---|---|
+| kuroshio | 19.67 h | 7,389.3 MiB — **PRE-133, not comparable** (pin 199) | RUN |
+| southern | 27.48 h | 4,951.2 MiB | RUN |
+| equatorial | 25.54 h | 4,817.0 MiB | RUN |
+| quiet_gyre | **26.03 h** | **4,986.4 MiB** | RUN |
+
+The basis named at 222(b) — "26 h/leg and 4,986 MiB" — is **quiet_gyre's leg exactly**.
+
+| path | trials/lane | solves/tile | **four-tile total** |
+|---|---|---|---|
+| full-scope (`n_sobol_per_lane` 7) | 7 | (7+1)+(7+2) = **17** | **68 solves · 1,678.2 h · 69.9 d** |
+| screening (`contingency_active: true`) | 30 | (30+1)+(30+2) = **63** | **252 solves · 6,219.4 h · 259.1 d** |
+| **anchors-only** (225 — Stage 2's entry) | 0 | 1+2 = **3** | **12 solves · 296.2 h · 12.3 d** |
+
+⭐ **THE TWO QUESTIONS ARE DEMONSTRABLY SEPARATE (224b).** **Every one of the 68 solves is
+RUN** — 26.03 h against a 40 h ceiling, 14 h of margin — so **pin 99(b) marks NOT ONE LANE a
+WAIT**. And the aggregate is still refused at 69.9 days. *The per-lane guard is not wrong and
+was not overridden; it simply has no opinion on the total, by design.* **That is pin 222(c)
+demonstrated rather than asserted**, and it is why `revisit_tier_verdict` stays exactly as
+built.
+
+⛔ **THE SCREENING LEVER IS NAMED AND DELIBERATELY UNPRICED** (ratified 226). Phase-10's own
+screening scores every 4th day (91/365) at 478.25 s/trial versus 1,918.26 s full-year — ~4×
+cheaper **at phase-10 scale**. The Stage-1 leg is a **9-window solve, not a 365-day score**,
+so scaling by 91/365 has **no valid basis here**. *If that lever is ever wanted, it is a
+MEASUREMENT, not arithmetic.*
