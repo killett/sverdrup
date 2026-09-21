@@ -1,14 +1,13 @@
-"""T8 OSSE pricing tests, v3 (owner pins 232-249) — CI-local.
+"""T8 WAIT-record tests (owner pins 250-252) — CI-local.
 
-Two rounds of two-reviewer review overturned v1 and v2, both on the UNIT OF
-ACCOUNT. The suites passed both times. What they pinned was the model that
-happened to be in the producer, never the *application* of it — so a mutant
-that rescaled every headline hour stayed green.
+T8 is no longer priced. Three pricing rounds were overturned on the unit of
+account, and owner pin 250 ruled the task a WAIT because **validity is prior
+to price**.
 
-v3's headline is a BAND ACROSS MODELS with no exponent in it, so these tests
-pin the band, the axes declared open, the per-class ceiling verdicts, and —
-most importantly — **the claims that were WITHDRAWN**, so they cannot creep
-back in.
+⛔ The failure mode these tests guard is **a successor re-opening the price**.
+Every round's suite passed while its document was overturned, so a test that
+merely checks the record parses would repeat that. These pin the WAIT, the
+exit, and the facts that survived — and they fail if a price returns.
 """
 
 from __future__ import annotations
@@ -29,162 +28,182 @@ _WALL_S = {
     "quiet_gyre": 93712.97317277198,
     "southern": 98929.75216705899,
 }
-_N_OBS = {
-    "kuroshio": 138518,
-    "equatorial": 167579,
-    "quiet_gyre": 168755,
-    "southern": 175059,
-}
-_MISSION_COUNTS = [3, 3, 4, 4, 4, 4, 4, 4, 5, 7, 6, 7, 7, 8, 9]
 
 
 def _block() -> dict[str, Any]:
-    return _mod.price()
+    return _mod.wait_record()
 
 
-# ---------------------------------------------------------------------------
-# The withdrawals — the claims that must not come back.
-# ---------------------------------------------------------------------------
+def test_t8_is_a_wait_with_pricing_explicitly_withdrawn() -> None:
+    """The verdict is WAIT and the record says pricing is withdrawn.
 
-
-def test_no_subset_ordering_is_asserted_anywhere() -> None:
-    """§9 carries NO ordering, and the withdrawal is recorded.
-
-    Bug caught — THE ONE THAT OVERTURNED v2, and the reason 244(a) says do
-    not re-derive it: cost is sum f(m_i), post-lift has FEWER and LARGER
-    classes (6/44) than pre-lift (9/35), so the ordering needs f CONVEX and
-    reverses below p ~ 0.638. Any re-derivation would need the conditioning
-    term, which has never been measured. A future edit that "restores the
-    finding" with a new exponent would repeat the defect exactly.
+    Bug caught: a successor reading the node as "priced, decision pending"
+    and electing a run from it. Three rounds of hours sit in this task's
+    history; without an explicit withdrawal the most recent numbers look
+    like the answer. Pin 250 is that validity is PRIOR to price.
     """
-    subs = _mod.scope_subsets()
-    assert subs["ordering"] is None
-
-    w = subs["ordering_is_WITHDRAWN"]
-    assert "ANY cost monotone" in w["withdrawn_claim"]
-    assert "CONVEX" in w["why_it_is_false"]
-    assert "0.638" in w["why_it_is_false"]
-    assert "NO ordering is re-derived" in w["not_re_derived"]
-
-    # No row may carry an hours figure — an hours column is an ordering.
-    for row in subs["rows"]:
-        assert not [k for k in row if "_h" in k or "hour" in k.lower()], row
+    b = _block()
+    assert b["verdict"] == "WAIT"
+    assert "pin 250" in b["verdict_authority"]
+    assert "NOT PRICED AND WILL NOT BE PRICED" in b["pricing_is_withdrawn"]
+    assert "VALIDITY IS PRIOR TO PRICE" in b["pricing_is_withdrawn"]
+    assert b["decision"] is None
+    assert b["decision_cell"] == "EMPTY"
 
 
-def test_the_convexity_arithmetic_is_recorded_with_its_coincidence() -> None:
-    """The aggregate-vs-sum error is recorded, and so is why it hid.
+def test_no_price_figure_survives_anywhere_in_the_record() -> None:
+    """No hours, no band, no leg-equivalents.
 
-    Bug caught (owner pin 244c): recording "the arithmetic was wrong"
-    without recording that p=1 is the ONLY point where sum(m^p) and
-    (sum m)^p agree. The ratification checked several exponents and the one
-    that matched was the one that could not disagree. Without that, the next
-    reader takes the lesson as "check your arithmetic" instead of "a lone
-    agreeing figure is not verification".
+    Bug caught — the specific way this task would regress: a price left in
+    the record "for reference". The overturned bands (295-470 h and the rest)
+    were each defensible-looking and each wrong about what they measured. A
+    number left behind is a number a successor will use.
     """
-    w = _mod.scope_subsets()["ordering_is_WITHDRAWN"]
-    err = w["the_arithmetic_error_beneath_it"]
-    assert "AGGREGATE" in err
-    assert "sum(m_i**p) is not (sum m_i)**p unless p == 1" in err
-    assert "ONLY POINT WHERE" in err
+    text = json.dumps(_block())
+    for banned in ("295", "470", "leg_equivalents", "full_sweep", "band_"):
+        assert banned not in text, banned
 
-    # And the claim is genuinely false at a monotone exponent.
-    pre = [3, 3, 4, 4, 4, 4, 4, 4, 5]
-    post = [7, 6, 7, 7, 8, 9]
-    assert sum(m**0.5 for m in post) < sum(m**0.5 for m in pre)
-    assert sum(m**1.0 for m in post) > sum(m**1.0 for m in pre)
+    # No key may announce a PROJECTED cost. `wall_h` on a leg is allowed and
+    # deliberately kept: it is a MEASUREMENT of a leg that ran, and it is one
+    # of the surviving facts. What is forbidden is a figure projected onto
+    # classes or subsets — which is what every overturned round produced.
+    # NB not "price": keys like `why_wait_and_not_a_price` and
+    # `pricing_is_withdrawn` are prose about the withdrawal, which is
+    # exactly what the record is for. The markers below are the shapes a
+    # projected COST takes.
+    projected = ("_h_at_", "flat_", "obs_scaled", "sweep", "equivalents")
+
+    def walk(o: Any, path: str = "") -> None:
+        if isinstance(o, dict):
+            for k, v in o.items():
+                assert not any(m in k for m in projected), f"{path}.{k}"
+                walk(v, f"{path}.{k}")
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                walk(v, f"{path}[{i}]")
+
+    walk(_block())
 
 
-def test_the_controlled_experiment_premise_is_struck() -> None:
-    """The collinearity caveat is present and the premise is not asserted.
+def test_all_three_overturns_are_recorded_with_their_defects() -> None:
+    """Each round names its DEFECT, not its fix.
 
-    Bug caught (245f): v2 called the four legs a controlled experiment in
-    which "n_obs is the only varying input". With n=4 and one point per
-    tile, n_obs is perfectly collinear with tile identity — the regression
-    measures which tile. Restoring that sentence would restore a causal
-    claim the data cannot support.
+    Bug caught: recording "v1 and v2 were superseded" without what went
+    wrong. The three defects are one pattern — the unit of account — and a
+    successor who sees only "superseded" learns nothing and is free to
+    repeat it. v3's entry is the sharpest: the headline was fixed and the
+    defect left in the only section that produced a verdict.
     """
-    d = _mod.wall_diagnostic()
-    assert "PERFECTLY COLLINEAR" in d["collinearity_caveat"]
-    assert "WHICH TILE" in d["collinearity_caveat"]
-    assert "STRUCK" in d["collinearity_caveat"]
+    ov = _block()["overturns"]
+    assert len(ov) == 3
+    assert [o["version"] for o in ov] == ["v1", "v2", "v3"]
+    for o in ov:
+        assert o["defect"] and o["why_wrong"] and o["found_by"]
+
+    assert "one epoch class = one tile solve" in ov[0]["defect"]
+    assert "OBSERVATIONS" in ov[1]["defect"] and "MISSION COUNTS" in ov[1]["defect"]
+    assert "ONLY SECTION THAT PRODUCES A VERDICT" in ov[2]["defect"]
+    # v1's entry must keep the fact that the authored surfaces all passed.
+    assert "CONFIRMED" in ov[0]["found_by"]
 
 
-def test_unreproducible_reviewer_figures_are_not_restated() -> None:
-    """n_coef per tile is recorded as searched-and-absent, not quoted.
+def test_the_exit_names_a_nature_run_and_why_glorys_fails() -> None:
+    """Pin 251's exit is recorded with its reason and its consequences.
 
-    Bug caught (owner pin 247): a reviewer reported per-tile n_coef values
-    that do not exist in the store or the logs. Restating them would be the
-    same failure as the "424-554" iteration range that went into v2 lifted
-    from a reviewer report unverified — agent output is a claim to check.
+    Bug caught: recording "use different truth" without the mechanism. The
+    reason GLORYS12 fails is that it ASSIMILATES altimetry — it has already
+    seen the observations the OSSE would test. Without that, a successor
+    could pick another reanalysis and reproduce the defect exactly.
     """
-    note = _mod.wall_diagnostic()["domain_confound_searched_and_absent"]
-    assert "SEARCHED AND ABSENT" in note
-    assert "297600" in note
-    assert "not restated" in note
+    e = _block()["exit"]
+    assert "NATURE RUN" in e["headline"]
+    assert "ASSIMILATES ALTIMETRY" in e["why"]
+    assert "FREE-RUNNING" in e["why"]
+    assert e["owner"] == "Stage 2"
+    assert "~14 months" in e["llc4320_span_forces_the_common_span_design"]
+    assert "OPEN DESIGN QUESTION" in e["the_open_design_question"]
+    assert "NOT resolved here" in e["the_open_design_question"]
+    assert "UNPRICED" in e["replication_is_required_and_unpriced"]
 
 
-def test_the_node_exponent_corroboration_is_withdrawn() -> None:
-    """1.28 is an exponent on NODES and is no longer cited as support.
+def test_the_237_measurement_is_marked_as_the_wrong_object() -> None:
+    """The truth volume was measured correctly, of the wrong thing.
 
-    Bug caught: v2 offered implied_exponent 1.28 as "independent
-    corroboration" of an exponent on OBSERVATIONS. They are exponents of
-    different variables, and the four legs hold nodes fixed — so it could
-    not corroborate even in principle.
+    Bug caught: a successor reusing the 40.01 MiB figure for a nature run.
+    The measurement is sound and its arithmetic exact — it is GLORYS12's
+    size, and pin 251 rules GLORYS12 out. Correct measurement, wrong object,
+    and the record has to say which.
     """
-    note = _mod.probe_cross_check()["note_on_1_28"]
-    assert "GRID NODES" in note
-    assert "WITHDRAWN" in note
+    note = _block()["exit"]["the_237_query_measured_the_wrong_kind_of_truth"]
+    assert "WRONG KIND OF TRUTH" in note
+    assert "The measurement was correct; the object was not." in note
 
 
-# ---------------------------------------------------------------------------
-# The v3 headline: a band, with every axis open.
-# ---------------------------------------------------------------------------
+def test_value_case_is_recorded_as_what_is_at_risk() -> None:
+    """The value case is quoted, and the threat to it is stated.
 
-
-def test_headline_is_a_band_across_models_with_no_single_exponent() -> None:
-    """295-470 h, spanning flat through the CI ceiling.
-
-    Bug caught: a headline that quotes one model's number. Two rounds of
-    review were spent moving this band by ~11%, less than the tile axis's
-    1.40x. Collapsing back to one exponent would re-inherit an authority
-    the evidence does not carry.
+    Bug caught: keeping the value case as a justification when it is the
+    thing in doubt. Neither epoch-span reading preserves "FIXED truth" —
+    common-span means synthesised ground tracks, per-era means truth that
+    is not fixed. That is why the task waits.
     """
-    survey = _mod.model_survey()
-    assert survey["band_low_h"] == pytest.approx(295.0, abs=0.5)
-    assert survey["band_high_h"] == pytest.approx(470.4, abs=0.5)
-
-    names = [r["model"] for r in survey["rows"]]
-    assert any("flat" in n for n in names)
-    assert any("linear" in n for n in names)
-    assert any("CI" in n for n in names)
-    assert len(survey["rows"]) >= 4
+    b = _block()
+    assert b["value_case_verbatim"] == _mod.VALUE_CASE
+    risk = b["value_case_is_what_is_at_risk"]
+    assert "neither epoch-span reading" in risk
+    assert "SYNTHESISING" in risk
+    assert "no longer FIXED" in risk
 
 
-def test_band_follows_the_models_not_a_constant(tmp_path: Path) -> None:
-    """The band recomputes from the store.
+def test_surviving_facts_are_derived_not_typed(tmp_path: Path) -> None:
+    """The census and decomposition recompute from the store and seal.
 
-    Bug caught — REVIEWER MUTANTS B1 and B3, which both survived v2: the
-    applied exponent rescaled every headline hour while the reported fit
-    stayed put, and the suite never noticed because it pinned the fit and
-    not its application. Halving every leg wall must halve the band.
+    Bug caught: the surviving facts frozen as literals as the task closed.
+    They exist so Stage 2 inherits them rather than re-deriving them, which
+    is only safe if they still track their sources. Halving the walls must
+    halve the per-iteration cost.
     """
+    real = _mod.surviving_facts()
+    assert real["epoch_classes"]["n_classes"] == 15
+    assert real["epoch_classes"]["deduplication_available"] is False
+    assert real["convexity_crossover_p"] == pytest.approx(0.638, abs=0.002)
+
     store = json.loads(_mod.EVIDENCE.read_text())
     for t in _mod.PRICED_TILES:
         store["phase14"]["stage1"]["tiles"][t]["wall_s"] /= 2.0
     p = tmp_path / "store.json"
     p.write_text(json.dumps(store))
 
-    out = _mod.model_survey(p)
-    assert out["band_low_h"] == pytest.approx(295.0 / 2, abs=0.5)
-    assert out["band_high_h"] == pytest.approx(470.4 / 2, abs=0.5)
+    out = _mod.surviving_facts(p)
+    lo_r, hi_r = real["per_iteration_decomposition"]["microseconds_span"]
+    lo_o, hi_o = out["per_iteration_decomposition"]["microseconds_span"]
+    assert lo_o == pytest.approx(lo_r / 2)
+    assert hi_o == pytest.approx(hi_r / 2)
 
 
-def test_leg_equivalents_follow_the_sealed_mission_counts(tmp_path: Path) -> None:
-    """The per-model leg-equivalents recompute from the seal.
+def test_decomposition_and_iteration_span_match_the_store() -> None:
+    """57.9-63.3 us, and 375-626 PCG iterations.
 
-    Bug caught (B1's shape): the baseline or the class list typed, so every
-    obs-scaled hour is rescaled without any test failing. A seal with three
-    3-mission classes must give a smaller sweep than the real fifteen.
+    Bug caught: the conditioning exposure being lost. The per-iteration cost
+    being flat is what makes the iteration term first-order, and the 375-626
+    span against maxiter 1200 is the concrete headroom a sparse class would
+    eat. Both are the evidence behind "validity is prior to price".
+    """
+    d = _mod.surviving_facts()["per_iteration_decomposition"]
+    lo, hi = d["microseconds_span"]
+    assert lo == pytest.approx(57.9, abs=0.2)
+    assert hi == pytest.approx(63.3, abs=0.2)
+    assert d["spread_pct"] < 6.0
+    assert d["pcg_iterations_span"] == [375, 626]
+    assert set(leg["tile"] for leg in d["legs"]) == set(_WALL_S)
+
+
+def test_convexity_crossover_is_solved_not_asserted(tmp_path: Path) -> None:
+    """The 0.638 crossover is computed from the sealed counts.
+
+    Bug caught: the crossover typed. It is the number that showed the
+    withdrawn ordering claim was false, so it has to follow the seal — a
+    different epoch table must move it.
     """
     seal = tmp_path / "seal.json"
     seal.write_text(
@@ -192,264 +211,54 @@ def test_leg_equivalents_follow_the_sealed_mission_counts(tmp_path: Path) -> Non
             {
                 "content": {
                     "epoch_table": [
-                        {"epoch_id": f"e{i}", "missions": ["a", "b", "c"]}
-                        for i in range(3)
+                        {"epoch_id": "a", "missions": ["m"] * 2, "mask_66": True},
+                        {"epoch_id": "b", "missions": ["m"] * 2, "mask_66": True},
+                        {"epoch_id": "c", "missions": ["m"] * 5, "mask_66": False},
                     ]
                 }
             }
         )
     )
-    out = _mod.model_survey(seal_path=seal)
-    linear = next(r for r in out["rows"] if "linear" in r["model"])
-    # 3 classes x (3/5) = 1.8 leg-equivalents.
-    assert linear["leg_equivalents"] == pytest.approx(1.8, abs=1e-9)
+    out = _mod.surviving_facts(seal_path=seal)
+    # pre = [2,2], post = [5]: 5^p = 2*2^p has a root near p = 0.7565.
+    assert out["convexity_crossover_p"] == pytest.approx(0.7565, abs=0.01)
+    assert out["convexity_crossover_p"] != pytest.approx(0.638, abs=0.001)
 
 
-def test_every_axis_is_declared_open_including_ram_and_platforms() -> None:
-    """Four axes, none collapsed (owner pin 245b).
+def test_platform_convention_and_99c_attestation_are_kept() -> None:
+    """Both survived every round and are carried forward.
 
-    Bug caught: declaring the tile axis open — as v1 and v2 both did — while
-    silently fixing the larger ones. The platform convention alone moves the
-    price ~1.28x and neither version disclosed which convention it used.
+    Bug caught: dropping the facts that held along with the ones that
+    failed. The platform convention (~1.28x, four platforms under five
+    labels) was never disclosed by any pricing round and is a live trap for
+    the next one; the 99(c) attestation is the one thing three reviews
+    confirmed unanimously.
     """
-    axes = {a["axis"]: a for a in _mod.open_axes()}
-    assert len(axes) == 4
-    for name, a in axes.items():
-        assert a["not_a_default"] is True, name
-    assert "which tile" in axes
-    assert "constellation size" in axes
-    assert any("platform" in k for k in axes)
-    assert "RAM" in axes
-    assert axes["RAM"]["spread"] == "UNMODELLED"
+    sf = _mod.surviving_facts()
+    pc = sf["platform_convention"]
+    assert (pc["leg_labels"], pc["leg_platforms"]) == (5, 4)
+    assert "1.28x" in pc["note"]
+    assert "CAPPED T2 probe" in sf["pin_99c_attestation"]
 
 
-def test_platform_convention_is_disclosed_with_its_basis() -> None:
-    """j2g/j2n are one platform, and the note says so.
+def test_the_withdrawn_document_is_preserved_not_deleted() -> None:
+    """The v3 document is kept as the record of why.
 
-    Bug caught: counting mission LABELS as platforms without disclosure.
-    The legs ran four platforms under five labels; the same over-count sits
-    in four of the fifteen epochs. A price that silently picks a convention
-    is ~1.28x from the one that picks the other.
+    Bug caught: deleting the overturned document, which would leave the WAIT
+    without its reasoning. It is withdrawn as a DELIVERABLE and preserved as
+    the record — and the file it names must exist.
     """
-    assert _mod.LEG_PLATFORMS == 4
-    assert len(_mod.LEG_MISSIONS) == 5
-    note = _mod.LABEL_VS_PLATFORM_NOTE
-    assert "j2g and j2n" in note
-    assert "ONE Jason-2" in note
-    assert "1.28x" in note
-
-
-# ---------------------------------------------------------------------------
-# Per-class walls and the ceiling that v2 left as dead code.
-# ---------------------------------------------------------------------------
-
-
-def test_per_class_walls_are_judged_against_the_40h_ceiling() -> None:
-    """TIER_CEILING_H is WIRED, and classes breach it.
-
-    Bug caught (245c) — the decision-relevant fact v2 omitted entirely:
-    TIER_CEILING_H = 40.0 sat in the producer UNREFERENCED while the same
-    constant was used correctly one task over. Pin 99(b)'s rule is PER LEG;
-    v2 reported only sums, so a breach — which is a WAIT — was invisible.
-    """
-    pcw = _mod.per_class_walls()
-    assert pcw["ceiling_h"] == 40.0
-    assert pcw["classes_breaching_at_dearest_tile"] > 0
-
-    rows = {r["n_missions"]: r for r in pcw["rows"]}
-    assert rows[9]["verdict_at_southern"] == "WAIT"
-    assert rows[3]["verdict_at_southern"] == "RUN"
-    assert sum(r["n_classes_at_this_size"] for r in pcw["rows"]) == 15
-
-
-def test_ceiling_verdicts_move_when_the_ceiling_moves(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """The verdicts are derived from the constant, not typed.
-
-    Bug caught: "WAIT"/"RUN" written as literals, so the ceiling could be
-    changed — or the rule retired — with every verdict frozen. That is the
-    same defect as v2's typed "FEASIBLE", which no budget change could flip.
-    """
-    monkeypatch.setattr(_mod, "TIER_CEILING_H", 1.0)
-    assert all(
-        r["verdict_at_southern"] == "WAIT" for r in _mod.per_class_walls()["rows"]
-    )
-    monkeypatch.setattr(_mod, "TIER_CEILING_H", 10_000.0)
-    assert all(
-        r["verdict_at_southern"] == "RUN" for r in _mod.per_class_walls()["rows"]
-    )
-
-
-def test_ram_is_a_named_axis_carrying_an_explicit_refusal() -> None:
-    """RAM is UNMODELLED by declaration, with the incidents recorded.
-
-    Bug caught (245d): RAM as one clause in a NOT-costed list, on the axis
-    that actually stops work here — it refused the equatorial leg by 11 MiB
-    and nearly lost leg 2 at 1382 MiB with swap exhausted. This project has
-    pinned the same asymmetry once before: wall 0.63x, RAM 1.69x, the RAM
-    projection never written down. A silent omission would be the second
-    instance; an explicit refusal is not.
-    """
-    ram = _mod.ram_axis()
-    assert ram["modelled"] is False
-    assert "UNMODELLED" in ram["declaration"]
-    assert ram["launch_gate_mib"] == pytest.approx(9902.33)
-    assert len(ram["recorded_incidents"]) >= 2
-    assert any("11 MiB" in i for i in ram["recorded_incidents"])
-    assert "1.69x" in ram["why_it_is_not_estimated"]
-    assert set(ram["measured_peaks_mib"]) == set(_WALL_S)
-
-
-# ---------------------------------------------------------------------------
-# Diagnostic, truth field, and the surfaces that must keep holding.
-# ---------------------------------------------------------------------------
-
-
-def test_per_iteration_cost_is_near_constant_across_the_legs() -> None:
-    """wall/(n_obs x iterations) is flat to ~4.5%.
-
-    Bug caught: treating the raw wall-vs-n_obs exponent as a physical law.
-    The per-iteration cost being constant is what shows most of the apparent
-    superlinearity is the ITERATION term — which runs opposite to the
-    observation term for sparse constellations, and therefore cannot be
-    folded into an observation exponent without changing sign somewhere.
-    """
-    d = _mod.wall_diagnostic()
-    lo, hi = d["microseconds_per_obs_iteration_span"]
-    assert lo == pytest.approx(57.9, abs=0.2)
-    assert hi == pytest.approx(63.3, abs=0.2)
-    assert d["spread_pct"] < 6.0
-    assert "DIAGNOSTIC" in d["is_a_diagnostic_not_a_basis"]
-
-
-def test_anchor_gate_is_recorded_as_a_measured_point_below_the_legs() -> None:
-    """The refit exists and the "below anything measured" claim is retired.
-
-    Bug caught: v2's pin-139 block declared the small classes "below
-    anything measured" while a measured m=100, 9-window, CONVERGED solve at
-    54,345 observations sat in the same store. Including it moves the
-    exponent materially, so the omission was not harmless.
-    """
-    d = _mod.wall_diagnostic()
-    assert d["refit_with_anchor_gate"] == pytest.approx(1.2627, abs=0.01)
-    assert d["refit_with_anchor_gate"] < d["raw_wall_vs_nobs_exponent"]
-    assert "was false" in d["anchor_gate_was_not_below_anything_measured"]
-
-
-def test_epoch_classes_and_the_above_leg_size_count_are_derived() -> None:
-    """15 classes, no deduplication, and SIX classes above 5 missions.
-
-    Bug caught: v2 typed "7 of the 15 classes are above 5 missions". The
-    sealed counts are [3,3,4,4,4,4,4,4,5,7,6,7,7,8,9] — six are above five;
-    seven are at-or-above, and the one at exactly five is the leg
-    constellation, which every model prices correctly by construction.
-    """
-    c = _mod.epoch_classes()
-    assert c["n_classes"] == 15
-    assert c["n_classes_without_locked"] == 15
-    assert c["deduplication_available"] is False
-    assert c["mission_counts"] == _MISSION_COUNTS
-    assert c["classes_above_leg_size"] == 6
-
-
-def test_truth_field_volume_and_non_scaling(tmp_path: Path) -> None:
-    """40.01 MiB per tile, 160.04 for four, and it recomputes.
-
-    Bug caught: the span hardcoded so the window plan is never read, which
-    survived v1's suite while the basis table claimed the value MEASURED.
-    """
-    tf = _mod.truth_field_cost()
-    assert tf["grid_nodes_per_side"] == 229
-    assert tf["mib_per_tile_per_span"] == pytest.approx(40.01, abs=0.01)
-    assert tf["mib_all_four_tiles"] == pytest.approx(160.04, abs=0.05)
-    assert "ONCE PER TILE" in tf["does_not_scale_with_classes"]
-    assert tf["feasibility"]["verdict"] == "FEASIBLE"
-
-    store = json.loads(_mod.EVIDENCE.read_text())
-    store["phase14"]["stage1"]["tiles"]["quiet_gyre"]["window_plan"]["starts"] = [
-        0.0,
-        45.0,
-    ]
-    p = tmp_path / "store.json"
-    p.write_text(json.dumps(store))
-    assert _mod.truth_field_cost(p)["window_plan_span_days"] == 105.0
-
-
-def test_window_plan_stride_is_described_as_non_uniform() -> None:
-    """The stride is not uniform, and the text says so.
-
-    Bug caught: v2 said "a 45-d stride". The strides are [25, 45] distinct —
-    a uniform 45-d stride over 9 x 60 d windows spans 420 days, which
-    contradicts the document's own 400-day union by 20 days.
-    """
-    shape = _mod.truth_field_cost()["window_plan_shape"]
-    assert "NON-UNIFORM" in shape
-    assert "OVERLAPPING" in shape
-    assert "25.0" in shape or "25" in shape
-
-
-def test_epoch_span_reading_is_flagged_as_unstated() -> None:
-    """The common-span vs per-era ambiguity is raised, not resolved silently.
-
-    Bug caught: pricing one 400-day truth span against 15 date-ranged epochs
-    without saying which reading the design takes. Common-span means
-    historical ground tracks must be synthesised (uncosted); per-era means
-    15x the download and the truth is no longer "FIXED", which is the value
-    case's own word.
-    """
-    note = _mod.truth_field_cost()["epoch_span_reading_is_unstated"]
-    assert "SYNTHESISED" in note
-    assert "no longer 'FIXED'" in note
-
-
-def test_lower_bound_names_replication_and_the_twin_problem() -> None:
-    """The uncosted list carries the items a spend decision actually needs.
-
-    Bug caught: a lower-bound list that names only engineering. Replication
-    is absent from v1 and v2 entirely — 15 classes x 1 tile x 1 realisation
-    cannot separate "this constellation is worse" from "these tracks over
-    this tile were unlucky". And GLORYS assimilates the very constellations
-    being simulated, which is first-order for an OSSE whose value case is
-    "against truth".
-    """
-    lb = _block()["lower_bound"]
-    joined = " ".join(lb["what_is_not_costed"]).upper()
-    for owed in ("DORMANT", "REPLICATION", "FRATERNAL-TWIN", "375-626"):
-        assert owed in joined, owed
-
-
-def test_decision_cell_is_empty_and_cannot_read_as_not_priced() -> None:
-    """EMPTY means "priced, owner to decide" — and says so.
-
-    Bug caught (235e): an empty cell read as "T8 was never priced", which is
-    how the posted Gate-1 pack's own OSSE slot still reads.
-    """
-    b = _block()
-    assert b["decision"] is None
-    assert b["decision_cell"] == "EMPTY"
-    assert "NOT 'not priced'" in b["decision_is_the_owners"]
-
-
-def test_value_case_is_the_spec_string_verbatim() -> None:
-    """The value case is quoted, not paraphrased.
-
-    Bug caught (235c): a paraphrase that strengthens the claim by dropping
-    the parenthetical about what fork-e level 1 validates against.
-    """
-    assert _mod.VALUE_CASE == (
-        "constellation varied over FIXED model truth is the only "
-        "ground-truth test of the era-transfer claim (fork-e level 1 "
-        "validates against fitted s; OSSE against truth)"
-    )
-    assert _block()["value_case_verbatim"] == _mod.VALUE_CASE
+    doc = _block()["the_v3_document"]
+    assert "WITHDRAWN as a pricing deliverable" in doc["status"]
+    assert "PRESERVED" in doc["status"]
+    assert Path(doc["path"]).exists()
 
 
 def test_leg_constellation_matches_the_runner() -> None:
     """LEG_MISSIONS equals the runner's PROBE_MISSIONS.
 
-    Bug caught: the baseline constellation drifting from the one the legs
-    ran. Every per-class scaling divides by this count.
+    Bug caught: the platform-convention finding drifting from the legs it
+    describes. The rows carry no mission list, so this is the only check.
     """
     runner = load_script("phase14_stage1_run")
     assert _mod.LEG_MISSIONS == runner.PROBE_MISSIONS

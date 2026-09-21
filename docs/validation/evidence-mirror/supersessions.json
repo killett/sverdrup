@@ -850,6 +850,440 @@
         "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
         "the_audits_limit": "A shape-keyed audit reads what was WRITTEN. The pin-89 probe's RAM projection was never written as one — measured_one_window.peak_rss_mib became the launch-gate basis with no derived field — so no field name could catch it. It is declared here by hand, and the limit is recorded rather than papered over"
       }
+    },
+    {
+      "path": "phase14.stage1.osse_pricing",
+      "superseded_utc": "2026-09-21T05:21:51.328550+00:00",
+      "reason": "T8 CLOSED AS A RULED WAIT under owner pins 250-252. The node no longer carries a price: all three pricing rounds were overturned by two-reviewer review on the unit of account, and owner pin 250 ruled that VALIDITY IS PRIOR TO PRICE — the experiment may not answer its value case (no replication; GLORYS12 assimilates the constellations under test; neither epoch-span reading preserves FIXED truth). The node now records the WAIT, the three overturns by their defect, pin 251's exit (a free-running NATURE RUN, LLC4320-class), and the facts that survived every round. Prior body and digest preserved here, not dropped.",
+      "prior_digest": "4f81c44200492c6f2bac30168b0a7a851035ddf85c3743b9889e28606670e911",
+      "prior_value": {
+        "decision": null,
+        "decision_cell": "EMPTY",
+        "decision_is_the_owners": "PRICED, OWNER TO DECIDE — NOT 'not priced'. Every figure below is a measurement, a declared diagnostic, or an explicit refusal to estimate. What is absent is the owner's election (pin 235e).",
+        "report_only": true,
+        "version": "v3",
+        "rebuilt_under_pin_245": "v1 and v2 were both OVERTURNED on the UNIT OF ACCOUNT. v3 is SIMPLER than v1: the headline is the BAND ACROSS MODELS with no exponent in it, because every defensible model lands inside it and that was always sufficient for a go/no-go.",
+        "value_case_verbatim": "constellation varied over FIXED model truth is the only ground-truth test of the era-transfer claim (fork-e level 1 validates against fitted s; OSSE against truth)",
+        "headline_band_h": [
+          295.04718553885806,
+          470.3848086389649
+        ],
+        "model_survey": {
+          "rows": [
+            {
+              "model": "flat — one class = one leg (v1)",
+              "exponent": 0.0,
+              "leg_equivalents": 15.0,
+              "h_at_lowest_tile": 295.04718553885806,
+              "h_at_highest_tile": 412.20730069607913
+            },
+            {
+              "model": "linear in missions",
+              "exponent": 1.0,
+              "leg_equivalents": 15.8,
+              "h_at_lowest_tile": 310.78303543426387,
+              "h_at_highest_tile": 434.19169006653675
+            },
+            {
+              "model": "5-point refit (legs + anchor_gate)",
+              "exponent": 1.2627438569167941,
+              "leg_equivalents": 16.33395133531598,
+              "h_at_lowest_tile": 321.2857580142435,
+              "h_at_highest_tile": 448.8649326421145
+            },
+            {
+              "model": "raw wall-vs-n_obs fit (diagnostic)",
+              "exponent": 1.4146473461065867,
+              "leg_equivalents": 16.710859105674217,
+              "h_at_lowest_tile": 328.6994631377051,
+              "h_at_highest_tile": 459.2225416174976
+            },
+            {
+              "model": "upper 95% CI on the 4-leg fit",
+              "exponent": 1.5587309068474515,
+              "leg_equivalents": 17.117047945705117,
+              "h_at_lowest_tile": 336.68912140759915,
+              "h_at_highest_tile": 470.3848086389649
+            }
+          ],
+          "band_low_h": 295.04718553885806,
+          "band_high_h": 470.3848086389649,
+          "band_statement": "EVERY DEFENSIBLE MODEL PUTS THE FULL SWEEP IN 295-470 h. That band is sufficient for a go/no-go, and it always was.",
+          "why_no_exponent_in_the_headline": "The models disagree by less than the TILE axis does (1.40x). Two rounds of review were spent on the smallest term in the price (owner pin 245a)."
+        },
+        "epoch_classes": {
+          "n_epochs": 15,
+          "n_classes": 15,
+          "n_classes_without_locked": 15,
+          "mission_counts": [
+            3,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            5,
+            7,
+            6,
+            7,
+            7,
+            8,
+            9
+          ],
+          "classes_above_leg_size": 6,
+          "deduplication_available": false,
+          "source": "phase14_evaluation_seal_v1.json content.epoch_table",
+          "no_deduplication_note": "EVERY epoch's constellation is UNIQUE — 15 epochs, 15 distinct mission sets, still 15 after removing the locked c2/c2n. THE PRICE HAS NO CHEAP REDUCTION AVAILABLE (owner pin 234b)."
+        },
+        "open_axes": [
+          {
+            "axis": "which tile",
+            "not_a_default": true,
+            "spread": "1.40x",
+            "detail": "measured legs run 19.67-27.48 h"
+          },
+          {
+            "axis": "constellation size",
+            "not_a_default": true,
+            "spread": "~4.7x",
+            "detail": "classes run 3-9 missions; the legs ran 5"
+          },
+          {
+            "axis": "platform convention (labels vs platforms)",
+            "not_a_default": true,
+            "spread": "~1.28x",
+            "detail": "j2g and j2n are time-disjoint orbit phases of ONE Jason-2, so the legs ran 4 PLATFORMS under 5 LABELS. The same over-count appears in epochs 0 (e1+e1g), 8 (al+alg), 9 (j2+j2n) and 14 (j3g+j3n). Which convention a price uses moves it ~1.28x and v2 disclosed neither."
+          },
+          {
+            "axis": "RAM",
+            "not_a_default": true,
+            "spread": "UNMODELLED",
+            "detail": "no measurement at any constellation size but five; the one recorded RAM projection in this project missed by 1.69x"
+          }
+        ],
+        "per_class_walls": {
+          "ceiling_h": 40.0,
+          "ceiling_authority": "owner pin 99(b) + E-16 — the PER-LEG WAIT ceiling",
+          "rows": [
+            {
+              "n_missions": 3,
+              "n_classes_at_this_size": 2,
+              "wall_h_at_kuroshio": 9.549100680165223,
+              "wall_h_at_southern": 13.340947510674006,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 4,
+              "n_classes_at_this_size": 6,
+              "wall_h_at_kuroshio": 14.345203862908885,
+              "wall_h_at_southern": 20.04153251441832,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 5,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 19.669812369257205,
+              "wall_h_at_southern": 27.480486713071944,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 6,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 25.45738301844596,
+              "wall_h_at_southern": 35.566240422373994,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "RUN"
+            },
+            {
+              "n_missions": 7,
+              "n_classes_at_this_size": 3,
+              "wall_h_at_kuroshio": 31.660652061760512,
+              "wall_h_at_southern": 44.232761959145186,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "WAIT"
+            },
+            {
+              "n_missions": 8,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 38.243533233900656,
+              "wall_h_at_southern": 53.42963558400326,
+              "verdict_at_kuroshio": "RUN",
+              "verdict_at_southern": "WAIT"
+            },
+            {
+              "n_missions": 9,
+              "n_classes_at_this_size": 1,
+              "wall_h_at_kuroshio": 45.177353793035955,
+              "wall_h_at_southern": 63.11680291275488,
+              "verdict_at_kuroshio": "WAIT",
+              "verdict_at_southern": "WAIT"
+            }
+          ],
+          "classes_breaching_at_cheapest_tile": 1,
+          "classes_breaching_at_dearest_tile": 5,
+          "finding": "BETWEEN 1 AND 5 OF THE 15 CLASSES BREACH THE 40 h PER-LEG CEILING depending on the tile. A breach is a WAIT under pin 99(b), not a line in a total — and v2 reported only totals (owner pin 245c).",
+          "note_on_the_scale": "the per-class scaling uses the DIAGNOSTIC exponent because the ceiling question needs SOME per-class figure; it inherits that diagnostic's collinearity caveat and is not a measurement"
+        },
+        "ram_axis": {
+          "modelled": false,
+          "declaration": "⛔ RAM IS UNMODELLED AT CONSTELLATION SIZES OTHER THAN THE LEGS' FIVE. This is a NAMED AXIS carrying an explicit refusal to estimate, not an omission (owner pin 245d).",
+          "measured_peaks_mib": {
+            "kuroshio": 7389.3359375,
+            "equatorial": 4817.0,
+            "quiet_gyre": 4986.41796875,
+            "southern": 4951.1640625
+          },
+          "peak_basis_missions": 5,
+          "launch_gate_mib": 9902.33,
+          "launch_gate_rule": "MemAvailable >= 2 x the MEASURED peak (owner pin 155)",
+          "why_it_is_not_estimated": "no measurement exists at any constellation size but five, and the one recorded RAM projection in this project MISSED BY 1.69x while its wall projection was 0.63x — the asymmetry pin 139(a) predicted. Estimating here would repeat that.",
+          "recorded_incidents": [
+            "the equatorial leg was REFUSED by the launch gate at 9891.58 MiB against a 9902.33 MiB gate — a margin of 11 MiB — and relaunched at 9907.33 MiB, clearing by 5 MiB",
+            "leg 2 bottomed at 1382 MiB mid-run with swap exhausted and survived by owner intervention, which is not a property the remaining legs can rely on"
+          ],
+          "what_would_settle_it": "predicted peak RSS at 9 missions against the 9902.33 MiB gate — a go/no-go, not a magnitude"
+        },
+        "wall_diagnostic": {
+          "legs": [
+            {
+              "tile": "kuroshio",
+              "n_obs": 138518,
+              "sum_pcg_iterations": 8075,
+              "wall_h": 19.669812369257205,
+              "microseconds_per_obs_iteration": 63.30732667290544
+            },
+            {
+              "tile": "equatorial",
+              "n_obs": 167579,
+              "sum_pcg_iterations": 9178,
+              "wall_h": 25.540277777777778,
+              "microseconds_per_obs_iteration": 59.78062748277099
+            },
+            {
+              "tile": "quiet_gyre",
+              "n_obs": 168755,
+              "sum_pcg_iterations": 9592,
+              "wall_h": 26.031381436881105,
+              "microseconds_per_obs_iteration": 57.89404539236707
+            },
+            {
+              "tile": "southern",
+              "n_obs": 175059,
+              "sum_pcg_iterations": 9452,
+              "wall_h": 27.480486713071944,
+              "microseconds_per_obs_iteration": 59.78865240846845
+            }
+          ],
+          "microseconds_per_obs_iteration_span": [
+            57.89404539236707,
+            63.30732667290544
+          ],
+          "fit_ci_95": [
+            1.270563785365722,
+            1.5587309068474515
+          ],
+          "refit_with_anchor_gate": 1.2627438569167941,
+          "anchor_gate_was_not_below_anything_measured": "phase14.stage1.anchor_gate is a MEASURED m=100, 9-window, CONVERGED solve at n_obs 54,345 — BELOW the four legs' span. v2 declared the small classes 'below anything measured'; that was false. Including it drops the exponent to 1.2627. It is a smaller domain and a dc2021a source, so excluding it from the headline is defensible — but the reason for excluding it (a domain change) is the SAME confound that disqualifies the four-leg fit as a clean observation contrast. It cannot be had both ways, so the fit is a diagnostic only.",
+          "spread_pct": 4.496628834577495,
+          "reading": "wall is essentially LINEAR in (observations x iterations): the per-iteration cost is constant to about +/-4.5% across four legs spanning 1.26x in observations.",
+          "raw_wall_vs_nobs_exponent": 1.4146473461065867,
+          "is_a_diagnostic_not_a_basis": "RECORDED AS A DIAGNOSTIC (owner pin 245a). It is NOT the pricing basis: about 60% of it is the iteration term, and the iteration term runs OPPOSITE to the observation term for sparse constellations (owner pin 245e).",
+          "collinearity_caveat": "⛔ THE 'CONTROLLED EXPERIMENT' PREMISE IS STRUCK (owner pin 245f). With n=4 and ONE POINT PER TILE, observation count is PERFECTLY COLLINEAR with tile identity — the regression measures WHICH TILE, not HOW MANY OBSERVATIONS. There is no measurement in this repository where n_obs varies at a FIXED domain, which is the only contrast an OSSE produces.",
+          "domain_confound_searched_and_absent": "n_coef (the basis dimension) varies with latitude through miost_sizing.n_coefficients' d_x_km/d_y_km, so a domain confound is PLAUSIBLE. It is NOT QUANTIFIED here: only kuroshio's n_coef is recorded anywhere (297600 at tier2_probe_kuroshio_m100.model_at_probe_geometry), and the other three tiles' values are SEARCHED AND ABSENT from the store and the logs (pin 60a's form). A reviewer reported per-tile values; they could not be reproduced, so they are not restated here (owner pin 247)."
+        },
+        "probe_cross_check": {
+          "role": "CROSS-CHECK ONLY — NOT A PRICE (owner pin 236b)",
+          "source": "phase14.stage1.tier2_probe_kuroshio_m100.derived_pin_89d.wall",
+          "projected_tile_h": 30.958956600112433,
+          "measured_same_tile_h": 19.669812369257205,
+          "overprediction_factor": 1.573932481862385,
+          "note_on_1_28": "⛔ the node's implied_exponent 1.28 is an exponent on GRID NODES (its anchors are labelled nodes^1.25 / nodes^1.5). v2 cited it as 'independent corroboration' of an OBSERVATION exponent. It is not: they are exponents of different variables, and the four legs hold nodes FIXED. THE CORROBORATION CLAIM IS WITHDRAWN (owner pin 246)."
+        },
+        "scope_subsets": {
+          "rows": [
+            {
+              "subset": "full_sweep",
+              "n_classes": 15,
+              "total_missions": 79,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                5,
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
+              "elected": false,
+              "cannot_establish": ""
+            },
+            {
+              "subset": "fit+validate",
+              "n_classes": 10,
+              "total_missions": 61,
+              "mission_counts": [
+                4,
+                4,
+                4,
+                5,
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
+              "elected": false,
+              "cannot_establish": "CANNOT establish transfer into the 5 validate-only epochs, which is where transfer is actually claimed"
+            },
+            {
+              "subset": "pre_lift_mask66",
+              "n_classes": 9,
+              "total_missions": 35,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4,
+                4,
+                4,
+                4,
+                5
+              ],
+              "elected": false,
+              "cannot_establish": "CANNOT establish anything about the 6 modern post-lift constellations"
+            },
+            {
+              "subset": "post_lift_mask66",
+              "n_classes": 6,
+              "total_missions": 44,
+              "mission_counts": [
+                6,
+                7,
+                7,
+                7,
+                8,
+                9
+              ],
+              "elected": false,
+              "cannot_establish": "CANNOT establish era-transfer across the 1992-2009 boundary — the era gap the claim is weakest at"
+            },
+            {
+              "subset": "validate_only",
+              "n_classes": 5,
+              "total_missions": 18,
+              "mission_counts": [
+                3,
+                3,
+                4,
+                4,
+                4
+              ],
+              "elected": false,
+              "cannot_establish": "CANNOT establish anything fitted; it tests only the transferred epochs"
+            }
+          ],
+          "ordering": null,
+          "ordering_is_WITHDRAWN": {
+            "withdrawn_claim": "post_lift_mask66 is DEARER than pre_lift_mask66, and this holds under ANY cost monotone in observation count",
+            "why_it_is_false": "cost is SUM f(m_i). post-lift has FEWER and LARGER classes (6 classes / 44 missions) than pre-lift (9 / 35), so the ordering requires f CONVEX, not merely MONOTONE. It REVERSES below p ~ 0.638: at p=0.5 pre-lift costs 17.70 and post-lift 16.22 leg-equivalents.",
+            "the_arithmetic_error_beneath_it": "the ratios that ratified it were (sum m_post / sum m_pre)**p — the exponent applied to the AGGREGATE. sum(m_i**p) is not (sum m_i)**p unless p == 1. ⭐ p=1 IS THE ONLY POINT WHERE THE TWO FORMULAS COINCIDE, and that lone agreeing figure was read as verification. THAT IS THE FINDING, not the slip (owner pin 244c).",
+            "not_re_derived": "⛔ NO ordering is re-derived (owner pin 244a). Convexity needs the conditioning term, which needs a measurement that does not exist. This is pin 239(c)'s discipline applied to the owner's claim as it was to the executor's: record that it is UNSETTLED; do not replace it with its opposite.",
+            "what_would_settle_it": "one solve, one tile, one window, at a 3-mission subset of PROBE_MISSIONS, recording n_obs and PCG iterations — roughly 1-2 h of compute"
+          }
+        },
+        "truth_field": {
+          "measured": true,
+          "query": {
+            "host": "stac.marine.copernicus.eu",
+            "product": "GLOBAL_MULTIYEAR_PHY_001_030",
+            "dataset": "cmems_mod_glo_phy_my_0.083deg_P1D-m_202311",
+            "url": "https://stac.marine.copernicus.eu/metadata/GLOBAL_MULTIYEAR_PHY_001_030/cmems_mod_glo_phy_my_0.083deg_P1D-m_202311/dataset.stac.json",
+            "queried_utc": "2026-09-20T06:58:29Z",
+            "http_status": 200,
+            "authorisation": "owner pin 237(a) — metadata only, no download, one host",
+            "grid": {
+              "latitude_len": 2041,
+              "longitude_len": 4320,
+              "time_len": 12227,
+              "step_deg": 0.08333333333333333,
+              "temporal_extent": "1993-01-01T00:00:00Z .. 2026-06-23T00:00:00Z"
+            },
+            "zos_item_size_bytes": 2,
+            "zos_dtype": "<i2"
+          },
+          "variable": "zos (sea surface height) — the OSSE truth field",
+          "scope_assumption": "zos only; no MDT, mask or ancillary — a nadir-SLA scope choice",
+          "grid_nodes_per_side": 229,
+          "window_plan_span_days": 400.0,
+          "window_plan_shape": "9 windows x 60 d, OVERLAPPING and on a NON-UNIFORM stride [25.0, 45.0] d — 540 window-days over a 400-d union. The UNION is the download basis because each day is bought once.",
+          "mib_per_tile_per_span": 40.009307861328125,
+          "mib_all_four_tiles": 160.0372314453125,
+          "global_zos_full_record_tib": 0.19609965645940974,
+          "does_not_scale_with_classes": "THE TRUTH FIELD IS BOUGHT ONCE PER TILE, NOT ONCE PER CLASS — an OSSE varies the CONSTELLATION over FIXED truth. It DOES scale with the number of tiles.",
+          "epoch_span_reading_is_unstated": "⚠ OPEN: the 15 classes are DATE-RANGED in the sealed table (1992-2026) while this volume assumes ONE common 400-day truth span. Common-span means historical ground tracks must be SYNTHESISED (uncosted engineering); per-era means 15x the download (2.34 GiB for four tiles, still feasible) and the truth is no longer 'FIXED', which is the value case's own word. The run design must name which reading it takes.",
+          "bbox_caveat": "this is the SOLVE box; simulating observations needs the OBS footprint (+1.0 deg halo = 21 deg), 1.22x larger",
+          "encoding_caveat": "this is the UNCOMPRESSED array size — a BOUND on wire volume, not a wire measurement",
+          "feasibility": {
+            "cmems_storage_budget_gib": 50.0,
+            "budget_row": "ladder.STAGE0_SPEND_TABLE task_class=cmems_downloads (BOX_PRODUCTION)",
+            "all_four_tiles_gib": 0.156286358833313,
+            "fraction_of_budget": 0.0031257271766662598,
+            "verdict": "FEASIBLE",
+            "derived_not_asserted": "computed from the volume against the budget"
+          }
+        },
+        "lower_bound": {
+          "statement": "THE FIGURES HERE ARE A LOWER BOUND ON THE OSSE PRICE.",
+          "what_is_covered": "constellation-varied re-solves + the truth download, both at declared model assumptions",
+          "what_is_not_costed": [
+            "truth-provider wiring: the TRUTH interface is DORMANT since 4b and re-arming it is unmeasured engineering time — the LARGEST open item, and it carries no number at all",
+            "per-class observation simulation from the truth field",
+            "scoring and analysis of 15 outputs",
+            "REPLICATION: 15 classes x 1 tile x 1 truth realisation gives no way to separate 'this constellation is worse' from 'these track positions over this tile were unlucky'",
+            "non-convergence retries; the legs ran 375-626 PCG iterations per window at 5 missions",
+            "calendar time and box occupancy: serial single-host hours",
+            "truth-field independence: GLORYS12V1 is a data-assimilative reanalysis that ingests along-track SLA from the very constellations being simulated — the fraternal-twin problem, first-order for an OSSE whose value case is 'against truth'"
+          ]
+        },
+        "recommendation_options": [
+          {
+            "option": "run at Stage-2 entry (when era-transfer is the live question)",
+            "cost": "same compute; truth download trivial either way",
+            "can_establish": "the era-transfer claim against truth where it becomes load-bearing",
+            "cannot_establish": "anything for Gate 1 — it closes no Stage-1 item"
+          },
+          {
+            "option": "run now",
+            "cost": "295-470 h across all defensible models, + the truth download",
+            "can_establish": "the same thing, earlier",
+            "cannot_establish": "any Gate-1 item — the OSSE is not a Gate-1 deliverable, and Gate 1 already carries two ruled WAITs"
+          }
+        ],
+        "citations": [
+          "owner pin 99(c) — price from CONVERGED numbers, basis in-row",
+          "owner pin 232 — standalone doc + witnessed node; posted pack untouched",
+          "owner pin 234 — N_epoch-classes derived; no deduplication",
+          "owner pin 237 — the STAC metadata query, authorised and recorded",
+          "owner pin 244 — the direction claim WITHDRAWN, not re-derived",
+          "owner pin 245 — v3 simpler than v1: the band, every axis open",
+          "owner pin 247 — agent output is data, not fact"
+        ]
+      }
     }
   ]
 }

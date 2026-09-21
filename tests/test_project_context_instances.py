@@ -189,3 +189,31 @@ def test_the_withdrawn_ordering_claim_is_not_asserted_in_section_7() -> None:
     assert "dearer at every exponent above zero" not in text
     assert "ITSELF WITHDRAWN AND FALSE" in text
     assert "f CONVEX" in text
+
+
+def test_deliverable_review_instance_tags_are_contiguous_and_unique() -> None:
+    """Discipline 19's (dN) tags run d1..dN with no gaps or repeats.
+
+    Bug caught: the drift pin 146(b) corrected, on the newest list. Every
+    tagged list in §7 is now checked.
+    """
+    numbers = _tagged(_discipline("19. **When a deliverable is overturned"), "d")
+
+    assert numbers, "discipline 19 carries no instance tags"
+    assert len(set(numbers)) == len(numbers), f"duplicate tags: {numbers}"
+    assert numbers == list(range(1, len(numbers) + 1)), f"gap in tags: {numbers}"
+
+
+def test_the_deliverable_discipline_is_marked_as_the_owners_own() -> None:
+    """(d1) records that the instance and the rule are both the owner's.
+
+    Bug caught: recording the three overturns as the executor's failures
+    and dropping that the decision to order each rebuild was the owner's.
+    Pin 253 is explicit that the pattern being catalogued is the ruling
+    one, not the building one — a list that quietly reassigns it teaches
+    the wrong lesson about where this failure comes from.
+    """
+    text = _discipline("19. **When a deliverable is overturned")
+    assert "owner-authored, and the instance is the owner's own" in text
+    assert "VALIDITY IS PRIOR TO PRICE" in text
+    assert "was available at the first overturn and" in text

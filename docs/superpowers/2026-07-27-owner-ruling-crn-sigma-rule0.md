@@ -4353,3 +4353,88 @@ under 246, via the pin-64 forward-pointer form). Prior bodies and digests preser
 `supersessions.json`, which now holds three entries — the precedent being pin 148's
 `reachability_declarations`, superseded for the same reason: *the node grew, and the
 append-only gate correctly refuses growth without a stated reason.*
+
+---
+
+## PART 58 — T8 IS A WAIT: VALIDITY IS PRIOR TO PRICE (verbatim), pins 250–254, 2026-09-20
+
+**Landed verbatim under pin 40/41/48.**
+
+> **250. T8 IS A WAIT. Validity is prior to price, and pricing stops here.**
+> (a) v3 OVERTURNED, F1 confirmed: §3 — the only section that produces a verdict — still
+> applies the n_obs-fitted exponent to mission counts, v2's exact defect. The breach
+> count runs 0 to 5 across the document's own band and is driven by MODEL, not tile.
+> (b) F6 is prior to all of it: no replication, a truth field that assimilates the
+> constellations under test, and an epoch-span question that may not preserve "fixed
+> truth" under either reading. Until those are answered the price is of an experiment
+> that may establish nothing.
+> (c) SAME SHAPE AS T6 AND T7: a measured WAIT with its exits named, not an empty row.
+> Gate 1 now carries THREE ruled WAITs.
+>
+> **251. THE EXIT — the truth field must be a NATURE RUN, not a reanalysis.**
+> GLORYS12 assimilates altimetry, so it has seen the observations an OSSE would test.
+> LLC4320-class truth is free-running and has not. The 237 query measured GLORYS because
+> the CMEMS host carries it, so the 40.01 MiB figure is the size of the wrong kind of
+> truth. Record: (1) the truth must be free-running; (2) LLC4320's span is ~14 months,
+> which forces the common-span design; (3) whether flying each era's orbit geometry over
+> one fixed nature-run period preserves "constellation varied over fixed truth" is the
+> OPEN DESIGN QUESTION, owned by Stage 2, not resolved here; (4) replication is required
+> and unpriced.
+>
+> **252. CLOSE T8 AS A WAIT, witnessed.** One node at phase14.stage1.osse_pricing recording the
+> WAIT, the three overturns and what each found, the 251 exit, and the verified facts
+> that survived (15 classes, no deduplication, the 0.638 crossover, the ±4.5%
+> decomposition, the 1.28× platform convention, 99(c) clean). The v3 document is
+> WITHDRAWN as a pricing deliverable and PRESERVED as the record of why. T8 → completed
+> with the reason in the subject, as T7 was.
+>
+> **253. §7 — MY PATTERN, tagged as mine.** I ordered three rebuilds of a deliverable whose frame
+> was wrong, and each rebuild moved the defect instead of removing it. The question
+> "should this be priced at all?" was available at the first overturn and I did not ask
+> it. When a deliverable is overturned twice on the same frame, the next ruling examines
+> the deliverable, not the fix.
+>
+> **254. RATIFIED:** refusing to restate 245(f)'s n_coef figure because you could not source it —
+> pin 247 applied to the report my own pin quoted, which is the pin's own test; the two
+> supersessions, correctly judged as implied by 244-246; and naming the WAIT shape before
+> I did.
+
+### What closed, and what Stage 2 inherits
+
+**T8 → completed as a ruled WAIT**, witnessed at `phase14.stage1.osse_pricing`. **All of
+T5–T9 is now closed.** What remains for Gate 1 is the owner's: the refresh election (task
+24's wall, then task 23).
+
+⛔ **THE THREE OVERTURNS ARE RECORDED BY THEIR DEFECT, NOT THEIR FIX**, because they are one
+pattern: **v1** priced *one class = one tile solve*; **v2** fitted on observations and
+applied to missions; **v3** removed the exponent from the headline and left it in the only
+section that produced a verdict. *Each rebuild moved the defect rather than removing it* —
+which is §7 discipline 19, authored by the owner about the owner's own rulings.
+
+⭐ **THE EXIT IS WHY THIS IS A WAIT AND NOT A REFUSAL** (251). The truth must be
+**free-running**. ⚖ *The pin-237 measurement was correct arithmetic about the wrong
+object*: it sized GLORYS12 because the CMEMS host carries it, and GLORYS12 is precisely
+what the fraternal-twin problem rules out. LLC4320's ~14-month span then **forces** the
+common-span design, and whether that design preserves "constellation varied over fixed
+truth" is **Stage 2's open question**, not Stage 1's to answer.
+
+**What survived all three rounds is recorded so Stage 2 inherits it rather than re-deriving
+it**, each still computed from the store and the seal: 15 classes with **no deduplication
+available**; the **0.638** convexity crossover; the **±4.5%** per-iteration decomposition
+with its 375–626 PCG span; the **~1.28×** platform convention (four platforms under five
+labels, disclosed by no pricing round); and the **99(c)** attestation — *no figure in any
+round traced to the capped T2 probe*, confirmed by three independent reviews.
+
+⚠ **THE DOCUMENT IS WITHDRAWN, NOT DELETED** (252). Every hour figure in it is withdrawn,
+the 295–470 h band included, and it opens with a banner saying so. It is kept because
+deleting it would leave the WAIT without its reasoning.
+
+### Two corrections to the record, both mine
+
+1. **§7 discipline 18's `(u2)`** described v2's defect. This ruling adds that **v3 repeated
+   it in §3** — the same substitution, in the one place a number changed a decision. The
+   pattern ran to three, not two.
+2. **A test I wrote to forbid price figures in the WAIT node was too broad** and failed on
+   `wall_h`, a MEASURED leg wall among the surviving facts. Narrowed to projected shapes
+   (`sweep`, `equivalents`, `_h_at_`, …) with the reason recorded in the test: *a
+   measurement of a leg that ran is not a price*.

@@ -1,4 +1,43 @@
-# Phase-14 Stage-1 T8 — the OSSE run decision, PRICED (**v3**)
+# Phase-14 Stage-1 T8 — the OSSE run decision (v3) — ⛔ **WITHDRAWN AS A PRICING DELIVERABLE**
+
+> # ⛔⛔ THIS DOCUMENT IS WITHDRAWN. **DO NOT PRICE AN OSSE FROM IT.**
+>
+> **Owner pins 250–252, 2026-09-20. T8 IS A RULED WAIT.**
+>
+> **v3 was OVERTURNED**, like v1 and v2 before it, by two-reviewer adversarial
+> review under pin 212(b) — all three on the **unit of account**. v3's §3, the
+> only section that produced a verdict, still applied an **observation-fitted
+> exponent to mission counts**: v2's exact defect, in the one place a number
+> changed a decision. Its breach count runs **0 to 5 across this document's own
+> band**, driven by **model**, not by tile as §3 claims.
+>
+> ⭐ **AND VALIDITY IS PRIOR TO PRICE (pin 250).** The experiment may not answer
+> its own value case: **no replication**; a truth field (**GLORYS12**) that
+> **assimilates the constellations under test**; and an epoch-span question that
+> preserves "**FIXED** truth" under **neither** reading.
+>
+> ⛔ **EVERY HOUR FIGURE BELOW IS WITHDRAWN** — the 295–470 h band, the per-class
+> walls, the WAIT verdicts, all of it. They are left in place only so the WAIT
+> carries its reasoning.
+>
+> ✅ **THE RULED RECORD IS `phase14.stage1.osse_pricing`** (witnessed), which
+> carries the WAIT, the three overturns, pin 251's exit and the facts that
+> survived. **Read that, not this.**
+>
+> **THE EXIT (pin 251):** the truth must be a **free-running NATURE RUN**
+> (LLC4320-class), not a reanalysis. LLC4320's ~14-month span forces the
+> common-span design, and whether flying each era's orbit geometry over one
+> fixed nature-run period preserves "constellation varied over fixed truth" is
+> the **OPEN DESIGN QUESTION, owned by Stage 2**. Replication is **required and
+> unpriced**.
+>
+> ⚠ The pin-237 truth measurement below is **sound arithmetic about the wrong
+> object**: it sized GLORYS12, which pin 251 rules out.
+
+---
+
+## [WITHDRAWN — preserved as the record of why] The v3 document as posted
+
 
 **Posted 2026-09-20. Owner pins 232 / 234 / 235 / 236 / 237 / 244–249.**
 **Evidence node:** `phase14.stage1.osse_pricing` (mirrored and witnessed).

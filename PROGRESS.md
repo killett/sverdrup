@@ -2,26 +2,21 @@
 
 > # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
-> T8 v3 POSTED — v1 AND v2 BOTH OVERTURNED, both on the UNIT OF ACCOUNT (pins 244/245).
-> ⭐ **v3 IS SIMPLER THAN v1:** the headline is a **BAND ACROSS MODELS, 295-470 h**, with
-> **no exponent in it** — flat, linear, 5-point refit, the fit, and the 95% CI ceiling all
-> land inside it, and that band was always sufficient for a go/no-go. Two rounds were spent
-> moving the SMALLEST term in the price.
-> ⛔ **THE SUBSET DIRECTION CLAIM IS WITHDRAWN AND NOT RE-DERIVED (244).** "Post-lift is
-> dearer under ANY monotone cost" is FALSE: cost is Σ f(mᵢ), post-lift has FEWER and
-> LARGER classes (6/44 v 9/35), so it needs f **CONVEX** and reverses below p ≈ 0.638.
-> ⭐ **The ratifying arithmetic was (Σm_post/Σm_pre)^p — the exponent on the
-> AGGREGATE. Σ(mᵢ^p) ≠ (Σmᵢ)^p unless p = 1, and p = 1 was the only
-> checked point that agreed. A lone agreeing figure was read as verification — THAT is the
-> finding** (244c), now §7 discipline 18 with three tagged instances, one the owner's.
-> ⛔ **NEW IN v3:** per-class walls against the 40 h ceiling — **1 to 5 of the 15 classes
-> BREACH it** and v2 reported only sums, with `TIER_CEILING_H` sitting in the producer
-> UNREFERENCED; **RAM as a NAMED, explicitly UNMODELLED axis** (it refused the equatorial
-> leg by 11 MiB and nearly lost leg 2 at 1,382 MiB); the **platform convention** disclosed
-> (~1.28x — j2g/j2n are one Jason-2); and the **controlled-experiment premise STRUCK** (n=4,
-> one point per tile, n_obs collinear with tile identity).
-> ⚠ Two supersessions spent: `osse_pricing` and `projection_declarations` (the register
-> grew by one block under 246). Prior bodies preserved. Decision cell stays EMPTY.
+> T8 CLOSED as a ruled WAIT (pins 250-252). Validity is prior to price: three pricing rounds
+> were overturned on the unit of account, and the experiment itself may not answer its value
+> case. EXIT: the truth must be a free-running NATURE RUN (LLC4320-class), not a reanalysis —
+> GLORYS12 assimilates the constellations under test. The common-span design question and
+> replication are OPEN, owned by Stage 2. Gate 1 carries THREE ruled WAITs (kernel 219,
+> revisit 224, OSSE 250) and does not close. All of T5-T9 is now closed. What remains for
+> Gate 1 is the owner's: the refresh election (task 24, then task 23).
+>
+> ⛔ **THE v3 DOCUMENT IS WITHDRAWN AS A PRICING DELIVERABLE AND PRESERVED AS THE RECORD OF
+> WHY** — every hour figure in it is withdrawn, including the 295-470 h band. **Do not
+> price an OSSE from it.** The ruled record is `phase14.stage1.osse_pricing`, witnessed.
+> ⭐ **§7 GAINED TWO DISCIPLINES FROM THIS TASK:** **18** — a price is stated in a
+> UNIT and the unit must be the thing that VARIES (three tagged instances, one the owner's);
+> and **19** — when a deliverable is overturned TWICE on the same frame, the next ruling
+> examines the DELIVERABLE, not the fix (owner-authored, the instance the owner's own).
 >
 > **✅ 237 IS CLOSED, NOT DECLARED OPEN.** The authorised metadata-only query returned HTTP
 > 200: GLORYS12V1 `zos` at 2 bytes/item on a 2041×4320 grid — so **39.66 MiB for one tile
