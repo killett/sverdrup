@@ -1,14 +1,19 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-09-19. THIS IS THE ONLY BLOCK DESCRIBING NOW.
+> # ⬛ CURRENT STATE — 2026-09-21. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
 > T8 CLOSED as a ruled WAIT (pins 250-252). Validity is prior to price: three pricing rounds
 > were overturned on the unit of account, and the experiment itself may not answer its value
 > case. EXIT: the truth must be a free-running NATURE RUN (LLC4320-class), not a reanalysis —
 > GLORYS12 assimilates the constellations under test. The common-span design question and
-> replication are OPEN, owned by Stage 2. Gate 1 carries THREE ruled WAITs (kernel 219,
-> revisit 224, OSSE 250) and does not close. All of T5-T9 is now closed. What remains for
-> Gate 1 is the owner's: the refresh election (task 24, then task 23).
+> replication are OPEN, owned by Stage 2. All of T5-T9 is now closed.
+>
+> **REFRESH ELECTION RULED (pins 255-259): ELECTED, BUNDLED** with Stage 2G's acceptance
+> chain — no touch spent now. δ_j3 := δ_j2n is PROVISIONAL pending Stage 2's per-era δ fit
+> (E7). e10 needs a replacement holdout before 2G runs. C-11 is RECORDED. Every Gate-1 item
+> now has a ruled outcome: anchor, seams and transfer readings as ruled at 209; kernel,
+> revisit and OSSE as ruled WAITs (219, 224, 250); refresh ELECTED (255). **Whether Gate 1
+> CLOSES is the owner's next decision and has NOT been made.**
 >
 > ⛔ **THE v3 DOCUMENT IS WITHDRAWN AS A PRICING DELIVERABLE AND PRESERVED AS THE RECORD OF
 > WHY** — every hour figure in it is withdrawn, including the 295-470 h band. **Do not
