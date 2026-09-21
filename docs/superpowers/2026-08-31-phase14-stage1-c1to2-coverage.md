@@ -1,16 +1,47 @@
 # Stage-1 C1→2 contract coverage table (T12 — precondition on T9)
 
-> **✅ THE STOP CONDITION BELOW WAS RULED 2026-09-01 (owner pins 136/137, ruling doc
-> PART 34). It is kept in place as the trail — it is why task 23 exists.**
-> **C-11 now has a producer: TASK 23, post-gate, `blockedBy [9]`**, recording the outcome
-> and its scope to the witnessed node `phase14.stage1.refresh_election`; T9's AC states
-> that presenting the rule with an empty decision cell does NOT discharge the line
-> (136b); and **⛔ STAGE 1 DOES NOT CLOSE WHILE C-11 IS OUTSTANDING (136c)** — recorded in
-> the C-11 row above, not only here, so a successor cannot read a presented question as an
-> answered one. **Finding 5 is ratified (137):** T9 pack item (10) now carries this table
-> beside the T11 instrument table.
+> # ✅ C-11 IS DISCHARGED — 2026-09-21, owner pins 255-259 (ruling PART 59)
 >
-> **⛔ STOP CONDITION TRIGGERED — ONE UNASSIGNED CONTRACT ITEM FOUND.**
+> **THE STOP CONDITION BELOW IS RETIRED.** It was raised because the election OUTCOME had
+> no producer; the outcome now exists, is ruled, and is recorded. **Finding 1 itself is
+> kept in place, unedited, as the trail — it is why task 23 exists**, and deleting it would
+> erase the reason the line was ever caught.
+>
+> **THE OUTCOME: ELECTED** — the six-mission production refresh with structured R (Phase
+> 12's frozen-transfer chain re-run on the Phase-13 R-winner, j3 assimilated). **SCOPE:**
+> Stage-2G assembly runs onward (1-8). **CHAIN AND TOUCH: BUNDLED** with Stage 2G's
+> acceptance chain, sharing its touch — **NO TOUCH IS SPENT NOW and the c2 tally is
+> untouched** (255c). Recorded at the witnessed node `phase14.stage1.refresh_election`,
+> which carries pins 255-258 verbatim.
+>
+> ⛔ **DISCHARGED IS NOT CLOSED.** C-11 no longer blocks on 136(c), but **whether Gate 1
+> CLOSES — carrying three ruled WAITs (kernel 219, revisit 224, OSSE 250) — is a separate
+> owner decision and it has NOT been made.** Nothing here closes Stage 1.
+>
+> **Two named Stage-2 obligations travel with the election, neither a condition on it:**
+> **δ_j3 := δ_j2n is PROVISIONAL** pending Stage 2's per-era δ fit (E7) — j3 was the
+> validation holdout, so the value is inherited, never fitted (256); and ⛔ **e10 needs a
+> REPLACEMENT HOLDOUT, chosen by fork C's criteria in order and sealed, BEFORE 2G runs**
+> (257).
+>
+> ⛔ **THE ELECTION MAKES NO CLAIM ABOUT THE TRANSFER RESULT** (258). A sixth mission
+> raises observation density and **nothing recorded says whether that helps, hurts or
+> leaves unchanged the two tiles whose λx is absent.** It must not be cited as a remedy for
+> the weak-signal finding.
+>
+> ---
+>
+> **The 2026-09-01 ruling that created the producer (owner pins 136/137, PART 34), kept as
+> the trail:** **C-11's producer was TASK 23, post-gate, `blockedBy [9]`** (amended to
+> `[9, 24]` at pin 221c), recording the outcome and its scope to the witnessed node
+> `phase14.stage1.refresh_election`; T9's AC states that presenting the rule with an empty
+> decision cell does NOT discharge the line (136b); and **STAGE 1 DOES NOT CLOSE WHILE C-11
+> IS OUTSTANDING (136c)** — recorded in the C-11 row above, not only here, so a successor
+> cannot read a presented question as an answered one. **Finding 5 is ratified (137):** T9
+> pack item (10) now carries this table beside the T11 instrument table.
+>
+> **⛔ STOP CONDITION AS RAISED 2026-08-31 — RETIRED 2026-09-21 BY PIN 255, KEPT VERBATIM:**
+> **ONE UNASSIGNED CONTRACT ITEM FOUND.**
 > The C1→2 line **"the Gate-1 shipped-config election OUTCOME with its scope"**
 > is assigned to **no task AC in the Stage-1 plan**. T9 pack item (7) produces
 > the *presentation* (presumptive rule, δ_j3 := δ_j2n, scope = Stage-2G assembly
@@ -68,7 +99,7 @@ a different state from unassigned and is marked as such.
 | C-08 | **…LABELED scalar-s\* reference rows** | T5 AC-1 (labelled reference row per tile); T1 evidence AC pins the label and the `bridge_caveat` exact string; **`S_STAR_CHI2_IDENTITY` schema field (pin 100)** states the shared expression, `same_by_construction`, and `not_corroboration` in-row, and `build_scores_block` RAISES on divergence (pin 100c) with `preflight_scores_construction()` exercising the construction before either gate (pin 103a) | ASSIGNED, UNRUN (schema + invariant landed and test-pinned) |
 | C-09 | **Equatorial lane-0 baseline persisted under the frozen fold/eval frame** | T5 equatorial-persistence AC (fork-b pin 1: maps + `evidence_pack.json` + `fold_eval_frame.json` + `lane0_manifest.json` with per-file sha+size, recorded at `phase14.stage1.equatorial_lane0_manifest`); machinery LANDED at T5d — `persist_lane0_bundle` / `record_lane0_manifest`, manifest node in the evidence mirror's `MIRRORED` set (96c), fork-b pin 2 verbatim, pin-67 class `WITNESSED_AT_CREATION`, and the **instrument composition** recorded (pin 107) so a later wave-increment run cannot be compared blind | ASSIGNED, UNRUN (mirror shows the node `PENDING (registered, not yet written)` — correct pre-run state) |
 | C-10 | **Land-mask path exercised** | T5 kuroshio AC (dropped-land handling in framing/scoring; `n_scored_points` honest; all-land core refusal surfaced not swallowed); machinery LANDED at T5d — `land_mask_exercise.kuroshio.<era>` records all three counts (framed obs / scored points / calibration points) **with their gap** | ASSIGNED, UNRUN. Partially de-risked already: pin 89's kuroshio probe converged **with the land-mask path intact** |
-| C-11 | **The Gate-1 shipped-config election OUTCOME with its scope** | **RULED (owner pin 136): the producer is TASK 23, post-gate, `blockedBy [9]`** — it records the outcome AND its scope to the witnessed node `phase14.stage1.refresh_election`, and a DECLINE is an outcome, not an empty node. T9 pack item (7) produces only the **presentation** (presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly runs onward) and **its AC now states that presenting with an empty decision cell does NOT discharge this line** (136b) | **ASSIGNED (T23), OUTSTANDING — ⛔ STAGE 1 DOES NOT CLOSE WHILE IT IS (136c)** |
+| C-11 | **The Gate-1 shipped-config election OUTCOME with its scope** | **RULED (owner pin 136): the producer is TASK 23, post-gate, `blockedBy [9]`** — it records the outcome AND its scope to the witnessed node `phase14.stage1.refresh_election`, and a DECLINE is an outcome, not an empty node. T9 pack item (7) produces only the **presentation** (presumptive rule verbatim: instrument-class match, δ_j3 := δ_j2n (Poseidon-series); own chain + touch if elected; scope = Stage-2G assembly runs onward) and **its AC now states that presenting with an empty decision cell does NOT discharge this line** (136b) | ✅ **DISCHARGED 2026-09-21 — OUTCOME RECORDED** at `phase14.stage1.refresh_election` (witnessed; mirror `check` PASS without re-sync), by T23 under **owner pins 255-259, ruling PART 59**: **ELECTED**, SCOPE **Stage-2G assembly runs onward (1-8)**, **BUNDLED** with 2G's acceptance chain sharing its touch — **NO TOUCH SPENT NOW, c2 tally untouched** (255c). It REUNIFIES an already-six-mission SHIPPED (`shipped_miost6`, `b4878a0`) with the five-mission structured-R winner; **NOT a mission-count change** (255d). **Two named Stage-2 obligations ride with it, neither a condition on the election:** δ_j3 := δ_j2n is **PROVISIONAL** pending Stage 2's per-era δ fit (E7) (256); and ⛔ **e10 needs a replacement holdout — fork C's criteria in order — chosen and sealed BEFORE 2G runs** (257). ⛔ **The election makes NO CLAIM about the transfer result** (258). **136(c) is satisfied, NOT waived** — and DISCHARGED IS NOT CLOSED: whether Gate 1 closes carrying three ruled WAITs is the owner's separate, unmade decision |
 | C-12 | **(pin 86a — added to the contract) The σ seam question is recorded OPEN, with the inheritance package NAMED** | This table, §2 below (the package enumerated, not referenced); T9 pack item (12); T13 pin-45b (the withholding cells as produced); the closure map §3 (the branch-B reading the owner adopted at pin 84) | COVERED — §2 is the discharge |
 | C-13 | **(pin 86b / pin 37c — added to the contract) STAGE 2 / 2G MAY NOT ASSUME σ SEAMS ARE CLEAN** | This table, §2.6 — **carried as a contract line item in those words**; T9 pack item (12) | COVERED |
 | C-14 | **(pin 87 — added to the contract) The CRN defect travels forward as a PRODUCTION DEFECT** | `phase14.stage1.crn_production_defect_deferred` (recorded in those words); T9 pack item (13); pin 124(a)'s attestation wording — "zero locked opens, **one deferred production defect named at `crn_production_defect_deferred`**" — so the attestation cannot read as a clean bill | COVERED |
@@ -171,7 +202,7 @@ adjacency, which T4 already measured.
 | T7 revisit lanes (per-tile, two bands, report-only, promotion sentence verbatim) | **No C1→2 line** | A **Gate-1 item** and a Stage-2/fork input; the contract sentence names no revisit deliverable. Benign orphan — Finding 6 |
 | T8 OSSE pricing + strongest value case; decision cell empty | **No C1→2 line** | Gate-1 item; the OSSE election is fork-f's, not C1→2's. Benign orphan — Finding 6 |
 | T9 pack item (3) FOUR transfer readings | C-06, C-07, C-08 | **Corrected orphan:** the AC formerly said "six", which claimed more than the contract line yields; pin 97(a) fixed it to FOUR and test-pinned the count |
-| T9 pack item (7) refresh-election presentation | C-11 (presentation half only) | **The outcome half is unassigned — Finding 1** |
+| T9 pack item (7) refresh-election presentation | C-11 (presentation half only) | **The outcome half was unassigned — Finding 1**; RULED at pin 136 (producer = T23) and **DISCHARGED 2026-09-21 at pins 255-259**: the outcome is ELECTED and recorded at `phase14.stage1.refresh_election` |
 | T9 pack item (10) the T11 sealed-instrument coverage table | T11 closure | **No slot names THIS table — Finding 5** |
 | T9 pack items (12)/(13) | C-12, C-13, C-14 | |
 | T10 AC-1..4 (σ pair beside mean; same pure functions; sentinel covers both routes; guard on both) | C-03 | The σ field kind of the rubric verdict |
@@ -191,6 +222,11 @@ Finding 6 (LOW, no action) so the reverse walk is exhaustive.
 
 **Finding 1 — CRITICAL (STOP-condition trigger): the shipped-config election
 OUTCOME has no producer.**
+**✅ RULED (pin 136, 2026-09-01) AND DISCHARGED (pins 255-259, 2026-09-21).** The finding
+is kept below exactly as written — it is why task 23 exists, and the C-11 row now carries
+the outcome it asked for: **ELECTED**, scope Stage-2G assembly runs onward, **BUNDLED**,
+recorded at `phase14.stage1.refresh_election`. The remedy shape it proposed is the one that
+was taken: *a one-AC closing task that runs after the Gate-1 walk*.
 C-11 names *"the Gate-1 shipped-config election **outcome** with its scope"*.
 The plan produces the **question**: T9 pack item (7) presents the presumptive
 rule verbatim (instrument-class match, δ_j3 := δ_j2n, own chain + touch if

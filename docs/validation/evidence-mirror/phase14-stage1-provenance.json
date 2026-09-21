@@ -10,9 +10,7 @@
   "ruling": "docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
   "pin": "56 — mirror the provenance-bearing evidence into the tree",
   "registered_but_not_yet_written": {
-    "paths": [
-      "phase14.stage1.refresh_election"
-    ],
+    "paths": [],
     "meaning": "REGISTERED for mirroring, and the work that writes them has not run. They are named here rather than skipped silently, so the registration cannot be forgotten and their absence cannot be mistaken for a decision not to witness them. A path leaves this list by being written and then synced."
   },
   "source_store": "data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json",
@@ -229,7 +227,7 @@
       }
     ]
   },
-  "generated_utc": "2026-09-21T05:21:51.329079+00:00",
+  "generated_utc": "2026-09-21T17:48:42.719753+00:00",
   "nodes": {
     "acceptance_artifact_correction": {
       "digest_sha256": "900c352d10fe042555b2bdacbcd238332a555841a7572bea7fbdac00776ec296",
@@ -4034,6 +4032,77 @@
           ],
           "status": "RECORDED AS FOUND, NOT DECLARED. They remain in the pin-140a sweep output, so they are visible every time the check runs rather than quietly exempted"
         }
+      }
+    },
+    "phase14.stage1.refresh_election": {
+      "digest_sha256": "566a99fbe40ad30b49dea6342b3c397fcce6916463fb1dda801efabdc53d1d30",
+      "value": {
+        "outcome": "ELECTED",
+        "outcome_authority": "owner pin 255, 2026-09-21 — ruling PART 59 of docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md",
+        "contract_line": "C-11 — the Gate-1 shipped-config election OUTCOME with its scope",
+        "what_was_elected": "the six-mission production refresh with structured R: Phase 12's frozen-transfer chain re-run on the Phase-13 R-winner, j3 assimilated",
+        "scope": "Stage-2G assembly runs onward, as the spec named it (1-8)",
+        "presented_rule_is_not_the_decision": "T9 pack item (7) posted the presumptive rule with the decision cell EMPTY and STOPPED, because Gate 1 is the owner's (pin 136b). THIS NODE IS THE DECISION. A successor must not read the presentation as the answer — that reading is the defect pin 136 created task 23 to prevent.",
+        "chain_and_touch": {
+          "mode": "BUNDLED",
+          "bundled_with": "Stage 2G's acceptance chain, sharing its touch",
+          "bundling_rule_verbatim": "it runs with its OWN chain + touch when the next six-mission-relevant improvement can share the chain, or at the global-domain transition — whichever first. Neither silent fold-in nor flat decline.",
+          "bundling_rule_source": "owner T14 item 2 at the Phase-13 close; named again in the Phase-14 program design §1 as fired by THIS program",
+          "branch_that_fired": "the FIRST branch of the rule quoted above — Stage 2G is the shareable chain, and it is reached before the global-domain transition",
+          "touch_spent_now": false,
+          "c2_touch_tally_observed": {
+            "miost5": 3,
+            "miost6": 1
+          },
+          "c2_touch_tally_source": "phase13.miost.c2_acceptance.c2_touch_tally",
+          "tally_untouched_by_this_ruling": true
+        },
+        "what_it_reunifies": {
+          "statement": "SHIPPED is already six-mission without structured R; the structured-R winner is five-mission. The election joins them.",
+          "shipped_is_already_six_mission": true,
+          "shipped_factory": "shipped_miost6",
+          "shipped_flip": "b4878a0",
+          "structured_r_winner_is_five_mission": true,
+          "is_a_mission_count_change": false
+        },
+        "delta_j3": {
+          "rule": "δ_j3 := δ_j2n",
+          "basis": "instrument-class match, Poseidon-series",
+          "status": "PROVISIONAL",
+          "fitted": false,
+          "why_not_fitted": "the five-mission contrasts never fit j3 — it was the VALIDATION HOLDOUT — so the presumptive rule supplies an INHERITED value",
+          "governed_by": "Stage 2's per-era δ assignment (spec E7)",
+          "if_stage2_fits_it": "the fit replaces the inheritance and the election stands unchanged",
+          "is_a_condition_of_the_election": false,
+          "obligation": "owner pin 256 — a named Stage-2 obligation in the C1->2 contract"
+        },
+        "e10_holdout_consequence": {
+          "statement": "2G does not run on the elected config until e10's replacement holdout is chosen and sealed",
+          "why": "every Stage-1 transfer reading is j3-validated, and j3 is the 2017 epoch's (e10) holdout in the sealed census. Assimilating j3 from 2G onward consumes that holdout.",
+          "is_a_precondition_on_2g": true,
+          "resolved": false,
+          "selection_criteria": "fork C's recorded criteria, in order",
+          "obligation": "owner pin 257 — carried in the C1->2 contract as a precondition"
+        },
+        "makes_no_claim_about_the_transfer_result": "⛔ THE ELECTION MAKES NO CLAIM ABOUT THE TRANSFER RESULT (owner pin 258). A sixth mission raises observation density, and nothing recorded says whether that helps, hurts or leaves unchanged the two tiles whose λx is absent. That mechanism is firewalled and open. The election is about reuniting the shipped product with its calibration. It must not be cited as a remedy for the weak-signal finding, and no record may imply it is.",
+        "stage2_obligations": [
+          "pin 256 — δ_j3 := δ_j2n is PROVISIONAL; Stage 2's per-era δ assignment (E7) governs it",
+          "pin 257 — e10's replacement holdout is chosen and sealed BEFORE 2G runs on the elected config"
+        ],
+        "ruling_verbatim": {
+          "255": "255. THE SIX-MISSION-REFRESH ELECTION: ELECTED, BUNDLED. Owner's ruling, 2026-09-21. This is the election outcome C-11 requires. Record it verbatim. (a) OUTCOME: ELECTED. The six-mission production refresh with structured R — Phase 12's frozen-transfer chain re-run on the Phase-13 R-winner, j3 assimilated. (b) SCOPE: Stage-2G assembly runs onward, as the spec named it (1-8). (c) CHAIN AND TOUCH: BUNDLED with Stage 2G's acceptance chain, sharing its touch, per the Phase-13 bundling rule (\"when the next six-mission-relevant improvement can share the chain, or at the global-domain transition — whichever first\"). NO TOUCH IS SPENT NOW. The c2 tally is untouched by this ruling. (d) WHAT IT REUNIFIES: SHIPPED is already six-mission (shipped_miost6, b4878a0) without structured R; the structured-R winner is five-mission. The election joins them. It is NOT a change of mission count.",
+          "256": "256. δ_j3 := δ_j2n IS PROVISIONAL, and Stage 2 supersedes it. (a) The five-mission contrasts never fit j3 — it was the validation holdout — so the presumptive rule (instrument-class match, Poseidon-series) supplies an inherited value, not a fitted one. Record it as PROVISIONAL. (b) Stage 2's per-era δ assignment (spec E7) governs δ_j3. If Stage 2 fits δ_j3, the fit replaces the inheritance and the election stands unchanged — δ_j3 is a parameter inside the elected config, not a condition of the election. (c) The C1->2 contract carries this as a Stage-2 obligation, named.",
+          "257": "257. ⛔ THE e10 HOLDOUT CONSEQUENCE — Stage 2 must resolve it before 2G runs. Every Stage-1 transfer reading is j3-validated, and j3 is the 2017 epoch's (e10) holdout in the sealed census. Assimilating j3 from 2G onward means e10 needs a replacement holdout, selected by fork C's recorded criteria in order. Record it in the C1->2 contract as a precondition on 2G: 2G does not run on the elected config until e10's replacement holdout is chosen and sealed.",
+          "258": "258. THE ELECTION MAKES NO CLAIM ABOUT THE TRANSFER RESULT. A sixth mission raises observation density, and nothing recorded says whether that helps, hurts or leaves unchanged the two tiles whose lambda_x is absent. That mechanism is firewalled and open. The election is about reuniting the shipped product with its calibration. It must not be cited as a remedy for the weak-signal finding, and no record may imply it is."
+        },
+        "citations": [
+          "owner pin 255 — ELECTED, scope 2G onward, BUNDLED, no touch spent",
+          "owner pin 256 — δ_j3 is PROVISIONAL, superseded by Stage 2",
+          "owner pin 257 — the e10 holdout consequence, a precondition on 2G",
+          "owner pin 258 — the transfer-result firewall",
+          "owner pin 259(b) — this node is an APPEND to a pre-registered node",
+          "owner pin 136 — C-11's producer is task 23, post-gate"
+        ]
       }
     },
     "phase14.stage1.revisit.equatorial": {
