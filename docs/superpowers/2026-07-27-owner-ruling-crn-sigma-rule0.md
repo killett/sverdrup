@@ -4438,3 +4438,99 @@ deleting it would leave the WAIT without its reasoning.
    `wall_h`, a MEASURED leg wall among the surviving facts. Narrowed to projected shapes
    (`sweep`, `equivalents`, `_h_at_`, …) with the reason recorded in the test: *a
    measurement of a leg that ran is not a price*.
+
+---
+
+## PART 59 — THE SIX-MISSION REFRESH: ELECTED, BUNDLED (verbatim), pins 255–259, 2026-09-21
+
+**Landed verbatim under pin 40/41/48.**
+
+> **255. THE SIX-MISSION-REFRESH ELECTION: ELECTED, BUNDLED. Owner's ruling, 2026-09-21.**
+> This is the election outcome C-11 requires. Record it verbatim.
+> (a) OUTCOME: ELECTED. The six-mission production refresh with structured R — Phase
+> 12's frozen-transfer chain re-run on the Phase-13 R-winner, j3 assimilated.
+> (b) SCOPE: Stage-2G assembly runs onward, as the spec named it (1-8).
+> (c) CHAIN AND TOUCH: BUNDLED with Stage 2G's acceptance chain, sharing its touch, per
+> the Phase-13 bundling rule ("when the next six-mission-relevant improvement can
+> share the chain, or at the global-domain transition — whichever first"). NO TOUCH
+> IS SPENT NOW. The c2 tally is untouched by this ruling.
+> (d) WHAT IT REUNIFIES: SHIPPED is already six-mission (shipped_miost6, b4878a0) without
+> structured R; the structured-R winner is five-mission. The election joins them. It
+> is NOT a change of mission count.
+>
+> **256. δ_j3 := δ_j2n IS PROVISIONAL, and Stage 2 supersedes it.**
+> (a) The five-mission contrasts never fit j3 — it was the validation holdout — so the
+> presumptive rule (instrument-class match, Poseidon-series) supplies an inherited
+> value, not a fitted one. Record it as PROVISIONAL.
+> (b) Stage 2's per-era δ assignment (spec E7) governs δ_j3. If Stage 2 fits δ_j3, the
+> fit replaces the inheritance and the election stands unchanged — δ_j3 is a
+> parameter inside the elected config, not a condition of the election.
+> (c) The C1->2 contract carries this as a Stage-2 obligation, named.
+>
+> **257. ⛔ THE e10 HOLDOUT CONSEQUENCE — Stage 2 must resolve it before 2G runs.**
+> Every Stage-1 transfer reading is j3-validated, and j3 is the 2017 epoch's (e10)
+> holdout in the sealed census. Assimilating j3 from 2G onward means e10 needs a
+> replacement holdout, selected by fork C's recorded criteria in order. Record it in the
+> C1->2 contract as a precondition on 2G: 2G does not run on the elected config until
+> e10's replacement holdout is chosen and sealed.
+>
+> **258. THE ELECTION MAKES NO CLAIM ABOUT THE TRANSFER RESULT.**
+> A sixth mission raises observation density, and nothing recorded says whether that
+> helps, hurts or leaves unchanged the two tiles whose lambda_x is absent. That mechanism
+> is firewalled and open. The election is about reuniting the shipped product with its
+> calibration. It must not be cited as a remedy for the weak-signal finding, and no
+> record may imply it is.
+>
+> **259. MECHANICS.**
+> (a) Task 24 is DISCHARGED by this ruling — it was the userGate for exactly this
+> decision. Mark it completed with this pin as its reason.
+> (b) Task 23 then records 255-258 to phase14.stage1.refresh_election — the pre-
+> registered node, currently PENDING. Writing a pre-registered node is an APPEND, not
+> a supersession. Sync and verify store-vs-mirror PASS without a re-sync.
+> (c) C-11 is updated in the C1->2 contract record: OUTCOME ELECTED, SCOPE 2G onward,
+> BUNDLED, with 256 and 257 as named Stage-2 obligations.
+> (d) Task 23 → completed with the reason in the subject line.
+
+### What this closes, and what it hands forward
+
+**C-11 has its OUTCOME.** The contract line owed *"the Gate-1 shipped-config election
+outcome with its scope"* (pin 136, Finding 1 of the C1→2 table). T9 could only present the
+question with an empty decision cell; this ruling fills it. **ELECTED, scope Stage-2G
+assembly runs onward (1-8), BUNDLED** with 2G's acceptance chain.
+
+⭐ **BUNDLED IS THE OPERATIVE WORD, AND IT MEANS NO TOUCH IS SPENT NOW** (255c). The
+Phase-13 bundling rule fires on its first branch — *the next six-mission-relevant
+improvement can share the chain* — so the refresh rides 2G's acceptance chain and its
+touch. **The c2 tally is untouched by this ruling.** A successor reading "elected" as
+"a touch was spent" would be reading a cost this ruling did not incur.
+
+⭐ **IT IS A REUNIFICATION, NOT A MISSION-COUNT CHANGE** (255d). SHIPPED is *already*
+six-mission (`shipped_miost6`, `b4878a0`) and lacks structured R; the structured-R winner
+is five-mission. The election joins the two halves. Nothing here adds a mission to the
+shipped product.
+
+**Two named Stage-2 obligations travel with the election, and they are not conditions on
+it:**
+
+1. **δ_j3 := δ_j2n is PROVISIONAL** (256). j3 was the validation holdout, so the
+   five-mission contrasts never fit it; the presumptive rule supplies an *inherited*
+   value. Stage 2's per-era δ assignment (spec E7) governs, and if it fits δ_j3 the fit
+   replaces the inheritance **with the election unchanged** — δ_j3 is a parameter inside
+   the elected config, not a term of the election.
+2. ⛔ **e10 NEEDS A REPLACEMENT HOLDOUT BEFORE 2G RUNS** (257). Every Stage-1 transfer
+   reading is j3-validated and j3 is e10's holdout in the sealed census. Assimilating j3
+   from 2G onward consumes that holdout. The replacement is chosen by **fork C's recorded
+   criteria in order**, and **2G does not run on the elected config until it is chosen and
+   sealed** — a precondition carried in the C1→2 contract, not a note.
+
+⛔ **THE FIREWALL IS PART OF THE RULING, NOT A CAVEAT ON IT** (258). A sixth mission
+raises observation density; **nothing recorded says whether that helps, hurts, or leaves
+unchanged the two tiles whose λx is absent.** The election must not be cited as a remedy
+for the weak-signal finding, and **no record may imply it is** — which is why the node, the
+contract row and the banner each carry the firewall in their own words rather than pointing
+at this paragraph.
+
+**Gate 1 still does not close.** Every Gate-1 item now has a *ruled outcome* — anchor,
+seams and transfer readings as ruled at 209; kernel, revisit and OSSE as ruled WAITs (219,
+224, 250); the refresh ELECTED (255) — but **whether Gate 1 closes carrying three ruled
+WAITs is a separate owner decision and it has not been made.**
