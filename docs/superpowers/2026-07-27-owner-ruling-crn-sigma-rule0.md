@@ -4534,3 +4534,195 @@ at this paragraph.
 seams and transfer readings as ruled at 209; kernel, revisit and OSSE as ruled WAITs (219,
 224, 250); the refresh ELECTED (255) — but **whether Gate 1 closes carrying three ruled
 WAITs is a separate owner decision and it has not been made.**
+
+---
+
+## PART 60 — GATE 1 CLOSES; STAGE 1 CLOSES (verbatim), findings F1–F4 + pins 260–267, 2026-09-21
+
+**Landed verbatim under pin 40/41/48.** The findings are the ruling's own preamble and are
+landed with it. ⛔ **Closure is CONDITIONAL ON 262(a) READING TRUE** (260), and at this
+commit the four reads have NOT yet been run — landing the pins is step 1, running the reads
+is step 2, and if any read trips then Gate 1 does NOT close and nothing else in this ruling
+lands (262b).
+
+> **FINDINGS FROM THE OWNER'S WALK OF origin/main @ 986e42f:**
+> **F1. THE PER-RUN ZERO-TOUCH GUARD WATCHES THE WRONG KEY.** snapshot_locked_tally
+> (scripts/phase14_anchor_gate.py:249-266), used by every Stage-1 run
+> (scripts/phase14_stage1_run.py:3976), snapshots top-level c2_touch_tally and
+> phase14.locked_n. Its docstring claims "every locked-tally node in the store". The
+> locked-tier ceremony (src/sverdrup/validation/locked_tier.py:28) writes
+> phase14.locked_tally. Nothing writes locked_n except the guard's own test fixture
+> (tests/test_phase14_anchor_gate.py:261). Mismatched from birth: ceremony 9623b0f
+> (07-22), guard f201c09 (07-25). The guard also does not see
+> phase13.miost.c2_acceptance.c2_touch_tally, the c2 ledger 255(c) reads.
+> **F2.** The mirror labels top-level c2_touch_tally "the LOCKED-INSTRUMENT tally (see
+> locked_tier.py)". It is the Phase-7 list, still reading "touch 3 … PENDING" though the
+> trail records touch 3 spent at Phase 7's close (progress-archive/phase14-stage1-
+> trail.md:4220). It is not the ledger locked_tier.py maintains, and that ledger is not
+> mirrored at all.
+> **F3.** The owner's previous message scoped the PROGRESS repair to line 669. The staleness is
+> block-wide: the banner's own line 39 ("does not close. NEXT: T8"); the T7 config-pins
+> paragraph ("no lane command, no legs"); "TASK 23 IS BEHIND TASK 24"; carried-forward
+> item 5 (C-11 outstanding); the standing stop "Gate 1 (T9) is the owner's walk";
+> Next-action item 2 (refresh_election "stays PENDING … meant to keep printing"); item 4
+> ("GATE 1 IS NOT CLOSED"); and 669. A list of one where the frame was "every sentence
+> the closure falsifies". The miss is the owner's.
+> **F4.** The spec's Gate-1 list (§6, line 719) carries one quantitative criterion: "Zero
+> locked-instrument opens, zero c2, tally untouched". The pack attested it (§1.11, pin
+> 124a wording) by reading the legacy list of F2. That attestation is true of what it
+> read and silent on the ledger that records Phase-14 opens.
+>
+> **260. GATE 1 CLOSES. Owner's ruling, 2026-09-21, CONDITIONAL ON 262(a) READING TRUE.**
+> Accounting against the spec's items, as ruled and never restated more strongly:
+> (a) Anchor identity: the ruled accounting (97b). TWO run and passed (1, 5), TWO cited
+> and pre-ratified at Gate 0 (2, 4), ONE proxy-passed with the era no-op DEFERRED.
+> Never "five green".
+> (b) Seam verdicts: mean CLEAN on the oracle (R=0.098103) and the pair (R=0.082738);
+> σ NOT_ESTABLISHED on both; the σ question OPEN with its package (C-12); the 10×5
+> non-production-geometry sentence travels (pin 13).
+> (c) Transfer readings: FOUR (97a), witnessed. Composition INCOMPLETE: no GroundTrack
+> row (106). The three-class reading lives in the pack, not the store (197b).
+> (d) Kernel decision: WAIT, option cell EMPTY (219).
+> (e) Revisit verdict: WAIT (224). The aggregate is refused; anchors-only is priced
+> and not elected, and 225(b)'s limit travels with it.
+> (f) Refresh election: ELECTED, BUNDLED (255). No touch spent.
+> (g) OSSE run decision (1-7, carried to the gate at 209b): WAIT (250). Validity is
+> prior to price; exit 251.
+> (h) Zero locked-instrument opens / zero c2 / tally untouched: per 262.
+>
+> **261. A RULED WAIT CLOSES A GATE ITEM; AN EMPTY QUESTION DOES NOT.** This does not relax
+> 136(b).
+> (a) 136(b) refused a question PRESENTED with an empty decision cell. Each WAIT here is
+> an ANSWER ("no option is electable as the code stands", "the aggregate is
+> refused", "validity is prior to price"), with its reason recorded and its exits
+> named. The kernel's EMPTY cell is the OPTION cell; the DECISION cell reads WAIT.
+> (b) The test for any future gate: a line discharges on a ruling with a reason AND a
+> named exit. A WAIT with no named exit discharges nothing and closes nothing.
+> (c) No WAIT here can discharge inside Stage 1, because every exit is Stage-2 work.
+> Holding the gate open would not bring one closer; it would only halt Stage 2's
+> spec.
+>
+> **262. THE SPEC'S GATE-1 CRITERION IS READ AT CLOSURE. THE PER-RUN GUARD IS NOT ITS
+> EVIDENCE.**
+> (a) Discharge by direct reads. Each is failable and records the value that would
+> have tripped it:
+> (i)   the ceremony's ledger, phase14.locked_tally, keyed from
+> locked_tier._TALLY_KEYS and not retyped: ABSENT or EMPTY. Any entry trips.
+> (ii)  phase13.miost.c2_acceptance.c2_touch_tally == {"miost5": 3, "miost6": 1},
+> the value witnessed in phase14.stage1.refresh_election and written by
+> scripts/phase13_c2_touch.py. Any other value trips.
+> (iii) mirror `check` PASS without re-sync: the legacy list unchanged at digest
+> 9ea71b85…d806. A digest change trips.
+> (iv)  The residual, stated and not hidden: the ceremony increments on clean
+> completion only, so an open that crashed would leave no entry. Record by
+> grep that no Stage-1 producer references SVERDRUP_PHASE14_TOUCH or
+> SVERDRUP_INSITU_LOCKED. The grep and its hits (the owner saw none in
+> scripts/) go in the record.
+> (b) If ANY read trips, Gate 1 does NOT close. STOP after landing these pins verbatim
+> and report the read. Nothing else in this ruling lands.
+> (c) Under §7-11 the guard's Phase-14 half was UNRUN, not passed: it could not have
+> tripped on a ceremony open. The guard and the pack's §1.11 are evidence for the
+> legacy list only, and any record citing either for more says so from here on.
+> No witnessed row is amended. The rows recorded what the guard said, accurately.
+> (d) The guard is NOT fixed at closure. Changing its keys changes the byte-identity
+> token, and re-scoring a witnessed row compares against its recorded token
+> (phase14_stage1_run.py:4456-4458). A hasty fix could refuse re-scores of rows
+> already witnessed. Land ONE strict-xfail test now: a store whose
+> phase14.locked_tally moves between snapshot and assert must be refused, with the
+> key taken from locked_tier's own constant (§7-12: the key has one origin). It
+> flips when Stage 2 fixes the guard.
+> (e) The F2 label is NOT amended at closure. Which ledger is authoritative is the
+> open question, and relabelling before deciding it is guessing. Stage 2 obligation
+> (263.10).
+>
+> **263. WHAT STAGE 2 INHERITS.** Named obligations, recorded in the closure record (264), not
+> in T12's C1→2 table (closed, 197a):
+> 1. KERNEL (219; 216/217b; 108): no high-latitude option is electable as the code
+> stands. Option 1 breaches ±66 (−66.13 at the core edge); options 2/3 are inert at
+> the SO tile under the F-2 hull clamp. Exits: a smaller km scale, or a
+> latitude-aware halo. A widened hull re-opens 2/3 (inert ≠ refused on merit). The
+> anisotropy axis is UNEVIDENCED. operative_halo_deg() stays untouched until a
+> Stage-2 ruling.
+> 2. REVISIT (224-226): anchors-only (12 solves / 296.2 h / 12.3 d) is Stage 2's entry
+> point, with 225(b)'s limit verbatim in the row. The screening lever is named and
+> unpriced; if wanted, it is a measurement.
+> 3. OSSE (250/251): truth is a free-running nature run, never a reanalysis that
+> assimilates the constellations under test. Common-span design and replication are
+> OPEN. T8 v3 is withdrawn as a pricing deliverable.
+> 4. REFRESH (255-258): BUNDLED with 2G's chain and touch. δ_j3 := δ_j2n is
+> PROVISIONAL (256). e10's replacement holdout is chosen by fork C's criteria in
+> order and SEALED before 2G runs (257). The 258 firewall travels in its own words.
+> 5. σ SEAMS (C-12/C-13): OPEN. Stage 2/2G may not assume σ seams are clean.
+> 6. CRN (87/C-14): a production defect. Stage 2G cannot close while it stands.
+> 7. GROUNDTRACK (106): no per-tile row, so transfer composition is INCOMPLETE.
+> 8. ATTRIBUTION: the source-delta readout has not landed. The bridge caveat stands on
+> every cross-lineage reading (§7-8).
+> 9. POWER (132): an interruption still costs the in-flight window (~3.44 h).
+> 10. LEDGERS (262): before 2G spends the program's first locked open (§5.4), Stage 2
+> names ONE ledger for it, fixes the guard to read that ledger, mirrors and
+> witnesses the ledger, and amends the F2 label under pin 64.
+> 11. TEST ISOLATION: four seam_pair CLI tests fail only in combined runs
+> (tier1_eligible reads live /proc/meminfo). Unfixed.
+> 12. TASKS 14-21: halted under pin 88. READY ≠ RUNNABLE. The Stage-2 spec opens or
+> re-homes them; nothing else does.
+> E-SWEEP: this list is the owner's, and the owner just missed a frame (F3). Sweep the
+> ruling doc, the pack, the kernel and OSSE records, and the store for Stage 1's own
+> words: DEFERRED, OPEN, WAIT, PROVISIONAL, "Stage 2's", "before 2G". Anything found and
+> not listed goes into the record as FOUND-BY-SWEEP with its source line. Do not merge
+> it silently into 1-12, and do not act on it.
+>
+> **264. THE CLOSURE RECORD: docs/superpowers/2026-09-21-phase14-gate1-closure.md**
+> (a) It supersedes the pack under 209c. Contents: 260's accounting; 261 and 262 cited
+> verbatim; 262(a)'s four reads with values and trip conditions; C-01…C-14 AT
+> CLOSURE, each line citing the witnessed node(s) that carry it; 263 and the
+> sweep's findings.
+> (b) The derived sections (per-line node citations and the reads) come from a
+> producer script and are never hand-pasted (230e). Tests pin: 14 contract lines;
+> every cited node present in the mirror with a digest;
+> registered_but_not_yet_written empty; read (i) trips on a fixture with a
+> non-empty locked_tally (§7-11). If any line's at-closure status cannot be
+> derived from the mirror, STOP and report. It does not get prose instead.
+> (c) It is a RECORD of a decision already made, not a decision pack, so 212(b) does
+> not bind it. Its rows are verified against artifacts, the instrument §7-15 names.
+> (d) Pointers are header-only, with bodies byte-identical below (the diff shows added
+> lines only). The posted pack gains: "SUPERSEDED 2026-09-21 by <record> (pin
+> 209c); body below unedited". T12's C1→2 doc gains: "STAGE 1 CLOSED 2026-09-21.
+> The status column is AS OF 2026-08-31 except C-11; at-closure status per line:
+> <record>." This is the instrument 259 used for C-11.
+> (e) NO evidence-store node. The store holds measurements and firewalled hypotheses
+> (197b), and a closure is a ruling. refresh_election had a node because C-11
+> named one; no contract line names one here. The mirror stays at 53. Nothing
+> seals. The single authorised supersession stays UNSPENT.
+>
+> **265. PROGRESS: THE STAGE-1 BLOCK MOVES AND A NEW BLOCK DESCRIBES NOW (pin 154, F3).**
+> (a) Move CURRENT STATE (lines 3-670 as of 986e42f) verbatim to the end of
+> docs/progress-archive/phase14-stage1-trail.md, under a header naming the commit
+> and range. Same instrument as the 2026-09-18 move: moved, not rewritten, not
+> deleted.
+> (b) Write the new CURRENT STATE: the banner below, verbatim. Then CARRY VERBATIM,
+> since both are still in force: "Standing practice — ruled, not preference" and
+> "THE OWNER MAY WORK THIS REPO CONCURRENTLY". Then "Standing stops", REWRITTEN for
+> post-closure with no T9 line. Then a pointer to the record for obligations
+> (migrate, don't duplicate).
+> (c) The commit body lists every "> ## " heading of the old block and where it went:
+> moved / carried / rewritten. The owner counts 18 at 986e42f; derive the count,
+> don't take the owner's.
+> (d) Grep the new block for "does not close", "NOT CLOSED", "NEXT — T",
+> "behind task 24" and "PENDING". Record the hits in the commit body. Any hit is a
+> defect, fixed before the push.
+> (e) OBSERVED, NOT ORDERED: the "Current work" index (line ~692) still lists Phases
+> 11 and 4 as live. That is outside this ruling's scope; it is named here so nobody
+> reads it as current.
+>
+> **266.** docs/project-context.md §5.4, OSSE bullet. Replace "Cost: GLORYS12/LLC4320-class
+> truth fields are heavy downloads. Run decision priced at plan time." with: "Run
+> decision RULED at Stage 1 (pins 250/251): WAIT — validity is prior to price.
+> Admissible truth is a free-running nature run (LLC4320-class), never a reanalysis
+> that assimilates the constellations under test (GLORYS12 disqualified). Common-span
+> design and replication are Stage 2's." Nothing else in that file changes.
+>
+> **267. WHAT CLOSING DOES NOT DO.** Nothing in Stage 2 opens. The Stage-2 spec is the next
+> work and begins on the owner's word, not on this ruling. Tasks 14-21 stay halted.
+> No locked open, no c2 touch, no seal, no supersession. operative_halo_deg() stays
+> untouched. The posted pack's body and T12's table rows stay untouched. The guard is
+> not fixed.
