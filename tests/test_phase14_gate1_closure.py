@@ -163,12 +163,27 @@ def test_nothing_has_opened_since_stage1_closure() -> None:
     closure with nothing noticing — the exact silence pin 262's reads
     exist to break, extended forward in time.
     """
+    # What each read TRIPPING actually means (owner pin 273). Reporting them
+    # all as "a ledger moved" is true of (i)/(ii) only, and would send a
+    # reader looking for a touch when the finding is a mirror disagreement
+    # or a newly-added code path.
+    meaning = {
+        "(i)": "the CEREMONY's ledger moved: a locked-instrument open since closure",
+        "(ii)": "the c2 ledger moved: a c2 touch since closure",
+        "(iii)": "the store and the mirror DISAGREE on the legacy list",
+        "(iv)": (
+            "a script now NAMES the ceremony's env: a touch PATH exists, "
+            "which is not by itself a touch. Expected only as 2G's touch is "
+            "built; the owner rules on it"
+        ),
+    }
     reads = _mod.closure_reads()
     assert [r["id"] for r in reads] == ["(i)", "(ii)", "(iii)", "(iv)"]
     tripped = [r["id"] for r in reads if r["trips"]]
     assert not tripped, (
-        f"CLOSURE TRIPWIRE {tripped}: a locked-ledger or c2 change since "
-        "Stage-1 closure. The only authorised one is the 2G acceptance "
+        "CLOSURE TRIPWIRE — "
+        + "; ".join(f"{rid} {meaning[rid]}" for rid in tripped)
+        + ". The only authorised one is the 2G acceptance "
         "touch. If this is that touch, the owner retires this test by "
         "numbered pin; otherwise it is a violation — STOP."
     )

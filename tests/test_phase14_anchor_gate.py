@@ -662,10 +662,15 @@ def test_recorded_split_matches_what_a_rerun_would_build() -> None:
     # Owner pin 269(d): ONLY the did-not-raise failure is expected. Without
     # this, a guard repointed at the right key but raising a DIFFERENT
     # message would keep xfailing — the defect would look "expected" while
-    # actually being a new one. pytest.raises turns both DID NOT RAISE and a
-    # non-matching message into Failed, so the narrowing is enforced by the
-    # message assert inside the test, and any OTHER exception type escapes
-    # the marker entirely and fails loudly.
+    # actually being a new one.
+    #
+    # How the narrowing works (verified under pytest 9.0.3, owner pin 272b):
+    # `pytest.raises` raises `Failed` ONLY for DID NOT RAISE. A non-matching
+    # message raises `AssertionError` ("Regex pattern did not match."), which
+    # is NOT a `pytest.fail.Exception` and therefore ESCAPES this marker —
+    # and that escape is exactly why a guard fixed with different wording
+    # fails loudly instead of staying "expected". Any other exception type
+    # escapes for the same reason.
     raises=pytest.fail.Exception,
     reason=(
         "owner pin 262(d) / finding F1: the guard snapshots phase14.locked_n "
