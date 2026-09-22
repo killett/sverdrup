@@ -2,7 +2,9 @@
 
 > # ⬛ CURRENT STATE — 2026-09-21. STAGE 1 IS CLOSED. GATE 1 IS CLOSED.
 >
-> Owner pins 260-267, ruling PART 60. Gate 1 closed carrying three ruled WAITs, each with
+> Owner pins 260-267, ruling PART 60. ⭐ **THE STAGE-2 SPEC IS OPEN** — pins 274-276, ruling
+> PART 63, 2026-09-21; the draft is `docs/superpowers/specs/2026-09-21-phase14-stage2-temporal-design.md`.
+> Gate 1 closed carrying three ruled WAITs, each with
 > named exits: kernel (219), revisit (224), OSSE (250). Anchor, seams and the four
 > transfer readings stand as ruled at 209. The refresh is ELECTED, BUNDLED (255), with no
 > touch spent. A ruled WAIT is an answer with a reason and a named exit; an empty question
@@ -17,8 +19,10 @@
 > Read it before the Stage-2 spec is drafted. The closure record is FROZEN by digest
 > (269a). A red closure tripwire means something opened since closure — see 269(b).
 >
-> ▶ NEXT: the Stage-2 spec, on the owner's word. Tasks 14-21 stay halted under pin 88
-> until that spec opens them. READY is not RUNNABLE.
+> ▶ NEXT: brainstorm the Stage-2 draft with the owner, then the §7-17 frame review, then
+> the owner's spec gate (276). ⛔ **NOTHING RUNS** (276d): no evaluation-bearing maps until
+> the Stage-2 PLAN is approved, and tasks 14-21 stay halted under pin 88 until **that PLAN**
+> opens or re-homes them. READY is not RUNNABLE.
 >
 > ## ⚖ Standing practice — ruled, not preference
 >
@@ -57,12 +61,19 @@
 > ## ⛔ Standing stops
 >
 > - **`[STAGE 2]` tasks 14–21 are under pin 88's halt.** They show READY when blockers
->   clear; **that is not permission.** Only the Stage-2 spec opens or re-homes them (263.12).
+>   clear; **that is not permission.** Only the Stage-2 **PLAN** opens or re-homes them —
+>   **276(d) refines 263.12**, which had said the spec. The spec places them; the plan opens them.
 > - **Nothing is sealed.** The one sanctioned seal change is **UNSPENT**, and closure spent
 >   nothing: no locked open, no c2 touch, no supersession (267).
 > - **Gate 1 closing is NOT Stage 2 opening** (267). The Stage-2 spec is the next work and
 >   begins **on the owner's word**, not on the closure ruling.
 > - **`operative_halo_deg()` stays untouched** until a Stage-2 ruling (263.1).
+> - **⭐ THE CLOSURE TRIPWIRE STAYS GREEN THROUGH ALL OF STAGE 2** (275b). Gate 2 opens
+>   nothing (§3.3), so a trip during Stage 2 is a **VIOLATION, not the tripwire's expiry**.
+>   Its authorised red is 2G's acceptance touch, and only a numbered pin retires it.
+> - **Stage 2 is NOT Stage 2G** (274). Poles and the kernel exits, the three ledgers and the
+>   first locked open (263.10), the bundled refresh (255) and seam behaviour at fleet count
+>   are **RECORDED for 2G, not settled** by the Stage-2 spec.
 > - **The per-run tally guard is NOT fixed** (262d) — repointing its key would change the
 >   byte-identity token witnessed rows are re-scored against. It is pinned by a strict
 >   xfail that FAILS the day the guard is fixed, which is the signal to remove it.
