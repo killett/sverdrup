@@ -4831,3 +4831,62 @@ lands (262b).
 > rules on it.
 > Keep the retirement rule verbatim: retired by numbered pin, never made green by
 > rewriting the record. Assertion logic unchanged; message only.
+
+---
+
+## PART 63 — THE STAGE-2 SPEC OPENS (verbatim), pins 274–276, 2026-09-21
+
+**Landed verbatim under pin 40/41/48.** Transcribed as in PARTs 60–62: continuation and
+sub-item lines are dedented, because a 6-space indent inside a blockquote renders as a code
+block. No word is changed.
+
+> **274. STAGE 2 IS NOT STAGE 2G.** The boot agenda asked "the Stage-2 spec" to settle
+> everything Stage 1 inherited. The program spec gives each stage its OWN spec:
+> Stage 2 (§8) is temporal scaling at fixed domain, consuming C1→2 plus forks c and e.
+> Stage 2G (§7) is global assembly, consuming C2→2G. The Stage-2 spec SETTLES Stage 2's
+> items and RECORDS 2G's items as named C2→2G carry-forwards. It does not settle 2G's.
+> (a) STAGE 2 SETTLES: §8's scope — era-aware calibration (fork e), role-split
+> validation (fork c), per-era δ_m (E7) including the δ_j3 fit (256), the
+> seasonal-axis decision, transferred-vs-refit per era; e10's replacement holdout,
+> chosen by fork C's criteria in order and sealed before 2G (257); the σ chain
+> (pin 88; tasks 19-21) and the σ-seam question (C-12/C-13), since 2G ships
+> CALIBRATED σ produced by Stage-2 machinery (§7); the era no-op (S1), now testable
+> because era-keyed code arrives here; revisit anchors-only (225, "Stage 2's entry
+> point"); the OSSE exit (251).
+> (b) RECORDED FOR 2G, NOT SETTLED: pole handling and the kernel exits (219; §7 decides
+> poles "with the kernel decision in hand"); the ledgers, the guard fix and the
+> first locked open (263.10); the refresh bundled with 2G's chain and touch (255);
+> seam behaviour at fleet count.
+> (c) THE SPEC PLACES, WITH REASONS: tasks 14-17 (global lattice origin and its
+> followers: Stage 2 or 2G?) and with them S3/S4; whether Stage 2 fixes the CRN
+> defect or leaves it for 2G, where it blocks closure (87); whether Stage 2 uses
+> Tier 2 (if so, S2's cloud-leg precondition binds Stage 2); GroundTrack rows (106);
+> the attribution readout versus the bridge caveat; the power-window cost (132);
+> S5; S6.
+>
+> **275. TWO CORRECTIONS TO THE AGENDA.**
+> (a) The seam_pair isolation flake and A-1 produce false FAILURES and STALLS, not
+> false passes. They do not make a suite's evidence untrustworthy. Fix them early
+> as housekeeping; they are not a gate on the spec.
+> (b) The ledger question has THREE ledgers, not two: phase14.locked_tally,
+> phase13.miost.c2_acceptance.c2_touch_tally and the legacy top-level list. At 2G
+> the opens cover c1 (locked gauges) and c2 (§7). It is 2G's question. Because
+> Gate 2 opens nothing (§3.3), the closure tripwire stays GREEN through all of
+> Stage 2; a trip during Stage 2 is a VIOLATION, not the tripwire's expiry.
+>
+> **276. PROCESS.**
+> (a) Brainstorm with the owner per CLAUDE.md, persisting as it forms. The output is a
+> DRAFT at docs/superpowers/specs/<date>-phase14-stage2-temporal-design.md.
+> (b) The draft carries a coverage map: every closure-record item (263.1-12, S1-S6,
+> A-1) and pins 255-258, each marked SETTLED (§ ref), CARRIED TO C2→2G (named), or
+> PLACED (with reason). The count is derived, not recalled (146b).
+> (c) Before the owner's spec gate: a frame review per §7-17. Reviewer B is briefed
+> independently to attack the spec's frame (its unit of account, its stage
+> boundary), not the owner's list.
+> (d) Nothing runs. No evaluation-bearing maps until the Stage-2 PLAN is approved
+> (§7-1). Tasks 14-21 stay halted until that plan opens or re-homes them. The
+> guard stays unfixed and the closure record stays frozen. No seal, no
+> supersession, no locked open.
+>
+> SEQUENCE: land 274-276 as PART 63; commit, push. Then begin the brainstorm with the owner.
+> STOP at the draft plus the frame review. The spec gate is the owner's.
