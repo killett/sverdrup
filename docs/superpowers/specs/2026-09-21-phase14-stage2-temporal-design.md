@@ -29,7 +29,11 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §1 | The frame: what Stage 2 is, and what it is not | VALIDATED |
 | §2 | Identification scope — the fit set | VALIDATED (D1) |
 | §3 | The density law: pooled, with a pre-registered regime test | VALIDATED (D2) |
-| §4+ | remaining scope, placements, gate design, coverage map | NOT YET REACHED |
+| §4 | The anchor reference epoch: e10, pure and seasonally balanced | VALIDATED (D3) |
+| §5+ | the +2 reference epochs, tolerance and power, placements, gate design, coverage map | NOT YET REACHED |
+
+⚠ **Numbering note:** D3 was validated as §4, so the tolerance-and-power section §3 forward-references
+is **§5**. Earlier drafts pointed those references at §4; they are updated in place, not layered.
 
 ---
 
@@ -94,7 +98,7 @@ era-fits.
 Reference epochs: **2017 (e10) by construction, plus two**, per fork E's recorded criteria
 — constellation ≥4 net of locked exclusions, maximum joint density-support spread,
 instrument-class coverage of the record's mission families. **The +2 are not yet chosen**;
-that selection is §4's business and is constrained by the sealed epoch table
+that selection is **§4.2**'s business and is constrained by the sealed epoch table
 (`sealed/phase14_evaluation_seal_v1.json` → `content.epoch_table`, 15 epochs, mirrored).
 
 Consequences that follow from D1 and are therefore settled here:
@@ -104,10 +108,15 @@ Consequences that follow from D1 and are therefore settled here:
   chosen rotation).
 - The four regimes — western-boundary jet, equatorial, subtropical-quiet, Southern Ocean —
   all enter identification, so the regime spread in §3 is **measured, not assumed**.
-- The southern tile enters with its known poleward geometry: core `lat_min = −62.0`, and an
-  obs edge at `solve_bbox.lat_min − halo ≈ −66.13`. Its **0.13° overshoot past ±66** is
-  where fork-c pin 3's latitude-band validity mask bites, and it is the same edge the
-  kernel WAIT (263.1) lives on. Carried into §4's mask treatment; not re-opened here.
+- The southern tile enters with its framed geometry, and ⭐ **±66 is NOT breached by
+  Stage 2's southern tile as framed.** From `S tiles.southern.frame`, with halo **1.0°** on
+  all four tiles, the obs edges are **−65.0 / −43.8**; the poleward edge is **−65.0** and
+  the **margin to ±66 is 1.0°** (Gate-1 pack §1.11, as corrected by owner pin 215).
+  ⚠ **−66.13 is a different quantity**: it is kernel **OPTION 1**'s breach under a km-scale
+  halo, and option 1 **was not elected** (219). It reaches Stage 2 only if a kernel exit
+  widens the halo — **and the kernel exits are 2G's** (274b), not settled here. Fork-c
+  pin 3's latitude-band validity mask still governs sparse-era readings; it bites on the
+  **band**, not on a breach.
 
 ---
 
@@ -130,9 +139,14 @@ absorbs what changes with constellation, and the fit is **constructed to enforce
 split, not hoped into it**. ⭐ **The contrast is per matched LOCATION, not per tile** — fork
 E's own answer to the extrapolation objection records that density varies enormously
 *within* one epoch (crossover diamonds vs mid-diamond voids, latitude convergence, per-window
-mission dropouts). Each tile therefore contributes one contrast per matched location across
-its three eras, not three points. This is what gives the regime test below its power, and
-it is why a per-tile 2-dof fit is not the near-saturated fit a per-epoch reading would be.
+mission dropouts). Each tile therefore contributes **more than three points; how much more is
+DERIVED in §5**, beside the tolerance and before any numbers arrive.
+
+⛔ **The raw location count is NOT that figure.** Per-location contrasts are **not
+independent**: mapping errors correlate in space, and every location in a tile shares the
+same three era realisations. The quantity that sets the regime test's power is an
+**effective sample size under spatial correlation**, derived in §5 — never the location
+count, which would overstate it exactly as "three points per tile" understated it.
 
 **The regime test, pre-registered.** After the pooled fit, each tile's own (a_i, b_i) is
 fitted separately and compared to the pooled law. A spread beyond a **stated tolerance** is
@@ -143,7 +157,8 @@ assumption, and it satisfies discipline **§7-11**: the condition under which th
 fail is named at design time, beside the threshold, before the measurement.
 
 ⛔ **The tolerance is stated before the numbers arrive and is never loosened to manufacture
-a pass** (§7-10). Its value is set in §4 and is not left to the executor.
+a pass** (§7-10). Its value is set in **§5**, together with the effective-sample-size
+derivation that gives it meaning, and neither is left to the executor.
 
 **What C2→2G then carries:** one density law that reaches any fleet tile, **plus a measured
 regime-spread row stating where it was tested** — the four regimes named, with the tested
@@ -156,3 +171,109 @@ nothing about it — spending the roster's design and measuring none of it. Four
 laws make no pooling assumption but do not reach fleet tiles Stage 2 never fit, forcing
 C2→2G to state that the covariate does not transfer and leaving Stage 3 four laws with no
 selection rule.
+
+---
+
+## 4. The anchor reference epoch: e10, pure and seasonally balanced (D3)
+
+**DECISION D3 (owner, 2026-09-21): the anchor is e10, fitted on e10-PURE, SEASONALLY
+BALANCED windows.** Not Stage 1's calendar-2017 set, not the six e10-keyed windows of that
+set, and not a declared straddling set.
+
+### 4.1 Purity — a reference fit is held to a stricter rule than D6
+
+A reference-epoch fit is **fork E's ground truth**, so it is held to a stricter rule than
+production keying: ⭐ **every window's full EXTENT lies inside the epoch, not merely its
+centre.**
+
+**D6 is not amended and is not extended.** Fork D6's accepted approximation — *"a
+straddling window's map is mixed-constellation while its calibration key is
+window-center-epoch — immaterial at one-mission deltas over 60-day windows"* — remains
+exactly what it was: **a keying rule for PRODUCTION windows.** It does not reach reference
+fits, where the straddle would put mixed-constellation observations into the very quantity
+the covariate is identified against.
+
+### 4.2 Seasonal balance — and the rule that binds the +2 epochs
+
+The fit spans **whole years of pure windows inside the epoch**, so that **season cannot
+alias into the era contrast**. e10 (2017-05-18 → 2018-11-27) holds one.
+
+⭐ **The same rule binds the +2 reference epochs: an epoch that cannot hold a whole year of
+pure windows cannot be a reference epoch.** This joins fork E's recorded criteria
+(constellation ≥4 net of locked; maximum joint density-support spread; instrument-class
+coverage of the record's mission families) as a **hard admissibility test**, applied before
+the others rank anything.
+
+**Derived from the sealed table** (`content.epoch_table`, 15 epochs), against the
+production window geometry — `WindowPlan()` = 9 windows × 60 d at stride 45, full extent
+**400 d** (Stage-1 placement −18 → 382; the minimum to cover 365 consecutive days at that
+stride is 375 d):
+
+| epoch | span (d) | net of locked | holds a pure year? |
+|---|---|---|---|
+| e00 | 944 | 3 | yes |
+| e01 | 1698 | 3 | yes |
+| e02 | 859 | 4 | yes |
+| e03 | 1238 | 4 | yes |
+| e04 | 1225 | 4 | yes |
+| e05 | 623 | 3 | yes |
+| e06 | 531 | 3 | yes |
+| e07 | 733 | 3 | yes |
+| e08 | 704 | 4 | yes |
+| **e09** | **428** | 6 | yes — **28 d slack** |
+| **e10** | 558 | 5 | yes — the anchor |
+| e11 | 613 | 6 | yes |
+| e12 | 632 | 6 | yes |
+| **e13** | **452** | 7 | yes — **52 d slack** |
+| e14 | 911 | 8 | yes |
+
+⚠ **On this census the test eliminates nobody** — every epoch clears 400 d. That is a
+**derived finding, not a formality**: the rule earns its place because **e09 (28 d slack)
+and e13 (52 d slack) admit essentially one placement** of the production window set, so
+their window grids are effectively forced; and because the test **binds immediately** if
+the plan's window geometry grows. It is recorded as a criterion precisely so that a later
+change of window plan cannot silently admit an epoch that can no longer hold a pure year.
+
+### 4.3 Reuse is the PLAN's business, not the spec's
+
+**The spec states the rule; it does not state a reuse list.** A Stage-1 window may be
+reused **only if** (i) its full extent lies inside e10, **and** (ii) it sits on the e10
+plan's own window grid. Which windows satisfy both is a plan-time determination against the
+e10 grid, and this document deliberately does not enumerate it.
+
+### 4.4 What Stage 1's 2017 run actually was — recorded, so no successor mis-reads it
+
+Stage 1 applied **e10's role split — j3 held out, s3a assimilated — to all of calendar
+2017**, with the constellation frozen across the year
+(`PROBE_MISSIONS = ("alg","h2ag","j2g","j2n","s3a")`).
+
+⛔ **The three e09-keyed windows are therefore NOT e09-valid fits.** They assimilated
+**s3a**, which the sealed census makes **e09's holdout**. A window that assimilates an
+epoch's holdout cannot be a fit for that epoch under fork C's role split.
+
+**This is not a Stage-1 defect.** Fork C's execution belongs to Stage 2; Stage 1 ran a
+frozen single-era configuration exactly as specified, and era was degenerate there by
+design (S1). What the record above bounds is **any future claim that treats those windows
+as e09** — that claim is refused here, in advance, with its reason.
+
+### 4.5 The C2→2G line this creates
+
+⭐ **§7's "2017" reference epoch means e10 under this rule.** But **2G's calendar-2017
+product spans e09 and e10**, so the anchor label alone cannot carry calibration across that
+boundary.
+
+**C2→2G line (named, not settled here):** *the COVARIATE, not the anchor label, carries s
+across the e09/e10 boundary in 2G's calendar-2017 product.* Recorded as a carry-forward
+under 274(b); 2G's spec settles how it is applied.
+
+### 4.6 Correction recorded — the reasoning that produced the rejected options
+
+The question that led to D3 asserted that the e09/e10 boundary brought **"no constellation
+change, only sampling"**. ⛔ **That is wrong for this covariate.** The boundary is **Jason-2
+leaving its interleaved orbit (`j2n`) for the geodetic one (`j2g`)** — a **sampling-geometry
+change, which is precisely what `n_eff` measures.**
+
+The three e09-keyed windows are not a free era contrast, but **not for the reason given**:
+they fail on the **season confound** (§4.2) and on the **role-split violation** (§4.4). The
+corrected reason is recorded because the wrong one would have made a future reader think
+the covariate is blind to an orbit change, which would be the opposite of its design.
