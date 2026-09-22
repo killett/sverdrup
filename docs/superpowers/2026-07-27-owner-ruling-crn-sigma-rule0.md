@@ -4726,3 +4726,75 @@ lands (262b).
 > No locked open, no c2 touch, no seal, no supersession. operative_halo_deg() stays
 > untouched. The posted pack's body and T12's table rows stay untouched. The guard is
 > not fixed.
+
+---
+
+## PART 61 — THE CLOSURE RECORD IS DATED; FREEZE IT (verbatim), pins 268–271, 2026-09-21
+
+**Landed verbatim under pin 40/41/48.**
+
+> **268. THE WALK OF adcfdfd.** Verified on origin: the four reads as reported; the moved block
+> (986e42f lines 3-670, 50,033 bytes) found byte-identical exactly once in the archive;
+> pack +12 / T12 +4, zero deletions; the banner verbatim; 265(d) zero hits; mirror 53;
+> collected 1737 → 1747 (+10), reconciling exactly. The strict xfail is keyed from
+> _TALLY_KEYS and its match string is the guard's actual message.
+> RATIFIED: the two @external deselections with their measured reason, stated in-body
+> (197c); the ANN401 per-file ignore, scoped to one file with its rationale; the S603
+> noqa with its inline reason; the 31e7569/adcfdfd ordering fix; the sweep (S1-S6) and
+> the rho/headroom exclusion with its stated reason.
+>
+> **269. THREE CLOSURE TESTS READ NOW, NOT AT CLOSURE. The miss is the owner's.**
+> Finding: test_all_four_reads_pass_at_closure_…,
+> test_the_record_on_disk_is_what_the_producer_builds and
+> test_no_node_is_registered_but_still_unwritten re-derive against the LIVE store and
+> mirror on every run. `--write` splices live values into the record and never refuses.
+> The record's values are AT CLOSURE. The first legitimate Stage-2 act turns these red:
+> registering a node before writing it (the mirror's own protocol), 263.10's ledger
+> work, or 2G's acceptance touch. Their messages would then say the closure is broken,
+> and the only green path is `--write`, which rewrites a closed record to current
+> values: a 197(a) retroactive edit, made mechanical. Pin 264(b) wrote "tests pin: …
+> registered_but_not_yet_written empty" without saying AT CLOSURE, and the executor
+> built what was written.
+> (a) FREEZE. Pin each DERIVED block's sha256 as it stands at 31e7569 in a test; the
+> blocks on disk must match byte for byte. This replaces the splice test and
+> catches hand-edits AND regeneration. `--write` refuses on this record. The
+> producer stays as the documented derivation. If the blocks at HEAD already differ
+> from 31e7569, STOP.
+> (b) THE LIVE READS BECOME WHAT THEY ARE: A TRIPWIRE FOR 267. Rename the live-reads
+> test to assert that nothing has opened since closure. Failure message: "a
+> locked-ledger or c2 change since Stage-1 closure. The only authorised one is the
+> 2G acceptance touch. If this is that touch, the owner retires this test by
+> numbered pin; otherwise it is a violation — STOP." The docstring names the
+> expiry.
+> (c) RETIRE the live registered-but-unwritten assertion. Its at-closure fact goes in
+> the addendum (269e) with the commit it was read at (git show 31e7569:<mirror>).
+> (d) HARDEN THE TRIPWIRE, not the record:
+> (iv) any rg exit other than 0/1 raises ClosureReadError; today an errored grep
+> renders "NO HITS" (§7-11). Root the grep at the repo, not the cwd, and keep
+> the displayed method string repo-relative.
+> (iii) as built reads only the MIRROR's recorded digest, a tracked file that
+> changes only on re-sync, so it cannot see the store. Its failable half was
+> the hand-run `check`. The tripwire runs the mirror check in-process and
+> fails on anything but PASS.
+> Tests: (iii) trips on a store whose legacy list differs from the mirror; (iv)
+> trips on a fixture root containing the env name and raises on a missing root.
+> Restrict the 262(d) xfail to the did-not-raise failure (e.g.
+> raises=pytest.fail.Exception), so a guard fixed with a different message fails
+> loudly instead of staying "expected". Confirm both ways by running it.
+> (e) ADDENDUM, NOT REGENERATION. Append a dated "ADDENDUM — pins 268-271" to the
+> closure record. It states: (iii)'s derived value is the mirrored digest, and its
+> failable half was the hand-run `check` (quote the output kept; if none was kept,
+> re-run at HEAD and quote it with its date); the record is frozen by digest; the
+> tripwire and its expiry; registered_but_not_yet_written EMPTY at 31e7569, with the
+> command; and ONE new Stage-2 item, A-1: a trickling download stalls the gate
+> suite, because network_guard cannot see a trickle (measured 16 KB/s, ~17 h).
+> That is Stage 2's test-infra work. Appending leaves the derived blocks unchanged,
+> so (a)'s digests hold.
+>
+> **270. BANNER.** Rewrite the CURRENT STATE paragraph on the record rather than layering onto
+> it (pin 154). Add in place: "The closure record is FROZEN by digest (269a). A red
+> closure tripwire means something opened since closure — see 269(b)."
+>
+> **271. WHAT THIS DOES NOT DO.** The record's derived blocks are not regenerated. The guard is
+> not fixed (262d stands). Nothing in Stage 2 opens; tasks 14-21 stay halted. No store
+> node, mirror stays at 53, nothing seals, no supersession.
