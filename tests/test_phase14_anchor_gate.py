@@ -632,3 +632,68 @@ def test_recorded_split_matches_what_a_rerun_would_build() -> None:
         _mod.root_conditionality(block["root_int"])
         == recorded["tiling_identity"]["root_conditionality"]
     )
+
+
+# ---------------------------------------------------------------------------
+# Owner pin 262(d): the guard watches the WRONG KEY, pinned as a strict xfail
+# ---------------------------------------------------------------------------
+#
+# Finding F1 (owner's walk of 986e42f): `snapshot_locked_tally` snapshots
+# `phase14.locked_n`, and NOTHING writes that key except the fixture above.
+# The locked-tier ceremony writes `phase14.locked_tally` — mismatched from
+# birth (ceremony 9623b0f 07-22, guard f201c09 07-25). So a real ceremony
+# open during a gate run would NOT trip the zero-touch guard.
+#
+# ⛔ THE GUARD IS DELIBERATELY NOT FIXED HERE (pin 262d). Changing its keys
+# changes the byte-identity token, and re-scoring a witnessed row compares
+# against the token that row recorded (`phase14_stage1_run.py:4456-4458`), so
+# a hasty fix could REFUSE re-scores of rows already witnessed. The defect is
+# recorded as a failing expectation instead, and the fix is Stage 2's
+# (obligation 263.10).
+#
+# `strict=True` is the whole point: when Stage 2 repoints the guard at the
+# ceremony's ledger this test XPASSes, strict turns that into a FAILURE, and
+# the failure is what forces the xfail marker to be removed rather than left
+# to rot as a permanent "expected" defect.
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "owner pin 262(d) / finding F1: the guard snapshots phase14.locked_n "
+        "while the ceremony writes phase14.locked_tally, so a ceremony open "
+        "does not trip it. NOT fixed at closure — the fix would change the "
+        "byte-identity token witnessed rows re-score against. Stage-2 "
+        "obligation 263.10; remove this marker when the guard is repointed."
+    ),
+)
+def test_tally_guard_detects_ceremony_ledger_mutation(tmp_path: Path) -> None:
+    """A move in the CEREMONY's own ledger must be refused.
+
+    Bug caught: the zero-touch guarantee reading as covering Phase-14
+    locked opens when it does not. A ceremony touch increments
+    ``phase14.locked_tally``; this asserts the guard refuses when that
+    node moves between snapshot and assert — which it currently does not.
+
+    The key is taken from ``locked_tier._TALLY_KEYS``, never retyped
+    (§7-12: the key has one origin). If the ceremony ever renames its
+    ledger, this test follows it instead of silently testing a dead path.
+    """
+    from sverdrup.validation.locked_tier import _TALLY_KEYS
+
+    store = tmp_path / "ev.json"
+    store.write_text(
+        json.dumps({"c2_touch_tally": {"miost5": 3, "miost6": 1}, "phase14": {}})
+    )
+    before = _mod.snapshot_locked_tally(store)
+
+    # One ceremony open lands, addressed by the ceremony's own key path.
+    doc = json.loads(store.read_text())
+    node: Any = doc
+    for key in _TALLY_KEYS[:-1]:
+        node = node.setdefault(key, {})
+    node[_TALLY_KEYS[-1]] = {"prod": {"2017": 1}}
+    store.write_text(json.dumps(doc))
+
+    with pytest.raises(RuntimeError, match="ZERO-TOUCH VIOLATION"):
+        _mod.assert_tally_unchanged(before, store)

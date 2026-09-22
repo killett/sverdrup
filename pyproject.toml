@@ -80,6 +80,10 @@ ignore = [
 # the generic wrapper cannot be statically typed without a Protocol import that
 # would create a circular dependency at runtime.
 "src/sverdrup/distributions/calibration.py" = ["ANN401"]
+# The closure producer walks PARSED JSON (the evidence mirror) by dotted path:
+# a mirrored node value has no static shape, so Any is the honest type at that
+# boundary — the same reason recorded for their_eval and vendor above.
+"scripts/phase14_gate1_closure.py" = ["ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

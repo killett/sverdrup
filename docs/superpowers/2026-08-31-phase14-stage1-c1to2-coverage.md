@@ -1,5 +1,9 @@
 # Stage-1 C1→2 contract coverage table (T12 — precondition on T9)
 
+> ⬛ **STAGE 1 CLOSED 2026-09-21.** The status column is **AS OF 2026-08-31 except C-11**;
+> at-closure status per line: `docs/superpowers/2026-09-21-phase14-gate1-closure.md` §4.
+> This table is CLOSED (197a) and its rows stay as they are — the two must not be merged.
+
 > # ✅ C-11 IS DISCHARGED — 2026-09-21, owner pins 255-259 (ruling PART 59)
 >
 > **THE STOP CONDITION BELOW IS RETIRED.** It was raised because the election OUTCOME had

@@ -1,5 +1,17 @@
 # Phase 14 — GATE 1 pack (Stage 1: spatial transfer, 2017) — HELD for the owner's walk
 
+> ⛔ **SUPERSEDED 2026-09-21 by `docs/superpowers/2026-09-21-phase14-gate1-closure.md`
+> (pin 209c); body below unedited.**
+>
+> Owner pins 260-267 (ruling PART 60) closed Gate 1 and Stage 1. **This pack presented the
+> stage; the record records the decision.** Everything below this header is the pack AS
+> POSTED on 2026-09-18 and is deliberately NOT retro-edited — including its own statement
+> that C-11 is OUTSTANDING, which was true when it was written and was discharged at pin
+> 255. ⚠ **Its §1.11 zero-touch attestation is evidence for the LEGACY LIST ONLY** (262c,
+> finding F1): the per-run guard watches `phase14.locked_n` while the ceremony writes
+> `phase14.locked_tally`, so the guard's Phase-14 half was UNRUN, not passed. The criterion
+> was READ AT CLOSURE instead — see §3 of the record.
+
 **Posted 2026-09-18 by T9 and STOPPED (owner pin 208).** Gate 1 is the owner's. **This pack
 presents Stage 1; it does not close it** — the C1→2 line **C-11 is OUTSTANDING** and its
 producer is **task 23**, behind this gate (208d, pin 136c). Nothing is sealed; the single
