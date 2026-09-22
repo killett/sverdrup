@@ -31,7 +31,7 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §3 | The density law: pooled, with a pre-registered regime test | VALIDATED (D2) |
 | §4 | The anchor reference epoch: e10, pure and seasonally balanced | VALIDATED (D3) |
 | §5 | The +2 reference epochs: a pre-registered rule on measured n_eff | VALIDATED (D4) |
-| §6 | Tolerance and power: the regime-test threshold and its effective sample size | NOT YET REACHED |
+| §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
 | §7+ | placements (tasks 14-17, CRN, Tier 2, GroundTrack, attribution, power, S5, S6), gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
@@ -392,3 +392,95 @@ classless.
 **The fix, and it is PLAN work, not now:** key the class map by the **sealed IDs**. ⛔ **The
 seal is not touched**, and the fix **must reproduce the sealed table byte for byte before it
 lands** — the re-derivation above is the test it has to pass.
+
+---
+
+## 6. Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test (D5)
+
+**DECISION D5 (owner, 2026-09-21): se(b_i) comes from TWO-WAY BLOCK RESAMPLING,
+CONDITIONAL ON THE ERAS; LORO is the PRE-REGISTERED FALSIFIER; and the regime test has
+THREE outcomes, not two.**
+
+### 6.1 The analytic route is rejected
+
+⛔ **E-6's 3.1–3.9× does not travel here.** It was measured **for a different estimator on
+a different quantity** — the realized **half-split spread** — and carrying the factor into
+cross-era regression residuals would **move a number from where it held to where it does
+not** (§7-18, the (u2) shape exactly).
+
+⭐ **E-6's lesson is the METHOD, not its factor: a realized spread beats an analytic
+`N_eff`.** That is what is inherited; the number is not.
+
+### 6.2 b_i's uncertainty has THREE sources, and they are named
+
+| source | scope | resampleable? |
+|---|---|---|
+| **SPATIAL** | within a tile | **yes** — by space blocks |
+| **TEMPORAL** | within an era | **yes** — by **contiguous window blocks** |
+| **ERA-LEVEL** | shared by **every location in the tile** | ⛔ **NO** — only three per tile, not resampleable within a tile |
+
+⛔ **Spatial-only resampling measures the first source and SILENTLY DROPS the other two.**
+That is why it is not the method, and the omission is recorded here so the rejected option
+cannot return as an apparently-adequate shortcut.
+
+⚠ **Windows overlap 15 days** (width **60 d**, stride **45 d** — derived from
+`WindowPlan()`), so ⛔ **single windows are NEVER the resampling unit**: adjacent windows
+share a quarter of their span. The unit is a **contiguous block of windows**.
+
+### 6.3 Method — two-way block resampling, with block sizes pre-registered
+
+**Space blocks × window blocks** gives **se(b_i | eras sampled)**, and ⭐ **the spec says
+"conditional on the eras" every time it quotes that figure** — the conditioning is part of
+the number, not a caveat attached to it.
+
+Block sizes are **pre-registered**, not tuned:
+
+- **Space blocks come from each tile's MEASURED residual correlation length.**
+  ⛔ **NOT from λx.** Two reasons, both binding: λx is **RECORDED ABSENT at `equatorial`
+  and `quiet_gyre`** (`recorded_absent: true`, pins 160a/161 — the map resolves no scale;
+  not a scoring failure and not a value of zero), so it does not exist for half the fit
+  set; and λx is a **RESOLVED scale, not an error correlation length** — the wrong quantity
+  even where it is present (kuroshio 232.5339 km, southern 141.9472 km).
+- **Sweep block size upward and take the LARGEST se on the plateau** (§7-16 — priced at the
+  extreme that governs it, never the midpoint). ⛔ **The rule is stated before any numbers
+  arrive** (§7-10), so the sweep cannot be stopped where the answer is convenient.
+
+### 6.4 LORO is the FALSIFIER, not a free cross-check
+
+⭐ **The leave-one-reference-out rotation set is the ONLY instrument that touches the
+era-level component.** It is therefore not a bonus corroboration; it is the test of whether
+§6.3's figure is honest.
+
+**Pre-registered:** if LORO's held-out prediction errors **exceed what se(b_i | eras)
+implies by a stated factor**, then **the era component dominates**, and the regime test is
+reported as **CONDITIONAL ON THE ERAS SAMPLED, with its se UNDERSTATED**.
+
+⛔ **Three rotations per tile can FALSIFY a too-narrow se; they cannot ESTIMATE the era
+variance.** The spec says so in those words, so no successor reads three rotations as an
+era-variance estimate.
+
+### 6.5 The tolerance is the CONSEQUENCE threshold — and the test has three outcomes
+
+⭐ **The tolerance is the `s` error a Δb causes at the WORST transferred epoch's hull
+distance** (§7-16). ⛔ **The noise floor does NOT become the tolerance.** The noise floor
+decides something different: **whether the test can speak at all.**
+
+Three **pre-registered** outcomes:
+
+| outcome | condition | what it means |
+|---|---|---|
+| **CONSISTENT** | spread within tolerance **AND** noise floor below the threshold | the pooled law stands, tested at the scale that matters |
+| **DIVERGENT** | spread beyond tolerance | a **recorded finding that TABLES an owner decision** (D2's rule, never a silent pool) |
+| **UNDERPOWERED** | noise floor **above** the threshold | ⛔ **regime-invariance is UNTESTED at the scale that matters** |
+
+⛔ **UNDERPOWERED IS NEVER READ AS A PASS** (§7-10, §7-11). A test that could not have
+detected a consequential spread has not found its absence — it is discipline 11's family
+arriving in the regime test, and it is recorded under its own name precisely so the
+green-looking reading cannot be quoted as consistency.
+
+### 6.6 Reuse
+
+Existing resampling machinery is reused **where it fits**. ⚠ **The resampling unit and the
+estimator here are NEW**, so reuse is partial by construction, and **which pieces are reused
+is PLAN business** — this document does not name them, and a claim that it "reuses the
+existing bootstrap" would overstate what has been checked.
