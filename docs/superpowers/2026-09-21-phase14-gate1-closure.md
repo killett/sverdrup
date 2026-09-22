@@ -206,3 +206,91 @@ them again would be duplication, not a finding.
 - **The posted pack's body and T12's table rows stay untouched** — both gain a header
   pointer only, with the body byte-identical below (264d).
 - **Gate 1 closing is not Stage 2 opening** (267).
+
+---
+
+## ADDENDUM — pins 268-271, 2026-09-21
+
+⛔ **THIS IS AN APPEND, NOT A REGENERATION** (pin 269e). The derived blocks in §3.1 and §4
+are **unchanged**, and they are now **frozen by digest** — see below. Everything here is
+recorded *after* closure and states the commit or date it was read at.
+
+**Why this addendum exists.** Three of the tests written at closure re-derived against the
+**live** store and mirror on every run, while the record they guard states values **AT
+CLOSURE** (269). The first legitimate Stage-2 act — a node registered before it is written,
+263.10's ledger work, 2G's acceptance touch — would have turned them red saying the closure
+was broken, and the only green path would have been `--write`, regenerating a closed record
+to current values: **pin 197(a)'s retroactive edit, made mechanical**. The fix separates
+what was conflated: the **record is frozen**, and the **live reads become a tripwire**.
+
+### A. The record is FROZEN by digest (269a)
+
+| DERIVED block | sha256, frozen at `31e7569` |
+|---|---|
+| `reads` | `6a35ee3ec80104e409cb1e33ecf6853a21c392bee88c58e45ae44e67559a2c04` |
+| `contract` | `f023e0969b0f1bc13da49fd385eac8fb5b520236a166db1adc990d33a6984ea2` |
+
+`tests/test_phase14_gate1_closure.py::test_the_record_is_frozen_by_digest` pins both, byte
+for byte. It catches **hand-edits AND regeneration**, which are the same defect here.
+⛔ **`phase14_gate1_closure.py --write` now REFUSES on this record**, so the freeze cannot be
+satisfied by changing the record instead of the world; `--check` verifies the digests. The
+producer remains the **documented derivation**, not a live regenerator.
+
+### B. Read (iii): what it derived, and what its failable half actually was
+
+The value §3.1 records for read (iii) is **the MIRROR's recorded digest** of the legacy
+list. As first built, that is *all* it consulted — a tracked file that changes only on
+re-sync — so **it could not see the store**. Its real failable half was the **hand-run
+`check`**, which no test invoked. No such output was persisted at closure, so it was re-run
+at HEAD on **2026-09-21** and is quoted here in full:
+
+```
+mirror self-check: PASS (53 nodes, digests match)
+store vs mirror: PASS (no witnessed node has changed)
+seal vs mirror: PASS
+amendment index: PASS (24 forward pointers over 14 nodes)
+```
+
+Read (iii) now digests the **store's** legacy node with the mirror's own hashing and
+requires store, mirror and the pinned digest to agree (269d), and the tripwire runs the
+mirror check **in-process**, failing on anything but PASS.
+
+### C. The tripwire, and its expiry (269b)
+
+`test_nothing_has_opened_since_stage1_closure` is **not** a re-derivation of the closure. It
+asserts that the locked ledger and the c2 ledger still read what they read at closure, so
+**the first thing that opens after closure turns it red** — which is what makes pin 267
+checkable rather than merely stated. Its failure message:
+
+> CLOSURE TRIPWIRE […]: a locked-ledger or c2 change since Stage-1 closure. The only
+> authorised one is the 2G acceptance touch. If this is that touch, the owner retires this
+> test by numbered pin; otherwise it is a violation — STOP.
+
+⭐ **THE AUTHORISED WAY FOR IT TO GO RED IS 2G's ACCEPTANCE TOUCH, and it is then RETIRED BY
+NUMBERED PIN** — never updated, never relaxed, and never made green by rewriting the record.
+
+### D. registered_but_not_yet_written, AT CLOSURE (269c)
+
+The live assertion is **retired**; the at-closure fact is recorded here instead, read at the
+closure commit:
+
+```
+$ git show 31e7569:docs/validation/evidence-mirror/phase14-stage1-provenance.json \
+    | python3 -c "import json,sys; print(json.load(sys.stdin)['registered_but_not_yet_written']['paths'])"
+[]
+```
+
+**EMPTY at `31e7569`** — no node was registered-but-unwritten when Gate 1 closed. A future
+registration is Stage-2 business and must not turn a closure test red.
+
+### E. One new Stage-2 item
+
+| # | item | what it binds |
+|---|---|---|
+| **A-1** | **A TRICKLING DOWNLOAD STALLS THE GATE SUITE.** `tests/validation/_net.py`'s `network_guard` converts a transport *failure* into a skip, but it **cannot see a trickle**: on 2026-09-21 the MEOM mirror served at **~16 KB/s** (measured: 409 KB in 25 s) against ~1 GB, so no timeout fired and the suite sat at 97% on a path needing **~17 h**. Both ~1 GB `@external` downloads were deselected for that run, with the reason stated in-body (197c) | **Stage 2's test-infra work.** It is not a Stage-1 finding and nothing in Stage 1 depends on it |
+
+### F. What this addendum does not do (271)
+
+The derived blocks are **not regenerated**. The guard is **not fixed** (262d stands). Nothing
+in Stage 2 opens; tasks 14–21 stay halted. **No store node, the mirror stays at 53, nothing
+seals, no supersession.**

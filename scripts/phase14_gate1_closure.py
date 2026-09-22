@@ -23,14 +23,22 @@ The ruled at-closure STATUS of each line is the owner's own accounting from
 pin 260 and is quoted, not computed. What is computed is the evidence: which
 witnessed node carries the line, and what that node actually says today.
 
+⛔ **THE RECORD IS FROZEN** (owner pin 269a). Its values are AT CLOSURE, so
+``--write`` REFUSES: re-splicing today's values into a closed record is pin
+197(a)'s retroactive edit with a command attached. This module stays the
+DOCUMENTED DERIVATION — run it to see how each figure was obtained — while
+the record itself is pinned by sha256 at ``FROZEN_AT``. A Stage-2 fact is
+recorded by APPENDING an addendum, which leaves the derived blocks untouched.
+
 Commands:
-    (default)   print the derived sections as markdown
-    --write     splice them into the record between its DERIVED markers
-    --check     verify the record's derived blocks match this producer
+    (default)   print the derived sections as markdown (the derivation)
+    --write     REFUSED — the record is frozen by digest (269a)
+    --check     verify the record's blocks against the frozen digests
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -41,6 +49,8 @@ from typing import Annotated, Any
 import typer
 
 app = typer.Typer(add_completion=False)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 STORE = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 MIRROR = Path("docs/validation/evidence-mirror/phase14-stage1-provenance.json")
@@ -60,6 +70,25 @@ C2_TALLY_EXPECTED = {"miost5": 3, "miost6": 1}
 ENV_GREP_ROOTS = ("scripts/",)
 
 MARKERS = ("reads", "contract")
+
+# ---------------------------------------------------------------------------
+# THE FREEZE (owner pin 269a).
+#
+# The record's values are AT CLOSURE. Comparing them against freshly derived
+# output asserts them against NOW, so the first legitimate Stage-2 act — a
+# node registered before it is written, 263.10's ledger work, 2G's acceptance
+# touch — turns that comparison red, and the only green path is regenerating
+# a closed record. That is pin 197(a)'s retroactive edit with a command
+# attached. So the blocks are pinned by digest as they stand at the closure
+# commit, `--write` refuses, and the producer remains the DOCUMENTED
+# DERIVATION rather than a live regenerator.
+# ---------------------------------------------------------------------------
+
+FROZEN_AT = "31e7569"
+FROZEN_BLOCK_SHA256 = {
+    "reads": "6a35ee3ec80104e409cb1e33ecf6853a21c392bee88c58e45ae44e67559a2c04",
+    "contract": "f023e0969b0f1bc13da49fd385eac8fb5b520236a166db1adc990d33a6984ea2",
+}
 
 
 class ClosureReadError(RuntimeError):
@@ -382,18 +411,32 @@ def read_c2_tally(store_path: Path = STORE) -> dict[str, Any]:
     }
 
 
-def read_legacy_digest(mirror_path: Path = MIRROR) -> dict[str, Any]:
-    """Read (iii): the legacy list's mirrored digest must be unchanged.
+def read_legacy_digest(
+    mirror_path: Path = MIRROR, store_path: Path = STORE
+) -> dict[str, Any]:
+    """Read (iii): the legacy list must be unchanged, in the STORE too.
+
+    ⚠ As first built this read consulted only the mirror's own recorded
+    digest — a tracked file that changes on re-sync and never on its own —
+    so it could not see the store at all (owner pin 269d). It now digests
+    the STORE's legacy node with the mirror's own hashing and requires all
+    three to agree: store, mirror, and the digest pin 262(a)(iii) names.
 
     Args:
         mirror_path: Path to the provenance mirror.
+        store_path: Path to the evidence store.
 
     Returns:
         The read, as for :func:`read_locked_tally`.
     """
+    from sverdrup.validation.evidence_mirror import digest_node  # noqa: PLC0415
+
     digest = load_mirror(mirror_path)["nodes"][LEGACY_TALLY_NODE]["digest_sha256"]
-    unchanged = digest.startswith(LEGACY_TALLY_DIGEST_PREFIX) and digest.endswith(
-        LEGACY_TALLY_DIGEST_SUFFIX
+    store_digest = digest_node(json.loads(store_path.read_text())[LEGACY_TALLY_NODE])
+    unchanged = (
+        digest.startswith(LEGACY_TALLY_DIGEST_PREFIX)
+        and digest.endswith(LEGACY_TALLY_DIGEST_SUFFIX)
+        and store_digest == digest
     )
     return {
         "id": "(iii)",
@@ -411,15 +454,24 @@ def read_legacy_digest(mirror_path: Path = MIRROR) -> dict[str, Any]:
     }
 
 
-def read_env_grep() -> dict[str, Any]:
+def read_env_grep(roots: tuple[str, ...] = ENV_GREP_ROOTS) -> dict[str, Any]:
     """Read (iv): no Stage-1 producer references the ceremony's env gates.
 
     The residual 262(a)(iv) names: the ceremony increments on clean
     completion only, so an open that crashed would leave no entry. The
     grep is what covers that gap.
 
+    Args:
+        roots: Paths to search, relative to the repo root unless absolute.
+
     Returns:
         The read, with the grep's hits (or their absence) recorded.
+
+    Raises:
+        ClosureReadError: rg is unavailable, or exited with anything but 0
+            (hits) or 1 (no hits). An ERRORED grep rendered "NO HITS" as
+            first built (owner pin 269d) — a mistyped or moved root would
+            have shown the reassuring answer forever.
     """
     from sverdrup.adapters.insitu.gauges import LOCKED_ENV  # noqa: PLC0415
     from sverdrup.validation.locked_tier import TOUCH_ENV  # noqa: PLC0415
@@ -431,19 +483,31 @@ def read_env_grep() -> dict[str, Any]:
             "read (iv) needs rg and it is not on PATH — the read is NOT taken, "
             "and an untaken read is not a passed one"
         )
+    # Rooted at the REPO, not the cwd: a read taken from the wrong working
+    # directory is the same silent "NO HITS" the pin forbids.
+    targets = [
+        root if Path(root).is_absolute() else str(REPO_ROOT / root) for root in roots
+    ]
     # The command is fully resolved and its arguments come from the modules
     # that DEFINE the env names, never from input.
     proc = subprocess.run(  # noqa: S603
-        [ripgrep, "-n", pattern, *ENV_GREP_ROOTS],
+        [ripgrep, "-n", pattern, *targets],
         capture_output=True,
         text=True,
         check=False,
     )
+    if proc.returncode not in (0, 1):
+        raise ClosureReadError(
+            f"rg exited {proc.returncode} on {targets}: {proc.stderr.strip()}. "
+            "An ERRORED grep is not a clean grep — the read is NOT taken, and "
+            "an untaken read is not a passed one (owner pin 269d)"
+        )
     hits = [line for line in proc.stdout.splitlines() if line.strip()]
     return {
         "id": "(iv)",
         "name": "the residual — no producer can open a ceremony",
-        "method": f"`rg -n '{pattern}' {' '.join(ENV_GREP_ROOTS)}`",
+        # Displayed repo-relative: what a reader would type, not this box's paths.
+        "method": f"`rg -n '{pattern}' {' '.join(roots)}`",
         "value": "NO HITS" if not hits else "; ".join(hits),
         "trip_condition": "any hit in a Stage-1 producer trips",
         "trips": bool(hits),
@@ -465,7 +529,7 @@ def closure_reads(
     return [
         read_locked_tally(store_path),
         read_c2_tally(store_path),
-        read_legacy_digest(mirror_path),
+        read_legacy_digest(mirror_path, store_path),
         read_env_grep(),
     ]
 
@@ -553,6 +617,55 @@ def derived_blocks(
     }
 
 
+def block_digests(text: str) -> dict[str, str]:
+    """sha256 of each DERIVED block exactly as the record carries it.
+
+    Args:
+        text: The record's text.
+
+    Returns:
+        ``{marker: sha256}`` over the block's bytes between its markers.
+
+    Raises:
+        ClosureReadError: A marker pair is missing from the record.
+    """
+    out: dict[str, str] = {}
+    for name in MARKERS:
+        begin, end = f"<!-- BEGIN DERIVED: {name} -->", f"<!-- END DERIVED: {name} -->"
+        if begin not in text or end not in text:
+            raise ClosureReadError(f"record is missing the '{name}' DERIVED markers")
+        body = text.split(begin, 1)[1].split(end, 1)[0]
+        out[name] = hashlib.sha256(body.encode()).hexdigest()
+    return out
+
+
+def verify_frozen(record_path: Path = RECORD) -> dict[str, str]:
+    """Assert the record's derived blocks are byte-frozen at ``FROZEN_AT``.
+
+    Args:
+        record_path: Path to the closure record.
+
+    Returns:
+        The on-disk digests, when they match.
+
+    Raises:
+        ClosureReadError: A block has changed — by hand-edit OR by
+            regeneration. Both are the same defect here: the record states
+            AT-CLOSURE values, and anything that moves them is a
+            retroactive edit (pins 197a/269a).
+    """
+    on_disk = block_digests(record_path.read_text())
+    moved = [n for n, d in on_disk.items() if d != FROZEN_BLOCK_SHA256.get(n)]
+    if moved:
+        raise ClosureReadError(
+            f"the closure record's derived block(s) {moved} no longer match the "
+            f"digests frozen at {FROZEN_AT}. The record is FROZEN (pin 269a): it "
+            "states AT-CLOSURE values, so this is either a hand-edit or a "
+            "regeneration, and both are retroactive edits — STOP and report"
+        )
+    return on_disk
+
+
 def splice(text: str, blocks: dict[str, str]) -> str:
     """Replace each DERIVED marker's contents with freshly built markdown.
 
@@ -580,41 +693,42 @@ def splice(text: str, blocks: dict[str, str]) -> str:
 @app.command()
 def main(
     write: Annotated[
-        bool, typer.Option(help="Splice the blocks into the record")
+        bool, typer.Option(help="REFUSED: the record is frozen (pin 269a)")
     ] = False,
     check: Annotated[
-        bool, typer.Option(help="Verify the record matches this producer")
+        bool, typer.Option(help="Verify the record against the frozen digests")
     ] = False,
 ) -> None:
-    """Print, write, or check the closure record's derived sections.
+    """Print the derived sections, or verify the record's freeze.
 
     Args:
-        write: Splice the derived blocks into the record.
-        check: Verify the record's blocks match what this producer builds.
+        write: Refused — kept as a flag so the refusal is discoverable by
+            anyone who reaches for it.
+        check: Verify the on-disk blocks against the frozen digests.
 
     Raises:
-        SystemExit: ``--check`` found the record out of step.
+        ClosureReadError: ``--write`` was passed. The record is frozen by
+            digest at ``FROZEN_AT``; regenerating it would rewrite a closed
+            record to today's values, which is what pin 269(a) forbids.
+        SystemExit: ``--check`` found the record off its frozen digests.
     """
-    blocks = derived_blocks()
-    if not write and not check:
-        for name, body in blocks.items():
-            typer.echo(f"\n===== DERIVED: {name} =====\n{body}")
+    if write:
+        raise ClosureReadError(
+            "REFUSED: the closure record is FROZEN by digest at "
+            f"{FROZEN_AT} (owner pin 269a). Its values are AT CLOSURE, so "
+            "re-splicing today's values into it would rewrite a closed "
+            "record — pin 197(a)'s retroactive edit with a command attached. "
+            "If a Stage-2 fact must be recorded, APPEND an addendum (269e); "
+            "the derived blocks stay as they are."
+        )
+    if check:
+        digests = verify_frozen()
+        for name, digest in digests.items():
+            typer.echo(f"DERIVED {name}: {digest[:16]}… FROZEN at {FROZEN_AT} — PASS")
         return
 
-    current = RECORD.read_text()
-    spliced = splice(current, blocks)
-    if check:
-        if spliced != current:
-            typer.echo(
-                "DRIFT: the record's derived blocks are NOT what this producer builds"
-            )
-            raise SystemExit(1)
-        typer.echo(
-            "record derived blocks: PASS (byte-identical to the producer's output)"
-        )
-        return
-    RECORD.write_text(spliced)
-    typer.echo(f"wrote derived blocks into {RECORD}")
+    for name, body in derived_blocks().items():
+        typer.echo(f"\n===== DERIVED: {name} (documented derivation) =====\n{body}")
 
 
 if __name__ == "__main__":

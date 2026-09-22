@@ -1,15 +1,30 @@
-"""Gate-1 closure record tests (owner pin 264b) — CI-local.
+"""Gate-1 closure record tests (owner pins 264b, 269) — CI-local.
 
-Pin 264(b) names exactly what must be pinned: **14 contract lines; every
-cited node present in the mirror with a digest; registered_but_not_yet_written
-empty; read (i) trips on a fixture with a non-empty locked_tally.**
+Pin 264(b) named what must be pinned: **14 contract lines; every cited node
+present in the mirror with a digest; registered_but_not_yet_written empty;
+read (i) trips on a fixture with a non-empty locked_tally.**
 
-⛔ The failure mode these guard is **a closure record that looks complete and
-is not**. Stage 2 reads this record INSTEAD of re-deriving Stage 1, so a
-dropped contract line, a citation to a node nobody witnessed, or a read that
-cannot fail would all be invisible at exactly the moment they matter. The
-last one is the sharpest: a read that always passes is not evidence, it is
-decoration — so read (i) is exercised against a store that should trip it.
+⛔ **PIN 269 CORRECTED THE THIRD OF THOSE, AND IT IS THE LESSON OF THIS FILE.**
+Three tests here re-derived against the LIVE store and mirror, while the record
+they guard states values **AT CLOSURE**. The first legitimate Stage-2 act — a
+node registered before it is written, 263.10's ledger work, 2G's acceptance
+touch — would have turned them red claiming the closure was broken, and the
+only green path would have been regenerating a closed record: pin 197(a)'s
+retroactive edit with a command attached. *A test that can only be made green
+by falsifying the record it guards is worse than no test.*
+
+So the two concerns are now separate:
+- the RECORD is **frozen by digest** at the closure commit (269a), which
+  catches hand-edits and regeneration alike;
+- the LIVE reads are a **tripwire for pin 267** with a named expiry (269b) —
+  they assert that nothing has opened SINCE closure;
+- the live registered-but-unwritten assertion is **retired** to the record's
+  addendum, with the commit it was read at (269c).
+
+The other failure mode is unchanged: a read that always passes is not
+evidence, it is decoration — so every read is exercised against a fixture
+that must trip it, including the errored-grep case that once rendered a
+reassuring "NO HITS" (269d).
 """
 
 from __future__ import annotations
@@ -86,18 +101,6 @@ def test_a_missing_carrier_raises_instead_of_rendering_prose(tmp_path: Path) -> 
         _mod.contract_rows(mirror_path=moved)
 
 
-def test_no_node_is_registered_but_still_unwritten() -> None:
-    """The mirror has no PENDING registration at closure.
-
-    Bug caught: closing the gate with a pre-registered node still empty —
-    which is precisely the state `refresh_election` sat in from pin 136
-    until pin 259(b). A gate cannot close over a witness that was promised
-    and never written.
-    """
-    pending = _mirror()["registered_but_not_yet_written"]
-    assert pending["paths"] == [], pending["paths"]
-
-
 def test_read_i_trips_on_a_non_empty_ceremony_ledger(tmp_path: Path) -> None:
     """Read (i) is failable — the whole point of 262(a).
 
@@ -141,33 +144,79 @@ def test_read_ii_trips_when_the_c2_tally_moves(tmp_path: Path) -> None:
     assert _mod.read_c2_tally(store_path=store)["trips"] is True
 
 
-def test_all_four_reads_pass_at_closure_and_each_names_its_trip_condition() -> None:
-    """The reads as taken at closure, on the real store and mirror.
+def test_nothing_has_opened_since_stage1_closure() -> None:
+    """TRIPWIRE for pin 267 — not a re-derivation of the closure.
 
-    Bug caught: the record announcing closure while a read trips. Pin
-    262(b) makes a tripped read fatal to the closure itself, so this is
-    the assertion the whole ruling turns on — and each read must also
-    carry the condition that would have tripped it, or the record states
-    a value without stating what it rules out.
+    ⛔ THIS TEST HAS A NAMED EXPIRY. It asserts that the locked ledger and
+    the c2 ledger still read what they read when Stage 1 closed, so the
+    FIRST thing that opens after closure turns it red. That is its whole
+    job: pin 267 says closing opens nothing, and this is what makes that
+    checkable rather than stated.
+
+    The authorised way for it to go red is **2G's acceptance touch**. When
+    that lands, the owner RETIRES this test by numbered pin — it is not
+    updated, not relaxed, and never made green by rewriting the closure
+    record (pin 269a freezes that record by digest precisely so nobody
+    reaches for `--write` here).
+
+    Bug caught: a locked-instrument open or a c2 touch happening after
+    closure with nothing noticing — the exact silence pin 262's reads
+    exist to break, extended forward in time.
     """
     reads = _mod.closure_reads()
     assert [r["id"] for r in reads] == ["(i)", "(ii)", "(iii)", "(iv)"]
+    tripped = [r["id"] for r in reads if r["trips"]]
+    assert not tripped, (
+        f"CLOSURE TRIPWIRE {tripped}: a locked-ledger or c2 change since "
+        "Stage-1 closure. The only authorised one is the 2G acceptance "
+        "touch. If this is that touch, the owner retires this test by "
+        "numbered pin; otherwise it is a violation — STOP."
+    )
     for read in reads:
-        assert read["trips"] is False, read
         assert read["trip_condition"].strip()
         assert read["value"].strip()
 
 
-def test_the_record_on_disk_is_what_the_producer_builds() -> None:
-    """The derived blocks are never hand-pasted (264b).
+def test_the_tripwire_runs_the_mirror_check_in_process() -> None:
+    """Read (iii)'s failable half, made part of the tripwire (269d).
 
-    Bug caught: someone editing the closure record's tables by hand, so
-    the record and the mirror disagree while the record still looks
-    authoritative. Splicing the freshly built blocks into the file on
-    disk must be a no-op, byte for byte.
+    Bug caught: read (iii) as first built consulted only the MIRROR's own
+    recorded digest — a tracked file that changes only on re-sync — so it
+    could not see the store at all. Its real failable half was a hand-run
+    `check` that no test invoked. Anything but PASS must fail here.
     """
-    current = _mod.RECORD.read_text()
-    assert _mod.splice(current, _mod.derived_blocks()) == current
+    mirror = load_script("phase14_evidence_mirror")
+    mirror.check()
+
+
+def test_the_record_is_frozen_by_digest() -> None:
+    """The DERIVED blocks are byte-frozen at 31e7569 (pin 269a).
+
+    Bug caught — and this replaces a test that HAD the bug: comparing the
+    record against freshly derived output asserts AT-CLOSURE values
+    against NOW, so the first legitimate Stage-2 act turns it red and the
+    only green path is regenerating a closed record (pin 197a's
+    retroactive edit, made mechanical). A digest pinned at the closure
+    commit catches hand-edits AND regeneration, and can never be made
+    green by rewriting history.
+    """
+    on_disk = _mod.block_digests(_mod.RECORD.read_text())
+    assert on_disk == _mod.FROZEN_BLOCK_SHA256
+    assert set(on_disk) == {"reads", "contract"}
+    for name, digest in on_disk.items():
+        assert len(digest) == 64, name
+
+
+def test_write_refuses_on_the_frozen_record() -> None:
+    """`--write` cannot rewrite a frozen record (269a).
+
+    Bug caught: the producer silently re-splicing live values into a
+    closed record. Refusing is what makes the freeze real — a digest test
+    that a one-line command can satisfy by changing the record instead of
+    the world is not a freeze.
+    """
+    with pytest.raises(_mod.ClosureReadError, match="FROZEN"):
+        _mod.main(write=True)
 
 
 def test_a_record_without_the_markers_refuses_to_be_written(tmp_path: Path) -> None:
@@ -179,3 +228,52 @@ def test_a_record_without_the_markers_refuses_to_be_written(tmp_path: Path) -> N
     """
     with pytest.raises(_mod.ClosureReadError, match="markers"):
         _mod.splice("# a record with no markers\n", _mod.derived_blocks())
+
+
+def test_read_iii_trips_when_the_store_differs_from_the_mirror(tmp_path: Path) -> None:
+    """Read (iii) can see the STORE, not only the mirror's own digest.
+
+    Bug caught (269d): as first built, read (iii) compared the mirror's
+    recorded digest to a constant — both sides tracked files that move
+    together on re-sync — so a store whose legacy tally had actually
+    CHANGED would still read "passes". The store is the thing the pin
+    cares about.
+    """
+    store = json.loads(_mod.STORE.read_text())
+    store["c2_touch_tally"] = ["touch 4: a Stage-2 open nobody authorised"]
+    moved = tmp_path / "store.json"
+    moved.write_text(json.dumps(store))
+
+    read = _mod.read_legacy_digest(store_path=moved)
+    assert read["trips"] is True
+    assert _mod.read_legacy_digest()["trips"] is False
+
+
+def test_read_iv_trips_on_a_root_that_references_the_ceremony_env(
+    tmp_path: Path,
+) -> None:
+    """Read (iv) finds a producer that could open a ceremony.
+
+    Bug caught: the grep silently finding nothing because it ran in the
+    wrong directory. A fixture root that DOES contain the env name must
+    trip, or the read proves nothing about the real root either.
+    """
+    from sverdrup.validation.locked_tier import TOUCH_ENV
+
+    rogue = tmp_path / "rogue.py"
+    rogue.write_text(f'import os\n\nos.environ["{TOUCH_ENV}"] = "1"\n')
+    read = _mod.read_env_grep(roots=(str(tmp_path),))
+    assert read["trips"] is True
+    assert "rogue.py" in read["value"]
+
+
+def test_read_iv_raises_when_its_root_is_missing(tmp_path: Path) -> None:
+    """An errored grep is not a clean grep (269d).
+
+    Bug caught — the sharpest one in this file: rg exits 2 on a missing
+    path, and the read as first built treated any non-zero exit as "NO
+    HITS". A mistyped or moved root would have rendered the reassuring
+    answer forever. Anything but exit 0/1 must raise.
+    """
+    with pytest.raises(_mod.ClosureReadError, match="rg"):
+        _mod.read_env_grep(roots=(str(tmp_path / "does-not-exist"),))

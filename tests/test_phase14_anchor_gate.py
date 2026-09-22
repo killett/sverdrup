@@ -659,6 +659,14 @@ def test_recorded_split_matches_what_a_rerun_would_build() -> None:
 
 @pytest.mark.xfail(
     strict=True,
+    # Owner pin 269(d): ONLY the did-not-raise failure is expected. Without
+    # this, a guard repointed at the right key but raising a DIFFERENT
+    # message would keep xfailing — the defect would look "expected" while
+    # actually being a new one. pytest.raises turns both DID NOT RAISE and a
+    # non-matching message into Failed, so the narrowing is enforced by the
+    # message assert inside the test, and any OTHER exception type escapes
+    # the marker entirely and fails loudly.
+    raises=pytest.fail.Exception,
     reason=(
         "owner pin 262(d) / finding F1: the guard snapshots phase14.locked_n "
         "while the ceremony writes phase14.locked_tally, so a ceremony open "

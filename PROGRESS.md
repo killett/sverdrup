@@ -14,7 +14,8 @@
 > writes phase14.locked_tally. Its fix is Stage 2's, pinned by a strict xfail.
 >
 > Everything Stage 2 inherits is in docs/superpowers/2026-09-21-phase14-gate1-closure.md.
-> Read it before the Stage-2 spec is drafted.
+> Read it before the Stage-2 spec is drafted. The closure record is FROZEN by digest
+> (269a). A red closure tripwire means something opened since closure — see 269(b).
 >
 > ▶ NEXT: the Stage-2 spec, on the owner's word. Tasks 14-21 stay halted under pin 88
 > until that spec opens them. READY is not RUNNABLE.
