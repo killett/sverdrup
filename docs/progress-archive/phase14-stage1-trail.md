@@ -4801,6 +4801,34 @@ in force — *Standing practice — ruled, not preference* and *THE OWNER MAY WO
 CONCURRENTLY* — and *Standing stops* was **rewritten** for post-closure. Everything else
 below is **history and must not be read as current.**
 
+**The 18 sections of the moved block, and where each went** (derived from the block
+itself at `986e42f`, not taken from a count):
+
+| # | disposition | section |
+|---|---|---|
+| 1 | **MOVED** | ⭐ T5 IS COMPLETE — ALL FOUR LEGS RECORDED |
+| 2 | **MOVED** | ✅ PIN NUMBERING — RESOLVED. THE SERIES IS LANDED. |
+| 3 | **MOVED** | ✅ 202(b) DISPOSED (pin 206, `2530bb2`) — forward-pointer node `equatorial_sampler_log_scope`; row untouched; re-scores now log to their own directory. THE BLOCK BELOW IS THE FINDING AS ESTABLISHED (2026-09-16) |
+| 4 | **MOVED** | ✅ 199–205, AS DONE |
+| 5 | **CARRIED VERBATIM** | ⚠ THE OWNER MAY WORK THIS REPO CONCURRENTLY |
+| 6 | **MOVED** | ⭐ HEADROOM: ONE RECORD, AND IT IS NOT THE ROWS |
+| 7 | **MOVED** | Where the stage is |
+| 8 | **MOVED** | What holds the legs |
+| 9 | **MOVED** | What is measured and settled |
+| 10 | **MOVED** | ⛔⛔ LEG 3 (equatorial) CRASHED IN SCORING — OWNER RULING OWED (2026-09-06) |
+| 11 | **MOVED** | ⚖ EQUATORIAL — MECHANISM OPEN, TWO HYPOTHESES RETRACTED (2026-09-06) |
+| 12 | **MOVED** | ⭐ LEG 4 IS THE CONFOUND-BREAKING EXPERIMENT — READING PRE-REGISTERED (pin 180) |
+| 13 | **MOVED** | [SUPERSEDED by pin 180 — the hold is REVERSED; kept for the trail] LEG 4 HELD ON A MEASUREMENT (pin 176) |
+| 14 | **MOVED** | ⚖ 177/181 RESULTS — AND 180(c) IS WEAKENED AS A STOP CRITERION (2026-09-06) |
+| 15 | **MOVED** | ⚖ Carried forward — unresolved, and NOT resolvable by executor work |
+| 16 | **CARRIED VERBATIM** | ⚖ Standing practice — ruled, not preference |
+| 17 | **REWRITTEN** | ⛔ Standing stops |
+| 18 | **MOVED** | Next action |
+
+**CARRIED VERBATIM** = copied into the new CURRENT STATE block unchanged, because it is
+still in force. **REWRITTEN** = replaced in the new block by a post-closure version (the
+T9 line is gone; the closure's own stops are in). **MOVED** = here only, and history.
+
 > # ⬛ CURRENT STATE — 2026-09-21. THIS IS THE ONLY BLOCK DESCRIBING NOW.
 >
 > T8 CLOSED as a ruled WAIT (pins 250-252). Validity is prior to price: three pricing rounds
