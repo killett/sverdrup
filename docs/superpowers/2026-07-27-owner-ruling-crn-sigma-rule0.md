@@ -4798,3 +4798,36 @@ lands (262b).
 > **271. WHAT THIS DOES NOT DO.** The record's derived blocks are not regenerated. The guard is
 > not fixed (262d stands). Nothing in Stage 2 opens; tasks 14-21 stay halted. No store
 > node, mirror stays at 53, nothing seals, no supersession.
+
+---
+
+## PART 62 — TWO WORDING FIXES; STAGE 1'S WORK IS DONE (verbatim), pins 272–273, 2026-09-21
+
+**Landed verbatim under pin 40/41/48.**
+
+> **272. THE WALK OF 2c3e5e5, AND WHAT IT RATIFIES.**
+> (a) Verified: both DERIVED-block digests recomputed by the owner at 31e7569 and at
+> HEAD equal FROZEN_BLOCK_SHA256; the record gained lines and lost none. The
+> narrowed xfail was run by the owner under pytest 9.0.3 — as built → xfailed;
+> fixed → failed (strict); different message → failed; different type → failed.
+> Test counts reconcile: 9 → 13 closure tests (+6 new, −2 retired, one renamed).
+> RATIFIED: 269(a)-(e) and 270 as landed; (iii) now digesting the store with the
+> mirror's own hashing; (iv) raising on rg exit ≠ 0/1; the addendum's re-run of
+> `check` at HEAD, dated, instead of a remembered result.
+> (b) DEFECT — the comment is backwards. tests/test_phase14_anchor_gate.py:665-667
+> says pytest.raises turns a non-matching message into Failed. It does not: under
+> pytest 9.0.3 a mismatch raises AssertionError ("Regex pattern did not match"),
+> which escapes raises=pytest.fail.Exception. That escape is WHY the
+> different-message case fails loudly. Rewrite the comment to say so, and name
+> pytest 9.0.3 as the version it was verified against. Behaviour does not change.
+>
+> **273. THE TRIPWIRE NAMES WHAT TRIPPED.** test_nothing_has_opened_since_stage1_closure
+> reports every trip as "a locked-ledger or c2 change". That is true of (i)/(ii) only.
+> Make the message per-read:
+> (i)/(ii) — a ledger moved since closure;
+> (iii)    — the store and mirror disagree on the legacy list;
+> (iv)     — a script now names the ceremony's env: a touch PATH exists, which is
+> not by itself a touch. Expected only as 2G's touch is built; the owner
+> rules on it.
+> Keep the retirement rule verbatim: retired by numbered pin, never made green by
+> rewriting the record. Assertion logic unchanged; message only.
