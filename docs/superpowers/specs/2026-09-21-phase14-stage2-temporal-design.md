@@ -34,7 +34,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
 | §7 | The pavement: measured before it is placed; tasks 14-17 split by step | VALIDATED (D6) |
 | §8 | Ordering: the geometry step and the cheap sigma work; one packet | VALIDATED (D7) |
-| §9+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), E7/delta_m, seasonal axis, transferred-vs-refit, e10's replacement holdout, gate design, coverage map | NOT YET REACHED |
+| §9 | e10's replacement holdout, the seal-budget map, and delta_j3 | VALIDATED (D8) |
+| §10+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -344,6 +345,14 @@ in this order:
 3. Tie-breaks, in order: **sibling-having over sibling-less** (fork-c pin 4 weakens a
    ground truth by convolving map error with a prior-set holdout-error model; **e08 is the
    sibling-having four-net candidate**), then **lower cost**.
+
+⭐ **AMENDED BY D8(f) — a CONSTRAINT, applied BEFORE the n_eff objective:** at least one of
+the +2 epochs must **assimilate j3 by MISSION ID**. Derived from the census, the admissible
+epochs that qualify are **e09, e11 and e12** (e13 carries `j3n`, e14 carries `j3g`/`j3n` —
+different mission IDs; e02/e03/e04/e08 have no j3-family mission at all). This is what lets
+E7 fit δ_j3 without touching e10 — see §9.6. ⚠ **The n_eff objective's value is recorded
+BOTH with and without the constraint, so the constraint's cost is visible** rather than
+absorbed.
 
 ⭐ **Using the transferred epochs' GEOMETRY in selection is legal.** `n_eff` is geometry
 only — positions and times, **never values** — so step 1 consults where and when those
@@ -716,3 +725,111 @@ transitively, through the freeze.**
 
 ⛔ **The spec states this explicitly so that nobody reads the era-fits as waiting on σ
 validation itself.** They wait on a **pavement decision**; they do not wait on the ρ model.
+
+---
+
+## 9. e10's replacement holdout, the seal-budget map, and δ_j3 (D8)
+
+**DECISION D8 (owner, 2026-09-21): the replacement holdout is an ADDITION, not a
+supersession; δ_j3 is fitted ELSEWHERE; and the BUDGET MAP comes first.**
+
+### 9.1 The chain, confirmed — and two facts recorded
+
+Running fork C's own `_select_holdout` on e10's sealed mission set:
+
+- ⭐ **e10 → `alg`**, criterion **`non-climate-line+min-geometry-distortion`**.
+- The **sibling step is SKIPPED**: none of `alg` (ers-line), `h2ag` (hy2), `s3a` (sentinel3)
+  has an assimilated sibling at e10. So the replacement is **sibling-less**, and **fork-c
+  pin 4's caveat travels with it** — its structured-error parameters come from PUBLISHED
+  budget priors, and the reading convolves map error with a prior-set holdout-error model.
+- ⭐ **The chain returns `alg` EVEN WITH j3 IN THE POOL.** Candidates net of locked are
+  `['alg','h2ag','j2g','j3','s3a']`; j3 is removed at the climate-line step as `poseidon`.
+  **So the sealed `j3` is the `signed-workhorse-by-construction` OVERRIDE, not the chain's
+  answer** — e10 is the only row in the table whose criterion is that override.
+
+### 9.2 It is an ADDITION, not a supersession
+
+⛔ **Seal v1's e10 row (holdout `j3`) is CORRECT** — for the **five-mission workhorse**,
+which is exactly the role split D3's anchor inherits (§4.4). The replacement serves a
+**DIFFERENT configuration**: the **elected** one, 2G onward.
+
+⭐ **So it is ADDED, keyed by CONFIGURATION. Seal v1 is NOT modified.** A **new sealed
+record** plus a **new mirror node** — and brand-new nodes sync freely — **spends no
+budget**.
+
+⛔ **Replacing the row would break D3**, whose anchor is defined on the five-mission role
+split. The two configurations coexist; neither overwrites the other.
+
+### 9.3 ONE registry — logical, from one origin
+
+Fork-c pin 2 makes the census **the single registry**, so the addition enters it as a
+**CONFIGURATION key**: ⭐ **one reader resolves `(epoch, config) → holdout` from ONE origin
+in the code** (§7-12).
+
+⚠ **Reconciliation, stated so no reader trips on it:** "one registry" is **logical, not
+one file**. The resolver is single-origin; it spans **seal v1** and the **new sealed
+record**. ⛔ **A side file that some reader can miss is the tally-guard failure again**
+(F1/262c) — one writer, another reader, two keys.
+
+### 9.4 Stage 2 chooses AND seals the addition
+
+⛔ **Stage 2 both chooses and seals it**, as a precondition it **discharges before C2→2G**.
+257's words: *"Stage 2 must resolve it before 2G runs."* ⚠ **"2G seals" contradicts 257**,
+and the earlier draft option that said so is withdrawn. **The seal EVENT is an owner act,
+authorised at the time.**
+
+### 9.5 THE BUDGET MAP — derived, because it existed nowhere
+
+The record names limited instruments in near-identical words. **Derived:**
+
+| instrument | source pin | wording | allocation |
+|---|---|---|---|
+| **the seal's one sanctioned change** | ⭐ **pin 36(d)**, verbatim: *"HOLD THE SEAL AT ONE VERSION. Do not ship v2 and patch to v3 — pin 35 charges a coverage re-walk per version, and a sealed record containing a rule known to be unusable is worse than a delayed one."* | one further sealed version | ⭐ **ALREADY ALLOCATED**: pin 45 defers the whole rubric amendment (0.a + 0.b) to **ONE sealed version after T14 and T15** — **T17 spends it, once** |
+| **"the single authorised supersession"** (pin 264e, closure §6, pin 196d context) | ⛔ **no defining source pin exists** | — | — |
+
+⭐ **THE FINDING: THESE ARE ONE BUDGET, NOT TWO.** The seam rubric's thresholds live
+**inside the evaluation seal** — `clean_max = 1.0` and `elevated_max = 2.5` at
+`content/instruments/seam` of `sealed/phase14_evaluation_seal_v1.json` (which is also what
+pin 36 reads when it says "against sealed clean_max 1.0 / elevated_max 2.5"). `sealed/`
+holds only that file and the Gate-0 snapshot. So **T17's one sealed rubric version IS a v2
+of that file, produced through `supersede`** — and "the single authorised supersession" and
+"the one sanctioned seal change" name **the same thing**, already allocated to T17.
+
+⛔ **A TERMINOLOGY HAZARD, recorded.** The record uses "supersession" for **two different
+mechanisms**, and only one is budgeted:
+
+- **Store-node supersessions** — `supersessions.json` already records **FOUR spent**:
+  `reachability_declarations` (pins 148/145), `osse_pricing` and
+  `projection_declarations` (pin 246), `osse_pricing` again (pins 250–252). **These are
+  routine and unbudgeted.**
+- **The SEAL supersession** — the single budgeted one, allocated to T17.
+
+⭐ **So D6(f)'s question is now answerable in principle:** pin 31(d)'s
+superseded-configuration marking is a **store-node** operation, of the kind already spent
+four times, and **does not claim the seal budget** — provided it marks nodes rather than
+amending seal content. ⛔ **Anything that would claim the SEAL budget is an owner decision,
+never the executor's**, and nothing in this draft claims it.
+
+⚠ **Also derived:** `_ENVELOPE_KEYS = ("supersedes", "signoff", "date")` — envelope
+metadata only. **`epoch_table.holdout` is CONTENT**, so changing it in place would require
+`supersede`. §9.2's addition is precisely what avoids that.
+
+### 9.6 δ_j3 without touching e10
+
+**D4's rule gains the §5.3 constraint**, applied **before** the n_eff objective: at least
+one +2 epoch **assimilates j3 by mission ID**. Qualifying admissible epochs, derived from
+the census: **e09, e11, e12**. **E7 fits δ_j3 there.**
+
+⭐ **That can discharge 256's provisional inheritance under ONE STATED ASSUMPTION: a given
+mission's δ is ERA-INVARIANT — an instrument property, not a constellation property.**
+
+**Why the assumption is reasonable, stated rather than assumed silently:** the mission-ID
+granularity **already separates orbit phases** (`j3`, `j3n`, `j3g` are distinct IDs, as are
+`j2`/`j2n`/`j2g`), so what an era changes is the **constellation context**, not the
+instrument.
+
+⛔ **WHAT WOULD FALSIFY IT, named at design time** (§7-11): δ_j3 fitted at **two** epochs
+that both assimilate j3 disagreeing **beyond se**. If the +2 include two of
+{e09, e11, e12}, that test is **free and it runs**; if they include only one, ⚠ **the
+assumption is carried UNTESTED and the spec says so** — δ_j3 is then fitted but its
+era-invariance is unverified, which is not the same as verified.
