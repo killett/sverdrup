@@ -33,7 +33,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §5 | The +2 reference epochs: a pre-registered rule on measured n_eff | VALIDATED (D4) |
 | §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
 | §7 | The pavement: measured before it is placed; tasks 14-17 split by step | VALIDATED (D6) |
-| §8+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), E7/delta_m, seasonal axis, transferred-vs-refit, e10's replacement holdout, gate design, coverage map | NOT YET REACHED |
+| §8 | Ordering: the geometry step and the cheap sigma work; one packet | VALIDATED (D7) |
+| §9+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), E7/delta_m, seasonal axis, transferred-vs-refit, e10's replacement holdout, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -536,11 +537,33 @@ witnessed frames through the repo's own code.**
 | quiet_gyre | x | 18.385 | 53.281 | 66.868 | 67.286 | 66.868 | 173.848 | 274.147 | 173.848 |
 | quiet_gyre | y | 10.769 | 1.779 | 74.484 | 1.779 | 74.484 | 1.779 | 266.531 | 480.489 |
 
-⭐ **NO TILE IS CONGRUENT AT ANY RUNG, ON EITHER AXIS.** The coarse rungs are not
-forgiving: southern's y misses by 188.142 km at λ=452.5 and kuroshio's x by 151.393 km at
-λ=320. **Deriving per SCALE rather than from the finest rung alone was necessary** — the
-finest rung's misses (6–32 km) understate the coarse-rung displacement by an order of
-magnitude.
+⭐ **NO TILE IS CONGRUENT AT ANY RUNG, ON EITHER AXIS.**
+
+⚠ **AND THE KILOMETRE COLUMN IS THE WRONG UNIT FOR COMPARING RUNGS** (§7-18). The solve
+responds to a miss as a **FRACTION of that rung's own step**, and the steps differ by 11×
+across the ladder, so kilometres make coarse rungs look worse merely by being coarser. The
+same misses **as miss/step** (max possible **0.5**):
+
+| tile | axis | λ=80 | 113.1 | 160 | 226.3 | 320 | 452.5 | 640 | 905.1 |
+|---|---|---|---|---|---|---|---|---|---|
+| kuroshio | x | 0.224 | 0.050 | 0.112 | 0.025 | **0.444** | 0.012 | 0.222 | 0.006 |
+| kuroshio | y | 0.140 | **0.463** | 0.430 | 0.232 | 0.285 | 0.384 | 0.143 | 0.192 |
+| southern | x | 0.373 | 0.339 | 0.187 | 0.169 | 0.093 | 0.085 | **0.453** | **0.458** |
+| southern | y | 0.342 | 0.440 | 0.329 | 0.220 | 0.336 | 0.390 | 0.168 | 0.195 |
+| equatorial | x | 0.192 | 0.425 | 0.096 | 0.287 | 0.048 | 0.356 | **0.476** | 0.178 |
+| equatorial | y | 0.076 | 0.009 | 0.462 | 0.004 | 0.269 | 0.002 | 0.366 | **0.499** |
+| quiet_gyre | x | 0.216 | 0.442 | 0.392 | 0.279 | 0.196 | 0.360 | 0.402 | 0.180 |
+| quiet_gyre | y | 0.126 | 0.015 | 0.437 | 0.007 | 0.218 | 0.004 | 0.391 | **0.498** |
+
+⭐ **RESTATED IN THE RIGHT UNIT:** across all 64 (tile, axis, rung) cells the fraction runs
+**min 0.002, median 0.223, max 0.499** against a worst possible **0.500**. The finest rung
+(0.076–0.373) is **comparable to** the coarse rungs, **not** an order of magnitude below
+them, and coarse rungs are **not systematically worse** — some are nearly aligned
+(kuroshio x at λ=905.1 is 0.006; equatorial y at λ=452.5 is 0.002) while others sit at
+essentially the maximum half-step (equatorial y at λ=905.1 is **0.499**). ⛔ **Deriving per
+SCALE was still necessary** — the finest rung alone would have missed both the near-aligned
+rungs and the half-step extremes — **but the reason is coverage of the ladder, not a
+monotone worsening with scale.**
 
 ⚠ **Reconciliation with the owner's figures, per the owner's own rule.** The owner's
 finest-rung numbers (kuroshio 19.156/11.954, southern 31.815/29.218, equatorial
@@ -610,3 +633,86 @@ comparison across two pavements is REFUSED BY CONSTRUCTION, not reported.**
 ⚠ **A silent mixed-pavement comparison is the same failure family as the tally-guard key
 mismatch** (F1/262c): a check that reads one key while the world writes another, producing
 a result that looks like evidence and is not.
+
+---
+
+## 8. Ordering: the geometry step and the cheap σ work run together (D7)
+
+**DECISION D7 (owner, 2026-09-21): the geometry step and the cheap σ work run TOGETHER; T21
+prices at the MEASURED r; ONE packet reaches the owner.**
+
+### 8.1 r is the element-pairing fraction — fact, not inference
+
+⭐ **CONFIRMED from the tracker, and recorded as fact rather than inference.** T20's
+acceptance criterion reads **"(73a) SWEEP the paired fraction from 0 to 1"**, by pure
+arithmetic over the stored per-member `acc` with **NO SOLVES**. T21 prices **"at least TWO
+points at PARTIAL element pairing"**. So the `r` in the ρ model **is** the element-pairing
+fraction, and **T14 is what drives it** — pin 31's stated purpose being that coincident
+elements draw identically and adjacent-tile comparisons become PAIRED.
+
+### 8.2 A LATENT CYCLE in the tracker, and how D6's split dissolves it
+
+⛔ **The tracker contains a dependency cycle that its own edges cannot show.** T21's
+acceptance criterion takes its partial-pairing points from *"what T15's alignment survey
+says the production grid will actually contain"* — **in prose**. The edges read:
+
+```
+15 ← [14]          14 ← [1,2,3,4,13,18,19,20,21]          21 ← [20]
+T21 ──prose──▶ T15 ──edge──▶ T14 ──edge──▶ T21        (closed, and invisible to the graph)
+```
+
+⭐ **D6's split-by-step dissolves it.** The geometry halves of **T14** (choose the
+anchor-congruent origin) and **T15** (the survey) form **ONE geometry-only step that runs
+first**. **T21 gains an EXPLICIT EDGE to that step**, replacing the prose dependence.
+
+⛔ **T18's wall and the `[19, 20, 21]` edges stay on T14's IMPLEMENTATION + ACCEPTANCE —
+the freeze — and NEVER on the geometry.**
+
+⚠ **A dependency carried in prose is not a dependency the graph can enforce.** This is the
+same family as §7.5's inherited edge: the tracker is only as truthful as its edges, and a
+plan that reads the prose while the scheduler reads the edges will dispatch in an order
+nobody authorised.
+
+### 8.3 Concurrent, as PLAN tasks
+
+⛔ **Nothing runs at spec time** (276d). As plan tasks:
+
+| lane | contents | cost |
+|---|---|---|
+| **[A]** | the **geometry step**: T14's anchor-congruent origin + T15's survey | geometry only — no solver, no values, no maps |
+| **[B]** | **T19** (DT scoring-track re-score) and **T20** (ρ(r) sweep over the reachable span) | T20 is pure arithmetic over stored `acc`, **no solves** |
+
+**T21 runs after [A] AND T20.** ⭐ **It prices at the MEASURED post-freeze pairing fractions
+from [A] — not the assumed r ≈ 0.9 — taken at the HIGHEST r any production seam will
+carry** (§7-16: the extreme that governs it, never the middle).
+
+### 8.4 T19 failing is NOT packet material
+
+⛔ **Pin 19(b): a mismatch is a STOP.** T19's failure **goes to the owner the moment it
+happens**, not bundled into the packet. A stop condition held back to travel with other
+findings is no longer a stop condition.
+
+### 8.5 ONE packet to the owner
+
+| # | contents |
+|---|---|
+| 1 | **the survey** — clean, or latitude-varying (D6 §7.3's fork) |
+| 2 | **the measured post-freeze r per seam** |
+| 3 | **T20's result** — the closed form holds, **or** the measured curve replaces it (**73c pre-registers BOTH as acceptable**) |
+| 4 | **T19's PASS** (its failure having already gone up alone, §8.4) |
+| 5 | **T21's price** |
+| 6 | **the m question** — pin 53 reopened pin 31's m-rejection and ordered **m=137 PRICED, not chosen**: m ≥ 137 (129 at factor 1.00, **137 at 1.03**, 148 at 1.07), and pin 57 put it at **27% of the RAM knee — +0.5% predicted peak, ×1.37 wall, inside the box's own ×1.70 drift**. Pin 53 placed the remedy **after T14/T15, with Rule 0.b, in T17**. ⭐ **Era-fits are ensemble products at a fixed m, so m is settled BEFORE them.** |
+
+**The owner decides:** whether to buy the high-r validation, **and whether it must precede
+the freeze**; the **freeze** itself (T14's acceptance re-solve); and **m**.
+
+### 8.6 Scope separation — the era-fits do NOT wait on σ validation
+
+⭐ **Stage 2's four diverse tiles share NO seams**, so **r never enters their era-fits.**
+
+The σ chain serves **the seam instruments and 2G's fleet.** It gates **the FREEZE** —
+through T19, T20, and the owner's ruling on T21's price — and reaches the era-fits **only
+transitively, through the freeze.**
+
+⛔ **The spec states this explicitly so that nobody reads the era-fits as waiting on σ
+validation itself.** They wait on a **pavement decision**; they do not wait on the ρ model.
