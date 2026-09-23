@@ -32,7 +32,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §4 | The anchor reference epoch: e10, pure and seasonally balanced | VALIDATED (D3) |
 | §5 | The +2 reference epochs: a pre-registered rule on measured n_eff | VALIDATED (D4) |
 | §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
-| §7+ | placements (tasks 14-17, CRN, Tier 2, GroundTrack, attribution, power, S5, S6), gate design, coverage map | NOT YET REACHED |
+| §7 | The pavement: measured before it is placed; tasks 14-17 split by step | VALIDATED (D6) |
+| §8+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), E7/delta_m, seasonal axis, transferred-vs-refit, e10's replacement holdout, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -484,3 +485,128 @@ Existing resampling machinery is reused **where it fits**. ⚠ **The resampling 
 estimator here are NEW**, so reuse is partial by construction, and **which pieces are reused
 is PLAN business** — this document does not name them, and a claim that it "reuses the
 existing bootstrap" would overstate what has been checked.
+
+---
+
+## 7. The pavement: measured before it is placed (D6)
+
+**DECISION D6 (owner, 2026-09-21): SPLIT BY STEP, NOT BY TASK — and the pavement is
+MEASURED before it is PLACED.**
+
+### 7.1 The inference is now arithmetic
+
+The earlier draft reasoned that the diverse tiles' element centres "should" move under a
+global origin. ⭐ **That is no longer an inference. It is arithmetic, derived from the
+witnessed frames through the repo's own code.**
+
+**Chain of derivation, every link from the store or the layout code, nothing typed:**
+
+- `basis_domain` is the per-tile pavement override (`Miost._spec_from`): `None` = the
+  signed anchor box; otherwise `x0_km, y0_km` come from the tile. The Stage-1 runner sets
+  it as `lonlat_to_km(solve_bbox.lon_min, solve_bbox.lat_min)`
+  (`phase14_stage1_run.py:2448-2454`, `:3542-3550`). ⭐ **So element identity today IS a
+  function of which tile is solving — pin 31's premise, confirmed in code.**
+- `lonlat_to_km` (`miost_basis.py:168-179`): `x = (lon − BOX_LON[0])·KM_PER_DEG·cos(MID_LAT)`,
+  `y = (lat − BOX_LAT[0])·KM_PER_DEG`, with `BOX_LON=(295.0,305.0)`, `BOX_LAT=(33.0,43.0)`,
+  `MID_LAT=38.0`, `KM_PER_DEG=111.32`.
+- Node positions are `x0_km − hw_j + i·step_j` with `step_j = alpha·lam_j`, `hw_j =
+  SUPPORT·lam_j` (`miost_basis.py:106-121`, `_layouts`). The `hw` term is common to both
+  lattices and cancels, so **congruence is `x0` modulo `step_j`**.
+- `alpha` is the **signed** `spacing_alpha = 1.0656719505786896`, read from the store at
+  `/winner/params` (also `/sobol/winner_params`, `/stage_b/winner_params`).
+- `LADDER` is D1's **8 rungs**: 80, 113.137, 160, 226.274, 320, 452.548, 640, 905.097 km.
+
+**Per-scale steps (km):** 85.254, 120.567, 170.508, 241.134, 341.015, 482.268, 682.030,
+964.536. **Max possible miss is step/2.**
+
+**Tile origins in the km plane:** kuroshio `(−14474.024, −779.240)`; southern
+`(−7193.151, −10798.040)`; equatorial `(−8508.972, −4341.480)`; quiet_gyre
+`(−3684.297, −7235.800)`.
+
+**MISS FROM THE NEAREST ANCHOR-CONGRUENT NODE, PER SCALE (km):**
+
+| tile | axis | λ=80 | 113.1 | 160 | 226.3 | 320 | 452.5 | 640 | 905.1 |
+|---|---|---|---|---|---|---|---|---|---|
+| kuroshio | x | 19.115 | 5.982 | 19.115 | 5.982 | 151.393 | 5.982 | 151.393 | 5.982 |
+| kuroshio | y | 11.956 | 55.838 | 73.298 | 55.838 | 97.210 | 185.296 | 97.210 | 185.296 |
+| southern | x | 31.836 | 40.870 | 31.836 | 40.870 | 31.836 | 40.870 | 309.179 | 441.398 |
+| southern | y | 29.187 | 52.992 | 56.067 | 52.992 | 114.441 | 188.142 | 114.441 | 188.142 |
+| equatorial | x | 16.404 | 51.287 | 16.404 | 69.280 | 16.404 | 171.854 | 324.611 | 171.854 |
+| equatorial | y | 6.462 | 1.067 | 78.792 | 1.067 | 91.715 | 1.067 | 249.300 | 481.201 |
+| quiet_gyre | x | 18.385 | 53.281 | 66.868 | 67.286 | 66.868 | 173.848 | 274.147 | 173.848 |
+| quiet_gyre | y | 10.769 | 1.779 | 74.484 | 1.779 | 74.484 | 1.779 | 266.531 | 480.489 |
+
+⭐ **NO TILE IS CONGRUENT AT ANY RUNG, ON EITHER AXIS.** The coarse rungs are not
+forgiving: southern's y misses by 188.142 km at λ=452.5 and kuroshio's x by 151.393 km at
+λ=320. **Deriving per SCALE rather than from the finest rung alone was necessary** — the
+finest rung's misses (6–32 km) understate the coarse-rung displacement by an order of
+magnitude.
+
+⚠ **Reconciliation with the owner's figures, per the owner's own rule.** The owner's
+finest-rung numbers (kuroshio 19.156/11.954, southern 31.815/29.218, equatorial
+16.428/6.474, quiet_gyre 18.375/10.790) are reproduced **exactly** by using the rounded
+step **85.254** in place of the signed **85.25375604629517** (`alpha·80`). Each tile origin
+lies **~170–200 steps** from the box origin, so the **0.244 m** step difference accumulates
+to the 10–41 m gap — kuroshio: 170 × 0.000244 km = 41.5 m, matching its −0.041. **The
+figures above are from the store and the layout code, and they stand.**
+
+⛔ **AND THE EXPOSURE IS BROADER THAN CRN.** Moving element centres changes **the SOLVE**,
+not only the draws: the basis elements are the solve's degrees of freedom. A record that
+frames the pavement move as "a CRN re-key" understates it.
+
+### 7.2 Split T14 itself — by step, not by task
+
+| step | cost | when |
+|---|---|---|
+| **T14 geometry half** — choose the anchor-congruent global origin; compute per-tile, per-scale displacement | ⭐ **FREE**: no solver, no values, no maps | **Stage 2, FIRST** |
+| **T15 survey** — alignment residual over every adjacent pair in the D1 production tiling | ⭐ **FREE**: geometry | **Stage 2, FIRST** |
+| **T14 acceptance half** — the check-1 anchor re-solve for sha-equality against `phase13_winner_members.npz` | **~7 h, RAM-gated** | **only after the fork below** |
+
+⭐ **THE FREE STEPS COME FIRST, IN STAGE 2, BEFORE ANY ERA-FIT.** They are geometry, so
+§7-1's "no evaluation-bearing maps" does not bite, and they cost nothing to learn from.
+
+### 7.3 Then the fork — and it is the OWNER's, not the executor's
+
+- **Survey CLEAN** (one global origin serves the whole roster) → **freeze the pavement**
+  (T14's acceptance re-solve), and **every Stage-2 era-fit runs on the frozen pavement.**
+  Twelve era-fits over four tiles is the expensive product, and **2G's shipped calibration
+  is made of them** (§7 of the program spec), so ⛔ **they must not sit on a lattice 2G
+  abandons.**
+- **Survey shows a LATITUDE-VARYING residual** (the ruling doc's open question 1: 31(a) is
+  then **necessary but not sufficient**) → ⛔ **STOP at the survey and bring it to the
+  owner. Stage 2 does not choose a pavement for the program.**
+
+### 7.4 T17 follows the freeze, wherever the freeze lands
+
+T17 is **CRN-state-conditional** and gets **ONE sealed version** (pin 45/45d). ⛔ **Spending
+it before the pavement is frozen wastes it.** It is therefore ordered behind the freeze,
+not behind a stage label — which also answers **S3**, whose substance (one sealed version,
+CRN-state-conditional) the closure record recorded as unnamed by obligations 1–12.
+
+### 7.5 T16 → Stage 2
+
+**T16 is doc-only** (pin 33's two-sided discipline 11, pin 35's procedural cost, the
+process minors) and goes to **Stage 2**. ⚠ **Its tracker edge `blockedBy [15]` is
+RE-DERIVED on re-homing, never carried across** — an inherited dependency edge is not
+evidence that the dependency exists.
+
+### 7.6 The inventory comes BEFORE the move
+
+⛔ **Pin 31(d)'s "superseded configuration" list is built BEFORE the pavement moves, or
+nobody can say what the move invalidated.** At minimum: **T4's `seam_rows` σ entries** and
+**`seam_sigma_diagnosis`**; and **check** the T3 anchor std maps and any σ the C1→2
+contract cites.
+
+⛔ **THE SPEC MUST STATE WHETHER THAT MARKING SPENDS THE SINGLE AUTHORISED SUPERSESSION.**
+If it does, **that is an owner decision at the time, never an executor's.** (The
+supersession is currently **UNSPENT**, and nothing in this draft spends it.)
+
+### 7.7 The durable fix, whichever branch runs
+
+⭐ **Every Stage-2 product records its element-identity mode and lattice origin in its own
+descriptor or row, from ONE origin in the code** (§7-12: the key has one origin). **A
+comparison across two pavements is REFUSED BY CONSTRUCTION, not reported.**
+
+⚠ **A silent mixed-pavement comparison is the same failure family as the tally-guard key
+mismatch** (F1/262c): a check that reads one key while the world writes another, producing
+a result that looks like evidence and is not.
