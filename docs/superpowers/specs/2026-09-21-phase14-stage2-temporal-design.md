@@ -35,7 +35,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §7 | The pavement: measured before it is placed; tasks 14-17 split by step | VALIDATED (D6) |
 | §8 | Ordering: the geometry step and the cheap sigma work; one packet | VALIDATED (D7) |
 | §9 | e10's replacement holdout, the seal-budget map, and delta_j3 | VALIDATED (D8) |
-| §10+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, gate design, coverage map | NOT YET REACHED |
+| §10 | The amended rubric: simulated null, real-data falsifier, reachability, v2 | VALIDATED (D9) |
+| §11+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -814,6 +815,20 @@ never the executor's**, and nothing in this draft claims it.
 metadata only. **`epoch_table.holdout` is CONTENT**, so changing it in place would require
 `supersede`. §9.2's addition is precisely what avoids that.
 
+⭐ **THE PHRASE IS SETTLED HERE, BECAUSE IT HAS BEEN USED LOOSELY** (D9g). **"The single
+authorised supersession" MEANS THE SEAL's v2** — and it has been used loosely in mirror
+contexts, **including the Gate-1 closure ruling's own 264(e) and 267**. The mirror's
+**store-node supersessions are a SEPARATE instrument with NO numeric cap**: four spent, each
+deliberate and each with its recorded reason. ⛔ **A reader who counts the four against "the
+single authorised supersession" concludes the budget is overspent three times over. It is
+not: they are different instruments.**
+
+⭐ **PIN 31(d) DOES NOT COMPETE FOR v2 — confirmed by reading it.** Verbatim: *"Stage-1 σ
+rows become measurements of a SUPERSEDED configuration once (a) lands. Mark them so; do not
+carry them into the C1→2 contract as σ readings."* It concerns **σ rows in the store**, not
+seal content, so it is a store-node operation of the uncapped kind. **D6(f)'s question is
+answered: the marking spends no seal budget.**
+
 ### 9.6 δ_j3 without touching e10
 
 **D4's rule gains the §5.3 constraint**, applied **before** the n_eff objective: at least
@@ -833,3 +848,104 @@ that both assimilate j3 disagreeing **beyond se**. If the +2 include two of
 {e09, e11, e12}, that test is **free and it runs**; if they include only one, ⚠ **the
 assumption is carried UNTESTED and the spec says so** — δ_j3 is then fitted but its
 era-invariance is unverified, which is not the same as verified.
+
+---
+
+## 10. The amended rubric: simulated null, real-data falsifier, reachability, v2 (D9)
+
+**DECISION D9 (owner, 2026-09-21): the null is SIMULATED THROUGH THE REAL BASIS; the
+falsifier is a REAL-DATA NULL; reachability is CHECKED BEFORE SEALING; and v2 is COMPLETE
+OR NOTHING.**
+
+### 10.1 The order
+
+```
+freeze (T14 acceptance, survey CLEAN)
+  → null harness            (§10.2)
+  → falsifier               (§10.3)
+  → reachability            (§10.4)
+  → T17 authors and SEALS v2 (§10.5)
+```
+
+⛔ **Deriving the constants from the run they will score is REFUSED.** That is discipline
+11's **(i6)** family — the s*/χ² shape, one number read twice, where agreement is an
+identity rather than corroboration.
+
+### 10.2 SIMULATE, don't estimate
+
+⭐ **Pin 36(b)'s N=200k harness draws through the FROZEN pavement's ACTUAL BASIS at the
+production geometry**, with **pairing taken element by element from D7's geometry step**, so
+**spatial correlation and ρ EMERGE rather than being parameterised.**
+
+The factor is read as **a stated quantile of the simulated `RMS(σ_delta)/F_ens`
+distribution at a stated confidence**, with **36(b)'s explicit margin for the asymptotic
+`σ²/(2(m−1))` approximation**.
+
+⭐ **NO `N_eff` IS ESTIMATED AT ALL.** D5's lesson is *realised* spread; here the spread is
+**simulated directly**, which is the same lesson taken one step further — and it is why
+E-6's overturned estimator is not needed in this path either.
+
+⚠ **FALLBACK, only if element-level simulation is infeasible:** parameterise by the **ρ(r)
+the owner rules in D7's packet** (closed form or measured curve), and ⛔ **the SEALED rubric
+states its VALIDITY RANGE IN r.** Beyond T20's validated span, with the high-r validation
+not bought, **the factor carries that exposure IN WRITING** — pin 73's **7.166× at r = 0.9**
+named in the sealed record itself, not in a commit message.
+
+### 10.3 The falsifier is a REAL-DATA null with no seam by construction
+
+**The within-tile half-split at the frozen pavement** — the diagnosis's own discriminator,
+*"a seam artifact cannot appear inside a single tile"* — ⭐ **on a region DISJOINT from the
+seam strip the rubric will score.**
+
+**Pre-registered tolerance:** the real-data statistic **must fall inside the simulated
+null's stated band.**
+
+⛔ **If it does not, the synthetic null misses real structure: NOTHING SEALS, and it goes to
+the owner.** It **runs before sealing** and is **read once**.
+
+⚠ Why this is the right falsifier rather than a second simulation: a simulated null can only
+be wrong in ways the simulation does not model. **A real-data null with no seam by
+construction can.**
+
+### 10.4 Reachability BEFORE sealing (36c)
+
+Compute **CLEAN and ELEVATED reachability** at the **production geometry** and at **the m
+the owner rules** (pin 53).
+
+⛔ **If CLEAN is unreachable, DO NOT SEAL.** Pin 36(d) in its own words: *"a sealed record
+containing a rule known to be unusable is worse than a delayed one."* **The owner decides m
+or geometry.**
+
+⚠ This is pin 36's reachability condition used as a **precondition on sealing** rather than
+as a property recorded after it — which is the difference between a rule that can fail and
+one that merely describes.
+
+### 10.5 v2 IS THE LAST VERSION — so inventory v1 first
+
+Because pin 36(d) holds the seal at **one further version**, ⭐ **v2 is COMPLETE OR
+NOTHING**: anything Stage 2 knows must change and leaves out has **no second chance.**
+
+**Before T17 authors v2, every field of `sealed/phase14_evaluation_seal_v1.json` is marked
+RIDES IN v2 or STAYS AT v1, with its reason.** First pass, derived from the file:
+
+| field | disposition | reason |
+|---|---|---|
+| `instruments.seam.clean_max` (1.0), `.elevated_max` (2.5) | **RIDES IN v2** | these **are** the rubric amendment |
+| `instruments.seam.metric`, `.oracle`, `.rubric_doc` | **RIDES IN v2 if** the amendment changes the metric or its document | decided at authoring, **recorded either way** |
+| `instruments.schema_version`, `schema_version`, `descriptor_schema_version` | **TBD at authoring** | rides only if the amendment changes shape; the decision is recorded, not left implicit |
+| `epoch_table` (15 rows) | **STAYS AT v1** | D8: the replacement holdout is a **configuration-keyed ADDITION** in a separate record; replacing the row would break D3 |
+| `c2_era_windows` (10) | **STAYS AT v1** | 2G's acceptance touch reads them; Stage 2 changes nothing |
+| `dev_gauges` (96), `locked_gauges` (39), `split_seed`, `screening` | **STAYS AT v1** | the pre-registered sealed split; changing it would void the independence the locked tier rests on |
+| `instruments.groundtrack`, `.insitu_nulls`, `.spectral_fidelity` | **STAYS AT v1** unless obligation 7 (GroundTrack, 106) requires otherwise — ⚠ **flagged, not settled here** | `groundtrack` already declares `per_era: true` |
+
+⭐ **Pin 31(d) does NOT compete for v2 — confirmed** (see §9.5): it marks **store σ rows**,
+not seal content.
+
+### 10.6 D8(b)'s holdout addition stays OUT of v2
+
+⛔ **It changes no v1 content**, so it does not need v2. And ⭐ **coupling a mechanical,
+already-derived holdout to the stage's hardest open derivation would let a rubric failure
+block 2G's precondition** — 257's requirement would then hostage itself to §10.4's
+"do not seal".
+
+Two instruments, two artifacts, **no shared failure mode**.
