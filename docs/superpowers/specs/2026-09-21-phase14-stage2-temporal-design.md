@@ -36,7 +36,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §8 | Ordering: the geometry step and the cheap sigma work; one packet | VALIDATED (D7) |
 | §9 | e10's replacement holdout, the seal-budget map, and delta_j3 | VALIDATED (D8) |
 | §10 | The amended rubric: simulated null, real-data falsifier, reachability, v2 | VALIDATED (D9) |
-| §11+ | remaining placements (CRN, Tier 2, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, gate design, coverage map | NOT YET REACHED |
+| §11 | Tier 2, S2's cloud leg, and the stage0:T18 correction | VALIDATED (D10) |
+| §12+ | remaining placements (CRN, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -949,3 +950,105 @@ block 2G's precondition** — 257's requirement would then hostage itself to §1
 "do not seal".
 
 Two instruments, two artifacts, **no shared failure mode**.
+
+---
+
+## 11. Tier 2, S2's cloud leg, and the `stage0:T18` correction (D10)
+
+**DECISION D10 (owner, 2026-09-21): the cross-host slot waits on `stage0:T18`; STAGE 2's
+TIER IS ARITHMETIC; and the precondition MOVES INTO THE LADDER.**
+
+### 11.1 `pending-T18` is the STAGE-0 tracker's Task 18 — and the wall DOES know
+
+⛔ **A FINDING I ASSERTED IS WITHDRAWN.** I reported that the wall "does not know what it is
+waiting for", having searched **`stage1:T18`**'s body. **I read the wrong tracker.**
+
+**Verified** in `docs/superpowers/plans/2026-07-22-phase14-stage0-foundations.md.tasks.json`:
+
+- **`stage0:T18` = "Task 18: Tier-2 probe — cost + BOTH determinism measurements (0b-3)"**,
+  status **`blocked`**, `blockedBy [15, 16, 17]`.
+- ⭐ **It IS the cloud leg**: a SkyPilot task (`sky/phase14_probe.yaml`, pinned image),
+  **CRN cross-host bit-exactness** (the Stage-0 half of gate 4), **cross-host single-thread
+  solve delta**, same-host multi-thread spread → the two recorded tolerances; ceiling
+  **US$25 / 8 vCPU / 64 GiB / 6 h**; **"Runs when owner supplies credentials."**
+- ⭐ **Its own body carries the slot verbatim:** *"restructured as a ladder-enforced
+  precondition on FIRST TIER-2 PRODUCTION USE. Cross-host tolerance slot = pending-T18.
+  Runs when owner supplies credentials."*
+
+⭐ **So the wall knows exactly what it waits for.** `stage1:T18`'s body never mentions
+cross-host because **the slot was never its business.**
+
+### 11.2 The collision is OLD — and neither record is edited
+
+Two existing records read `pending-T18` against the **wrong tracker**:
+
+| record | what it says | status |
+|---|---|---|
+| the posted **Gate-1 pack**, row 4 | *"cross-host slot `pending-T18` — and **T18 is a Stage-2 task (pin 86c)**"*; §1.11 repeats it: the slot *"is Stage-2 work (pin 86c), not a Stage-1 wait"* | ⛔ **SUPERSEDED** by the closure record — **not edited** |
+| the **2026-08-01 stale-criteria sweep**, lines 160–162 | *"**pin 86(c) sent T14–T21 to Stage 2**, so 'pending-T18' now means pending a *Stage-2* task — a materially weaker promise at Gate 1 than when written"* | ⛔ **HISTORY** — **not edited** |
+
+**Pin 86(c) moved `stage1:`T14–T21.** `pending-T18` names **`stage0:`T18**, which pin 86(c)
+never touched — so the sweep's "materially weaker promise" worry **dissolves under the
+correction**: the slot still waits on a blocked Gate-0 cloud probe, exactly as written.
+
+⭐ **THE STAGE-2 SPEC RECORDS THE CORRECTION, and from here on EVERY task reference in the
+spec is TRACKER-QUALIFIED** — `stage0:T18`, `stage1:T18`. A bare "T18" is ambiguous across
+two trackers and has already misled two records.
+
+**A plan-stage item adds a FORWARD POINTER to the witnessed `cross_env` node under pin 64,
+naming the namespace.** ⛔ **No node is edited.**
+
+### 11.3 Stage 1 never made Tier-2 production use
+
+**Confirmed from the rows.** `phase14.stage1.tier2_probe_kuroshio_m100` is a **Tier-1 sizing
+probe on the box**:
+
+- *"Measured, CONVERGED: **3.440 h for ONE window** at m=100 on kuroshio. Per tile (×9
+  windows) **31.0 h**; four tiles **123.8 h**."* ⭐ **31.0 h per tile against the
+  `tier2_probe` row's 6 h ceiling** — the work could never have run under that ceiling.
+- Its RAM finding is stated against **Tier 1**: *"the ≥9431 MiB **Tier-1** requirement was a
+  MODEL figure (2 × 4715.6). Measured peak is 4365 MiB, so the **2× launch rule** needs
+  ~8730 MiB."*
+- The pack's own §1.11: the four legs *"ran under the pin-155 launch gate and the pin-156
+  watchdog on that box; **no Tier-2 cloud ceiling was reached or used**."*
+
+⚠ **Where the ambiguity came from:** the pack calls them *"the four Tier-2 legs (19.67 /
+27.48 / 25.54 / 26.03 h)"*, in the **local memory-class** sense of E-16 / `stage1:T22`'s
+"Tier-2 crossing" — **not** the ladder's `Tier.CLOUD_NODE` sense that S2's precondition keys
+on. ⛔ **Two meanings of "Tier 2" in one program; the spec uses the LADDER's.**
+
+### 11.4 Stage 2's tier is ARITHMETIC, not an election
+
+D4(d) already prices the fit envelope at the **costliest admissible selection**. ⭐ **Price
+that costliest era-fit — the densest admissible epoch at the highest-`n_obs` tile — against
+Tier 1: RAM by the 2× launch rule under `tier1_eligible`, and wall with the ×1.70 margin
+(pin 28).**
+
+| outcome | consequence |
+|---|---|
+| **it CLEARS Tier 1** | era-fits **never need Tier 2**, and **S2 does not bind them**. ⚠ If the owner later **ELECTS** Tier 2 for throughput, **that election triggers S2** |
+| **it does NOT clear** | **S2 binds before the first Tier-2 fit**, and **`stage0:T18` must discharge first** |
+
+⭐ **The same verdict is applied to EVERY other Stage-2 compute consumer when it is priced:**
+the anchors-only revisit, `stage1:T21`'s high-r validation, the OSSE.
+
+### 11.5 Make "ladder-enforced" MECHANICAL (plan work)
+
+**Verified as built:** `authorize()` (`src/sverdrup/application/ladder.py`) already **WAITs
+on any task class without a spend row** — *"no pre-registered spend row for {task_class}:
+the owner must register one before any spend (executor-set spend never happens)"* — and
+`STAGE0_SPEND_TABLE` holds only `tier2_probe` (CLOUD_NODE, $25 / 8 vCPU / 64 GiB / 6 h),
+`cmems_downloads` and `stage0_default`. ⭐ **So Tier-2 production needs an owner-added row.**
+
+⛔ **BUT NOTHING CHECKS `stage0:T18`'s EVIDENCE WHEN THAT ROW IS ADDED** — `SpendRow` has no
+evidence field at all.
+
+**The fix (plan work):** a Tier-2 **production** row carries a **required-evidence field
+naming `stage0:T18`'s witnessed node**, and ⭐ **`authorize()` REFUSES while that node is
+absent** — so the precondition lives **in the code path that grants the spend, from ONE
+origin** (§7-12), rather than in a sentence someone must remember.
+
+**Tests:** a row with the evidence **absent** refuses; with it **present**, it authorises.
+
+⚠ This is the same correction shape as §7.7 and §8.2: a rule enforced by the mechanism that
+acts, not by a note beside it.
