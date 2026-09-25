@@ -37,7 +37,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §9 | e10's replacement holdout, the seal-budget map, and delta_j3 | VALIDATED (D8) |
 | §10 | The amended rubric: simulated null, real-data falsifier, reachability, v2 | VALIDATED (D9) |
 | §11 | Tier 2, S2's cloud leg, and the stage0:T18 correction | VALIDATED (D10) |
-| §12+ | remaining placements (CRN, GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §12 | Data availability by (mission, day); the census's acquisition; CRN's discharge | VALIDATED (D11) |
+| §13+ | remaining placements (GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1052,3 +1053,111 @@ origin** (§7-12), rather than in a sentence someone must remember.
 
 ⚠ This is the same correction shape as §7.7 and §8.2: a rule enforced by the mechanism that
 acts, not by a note beside it.
+
+---
+
+## 12. Availability by (mission, day); the census's acquisition; CRN's discharge (D11)
+
+**DECISION D11 (owner, 2026-09-21): availability is by (MISSION, DAY); the census fetches
+only its SAMPLED windows; CMEMS throughput is MEASURED, not inherited.**
+
+### 12.1 The availability check used the WRONG UNIT — corrected
+
+⛔ **My check asked which mission DIRECTORIES exist.** The census needs coverage by
+**(mission, date range)** (§7-18: the unit must be the thing that varies). Re-derived from
+the per-day files in `data/cmems_my/<mission>/`:
+
+| mission | local days | first → last | span | missing days in span |
+|---|---|---|---|---|
+| `alg` | 427 | 2016-12-01 → 2018-01-31 | 427 d | 0 |
+| `h2ag` | 398 | 2016-12-01 → 2018-01-31 | 427 d | **29** |
+| `j2n` | 154 | 2016-12-01 → **2017-05-17** | 168 d | 14 |
+| `j2g` | **66** | 2017-07-11 → 2017-09-14 | 66 d | 0 |
+| `j3` | 427 | 2016-12-01 → 2018-01-31 | 427 d | 0 |
+| `s3a` | 427 | 2016-12-01 → 2018-01-31 | 427 d | 0 |
+
+⭐ **`j2n` ends 2017-05-17 — the day before the e09/e10 boundary (2017-05-18).** The sealed
+boundary *is* the Jason-2 orbit change, confirmed to the day. (This also vindicates D3(e):
+the boundary is a real sampling-geometry change, which is what `n_eff` measures.)
+
+⛔ **AND e10 IS NOT FULLY LOCAL EITHER — the owner's suspicion is confirmed.** e10 spans
+2017-05-18 → 2018-11-27 (558 d); D3's pure year needs the 400 d `WindowPlan` extent, i.e.
+data through **2018-06-22**, but local data ends **2018-01-31**. Coverage *inside* e10:
+
+| mission | local days inside e10 | of ~400 needed |
+|---|---|---|
+| `alg`, `j3`, `s3a` | 259 | ~65% |
+| `h2ag` | 250 | ~63% |
+| ⭐ **`j2g`** | **66** | ⛔ **~17% — THE BINDING CONSTRAINT** |
+
+⚠ **So even the ANCHOR needs acquisition, and `j2g` needs the most of it.** A corollary
+worth recording: Stage 1's own frozen five-mission config had `j2g` present for only 66 days
+of calendar 2017 locally — an **acquisition** limit, not a mission-lifetime one (Jason-2 flew
+its geodetic orbit from 2017-07 to 2019-10).
+
+### 12.2 It is NOT circular — the census fetches only its sampled windows
+
+D4(d) already puts the census on **sampled windows**, and `n_eff` is **geometry only**, so
+⭐ **the census fetches only the days its sampled windows cover** — never a candidate epoch
+in full.
+
+**Pre-registered sampling, stated before any fetch:** per candidate epoch, **K windows spread
+across the seasons**, inside **D3-admissible spans**, **per tile** — with **K and the
+placement rule fixed in advance**.
+
+**Pricing basis, MEASURED from the local files and never by mission count:**
+
+- ⭐ **0.444 MiB per (mission, day)** (1899 files, 843.5 MiB; per-mission medians 0.429–0.500
+  MiB).
+- A 400-day pure year for **one** mission ≈ **0.17 GiB**; an e10-like era-fit at five
+  missions ≈ **0.87 GiB**.
+- Acquisition is therefore priced as `Σ over (mission, day)` — **the unit that varies** —
+  not as a mission count.
+
+⚠ **THE SUBSETTING QUESTION IS ANSWERED FROM THE SERVICE'S OWN BEHAVIOUR, NOT ASSUMED.** If
+the service supports variable or region subsetting for this product, **fetch coordinates
+only**. If it does not, ⛔ **the native daily file is the unit, and "coordinates only" saves
+DISK, not BANDWIDTH.** The spec says which applies **after checking**, and my option 1
+overstated the saving by assuming the former.
+
+### 12.3 Selection by acquisition cost is REFUSED
+
+⛔ Acquisition cost must not shape **which epochs identify the covariate** — that is outside
+D4's pre-registered objective. ⭐ **Cost enters ONLY as D4's last tie-break, where it already
+sits** (§5.3 step 3).
+
+### 12.4 Acquiring every candidate in full is UNNECESSARY
+
+Full data is needed only for the **three SELECTED** epochs, **acquired after selection**.
+The candidates are only ever sampled.
+
+### 12.5 A-1 does NOT transfer — but its MECHANISM does
+
+⛔ **The 16 KB/s was measured on the MEOM mirror serving dc2021a/dc2023, NOT on Copernicus
+Marine.** Carrying that number to this path would be the same unit error §7-18 catches.
+
+⭐ **Measure CMEMS throughput for this path on its own** — one day-file per candidate mission,
+timed — **before pricing any wall.**
+
+⭐ **What DOES transfer is A-1's MECHANISM: a trickle defeats a transport-failure guard.** The
+acquisition code therefore carries a **throughput floor with a stall watcher**, not error
+handling alone. ⚠ **A-1 itself stays test-infra work, as the closure record has it** — my
+earlier reclassification of it onto the acquisition critical path is withdrawn.
+
+### 12.6 Pin 87 — the CRN defect is discharged by MEASUREMENT, not by construction
+
+⭐ **T14's freeze removes the MECHANISM** of the CRN production defect — pin 31(c)'s
+manufactured σ gradient at tile boundaries, which pin 87 calls "a property of the shipped
+system, not of an instrument".
+
+⛔ **BUT THE DEFECT IS DISCHARGED ONLY BY A POST-FREEZE MEASUREMENT showing the manufactured
+σ gradient GONE at the seams — a FAILABLE check (§7-11), never by construction.** The spec
+**names that measurement and its trip condition**.
+
+⛔ **Until it passes, pin 87's "Stage 2G cannot close while it stands" STILL HOLDS.** A
+mechanism removed by design is not a defect measured absent.
+
+### 12.7 All of this is PLAN work
+
+⛔ **Nothing runs at spec time** (276d). The spec records **the acquisition design, the
+sampling rule, the pricing basis, and the throughput measurement** — not their results.
