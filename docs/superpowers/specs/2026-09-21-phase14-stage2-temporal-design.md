@@ -38,7 +38,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §10 | The amended rubric: simulated null, real-data falsifier, reachability, v2 | VALIDATED (D9) |
 | §11 | Tier 2, S2's cloud leg, and the stage0:T18 correction | VALIDATED (D10) |
 | §12 | Data availability by (mission, day); the census's acquisition; CRN's discharge | VALIDATED (D11) |
-| §13+ | remaining placements (GroundTrack, attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §13 | One new surface, authorised by name: the geometry provider and GroundTrack | VALIDATED (D12) |
+| §14+ | remaining placements (attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1161,3 +1162,85 @@ mechanism removed by design is not a defect measured absent.
 
 ⛔ **Nothing runs at spec time** (276d). The spec records **the acquisition design, the
 sampling rule, the pricing basis, and the throughput measurement** — not their results.
+
+---
+
+## 13. One new surface, authorised by name (D12)
+
+**DECISION D12 (owner, 2026-09-21): ONE new surface, AUTHORISED BY NAME; identity
+PRESERVED; rows REPORT-ONLY.**
+
+### 13.1 Pin 106(a) cited TWO blockers, not one
+
+I found the first and missed the second.
+
+| blocker | scope | status |
+|---|---|---|
+| **pin 82** — "bring me this before any further hardening task is created… what must be TRUE for **Stage 1** to close" | ⭐ **Stage-1 scoped** | **does NOT bind Stage 2** |
+| ⛔ **the PROGRAM spec's standing-instruments clause** (fork F), verbatim: *"Standing instruments, default rows (report-only; keyed (tile, era) via `Registry.applicable` + `report_rows` — Phase-11 machinery, **zero new surfaces**)"* | ⛔ **NOT stage-scoped** | ⭐ **this is why 106(b) named a design conflict Stage 2 inherits** |
+
+⭐ **THIS DECISION LIFTS THE SECOND BLOCKER FOR EXACTLY ONE NAMED SURFACE:** a
+**source-agnostic obs locator** plus **explicit per-tile window parameters** for the
+geometry provider.
+
+⛔ **IT IS NOT A GENERAL LICENCE.** It is recorded in the spec as an **amendment of that
+clause, citing this decision** — so a successor reads the clause and the exception together.
+
+### 13.2 Why lifting it is right, recorded
+
+⭐ **Fork E already requires it.** It puts `n_eff` in *"the geometry-provider layer, never
+through the solver"* — so **the program spec already demands a geometry provider that
+reaches cmems_my tiles.** The surface is **mandated by fork E**; GroundTrack **rides on it**.
+
+**One reader, two consumers, ONE origin** (§7-12). ⛔ **The derivation stays Phase-11's,
+unchanged** — `split_passes`, `_fit_heading`, `classify_orbit`, `derive_family` are
+box-agnostic already; only the file lookup and the longitude window are scoped:
+
+- `_find_obs` globs `dt_gulfstream_{mission}_phy_l3_*.nc` and demands **exactly one file per
+  mission**. cmems_my is `dt_global_{mission}_phy_l3_1hz_{date}_{vintage}.nc`, **427 files
+  per mission**.
+- `_LON_LO, _LON_HI = 295.0, 305.0` sit at **module level** and are baked into the artifact
+  key (`box_lon`).
+
+### 13.3 IDENTITY — the pin-31(a) pattern, reused
+
+`_LON_LO`/`_LON_HI` **leave module level and become explicit inputs**, and ⭐ **the
+challenge-box call site passes today's constants.**
+
+⛔ **ACCEPTANCE: given the challenge box (295–305) and the dc2021a locator, the generalised
+provider reproduces the existing artifact's KEY AND BYTES exactly.** ⛔ **A mismatch is a
+STOP, not a re-baseline.**
+
+⚠ This is the same instrument as pin 31(a)'s hard identity constraint: a generalisation is
+accepted only when it reproduces the specialisation byte for byte.
+
+### 13.4 Rows are REPORT-ONLY — and the program spec already refused the alternative
+
+⭐ **Report-only is the program spec's OWN classification for standing instruments**, not a
+caution added here.
+
+⛔ **Claim-bearing groundtrack rows are REFUSED.** GroundTrack's **0.410** is a
+**challenge-box baseline** (the `0.410→0.331` lineage, fork F), and a claim-bearing threshold
+carried to other tiles is **a box-scale result cited as transferring** — §7-7 exactly.
+
+⭐ **And fork F pin 6 had already refused it, in its own words:** *"every standing row is
+report-only; promotion to a bar anywhere in this program goes through the pre-registration
+mechanism with owner sign-off — the box-scale rule, said once here so no tile/era table
+drifts into gating."*
+
+**So promoting ANY standing instrument to claim-bearing is a SEPARATE owner decision, with
+pre-registered tolerances.** Nothing here promotes one.
+
+### 13.5 Stage 1's composition stays INCOMPLETE
+
+⛔ **Stage 1's transfer composition stays INCOMPLETE as recorded (106), and the closure
+record stays FROZEN.** ⭐ **Stage 2's rows complete the composition for STAGE 2's readings
+going forward** — and the spec says exactly that, so no reader takes Stage-2 rows as
+retroactively completing Stage 1's.
+
+### 13.6 D11 binds the reader
+
+- **Availability by (mission, day)** — §12.1's unit, not directory presence.
+- **A throughput floor with a stall watcher** — A-1's mechanism, not its number (§12.5).
+- ⭐ **The locator handles the many-day-file layout WITHOUT the one-file-per-mission
+  assumption** — the concrete defect §13.2 names.
