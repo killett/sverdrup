@@ -39,7 +39,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §11 | Tier 2, S2's cloud leg, and the stage0:T18 correction | VALIDATED (D10) |
 | §12 | Data availability by (mission, day); the census's acquisition; CRN's discharge | VALIDATED (D11) |
 | §13 | One new surface, authorised by name: the geometry provider and GroundTrack | VALIDATED (D12) |
-| §14+ | remaining placements (attribution, power, S5, S6), seasonal axis, transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §14 | The seasonal axis: a report-only diagnostic on covariate residuals | VALIDATED (D13) |
+| §15+ | remaining placements (attribution, power, S5, S6), transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1244,3 +1245,80 @@ retroactively completing Stage 1's.
 - **A throughput floor with a stall watcher** — A-1's mechanism, not its number (§12.5).
 - ⭐ **The locator handles the many-day-file layout WITHOUT the one-file-per-mission
   assumption** — the concrete defect §13.2 names.
+
+---
+
+## 14. The seasonal axis: a report-only diagnostic on covariate residuals (D13)
+
+**DECISION D13 (owner, 2026-09-21): a REPORT-ONLY seasonal diagnostic on COVARIATE
+RESIDUALS; `s(x, era)` UNCHANGED; resolution STATED.**
+
+### 14.1 The substrate is THINNER than "n>1 years"
+
+⚠ **The unlock condition is met only in a weak sense.** D3 gives each reference epoch **ONE
+balanced year**, so **within an era every season appears once.** The n>1 years exist only
+**ACROSS the three reference epochs — which are different ERAS.**
+
+⭐ **So the diagnostic runs on residuals AFTER the covariate model, where era is absorbed by
+`n_eff`.** That gives ⭐ **n = 3 per (season, tile)**, ⛔ **CONDITIONAL ON THE COVARIATE
+ABSORBING ERA** — D5's structure exactly, **and quoted with that qualifier every time**.
+
+### 14.2 Resolution is set by the WINDOW STRIDE — quarters, not months
+
+Derived from `WindowPlan()`: 9 windows, stride **45 d**, so **365/45 ≈ 8.1 windows per year**.
+Season is taken **by window centre**, and the centres (days 12, 57, 102, 147, 192, 237, 282,
+327, 352) fall **2 / 2 / 2 / 3** across quarters.
+
+⭐ **THE PARTITION IS QUARTERS, NOT MONTHS, AND IT IS PRE-REGISTERED.**
+
+⛔ **THE AUGUST 0.629 FINDING IS MONTHLY. It can be tested only at SEASONAL resolution, and
+the spec says so** — so no reader takes a quarterly result as a test of the monthly claim.
+(The lineage, from the archived trail's owner T14 ledger line (c): *"August 0.629 — the
+seasonal limitation survives the R change: one more candidate mechanism eliminated; the axis
+stays named future work with n>1-years as its substrate."*)
+
+### 14.3 Pre-registered exactly as D5 is
+
+| element | specification |
+|---|---|
+| **statistic** | per-season **`coverage_1σ`** and **χ² deviation from the all-season value** |
+| **tolerance** | **stated before any number arrives** (§7-10) |
+| **noise floor** | **two-way block resampling with WINDOW BLOCKS WITHIN SEASON** (§6.3's method, restricted) |
+| **outcomes** | **CONSISTENT** / **DIVERGENT** / **UNDERPOWERED** |
+
+⛔ **UNDERPOWERED IS NEVER READ AS "NO SEASONALITY."** With n = 3 per (season, tile) this is
+the likely outcome, and it must be reported under its own name (§7-11).
+
+### 14.4 `s(x, era)` stays ERA-STATIC — and a DIVERGENT result does not change it
+
+⛔ `s(x, era)` **stays era-static** (fork-e pin 2(ii), per-location median).
+
+⭐ **A DIVERGENT result is a RECORDED FINDING that tables an owner decision to fit the axis
+in STAGE 3**, where the full record gives **many years per era**.
+
+⛔ **IT NEVER CHANGES THE CALIBRATION MODEL INSIDE STAGE 2.** Changing `s` on the diagnostic
+that measures it is **the (i6) pattern** — the same refusal as D9 §10.1.
+
+### 14.5 The C2→2G line
+
+⭐ **2G's calibrated σ is ERA-STATIC, and the seasonal row travels with it as a STATED
+LIMITATION** — continuing the August 0.629 lineage rather than closing it.
+
+### 14.6 No extra solves
+
+D3's windows already carry the substrate. The diagnostic adds **no solves**.
+
+### 14.7 CORRECTION APPLIED to `docs/project-context.md` (owner's, D13g)
+
+**Line 64 read:** *"extrapolation-fraction audit; **locked-gauge era rows (DEV pool)**."*
+
+⛔ **That contradicts itself** — the locked c1 set is 39 gauges, **disjoint from the 96-gauge
+DEV pool by pre-registered sealed split** — **and it contradicts program spec §3.3 and the
+same file's own §5.4**, both of which read *"DEV-pool gauge era rows."*
+
+**Replaced with:** *"extrapolation-fraction audit; **DEV-pool gauge era rows (no locked opens
+at Gate 2, §3.3)**."* ⛔ **Nothing else in that file changes.**
+
+⭐ **RECORDED, because the consequence was not cosmetic: a successor reading the old line
+could have spent the program's FIRST LOCKED OPEN at the wrong gate** — Gate 2, where §3.3
+says the locked set is *never opened*, instead of at 2G's acceptance touch.
