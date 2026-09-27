@@ -42,7 +42,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §14 | The seasonal axis: a report-only diagnostic on covariate residuals | VALIDATED (D13) |
 | §15 | The era no-op: a plumbing identity that CAN fail | VALIDATED (D14) |
 | §16 | Four EXECUTOR placements (P1-P4): attribution, power, S5, S6 | PLACED — executor-authored, awaiting owner correction |
-| §17+ | transferred-vs-refit, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §17 | Transferred-vs-refit per era: eligibility is not a schedule | VALIDATED (D15) |
+| §18+ | revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -320,14 +321,27 @@ the sealed table and that map**, not asserted:
 ⭐ **THE PURPOSIVE READING, AND WHY NO EARLY EPOCH IS FORCED.** The covariate exists to
 carry `s` to the epochs that cannot be fit. Those are the sealed **`transferred`** epochs,
 and they carry only ers-line and poseidon — **both already in the anchor**. `gfo` flies only
-in e02–e04, and all three of those are **`fit`** epochs, which get their **own per-era fit**
-and never lean on the covariate. So the class e10 lacks is a class the covariate is never
-asked to reach.
+in e02–e04, and all three of those are sealed **`fit`** epochs, **eligible to carry their own
+per-era fit** rather than leaning on the covariate. So the class e10 lacks is a class the
+covariate is never asked to reach.
 
-**The reconciliation, stated in the spec so no consumer mis-reads the roles:**
+**The reconciliation — REWRITTEN by the owner (D15a), whose sentence the earlier version
+was:**
 
-> **Reference epochs identify (a, b). Every `fit` epoch gets its own per-era fit. Only
-> `transferred` epochs rely on the covariate.**
+> **Reference epochs identify (a, b). A `fit` epoch CAN carry its own per-era fit, and
+> WHICH STAGE PRODUCES IT is recorded per era. Only `transferred` epochs rely on the
+> covariate BY DESIGN.**
+
+⚠ **The superseded wording said "Every `fit` epoch gets its own per-era fit."** That
+**overstated**: ⭐ **the sealed role records ELIGIBILITY — at least four missions net of
+locked, `fit+validate` — and NO ruling schedules a fit for all ten.** (Derived: `role ==
+fit+validate` ⟺ net-of-locked ≥ 4, on all 15 rows.)
+
+⛔ **AND THIS MAKES THE COVERAGE ARGUMENT ABOVE CONDITIONAL** (D15b). *"No early epoch is
+forced"* holds **only while e02–e04 are REFIT when their calibration is produced.** ⭐ **If
+Stage 3 TRANSFERS to any `gfo` epoch instead, the covariate meets a class it never saw, and
+the `gfo` coverage gap REOPENS as a Stage-3 obligation.** Carried as a **C2→3 line**, not
+only as a note here.
 
 ### 5.2 Correction — the unit error in the question that produced this
 
@@ -1491,3 +1505,65 @@ resolution is a **consumption-side decision recorded outside the seal**, leaving
 which DEV-pool gauges serve which tile and era. That is a Stage-2 design item, and being a
 **Gate-0 owner attention item**, the resolution goes to the owner rather than being chosen by
 the executor.
+
+---
+
+## 17. Transferred-vs-refit per era: eligibility is not a schedule (D15)
+
+**DECISION D15 (owner, 2026-09-21): the SEALED ROLE IS ELIGIBILITY, NOT A SCHEDULE; the
+SEVEN are NOT PRODUCED in Stage 2; STAGE 3 decides REFIT vs TRANSFER.**
+
+### 17.1 The owner's correction, tagged as the owner's
+
+⭐ **§5.1's "Every `fit` epoch gets its own per-era fit" is the OWNER's sentence, and it
+OVERSTATED.** The sealed role records **ELIGIBILITY** — at least four missions net of locked,
+`fit+validate` — and ⛔ **no ruling schedules a fit for all ten.** §5.1 now carries the
+rewritten form.
+
+⚠ Recorded as the owner's own correction rather than absorbed silently, for the same reason
+§5.2 and §12.1 are: the tree should show where a sentence came from and who fixed it.
+
+### 17.2 The per-era row: THREE FIELDS, not a category picked by eye
+
+| field | values | note |
+|---|---|---|
+| **`sealed_role`** | **verbatim from seal v1** | ⛔ **never restated** — quoted, not paraphrased |
+| **`stage2_status`** | **FITTED** (the three reference epochs) \| **TRANSFER-READ** (where the Gate-2 sparse-epoch reading consumes it — **once, masked**) \| **NOT PRODUCED** | what Stage 2 actually did |
+| **`calibration_when_produced`** | **REFIT** \| **TRANSFER** \| **UNDECIDED**, **with the stage that decides** | the forward-looking field |
+
+⭐ **THE SEVEN ARE: `stage2_status` = NOT PRODUCED, `calibration_when_produced` = UNDECIDED
+(Stage 3).**
+
+⛔ **Recording them as "transferred" would record a transfer THAT NEVER HAPPENS IN STAGE 2.**
+Both my two-category option and my own preview's "s from the covariate in practice" made
+exactly that error: Stage 2 produces **no** `s` for those eras at all — neither fitted nor
+transferred.
+
+### 17.3 Stage 3 decides, and is NOT committed to fit
+
+⭐ **REFIT is the default the sealed role allows.** ⛔ **TRANSFER instead must CITE STAGE 2's
+LORO EVIDENCE** — held-out-reference prediction error is **exactly the test of whether the
+covariate can stand in for a per-era fit** — and it **triggers §5.1's `gfo` obligation where
+it applies.**
+
+⚠ So D5's LORO is doing double duty, and the spec says so: it is the era-level **falsifier**
+for `se(b_i)` (§6.4) **and** the evidence any future TRANSFER decision must cite. A weak LORO
+result therefore costs twice.
+
+### 17.4 The Phase-12 pattern, era-indexed — on every row that TRANSFERS
+
+Three elements on each transferring row, following Phase 12's own form (*"the six-mission
+product SHIPS; the five-mission config CALIBRATES"*):
+
+1. **the expected DIRECTION, with its reason**;
+2. **a PRE-REGISTERED BAR**;
+3. **an OWNER-RULED REFERENT**.
+
+⛔ **AND ONE ASYMMETRY IS STATED NOW.** Phase 12 transferred toward **MORE** missions and
+expected **over-coverage — the conservative direction** (its bar: coverage ∈ 0.6827 ± 0.10,
+referent 0.7350). ⭐ **Stage 2's sparse-era transfer runs toward FEWER missions, and where the
+hull clip binds, the bias direction is set by THE SIGN OF `b`: UNDER-coverage if `b < 0`.**
+
+⛔ **IT CANNOT BE ASSUMED CONSERVATIVE.** ⭐ **The row states the direction ONCE `b` IS
+FITTED, and BEFORE the sparse reading is consumed** — the reading is consumed **once**
+(fork-c pin 1), so a direction stated after it would be stated too late to be a prediction.
