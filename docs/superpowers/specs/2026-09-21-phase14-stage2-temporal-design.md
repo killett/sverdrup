@@ -41,7 +41,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §13 | One new surface, authorised by name: the geometry provider and GroundTrack | VALIDATED (D12) |
 | §14 | The seasonal axis: a report-only diagnostic on covariate residuals | VALIDATED (D13) |
 | §15 | The era no-op: a plumbing identity that CAN fail | VALIDATED (D14) |
-| §16+ | remaining placements (attribution, power, S5, S6), transferred-vs-refit, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §16 | Four EXECUTOR placements (P1-P4): attribution, power, S5, S6 | PLACED — executor-authored, awaiting owner correction |
+| §17+ | transferred-vs-refit, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1407,3 +1408,86 @@ wrong.
 ⭐ **After T14's acceptance, or re-run after it.** Pin 31(a) keeps the anchor identical **by
 construction** — ⛔ **and "by construction" is precisely what this decision refuses to lean
 on.**
+
+---
+
+## 16. Four placements, with reasons (P1–P4)
+
+⛔ **THESE ARE EXECUTOR PLACEMENTS, NOT OWNER DECISIONS.** 274(c) directs that *"THE SPEC
+PLACES, WITH REASONS"*, so they are authored here and tagged **P1–P4** rather than given pin
+numbers — **a pin number asserts owner authorship** (pin 40). Each is **subject to owner
+correction**, and none is cited as ruled.
+
+### P1 — ATTRIBUTION versus the bridge caveat → the CAVEAT travels; the READOUT does not
+
+**PLACED:** Stage 2 does **NOT** land the source-delta attribution readout. It is an **owner**
+readout — the golden-tile node records the AVISO DT2021 decomposition as an
+**owner-electable ledger row, `tabled_for_owner: true`** — and nothing in Stage 2's scope
+produces it.
+
+**What Stage 2 does instead:** ⭐ **the bridge caveat travels as a REQUIRED SCHEMA FIELD**, the
+mechanism that already exists — `BRIDGE_CAVEAT` in `phase14_stage1_run.py:233-238`, verbatim
+on every cmems_my row: *"cross-lineage reading; golden-tile bridge delta MEASURED ON THE
+ANCHOR BOX (mu −0.012457 their_eval-scale, map RMS 4.10 cm); its magnitude at THIS tile is
+unmeasured; interpretation WAITS on the owner attribution readout."*
+
+**Reason:** pin 94's precedent is explicit — *"a row that must be paired with a document to be
+read correctly will eventually be read alone"* — so a Stage-2 cross-lineage row **cannot be
+BUILT without the field**. ⚠ **Stage 2's own named exposure:** `s_spatial`'s baseline lineage
+is the phase-13 anchor-derived surface while the covariate is identified on **cmems_my**
+tiles, so **any reading that carries the anchor's surface onto a cmems_my tile is
+cross-lineage** and carries the field.
+
+### P2 — THE POWER WINDOW (132) → a budget line, not new work
+
+**PLACED:** recorded in the plan's per-leg envelope as a **budget line**; **no new work**.
+
+**Reason:** pin 132 names it *"carried forward, unresolved and **not resolvable by executor
+work**… a power event still costs the window in flight (~3.44 h), which is the residual R5
+could not remove."* ⭐ **And the figure is exactly ONE WINDOW-SOLVE, measured**: the
+`tier2_probe_kuroshio_m100` row records **3.440 h for one window at m=100**. So the exposure
+is *one window re-solve per power event*, priced in the unit that varies (§7-18).
+
+**Standing practice already covers the mitigation** — *"persist expensive intermediate state
+BEFORE any compare phase; a compare-phase death must not cost the solves"* — so Stage 2 adds
+**no mechanism**, only the line in the envelope.
+
+### P3 — S5 (the open witness interval) → binds ONLY where Stage 2 re-cites the artifact
+
+**PLACED:** the open interval rides **`stage1:T19`**'s citation, and is otherwise **recorded,
+not acted**.
+
+**Reason, derived from the node:** exactly **one** of three intervals is open —
+**`phase13_lane0_mean.nc`**, *"ABSENT — no contemporaneous sha of this artifact exists in the
+record"*, so *"the 2026-07-28 capture closes **future substitution only**."* Its own recorded
+materiality: *"lower than the other two: this artifact is cited by the **gate-5 `scope_note`**
+and the **Stage-0 golden-tile `mu_scale_check`**, not by a bit-identical check-1 route."*
+
+⭐ **Stage 2 touches gate-5 through `stage1:T19`** (the DT scoring-track re-score that
+constrains gate-5's write-once constants), **so that is the one place the caveat must
+travel.** The other two intervals are **CLOSED by exact match** and need nothing.
+
+### P4 — S6 (gauge proximity) → it BINDS Stage 2, and is resolvable WITHOUT a seal change
+
+⭐ **PLACED AS BINDING, not as recorded-only** — this is the one of the four that reaches into
+Stage 2's own gate.
+
+**Reason:** the **sealed** screening block carries
+`"proximity": "DEFERRED to consumption grid (Stage-0 recorded interpretation; Gate-0 owner
+attention item)"`, with `l_prox_km = 150.0` concrete and **`proximity` the FOURTH of five
+entries in `criteria_order`**. ⭐ **Gate 2's independence evidence includes DEV-pool gauge era
+rows (§3.3), so STAGE 2 IS A CONSUMPTION GRID** — the deferral's own named trigger.
+
+⛔ **It must be resolved BEFORE those rows are read**, or the rows carry an **unresolved
+screening criterion** while serving as Gate-2 independence evidence.
+
+⭐ **AND IT IS RESOLVABLE WITHOUT TOUCHING THE SEAL** — which matters, because a seal change
+would claim the one authorised v2 already allocated to T17 (§9.5). The sealed text **itself
+contemplates this**: the interpretation is deferred *to the consumption grid*, so the
+resolution is a **consumption-side decision recorded outside the seal**, leaving
+`screening.proximity` and `l_prox_km = 150.0` byte-unchanged.
+
+⚠ **What resolving it means is NOT settled here:** how proximity is applied when selecting
+which DEV-pool gauges serve which tile and era. That is a Stage-2 design item, and being a
+**Gate-0 owner attention item**, the resolution goes to the owner rather than being chosen by
+the executor.
