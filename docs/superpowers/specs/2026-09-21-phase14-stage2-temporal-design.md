@@ -40,7 +40,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §12 | Data availability by (mission, day); the census's acquisition; CRN's discharge | VALIDATED (D11) |
 | §13 | One new surface, authorised by name: the geometry provider and GroundTrack | VALIDATED (D12) |
 | §14 | The seasonal axis: a report-only diagnostic on covariate residuals | VALIDATED (D13) |
-| §15+ | remaining placements (attribution, power, S5, S6), transferred-vs-refit, era no-op, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §15 | The era no-op: a plumbing identity that CAN fail | VALIDATED (D14) |
+| §16+ | remaining placements (attribution, power, S5, S6), transferred-vs-refit, revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1322,3 +1323,87 @@ at Gate 2, §3.3)**."* ⛔ **Nothing else in that file changes.**
 ⭐ **RECORDED, because the consequence was not cosmetic: a successor reading the old line
 could have spent the program's FIRST LOCKED OPEN at the wrong gate** — Gate 2, where §3.3
 says the locked set is *never opened*, instead of at 2G's acceptance touch.
+
+---
+
+## 15. The era no-op: a plumbing identity that CAN fail (D14)
+
+**DECISION D14 (owner, 2026-09-21): the era no-op is a PLUMBING IDENTITY THAT CAN FAIL;
+§10 check 3's "BY CONSTRUCTION" wording is REPLACED for Stage 2.**
+
+### 15.1 The trap is in the SPEC
+
+⛔ **Program spec §10 check 3, verbatim:** *"**Era-machinery no-op:** era-keyed calibration
+evaluated at the reference epoch = signed s(x) EXACTLY, **BY CONSTRUCTION** (fork-e pin 1's
+gauge: density factor ≡ 1 at n_eff₀) — an identity, not a tolerance."*
+
+⛔ **A CHECK TRUE BY CONSTRUCTION CANNOT FAIL** (§7-11) — and this one sits **inside the
+five-gate anchor identity set**, which is the last place it belongs.
+
+⭐ **The gauge-identity reading is REFUSED.** This decision **replaces check 3's CONTENT for
+Stage 2**, recorded here. ⛔ **The program spec's text is NOT edited.**
+
+### 15.2 What it asserts
+
+- ⭐ **The FULL era-keyed path runs, with NO branch on `era == reference`.** A path that
+  short-circuits at the reference epoch tests nothing.
+- Evaluated at **the anchor's reference epoch**, surface values **`==` the signed phase13
+  field** (`phase13_field_miost.json`, sha `a4d3b4a0…`, **2652 values**, exact `==`, never a
+  tolerance).
+- ⭐ **The factor is built NORMALISED BY THE REFERENCE ERA'S OWN FACTOR**, so the reference
+  epoch **cancels exactly in IEEE** (`x/x = 1.0` for finite nonzero `x`) **while the whole
+  path still executes.**
+- **Assert that the covariate path RAN**: `n_eff` computed, descriptor fields populated.
+
+### 15.3 The descriptor is a STRUCTURED DIFF, not `cal_key` byte-equality
+
+⚠ **Byte-equality is the wrong instrument here.** Fork E **serialises the covariate
+definition into the calibration descriptor**, while Stage 1's `cal_key` is the **bare
+polynomial string**
+(`cal:poly;coeffs=(…);clip=(…);fit=L-BFGS-B;gtol=1e-08`) — so ⛔ **`cal_key` byte-equality is
+reachable only by a BYPASS**, which is the opposite of what the check wants.
+
+**Assert instead:** every **Stage-1 `cal_key` field unchanged**, **plus EXACTLY the era and
+covariate fields on an ALLOWLIST written before the run.** ⛔ **Any other difference fails.**
+
+### 15.4 BOTH outcomes reachable (pin 42)
+
+⭐ **A declared MIS-WIRING must FAIL** — the other era's geometry on one side of the
+normalisation, or a wrong era key. ⭐ **The negative control's FAIL is recorded BESIDE the
+PASS.**
+
+⛔ **NAMED TRIP CONDITION:** a **zero or infinite density reaching the normalisation**
+(`n_eff = 0` not caught by hull/clip) yields a **non-1.0 factor and trips**. ⭐ **That is a
+real defect the check exists to catch** — not a hypothetical.
+
+### 15.5 Scope, stated BESIDE the PASS
+
+⭐ **This proves the era machinery is TRANSPARENT at the anchor. It CANNOT validate the
+covariate.** That is **LORO's** job and the **sparse-epoch transfer reading's** job.
+
+⚠ Stated beside the PASS, not in a footnote — a transparent-plumbing result quoted as
+covariate validation would be the pack's §1.11 error repeated (evidence read as covering
+more than it does).
+
+### 15.6 Discharge accounting
+
+**On PASS:** ⭐ **anchor check 3's era no-op is RUN AND PASSED at Stage 2, with its commit
+named.**
+
+⛔ **Stage 1's proxy-pass stays as recorded**: the closure record is **frozen at 97b's
+accounting**, and **the `anchor_gate` node is NOT edited**. ⭐ **A pin-64 FORWARD POINTER
+names the Stage-2 discharge.**
+
+**From then on the accounting reads:** ⭐ **THREE run and passed (1, 3, 5), TWO cited
+(2, 4) — each with its date.** (Still never "five green": 260(a)'s form is preserved, with
+one item moved from proxy to run.)
+
+⚠ The narrower option — running the test but declining to discharge check 3 — **would
+UNDER-record once the real check has run**, which is the mirror of over-recording and just as
+wrong.
+
+### 15.7 It runs on the code that SHIPS
+
+⭐ **After T14's acceptance, or re-run after it.** Pin 31(a) keeps the anchor identical **by
+construction** — ⛔ **and "by construction" is precisely what this decision refuses to lean
+on.**
