@@ -43,7 +43,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §15 | The era no-op: a plumbing identity that CAN fail | VALIDATED (D14) |
 | §16 | Four EXECUTOR placements (P1-P4): attribution, power, S5, S6 | PLACED — executor-authored, awaiting owner correction |
 | §17 | Transferred-vs-refit per era: eligibility is not a schedule | VALIDATED (D15) |
-| §18+ | revisit, OSSE exit, gate design, coverage map | NOT YET REACHED |
+| §18 | The revisit (225) declined and travelling; the OSSE exit (251(3)) answered | VALIDATED (D16) |
+| §19+ | Gate-2 design, the derived coverage map (276b) | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1567,3 +1568,96 @@ hull clip binds, the bias direction is set by THE SIGN OF `b`: UNDER-coverage if
 ⛔ **IT CANNOT BE ASSUMED CONSERVATIVE.** ⭐ **The row states the direction ONCE `b` IS
 FITTED, and BEFORE the sparse reading is consumed** — the reading is consumed **once**
 (fork-c pin 1), so a direction stated after it would be stated too late to be a prediction.
+
+---
+
+## 18. The revisit (225) and the OSSE exit (251(3)) (D16)
+
+**DECISION D16 (owner, 2026-09-21).** Two halves: the **revisit is NOT ELECTED at Stage 2,
+by explicit decision, and TRAVELS to 2G**; the **OSSE design question is PRESERVED FOR THE
+SAMPLING CLAIM, and for its FORM only, with three limits.**
+
+### 18.1 The Phase-10 reopening condition — quoted, and my mis-citation corrected
+
+⛔ **I CITED THE WRONG ROW.** *"Revisit only at the global domain"* is the **MIOST-B
+REPRESENTATION** thread — **Phase-10 post-close ruling 4** — and *"the OI product question
+re-opens at the global domain"* is **ruling 1** (the declined tuned-constant election).
+**Neither is the Phase-10 revisit thread's reopening condition**, and §9's row for that
+thread reads only *"per its recorded reopening condition."*
+
+⭐ **THE CONDITION, VERBATIM — Phase-10 post-close ruling 3(a), 2026-07-15:**
+
+> *"the negative result is SCOPED — **'no lat-varying gain beyond the measured band UNDER
+> THIS SEARCH (recorded `n_sobol_per_lane`: 7 full-year equivalent / 30 screening per lane,
+> 12 h wall, screening contingency active)'** — a search-scoped negative, never a physics
+> disproof."*
+
+⭐ **AND THAT SETTLES SOMETHING 225(b) ONLY IMPLIED.** The condition is about **SEARCH
+BREADTH**. ⛔ **Anchors-only is NARROWER than the search that produced the negative** — 3
+solves/tile against 7 full-year-equivalent sobol samples per lane — so **it can never
+discharge the reopening condition at any stage.** Only a **wider** search can. The revisit
+therefore travels as a **configuration comparison**, never as a reopening instrument.
+
+### 18.2 NOT ELECTED at Stage 2 — an explicit decision, with reasons
+
+⚠ **225 names anchors-only "Stage 2's entry point", so DECLINING IS AN EXPLICIT OWNER
+DECISION**, recorded with its reasons — not a silent lapse.
+
+**225(c)'s reasons, re-checked for Stage 2, each still holding:**
+
+1. **12 days for a report-only result whose strong form is unreachable**, on a
+   memory-constrained box;
+2. **the box-scale negative is never cited as transferring** (§7-7 / discipline 7);
+3. **no Gate-2 item is bought** — Gate 2's four items are the covariate rotations verdict,
+   the sparse-epoch transfer reading, the extrapolation-fraction audit and the DEV-pool
+   gauge era rows; the revisit is **not among them**.
+
+**Two more, specific to Stage 2:**
+
+4. ⭐ **It has NO TEMPORAL CONTENT** — a 2017-only configuration comparison, in the stage
+   whose whole subject is era;
+5. ⭐ **it competes with Stage 2's box-bound critical path** (the era-fits and the
+   acquisition of §12).
+
+### 18.3 It TRAVELS to 2G — and the price is labelled
+
+⭐ **At 2G, fleet compute makes 12 solves cheap in WALL time, and the answer — which
+configuration to ship per regime — BUYS something.**
+
+⛔ **296.2 h / 12.3 d is a TIER-1 BOX PRICE.** It **travels as that, LABELLED**, and is
+**RE-PRICED at 2G's rung**. ⛔ **It is NEVER quoted as a 2G cost** (§7-18: a figure measured
+on one axis must not be applied on another).
+
+### 18.4 225(b)'s limit travels verbatim
+
+⛔ **Wherever the option appears:** anchors-only can say *"the lane's designated
+configuration does not beat lane-0 in this regime."* It **CANNOT** say *"no configuration in
+the lane does."* **A negative result needs the second, and the sobol search is what buys
+it.**
+
+### 18.5 OSSE 251(3) — PRESERVED for the sampling claim, and for its FORM only
+
+⭐ **Flying each era's geometry over one fixed nature-run period ISOLATES SAMPLING, which is
+exactly what `s = f(n_eff)` claims.** So the design **does** preserve "constellation varied
+over fixed truth" — **for that claim.**
+
+⛔ **BUT IT TESTS THE COVARIATE'S *FORM*, NOT ITS LEVEL.** It tests **`b`** — the slope,
+relative across eras. ⛔ **`a` is set by the TRUTH's own variance spectrum, which a nature
+run does not share with the real ocean.** ⭐ **Compare `b` between the OSSE and real data.
+NEVER `a`.**
+
+### 18.6 Three stated limits
+
+| # | limit |
+|---|---|
+| 1 | ⛔ **ERROR MODELS ARE INPUTS.** The OSSE tests the covariate **GIVEN** the assumed δ_m and structured R — **not those models** |
+| 2 | ⛔ **OCEAN STATE IS HELD FIXED.** Any era-dependence of `s` arising from the ocean itself (eddy energy, regime shifts) is **invisible by construction**. ⭐ *"Nothing but density varies with era"* is tested **only** by real-data **LORO** and the **sparse-epoch reading** |
+| 3 | ⛔ **ABSOLUTE `s` IS TRUTH-DEPENDENT** — §18.5 |
+
+### 18.7 The truth period, and what stays open
+
+⭐ **The ~14-month truth holds ONE D3-balanced year, so the OSSE INHERITS D3's balance.**
+Era geometry comes from **D12's reader**, with times **re-mapped to the truth period by a
+PRE-REGISTERED rule**.
+
+⛔ **Replication (251(4)) stays OPEN and UNPRICED. No pricing here.**
