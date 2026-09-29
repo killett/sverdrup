@@ -45,7 +45,7 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §17 | Transferred-vs-refit per era: eligibility is not a schedule | VALIDATED (D15) |
 | §18 | The revisit (225) declined and travelling; the OSSE exit (251(3)) answered | VALIDATED (D16) |
 | §19 | Gate 2: every item has a bar; what a failure DOES separates them | VALIDATED (D17) |
-| §20 | The derived coverage map (276b) | NOT YET REACHED |
+| §20 | The coverage map (276b), counts DERIVED | COMPLETE — awaiting the §7-17 frame review (276c) |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1770,3 +1770,77 @@ assemble the decision themselves.
 ⭐ **CONVENTION, extending §11.2's rule from tasks to gates and sweep items:** **"Gate 2"**
 means the stage gate; **"anchor-check-2"** means §10's second identity; task references are
 tracker-qualified; **"S6"** is written **"sweep item S6"** or **"Sentinel-6"**, never bare.
+
+---
+
+## 20. The coverage map (276b)
+
+⭐ **Every closure-record item (263.1–12, S1–S6, A-1) and pins 255–258, each marked SETTLED
+(§ ref), CARRIED TO C2→2G (named), or PLACED (with reason).** ⛔ **The count is DERIVED from
+this table by script, never recalled** (146b) — see §20.3.
+
+### 20.1 The map
+
+| item | disposition | where, and why |
+|---|---|---|
+| **263.1 KERNEL** | **CARRIED TO C2→2G** | 274(b): poles and the kernel exits are 2G's, decided "with the kernel decision in hand". `operative_halo_deg()` stays untouched (§1) |
+| **263.2 REVISIT** | **SETTLED** | §18.1–18.4 — NOT elected at Stage 2 by explicit decision; travels to 2G labelled as a **Tier-1 box price**, with 225(b)'s limit verbatim |
+| **263.3 OSSE** | **SETTLED** (in part) | §18.5–18.7 — 251(3) answered: preserved for the **sampling** claim, **form only** (`b`, never `a`), three limits stated. ⚠ **Replication (251(4)) stays OPEN and UNPRICED** |
+| **263.4 REFRESH** | **CARRIED TO C2→2G** | bundled with 2G's chain and touch (255c); its two named Stage-2 obligations are SETTLED — see **256** and **257** |
+| **263.5 σ SEAMS** | **SETTLED** | §10 — freeze → simulated null → real-data falsifier → reachability → v2 → score. The diagnosis's five confirmed lines stand; the verdict becomes attributable once the pavement pairs |
+| **263.6 CRN** | **SETTLED** | §12.6 — the freeze removes the MECHANISM; the defect is discharged only by a **failable post-freeze measurement** (§7-11), which is precondition **§19.2-A5** |
+| **263.7 GROUNDTRACK** | **SETTLED** | §13 — ONE named surface authorised; rows **REPORT-ONLY** (fork F pin 6); identity by the pin-31(a) pattern |
+| **263.8 ATTRIBUTION** | **PLACED** | §16 **P1** — the caveat travels as a **required schema field** (pin 94's precedent); the **readout stays the owner's** |
+| **263.9 POWER** | **PLACED** | §16 **P2** — a budget line, not new work; the ~3.44 h is **one window-solve, measured** |
+| **263.10 LEDGERS** | **CARRIED TO C2→2G** | 275(b): **THREE** ledgers, and it is **2G's question**; the tripwire stays green through Stage 2 (§1.2, §9.5) |
+| **263.11 TEST ISOLATION** | **PLACED** | §1.2 — 275(a): **early housekeeping**; false FAILURES, not false passes, so it **gates nothing** |
+| **263.12 TASKS 14–21** | **SETTLED** | §7 (split by step), §8.2 (the latent cycle dissolved), §11; ⛔ **the PLAN opens them, not this spec** (276d) |
+| **S1 era no-op** | **SETTLED** | §15 — a **plumbing identity that CAN fail**; §10 check 3's "BY CONSTRUCTION" replaced for Stage 2 |
+| **S2 Gate-0 cloud leg** | **SETTLED** | §11 — it waits on **`stage0:T18`**; the precondition **moves into the ladder** (`authorize()` refuses) |
+| **S3 seam-rubric amendment (substance)** | **SETTLED** | §7.4 + §10 — **T17 follows the FREEZE**, not a stage label; ONE sealed version, CRN-state-conditional |
+| **S4 ensemble-settling sealing dependency** | **SETTLED** | §7.4 + §8.5 — ordered behind the freeze; **m** travels in the owner's packet (pin 53's m ≥ 137, priced not chosen) |
+| **S5 witness interval** | **PLACED** | §16 **P3** — one of three intervals open (`phase13_lane0_mean.nc`); rides **`stage1:T19`**'s citation |
+| **sweep item S6 (gauge consumption grid)** | **PLACED — BINDING** | §16 **P4** — Stage 2 **IS** a consumption grid; resolvable **without a seal change**; the resolution is the owner's |
+| **A-1 trickling download** | **PLACED** | §12.5 — the **mechanism** transfers (throughput floor + stall watcher); ⛔ **the 16 KB/s number does NOT** (MEOM, not CMEMS). A-1 stays test-infra |
+| **pin 255 refresh ELECTED, BUNDLED** | **CARRIED TO C2→2G** | 274(b) — bundled with 2G's chain and touch; **no touch spent**, and none spent here |
+| **pin 256 δ_j3 PROVISIONAL** | **SETTLED** | §9.6 + §5.3 — fitted at **e09 / e11 / e12** under **one stated assumption** (δ is era-invariant, an instrument property) with a **named falsifier** |
+| **pin 257 e10 replacement holdout** | **SETTLED** | §9.1–9.4 — fork C's chain gives **`alg`**; it is an **ADDITION**, not a supersession; **Stage 2 chooses AND seals** |
+| **pin 258 the firewall** | **CARRIED — and landed HERE** | §20.2 — it was **not yet in this draft**; the coverage map is what found that |
+
+### 20.2 Pin 258's firewall, in its own words — the gap this map found
+
+⚠ **Building the map surfaced one item the draft had not carried.** Pin 258 requires the
+firewall to travel **in its own words** wherever the election appears, and this draft
+references the election in §1 and §9 without it. Landed now:
+
+> **258. THE ELECTION MAKES NO CLAIM ABOUT THE TRANSFER RESULT.** A sixth mission raises
+> observation density, and nothing recorded says whether that helps, hurts or leaves
+> unchanged the two tiles whose lambda_x is absent. That mechanism is firewalled and open.
+> The election is about reuniting the shipped product with its calibration. It must not be
+> cited as a remedy for the weak-signal finding, and no record may imply it is.
+
+⛔ **CONSEQUENCE FOR THIS SPEC, stated because §5.3's rule could otherwise imply it:** the
++2 selection maximises **log `n_eff` spread**, which raises density at some tiles. ⛔ **No
+Stage-2 record may present that as remedying the weak-signal finding at `equatorial` or
+`quiet_gyre`** — the two tiles whose λx is **RECORDED ABSENT** (§6.3). The mechanism stays
+**firewalled and open**.
+
+### 20.3 The count, DERIVED
+
+Counted from §20.1's rows by script, not recalled:
+
+```
+SETTLED                12   263.2 263.3 263.5 263.6 263.7 263.12
+                            S1 S2 S3 S4 256 257
+CARRIED TO C2→2G        5   263.1 263.4 263.10 255 258
+PLACED                  6   263.8 263.9 263.11 S5 sweep-S6 A-1
+                       ---
+TOTAL                  23   = 12 (263.1-12) + 6 (S1-S6) + 1 (A-1) + 4 (255-258)
+```
+
+⭐ **The enumeration reconciles exactly: 12 + 6 + 1 + 4 = 23, and 12 + 5 + 6 = 23.**
+
+⚠ **PLAN-TIME OBLIGATION:** a test pins these counts **against the table's own rows**, the
+way `tests/test_project_context_instances.py` pins discipline 11's instance tags — so ⛔ **a
+count can never drift from its own enumeration** (146b's defect, which had already happened
+once: "six" stated beside seven items).
