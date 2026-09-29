@@ -22,7 +22,11 @@
 > ▶ NEXT: the owner's SPEC GATE (276). The Stage-2 draft is **COMPLETE as a draft** — 20
 > sections, owner decisions **D1-D17** plus executor placements **P1-P4**, and 276(b)'s
 > coverage map over all **23** items (263.1-12, S1-S6, A-1, pins 255-258) with its counts
-> DERIVED. The §7-17 frame review (276c) is the last step before the gate. ⛔ **NOTHING
+> DERIVED. ⛔ **THE §7-17 FRAME REVIEW (276c) IS DONE AND RETURNED TWO *CONFIRMED* FRAME
+> DEFECTS** — the unit of account and the stage boundary, three instances each, all of them
+> the executor's: `docs/superpowers/2026-09-28-phase14-stage2-frame-review.md`. **NOTHING IS
+> FIXED; the draft at `119acce` is unchanged. The draft is NOT gate-ready as it stands** —
+> the owner rules what the findings change. ⛔ **NOTHING
 > RUNS** (276d): no evaluation-bearing maps until the Stage-2 PLAN is approved, and tasks
 > 14-21 stay halted under pin 88 until **that PLAN** opens or re-homes them — the spec
 > PLACES them, the plan OPENS them. READY is not RUNNABLE.
