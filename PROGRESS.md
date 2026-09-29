@@ -19,10 +19,13 @@
 > Read it before the Stage-2 spec is drafted. The closure record is FROZEN by digest
 > (269a). A red closure tripwire means something opened since closure — see 269(b).
 >
-> ▶ NEXT: brainstorm the Stage-2 draft with the owner, then the §7-17 frame review, then
-> the owner's spec gate (276). ⛔ **NOTHING RUNS** (276d): no evaluation-bearing maps until
-> the Stage-2 PLAN is approved, and tasks 14-21 stay halted under pin 88 until **that PLAN**
-> opens or re-homes them. READY is not RUNNABLE.
+> ▶ NEXT: the owner's SPEC GATE (276). The Stage-2 draft is **COMPLETE as a draft** — 20
+> sections, owner decisions **D1-D17** plus executor placements **P1-P4**, and 276(b)'s
+> coverage map over all **23** items (263.1-12, S1-S6, A-1, pins 255-258) with its counts
+> DERIVED. The §7-17 frame review (276c) is the last step before the gate. ⛔ **NOTHING
+> RUNS** (276d): no evaluation-bearing maps until the Stage-2 PLAN is approved, and tasks
+> 14-21 stay halted under pin 88 until **that PLAN** opens or re-homes them — the spec
+> PLACES them, the plan OPENS them. READY is not RUNNABLE.
 >
 > ## ⚖ Standing practice — ruled, not preference
 >
