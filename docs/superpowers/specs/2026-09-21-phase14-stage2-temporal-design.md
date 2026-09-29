@@ -44,7 +44,8 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §16 | Four EXECUTOR placements (P1-P4): attribution, power, S5, S6 | PLACED — executor-authored, awaiting owner correction |
 | §17 | Transferred-vs-refit per era: eligibility is not a schedule | VALIDATED (D15) |
 | §18 | The revisit (225) declined and travelling; the OSSE exit (251(3)) answered | VALIDATED (D16) |
-| §19+ | Gate-2 design, the derived coverage map (276b) | NOT YET REACHED |
+| §19 | Gate 2: every item has a bar; what a failure DOES separates them | VALIDATED (D17) |
+| §20 | The derived coverage map (276b) | NOT YET REACHED |
 
 ⚠ **Numbering note:** ⭐ **This table is the index, and forward references cite number AND
 name** — sections are appended as they are validated, so a bare number drifts. Earlier drafts
@@ -1661,3 +1662,111 @@ Era geometry comes from **D12's reader**, with times **re-mapped to the truth pe
 PRE-REGISTERED rule**.
 
 ⛔ **Replication (251(4)) stays OPEN and UNPRICED. No pricing here.**
+
+---
+
+## 19. Gate 2: every item has a bar; what a failure DOES separates them (D17)
+
+**DECISION D17 (owner, 2026-09-21): EVERY ITEM HAS A BAR; WHAT A FAILURE DOES separates
+them; 212(b) BINDS THE PACK.**
+
+### 19.1 "TABLE vs TRIP" is a FALSE DICHOTOMY
+
+⛔ **My framing was wrong.** ⭐ **Every Gate-2 item carries a PRE-REGISTERED BAR, stated
+before its numbers** (§7-10, §7-11). ⛔ **A reading with no bar that merely "tables" CANNOT
+FAIL, and as a gate item it is UNRUN** — discipline 11's family, arriving in the gate design
+itself.
+
+⭐ **What separates the items is WHAT A FAILURE DOES:**
+
+- **IDENTITIES AND REFUSALS STOP.** A trip **halts downstream work**. These are
+  **PRECONDITIONS: the pack cannot be posted while any is tripped or unrun.**
+- **READINGS TABLE** — each with its bar, and a failure **routes to an OWNER DECISION**,
+  never an automatic action, ⛔ **never a silent pool or clip.**
+
+### 19.2 The preconditions, DERIVED from D1–D16 (not taken)
+
+**Derived by sweeping every decision for stop-shaped conditions. The count is 13, and it is
+DERIVED, never restated beside the list** (146b). ⭐ **Grouped by WHAT THE FAILURE BLOCKS** —
+a flat list would imply they all block the same thing, and they do not.
+
+**A. Preconditions on POSTING the Gate-2 pack (8):**
+
+| # | precondition | source |
+|---|---|---|
+| 1 | era no-op **PASSES** and its declared mis-wiring **FAILS** | §15 (D14) |
+| 2 | `stage1:T19`'s reproduction — a mismatch is a STOP, reported the moment it happens | §8.4 (D7) |
+| 3 | geometry provider reproduces the existing artifact's **KEY AND BYTES** exactly | §13.3 (D12) |
+| 4 | the **Sentinel-6** class-map fix reproduces the sealed table **byte for byte** | §5.5 (D4) |
+| 5 | the **CRN post-freeze σ-gradient discharge measurement** passes | §12.6 (D11) |
+| 6 | the **267 closure tripwire is GREEN** — a trip in Stage 2 is a VIOLATION | §1.2 (275b) |
+| 7 | `stage1:T14`'s member **sha-equality** vs `phase13_winner_members.npz` — *if the freeze ran* | §7.2 (pin 31a) |
+| 8 | the **mixed-pavement comparison refusal** is active (refused by construction, not reported) | §7.7 (D6) |
+
+**B. Preconditions on SEALING v2 (2) — these gate the SEAL, not the pack:**
+
+| # | precondition | source |
+|---|---|---|
+| 9 | the **real-data null** falls inside the simulated null's stated band — else **NOTHING SEALS** | §10.3 (D9) |
+| 10 | **CLEAN reachability** holds at the production geometry and the ruled m — else **do not seal** | §10.4 (D9) |
+
+**C. Precondition on SPEND (1):**
+
+| # | precondition | source |
+|---|---|---|
+| 11 | `authorize()` **REFUSES** Tier-2 production while `stage0:T18`'s witnessed node is absent | §11.5 (D10) |
+
+**D. Selection admissibility — refusals, not halts (2):**
+
+| # | precondition | source |
+|---|---|---|
+| 12 | an epoch that cannot hold a **whole year of pure windows** cannot be a reference epoch | §4.2 (D3) |
+| 13 | at least one +2 epoch **assimilates j3 by mission ID** | §5.3 (D8f) |
+
+### 19.3 The classification, CORRECTED
+
+⛔ **My "three of four table" was wrong, item by item:**
+
+| item | corrected classification |
+|---|---|
+| **LORO** | ⭐ **CLAIM-BEARING AS A SET** (fork-e pin 4) — **a pre-registered bar ON THE SET.** The claim **can fail** |
+| **DEV-pool gauge era rows** | ⭐ **THE CLAIM-BEARING INDEPENDENT FAMILY IN ALL EPOCHS** (fork C), carrying the **independence burden in sparse eras**. ⛔ **They are NOT "record"** — my own Gate-2 preview said "record", and that was the error |
+| **sparse-epoch reading** | consumed **ONCE**, against **D15(e)'s Phase-12-pattern bar** (direction, bar, referent) |
+| **extrapolation audit** | it tables *"a large fraction"* — ⛔ **and "large" is a NUMBER, STATED NOW** |
+
+### 19.4 212(b) binds the PACK; the identities do not need it
+
+⭐ **212(b) BINDS THE PACK — the readings and their interpretation.** Reviewer A takes the
+requester's surfaces; ⭐ **reviewer B is briefed INDEPENDENTLY on the FRAME** (§7-17).
+
+⭐ **The IDENTITIES do not need it:** they are **verification against artifacts**, which is
+exactly the case §7-15 names as admitting owner ratification — ⛔ **and each passed identity
+is shown WITH ITS NEGATIVE CONTROL** (D14(d)), so the ratification rests on a check that
+could have failed.
+
+### 19.5 Organise the pack around the DECISIONS, not the four items
+
+Stage 2 **ships no product and opens nothing** (§3.3), so ⭐ **Gate 2's decisions concern
+what C2→2G CARRIES:**
+
+1. **is the covariate FIT TO FEED 2G?**
+2. **what does a DIVERGENT, UNDERPOWERED or large-fraction finding CHANGE IN 2G's DESIGN?**
+
+⛔ **The pack is organised around those two decisions, NOT around the four items.** The items
+are evidence *for* the decisions; a pack shaped like its evidence list makes the reader
+assemble the decision themselves.
+
+### 19.6 The NAME COLLISIONS — now FOUR
+
+⛔ **This program reuses names, and each collision has already misled a record or a reader:**
+
+| name | meanings |
+|---|---|
+| **"Tier 2"** | the ladder's `Tier.CLOUD_NODE` **vs** the local memory-class crossing of E-16 / `stage1:T22` (§11.3) |
+| **"T18"** | `stage0:T18` (the Tier-2 cloud probe, which owns `pending-T18`) **vs** `stage1:T18` (the userGate before T14) — **this one misled two records** (§11.2) |
+| **"gate 2"** | ⭐ **the STAGE gate** (Gate 2) **vs** **§10's anchor identity check 2** (loader identity), which §14's "Gate-2 decomposition" is about |
+| **"S6"** | ⭐ **sweep item S6** (the gauge consumption grid, §16 P4) **vs** **Sentinel-6** (`s6a_lr`, §5.5's classless mission) — surfaced by D17's own wording |
+
+⭐ **CONVENTION, extending §11.2's rule from tasks to gates and sweep items:** **"Gate 2"**
+means the stage gate; **"anchor-check-2"** means §10's second identity; task references are
+tracker-qualified; **"S6"** is written **"sweep item S6"** or **"Sentinel-6"**, never bare.
