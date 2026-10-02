@@ -4890,3 +4890,99 @@ block. No word is changed.
 >
 > SEQUENCE: land 274-276 as PART 63; commit, push. Then begin the brainstorm with the owner.
 > STOP at the draft plus the frame review. The spec gate is the owner's.
+
+---
+
+## PART 64 — STAGE-2 SPEC GATE: NOT APPROVED, REVISE (verbatim), pins 277–286, 2026-09-28
+
+**Landed verbatim under pin 40/41/48.** Transcribed as in PARTs 60–63: continuation and
+sub-item lines are dedented, because a 6-space indent inside a blockquote renders as a code
+block. No word is changed.
+
+> **277.** The frame review (§7-17) did its job: reviewer B found six frame defects the
+> requester's list could not. D1-D17 STAND except where amended below. P1-P4 are not
+> ruled here; they are reviewed with the revision.
+>
+> **278. OWNERSHIP, CORRECTED.** The review records all six as the author's. FOUR trace to the
+> owner's rulings; tag them as the owner's:
+> (a) 274(b) mis-homed the kernel exits to 2G. 219(c) verbatim: "Both are Stage 2;
+> neither is T6's to choose." §7 has 2G decide POLES "with the kernel decision in
+> hand", so the decision PRECEDES 2G. Pole handling is 2G's; the kernel exits are
+> Stage 2's.
+> (b) 276(b) scoped the coverage map to INHERITED items only, not Stage 2's own scope
+> (§8) or its outbound contract (C2→2G), and gave it three marks with no PLAN-WORK
+> state, although D1-D17 defer to the plan throughout.
+> (c) D5(d) wrote "three rotations per tile". Fork-e pin 4 says "three epochs →
+> three", and under D2's pooled law a rotation removes one epoch from all four
+> tiles at once.
+> (d) D10(d) framed the tier as "clears Tier 1", pricing RAM and wall as if both were
+> Tier-1 ceilings. tier1_eligible is RAM-only, correctly, and Tier 1 has no wall
+> ceiling. Wall binds, and it is a CALENDAR question.
+> The other two (n_eff never defined; §2's rotation arithmetic) are the draft's, and
+> the owner built D4/D5/D11 on the undefined n_eff without noticing: shared. Record
+> all six as instances of §7-17 working, with the count derived.
+>
+> **279. RE-SEQUENCE: THE KERNEL SCALE IS UPSTREAM.** halo is inside BasisSpec.key(); fork-e
+> pin 2(i) binds n_eff's kernel length to the NAMED scale that fork-d pin 4's halo
+> auto-follows; the halo sets the obs frame (southern's ±66 margin is 1.0°). Deciding
+> it after the freeze re-keys the pavement. Order:
+> KERNEL DECISION → n_eff DEFINED → geometry step (D6/D7, recomputed under the decided
+> scale) → freeze → census (D4) → era-fits.
+> The kernel decision is an OWNER RULING. Present 219's exits (smaller km scale;
+> latitude-aware halo; F-2 hull widening per 216) with each one's consequence for the
+> pavement key, n_eff's L and southern's frame. operative_halo_deg() stays untouched
+> until that ruling.
+>
+> **280. n_eff DEFINED BEFORE ANY BAR:** L, L_t, n_eff₀ and the aggregation fixed in the spec
+> from fork-e pins 1(i) and 2. Pin 2(i) places the named scale "in the λx
+> neighborhood", and λx is RECORDED ABSENT at equatorial and quiet_gyre, so name the
+> scale by a rule that needs no per-tile λx. Then EVERY bar gets its NUMBER: D2's
+> tolerance, D4's objective, D5's threshold, D13, and D17's four. A bar without a
+> number is unrun (§7-11), including the draft's own. D4 becomes mechanical only once
+> L is fixed; the census operator must never choose the epochs by choosing L.
+>
+> **281. LORO = THREE ROTATIONS** (fork-e pin 4), each removing one reference epoch from all
+> four tiles. Each rotation's four per-tile prediction errors are NOT independent.
+> Re-derive D5(d)'s era-level falsifier for the pooled law, across three rotations,
+> and state what n = 3 can and cannot falsify.
+>
+> **282. TIER IS CALENDAR.** One era-fit 30.96 h (3.440 h/window × 9, the probe node); the
+> 12-fit set 371.5 h; 509 h at m = 137; ~865 h (~36 d) under ×1.70. Tier 1 has no
+> wall ceiling, so §11.4's "does not clear" row is unreachable, and §11.5/§19.2-C11 as
+> framed are unrun. Present the owner a calendar decision: accept ~36 days of box
+> time on the critical path, OR elect Tier 2 for throughput. That needs a NEW spend
+> row, since the only row, tier2_probe, caps wall at 6 h, which one era-fit exceeds
+> 5.16×, and the election triggers stage0:T18 per D10(e). tier1_eligible is NOT given
+> a wall term: that would invent a ceiling nobody set.
+>
+> **283. THE BOUNDARY GETS FOUR STATES AND AN OUTBOUND CONTRACT:**
+> SETTLED (§ ref) · PLAN WORK (named, with the plan task that discharges it) ·
+> CARRIED TO C2→2G (named) · PLACED (with reason).
+> Rebuild the coverage map against the RIGHT boundary:
+> (i) Stage 2's own scope, §8: era-aware calibration; role-split validation; per-era
+> δ_m for EVERY mission, not only δ_j3; per-era R; the seasonal decision;
+> transferred-vs-refit per era; fork C's required-verbatim sparse-era sentence;
+> (ii) the inherited items;
+> (iii) a C2→2G LINE TABLE in the C1→2 pattern: C-lines, each with its producer and
+> status.
+> Counts derived, never recalled.
+>
+> **284. RE-REVIEW BEFORE THE GATE.** Reviewer A checks that 278-283 were applied. A FRESH
+> reviewer B attacks the frame again, briefed independently and NOT handed this
+> review's findings as targets (§7-17).
+>
+> **285. §7-19 WATCH.** This is the draft's first frame overturn. If the revision is overturned
+> again on the same frame, the next ruling examines the deliverable, not the fix.
+>
+> **286. STOPPING POINT.** Land 277-286 as PART 64. Rewrite PROGRESS's CURRENT STATE (pin 154)
+> with the ordered NEXT list:
+> R1 kernel decision item (279) → owner;  R2 n_eff defined + every bar's number (280);
+> R3 LORO unit (281);  R4 tier/calendar item (282) → owner;
+> R5 four-state boundary + rebuilt coverage map + C2→2G line table (283);
+> R6 re-review (284);  R7 spec gate.
+> Record the same list as the frame-review doc's disposition. Commit, push, verify
+> origin with ls-remote, STOP. The revision begins in a fresh session.
+>
+> STOP CONDITION: nothing runs; nothing in Stage 2 opens; tasks 14-21 stay halted; the
+> guard stays unfixed; the closure record stays frozen; the mirror stays at 53; seal v1 is
+> untouched and its one v2 stays UNSPENT with T17. The draft is NOT edited in this session.

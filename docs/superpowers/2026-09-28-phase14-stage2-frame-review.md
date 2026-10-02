@@ -22,6 +22,11 @@
 ⭐ **THE DEFECTS ARE THE AUTHOR'S, NOT THE OWNER'S.** Every one sits in a decision the
 executor drafted or in a sentence the executor wrote; none is in the pins.
 
+> ⚖ **FORWARD POINTER — THIS ATTRIBUTION IS CORRECTED BY OWNER PIN 278 (PART 64): FOUR of
+> the six are the OWNER's, one is SHARED, one is the draft's.** The claim above is left as
+> written, with this pointer beside it, so the correction is visible rather than silent —
+> see **§5.1**. ⛔ **Read §5.1 before quoting this line.**
+
 ---
 
 ## 1. Unit of account — CONFIRMED
@@ -252,3 +257,57 @@ The reviewer recomputed and confirmed, independently:
   figures 4364.5 / 8729 / 11 248 MiB quoted from the probe node.
 - ⛔ **No finding has been acted on.** The draft at `119acce` is unchanged, and remains the
   artifact before the owner's spec gate.
+
+---
+
+## 5. DISPOSITION — owner ruling PART 64, pins 277–286, 2026-09-28
+
+⛔ **THE SPEC GATE IS *NOT APPROVED*. REVISE.** The ruling is landed verbatim as **PART 64**
+of `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md`.
+
+⭐ **The review DID ITS JOB (277):** reviewer B found **six** frame defects the requester's
+list could not. ⭐ **D1–D17 STAND except as amended by 278–283.** ⚠ **P1–P4 are NOT ruled —
+they are reviewed with the revision.**
+
+### 5.1 OWNERSHIP, CORRECTED (278) — four of the six are the OWNER's
+
+⚠ **§2 and the summary of this record attribute all six to the author. That attribution is
+corrected by the ruling**, and the record keeps both so the correction is visible:
+
+| defect | owner's or draft's | the ruling's words |
+|---|---|---|
+| **kernel exits mis-homed to 2G** (§2a) | ⚖ **OWNER's** | *"274(b) mis-homed the kernel exits to 2G. 219(c) verbatim: 'Both are Stage 2; neither is T6's to choose.' §7 has 2G decide POLES 'with the kernel decision in hand', so the decision PRECEDES 2G. **Pole handling is 2G's; the kernel exits are Stage 2's.**"* |
+| **coverage map scoped to inherited items, three marks, no PLAN-WORK state** (§2b) | ⚖ **OWNER's** | *"276(b) scoped the coverage map to INHERITED items only, not Stage 2's own scope (§8) or its outbound contract (C2→2G), and gave it three marks with no PLAN-WORK state, although D1-D17 defer to the plan throughout."* |
+| **"three rotations per tile"** (§1c, the D5 side) | ⚖ **OWNER's** | *"D5(d) wrote 'three rotations per tile'. Fork-e pin 4 says 'three epochs → three', and under D2's pooled law a rotation removes one epoch from all four tiles at once."* |
+| **tier framed as "clears Tier 1"** (§1a) | ⚖ **OWNER's** | *"D10(d) framed the tier as 'clears Tier 1', pricing RAM and wall as if both were Tier-1 ceilings. `tier1_eligible` is RAM-only, correctly, and Tier 1 has no wall ceiling. **Wall binds, and it is a CALENDAR question.**"* |
+| **`n_eff` never defined** (§1b) | ⭐ **SHARED** | *"the draft's … and the owner built D4/D5/D11 on the undefined n_eff without noticing: shared."* |
+| **§2's rotation arithmetic** (§1c, the §2 side) | **the draft's** | *"The other two (n_eff never defined; §2's rotation arithmetic) are the draft's."* |
+
+⭐ **All six are recorded as instances of §7-17 WORKING, with the count DERIVED** (278) — six
+rows above, six findings in §§1–2.
+
+### 5.2 The ordered revision list (286) — identical to PROGRESS's
+
+| # | item | whose |
+|---|---|---|
+| **R1** | the **kernel decision item** (279): 219's exits — smaller km scale, latitude-aware halo, F-2 hull widening per 216 — each with its consequence for the **pavement key**, **n_eff's L** and **southern's frame** | ⚖ **→ OWNER** |
+| **R2** | **n_eff DEFINED** (280): L, L_t, n_eff₀ and the aggregation fixed from fork-e pins 1(i)/2, the named scale by a rule needing **no per-tile λx**; then **EVERY bar gets its NUMBER** (D2, D4, D5, D13, D17's four). **A bar without a number is unrun** (§7-11). **D4 becomes mechanical only once L is fixed; the census operator must never choose the epochs by choosing L** | executor |
+| **R3** | the **LORO unit** (281): three rotations, each removing one reference epoch from **all four tiles**; the four per-tile prediction errors are **NOT independent**; re-derive D5(d)'s era-level falsifier for the **pooled** law and state what **n = 3** can and cannot falsify | executor |
+| **R4** | the **tier/calendar item** (282): accept **~36 d** of box time on the critical path **OR** elect Tier 2 — a **NEW spend row** (`tier2_probe` caps wall at 6 h; one era-fit exceeds it **5.16×**), triggering **`stage0:T18`**. ⛔ **`tier1_eligible` is NOT given a wall term: that would invent a ceiling nobody set** | ⚖ **→ OWNER** |
+| **R5** | the **four-state boundary** (283): SETTLED (§ ref) · **PLAN WORK** (named, with the plan task that discharges it) · CARRIED TO C2→2G (named) · PLACED (with reason) — plus the **rebuilt coverage map** against (i) §8's own scope *(incl. per-era δ_m for EVERY mission, per-era R, and fork C's required-verbatim sparse-era sentence)*, (ii) the inherited items, and (iii) a **C2→2G LINE TABLE** in the C1→2 pattern. **Counts derived, never recalled** | executor |
+| **R6** | **re-review** (284): reviewer A checks 278–283 were applied; ⭐ **a FRESH reviewer B** attacks the frame again, briefed independently and **NOT handed this review's findings as targets** (§7-17) | both |
+| **R7** | the **spec gate** | ⚖ **→ OWNER** |
+
+### 5.3 §7-19 WATCH (285)
+
+⚠ **This is the draft's FIRST frame overturn.** ⛔ **If the revision is overturned again ON
+THE SAME FRAME, the next ruling examines the DELIVERABLE, not the fix.**
+
+### 5.4 What this session did and did not do (286)
+
+**Did:** landed PART 64 verbatim; rewrote PROGRESS's CURRENT STATE (pin 154) with the R1–R7
+list; appended this disposition.
+
+⛔ **Did NOT:** edit the draft — *"The draft is NOT edited in this session"* — run anything,
+open anything in Stage 2, fix the guard, regenerate or unfreeze the closure record, touch
+seal v1, or spend its one v2. ⭐ **The revision begins in a FRESH SESSION.**

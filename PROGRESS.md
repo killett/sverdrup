@@ -1,9 +1,25 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-09-21. STAGE 1 IS CLOSED. GATE 1 IS CLOSED.
+> # ⬛ CURRENT STATE — 2026-09-28. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE**.
 >
-> Owner pins 260-267, ruling PART 60. ⭐ **THE STAGE-2 SPEC IS OPEN** — pins 274-276, ruling
-> PART 63, 2026-09-21; the draft is `docs/superpowers/specs/2026-09-21-phase14-stage2-temporal-design.md`.
+> Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
+> §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
+> findings) and **did its job** (277). ⭐ **D1-D17 STAND except as amended by 278-283**;
+> **P1-P4 are NOT ruled — they are reviewed with the revision**. ⚖ **OWNERSHIP CORRECTED
+> (278): FOUR of the six trace to the OWNER's rulings** — 274(b) mis-homing the kernel
+> exits, 276(b)'s inherited-only coverage scope with no PLAN-WORK state, D5(d)'s "three
+> rotations per tile", D10(d)'s "clears Tier 1" — **two are the draft's** (n_eff undefined,
+> §2's rotation arithmetic), **and the undefined n_eff is SHARED**, the owner having built
+> D4/D5/D11 on it. ⛔ **The draft at `119acce` is NOT EDITED in this session.**
+>
+> ⭐ **THE RE-SEQUENCE (279) — THE KERNEL SCALE IS UPSTREAM:**
+> **KERNEL DECISION → n_eff DEFINED → geometry step (D6/D7, recomputed) → freeze → census
+> (D4) → era-fits.** `halo` is inside `BasisSpec.key()`; fork-e pin 2(i) binds n_eff's
+> kernel length to the NAMED scale fork-d pin 4's halo auto-follows; the halo sets the obs
+> frame. **Deciding it after the freeze re-keys the pavement.** `operative_halo_deg()` stays
+> untouched until that owner ruling. **Pole handling is 2G's; the kernel exits are STAGE
+> 2's** (278a, 219c: *"Both are Stage 2; neither is T6's to choose."*).
+>
 > Gate 1 closed carrying three ruled WAITs, each with
 > named exits: kernel (219), revisit (224), OSSE (250). Anchor, seams and the four
 > transfer readings stand as ruled at 209. The refresh is ELECTED, BUNDLED (255), with no
@@ -19,14 +35,24 @@
 > Read it before the Stage-2 spec is drafted. The closure record is FROZEN by digest
 > (269a). A red closure tripwire means something opened since closure — see 269(b).
 >
-> ▶ NEXT: the owner's SPEC GATE (276). The Stage-2 draft is **COMPLETE as a draft** — 20
-> sections, owner decisions **D1-D17** plus executor placements **P1-P4**, and 276(b)'s
-> coverage map over all **23** items (263.1-12, S1-S6, A-1, pins 255-258) with its counts
-> DERIVED. ⛔ **THE §7-17 FRAME REVIEW (276c) IS DONE AND RETURNED TWO *CONFIRMED* FRAME
-> DEFECTS** — the unit of account and the stage boundary, three instances each, all of them
-> the executor's: `docs/superpowers/2026-09-28-phase14-stage2-frame-review.md`. **NOTHING IS
-> FIXED; the draft at `119acce` is unchanged. The draft is NOT gate-ready as it stands** —
-> the owner rules what the findings change. ⛔ **NOTHING
+> ▶ **NEXT: THE REVISION, IN THIS ORDER (pin 286). It begins in a FRESH SESSION.**
+>
+> | # | item | whose |
+> |---|---|---|
+> | **R1** | the **kernel decision item** (279): 219's exits — smaller km scale, latitude-aware halo, F-2 hull widening per 216 — each with its consequence for the **pavement key**, **n_eff's L**, and **southern's frame** | ⚖ **→ OWNER** |
+> | **R2** | **n_eff DEFINED** (280): L, L_t, n_eff₀ and the aggregation fixed from fork-e pins 1(i)/2, the named scale by a rule needing **no per-tile λx** — then **EVERY bar gets its NUMBER** (D2, D4, D5, D13, D17's four). A bar without a number is **unrun** (§7-11) | executor |
+> | **R3** | the **LORO unit** (281): three rotations, each removing one epoch from **all four tiles**; re-derive D5(d)'s era-level falsifier for the **pooled** law and state what **n = 3** can and cannot falsify | executor |
+> | **R4** | the **tier/calendar item** (282): accept **~36 d** of box time on the critical path, **OR** elect Tier 2 — which needs a **NEW spend row** (`tier2_probe` caps wall at 6 h; one era-fit exceeds it **5.16×**) and triggers **`stage0:T18`** | ⚖ **→ OWNER** |
+> | **R5** | the **four-state boundary** (283): SETTLED · **PLAN WORK** · CARRIED TO C2→2G · PLACED — plus the **rebuilt coverage map** against §8's own scope and the **C2→2G LINE TABLE** in the C1→2 pattern. Counts **derived** | executor |
+> | **R6** | **re-review** (284): reviewer A checks 278-283 were applied; a **FRESH reviewer B** attacks the frame again, **NOT handed this review's findings as targets** | both |
+> | **R7** | the **spec gate** | ⚖ **→ OWNER** |
+>
+> ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
+> is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the
+> fix.**
+>
+> The frame review is `docs/superpowers/2026-09-28-phase14-stage2-frame-review.md`; its
+> disposition section carries this same R1-R7 list. ⛔ **NOTHING
 > RUNS** (276d): no evaluation-bearing maps until the Stage-2 PLAN is approved, and tasks
 > 14-21 stay halted under pin 88 until **that PLAN** opens or re-homes them — the spec
 > PLACES them, the plan OPENS them. READY is not RUNNABLE.
