@@ -47,6 +47,21 @@
 > | **R6** | **re-review** (284): reviewer A checks 278-283 were applied; a **FRESH reviewer B** attacks the frame again, **NOT handed this review's findings as targets** | both |
 > | **R7** | the **spec gate** | ⚖ **→ OWNER** |
 >
+> ▶ **R1 IS PREPARED AND WAITING ON THE OWNER** — `docs/superpowers/2026-10-03-phase14-stage2-r1-kernel-decision-item.md`,
+> ⚖ **decision cell EMPTY**. 219(c)'s two exits plus 216's, each with its consequence for
+> the pavement key, n_eff's L and southern's frame, all numbers DERIVED at `9d16b17`.
+> ⭐ **THE CRUX IT FOUND: fork-e pin 2(i) is UNSATISFIABLE at `southern`.** The halo budget
+> there is **2.0°** (`66 + solve_bbox.lat_min`), spending 1.0° today. **226.274 km is the
+> UNIQUE rung that is both mid-ladder AND in the λx neighbourhood, and it breaches by
+> 0.0349°** under the most generous halo reading — so the ruling must relax one of pin 2(i)'s
+> two conditions. A **per-axis** halo is the only exit reaching the λx neighbourhood
+> (160.000 km); a latitude-aware **scalar**, and exit (a) alone, force the bottom rung
+> (**80.000 km**). ⛔ **AND THERE IS A SECOND CONSTANT**, against 217(d)'s "no second
+> constant": `HALO_DEG` (`miost_basis.py:34`, inside `BasisSpec.key()`) and
+> `operative_halo_deg()` (`spatial_tiles.py:41`) are **independent literals, both 1.0, with
+> no cross-reference** — so changing the halo alone moves the obs frame while `params_key`
+> stays put. **That silent outcome must be ruled out by name.**
+>
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the
 > fix.**
