@@ -24,6 +24,12 @@ brainstorm as it forms". A section present here has been agreed; a section absen
 been reached. The coverage map required by 276(b) is built last and its counts are
 **derived by script, never recalled** (146b).
 
+> ⚖ **REVISION IN PROGRESS — ruling PART 64 (pins 277–286) returned this draft NOT APPROVED;
+> D1–D17 stand except as amended.** The ordered list is R1–R7 (pin 286). **R1 is DECIDED at
+> PART 65 (pins 287–291, 2026-10-03)** and is folded in at §3.1 (R1a), §7.3a (R1b) and §20.1's
+> 263.1 row. R2–R7 follow in order. Amendments are marked ⚖ with their pin; nothing is
+> silently rewritten.
+
 | section | content | state |
 |---|---|---|
 | §1 | The frame: what Stage 2 is, and what it is not | VALIDATED |
@@ -131,7 +137,10 @@ Consequences that follow from D1 and are therefore settled here:
   the **margin to ±66 is 1.0°** (Gate-1 pack §1.11, as corrected by owner pin 215).
   ⚠ **−66.13 is a different quantity**: it is kernel **OPTION 1**'s breach under a km-scale
   halo, and option 1 **was not elected** (219). It reaches Stage 2 only if a kernel exit
-  widens the halo — **and the kernel exits are 2G's** (274b), not settled here. Fork-c
+  widens the halo — **and the kernel exits are 2G's** (274b), not settled here. ⚖ **FORWARD
+  POINTER: that homing was CORRECTED by pin 278(a) — the kernel exits are STAGE 2's — and
+  Stage 2 then RULED them at pin 288: a WAIT with its exit named, Stage 2 running on the
+  shipped kernel at halo 1.0°, so the margin above stands as written (§7.3a).** Fork-c
   pin 3's latitude-band validity mask still governs sparse-era readings; it bites on the
   **band**, not on a breach.
 
@@ -149,6 +158,41 @@ The model is fork E's, unchanged:
 s(x, era) = s_spatial(x) · exp(a + b · log n_eff(x, era))
 n_eff(x, window, era) = Σ_obs K(|x − x_obs|/L) · K(|t_c − t_obs|/L_t)
 ```
+
+### 3.1 n_eff's kernel scale L — RULED (owner pin 287, R1a, 2026-10-03)
+
+⚖ **AMENDMENT TO FORK-E PIN 2(i), recorded verbatim here per 287; the program spec's text is
+not edited.** Pin 2(i)'s last clause — *"the fork-d pin-4 auto-follow linkage binds to the
+NAMED scale"* — is **STRUCK for Stage 2 onward**. The halo follows the **SOLVER's**
+operative kernel scale under fork-d pin 4, which **stands unchanged** (1.0° shipped practice
+until a solver ruling moves it); it **never** follows the covariate's scale. Why the clause
+had to go: with it, the only rung satisfying pin 2(i)'s two conditions (226.274 km) demands a
+2.0349° halo and breaches `southern`'s 2.0° budget by 0.0349°; without it the two conditions
+are jointly satisfiable, and fork E's own record — which **rejected** a covariate for being
+*"config-dependent"* through the solver — argues for the decoupling (R1 item §§3–4).
+
+⭐ **L = 226.274 km — a CONSTANT.** By the rule (287a): *the ladder rung inside the closed
+interval of RECORDED λx across the fit set and the anchor, and among those the mid-ladder
+one; tiles whose λx is `recorded_absent` contribute no endpoint and are never imputed.*
+Derived once on Stage 1's recorded values — interval [141.9472, 232.5339] km (southern,
+kuroshio; the anchor's 174.5211 interior), rungs inside {160.000, 226.274}, mid-ladder
+{226.274, 320.000}, intersection **{226.274}**. ⛔ **The rule is NOT re-evaluated as Stage 2
+records λx per era** — the scale would otherwise drift with the fits it conditions. Both of
+pin 2(i)'s conditions are kept as written: rung 4 of 8, inside the recorded λx range.
+
+⛔ **REQUIRED CLAUSE (287b): n_eff's obs support is each tile's FRAMED obs** — `obs_bbox` at
+the operative halo — **never the global daily file** §12.2 acquires. That support is n_eff's
+**sole** coupling to the solver: a later halo change re-runs the geometry step (D6/D7); it
+**never redefines L**. So density near a frame edge falls exactly as the solver's information
+does, because the same truncation is applied to both.
+
+**Consequences for the key and the frame (R1 item §5, derived):** the pavement key is
+**unchanged** — L is a choice of rung, not a `BasisSpec` field, and `halo=` no longer follows
+it; `southern`'s frame is **unchanged** at obs edge −65.0, margin 1.0000°; ±66 is **not
+engaged** by this choice at all.
+
+▶ **L_t, n_eff₀ and the window aggregation are pin 280's (R2)** and are fixed in §3.2, which
+follows. 287(c): R1a unblocks pin 280 on its own.
 
 **Identification.** (a, b) are identified by **cross-era contrast at matched locations**
 (fork-e pin 1(ii)): `s_spatial` absorbs era-invariant spatial structure, the covariate
@@ -630,6 +674,43 @@ frames the pavement move as "a CRN re-key" understates it.
 - **Survey shows a LATITUDE-VARYING residual** (the ruling doc's open question 1: 31(a) is
   then **necessary but not sufficient**) → ⛔ **STOP at the survey and bring it to the
   owner. Stage 2 does not choose a pavement for the program.**
+
+### 7.3a The kernel under the freeze — RULED WAIT (owner pin 288, R1b, 2026-10-03)
+
+⚖ **The freeze proceeds on the SHIPPED kernel: halo 1.0°, `HALO_DEG` bound to
+`operative_halo_deg()`, and `operative_halo_deg()` untouched** (288e). The high-latitude
+kernel exit (219's cos-φ anisotropy) is a **RULED WAIT with its exit named** (261) — the
+kernel question's **second** (219, now 288), and pin 290's §7-19 watch records that a
+**third** deferral at 2G would indict the deliverable, not the exit.
+
+**Why Stage 2 can afford it (288a):** the kernel is **era-invariant** (D5's frozen config), so
+the shipped kernel's anisotropy — true-km zonal/meridional **0.74** at `southern`'s centre,
+**0.60** at its core edge, **1.27** `equatorial`, **1.17** `quiet_gyre`, **1.03** `kuroshio`,
+each derived from `lonlat_to_km`'s fixed `cos(MID_LAT)` as `cos φ / cos 38°` — is **the same
+in every era and absorbed by `s_spatial(x)`** under fork-e pin 1(ii). Stage 2's
+identification of (a, b) is not compromised.
+
+**Why no active exit is Stage 2's to take (288b):** anchor identity is **MEMBER-LEVEL
+equality** against the signed Phase-13 winner, and under a new metric the elements move, so it
+**cannot be "re-established"**. A new kernel needs a **NEW signed baseline**, which only an
+acceptance touch grants — and **Stage 2 opens nothing** (program spec §3.3). That blocker is
+shared by every active exit, 216's hull widening included.
+
+**The exit (288c):** 2G's spec decides **the kernel and pole handling TOGETHER**, as program
+spec §7 wrote it, with a new kernel accepted on 2G's acceptance chain if elected. 2G starts
+from the **per-axis halo reading** — the only reading that leaves halo room poleward of
+`southern`, where the per-tile budget `66 + solve_bbox.lat_min` reaches zero at −66. The
+±66 budget at each fleet tile's **solve-bbox poleward edge** is the constraint any 2G kernel
+must satisfy (§7-16).
+
+⭐ **Consequence for this section:** the pavement frozen here sits on the shipped kernel, so
+§7.3's *"must not sit on a lattice 2G abandons"* now carries 288(d)'s explicit C2→2G line
+(§20.1, 263.1 row) rather than an assumption of kernel continuity.
+
+▶ **PLAN WORK (R1 item §6, ruled bound):** `HALO_DEG` derives from `operative_halo_deg()` —
+one origin (§7-12) — with an identity guard (today's `params_key` bytes unchanged at 1.0)
+**and a negative control that a halo change re-keys**. Changing `operative_halo_deg()`
+alone is **REFUSED**.
 
 ### 7.4 T17 follows the freeze, wherever the freeze lands
 
@@ -1783,7 +1864,7 @@ this table by script, never recalled** (146b) — see §20.3.
 
 | item | disposition | where, and why |
 |---|---|---|
-| **263.1 KERNEL** | **CARRIED TO C2→2G** | 274(b): poles and the kernel exits are 2G's, decided "with the kernel decision in hand". `operative_halo_deg()` stays untouched (§1) |
+| **263.1 KERNEL** | ⚖ **RULED in Stage 2 (pin 288): a WAIT with its exit named; and a C2→2G LINE (288d)** | ~~274(b): poles and the kernel exits are 2G's~~ **corrected by 278(a) — the exits are Stage 2's — and RULED at 288.** Stage 2 runs on the **shipped kernel** (§7.3a); `operative_halo_deg()` untouched (288e). **C2→2G line:** *the covariate (a, b) is identified on the shipped kernel. If 2G changes the kernel, it RE-IDENTIFIES (a, b) on the new one — priced: the twelve-fit set again — or carries the caveat that b was identified under 288(a)'s anisotropy.* Exit: 2G decides kernel and poles together, starting from the per-axis halo reading (288c). ⚠ R5 (pin 283) rebuilds this map with the four-state boundary and the full C2→2G line table; this row is amended now so the ruling is not held only in the item |
 | **263.2 REVISIT** | **SETTLED** | §18.1–18.4 — NOT elected at Stage 2 by explicit decision; travels to 2G labelled as a **Tier-1 box price**, with 225(b)'s limit verbatim |
 | **263.3 OSSE** | **SETTLED** (in part) | §18.5–18.7 — 251(3) answered: preserved for the **sampling** claim, **form only** (`b`, never `a`), three limits stated. ⚠ **Replication (251(4)) stays OPEN and UNPRICED** |
 | **263.4 REFRESH** | **CARRIED TO C2→2G** | bundled with 2G's chain and touch (255c); its two named Stage-2 obligations are SETTLED — see **256** and **257** |

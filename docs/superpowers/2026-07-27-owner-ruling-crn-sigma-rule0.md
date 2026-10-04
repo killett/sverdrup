@@ -4986,3 +4986,90 @@ block. No word is changed.
 > STOP CONDITION: nothing runs; nothing in Stage 2 opens; tasks 14-21 stay halted; the
 > guard stays unfixed; the closure record stays frozen; the mirror stays at 53; seal v1 is
 > untouched and its one v2 stays UNSPENT with T17. The draft is NOT edited in this session.
+
+## PART 65 — R1 DECIDED: SHAPE (d) ELECTED, THE SOLVER EXIT A RULED WAIT (verbatim), pins 287–291, 2026-10-03
+
+**Landed verbatim under pin 40/41/48.** Transcribed as in PARTs 60–64: continuation and
+sub-item lines are dedented, because a 6-space indent inside a blockquote renders as a code
+block. No word is changed. The owner's two option picks that accompanied the ruling —
+R1a option 1, R1b option 1 of the R1 item's question — are recorded in the item's decision
+cells, not here.
+
+> OWNER RULING — R1 DECIDED. Pins 287–291, 2026-10-03. Land verbatim as ruling PART 65
+> before any pin is cited (pins 40/41/48).
+>
+> **287.** R1a: SHAPE (d) ELECTED. Fork-e pin 2(i)'s last clause, "the fork-d pin-4
+> auto-follow linkage binds to the NAMED scale", is STRUCK for Stage 2 onward. The
+> amendment is recorded verbatim in the Stage-2 spec with this pin; the program spec's
+> text is not edited. Fork-d pin 4 stands unchanged: the halo follows the SOLVER's
+> operative kernel scale, 1.0° shipped practice, until a solver ruling moves it.
+> (a) THE NAMED SCALE IS 226.274 km, by §5.1's rule: the ladder rung inside the closed
+> interval of RECORDED λx across the fit set and the anchor, and among those the
+> mid-ladder one; absent tiles contribute no endpoint and are never imputed.
+> The rule is evaluated ONCE, on Stage 1's recorded values, and the result is a
+> CONSTANT. It is not re-evaluated as Stage 2 records λx per era, or the scale
+> would drift with the fits it conditions.
+> (b) REQUIRED CLAUSE (§4): n_eff's obs support is each tile's FRAMED obs, obs_bbox at
+> the operative halo, never the global file. Its sole coupling to the solver is
+> that support. A later halo change re-runs the geometry step; it never redefines
+> n_eff's L.
+> (c) R1a unblocks pin 280 (R2) on its own: n_eff defined, then every bar's number.
+>
+> **288.** R1b: RULED WAIT, WITH ITS EXIT NAMED (261). Stage 2 runs on the shipped kernel.
+> (a) WHY STAGE 2 CAN AFFORD IT: the kernel is era-invariant, so the shipped kernel's
+> anisotropy (zonal/meridional in true km: 0.74 at southern's centre, 0.60 at its
+> core edge, 1.27 at equatorial, 1.17 at quiet_gyre, 1.03 at kuroshio) is the same
+> in every era and is absorbed by s_spatial(x) (fork-e pin 1(ii)). Record those
+> ratios, derived from lonlat_to_km's fixed cos(MID_LAT). Stage 2's identification
+> of (a, b) is not compromised.
+> (b) WHY NO ACTIVE EXIT IS STAGE 2's TO TAKE. R1b-1 and R1b-2 share R1b-3's blocker:
+> anchor identity is MEMBER-LEVEL equality against the signed Phase-13 winner, and
+> under a new metric the elements move, so it cannot be "re-established". A new
+> kernel needs a NEW signed baseline, which only an acceptance touch grants, and
+> Stage 2 opens nothing (§3.3). Correct the table: "signed-component touch: none"
+> is wrong for R1b-1/2.
+> (c) THE EXIT: 2G's spec decides the kernel and pole handling TOGETHER, as §7 wrote
+> it, with the new kernel accepted on 2G's acceptance chain if elected. The
+> per-axis halo reading (b2) is recorded as the reading that leaves room poleward;
+> 2G starts from it. The ±66 budget at the fleet's poleward tiles is the
+> constraint any 2G kernel must satisfy, derived at each tile's solve-bbox
+> poleward edge (§7-16).
+> (d) C2→2G LINE: the covariate (a, b) is identified on the shipped kernel. If 2G
+> changes the kernel, it RE-IDENTIFIES (a, b) on the new one (priced: the twelve-fit
+> set again) or carries the caveat that b was identified under the anisotropy
+> in (a). Correct R1b-4's row: "consistent with 2G" holds only if 2G keeps the
+> shipped kernel.
+> (e) The freeze proceeds on the shipped kernel: halo 1.0°, HALO_DEG bound (§6).
+> operative_halo_deg() stays untouched.
+>
+> **289.** CORRECTION to the item: R1b-2's "+0.9825° at the shipped scale" was computed at the
+> 113.137 km rung. At 111.195 km the lat halo is exactly 1.0° and the margin 1.0000°.
+> Re-derive and fix.
+>
+> **290.** §7-19 WATCH, noted: this is the kernel question's second WAIT (219, now 288). Pin
+> 285's watch is on the draft's frame, and a WAIT with a named exit is an answer. But
+> a THIRD deferral at 2G would mean the deliverable, not the exit, is the problem.
+>
+> **291.** SEQUENCE: land 287-291 as PART 65; fill both decision cells of the R1 item by
+> citation (no regeneration of its derived tables); amend the draft (R1a into §6's
+> n_eff definition, R1b into §7 and the C2→2G table); push; verify origin; then
+> continue to R2 (pin 280). Nothing runs; nothing in Stage 2 opens; tasks 14-21 stay
+> halted; seal v1 untouched, its v2 UNSPENT with T17.
+
+### What PART 65 changes
+
+- **⭐ R1a — SHAPE (d) IS ELECTED (287).** Fork-e pin 2(i)'s **last clause is STRUCK for
+  Stage 2 onward**; fork-d pin 4 **stands unchanged**. The named scale is **226.274 km**,
+  by the R1 item's §5.1 rule, **evaluated ONCE on Stage 1's recorded λx and then a
+  CONSTANT** (287a). n_eff's obs support is **each tile's FRAMED obs** (287b). **Pin 280 is
+  unblocked on R1a alone** (287c).
+- **⚖ R1b — A RULED WAIT WITH ITS EXIT NAMED (288).** Stage 2 runs on the **shipped
+  kernel**. Its anisotropy is **era-invariant and absorbed by `s_spatial(x)`** (288a), so
+  (a, b)'s identification is not compromised. **No active exit is Stage 2's to take**: a new
+  kernel needs a **NEW signed baseline**, which only an acceptance touch grants (288b). The
+  exit is **2G's spec deciding kernel and poles together**, starting from the **per-axis
+  halo reading** (288c). **C2→2G line:** (a, b) are identified on the shipped kernel; a 2G
+  kernel change **re-identifies or carries the caveat** (288d). The freeze proceeds at
+  **halo 1.0°, `HALO_DEG` bound** (288e).
+- **One correction to the item** (289) and **the §7-19 watch noted** (290): a THIRD
+  deferral at 2G would indict the deliverable.

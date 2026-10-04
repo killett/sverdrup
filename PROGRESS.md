@@ -1,6 +1,6 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-09-28. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE**.
+> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2 next).
 >
 > Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
 > §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
@@ -39,8 +39,8 @@
 >
 > | # | item | whose |
 > |---|---|---|
-> | **R1a** | the **NAMED SCALE for n_eff** — a covariate choice. ⭐ **SPLIT OUT of 279's R1 by owner directive 2026-10-03**, which priced a **FOURTH shape (d) DECOUPLE**: n_eff's K takes the named scale; the halo follows the **solver's own** operative kernel scale (fork-d pin 4), never the covariate's | ⚖ **→ OWNER** |
-> | **R1b** | the **SOLVER KERNEL EXIT for high latitude** — 219's cos-φ anisotropy, needed by 2G's poleward fleet. Priced on the **solver's** merits, not on n_eff's L. Stays **upstream of the freeze** (279) if it moves the kernel or the halo | ⚖ **→ OWNER** |
+> | **R1a** | ✅ **DECIDED — pin 287 (PART 65, 2026-10-03): SHAPE (d) ELECTED.** Fork-e pin 2(i)'s last clause STRUCK for Stage 2 onward; fork-d pin 4 unchanged. **n_eff's L = 226.274 km, a CONSTANT** (evaluated once on Stage 1's recorded λx). n_eff's obs support = each tile's FRAMED obs. Folded into the draft at **§3.1** | ✅ owner |
+> | **R1b** | ✅ **DECIDED — pin 288: RULED WAIT, exit named.** Stage 2 runs on the **shipped kernel**, halo 1.0°, `HALO_DEG` bound; anisotropy era-invariant and absorbed by `s_spatial` (ratios 0.74/0.60/1.27/1.17/1.03 derived). No active exit is Stage 2's (a new kernel needs a NEW signed baseline — an acceptance touch). Exit = 2G decides kernel + poles together from the per-axis reading; **C2→2G line 288(d)**. Folded in at **§7.3a** and §20.1's 263.1 row. ⚠ 290: a THIRD deferral at 2G indicts the deliverable | ✅ owner |
 > | **R2** | **n_eff DEFINED** (280): L, L_t, n_eff₀ and the aggregation fixed from fork-e pins 1(i)/2, the named scale by a rule needing **no per-tile λx** — then **EVERY bar gets its NUMBER** (D2, D4, D5, D13, D17's four). A bar without a number is **unrun** (§7-11) | executor |
 > | **R3** | the **LORO unit** (281): three rotations, each removing one epoch from **all four tiles**; re-derive D5(d)'s era-level falsifier for the **pooled** law and state what **n = 3** can and cannot falsify | executor |
 > | **R4** | the **tier/calendar item** (282): accept **~36 d** of box time on the critical path, **OR** elect Tier 2 — which needs a **NEW spend row** (`tier2_probe` caps wall at 6 h; one era-fit exceeds it **5.16×**) and triggers **`stage0:T18`** | ⚖ **→ OWNER** |
@@ -48,50 +48,21 @@
 > | **R6** | **re-review** (284): reviewer A checks 278-283 were applied; a **FRESH reviewer B** attacks the frame again, **NOT handed this review's findings as targets** | both |
 > | **R7** | the **spec gate** | ⚖ **→ OWNER** |
 >
-> ▶ **R1 IS PRICED, SPLIT, AND WAITING ON THE OWNER** — the item is
-> `docs/superpowers/2026-10-03-phase14-stage2-r1-kernel-decision-item.md`, ⚖ **two decision
-> cells, BOTH EMPTY**. Amended in place 2026-10-03 on the owner's R1 directive (rewritten,
-> not layered over — pin 154). All numbers DERIVED at `9d16b17`.
+> ▶ **R1 IS DECIDED — ruling PART 65, pins 287–291.** The item
+> (`docs/superpowers/2026-10-03-phase14-stage2-r1-kernel-decision-item.md`) carries both cells
+> filled by citation, its derived tables unregenerated, and the ruling's three corrections
+> (288b: active exits share the signed-baseline blocker; 288d: "consistent with 2G" only if 2G
+> keeps the shipped kernel; 289: margin at the shipped scale is 1.0000°, not 0.9825°). The
+> item's history — the first draft's "pin 2(i) unsatisfiable" headline and its correction to
+> "the LAST CLAUSE is the collision" — is preserved in the item, not here.
 >
-> ⭐ **THE COLLISION IS ONE CLAUSE, NOT PIN 2(i).** The first draft reported fork-e pin 2(i)
-> *"unsatisfiable at southern under every exit"*; ⛔ **that is CORRECTED.** Pin 2(i)'s two
-> conditions ARE jointly satisfiable, at **226.274 km**. What collides them with ±66 is only
-> its **LAST CLAUSE** — *"the fork-d pin-4 auto-follow linkage binds to the NAMED scale"* —
-> which couples n_eff's kernel length to the **solver's** obs halo. ⭐ **Fork-d pin 4 itself
-> never mentions the covariate**: it names *"the OPERATIVE kernel scale per tile"* and makes
-> *"the constraint-3 high-latitude decision"* its trigger. **So shape (d) amends ONE clause of
-> fork-e pin 2(i) and NOTHING in fork-d pin 4** — and **12 citations audited: only TWO rely on
-> the clause** (the frame review's coupling sub-claim, and 279's re-sequence, which SPLITS
-> rather than falls). **The draft cites it 0 times; no code wires it.** ⚖ **(d) does NOT
-> rehabilitate 274(b)'s mis-homing** — the frame review's HOMING finding stands on 219(c), the
-> closure obligation and 274(b)'s own words.
->
-> ⭐ **FORK E ARGUES FOR (d), not merely permits it.** It rejected a candidate covariate
-> *because* it was *"config-dependent"* through the solver; the obs halo **is** solver config.
-> Decoupling **restores** fork E's intent. ⛔ **Its REQUIRED CLAUSE:** n_eff's obs support is
-> each tile's FRAMED obs (`obs_bbox`), never §12.2's global daily file. ⚠ **Honest limit:**
-> (d) decouples n_eff's **LENGTH** from the halo, **not its SUPPORT** — R1b still moves n_eff
-> through the frame, but no longer **defines** it. That asymmetry is what makes the split work.
->
-> **Southern's halo budget is 2.0000°** (`66 + solve_bbox.lat_min`), spending 1.0° today. It is
-> **per tile**, hits **zero at −66** — so on D1's lattice `southern` is the poleward-most tile
-> with any budget, and beyond is D4's pole region. **Solver-scale ceilings: 97.489 km** under a
-> scalar halo (⛔ a **≥12.33% cut** below the shipped 111.195 km) vs **222.390 km** per-axis
-> (✅ shipped scale inside). ⭐ **(b) ALONE CHANGES NOTHING** at a degree scale — its whole
-> value is raising (a)'s ceiling. ⛔ **R1b-3 (216's hull) cannot COMPLETE inside Stage 2**:
-> §3.3 gives Stage 2 no touch, so bundling it with 2G's chain **puts Stage 2's era-fits on a
-> different kernel than 2G ships.**
->
-> ⚖ **RULED NOW (owner, 2026-10-03) — `HALO_DEG` AND `operative_halo_deg()` ARE BOUND.** Any
-> halo change moves both; **changing `operative_halo_deg()` alone is REFUSED.** They are
-> independent literals today (`miost_basis.py:34`, inside `BasisSpec.key()` :80 — and
-> `spatial_tiles.py:41`), with no cross-reference, which made the obs frame movable while
-> `params_key` stood still. ⭐ **The THIRD instance of F1/262c's family** — a check reading one
-> key while the world writes another. **PLAN WORK (R2's plan):** `HALO_DEG` derives from
-> `operative_halo_deg()` — **one origin, §7-12** — with an identity guard (today's
-> `params_key` bytes unchanged at 1.0) **and a NEGATIVE CONTROL that a halo change re-keys**,
-> so the binding can fail. ⚠ Latent facet FLAGGED: pin 4 promises a halo *"per tile"* while
-> `key()` can record **one** global number — R1b's to price.
+> **▶ NEXT: R2 (pin 280) — n_eff DEFINED, then EVERY bar gets its NUMBER.** L is ruled
+> (226.274 km). Still to fix in the spec from fork-e pins 1(i)/2: **L_t** ("the shipped L_t"),
+> **n_eff₀** (anchor-epoch median, the λ_ref = 300 km gauge pattern), the **aggregation**
+> (per-location MEDIAN over the era's windows — already pinned by fork-e 2(ii)); then D2's
+> tolerance, D4's objective, D5's threshold, D13, and D17's four. A bar without a number is
+> unrun (§7-11). ⛔ HALO_DEG→operative_halo_deg() binding is PLAN WORK with a negative control,
+> not R2's spec text.
 >
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the

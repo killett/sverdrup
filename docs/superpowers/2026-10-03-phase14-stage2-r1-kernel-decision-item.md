@@ -11,8 +11,9 @@
 > is unfixed; the closure record is frozen; seal v1 is untouched and its v2 is UNSPENT.
 > Nothing in Stage 2 opens here; tasks 14-21 stay halted. The Stage-2 draft is not edited.
 >
-> ⚖ **TWO DECISION CELLS AT §9, BOTH EMPTY** — *priced, owner to decide*, the pin-235(e)
-> form. No shape below is recommended as elected.
+> ⚖ **BOTH DECISION CELLS AT §9 ARE FILLED BY CITATION — owner ruling PART 65, pins 287–291,
+> 2026-10-03.** The derived tables are **not regenerated** (291); the three corrections the
+> ruling ordered (288b, 288d, 289) are applied in place and marked.
 >
 > **Every number is DERIVED** at this commit, from the store, the frame and the source —
 > never recalled. Each row names its derivation.
@@ -257,16 +258,16 @@ R1b choice is a pair, not four independent exits.
 |---|---|---|---|---|
 | **fixes the cos-φ anisotropy?** | ✅ **yes, by construction** — a km metric is isotropic in km at every latitude | ✅ **yes** | ⛔ **no.** Options 2/3 are **degree-space**: the scale's SIZE varies with latitude (opt 2) or the kernel becomes nonstationary (opt 3). **Never enters km space, so 219(b)'s finding is untouched** | ⛔ no — stays unfixed |
 | **the frame it leaves** | ⚠ obs drawn **2.2812×** past the kernel's meridional reach on the lat axis (1/cos 64) — not a breach, an asymmetric over-draw | ✅ frame matched per axis | unchanged | unchanged |
-| **±66 budget at southern** | scale ≤ **97.489 km**; at that ceiling margin **+0.0000°** (clear, strict) | scale ≤ **222.390 km**; shipped 111.195 → margin **+0.9825°** | **unchanged, +1.0000°** | **unchanged, +1.0000°** |
+| **±66 budget at southern** | scale ≤ **97.489 km**; at that ceiling margin **+0.0000°** (clear, strict) | scale ≤ **222.390 km**; shipped 111.195 km → lat halo exactly **1.0°**, margin **+1.0000°** (⚖ **corrected per 289** — the earlier +0.9825° was the 113.137 km rung) | **unchanged, +1.0000°** | **unchanged, +1.0000°** |
 | **2G's poleward fleet** | the ±66 budget dies at `solve_bbox.lat_min = −66`; **a scalar halo has no room there at all** | ⭐ **the only reading that leaves room poleward** — the lat edge stops paying the 1/cos φ penalty | no change | 219's WAIT persists into 2G, which **219(d) says cannot decide poles without it** |
-| **anchor identity** | ⛔ **NOT preserved by construction** — different kernel family **and** metric; check 1's bit-identity vs the Phase-13 winner must be re-established | same as R1b-1 | ⚠ bit-identical **only at L0 = 1 AND variance = 1 exactly**, and that is ⛔ **PINNED BY NO TEST** | ✅ preserved |
-| **signed-component touch** | none | none | ⛔ **see the blocker below** | none |
+| **anchor identity** | ⛔ **NOT preserved by construction** — different kernel family **and** metric. ~~check 1's bit-identity must be re-established~~ ⚖ **288(b): it CANNOT be** — identity is member-level and the elements move under a new metric | same as R1b-1 | ⚠ bit-identical **only at L0 = 1 AND variance = 1 exactly**, and that is ⛔ **PINNED BY NO TEST** | ✅ preserved |
+| **signed-component touch** | ⛔ **YES — corrected per 288(b).** Anchor identity is **MEMBER-LEVEL equality** against the signed Phase-13 winner; under a new metric the elements move, so it cannot be "re-established" — a new kernel needs a **NEW signed baseline**, which only an acceptance touch grants, and Stage 2 opens nothing (§3.3) | ⛔ **YES — same blocker (288b)** | ⛔ **see the blocker below** | none |
 | **key change** | `halo=` **value** moves (and §6 binds `HALO_DEG` with it) → **every `params_key` re-keys** | ⛔ `halo=` **SCHEMA** change — a scalar token cannot express a per-axis rule; §6's per-tile facet lands here too | **none** | **none** |
 | **upstream of the freeze (279)?** | ✅ yes | ✅ yes | n/a — see blocker | ✅ moot |
-| **Stage 2 vs 2G consistency** | ✅ both on the new kernel | ✅ both on the new kernel | ⛔ **DIVERGENT — see blocker** | ✅ both on the shipped kernel |
+| **Stage 2 vs 2G consistency** | ✅ both on the new kernel | ✅ both on the new kernel | ⛔ **DIVERGENT — see blocker** | ⚖ **corrected per 288(d): consistent ONLY IF 2G keeps the shipped kernel.** If 2G changes it, 2G **RE-IDENTIFIES (a, b)** on the new kernel (priced: the twelve-fit set again) or **carries the caveat** that b was identified under 288(a)'s anisotropy — the **C2→2G line** |
 | **code surface** | `operative_halo_deg()` + `HALO_DEG` | + `operative_halo_deg()`'s **signature** (it needs a latitude), `TileFrame.halo_deg`, `TileFrame.obs_bbox`, `__post_init__`, call sites `spatial_tiles.py:156` / `:294`, `phase14_stage1_run.py:479`, and `key()`. ⛔ **fork-d pin 4's "THIS function changes — nothing else" is FALSE here; amend it** | widen `core/parameters.py:17` `_LAT_HULL` from `[33, 43]` | none |
 
-### 7.1 ⛔ R1b-3's HIDDEN BLOCKER — it cannot complete inside Stage 2
+### 7.1 ⛔ THE BLOCKER — shared by R1b-1, R1b-2 AND R1b-3 (288b) — nothing active completes inside Stage 2
 
 **216:** widening the hull is *"a producer decision with its own chain and touch, not
 something a decision pack elects."* **Program spec §3.3:** *"Stage 2: **never opened** …
@@ -280,7 +281,7 @@ both stages to the new kernel; 4 leaves both on the shipped one.
 ⚠ **And R1b-3 settles WHICH KERNEL FAMILY, not WHICH SCALE** — so even elected it leaves
 R1b's anisotropy question open.
 
-### 7.2 R1b-4 is a WAIT, which is an answer — but only with its exit named
+### 7.2 R1b-4 is a WAIT, which is an answer — RULED at 288, with its exit named
 
 **261:** *"A ruled WAIT is an answer with a reason and a named exit; an empty question is
 not."* ⚖ **A deferral is Stage 2 exercising its ownership, not a re-homing** — it does not
@@ -289,6 +290,29 @@ no longer blocks n_eff's definition, so deferring costs the anisotropy fix and 2
 input — **not** Stage 2's bars. Gate 1 already carries three ruled WAITs (219, 224, 250);
 this would make the kernel's a second-generation one, and **pin 285's §7-19 watch applies
 to the revision, not to a WAIT.**
+
+### 7.3 ⭐ Why Stage 2 can afford the WAIT — 288(a)'s ratios, DERIVED
+
+`lonlat_to_km` (`methods/miost_basis.py:168-181`) projects longitude with a **fixed**
+`cos(MID_LAT)`, `MID_LAT = 38.0` (`miost_sizing.py:24`, the anchor box's middle). An element
+that is isotropic in that km frame therefore has a **true** zonal/meridional extent of
+`cos φ / cos 38°` at latitude φ:
+
+| where | φ | zonal / meridional, true km |
+|---|---|---|
+| `southern` centre | −54.50 | **0.7369 → 0.74** |
+| `southern` core edge | −62.00 | **0.5958 → 0.60** |
+| `equatorial` centre | +3.50 | **1.2667 → 1.27** |
+| `quiet_gyre` centre | −22.50 | **1.1724 → 1.17** |
+| `kuroshio` centre | +35.50 | **1.0331 → 1.03** |
+
+(φ from each tile's `frame.core` midpoint in the store; all five reproduce 288(a).)
+
+⭐ **The kernel is era-invariant** (D5's frozen config), so this anisotropy is **the same in
+every era** and is **absorbed by `s_spatial(x)`** under fork-e pin 1(ii)'s split — the
+covariate absorbs only what changes with constellation. **Stage 2's identification of (a, b)
+is not compromised**; what the anisotropy degrades is 2G's shipped high-latitude product,
+which is where the exit now lives (288c).
 
 ---
 
@@ -308,16 +332,16 @@ constants, with its plan work and its negative control.
 
 ---
 
-## 9. ⚖ DECISION CELLS — BOTH **EMPTY**
+## 9. ⚖ DECISION CELLS — BOTH FILLED BY CITATION (PART 65, 2026-10-03)
 
-| | cell |
-|---|---|
-| **R1a** — the named scale for n_eff | ⚖ **EMPTY** |
-| **R1b** — the solver kernel exit | ⚖ **EMPTY** |
+| | ruling | cell |
+|---|---|---|
+| **R1a** — the named scale for n_eff | **pin 287** | ⭐ **SHAPE (d) ELECTED.** Pin 2(i)'s last clause **STRUCK for Stage 2 onward**; fork-d pin 4 **unchanged**. Named scale **226.274 km** by §5.1's rule, **evaluated ONCE on Stage 1's recorded λx, then a CONSTANT** — never re-evaluated as Stage 2 records λx per era (287a). n_eff's obs support is **each tile's FRAMED obs** (287b). **Pin 280 unblocked on R1a alone** (287c) |
+| **R1b** — the solver kernel exit | **pin 288** | ⚖ **RULED WAIT, EXIT NAMED (261).** Stage 2 runs on the **shipped kernel**; the anisotropy is era-invariant and absorbed (§7.3). **No active exit is Stage 2's**: a new kernel needs a NEW signed baseline — an acceptance touch — and Stage 2 opens nothing (288b). **Exit: 2G's spec decides kernel and poles TOGETHER**, starting from the per-axis reading, the ±66 budget derived at each fleet tile's solve-bbox poleward edge (288c). **C2→2G line** per 288(d). Freeze proceeds at **halo 1.0°, `HALO_DEG` bound** (288e) |
 
-Priced, owner to decide. ⛔ **`operative_halo_deg()` is not touched.**
+⛔ **`operative_halo_deg()` is not touched** (288e). ⚠ **§7-19 watch (290):** this is the
+kernel question's **second** WAIT (219, 288); a **third** deferral at 2G would indict the
+deliverable, not the exit.
 
-**Until R1a carries a ruling:** n_eff is undefined, so no bar has a number (pin 280), the
-census does not select (D4), and no era-fit runs. **Until R1b carries one:** the geometry
-step is not recomputed (D6/D7) and the pavement is not frozen. ⭐ **Under (d) those are
-two chains, not one** — which is the whole point of the split.
+The owner's picks on the item's two questions: **R1a option 1** ((d) + 226.274 km) and
+**R1b option 1** (the ruled WAIT), 2026-10-03.
