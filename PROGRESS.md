@@ -1,6 +1,6 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2 drafted, R3 next).
+> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2–R3 drafted, R4 → owner).
 >
 > Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
 > §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
@@ -72,9 +72,22 @@
 > §9), ⚠ **"large" = 0.10 at the worst tile OR excursion×|b| > 0.2093 — the 0.10 is the ONE
 > CHOSEN number, tabled as such.**
 >
-> **▶ NEXT: R3 (pin 281) — the LORO unit.** Three rotations, each removing one reference epoch
-> from ALL FOUR tiles; re-derive D5(d)'s era-level falsifier for the POOLED law; state what
-> n = 3 can and cannot falsify. Then R4 (tier/calendar) → OWNER.
+> **R3 (pin 281) IS DRAFTED — draft §6.4a, awaiting the owner's read.** The unit is the EPOCH:
+> three rotations, each removing one reference epoch from ALL FOUR tiles; §2's "3 rotations ×
+> 4 tiles" and §6.2/§6.4's "per tile" are struck and marked. The 12-cell reading cannot fail in
+> the era axis (the held-out era stays in the pooled fit through the other three tiles). One
+> rotation = ONE era-level draw (shared realisation + shared refit); rotations pairwise share
+> one training epoch. Era-dof: 1 in the full fit, 0 inside a rotation — so σ²_era appears ONLY
+> in the held-out error. Falsifier: **Q = √(Σε_r²/Σse_r²) over three rotations, bar 1.6140**,
+> errs toward flagging under dependence. ⭐ **What n = 3 CANNOT do, derived:** detect an era
+> variance equal to the sampled-eras variance with more than **27%** power, or a tripled one
+> with more than **58%**; a non-exceedance is "NOT FALSIFIED at n = 3", never "absent"; one
+> epoch's quirk and an era effect are CONFOUNDED at n = 3; Q is never a variance estimate.
+>
+> **▶ NEXT: R4 (pin 282) — the TIER/CALENDAR item → OWNER.** Accept ~36 d of box time on the
+> critical path, OR elect Tier 2 for throughput (needs a NEW spend row — `tier2_probe` caps wall
+> at 6 h and one era-fit exceeds it 5.16× — and triggers `stage0:T18`). Derive the chain from
+> the probe node, never recall it.
 >
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the

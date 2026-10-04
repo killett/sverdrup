@@ -37,7 +37,7 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 | §3 | The density law: pooled, with a pre-registered regime test | VALIDATED (D2); **§3.1 R1a RULED (287); §3.2–3.3 R2 DRAFTED (280) — awaiting owner read** |
 | §4 | The anchor reference epoch: e10, pure and seasonally balanced | VALIDATED (D3) |
 | §5 | The +2 reference epochs: a pre-registered rule on measured n_eff | VALIDATED (D4) |
-| §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
+| §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5); **§6.4a D5(d) RE-DERIVED (281, R3) — awaiting owner read** |
 | §7 | The pavement: measured before it is placed; tasks 14-17 split by step | VALIDATED (D6) |
 | §8 | Ordering: the geometry step and the cheap sigma work; one packet | VALIDATED (D7) |
 | §9 | e10's replacement holdout, the seal-budget map, and delta_j3 | VALIDATED (D8) |
@@ -126,9 +126,13 @@ that selection is **§5**'s business and is constrained by the sealed epoch tabl
 
 Consequences that follow from D1 and are therefore settled here:
 
-- **Gate-2's leave-one-reference-out rotation set is 3 rotations × 4 tiles** (fork-e pin 4:
-  ALL rotations run and reported — the covariate's claim-bearing test is the set, never a
-  chosen rotation).
+- **Gate-2's leave-one-reference-out rotation set is THREE rotations** — ⚖ **corrected per
+  278(c)/281 (R3): fork-e pin 4 says *"three epochs → three"*, and under D2's pooled law a
+  rotation removes one reference epoch from ALL FOUR tiles at once.** ~~3 rotations × 4
+  tiles~~ was the draft's own unit error (§6.4a): the three reference epochs are the *same
+  three* at every tile, so independent era realisations number **3** and cannot be raised by
+  adding tiles. ALL rotations run and reported — the covariate's claim-bearing test is the
+  set, never a chosen rotation.
 - The four regimes — western-boundary jet, equatorial, subtropical-quiet, Southern Ocean —
   all enter identification, so the regime spread in §3 is **measured, not assumed**.
 - The southern tile enters with its framed geometry, and ⭐ **±66 is NOT breached by
@@ -560,7 +564,7 @@ not** (§7-18, the (u2) shape exactly).
 |---|---|---|
 | **SPATIAL** | within a tile | **yes** — by space blocks |
 | **TEMPORAL** | within an era | **yes** — by **contiguous window blocks** |
-| **ERA-LEVEL** | shared by **every location in the tile** | ⛔ **NO** — only three per tile, not resampleable within a tile |
+| **ERA-LEVEL** | shared by **every location in EVERY tile** — the same three realisations at all four | ⛔ **NO** — only **three in the whole fit set** (⚖ 281, R3: not "three per tile"), not resampleable at all |
 
 ⛔ **Spatial-only resampling measures the first source and SILENTLY DROPS the other two.**
 That is why it is not the method, and the omission is recorded here so the rejected option
@@ -598,9 +602,82 @@ era-level component.** It is therefore not a bonus corroboration; it is the test
 implies by a stated factor** — ⚖ **1.6140 = √(χ²₃(0.95)/3), §3.3 (R2)** — then **the era component dominates**, and the regime test is
 reported as **CONDITIONAL ON THE ERAS SAMPLED, with its se UNDERSTATED**.
 
-⛔ **Three rotations per tile can FALSIFY a too-narrow se; they cannot ESTIMATE the era
-variance.** The spec says so in those words, so no successor reads three rotations as an
-era-variance estimate.
+⛔ **Three rotations — ⚖ *three epochs → three*, each removing one reference epoch from ALL
+FOUR tiles (278c/281; ~~per tile~~ struck) — can FALSIFY a too-narrow se; they cannot ESTIMATE
+the era variance.** The spec says so in those words, so no successor reads three rotations as
+an era-variance estimate. **What that means in numbers is §6.4a.**
+
+### 6.4a The LORO unit and the era-level falsifier, RE-DERIVED for the pooled law (pin 281, R3)
+
+**The unit is the EPOCH.** Fork-e pin 4, verbatim: *"ALL leave-one-reference-out rotations
+run and reported (**three epochs → three**)."* Rotation r drops reference epoch e_r from
+**all four tiles**, refits the pooled (a, b) on the two remaining epochs across the four
+tiles, predicts `s(x, e_r)` at every fit-tile core node, and compares it with e_r's
+**independently fitted** per-era `s`. ⚠ **The draft's "3 rotations × 4 tiles" (§2) was its
+own unit error (278c)** — it redefined the rotation as a (tile, epoch) cell and multiplied
+the claim-bearing set by four.
+
+**Why the 12-cell reading cannot work — it fails in the axis it exists to test.** D2 fits
+**one pooled (a, b)**. Dropping the cell (tile_i, e_r) leaves e_r **in the pooled fit through
+the other three tiles**, so the "held-out" prediction is made with e_r's own era realisation
+still inside the law. The falsifier then **cannot fail in the era axis** — discipline 11's
+family, inside §6.4. Only the epoch-level rotation removes the realisation entirely.
+
+**Why the four per-tile errors inside one rotation are NOT independent (281):** they share
+**the same held-out era realisation** (the constellation, orbit geometry and every
+era-specific effect of e_r are common to all four tiles) **and the same refit** — the
+rotation's (a, b) is one estimate used for all four predictions. A rotation therefore yields
+**ONE era-level draw**, with a four-tile spatial breakdown that is **report-only** (a regime
+read, §3's regime test's cousin), never four draws. **Across rotations, dependence remains:**
+each pair of rotations shares exactly one of its two training epochs (3 pairs, 1 shared
+epoch each), so the three refits are correlated through (a, b).
+
+**The era-dof accounting, which is why LORO is the ONLY instrument (§6.4):** three reference
+epochs and a 2-parameter law leave **one** residual era-dof in the full fit. Inside a
+rotation the two training epochs are fit **exactly** in the era dimension (**zero** residual
+era-dof), so an era-level component σ²_era is invisible in-sample and appears **only** in
+the held-out error — inflated by the refit's leverage, never deflated.
+
+**The falsifier, pre-registered (D5, D17-1):**
+
+> Let **ε_r** be the core-node RMS of `log s_pred − log s_fit` for rotation r, and **se_r**
+> the RMS that §6.3's se(b | eras) implies for the same nodes (the sampled-eras uncertainty,
+> propagated). The statistic is **Q = √(Σ_r ε_r² / Σ_r se_r²)** over the **three** rotations.
+> **Q > 1.6140** (= √(χ²₃(0.95)/3), §3.3) **FALSIFIES** the claim that se(b | eras) is a
+> complete uncertainty: the era component dominates, and the regime test is reported
+> **CONDITIONAL ON THE ERAS SAMPLED, with its se UNDERSTATED**. All three ε_r are reported
+> **beside** Q (fork-e pin 4), with their four-tile breakdowns.
+
+⚠ **Dependence makes the bar err toward flagging.** Under H₀ the correlated ε_r give Q a
+wider distribution than the χ² reference, so Q exceeds 1.6140 more often than 5% when
+nothing is wrong — the honest direction for a falsifier, and recorded rather than tuned away.
+
+**What n = 3 CAN falsify:** that se(b | eras) is **complete** — i.e. σ²_era ≈ 0. **What it
+CANNOT do, in numbers** (independence assumed, so these are *upper* bounds on power):
+
+| true era variance, as a multiple of the sampled-eras variance | expected Q | probability the bar is exceeded |
+|---|---|---|
+| 0.5× | 1.225 | **0.16** |
+| 1.0× (the era component equals everything else combined) | 1.414 | **0.27** |
+| 1.605× (the point where the *expected* Q sits on the bar) | 1.614 | **0.39** |
+| 3.0× (held-out RMS doubled) | 2.000 | **0.58** |
+
+⛔ **So n = 3 cannot ESTIMATE σ²_era, and it cannot even reliably DETECT one as large as the
+whole sampled-eras variance (27%)**. Three consequences are pre-registered:
+
+1. **A non-exceedance is reported as "NOT FALSIFIED at n = 3" — never as "era component
+   absent"** (§7-11): the test that could not have seen it has not found its absence.
+2. **One outlier epoch dominates an RMS of three.** The per-rotation ε_r are reported beside
+   Q so a single anomalous reference epoch is legible as such rather than read as a general
+   era effect — and ⛔ **with three epochs an era-level effect and one epoch's constellation
+   quirk are CONFOUNDED**; n = 3 cannot separate them, and the spec says so.
+3. **Q is not a variance estimate.** Nothing downstream may use Q² − 1 as σ²_era; the only
+   legal use is the binary falsification above.
+
+**D5(d), as it now reads:** three rotations, the epoch the unit, each across all four tiles;
+the falsifier is a bar on the SET (Q over three), with power as tabled; a tile-level LORO
+has zero era-dof and is not an instrument.
+
 
 ### 6.5 The tolerance is the CONSEQUENCE threshold — and the test has three outcomes
 
