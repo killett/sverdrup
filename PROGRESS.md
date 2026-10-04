@@ -1,6 +1,6 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2–R3 drafted, R4 → owner).
+> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2–R3 drafted, R4 → owner, waiting).
 >
 > Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
 > §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
@@ -84,10 +84,19 @@
 > with more than **58%**; a non-exceedance is "NOT FALSIFIED at n = 3", never "absent"; one
 > epoch's quirk and an era effect are CONFOUNDED at n = 3; Q is never a variance estimate.
 >
-> **▶ NEXT: R4 (pin 282) — the TIER/CALENDAR item → OWNER.** Accept ~36 d of box time on the
-> critical path, OR elect Tier 2 for throughput (needs a NEW spend row — `tier2_probe` caps wall
-> at 6 h and one era-fit exceeds it 5.16× — and triggers `stage0:T18`). Derive the chain from
-> the probe node, never recall it.
+> **▶ R4 (pin 282) IS PREPARED AND WAITING ON THE OWNER** —
+> `docs/superpowers/2026-10-03-phase14-stage2-r4-tier-calendar-item.md`, ⚖ **decision cell
+> EMPTY**. Chain DERIVED from `tier2_probe_kuroshio_m100`: 3.4399 h/window → **30.96 h** per
+> era-fit → **371.5 h** for 12 → **509.0 h** at m = 137 (×1.37, pin 57) → **865.2 h = 36.05 d**
+> under ×1.70 (pin 28); one era-fit exceeds `tier2_probe`'s 6 h cap **5.16×**. Tier 1 is RAM-only
+> (no wall ceiling → §11.4's "does not clear" row unreachable). ⚠ **The 2× RAM rule needs 8 729
+> MiB at launch and itself SERIALISES the fits (⌊11 248/8 729⌋ = 1); live on this box today
+> `MemAvailable` is 1 649 of 15 770 MiB with ~13 GiB held outside this container — a snapshot,
+> but it is why the 36 d must be the box's own.** (A) accept ~36 d serial, or (B) elect Tier 2:
+> NEW spend row + `stage0:T18` triggered + §11.5's REFUSE-until-witnessed.
+>
+> **After R4:** R5 (pin 283) — the four-state boundary, the rebuilt coverage map against §8's
+> scope, the C2→2G line table; then R6 re-review; then R7 the gate → OWNER.
 >
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the
