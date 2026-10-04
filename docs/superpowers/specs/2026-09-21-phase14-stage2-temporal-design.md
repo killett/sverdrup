@@ -34,7 +34,7 @@ been reached. The coverage map required by 276(b) is built last and its counts a
 |---|---|---|
 | §1 | The frame: what Stage 2 is, and what it is not | VALIDATED |
 | §2 | Identification scope — the fit set | VALIDATED (D1) |
-| §3 | The density law: pooled, with a pre-registered regime test | VALIDATED (D2) |
+| §3 | The density law: pooled, with a pre-registered regime test | VALIDATED (D2); **§3.1 R1a RULED (287); §3.2–3.3 R2 DRAFTED (280) — awaiting owner read** |
 | §4 | The anchor reference epoch: e10, pure and seasonally balanced | VALIDATED (D3) |
 | §5 | The +2 reference epochs: a pre-registered rule on measured n_eff | VALIDATED (D4) |
 | §6 | Tolerance and power: se(b_i), the LORO falsifier, and a three-outcome test | VALIDATED (D5) |
@@ -193,6 +193,71 @@ engaged** by this choice at all.
 
 ▶ **L_t, n_eff₀ and the window aggregation are pin 280's (R2)** and are fixed in §3.2, which
 follows. 287(c): R1a unblocks pin 280 on its own.
+
+### 3.2 n_eff DEFINED — every constant fixed, none new (pin 280, R2)
+
+⚖ **Fixed here in the spec from fork-e pins 1(i) and 2, as pin 280 requires. Not one constant
+below is new: each is inherited from a ruled or shipped value and its origin is named.**
+
+| element | value | origin |
+|---|---|---|
+| **L** — spatial scale | **226.274 km** — a CONSTANT | pin 287(a), §3.1; rung 4 of 8 |
+| **L_t** — temporal scale | **6.00630128569901 d** — *"the shipped L_t"* (fork-e pin 2(i)) | the signed basis's `l_t_days`, `/winner/params/l_t_days` in the store; identical in `/sobol/winner_params` and `/stage_b/winner_params` — Phase 13 varied R, not the basis |
+| **K** — the kernel | the basis's own taper, **U2021 Eq. 19**: `K(d) = cos(πd/2)` for `|d| < 1`, exactly 0 outside; **separable** in x, y, t | `methods/miost_basis.py:163-165` (`_cos_tap`). Fork E rejected counts-in-radius as *"a new arbitrary constant"*; reusing the basis taper adds none |
+| **spatial half-width** | `d_x = Δx / (1.5·L)`, `d_y = Δy / (1.5·L)` → **339.411 km** — the rung-226.274 element's own support | `miost_sizing.py:31` `SUPPORT_FACTOR = 1.5` |
+| **temporal half-width** | `d_t = (t_obs − t_c) / L_t`, t_c the window centre | the basis's temporal taper, `miost_basis.py:278` |
+| **metric** | ⭐ **TRUE local km**: `Δx = (lon_obs − lon_x)·111.32·cos φ_x`, `Δy = (lat_obs − lat_x)·111.32` | `KM_PER_DEG = 111.32` (`miost_sizing.py:21`, the basis family's constant). ⛔ **NOT `lonlat_to_km`'s fixed `cos(MID_LAT)`** — that frame carries 288(a)'s anisotropy, which belongs to the solver; under (d) the covariate measures density as the geometry gives it (§3.1) |
+| **obs support** | **each tile's FRAMED obs** — `obs_bbox` at the operative halo, within the window's 60-d span | pin 287(b); never §12.2's global file |
+| **per-window → era** | per-location **MEDIAN over the era's windows** (9 per pure year, `WindowPlan()`), deterministic, in the artifact schema | fork-e pin 2(ii) — already pinned |
+| **n_eff₀** — the gauge | ⭐ **RULE: the median, over all core grid nodes of the four fit tiles, of the e10 era-aggregate n_eff.** Density factor ≡ 1 there (fork-e pin 1(i)) | the **λ_ref = 300 km pattern** (`DiagonalQ.lam_ref`, gauge-inert, in `key()`): serialized in the calibration descriptor from one origin (§7-12) |
+
+**n_eff₀ is a RULE with no free constant, and a NUMBER the moment the geometry step runs.**
+Its value is not typed here because nothing runs (276d); it is **derived once, at the
+census, before any bar is evaluated** — the same discipline as 287(a)'s L. ⭐ **Why the
+four-tile median and not the anchor tile's:** the gauge should sit at the centre of the
+regressor's support, not inside one regime, or `a` absorbs a regime offset by construction.
+⛔ **Gauge test (plan work, the λ_ref pattern):** refit with `n_eff₀′`; then
+`a′ = a − b·log(n_eff₀′/n_eff₀)` and `s(x, era)` is unchanged to floating-point — an identity
+with both outcomes reachable, pinned by test, not prose.
+
+⭐ **D4 is now MECHANICAL** (280): with L a constant, §5.3's two rank-orderings have no free
+parameter, and the census operator cannot choose the epochs by choosing L.
+
+### 3.3 EVERY BAR GETS ITS NUMBER — one pedigree, stated before any measurement (pin 280)
+
+⭐ **The pedigree.** Phase 12's **ruled** bar — coverage_1σ ∈ **0.6827 ± 0.1** (§17.4) —
+is the one bar this program has already accepted on a shipped product. A σ mis-scaled by a
+factor **f** turns 1σ coverage into **2Φ(f) − 1**, so that bar **is** an s-error band:
+
+| Phase-12 coverage band | ⇒ σ scale factor f | ⇒ log s band | ⇒ reduced-χ² band (∝ 1/f²) |
+|---|---|---|---|
+| [0.5827, 0.7827] | **[0.8111, 1.2337]** (-18.89% / +23.37%) | [-0.2093, +0.2100] — **tighter side 0.2093** | **[0.6570, 1.5200]** |
+
+Every s-denominated bar below takes the **tighter side, |Δlog s| ≤ 0.2093**, so no bar is
+looser than the one the program already shipped under.
+
+| bar | the NUMBER | how it is evaluated | status |
+|---|---|---|---|
+| **D2 — the regime-spread tolerance** (§3, §6.5) | **|Δb_i| ≤ 0.2093 / |D_worst|**, where **D_worst = max over transferred epochs and fit-tile core nodes of |log(n_eff/n_eff₀)|** — *the WORST transferred epoch's hull distance* (§7-16) | D_worst is geometry (no solve; §7.2), derived at the census. **Every constant is fixed now**; the input arrives with the census | ⭐ DERIVED |
+| **D2 — UNDERPOWERED floor** (§6.5) | the test can speak iff **se(b_i \| eras) · |D_worst| < 0.2093** | se from §6.3's two-way block resampling | ⭐ DERIVED |
+| **D5 — the LORO factor** (§6.4) | **1.6140** = √(χ²₃(0.95)/3): RMS held-out error over the **three rotations** exceeding **1.6140 × the se-implied RMS** falsifies the se | ⚠ the three errors are **not independent** (281), so under H₀ the ratio is wider than χ² gives: the bar errs **toward flagging**, which is the honest direction for a falsifier. **R3 re-derives the pooled-law form and carries this rule** (q = 0.95, n = rotations) | ⭐ DERIVED; form → R3 |
+| **D4 — the hull, the fraction, and "large"** (§5.3, §19.3) | hull = **[min, max] of the three reference epochs' era-aggregate log n_eff per tile, padded ×/÷ 1.25** (Phase 8 §9's pad, no new constant). Extrapolation fraction = share of a transferred epoch's core nodes outside it, **at the worst tile**. ⚖ **"LARGE" = fraction > 0.10 at the worst tile, OR any node's beyond-hull excursion × |b| > 0.2093** (the clip would then cost more s error than the band allows) | the audit reports fraction **and** max excursion (Phase 8's clip-observability pattern). ⛔ **0.10 is the ONE number in this section that is CHOSEN, not derived** — its kinship is Phase 12's ±0.10 on coverage; the owner may move it, and it is tabled as such at R7 | ⚠ CHOSEN (0.10); rest DERIVED |
+| **D13 — the seasonal diagnostic** (§14.3) | per-season **coverage_1σ within ±0.1 of the all-season value**; per-season **reduced χ² within [0.6570, 1.5200] × the all-season value** — the same band, two statistics | noise floor by window blocks within season; UNDERPOWERED named as such (n = 3 per season-tile) | ⭐ DERIVED |
+| **D17-1 — LORO as a SET** (§19.3) | the D5 factor **1.6140**, applied to the set of three rotations | claim-bearing on the set, never a chosen rotation (fork-e pin 4) | ⭐ DERIVED; form → R3 |
+| **D17-2 — DEV-pool gauge era rows** (§19.3) | per era row, **coverage_1σ ∈ 0.6827 ± 0.1** — Phase 12's bar verbatim | ⚖ **the REFERENT is the owner's** (D15(e)); Phase 12's was 0.7350. **Tabled at R7 with the gate** | bar DERIVED; referent → OWNER |
+| **D17-3 — the sparse-epoch reading** (§17.4, §19.3) | D15(e)'s triple: **direction** stated once b is fitted (UNDER-coverage if b < 0, where the clip binds); **bar coverage_1σ ∈ 0.6827 ± 0.1**; **referent** owner-ruled | consumed ONCE (fork-c pin 1), direction stated BEFORE consumption | bar DERIVED; referent → OWNER |
+| **D17-4 — the extrapolation audit** (§19.3) | the D4 trigger above: **0.10 at the worst tile, or excursion × |b| > 0.2093** | tables an owner decision; never a silent clip | ⚠ CHOSEN (0.10) |
+
+⛔ **A bar without a number is unrun** (§7-11). Every row above now has one, or has a rule with
+no free constant whose single input is a geometry measurement named beside it. The two
+owner-ruled referents (D17-2, D17-3) are **not** bars without numbers — the bar is fixed;
+the referent is the quantity the owner names the comparison against, which Phase 12 also
+ruled separately.
+
+**Plan work this section creates (R2's plan, not spec text):** L, L_t, SUPPORT_FACTOR,
+KM_PER_DEG, n_eff₀ and the hull pad serialized into the calibration descriptor **from one
+origin in code** (§7-12); the n_eff₀ gauge test; and the D4 trigger implemented as a
+refusal-to-proceed that tables, never clips.
 
 **Identification.** (a, b) are identified by **cross-era contrast at matched locations**
 (fork-e pin 1(ii)): `s_spatial` absorbs era-invariant spatial structure, the covariate
@@ -407,7 +472,7 @@ Applied to the **D3-admissible** epochs (whole pure year, `fit+validate`, ≥4 n
 in this order:
 
 1. **Minimise the transferred epochs' extrapolation fraction** against the **joint hull of
-   the three reference epochs**, taken at the **WORST tile** (§7-16), **never the mean**.
+   the three reference epochs** — ⚖ **[min, max] of era-aggregate log n_eff per tile, padded ×/÷ 1.25, §3.3 (R2)** — taken at the **WORST tile** (§7-16), **never the mean**.
 2. Then **maximise log n_eff spread** — the leverage available to identify **b**.
 3. Tie-breaks, in order: **sibling-having over sibling-less** (fork-c pin 4 weakens a
    ground truth by convolving map error with a prior-set holdout-error model; **e08 is the
@@ -530,7 +595,7 @@ era-level component.** It is therefore not a bonus corroboration; it is the test
 §6.3's figure is honest.
 
 **Pre-registered:** if LORO's held-out prediction errors **exceed what se(b_i | eras)
-implies by a stated factor**, then **the era component dominates**, and the regime test is
+implies by a stated factor** — ⚖ **1.6140 = √(χ²₃(0.95)/3), §3.3 (R2)** — then **the era component dominates**, and the regime test is
 reported as **CONDITIONAL ON THE ERAS SAMPLED, with its se UNDERSTATED**.
 
 ⛔ **Three rotations per tile can FALSIFY a too-narrow se; they cannot ESTIMATE the era
@@ -540,7 +605,8 @@ era-variance estimate.
 ### 6.5 The tolerance is the CONSEQUENCE threshold — and the test has three outcomes
 
 ⭐ **The tolerance is the `s` error a Δb causes at the WORST transferred epoch's hull
-distance** (§7-16). ⛔ **The noise floor does NOT become the tolerance.** The noise floor
+distance** (§7-16) — ⚖ **its NUMBER is §3.3's: |Δb_i| ≤ 0.2093 / |D_worst|, the tighter side of
+Phase 12's ruled coverage band (R2).** ⛔ **The noise floor does NOT become the tolerance.** The noise floor
 decides something different: **whether the test can speak at all.**
 
 Three **pre-registered** outcomes:
@@ -1381,7 +1447,7 @@ stays named future work with n>1-years as its substrate."*)
 | element | specification |
 |---|---|
 | **statistic** | per-season **`coverage_1σ`** and **χ² deviation from the all-season value** |
-| **tolerance** | **stated before any number arrives** (§7-10) |
+| **tolerance** | ⚖ **±0.1 on per-season coverage_1σ; reduced χ² within [0.6570, 1.5200] × all-season** — §3.3 (R2) |
 | **noise floor** | **two-way block resampling with WINDOW BLOCKS WITHIN SEASON** (§6.3's method, restricted) |
 | **outcomes** | **CONSISTENT** / **DIVERGENT** / **UNDERPOWERED** |
 
@@ -1813,7 +1879,7 @@ a flat list would imply they all block the same thing, and they do not.
 | **LORO** | ⭐ **CLAIM-BEARING AS A SET** (fork-e pin 4) — **a pre-registered bar ON THE SET.** The claim **can fail** |
 | **DEV-pool gauge era rows** | ⭐ **THE CLAIM-BEARING INDEPENDENT FAMILY IN ALL EPOCHS** (fork C), carrying the **independence burden in sparse eras**. ⛔ **They are NOT "record"** — my own Gate-2 preview said "record", and that was the error |
 | **sparse-epoch reading** | consumed **ONCE**, against **D15(e)'s Phase-12-pattern bar** (direction, bar, referent) |
-| **extrapolation audit** | it tables *"a large fraction"* — ⛔ **and "large" is a NUMBER, STATED NOW** |
+| **extrapolation audit** | it tables *"a large fraction"* — ⚖ **"large" = fraction > 0.10 at the worst tile, OR excursion × |b| > 0.2093** (§3.3, R2; the 0.10 is CHOSEN and tabled as such) |
 
 ### 19.4 212(b) binds the PACK; the identities do not need it
 

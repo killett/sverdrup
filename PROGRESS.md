@@ -1,6 +1,6 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2 next).
+> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2 drafted, R3 next).
 >
 > Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
 > §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
@@ -56,13 +56,25 @@
 > item's history — the first draft's "pin 2(i) unsatisfiable" headline and its correction to
 > "the LAST CLAUSE is the collision" — is preserved in the item, not here.
 >
-> **▶ NEXT: R2 (pin 280) — n_eff DEFINED, then EVERY bar gets its NUMBER.** L is ruled
-> (226.274 km). Still to fix in the spec from fork-e pins 1(i)/2: **L_t** ("the shipped L_t"),
-> **n_eff₀** (anchor-epoch median, the λ_ref = 300 km gauge pattern), the **aggregation**
-> (per-location MEDIAN over the era's windows — already pinned by fork-e 2(ii)); then D2's
-> tolerance, D4's objective, D5's threshold, D13, and D17's four. A bar without a number is
-> unrun (§7-11). ⛔ HALO_DEG→operative_halo_deg() binding is PLAN WORK with a negative control,
-> not R2's spec text.
+> **R2 (pin 280) IS DRAFTED — draft §3.2 (n_eff DEFINED) and §3.3 (EVERY BAR'S NUMBER),
+> awaiting the owner's read; R6 re-reviews it.** Constants, none new: **L 226.274 km** (287),
+> **L_t 6.00630128569901 d** (the signed basis's `l_t_days`), **K = the basis's cos taper**
+> (U2021 Eq. 19) with the rung's own half-width **339.411 km** (SUPPORT_FACTOR 1.5), **metric =
+> TRUE local km** (not `lonlat_to_km`'s fixed cos(MID_LAT), which is 288(a)'s solver
+> anisotropy), support = framed obs (287b), aggregation = per-location median over the era's 9
+> windows (fork-e 2(ii)), **n_eff₀ = median over the four fit tiles' core nodes of e10's
+> era-aggregate n_eff** — a rule, numbered at the census, λ_ref gauge pattern with a gauge test.
+> ⭐ **ONE PEDIGREE FOR THE BARS:** Phase 12's ruled coverage band 0.6827 ± 0.10 ⇔ σ factor
+> [0.8111, 1.2337] ⇔ **|Δlog s| ≤ 0.2093** ⇔ reduced-χ² [0.6570, 1.5200]. D2: **|Δb| ≤
+> 0.2093/|D_worst|**; D5/D17-1: LORO factor **1.6140 = √(χ²₃(0.95)/3)**, errs toward flagging
+> under dependence (R3 carries the form); D13: ±0.10 coverage / the χ² band per season; D17-2/3:
+> Phase 12's bar, **referents → OWNER at R7**; D4/D17-4: hull [min,max] padded ×/÷1.25 (Phase 8
+> §9), ⚠ **"large" = 0.10 at the worst tile OR excursion×|b| > 0.2093 — the 0.10 is the ONE
+> CHOSEN number, tabled as such.**
+>
+> **▶ NEXT: R3 (pin 281) — the LORO unit.** Three rotations, each removing one reference epoch
+> from ALL FOUR tiles; re-derive D5(d)'s era-level falsifier for the POOLED law; state what
+> n = 3 can and cannot falsify. Then R4 (tier/calendar) → OWNER.
 >
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the
