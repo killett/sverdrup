@@ -292,7 +292,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 |---|---|---|
 | 1 | RESOLVED — the `--stage-b` rerun hole (first flush erasing the signed `c2_acceptance`) closed by item 42, `3bb69f0` | `stage_miost_gate_run.py:800`, `:816-827` |
 | 2 | CHANGED (better) — guarded, not retired; `stage_miost_gate_run --stage-b` still rewrites the same canonical maps unguarded | `tune_miost_inflation.py:50` |
-| 3 | OPEN — also: `os.write` return never checked (short write → truncated JSON installed atomically); ~30 callers now | `harness.py:1200`, `:1203` |
+| 3 | ✅ FIXED `c92c1b5` (2026-10-19; full gate suite on `d9447ea`: 1832 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:46:32, tree unchanged) — fdopen write + fsync + single close; unlink-only failure path | `harness.py` `atomic_write_json` |
 | 4 | OPEN | `coherent.py:215` |
 | 5 | OPEN | `feasibility.py:149-160` |
 | 6 | OPEN | `oi.py:124`, `gmrf.py:130`, `fem.py:194`; `observations.py:42,62` |
@@ -350,22 +350,22 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
     passes (`phase14_evidence_mirror.py:719-757`); seal drift is printed,
     not failed; `SEAL` hard-coded to v1. Detect removal against the existing
     mirror; fail on seal drift. (S-M)
-44. **Overwrite-on-rerun class** — ~20 writers replace nodes with no
+44. ✅ **FIXED in four parts (2026-10-19; same suite): `83fd90f` stage-1 commands, `6f1686f` settling/golden/floor/sigma, `ea5319d` phase-12/13 runners, `a5b37e3` seal v3 cap + build order — via the new `sverdrup.validation.write_once.refuse_if_recorded`. NOT guarded (recorded): the stage-1 leg writers (re-score gated by pin 190; recover-rows already append-only), anchor_gate ("deliberately NOT write-once"), kernel_pack/projection_declarations/probe tile-sizing/gauge_run (mirrored or idempotent).** **Overwrite-on-rerun class** — ~20 writers replace nodes with no
     write-once guard (seam rows → pin-45(b) firewall unrecoverable; tier2
     probe → R4's basis; settling → owner-added pin 53/54 blocks; `--stage-b`
     → signed c2_acceptance). Decide ONE src store-node recorder (seal-gated
     with the caller's path, write-once default, `--supersede --reason`,
     atomic + checked write), model `phase14_refresh_election.py:279`. (M)
-45. **Seal check ignores `evidence_path`** — ~11 sites call
+45. ✅ **FIXED `68ba272` (2026-10-19; same suite).** **Seal check ignores `evidence_path`** — ~11 sites call
     `verify_current_seal()` bare against the contract at
     `phase14_seal.py:175`; 29 test stubs lock it in. Falls out of 44. (S)
-46. **Locked-tier semantics** — clean-completion-only tally vs the misfire
+46. ✅ **PARTLY FIXED `2c416e0` (2026-10-19; same suite): blank key refused, keys appended, atomic write, per-process docstring. OPEN for the owner: clean-completion-only tally vs the misfire ruling.** **Locked-tier semantics** — clean-completion-only tally vs the misfire
     ruling; `corrected_by` overwrite and `""` bypass; non-atomic store write;
     per-process flag. Before Stage 2 wires `locked_tier`. (S, owner call)
 
 **P1 — firm bugs in live machinery**
 
-47. `miost_sizing.size_tile` prices RHS/workspace at signed-box `n_coef`
+47. ✅ **FIXED `d9447ea` (2026-10-19; same suite).** `miost_sizing.size_tile` prices RHS/workspace at signed-box `n_coef`
     (gates tier-1 eligibility, seam RAM gate). Changes recorded numbers —
     owner call. (S)
 48. ✅ **FIXED `59bd9f7` (2026-10-19; same suite).** `eval/spectral.py:150` empty-PSD regression (ValueError escapes four
