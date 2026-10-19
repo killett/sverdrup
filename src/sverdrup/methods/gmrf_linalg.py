@@ -17,7 +17,6 @@ from __future__ import annotations
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 from scipy.sparse.linalg import spsolve_triangular  # type: ignore[import-untyped]
-from sksparse.cholmod import cho_factor  # type: ignore[import-untyped]
 
 
 class GMRFFactor:
@@ -29,6 +28,18 @@ class GMRFFactor:
         Args:
             q: Symmetric positive-definite sparse precision (CSC).
         """
+        # Lazy: a module-level import made sverdrup.methods.registry — every
+        # method, OI and MIOST included — unimportable without SuiteSparse
+        # (hygiene item 50). scikit-sparse is the optional ``gmrf`` extra.
+        try:
+            from sksparse.cholmod import (  # type: ignore[import-untyped]  # noqa: PLC0415
+                cho_factor,
+            )
+        except ImportError as exc:
+            raise ImportError(
+                "the GMRF/FEM methods need scikit-sparse (CHOLMOD): "
+                "pip install 'sverdrup[gmrf]' (or conda install scikit-sparse)"
+            ) from exc
         self._q = q.tocsc()
         # order fixed -> deterministic permutation across factorizations.
         self._cf = cho_factor(self._q, order="amd", lower=True)

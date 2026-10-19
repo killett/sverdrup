@@ -22,12 +22,24 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",
     "pyproj>=3.6",
+    # On the core pipeline path: eval.resolution imports sverdrup.validation,
+    # whose __init__ loads the pydantic/dotenv config (hygiene item 50).
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
 dask = ["dask[distributed]>=2024.1"]
 io = ["xarray>=2024.1", "fsspec>=2024.1", "netcdf4>=1.6"]
-all = ["sverdrup[dask,io]"]
+# GMRF/FEM methods (CHOLMOD). Imported lazily, so the rest runs without it.
+gmrf = ["scikit-sparse>=0.5"]
+# Bayesian-optimisation search strategy (application.tuning.bayesopt).
+tuning = ["optuna>=3.6"]
+# Data download paths (adapters.odc.download, validation.access/downloaders).
+download = ["httpx>=0.27", "stamina>=24.2"]
+# The vendored 2021a challenge evaluation (validation.vendor / eval.spectral).
+challenge = ["matplotlib>=3.8", "pyinterp>=2024.3"]
+all = ["sverdrup[dask,io,gmrf,tuning,download,challenge]"]
 
 [project.urls]
 Homepage = "https://github.com/killett/sverdrup"
