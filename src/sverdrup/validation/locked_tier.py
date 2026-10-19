@@ -88,12 +88,16 @@ def open_touch(
     (a) ``SVERDRUP_PHASE14_TOUCH`` must be the exact string ``"1"``;
     (b) the seal verifier runs — a mismatch or missing seal refuses;
     (c) any (product, era) tally at ≥ 1 refuses unless ``corrected_by``
-        names the owner's dated defect key (misfire protocol);
-    (d) a second concurrent/nested ceremony refuses.
+        names the owner's dated defect key (misfire protocol) — a blank key
+        authorizes nothing;
+    (d) a second nested/concurrent ceremony IN THIS PROCESS refuses (the
+        flag is module-global; it cannot see another process).
 
     Inside the context the locked-instrument env
     (``SVERDRUP_INSITU_LOCKED``) is set for the CHILD SCOPE ONLY and
-    restored on exit; the tally increments only on clean completion.
+    restored on exit; the tally increments only on clean completion, and
+    is written atomically (it re-serialises the whole shared store). Every
+    defect key is KEPT, in order, under ``{era}_corrected_by``.
 
     Args:
         product_id: The accepted product being scored.
@@ -128,7 +132,7 @@ def open_touch(
     tally = read_tally(evidence_path)
     for era in eras:
         n = int(tally.get(product_id, {}).get(era, 0))
-        if n >= 1 and corrected_by is None:
+        if n >= 1 and (corrected_by is None or not corrected_by.strip()):
             raise TouchRefusedError(
                 f"tally exceeded: ({product_id!r}, {era!r}) already touched "
                 f"{n}x — a corrected re-touch needs the owner's dated "
@@ -156,5 +160,15 @@ def open_touch(
     for era in eras:
         prod[era] = int(prod.get(era, 0)) + 1
         if corrected_by is not None:
-            prod[f"{era}_corrected_by"] = corrected_by
-    evidence_path.write_text(json.dumps(results, indent=1, sort_keys=True))
+            # Append, never overwrite: a second corrected re-touch used to
+            # erase the first dated defect key (hygiene item 46).
+            keys = prod.get(f"{era}_corrected_by", [])
+            keys = [keys] if isinstance(keys, str) else list(keys)
+            prod[f"{era}_corrected_by"] = [*keys, corrected_by]
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+
+    # Atomic: the tally re-serialises the WHOLE shared store, seal pointer
+    # included; a plain write_text could truncate it (hygiene item 46).
+    atomic_write_json(evidence_path, results)

@@ -114,7 +114,7 @@ def test_defect_key_path_accepted(
         pass
     tally = read_tally(ev)
     assert tally["prodA"]["e00"] == 2
-    assert tally["prodA"]["e00_corrected_by"] == "2026-07-20-defect-xyz"
+    assert tally["prodA"]["e00_corrected_by"] == ["2026-07-20-defect-xyz"]
 
 
 def test_refuses_double_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -176,3 +176,57 @@ def test_default_verifier_checks_the_store_the_ceremony_writes(
         with open_touch("prodA", ["e00"], scratch):
             pass
     assert scratch.read_bytes() == before
+
+
+@pytest.mark.parametrize("key", ["", "   "])
+def test_an_empty_defect_key_does_not_authorize_a_re_touch(
+    key: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene 46): ``corrected_by=""`` is not None, so it
+    passed the one-touch refusal — a re-touch authorized by no key at all."""
+    monkeypatch.setenv(TOUCH_ENV, "1")
+    ev = _evidence(tmp_path, {"prodA": {"e00": 1}})
+    with pytest.raises(TouchRefusedError, match="defect key"):
+        with open_touch("prodA", ["e00"], ev, _ok_seal, corrected_by=key):
+            pass
+    assert read_tally(ev) == {"prodA": {"e00": 1}}
+
+
+def test_every_defect_key_is_kept_in_order(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene 46): a second corrected re-touch OVERWROTE
+    ``{era}_corrected_by``, erasing the first dated defect key from the
+    ledger the misfire protocol exists to keep."""
+    monkeypatch.setenv(TOUCH_ENV, "1")
+    ev = _evidence(tmp_path, {"prodA": {"e00": 1}})
+    for key in ("2026-07-20-defect-a", "2026-08-01-defect-b"):
+        with open_touch("prodA", ["e00"], ev, _ok_seal, corrected_by=key):
+            pass
+    tally = read_tally(ev)
+    assert tally["prodA"]["e00"] == 3
+    assert tally["prodA"]["e00_corrected_by"] == [
+        "2026-07-20-defect-a",
+        "2026-08-01-defect-b",
+    ]
+
+
+def test_a_failed_tally_write_leaves_the_store_intact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene 46): the tally re-serialised the WHOLE shared
+    store with a plain write_text — a crash mid-write truncates the store
+    that also holds the seal pointer. The write must be atomic: on failure
+    the prior bytes stand."""
+    monkeypatch.setenv(TOUCH_ENV, "1")
+    ev = _evidence(tmp_path)
+    before = ev.read_bytes()
+
+    def _replace_fails(src: object, dst: object) -> None:
+        raise OSError("disk full (injected)")
+
+    monkeypatch.setattr(os, "replace", _replace_fails)
+    with pytest.raises(OSError, match="injected"):
+        with open_touch("prodA", ["e00"], ev, _ok_seal):
+            pass
+    assert ev.read_bytes() == before
