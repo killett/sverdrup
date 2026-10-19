@@ -55,6 +55,7 @@ from sverdrup.validation.phase13_lanes import (
     rspec_for_trial,
     sobol_trials,
 )
+from sverdrup.validation.write_once import refuse_if_recorded
 
 _OUT_ROOT = Path("data/2021a_ssh_mapping_ose/ours")
 _RESULTS = _OUT_ROOT / "stage_miost_gate_results.json"
@@ -414,6 +415,9 @@ def main_winner_ctap(lane: str) -> None:
         SystemExit: On a missing winner record, or a modes-absent winner
             (no c-block exists — a tap would fabricate empty §8 rows).
     """
+    refuse_if_recorded(
+        _RESULTS, f"phase13.miost.ctap.{lane}"
+    )  # hygiene 44: a closed phase's record
     from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
     from sverdrup.methods.miost import Miost  # noqa: PLC0415
 
@@ -471,6 +475,9 @@ def main_winner_ensemble() -> None:
         SystemExit: Without a WINNER-branch verdict, or on member
             under-convergence at every cap (biased draws unacceptable).
     """
+    refuse_if_recorded(
+        _RESULTS, "phase13.miost.members"
+    )  # hygiene 44: a closed phase's record
     from sverdrup.core.parameters import ConstantProvider  # noqa: PLC0415
     from sverdrup.core.types import UncertaintyCapability  # noqa: PLC0415
     from sverdrup.distributions.calibration import (  # noqa: PLC0415

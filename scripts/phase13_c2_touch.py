@@ -32,6 +32,8 @@ from typing import Any, cast
 
 import numpy as np
 
+from sverdrup.validation.write_once import refuse_if_recorded
+
 _OURS = Path("data/2021a_ssh_mapping_ose/ours")
 _RESULTS = _OURS / "stage_miost_gate_results.json"
 _MEAN = _OURS / "phase13_winner_mean.nc"
@@ -106,6 +108,9 @@ def record_provenance() -> None:
     No c2 access here. The touch's tripwire recomputes every hash below
     and refuses on any mismatch BEFORE the c2 file opens.
     """
+    refuse_if_recorded(
+        _RESULTS, f"{_PREFIX}.provenance"
+    )  # hygiene 44: a closed phase's record
     cal = _refit_cal()
     wf = _read_results()["phase13"]["miost"]["refit"]["winner_field"]
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415

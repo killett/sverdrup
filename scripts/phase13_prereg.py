@@ -34,6 +34,7 @@ from typing import Any
 import numpy as np
 
 from sverdrup.validation import phase13_boxes as boxes
+from sverdrup.validation.write_once import refuse_if_recorded
 
 _OUT_ROOT = Path("data/2021a_ssh_mapping_ose/ours")
 _RESULTS = _OUT_ROOT / "stage_miost_gate_results.json"
@@ -181,6 +182,9 @@ def _regenerate_lane0(probe_mod: Any) -> dict[str, Any]:  # noqa: ANN401
 
 def main() -> None:
     """Regenerate lane-0, seal the bundle, write the evidence blocks."""
+    refuse_if_recorded(
+        _RESULTS, "phase13.band_protocol"
+    )  # hygiene 44: a closed phase's record
     probe_mod = _load_probe_module()
     results = json.loads(_RESULTS.read_text())
     probe = results.get("phase13", {}).get("probe", {})

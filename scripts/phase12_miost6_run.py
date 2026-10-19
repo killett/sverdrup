@@ -42,6 +42,7 @@ from sverdrup.validation.phase12_evidence import (
     sha256_file,
     write_pack_entry,
 )
+from sverdrup.validation.write_once import refuse_if_recorded
 
 OURS = Path("data/2021a_ssh_mapping_ose/ours")
 RESULTS = OURS / "phase12_miost6_results.json"
@@ -549,6 +550,9 @@ def run_main(scope_path: Path, signed_record: Path) -> None:
     Writes each pack leg incrementally; provenance LAST; STOPs nonzero when
     the σ structural signature is absent (spec §4b').
     """
+    refuse_if_recorded(
+        RESULTS, f"{MIOST6_PREFIX}.provenance", f"{MIOST6_PREFIX}.c2_acceptance"
+    )  # hygiene 44: a closed phase's record
     scope = load_phase12_scope(scope_path)
     evidence = json.loads(RESULTS.read_text()) if RESULTS.exists() else {}
     budget = evidence.get("phase12", {}).get("miost6", {}).get("budget")
@@ -646,6 +650,9 @@ def smoke_main(scope_path: Path) -> None:
     Raises:
         SystemExit: Naming the failing job, or reporting LAUNCH criteria.
     """
+    refuse_if_recorded(
+        RESULTS, f"{MIOST6_PREFIX}.budget"
+    )  # hygiene 44: a closed phase's record
     from sverdrup.application.tuning.feasibility import PeakFeasibility
     from sverdrup.methods.miost import _window_mask
     from sverdrup.methods.miost_windows import WindowPlan
