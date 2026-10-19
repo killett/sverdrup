@@ -302,3 +302,47 @@ def test_the_recorded_as_found_nine_are_VISIBLE_but_not_fatal() -> None:
     assert len(findings) == 1
     assert findings[0].startswith("RECORDED-AS-FOUND ")
     assert "phase10.oi.lanes" in findings[0]
+
+
+def test_a_second_supersession_is_refused_pin_36d(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """v1 -> v2 is the ONE sanctioned amendment; v2 -> v3 refuses.
+
+    Bug caught (hygiene 44): ``supersede`` had no version cap, so any
+    non-empty --signoff re-spent the single change — against owner pin
+    36(d) "HOLD THE SEAL AT ONE VERSION. Do not ship v2 and patch to v3".
+    """
+    p = _built(tmp_path)
+    _amend_the_sealed_instrument(monkeypatch)
+    assert runner.invoke(_mod.app, _supersede_args(p, _SIGNOFF)).exit_code == 0
+    monkeypatch.setattr(
+        _mod, "serialize_instrument_configs", lambda: b'{"seam":{"rubric_version":3}}'
+    )
+
+    res = runner.invoke(_mod.app, _supersede_args(p, _SIGNOFF))
+
+    assert res.exit_code != 0
+    assert "36(d)" in res.output
+    assert not (tmp_path / "seal_v3.json").exists()
+    node = json.loads(p["evidence"].read_text())["phase14"]["stage0"]["seal"]
+    assert node["version"] == 2
+
+
+def test_build_refuses_a_recorded_pointer_before_writing_any_seal_file(
+    tmp_path: Path,
+) -> None:
+    """The pointer refusal fires BEFORE a seal file is written.
+
+    Bug caught (hygiene 44): ``build`` wrote the seal file first and only
+    then refused on the recorded pointer, leaving an orphan sealed file at
+    ``--seal-path`` that no pointer names.
+    """
+    p = _fixtures(tmp_path)
+    p["evidence"].write_text(
+        json.dumps({"phase14": {"stage0": {"seal": {"path": "x", "sha": "y"}}}})
+    )
+    res = runner.invoke(_mod.app, _args(p, "build"))
+    assert res.exit_code != 0
+    assert "already recorded" in res.output
+    assert not p["seal"].exists()

@@ -67,14 +67,16 @@ def build(
     evidence_path: _EvidencePathOpt = EVIDENCE,
 ) -> None:
     """Build seal v1 (WRITE-ONCE) + record the evidence pointer."""
-    content = _assemble(epoch_table, locked_split)
-    sha = build_seal(content, path=seal_path)  # refuses an existing seal
     results = json.loads(evidence_path.read_text())
     node = results["phase14"]["stage0"].setdefault("seal", {})
+    # Refuse on the pointer BEFORE the seal file is written (hygiene 44): the
+    # old order wrote the file first, leaving an orphan no pointer names.
     if node:
         raise typer.BadParameter(
             "phase14.stage0.seal already recorded — the pointer is write-once"
         )
+    content = _assemble(epoch_table, locked_split)
+    sha = build_seal(content, path=seal_path)  # refuses an existing seal
     node.update(
         {
             "path": str(seal_path),
@@ -330,6 +332,13 @@ def supersede(
         raise typer.BadParameter(
             "no phase14.stage0.seal recorded — there is nothing to supersede "
             "(build the seal first)"
+        )
+    if int(node.get("version", 1)) >= 2:
+        raise typer.BadParameter(
+            f"seal v{node['version']} already records the ONE sanctioned "
+            "supersession — owner pin 36(d): HOLD THE SEAL AT ONE VERSION; do "
+            "not ship v2 and patch to v3. A further amendment needs a new owner "
+            "ruling, not this command (hygiene item 44)."
         )
     old_path = Path(node["path"])
     verify_seal(old_path, node["sha"])  # refuse to amend an unverified seal
