@@ -290,7 +290,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 
 | # | status | current location / note |
 |---|---|---|
-| 1 | RESOLVED — **but see 44**: a `--stage-b` rerun's first flush still erases the signed `c2_acceptance` before the disarm fires | `stage_miost_gate_run.py:800`, `:816-827` |
+| 1 | RESOLVED — the `--stage-b` rerun hole (first flush erasing the signed `c2_acceptance`) closed by item 42, `3bb69f0` | `stage_miost_gate_run.py:800`, `:816-827` |
 | 2 | CHANGED (better) — guarded, not retired; `stage_miost_gate_run --stage-b` still rewrites the same canonical maps unguarded | `tune_miost_inflation.py:50` |
 | 3 | OPEN — also: `os.write` return never checked (short write → truncated JSON installed atomically); ~30 callers now | `harness.py:1200`, `:1203` |
 | 4 | OPEN | `coherent.py:215` |
@@ -342,11 +342,11 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
 
 **P0 — evidence-integrity hazards**
 
-42. **Whole-store wipe** — `stage_miost_gate_run.py:463`: a flagless,
+42. ✅ **FIXED `3bb69f0` (2026-10-19; full gate suite on `946987d`: 1771 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:31:08, tree unchanged).** **Whole-store wipe** — `stage_miost_gate_run.py:463`: a flagless,
     typo'd or `SCOPE=dev` run `write_text`s a fresh dict over the entire
     shared store (phase 8-13 unmirrored). Refuse unknown/no flags, or never
     write `RESULTS` from `main()`. (S)
-43. **Mirror blind spots** — a deleted witnessed node reads as PENDING and
+43. ✅ **FIXED `9a13e1f` (2026-10-19; same suite).** **Mirror blind spots** — a deleted witnessed node reads as PENDING and
     passes (`phase14_evidence_mirror.py:719-757`); seal drift is printed,
     not failed; `SEAL` hard-coded to v1. Detect removal against the existing
     mirror; fail on seal drift. (S-M)
@@ -368,9 +368,9 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
 47. `miost_sizing.size_tile` prices RHS/workspace at signed-box `n_coef`
     (gates tier-1 eligibility, seam RAM gate). Changes recorded numbers —
     owner call. (S)
-48. `eval/spectral.py:150` empty-PSD regression (ValueError escapes four
+48. ✅ **FIXED `59bd9f7` (2026-10-19; same suite).** `eval/spectral.py:150` empty-PSD regression (ValueError escapes four
     tuning catch sites). Red/green. (S)
-49. `provenance_guard.py:25` regex passes mission-less names silently. (S)
+49. ✅ **FIXED `946987d` (2026-10-19; same suite).** `provenance_guard.py:25` regex passes mission-less names silently. (S)
 50. Packaging: `scikit-sparse`, `pydantic`, `python-dotenv` imported on the
     pipeline path, declared nowhere; add an install-smoke step to
     `release.yml`. scikit-sparse's install story is the decision. (S-M)
