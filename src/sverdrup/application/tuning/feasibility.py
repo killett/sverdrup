@@ -146,10 +146,31 @@ class CompositeFeasibility:
 
     members: tuple[FeasibilityPredicate, ...]
 
-    def explain(self, params: dict[str, float]) -> str | None:
+    def explain(
+        self,
+        params: dict[str, float],
+        *,
+        tile_geometry: TileGeometry | None = None,
+        required_capabilities: frozenset[UncertaintyCapability] = frozenset(),
+    ) -> str | None:
         """Return the first failing member's reason (or None when all pass).
 
-        Members without their own ``explain`` contribute a class-name reason.
+        Members without their own ``explain`` contribute a class-name reason
+        — which needs ``tile_geometry``: such a member can only be judged
+        through ``feasible``. Without it (the legacy ``explain(params)``
+        call) they cannot be evaluated and are skipped, which is how a
+        composite failing on e.g. CoherenceFeasibility used to record no
+        reason at all (hygiene P1-#5).
+
+        Args:
+            params: The trial parameters.
+            tile_geometry: The tile the trial is gated on; enables the
+                class-name reason for members without ``explain``.
+            required_capabilities: Capabilities the trial must provide.
+
+        Returns:
+            ``"<MemberClass>: <reason>"`` for the first failing member, or
+            None when every member passes.
         """
         for m in self.members:
             expl = getattr(m, "explain", None)
@@ -157,6 +178,10 @@ class CompositeFeasibility:
                 reason = expl(params)
                 if reason is not None:
                     return f"{type(m).__name__}: {reason}"
+            elif tile_geometry is not None and not m.feasible(
+                params, tile_geometry, required_capabilities
+            ):
+                return f"{type(m).__name__}: infeasible (member has no explain)"
         return None
 
     def feasible(

@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from sverdrup.application.tuning.feasibility import FeasibilityPredicate, TileGeometry
+from sverdrup.application.tuning.feasibility import (
+    CompositeFeasibility,
+    FeasibilityPredicate,
+    TileGeometry,
+)
 from sverdrup.application.tuning.objective import (
     ConstrainedObjective,
     NoAdmissibleTrial,
@@ -96,7 +100,17 @@ def tune(
             trial = Trial(method_name, params, split_id, seed, window_id)
             if not predicate.feasible(params, tile_geometry, required_capabilities):
                 expl = getattr(predicate, "explain", None)
-                explanation = expl(params) if expl is not None else None
+                if isinstance(predicate, CompositeFeasibility):
+                    # Geometry lets a member WITHOUT its own explain still
+                    # name itself (hygiene P1-#5); a bare predicate keeps the
+                    # explain(params)-or-None contract.
+                    explanation = predicate.explain(
+                        params,
+                        tile_geometry=tile_geometry,
+                        required_capabilities=required_capabilities,
+                    )
+                else:
+                    explanation = expl(params) if expl is not None else None
                 reason = str(explanation) if explanation else None
                 history.records.append(
                     TrialRecord(

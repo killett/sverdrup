@@ -116,3 +116,63 @@ def test_loop_back_compat_no_explain() -> None:
     )
     rec = result.history.records[0]
     assert not rec.feasible and rec.exclusion_reason is None
+
+
+class _NoExplainPasses:
+    def feasible(
+        self, params: dict[str, float], tile_geometry: object, caps: object
+    ) -> bool:
+        return True
+
+
+def test_composite_names_a_failing_member_that_has_no_explain() -> None:
+    """The docstring's promise: such a member contributes its CLASS NAME.
+
+    Bug caught (hygiene P1-#5): members without ``explain`` were skipped, so
+    a composite failing on e.g. CoherenceFeasibility recorded
+    ``exclusion_reason=None`` in tuning evidence — an excluded trial with no
+    recorded cause.
+    """
+    comp = CompositeFeasibility((_NoExplainPasses(), _NoExplainPredicate()))
+    reason = comp.explain(
+        {"spacing_alpha": 1.0}, tile_geometry=GEOM, required_capabilities=frozenset()
+    )
+    assert reason is not None
+    assert reason.startswith("_NoExplainPredicate:")
+
+
+def test_composite_reason_is_the_FIRST_failing_member() -> None:
+    """Bug caught: a passing no-explain member reported as the cause, or the
+    stored-G reason lost behind a no-explain member that did not fail."""
+    tight = StoredGFeasibility(n_obs_max=10**6, budget_bytes=1.0)
+    comp = CompositeFeasibility((_NoExplainPasses(), tight, _NoExplainPredicate()))
+    reason = comp.explain(
+        {"spacing_alpha": 1.0}, tile_geometry=GEOM, required_capabilities=frozenset()
+    )
+    assert reason is not None and reason.startswith("StoredGFeasibility:")
+
+
+def test_loop_records_the_reason_of_a_no_explain_composite_member() -> None:
+    """End to end: the tuning loop records the member, not ``None``.
+
+    Bug caught (hygiene P1-#5): the loop called ``explain(params)``, which
+    cannot evaluate a member without its own explain, and recorded None.
+    """
+    result = tune(
+        method_name="miost",
+        space=ParameterSpace(bounds={"spacing_alpha": (0.5, 1.5)}),
+        strategy=_OneShotStrategy(),
+        predicate=CompositeFeasibility((_NoExplainPredicate(),)),
+        objective=ConstrainedObjective(),
+        scorer=None,  # type: ignore[arg-type]  # gate excludes before any solve
+        split=None,
+        seed=1,
+        window=None,
+        tile_geometry=GEOM,
+        required_capabilities=frozenset(),
+        on_empty="return_history",
+    )
+    rec = result.history.records[0]
+    assert not rec.feasible
+    assert rec.exclusion_reason is not None
+    assert rec.exclusion_reason.startswith("_NoExplainPredicate:")
