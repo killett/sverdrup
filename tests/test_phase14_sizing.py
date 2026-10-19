@@ -6,6 +6,8 @@ domain defaults, and the basis-domain hook's identity guarantee.
 
 from __future__ import annotations
 
+import pytest
+
 from sverdrup.methods.miost_basis import LADDER, BasisSpec
 from sverdrup.methods.miost_sizing import (
     D_X_KM,
@@ -110,3 +112,55 @@ def test_default_basis_domain_identity() -> None:
     els_t = tile.elements_for_window(14.0, 60.0)
     assert els_t.identity.shape[0] > els_d.identity.shape[0]
     assert len(LADDER) == 8  # the D1 ladder is untouched by the extension
+
+
+def _peak_at(d_x_km: float, d_y_km: float, m: int = 200) -> dict[str, float]:
+    # m=200 so the SOLVE phase (CSR + RHS batch + workspace) is the phase-max
+    # at every size used below; at small m the assembly phase dominates and
+    # the n_coef-driven terms never reach ``.total``.
+    return size_tile(
+        d_x_km=d_x_km,
+        d_y_km=d_y_km,
+        n_grid_nodes=0,
+        window_days=60.0,
+        n_windows=1,
+        m_members=m,
+        n_obs=11041,
+        alpha=_ALPHA,
+        n_dir=_NDIR,
+        lam_min=_LAM,
+    )
+
+
+def test_the_peak_prices_the_TILE_coefficient_count_not_the_box() -> None:
+    """A bigger tile with the same obs count needs a bigger solve phase.
+
+    Bug caught (hygiene 47): size_tile computed the tile's n_coef, then
+    called peak_model, which recomputed n_coef at the signed-box dims — so
+    the RHS batch and solve workspace were priced at box size whatever the
+    tile, and two tiles of different area but equal n_obs reported the SAME
+    peak (gating tier1_eligible / seam_ram_gate on a box-sized number).
+    """
+    box = _peak_at(D_X_KM, D_Y_KM)
+    big = _peak_at(2 * D_X_KM, 2 * D_Y_KM)
+    assert big["n_coef"] > box["n_coef"]
+    assert big["peak_model_mib"] > box["peak_model_mib"]
+
+
+def test_the_peak_excess_scales_with_the_coefficient_excess() -> None:
+    """The n_coef-driven part of the peak is LINEAR in n_coef.
+
+    Bug caught: a fix that adds a constant (or prices only one of the RHS
+    and workspace terms per tile) — the excess over the box would then not
+    track the tile's own coefficient excess. Expected ratio comes from the
+    returned n_coef values only, not from the cost constants.
+    """
+    box = _peak_at(D_X_KM, D_Y_KM)
+    mid = _peak_at(1.5 * D_X_KM, 1.5 * D_Y_KM)
+    big = _peak_at(2 * D_X_KM, 2 * D_Y_KM)
+    d_peak_mid = mid["peak_model_mib"] - box["peak_model_mib"]
+    d_peak_big = big["peak_model_mib"] - box["peak_model_mib"]
+    d_coef_mid = mid["n_coef"] - box["n_coef"]
+    d_coef_big = big["n_coef"] - box["n_coef"]
+    assert d_peak_mid > 0
+    assert d_peak_big / d_peak_mid == pytest.approx(d_coef_big / d_coef_mid, rel=1e-9)

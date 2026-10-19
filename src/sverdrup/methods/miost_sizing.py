@@ -213,6 +213,8 @@ def peak_model(
     n_grid_nodes: int = 0,
     retained_bytes: float = 0.0,
     baseline_bytes: float = BASELINE_BYTES,
+    d_x_km: float = D_X_KM,
+    d_y_km: float = D_Y_KM,
 ) -> PeakComponents:
     """Component-sum peak-RSS model for one window solve (Task 22).
 
@@ -232,12 +234,24 @@ def peak_model(
         retained_bytes: Bytes held across windows by the caller (e.g.
             accumulated member anomalies in merged_members).
         baseline_bytes: Process baseline RSS.
+        d_x_km: Solve-domain width the coefficient count is taken at (the
+            signed box by default; a tile's own width via :func:`size_tile`).
+        d_y_km: Solve-domain height (as ``d_x_km``).
 
     Returns:
         The named components; ``.total`` is the phase-max peak in bytes.
     """
     nnz = nnz_g(n_obs, alpha, n_dir, lam_min, lam_max)
-    n_coef = n_coefficients(alpha, n_dir, window_days, lam_min, lam_max, margin=True)
+    n_coef = n_coefficients(
+        alpha,
+        n_dir,
+        window_days,
+        lam_min,
+        lam_max,
+        margin=True,
+        d_x_km=d_x_km,
+        d_y_km=d_y_km,
+    )
     return PeakComponents(
         csr_g=CSR_BYTES_PER_NNZ * nnz,
         assembly_triplets=TRIPLET_BYTES_PER_NNZ * nnz,
@@ -328,6 +342,10 @@ def size_tile(
         lam_max=lam_max,
         n_grid_nodes=n_grid_nodes,
         retained_bytes=retained_bytes,
+        # The TILE's dims: the RHS batch and solve workspace scale with the
+        # tile's coefficient count, not the signed box's (hygiene item 47).
+        d_x_km=d_x_km,
+        d_y_km=d_y_km,
     )
     nnz_box = nnz_g(BOX_W0_OBS_BASIS, alpha, n_dir, lam_min, lam_max)
     return {
