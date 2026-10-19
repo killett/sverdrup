@@ -1186,8 +1186,16 @@ def _default(o: object) -> object:
 def atomic_write_json(path: Path, data: object) -> None:
     """Write *data* as JSON to *path* atomically (POSIX os.replace).
 
-    Writes to a sibling temp file in the same directory, then renames over
-    the target.  A crash mid-write therefore never truncates the existing file.
+    Writes to a sibling temp file in the same directory, flushes it to disk,
+    then renames over the target. A crash mid-write therefore never
+    truncates the existing file.
+
+    The temp file is written through a file object, which writes the WHOLE
+    payload (a bare ``os.write`` may write only part of it, and a partial
+    file renamed into place is a truncated store) and closes the descriptor
+    exactly once. On any failure the temp file is removed and the ORIGINAL
+    error propagates — the old handler re-closed an already-closed fd, so
+    ``EBADF`` masked the real error and the temp leaked (hygiene P1-#3).
 
     Args:
         path: Destination path.
@@ -1196,11 +1204,12 @@ def atomic_write_json(path: Path, data: object) -> None:
     text = json.dumps(data, indent=2, default=_default)
     fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
     try:
-        os.write(fd, text.encode())
-        os.close(fd)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(text.encode())
+            fh.flush()
+            os.fsync(fh.fileno())
         os.replace(tmp, path)
-    except Exception:
-        os.close(fd)
+    except BaseException:
         try:
             os.unlink(tmp)
         except OSError:
