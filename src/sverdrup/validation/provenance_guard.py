@@ -14,6 +14,9 @@ from pathlib import Path
 
 import xarray as xr
 
+from sverdrup.application.epoch_table import INSTRUMENT_CLASS
+from sverdrup.validation.input_adapter import MAPPING_MISSIONS
+
 ASSIMILATED_ATTR = "assimilated_missions"
 # The mission is the token immediately before ``_phy_l3`` in the L3 naming
 # scheme. Written this way rather than against ``dt_gulfstream_`` so the
@@ -23,6 +26,14 @@ ASSIMILATED_ATTR = "assimilated_missions"
 # i.e. claiming provenance it does not have. A name that does not follow the
 # scheme still yields None, and the guard still fails LOUD on it.
 _TRACK_MISSION_RE = re.compile(r"_([a-z0-9]+)_phy_l3")
+# ...but that token is a mission only if it IS a known mission code (hygiene
+# item 49): a name with no mission token handed the parser the AREA
+# ("gulfstream"), half a tile name ("gyre") or a merged product ("allsat"),
+# none of which is ever in an assimilated list — so the guard passed
+# silently. Known = the CMEMS L3 codes of the census class table plus the
+# challenge's own codes (``h2g`` is not a CMEMS code). An unknown code yields
+# None — fail closed: a new mission is added here, never guessed at.
+KNOWN_MISSION_CODES: frozenset[str] = frozenset(INSTRUMENT_CLASS) | MAPPING_MISSIONS
 
 
 class TrainScoreLeakError(RuntimeError):
@@ -39,10 +50,13 @@ def mission_from_track_path(track_path: Path) -> str | None:
             not exist.
 
     Returns:
-        The mission id, or None if the name does not match the scheme.
+        The mission id, or None if the name does not match the scheme or
+        the token before ``_phy_l3`` is not a known mission code.
     """
     m = _TRACK_MISSION_RE.search(Path(track_path).name)
-    return m.group(1) if m else None
+    if m is None or m.group(1) not in KNOWN_MISSION_CODES:
+        return None
+    return m.group(1)
 
 
 def read_assimilated(map_path: Path) -> tuple[str, ...] | None:

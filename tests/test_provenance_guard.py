@@ -261,3 +261,61 @@ def test_localization_diag_scoring_asserts(tmp_path: Path) -> None:
             mod._score_on_validation(leaked)
     finally:
         sys.modules.pop("diag_miost_localization", None)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "dt_gulfstream_phy_l3_20161201-20180131_285-315_23-53.nc",
+        "dt_quiet_gyre_phy_l3_2017_stage1.nc",
+        "dt_global_allsat_phy_l3_1hz_20170101_20210603.nc",
+    ],
+)
+def test_a_name_without_a_mission_token_is_unidentifiable(name: str) -> None:
+    """The token before ``_phy_l3`` is a mission only if it IS a mission.
+
+    Bug caught (hygiene 49): ``_([a-z0-9]+)_phy_l3`` took whatever preceded
+    ``_phy_l3`` — the AREA ("gulfstream"), half a tile name ("gyre"), or a
+    merged product ("allsat") — so the guard "identified" a mission that is
+    never in the assimilated list and passed silently.
+    """
+    from sverdrup.validation.provenance_guard import mission_from_track_path
+
+    assert mission_from_track_path(Path(name)) is None
+
+
+@pytest.mark.parametrize(
+    ("name", "mission"),
+    [
+        ("dt_quiet_gyre_j3_phy_l3_2017_stage1.nc", "j3"),
+        ("dt_gulfstream_h2g_phy_l3_20161201-20180131_285-315_23-53.nc", "h2g"),
+        ("dt_global_h2ag_phy_l3_1hz_20170101_20210603.nc", "h2ag"),
+        ("dt_gulfstream_c2_phy_l3_20161201-20180131_285-315_23-53.nc", "c2"),
+        ("dt_global_s3b_phy_l3_1hz_20190101_20210603.nc", "s3b"),
+    ],
+)
+def test_real_mission_codes_still_resolve(name: str, mission: str) -> None:
+    """Challenge codes (``h2g``) and CMEMS codes (``h2ag``, ``s3b``) resolve.
+
+    Bug caught: a vocabulary too narrow for the names actually on disk —
+    the challenge's ``h2g`` is not a CMEMS code — which would turn every
+    legitimate score of that track into a loud refusal.
+    """
+    from sverdrup.validation.provenance_guard import mission_from_track_path
+
+    assert mission_from_track_path(Path(name)) == mission
+
+
+def test_guard_refuses_a_tagged_map_scored_on_a_mission_less_name(
+    tmp_path: Path,
+) -> None:
+    """End to end: the guard fails LOUD instead of passing silently.
+
+    Bug caught (hygiene 49): with "gulfstream" taken for the mission, a
+    provenance-tagged map passed the separation check unverified.
+    """
+    tagged = _map_file(tmp_path, ("alg", "j3"))
+    with pytest.raises(TrainScoreLeakError, match="no recognizable mission"):
+        assert_scored_not_assimilated(
+            tagged, Path("dt_gulfstream_phy_l3_20161201-20180131_285-315_23-53.nc")
+        )
