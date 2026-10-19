@@ -6,6 +6,11 @@ behavior-preserving FIX NOW items are already applied and pushed).
 Effort: S < 1 h, M = half-day, L = multi-day. Each tier states its
 trigger — when the items in it actually need a decision.
 
+> **2026-10-18 re-audit:** per-item status of 1–41 and the NEW items 42–55
+> (a P0 evidence-store write class among them) are in § "Status at
+> 2026-10-18" and § "Added 2026-10-18" at the end of this file. Detail:
+> `docs/hygiene-notes.md` § 2026-10-18.
+
 ## P0 — evidence-integrity hazards. Decide BEFORE any future evidence or gate rerun
 
 These two can destroy or silently corrupt recorded evidence on a rerun.
@@ -276,3 +281,112 @@ item 6 when swath work nears). P2 as a half-day drift-closure batch
 before the next evidence-producing phase. P3 batched into whichever
 next phase touches each area (item 21 first — it is owner-ordered work
 left dangling). P4 never, unless the trigger named in the item fires.
+
+## Status at 2026-10-18 (HEAD `029071f`; lines as of that commit)
+
+1 resolved · 33 open-unchanged · 7 open-changed (better: 2, 21; worse: 10,
+12, 26, 30, 38) · 0 moot. The 07-16 test tautologies (T1-T3) are all
+RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
+
+| # | status | current location / note |
+|---|---|---|
+| 1 | RESOLVED — **but see 44**: a `--stage-b` rerun's first flush still erases the signed `c2_acceptance` before the disarm fires | `stage_miost_gate_run.py:800`, `:816-827` |
+| 2 | CHANGED (better) — guarded, not retired; `stage_miost_gate_run --stage-b` still rewrites the same canonical maps unguarded | `tune_miost_inflation.py:50` |
+| 3 | OPEN — also: `os.write` return never checked (short write → truncated JSON installed atomically); ~30 callers now | `harness.py:1200`, `:1203` |
+| 4 | OPEN | `coherent.py:215` |
+| 5 | OPEN | `feasibility.py:149-160` |
+| 6 | OPEN | `oi.py:124`, `gmrf.py:130`, `fem.py:194`; `observations.py:42,62` |
+| 7 | OPEN — the "import, never re-paste" rule was never recorded, and phase12/13 re-pasted it | `phase8_gate_run.py:442`; new: `phase12_miost6_run.py:1068`, `phase13_c2_touch.py:280` |
+| 8 | OPEN | `harness.py:550` vs `folds.py:135` |
+| 9 | OPEN | `harness.py:1028-1029` |
+| 10 | CHANGED (worse) — 07-16 missed `application/tiling.py:20` (111.195); new 111.195 `phase14_kernel_pack.py:61`, new 111.32 `phase12_miost6_run.py:72` | — |
+| 11 | OPEN — private `_GAP_SEC` now imported cross-layer (`miost_error_basis.py:29`, `phase13_probe.py:44`) | `harness.py:173`, `lane_compare.py:49`, `orbit_geometry.py:35` |
+| 12 | CHANGED (worse) — missed inline literal `lane_compare.py:208`; new script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
+| 13 | OPEN | `_strip_fixtures.py:137`; `_tree_gate.py:403,417` |
+| 14 | OPEN | `persisted.py:245`, `:382-383` |
+| 15 | OPEN (moved) | `miost_solver.py:171` |
+| 16 | OPEN — new instance `eval/insitu.py:162,206` | `fidelity.py:88` |
+| 17 | OPEN — new instance `phase14_seal.py:106-129` | `phase9_g_pre_anchor.py:344-349` |
+| 18 | OPEN — :313 comment fixed; stamped strings still say 5 | `generate_oi_maps.py:322`, `:350` |
+| 19 | OPEN | `report.py:121` |
+| 20 | OPEN | `test_calibrated_distribution.py:39`; `test_miost_basis.py:72`; `test_tree_kriging_oracle.py:67` |
+| 21 | CHANGED (better) — used by `phase12_miost6_run.py:784`, no src path; docstring still recommends StoredG | `feasibility.py:210`; `stage_miost.py:38` |
+| 22 | OPEN — 25 sites / 16 files (+ `test_phase14_golden_tile.py:81`) | `grid.py:69` |
+| 23 | OPEN — `evaluator_names` gained a test-only caller (`test_phase14_stage1_run.py:833`) | see item |
+| 24 | OPEN | `coherent.py:81-117` |
+| 25 | OPEN | `blend.py:104,133,233,255` |
+| 26 | CHANGED (worse) — phase-13 structured-R block duplicated too; miost.py 817→1212 lines | `miost.py:672-701` vs `:865-877` |
+| 27 | OPEN | `gmrf.py:130-138`; `fem.py:194-202` |
+| 28 | OPEN | `run.py:208` vs `:292` |
+| 29 | OPEN | `pipeline.py:256,349,314` |
+| 30 | CHANGED (worse) — new src consumer `phase12_evidence.py:125`; 32 scripts reference it | `harness.py:1186` |
+| 31 | OPEN | `ensemble.py:54`, `persisted.py:250`, `coherent.py:24`, `gaussian.py:63` |
+| 32 | OPEN | `reduction.py:173` |
+| 33 | OPEN — `build_s` edited (domain hook) though never wired | `gmrf_grid.py:173,212`; `miost_basis.py:367,519,569`; `gmrf.py:99` |
+| 34 | OPEN | `calibration.py:750`; `coherent.py:406` |
+| 35 | OPEN | `firstdifference.py:80-92` |
+| 36 | OPEN — `_is_retryable` gained two script importers | `their_eval.py:37`; `download.py:15` vs `access.py:21`; `spectral.py:77` |
+| 37 | OPEN | `stage_a.py:137` |
+| 38 | CHANGED (worse) — `_write_evidence` 4 → 10+ copies, already drifted (root of 44/45). **Erratum:** F7 pair is NOT byte-identical (161 vs 120 lines) | scripts/* |
+| 39 | OPEN | `_tree_gate.py:142,226` |
+| 40 | OPEN — 4 new near-copies of the synthetic pass builder | `test_miost_ensemble.py:35` vs `test_diag_miost_seam_dispersion.py:36` |
+| 41 | OPEN | `download_ocean_data_challenges_2023.py:3,72-74,224-227` |
+| P4 argv | **RE-PRICED → P0 (item 42)** | `stage_miost_gate_run.py:1029-1041` |
+
+## Added 2026-10-18
+
+Trigger for the P0 block: **before ANY script that writes the evidence store
+is run again** — today that is gated by pin 276(d) ("NOTHING RUNS" until the
+Stage-2 plan), so the hazards are dormant, not absent. A dated backup of the
+store exists (`docs/hygiene-notes.md` § 2026-10-18).
+
+**P0 — evidence-integrity hazards**
+
+42. **Whole-store wipe** — `stage_miost_gate_run.py:463`: a flagless,
+    typo'd or `SCOPE=dev` run `write_text`s a fresh dict over the entire
+    shared store (phase 8-13 unmirrored). Refuse unknown/no flags, or never
+    write `RESULTS` from `main()`. (S)
+43. **Mirror blind spots** — a deleted witnessed node reads as PENDING and
+    passes (`phase14_evidence_mirror.py:719-757`); seal drift is printed,
+    not failed; `SEAL` hard-coded to v1. Detect removal against the existing
+    mirror; fail on seal drift. (S-M)
+44. **Overwrite-on-rerun class** — ~20 writers replace nodes with no
+    write-once guard (seam rows → pin-45(b) firewall unrecoverable; tier2
+    probe → R4's basis; settling → owner-added pin 53/54 blocks; `--stage-b`
+    → signed c2_acceptance). Decide ONE src store-node recorder (seal-gated
+    with the caller's path, write-once default, `--supersede --reason`,
+    atomic + checked write), model `phase14_refresh_election.py:279`. (M)
+45. **Seal check ignores `evidence_path`** — ~11 sites call
+    `verify_current_seal()` bare against the contract at
+    `phase14_seal.py:175`; 29 test stubs lock it in. Falls out of 44. (S)
+46. **Locked-tier semantics** — clean-completion-only tally vs the misfire
+    ruling; `corrected_by` overwrite and `""` bypass; non-atomic store write;
+    per-process flag. Before Stage 2 wires `locked_tier`. (S, owner call)
+
+**P1 — firm bugs in live machinery**
+
+47. `miost_sizing.size_tile` prices RHS/workspace at signed-box `n_coef`
+    (gates tier-1 eligibility, seam RAM gate). Changes recorded numbers —
+    owner call. (S)
+48. `eval/spectral.py:150` empty-PSD regression (ValueError escapes four
+    tuning catch sites). Red/green. (S)
+49. `provenance_guard.py:25` regex passes mission-less names silently. (S)
+50. Packaging: `scikit-sparse`, `pydantic`, `python-dotenv` imported on the
+    pipeline path, declared nowhere; add an install-smoke step to
+    `release.yml`. scikit-sparse's install story is the decision. (S-M)
+51. MIOST window store binds only `(wid, m, root)`; `save_state` omits the
+    basis domain. Latent. (S-M)
+
+**P2 — honesty and tooling**
+
+52. ~20 new tests that cannot fail (list in hygiene-notes § 2026-10-18);
+    the stage-1 test sandbox misses import-time path defaults. Red/green,
+    S each.
+53. `resume_checks.sh` — dirty tree never exits non-zero (CLAUDE.md step 0
+    says it does); origin-ahead mislabelled; `ls-remote` failure reads as
+    ABSENT; `--git-dir` wrong in worktrees. Session-protocol tool. (S)
+54. `phase14_gate_suite.py` attestation scope — stamps `*.py` + pyproject
+    only; `verify` doesn't echo the command (pin 197c class). (S)
+55. Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
+    README structure; CLAUDE.md:109; the SHA erratum not yet reflected in
+    PROGRESS/archive pointers. (S)

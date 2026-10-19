@@ -5,6 +5,10 @@ Future passes: read this before re-flagging anything.
 
 > Prioritized owner-review queue for everything left open here:
 > `docs/hygiene-priorities.md` (P0-P4, effort + trigger per item).
+>
+> The commit SHAs cited in the 2026-07-16 section predate an unrecorded
+> history rewrite and are not on main — read them through the map in the
+> 2026-10-18 ERRATUM below.
 
 ## 2026-07-16 — whole-repo audit (AUDIT-ONLY, no mutations)
 
@@ -349,3 +353,419 @@ invokes the driver.
 - `ensemble.py:38` dense `np.cov` scalability landmine and
   `firstdifference.py` O(ny·nx) exact-covariance double loop —
   flagged, correct as designed.
+
+## 2026-10-18 — whole-repo audit (AUDIT-ONLY, no code mutations)
+
+Baseline: HEAD `029071f`, origin in step (`ls-remote`), tree clean, canonical
+gate (`pixi run pre-commit run --all-files`) green in 21.5 s with the tree
+unchanged after it. No pytest run (audit-only; the gate does not include it).
+Scope: everything changed since the 07-16 pass (774 commits, ~49k inserted
+lines, 136 new files under src/tests/scripts) plus the status of every open
+P0-P4 item. Nine parallel read-only auditors: src new adapters/app/eval · src
+MIOST family · src new validation · `phase14_stage1_run.py` + shell tooling ·
+other phase-14 scripts · phase-12/13 + misc scripts · phase-14 tests · other
+new/changed tests · queue status + docs/config. Line numbers are as of
+`029071f`.
+
+Totals (auditor-reported): ~95 bug findings (~24 P0-class evidence-integrity
+hazards; ~20 new tests that cannot fail), 71 FIX NOW, 77 NEEDS DISCUSSION,
+84 LEAVE. Prior queue: 1 resolved (P0-1), 33 open-unchanged, 7 open-changed;
+the three 07-16 test tautologies are FIXED. Per-item status table:
+`docs/hygiene-priorities.md` § "Status at 2026-10-18".
+
+Re-read at source by the orchestrator (✔ below): `size_tile` peak pricing;
+the spectral empty-PSD regression; the `provenance_guard` regex; the mirror
+deletion blind spot; the `seam_rows` overwrite and seal-path defect; the
+settling node's wholesale replace; the `tier2_probe` overwrite; the
+`--stage-b` first flush before the disarm; the `stage_miost_gate_run`
+whole-store overwrite; the `locked_tier` non-atomic tally write;
+`test_miost_ensemble.py:705`; the packaging deps; the SHA map. Everything
+else is auditor-verified at source and NOT re-checked by the orchestrator.
+
+Operational mitigation taken (owner-approved 2026-10-19): a dated copy of the
+evidence store at
+`data/2021a_ssh_mapping_ose/evidence-backups/stage_miost_gate_results.2026-10-19.json`
+(gitignored; mode 600; sha256 `f67392ae…e8cd` sidecar alongside, equal to the
+live store at the time of copy; store last written 2026-09-21).
+
+### ERRATUM — SHAs cited here and in PROGRESS/archive are not on main
+
+History was rewritten at or after 2026-07-21 21:05, and nothing records it.
+~119 of ~211 SHAs cited in tracked markdown (auditor count) are unreachable
+from main. Each has a same-date, same-subject twin with an IDENTICAL tree.
+✔ Verified: `14f59d9`→`8892120`, `52023a9`→`d0d956d`, `6ec1d03`→`724177a`,
+`d960f15`→`bd6a351`. So the 07-16 applied pass is `d0d956d..724177a` on
+main, and its baseline is `8892120`. The records are left as written.
+
+### THE HEADLINE — one CLASS, not an instance: evidence-store writes are unguarded
+
+The shared store `data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json`
+(1 MB, mode 600) is gitignored, untracked and single-copy ✔. The only
+backstop is `docs/validation/evidence-mirror/`, which covers the phase-14
+subset only. These compose into one hazard:
+
+1. **Whole-store wipe on a flagless or typo'd run** ✔ —
+   `scripts/stage_miost_gate_run.py:463`: `main()` builds a fresh dict and
+   `RESULTS.write_text(...)`s it over the store. `main()` is the `else` of a
+   membership-based argv dispatch (:1029-1041), so no flag, `--stageb`,
+   `--c2-touch=1`, or `SVERDRUP_MIOST_SCOPE=dev` all reach it. The phase 8-13
+   evidence is not mirrored. **Re-prices the P4 "argv parsing ignores unknown
+   flags" item to P0.**
+2. **Mirror blind to deletion** ✔ (found independently by two auditors) —
+   `scripts/phase14_evidence_mirror.py:719-757` pre-filters unresolved
+   registered paths as PENDING, so `select_nodes`' "deliberately fatal"
+   KeyError (`src/sverdrup/validation/evidence_mirror.py:82-84`) cannot
+   fire, and `detect_changes` compares only nodes present on both sides. A
+   deleted witnessed node makes `check` print PENDING and pass, and `sync`
+   drops it silently. The gate-1 closure tripwire inherits this blind spot.
+3. **Mirror does not enforce seal drift** — `check` prints `seal vs mirror:
+   DRIFTED` and exits 0. `sync` overwrites `SEAL_MIRROR` with no append-only
+   gate. `SEAL` is hard-coded to v1 (also `phase14_osse_pricing.py:37`).
+4. **Overwrite-on-rerun with no write-once guard.** Detected only after the
+   fact by the mirror, or never for `NOT_MIRRORED` nodes:
+   - ✔ `phase14_stage1_run.py:3286-3333` `record_seam_rows` /
+     `record_seam_block` — a cheap rerun (all resume stores exist) erases the
+     pin-45(b) NOT_ESTABLISHED marks. `withhold-sigma-rows` then refuses at
+     :6809 because the marker node exists, so the firewall cannot be
+     restored.
+   - ✔ `phase14_stage1_run.py:1373-1375` `tier2_probe` — the defaults
+     overwrite `tier2_probe_kuroshio_m100`, the node R4's pending 36-d chain
+     derives from. It writes the module-global `EVIDENCE` with no seal check.
+   - `phase14_stage1_run.py` `probe` / `probe --maxiter` / `seam-probe`
+     (:1389, :1045, :2506) are "never rewritten" per the comment and CLI
+     help, but nothing enforces it, and they are NOT_MIRRORED. Also the
+     lane-0 "FROZEN" bundle (:5761-5931) and `report_rows` (:5009).
+   - ✔ `phase14_settling_measurement.py:488-539` defaults to `record=True`
+     and replaces the node wholesale. That destroys the owner-added
+     `pin_53_m_requirement` / `pin_54_condition` blocks, which no code
+     produces and which `phase14_projection_declarations.py:137` cites.
+   - `phase14_golden_tile.py:284-292` destroys the hand-added
+     `mu_scale_check`. `phase14_ensemble_floor_factor.py:251-338` re-creates
+     a WITHDRAWN node carrying the "cannot fail" ±4-sd test. Also
+     `phase14_sigma_diagnosis.py:713-764`, `phase14_kernel_pack.py:771`,
+     `phase14_projection_declarations.py:969`, `phase14_probe.py:196`,
+     `phase14_anchor_gate.py:729`, `phase14_gauge_run.py:148`.
+   - ✔ `stage_miost_gate_run.py:666-684` — a `--stage-b` rerun's first
+     `_flush("RUNNING…")` replaces `stage_b`, erasing the signed
+     `c2_acceptance` and so re-arming `--c2-touch`. This happens BEFORE
+     `refuse_inline_touch()` at :800. **P0-1's "RESOLVED" overstates.** The
+     rerun also rewrites the canonical `stage_b_*` maps that P0-2 protects.
+   - `phase13_prereg.py:182-271` re-dates the sealed band protocol.
+     `phase13_lane_run.py:597-615` also leaks dev scope into the full-scope
+     key. `phase12_miost6_run.py:810` destroys the owner's T7 launch
+     adjudication; see also its `:545-627` and `phase13_c2_touch.py:103-136`.
+   - `phase14_seal_run.py:306-358` — `supersede` has no version cap (pin
+     36(d): "hold the seal at one version"), and `build` writes the seal
+     before the pointer refusal.
+5. **The seal tripwire checks the wrong store** — `verify_current_seal()` is
+   called with no `evidence_path` in 8 `phase14_stage1_run.py` writers
+   (:942, 1071, 3303, 3327, 5001, 5881, 6066, 6174) ✔ (3303, 3327), plus
+   `phase14_anchor_gate.py:696`, `phase14_sigma_diagnosis.py:703` and
+   `locked_tier.py:39-57`. The contract is at `phase14_seal.py:175-179`;
+   only `stage1_run:6798` complies. The tests stub it with zero-arg lambdas
+   ×29, which locks the defect in.
+6. **Non-atomic or lossy writes** — ✔ `locked_tier.py:151` and
+   `phase14_seal.py:92-102` `write_text` the whole store.
+   `atomic_write_json` (P1-#3) still double-closes, AND never checks
+   `os.write`'s return, so a short write installs truncated JSON atomically.
+   The corrected-touch defect migration is not persisted
+   (`phase12_miost6_run.py:1130`, `phase13_c2_touch.py:265`) — a regression
+   from phase8, which writes the whole dict.
+7. **Locked tier** (`validation/locked_tier.py`; no production caller yet,
+   so decide before Stage 2 wires it):
+   - The tally counts clean completion only. That is intended per the
+     comment at :139, but a raise after the locked open is uncounted, unlike
+     the misfire ruling's "dated defect key, never a silent re-execution".
+   - A second corrected re-touch overwrites `{era}_corrected_by`.
+   - `corrected_by=""` bypasses the one-touch refusal.
+   - The module-global flag cannot see a second process.
+
+Recommended single decision: one src store-node recorder that every future
+writer imports. It is seal-gated with the caller's path, write-once by
+default, uses `--supersede --reason` to preserve the prior body, and writes
+atomically with a checked write. Alongside it: mirror deletion detection and
+seal drift as a hard fail. `phase14_refresh_election.py:279-285` is the
+existing model. Frozen runners stay records; guard them only by
+refusal-on-rerun.
+
+### Other bugs in live src (P1-class)
+
+- ✔ `methods/miost_sizing.py:321-331` — `size_tile` computes the tile's
+  `n_coef`, then calls `peak_model`, which recomputes it at signed-box dims
+  (`peak_model` takes no domain). `peak_model_mib` gates `tier1_eligible`,
+  `seam_ram_gate` and `peak_ratio`, so RHS and workspace are priced at box
+  size. A fix changes recorded numbers (e.g. 4715.6 MiB), so it is an owner
+  call.
+- ✔ `eval/spectral.py:150` — `_coherence_evidence` (pin 160a) runs
+  `np.nanmin` on an empty PSD BEFORE `_coherence_guard`, raising a bare
+  ValueError instead of ShortTrackError. The four tuning catch sites
+  (`loop.py:109`, `stage_a.py:187`, `lane_compare.py:293,311`) no longer
+  catch it. Untested.
+- ✔ `validation/provenance_guard.py:25` — `_([a-z0-9]+)_phy_l3` returns the
+  token before `_phy_l3` even when the mission is missing
+  (`dt_gulfstream_phy_l3_…` → "gulfstream"), so the train/score leak guard
+  passes silently. The comment at :23-24 claims such names still fail loud.
+- ✔ Packaging — none of these are declared in pyproject, any extra, or the
+  conda recipe:
+  - `sksparse` (`methods/gmrf_linalg.py:20`), reached via
+    `methods.registry` → `gmrf`. This chain already shipped in v0.2.0.
+  - `pydantic` + `python-dotenv` (`validation/config.py:8-9`), reached via
+    `eval.resolution` → `validation/__init__`.
+
+  So `pip install 'sverdrup[all]'` cannot run the pipeline, and
+  `release.yml` never install-smokes the wheel.
+- `distributions/miost_ensemble.py:432-658` — the window store binds only
+  `(wid, m, root)`, so a store from different params/rspec/basis is adopted
+  silently (the docstring at :392 claims refusal). Latent.
+- `miost_ensemble.py:281-322` / `miost.py:183-216` — `save_state` omits the
+  basis domain, so reloading a `basis_domain=` result crashes or silently
+  evaluates at the wrong positions. Latent (no saver/loader today).
+- `application/epoch_table.py:48` — `"s6a-lr"` vs the data's `s6a_lr`.
+  Already plan work (stage-2 design §5.5).
+- Also latent:
+  - `adapters/altimetry/contract.py:185`: empty-window IndexError.
+  - `adapters/insitu/gauges.py:33`: a cwd-relative locked split fails OPEN.
+  - `eval/insitu.py:162,206`: order-dependent alignment (new P2-#16
+    instance); `:232`: ZeroDivisionError.
+  - `cmems_my.py:133`: an empty manifest gives a constant sha.
+  - `jpl_ssha.py:54`: no locked-c2 exclusion (suspected).
+- Validation edge cases:
+  - `gate_schema.py:296` accepts a boolean `extrapolation_declared`.
+  - `seam_metrics.py:233` / `ensemble_settling.py:221`: zero σ raises
+    ZeroDivisionError.
+  - `ensemble_floor_null.py:193`: unchecked weights give a silent NaN.
+- `miost_solver.py:130-156`, `miost_ensemble.py:423-487` — npz is lazy, so a
+  member CRC error surfaces as a bare BadZipFile, the outcome pin 122
+  forbids.
+- Scripts (non-P0):
+  - `phase13_diagnostics.py:201`: a lexical sort drops 167 overlap pairs
+    from the recorded §8.5 check (a wrong recorded number).
+  - `diag_stage1_hypothesis_tests.py:552` writes the tracked artifact before
+    its STOP.
+  - `download_cmems_my.py:279` writes the ledger row only on full
+    completion.
+  - `download_gauges.py:127`: an unretried catalog fetch, where a 5xx
+    reports "done".
+  - `phase14_probe.py:229`: the T18 `tolerance_threading` is mis-measured
+    (live if R4 elects B).
+  - `phase14_stage1_run.py:1882`: an unreadable lock becomes pid −1, and
+    `os.kill(-1,0)` succeeds, so it is treated as held; `:3706`: resume
+    ignores the stored m/maxiter/root.
+- Tooling:
+  - `resume_checks.sh:57-63`: a dirty tree never sets a non-zero exit,
+    although CLAUDE.md step 0 says it does.
+  - BEHIND/DIVERGED cannot distinguish origin-ahead (pin 191).
+  - An `ls-remote` failure is reported as ABSENT.
+  - The hooks and scripts use `--git-dir`, which is wrong in linked
+    worktrees.
+  - `stage1_leg_launcher.sh:90`: `kill -0` liveness spins forever on an
+    unreaped zombie (PID 1 does not reap).
+  - `phase14_gate_suite.py` stamps only `*.py` + pyproject, and `verify`
+    does not echo the command, so a `--suite` subset attests like the full
+    suite (the pin-197c scope class).
+
+### Tests that cannot fail (new; the 07-16 three are all FIXED)
+
+- ✔ `test_miost_ensemble.py:705`: a ≤2 bound on a 2-window fixture, so pin
+  133's leg-1 accumulation test cannot catch a cache-everything mapping.
+- `test_miost_ensemble.py:627`: `assert first` on a non-empty str.
+- `test_evidence_mirror_gates.py:163`.
+- `test_ensemble_floor_null.py:351`.
+- `adapters/test_jpl_ssha.py:92`.
+- `test_phase12_config.py:167` (`git diff --stat` sees uncommitted edits
+  only) and `:93` (a bare ValueError parent).
+- `test_phase13_c2_touch.py:69` — it also reads a 1.4 GB npz on every unit
+  run.
+- `test_phase13_diagnostics.py:66,76`.
+- `test_phase14_locked_tier.py:68`.
+- `test_phase14_gauge_screening.py:179` (`or True`), `:120`, `:196`.
+- `test_phase14_gate1_closure.py:195` (seal drift passes) and `:207` (digest
+  compared to the script's own constant).
+- `test_phase14_stage1_run.py:3320`, `:4027`, `:5582`, `:4382`, `:4793`.
+
+Structural:
+- The stage-1 test sandbox monkeypatches module globals, but 17 script
+  defaults were bound at import (`evidence_path: Path = EVIDENCE`), and its
+  tripwire does not watch the store. One forgotten kwarg writes the live
+  store.
+- Three test modules (refresh_election, osse_pricing, gate1_closure) plus
+  four phase-13 modules read the gitignored store with no skipif, so they
+  ERROR on a clean clone.
+
+### Docs / config
+
+- PROGRESS.md "Current work" (:268-450) stops at Phase 11 "awaiting
+  review" / Phase 4 "IN PROGRESS". It has no Phase 5-10/12-14 entry, and the
+  CURRENT STATE banner has become the de facto index. Owner-governed, so ND.
+- README: no project-structure section (global CLAUDE.md rule); the ToC
+  misses Validation; last edited 07-21.
+- CLAUDE.md:109 claims trailing-whitespace / end-of-file-fixer hooks that
+  `.pre-commit-config.yaml` does not have.
+- `docs/project-context.md:170` says "data/ ~1 GB" (it is ≈37 GB, with one
+  file force-tracked).
+- `pyproject.toml:108-114`: the "Claude Opus 4.7 says" comment; the
+  per-module `strict = false` is likely ignored by mypy (verify).
+- Classifiers claim 3.13/3.14; the recipe and pixi cap `<3.14`.
+- `hygiene-priorities.md` item 38's F7 premise was wrong: the pair is not
+  byte-identical (161 vs 120 lines).
+
+### FIX NOW backlog (strictly behavior-preserving, low risk; NOT applied)
+
+src (~21):
+- Delete the dead `miost_ensemble._load_window` (:412-439, zero refs since
+  the pin-133 change) and fix its sibling's docstring (:464).
+- Docstring fixes:
+  - `miost_crn.py:39`.
+  - `miost_solver.py:196` (the npz suffix rule).
+  - `miost.py:626`.
+  - `eval/spectral.py:55,198`.
+  - `synthetic.py:107`.
+  - `phase14_seal.py:106-129` (byte-verify overstatement; a new P2-#17
+    instance).
+  - `gate_schema.py:36` (the stale "reports, does not refuse").
+  - `phase12_config.py:109`.
+  - `pertile_scoring.py:185` (Raises).
+  - `ensemble_floor_null.py:210` ("inverse erf" is a bisection).
+- Public-API Args/Returns: `phase13_lanes.py:179-197`, `phase14_seal.py:39`,
+  `locked_tier.py:60`.
+- Redundant local imports: `contract.py:208`, `screening.py:330`,
+  `ensemble_settling.py:129`, `ensemble_floor_null.py:212`.
+- One constant each for:
+  - the proximity-deferral string (`screening.py:216/340`);
+  - the "net ≥ 4" reference-epoch rule (`epoch_table.py:162` /
+    `epochs.py:229`);
+  - `MIN_TOTAL_YEARS` in `screening.py:156`;
+  - `SWEPT_MISSIONS` in `phase13_lanes.py:117`.
+- Naming: `eval/insitu.py:266`.
+- Dead `.rstrip(";")`: `gauges.py:174`.
+
+scripts (~9, live tools only — frozen runners stay records):
+- `resume_checks.sh:9-13` header (it performs four checks).
+- `phase14_seal_run.py:280`: parse the store once.
+- `phase14_evidence_mirror.py:772`: Args.
+- `phase14_sigma_diagnosis.py:124`: docstring.
+- `phase14_crossenv.py:123/252`: mission tuple ×2.
+- `phase14_crossenv.py:293` / `phase14_probe.py:270`: `np.load` without `with`.
+- Docstring overstatements in `download_cmems_my.py:4` and
+  `download_gauges.py:8`.
+- `check_task_citations.py:95` (red/green).
+
+tests (~34). Strengthening a tautology changes assertions, so do it
+red/green, not as hygiene:
+- Make the eviction bound bite (3+ windows or `max_resident=1`).
+- Tmp-path the c2-touch provenance test.
+- Add `set(items) == set(ContextKey)` (`test_evaluator_context_integrity.py:119`).
+- Make the module-level RNG per-test (`test_miost_solver_checkpoint.py:23`).
+- One named seal-bypass fixture for the 29 `lambda: None` stubs.
+- `test_phase14_sigma_diagnosis.py:13`: a hand-rolled loader, which
+  re-introduces the pattern `load_script` consolidated.
+- Duplicated `_dates` / mission-catalog fixtures
+  (`test_phase14_epochs.py` / `test_phase14_epoch_table.py`).
+- Stale docstrings:
+  - `capture_phase8_factory_bytecompat.py:8,97` (REGRESSED: `shipped_miost5`
+    became the phase-13 factory).
+  - `test_phase13_identity.py:230`.
+  - `test_phase13_diagnostics.py:89-92`.
+  - `test_phase14_epochs.py:152`.
+  - `test_phase14_gate5_score_identity.py:13`.
+  - `test_phase14_stage1_run.py:2080`.
+- Dead fallbacks and unused params:
+  - `test_phase13_diagnostics.py:34`, `test_phase13_lanes.py:96`.
+  - `test_gate_stamp.py:82,96`, `test_phase14_stage1_run.py:1837,4793`.
+- `os.environ` → `monkeypatch.setenv` (`test_phase14_seal.py:107`).
+- `test_phase14_anchor_gate.py:583`: the skip checks the wrong file.
+- Function-local re-imports (`test_phase14_stage1_run.py:1066…4636`,
+  `test_gate_schema_projection_audit.py:171…222`).
+- Verbatim setup ×3 (`test_miost_augmented_oracle.py:173/210/254`).
+
+docs (~5): README structure + ToC; CLAUDE.md:109;
+`project-context.md:170`; the pyproject comment; the priorities status
+(done in this commit).
+
+### NEEDS DISCUSSION (new, beyond the headline)
+
+- `phase14_stage1_run.py` (6940 lines, 9 commands, last touched 09-19):
+  freeze it as a record and give Stage 2 a new driver that imports its pure
+  builders. Its 5789-line test twin → a `tests/phase14_stage1/` package.
+  Blockers: the `globals()` discharge citations and the
+  `Path(__file__).parents[1]` reads.
+- `miost_error_basis.py:29` is the only methods→application import. It
+  pulls harness, folds, xarray and input_adapter into every
+  `import sverdrup.methods.miost`, and reaches the private `_GAP_SEC`.
+- MIOST duplication and conventions:
+  - The blake2b mission hash is duplicated (`miost.py:315` vs
+    `miost_error_basis.py:78`) and feeds CRN bytes.
+  - Two pass-direction conventions: `miost.py:808` uses endpoint latitude,
+    `orbit_geometry.py:105` uses the median sign.
+- Altimetry adapters: four re-paste the canonical-order / concat /
+  ObsWindow block, and the empty-mission dtype has already drifted
+  (U6/U3/U4/U4).
+- Repeated definitions:
+  - Two `Epoch` dataclasses (`screening.py:80`, `epochs.py:50`).
+  - File-sha256 helpers: five-plus in src and six in scripts; one
+    `read_bytes()`s a 1.4 GB store.
+  - The locked-c2 family `{"c2","c2n"}` ×4.
+  - Frame sizing ×3 in stage1_run, with two metrics (R2's
+    TRUE-local-km decision lands there).
+  - The store-path literal ×13, vs `phase14_seal.EVIDENCE`.
+- New cross-script families:
+  - F8 c2-touch ceremony ×3 (drifted).
+  - F9 member-ensemble production ×3.
+  - F10 script loaders ×5 (no scripts-side `load_script`).
+  - F11 sha256-of-file ×6.
+  - F12 storage-ledger writer ×3 (drifted).
+- `miost.py:1202`: the stale `shipped_miost6` tally text (a signed-record
+  docstring).
+- Retention: `phase14_gauge_run`, `phase14_settling_measurement`,
+  `phase10_flatten_read`, `diag_stage1_coherence` (thin-reference records).
+
+### Intentional smells KEPT (verified deliberate — do not re-flag)
+
+- MIOST:
+  - The pin-122 broad excepts in the checkpoint/window loaders.
+  - The unbounded `_eta_cache` (bounding risks re-solves; per the pin-133
+    commit).
+  - Importing, not copying, `_GAP_SEC` (spec §3).
+  - The structured-R dims in `parameter_space` (CONSUMPTION SEAM).
+  - Empty key fragments for the default `RSpec` / `BasisSpec` (cache
+    lineage, test-pinned).
+  - The `[bias, tilt]` interleave (documented at all three sites).
+  - `WindowBackedAnoms` (pin 133).
+  - `mc_error=None` at m=1.
+  - The PCG `print` (spec §2.4).
+- src new:
+  - `frame_grid`'s verbatim `np.arange` (gate-5 identity).
+  - The ladder's `Authorization.__post_init__` re-check (defense in depth).
+  - The write-once `write_locked_split`.
+  - dc2021a importing `load_mapping_obs`.
+  - The JPL local glob (data governance).
+  - The visible DEFERRED proximity row.
+  - synthetic's `_EPOCH` / noise, hashed into the descriptor (NOT a P2-#12
+    duplicate).
+  - The sealed `INSTRUMENT_CLASS`.
+- validation:
+  - The `phase10_lanes` / `phase13_lanes` confusable pair (test-pinned).
+  - The sealed `phase13_boxes`.
+  - Three canonical-JSON encoders with different `ensure_ascii` — recorded
+    digest contracts; do not unify.
+  - The kind-keyed `validate_gate_schema` ("seal unspent").
+  - `member_sigma`'s axis / no-nanstd choice (load-bearing).
+  - The locked tier counting clean completion only (comment at :139) — the
+    misfire question is an owner decision, not a smell.
+- scripts:
+  - The launcher constants (drift-tested).
+  - The exact-float tripwires (pin 100(c)).
+  - The "do NOT fix" D_int denominators.
+  - `SystemExit(75/76)`.
+  - `post-commit` always exits 0 (pin 102a).
+  - The osse/revisit/refresh blocks carry no `date` (idempotent), and
+    refresh is write-once — **the model for the recorder**.
+  - `gate1_closure --write` refuses before any I/O (tested).
+  - typer rejects unknown flags in all phase-14 scripts.
+  - The download scripts' `.part` + atomic replace + transient-only
+    stamina.
+- tests:
+  - The strict-xfail tripwire (262(d)/269(d)).
+  - The hand-read literal pins.
+  - The named data-gated skips.
+  - `network_guard` catching only TransportError.
