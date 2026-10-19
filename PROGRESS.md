@@ -1,6 +1,29 @@
 # Sverdrup — Progress notebook
 
-> # ⬛ CURRENT STATE — 2026-10-03. STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 decided, R2–R3 drafted, R4 → owner, waiting).
+> # ⬛ CURRENT STATE — 2026-10-03 (handoff re-verified 2026-10-18). STAGE 1 CLOSED. GATE 1 CLOSED. ⛔ STAGE-2 SPEC GATE: **NOT APPROVED — REVISE** (R1 DECIDED · R2–R3 DRAFTED · R4 UNANSWERED → re-put · R5–R7 not started).
+>
+> ## ▶▶ RESUME HERE (fresh session)
+>
+> 1. **Boot as CLAUDE.md says** (resume_checks → PROGRESS → design doc → `git log`). Last
+>    commit of the revision so far: **`4f49a89`**; origin in step at handoff (2026-10-18).
+> 2. ⛔ **RE-PUT R4 TO THE OWNER FIRST.** The R4 question — **(A) accept ~36 d of serial Tier-1
+>    box time** vs **(B) elect Tier 2** (new spend row + `stage0:T18` triggered) — was put on
+>    2026-10-03 and **the session ended before any answer was recorded. R4 is UNDECIDED; do not
+>    infer an answer.** Item: `docs/superpowers/2026-10-03-phase14-stage2-r4-tier-calendar-item.md`
+>    (§3 has both branches side by side). ⚠ Re-read `/proc/meminfo` live before quoting RAM —
+>    the item's 1 649 MiB is a 2026-10-03 snapshot.
+> 3. **Then R5** (executor; pin 283) — the four-state boundary, the rebuilt coverage map, the
+>    C2→2G line table. **Its inputs are listed below under "R5 MUST CARRY"** — plan work and
+>    C2→2G lines the revision already created, plus the frame review's known holes.
+> 4. **Owner reads still owed besides R4:** R2 (draft §3.2–3.3) and R3 (draft §6.4a) are
+>    **DRAFTED, NOT RULED**; the one **CHOSEN** number (extrapolation "large" = 0.10); the
+>    D17-2/3 **referents** at R7; P1-P4 are reviewed with the revision (277).
+>
+> **Documents:** draft `docs/superpowers/specs/2026-09-21-phase14-stage2-temporal-design.md` ·
+> R1 item `docs/superpowers/2026-10-03-phase14-stage2-r1-kernel-decision-item.md` (DECIDED) ·
+> R4 item (above) · frame review `docs/superpowers/2026-09-28-phase14-stage2-frame-review.md` ·
+> rulings `docs/superpowers/2026-07-27-owner-ruling-crn-sigma-rule0.md` **PART 64** (277–286)
+> and **PART 65** (287–291).
 >
 > Owner pins 277-286, ruling **PART 64**, 2026-09-28: the spec gate is **NOT APPROVED**. The
 > §7-17 frame review found **SIX** frame defects (count DERIVED from the review's own
@@ -10,7 +33,10 @@
 > exits, 276(b)'s inherited-only coverage scope with no PLAN-WORK state, D5(d)'s "three
 > rotations per tile", D10(d)'s "clears Tier 1" — **two are the draft's** (n_eff undefined,
 > §2's rotation arithmetic), **and the undefined n_eff is SHARED**, the owner having built
-> D4/D5/D11 on it. ⛔ **The draft at `119acce` is NOT EDITED in this session.**
+> D4/D5/D11 on it. ⛔ ~~The draft at `119acce` is NOT EDITED in this session~~ — that stop bound the PART-64
+> session only. ⚖ **The revision HAS since edited the draft:** R1 at §0/§2/§3.1/§7.3a/§20.1
+> (`d1dce0b`), R2 at §3.2–3.3 plus pointers at §5.3/§6.4/§6.5/§14.3/§19.3 (`d342b56`), R3 at
+> §2/§6.2/§6.4/§6.4a (`cc9034e`). Every amendment is marked ⚖ with its pin.
 >
 > ⭐ **THE RE-SEQUENCE (279) — THE KERNEL SCALE IS UPSTREAM:**
 > **KERNEL DECISION → n_eff DEFINED → geometry step (D6/D7, recomputed) → freeze → census
@@ -19,6 +45,12 @@
 > frame. **Deciding it after the freeze re-keys the pavement.** `operative_halo_deg()` stays
 > untouched until that owner ruling. **Pole handling is 2G's; the kernel exits are STAGE
 > 2's** (278a, 219c: *"Both are Stage 2; neither is T6's to choose."*).
+>
+> ⚖ **SUPERSEDED IN PART BY PART 65 (287/288)** — left as written so the correction shows.
+> Pin 2(i)'s last clause is **STRUCK** (287), so n_eff's L (**226.274 km, a constant**) no longer
+> follows the halo, and the chain **SPLITS**: R1a → n_eff defined → every bar's number → census;
+> R1b is a **ruled WAIT** (288), so the geometry step and the freeze proceed on the **SHIPPED
+> kernel** (halo 1.0°, `HALO_DEG` bound). `operative_halo_deg()` stays untouched (288e).
 >
 > Gate 1 closed carrying three ruled WAITs, each with
 > named exits: kernel (219), revisit (224), OSSE (250). Anchor, seams and the four
@@ -41,9 +73,9 @@
 > |---|---|---|
 > | **R1a** | ✅ **DECIDED — pin 287 (PART 65, 2026-10-03): SHAPE (d) ELECTED.** Fork-e pin 2(i)'s last clause STRUCK for Stage 2 onward; fork-d pin 4 unchanged. **n_eff's L = 226.274 km, a CONSTANT** (evaluated once on Stage 1's recorded λx). n_eff's obs support = each tile's FRAMED obs. Folded into the draft at **§3.1** | ✅ owner |
 > | **R1b** | ✅ **DECIDED — pin 288: RULED WAIT, exit named.** Stage 2 runs on the **shipped kernel**, halo 1.0°, `HALO_DEG` bound; anisotropy era-invariant and absorbed by `s_spatial` (ratios 0.74/0.60/1.27/1.17/1.03 derived). No active exit is Stage 2's (a new kernel needs a NEW signed baseline — an acceptance touch). Exit = 2G decides kernel + poles together from the per-axis reading; **C2→2G line 288(d)**. Folded in at **§7.3a** and §20.1's 263.1 row. ⚠ 290: a THIRD deferral at 2G indicts the deliverable | ✅ owner |
-> | **R2** | **n_eff DEFINED** (280): L, L_t, n_eff₀ and the aggregation fixed from fork-e pins 1(i)/2, the named scale by a rule needing **no per-tile λx** — then **EVERY bar gets its NUMBER** (D2, D4, D5, D13, D17's four). A bar without a number is **unrun** (§7-11) | executor |
-> | **R3** | the **LORO unit** (281): three rotations, each removing one epoch from **all four tiles**; re-derive D5(d)'s era-level falsifier for the **pooled** law and state what **n = 3** can and cannot falsify | executor |
-> | **R4** | the **tier/calendar item** (282): accept **~36 d** of box time on the critical path, **OR** elect Tier 2 — which needs a **NEW spend row** (`tier2_probe` caps wall at 6 h; one era-fit exceeds it **5.16×**) and triggers **`stage0:T18`** | ⚖ **→ OWNER** |
+> | **R2** | ✍ **DRAFTED, NOT RULED** — n_eff defined at draft **§3.2**, every bar's number at **§3.3** (`d342b56`; pin 280). Awaiting the owner's read; R6 re-reviews it. ⚠ One number is **CHOSEN**, not derived (extrapolation "large" = 0.10) and is tabled as such | executor ✍ → owner reads |
+> | **R3** | ✍ **DRAFTED, NOT RULED** — the LORO unit and the pooled-law falsifier at draft **§6.4a** (`cc9034e`; pin 281); "per tile" struck and marked at §2/§6.2/§6.4 | executor ✍ → owner reads |
+> | **R4** | ⚠ **PREPARED, QUESTION UNANSWERED** — item `docs/superpowers/2026-10-03-phase14-stage2-r4-tier-calendar-item.md` (`4f49a89`), cell EMPTY. Put 2026-10-03; **the session ended before an answer was recorded — RE-PUT IT** | ⚖ **→ OWNER** |
 > | **R5** | the **four-state boundary** (283): SETTLED · **PLAN WORK** · CARRIED TO C2→2G · PLACED — plus the **rebuilt coverage map** against §8's own scope and the **C2→2G LINE TABLE** in the C1→2 pattern. Counts **derived** | executor |
 > | **R6** | **re-review** (284): reviewer A checks 278-283 were applied; a **FRESH reviewer B** attacks the frame again, **NOT handed this review's findings as targets** | both |
 > | **R7** | the **spec gate** | ⚖ **→ OWNER** |
@@ -94,13 +126,52 @@
 > `MemAvailable` is 1 649 of 15 770 MiB with ~13 GiB held outside this container — a snapshot,
 > but it is why the 36 d must be the box's own.** (A) accept ~36 d serial, or (B) elect Tier 2:
 > NEW spend row + `stage0:T18` triggered + §11.5's REFUSE-until-witnessed.
+> ⛔ **The question was INTERRUPTED by the session ending on 2026-10-03 — no answer exists. R4 is
+> UNDECIDED. Re-put it; do not infer one.**
 >
 > **After R4:** R5 (pin 283) — the four-state boundary, the rebuilt coverage map against §8's
 > scope, the C2→2G line table; then R6 re-review; then R7 the gate → OWNER.
 >
+> ### ▶ R5 MUST CARRY — collected here so it is entered, not rediscovered
+>
+> **PLAN WORK the revision created** — each goes in the coverage map's **PLAN WORK** state with
+> the plan task that discharges it (283):
+> 1. `HALO_DEG` **derives from** `operative_halo_deg()` — one origin (§7-12) — with an identity
+>    guard (today's `params_key` bytes unchanged at 1.0) **and a negative control that a halo
+>    change re-keys** (R1 item §6; draft §7.3a; ruled bound 2026-10-03, carried by 288e).
+> 2. n_eff's constants — L, L_t, SUPPORT_FACTOR, KM_PER_DEG, n_eff₀, the 1.25 hull pad —
+>    serialized into the calibration descriptor **from one origin** (draft §3.3).
+> 3. The **n_eff₀ gauge test**: refit at n_eff₀′; `a′ = a − b·log(n_eff₀′/n_eff₀)`; s unchanged
+>    to floating point (draft §3.2).
+> 4. n_eff's obs support = each tile's **framed `obs_bbox`**, never the global daily file (287b;
+>    draft §3.1).
+> 5. The D4/D17-4 extrapolation trigger as a **refusal-to-proceed that TABLES, never clips**
+>    (draft §3.3).
+> 6. *Only if R4 elects (B):* §11.5's required-evidence field on the Tier-2 production row;
+>    `authorize()` refuses while `stage0:T18`'s witnessed node is absent.
+>
+> **C2→2G lines the revision created** — R5's line table must carry them (already written into
+> draft §20.1's 263.1 row): **288(d)** — (a, b) are identified on the shipped kernel; a 2G kernel
+> change RE-IDENTIFIES them (the twelve-fit set again) or carries the 288(a) anisotropy caveat.
+> **288(c)** — 2G decides kernel and poles together, starting from the per-axis halo reading,
+> with the ±66 budget derived at each fleet tile's solve-bbox poleward edge.
+>
+> **Known holes, from the frame review §2b/§2c — they must land as ROWS:** E7's per-era δ_m for
+> **every** mission (designed nowhere; the draft's 3 E7 mentions are all δ_j3 or the S6 class
+> bug); per-era R (one mention, §18.6); fork C's **required-verbatim** sparse-era sentence —
+> *"calibration is transferred, not fit, here; its validation is thin and stated; gauges carry
+> the independence burden"* — **absent**; program spec §11's Stage-2 expectation-setters
+> (absent); and §2c's free fleet-side e09/e10 extrapolation measurement (lower materiality).
+>
+> **FLAGGED, not plan work:** `key()` records ONE module-global halo while fork-d pin 4 promises
+> a halo *"per tile"* — accidentally correct while every tile gets 1.0°; 2G prices it with the
+> kernel (R1 item §6).
+>
 > ⚠ **§7-19 WATCH (285):** this is the draft's **FIRST** frame overturn. **If the revision
 > is overturned again ON THE SAME FRAME, the next ruling examines the DELIVERABLE, not the
-> fix.**
+> fix.** ⚖ **290 (PART 65):** the kernel question now carries its **SECOND** WAIT (219, 288). A
+> WAIT with a named exit is an answer — but a **THIRD** deferral at 2G would mean the
+> deliverable, not the exit, is the problem.
 >
 > The frame review is `docs/superpowers/2026-09-28-phase14-stage2-frame-review.md`; its
 > disposition section carries this same R1-R7 list. ⛔ **NOTHING
@@ -151,7 +222,9 @@
 >   nothing: no locked open, no c2 touch, no supersession (267).
 > - **Gate 1 closing is NOT Stage 2 opening** (267). The Stage-2 spec is the next work and
 >   begins **on the owner's word**, not on the closure ruling.
-> - **`operative_halo_deg()` stays untouched** until a Stage-2 ruling (263.1).
+> - **`operative_halo_deg()` stays untouched** (263.1) — ⚖ **ruled at 288(e): Stage 2 runs and
+>   freezes on the SHIPPED kernel, halo 1.0°, `HALO_DEG` bound to it; changing
+>   `operative_halo_deg()` alone is REFUSED.** A halo change is 2G's, with the kernel (288c).
 > - **⭐ THE CLOSURE TRIPWIRE STAYS GREEN THROUGH ALL OF STAGE 2** (275b). Gate 2 opens
 >   nothing (§3.3), so a trip during Stage 2 is a **VIOLATION, not the tripwire's expiry**.
 >   Its authorised red is 2G's acceptance touch, and only a numbered pin retires it.
@@ -663,6 +736,21 @@ items — were not moved.
   for obs-less coordinator probes in tests; real solves always set it).
 
 ## Gotchas
+
+- **`rg -r` IS `--replace`, NOT RECURSIVE (2026-10-03).** `rg -rn "mid-ladder" …` printed every
+  match with the matched text rewritten to `n` — a search that silently corrupts its own output,
+  and nearly produced a false "the phrase appears nowhere". rg recurses by default; **never pass
+  `-r`** unless you mean replace.
+- **TIER-1 RAM HEADROOM ON THIS BOX IS SHARED (2026-10-03).** `MemAvailable` read **1 649 of
+  15 770 MiB** while this container's processes held ~360 MiB — **~13 GiB was held outside the
+  container**. The probe's recorded 11 248 MiB is a moment, not a property of the box. **Read
+  `/proc/meminfo` live before any launch, and before any claim that RAM clears.**
+- **AN INFEASIBILITY IS A FINDING ABOUT THE CONSTRAINT SET (R1, 2026-10-03).** The first R1 item
+  reported fork-e pin 2(i) "unsatisfiable at southern under every exit" while treating the pin's
+  last clause as fixed — and that clause WAS the collision. **Before reporting "no option
+  works", name the clause that produces the collision and price relaxing it as its own shape.**
+- **PIN 291 SAID "§6's n_eff definition"; THE FORMULA IS IN DRAFT §3** (D2). §6 only consumes it.
+  R1a/R2 landed at §3.1–3.3 for that reason — recorded in `d1dce0b`'s body.
 
 - **A LOG-GROWTH STALL WATCHER IS BLIND TO `pytest -q` (2026-08-30).** The T5e gate suite
   ran green in 44:22, and the watcher reported **`STALL: log unchanged for ~20 min`**
