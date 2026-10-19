@@ -700,7 +700,7 @@ def record_sigma_diagnosis(
     from sverdrup.application.calibration.harness import atomic_write_json
     from sverdrup.validation import phase14_seal
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )

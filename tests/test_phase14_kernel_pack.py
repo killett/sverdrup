@@ -435,7 +435,7 @@ def test_record_writes_the_evidence_block(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda _p=None: None)
     evid = _evidence(tmp_path)
     monkeypatch.setattr(_pack, "EVIDENCE", evid)
 

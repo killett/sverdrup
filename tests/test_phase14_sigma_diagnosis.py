@@ -161,7 +161,7 @@ def test_record_writes_the_diagnosis_namespace_and_merges(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda _p=None: None)
     evid = tmp_path / "evidence.json"
     evid.write_text(
         json.dumps({"phase14": {"stage1": {"seam_rows": [{"kept": True}]}}})
@@ -180,7 +180,7 @@ def test_record_is_seal_gated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     """
     from sverdrup.validation import phase14_seal
 
-    def _boom() -> None:
+    def _boom(_p: object = None) -> None:
         raise phase14_seal.SealError("no seal")
 
     monkeypatch.setattr(phase14_seal, "verify_current_seal", _boom)
@@ -233,3 +233,18 @@ def test_assembled_block_never_reads_as_a_rubric_row() -> None:
     # the subject line may QUOTE the recorded row, but only as identification
     assert block["subject"]["rubric_cell_as_recorded"] == "ELEVATED"
     assert block["refuted"] and block["confirmed"]
+
+
+def test_record_verifies_the_seal_of_the_store_it_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene 45): verifying the PRODUCTION seal, then writing a
+    scratch store that carries no seal at all."""
+    from sverdrup.validation import phase14_seal
+    from tests.helpers import install_valid_production_seal
+
+    install_valid_production_seal(tmp_path, monkeypatch)
+    scratch = tmp_path / "scratch_store.json"
+    with pytest.raises(phase14_seal.SealError):
+        _mod.record_sigma_diagnosis({"block": 1}, evidence_path=scratch)
+    assert not scratch.exists()

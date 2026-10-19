@@ -154,3 +154,25 @@ def test_gate_approval_sentence_in_docstring() -> None:
     import sverdrup.validation.locked_tier as mod
 
     assert "gate approval is NOT touch authorization" in (mod.__doc__ or "")
+
+
+def test_default_verifier_checks_the_store_the_ceremony_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A scratch store with NO seal refuses, even while the default verifies.
+
+    Bug caught (hygiene 45): ``default_seal_verifier`` called
+    ``verify_current_seal()`` bare, so a ceremony over an isolated store
+    checked the PRODUCTION seal, opened, and counted its touch in a store
+    that has no seal at all.
+    """
+    from tests.helpers import install_valid_production_seal
+
+    install_valid_production_seal(tmp_path, monkeypatch)
+    monkeypatch.setenv(TOUCH_ENV, "1")
+    scratch = _evidence(tmp_path)
+    before = scratch.read_bytes()
+    with pytest.raises(SealVerificationError):
+        with open_touch("prodA", ["e00"], scratch):
+            pass
+    assert scratch.read_bytes() == before

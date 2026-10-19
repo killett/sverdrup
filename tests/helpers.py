@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -49,3 +50,34 @@ def row_metric(scores: dict[str, Any], evaluator: str, name: str) -> float:
     """
     (row,) = [r for r in scores["report_rows"] if r["evaluator"] == evaluator]
     return float(row["metrics"][name])
+
+
+def install_valid_production_seal(tmp_path: Path, monkeypatch: Any) -> Path:  # noqa: ANN401
+    """Point the DEFAULT seal store at a tmp store carrying a VALID seal.
+
+    The seal-path tests (hygiene item 45) need the production pointer to
+    verify cleanly while the caller's own ``evidence_path`` carries no seal
+    at all: a writer that verifies the default store instead of the store it
+    writes then passes, and only a writer that honours its argument refuses.
+    Independent of whether this host has a real store.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+        monkeypatch: Pytest monkeypatch fixture (redirects ``EVIDENCE``).
+
+    Returns:
+        The substitute "production" store path.
+    """
+    from sverdrup.validation import phase14_seal
+
+    seal_path = tmp_path / "production_seal_v1.json"
+    sha = phase14_seal.build_seal({"sealed": "for the test"}, seal_path)
+    production = tmp_path / "production_store.json"
+    production.write_text(
+        json.dumps(
+            {"phase14": {"stage0": {"seal": {"path": str(seal_path), "sha": sha}}}}
+        )
+    )
+    monkeypatch.setattr(phase14_seal, "EVIDENCE", production)
+    phase14_seal.verify_current_seal()  # the precondition: default verifies
+    return production

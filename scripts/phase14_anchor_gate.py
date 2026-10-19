@@ -696,7 +696,7 @@ def build_check4(
 def _seal_gated_store(evidence_path: Path) -> dict[str, Any]:
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     return json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
 
 

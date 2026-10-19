@@ -939,7 +939,7 @@ def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     serialized = json.dumps(row).lower()
     hits = [w for w in INTERPRETATION_WORDS if w in serialized]
     if hits:
@@ -1068,7 +1068,7 @@ def record_probe_row(
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -3300,7 +3300,7 @@ def record_seam_rows(
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -3324,7 +3324,7 @@ def record_seam_block(block: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -4998,7 +4998,7 @@ def record_tile_report_block(
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -5878,7 +5878,7 @@ def record_lane0_manifest(
     )
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -6063,7 +6063,7 @@ def record_anisotropy_if_elected(
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
     block = build_anisotropy_inputs(tile=tile, era=era, report_block=report_block)
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )
@@ -6171,7 +6171,7 @@ def record_land_mask_if_elected(
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
     block = build_land_mask_exercise(tile=tile, era=era, n_obs=n_obs, scores=scores)
-    phase14_seal.verify_current_seal()
+    phase14_seal.verify_current_seal(evidence_path)
     results: dict[str, Any] = (
         json.loads(evidence_path.read_text()) if evidence_path.exists() else {}
     )

@@ -496,7 +496,7 @@ def test_gate5_write_once_refusal(
     # constants — the whole point of PIN NOW is that they never move.
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda _p=None: None)
     p = tmp_path / "ev.json"
     p.write_text(json.dumps({"phase14": {"stage1": {}}}))
     constants = {"mu": 0.1, "sigma": 0.2, "lambda_x": 150.0}
@@ -710,3 +710,16 @@ def test_tally_guard_detects_ceremony_ledger_mutation(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="ZERO-TOUCH VIOLATION"):
         _mod.assert_tally_unchanged(before, store)
+
+
+def test_seal_gated_store_verifies_the_store_it_returns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene 45): verifying the PRODUCTION seal, then handing
+    back a scratch store that carries no seal at all."""
+    from sverdrup.validation import phase14_seal
+    from tests.helpers import install_valid_production_seal
+
+    install_valid_production_seal(tmp_path, monkeypatch)
+    with pytest.raises(phase14_seal.SealError):
+        _mod._seal_gated_store(tmp_path / "scratch_store.json")

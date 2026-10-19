@@ -36,12 +36,16 @@ class SealVerificationError(RuntimeError):
     """The seal tripwire failed (mismatch or missing seal)."""
 
 
-def default_seal_verifier() -> None:
+def default_seal_verifier(evidence_path: Path | None = None) -> None:
     """The REAL verifier (Task 19): byte-verify the recorded current seal.
 
     Delegates to ``phase14_seal.verify_current_seal`` — refuses while no
     seal is recorded in evidence (a locked open before the sealed set
     exists is definitionally unceremonied) and on any byte mismatch.
+
+    Args:
+        evidence_path: The store whose seal pointer is verified — the one
+            the ceremony WRITES (hygiene item 45); None = the standing store.
 
     Raises:
         SealVerificationError: No recorded seal or verification failure.
@@ -52,7 +56,7 @@ def default_seal_verifier() -> None:
     )
 
     try:
-        verify_current_seal()
+        verify_current_seal(evidence_path)
     except SealError as exc:
         raise SealVerificationError(str(exc)) from exc
 
@@ -75,7 +79,7 @@ def open_touch(
     product_id: str,
     eras: Sequence[str],
     evidence_path: Path,
-    seal_verifier: Callable[[], None] = default_seal_verifier,
+    seal_verifier: Callable[[], None] | None = None,
     corrected_by: str | None = None,
 ) -> Iterator[None]:
     """The ONE code path that opens locked instruments (context manager).
@@ -96,7 +100,9 @@ def open_touch(
         eras: The era ids this touch covers.
         evidence_path: The standing evidence JSON (single-writer).
         seal_verifier: Callable raising :class:`SealVerificationError` on
-            any seal problem (Task 19 supplies the real recompute).
+            any seal problem. None (the default) = the real recompute
+            against ``evidence_path`` — the store this ceremony writes, not
+            the standing one (hygiene item 45).
         corrected_by: The owner's dated defect key authorizing a corrected
             re-touch of an already-touched (product, era).
 
@@ -115,7 +121,10 @@ def open_touch(
         raise TouchRefusedError(
             "a touch ceremony is already open — single-ceremony discipline"
         )
-    seal_verifier()  # tripwire BEFORE any locked data opens
+    if seal_verifier is None:
+        default_seal_verifier(evidence_path)  # tripwire BEFORE any locked open
+    else:
+        seal_verifier()  # tripwire BEFORE any locked data opens
     tally = read_tally(evidence_path)
     for era in eras:
         n = int(tally.get(product_id, {}).get(era, 0))

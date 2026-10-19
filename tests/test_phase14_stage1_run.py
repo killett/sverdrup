@@ -24,6 +24,12 @@ from typer.testing import CliRunner
 from tests.helpers import load_script
 
 _mod = load_script("phase14_stage1_run")
+
+
+def _seal_ok(evidence_path: Path | None = None) -> None:
+    """Seal-check stub: accepts the store path the writers now pass (hygiene 45)."""
+
+
 runner = CliRunner()
 
 # The pinned evidence-row schema (plan Task 1; no free-prose field).
@@ -736,7 +742,7 @@ def test_recording_a_row_carrying_interpretation_prose_refuses(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     kwargs = _row_kwargs("kuroshio")
     kwargs["scores"] = {"mu": 0.9, "note": f"the transfer is {word} the anchor"}
@@ -757,7 +763,7 @@ def test_the_pinned_caveats_themselves_pass_the_tripwire(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     kwargs = _row_kwargs("kuroshio")
     kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
@@ -902,7 +908,7 @@ def test_record_tile_report_block_writes_beside_the_tiles_node(
 
     calls: list[str] = []
     monkeypatch.setattr(
-        phase14_seal, "verify_current_seal", lambda: calls.append("verified")
+        phase14_seal, "verify_current_seal", lambda _p=None: calls.append("verified")
     )
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
@@ -928,7 +934,7 @@ def test_solve_leg_records_the_tile_report_block(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     maps = _stage1_mean_map(tmp_path, geometry=True)
@@ -1107,7 +1113,7 @@ def test_record_lane0_manifest_lands_at_its_own_node(
 
     calls: list[str] = []
     monkeypatch.setattr(
-        phase14_seal, "verify_current_seal", lambda: calls.append("verified")
+        phase14_seal, "verify_current_seal", lambda _p=None: calls.append("verified")
     )
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
@@ -1134,7 +1140,7 @@ def test_lane0_bundle_is_persisted_for_the_elected_tile_only(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     inputs = _lane0_inputs(tmp_path)
     dest = tmp_path / "lane0"
@@ -1235,7 +1241,7 @@ def test_anisotropy_inputs_recorded_for_the_southern_tile_only(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     maps = _stage1_mean_map(tmp_path, geometry=False)
     block = _mod.build_tile_report_block(tile=tile, era="2017", mean_map=maps)
@@ -1329,7 +1335,7 @@ def test_land_mask_exercise_recorded_for_kuroshio_only(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     scores = _mod.build_scores_block(**_SCORE_KWARGS)
     out = _mod.record_land_mask_if_elected(
@@ -1686,7 +1692,7 @@ def test_recovery_computes_from_stored_maps_without_loader_or_solver(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
 
     def _boom(*a: object, **k: object) -> None:
         raise AssertionError("the recovery must not load obs or solve")
@@ -1728,7 +1734,7 @@ def test_recovery_stops_on_a_contradiction_instead_of_overwriting(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     maps = _stage1_mean_map(tmp_path, geometry=False)
     monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: maps)
     evid = tmp_path / "evidence.json"
@@ -1763,7 +1769,7 @@ def test_recovery_is_idempotent_on_an_identical_block(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     maps = _stage1_mean_map(tmp_path, geometry=False)
     monkeypatch.setattr(_mod, "stored_mean_map", lambda tile: maps)
     evid = tmp_path / "evidence.json"
@@ -1870,7 +1876,7 @@ def test_record_refuses_when_seal_unverified(
     """
     from sverdrup.validation import phase14_seal
 
-    def _raise() -> None:
+    def _raise(_p: object = None) -> None:
         raise phase14_seal.SealError("SENTINEL-NO-SEAL")
 
     monkeypatch.setattr(phase14_seal, "verify_current_seal", _raise)
@@ -1893,7 +1899,7 @@ def test_record_writes_row_under_stage1_tiles_preserving_store(
 
     calls: list[str] = []
     monkeypatch.setattr(
-        phase14_seal, "verify_current_seal", lambda: calls.append("verified")
+        phase14_seal, "verify_current_seal", lambda _p=None: calls.append("verified")
     )
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
@@ -2034,7 +2040,7 @@ def test_record_tile_leg_records_equatorial_on_the_programmatic_path(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     kwargs = _row_kwargs("equatorial")
@@ -2263,7 +2269,7 @@ def test_probe_cli_records_then_stops_on_tripped_bracket(
     from sverdrup.validation import phase14_seal
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
     monkeypatch.setattr(
@@ -2290,7 +2296,7 @@ def test_probe_cli_green_bracket_records_and_exits_zero(
     from sverdrup.validation import phase14_seal
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
@@ -2316,7 +2322,7 @@ def test_probe_record_seal_tripwire_fires_before_write(
     from sverdrup.application import ladder
     from sverdrup.validation import phase14_seal
 
-    def _raise() -> None:
+    def _raise(_p: object = None) -> None:
         raise phase14_seal.SealError("SENTINEL-NO-SEAL")
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
@@ -2452,7 +2458,7 @@ def test_probe_cli_maxiter_rerun_records_at_probe_converged_preserving_history(
     from sverdrup.validation import phase14_seal
 
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     t2_history = {"label": "PROBE", "sentinel": "T2-CAPPED-HISTORY"}
     evid.write_text(json.dumps({"phase14": {"stage1": {"probe": t2_history}}}))
@@ -2491,7 +2497,7 @@ def test_probe_cli_default_maxiter_is_the_production_cap_and_probe_node(
 
     assert _mod.PROBE_MAXITER_DEFAULT == PCG_MAXITER
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: True)
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
     seen: list[int] = []
@@ -3016,7 +3022,7 @@ def test_seam_probe_cli_records_at_the_pinned_node_and_exits_zero(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
@@ -3045,7 +3051,7 @@ def test_seam_probe_cli_records_then_stops_when_a_leg_caps(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
@@ -3074,7 +3080,7 @@ def test_seam_probe_cli_default_maxiter_is_2000(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     monkeypatch.setattr(_mod, "EVIDENCE", tmp_path / "evidence.json")
     seen: list[int] = []
@@ -3694,7 +3700,7 @@ def test_record_seam_rows_writes_the_rubric_namespace_and_merges(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase14": {"stage1": {"probe": {"kept": True}}}}))
     _mod.record_seam_rows([_row()], evidence_path=evid)
@@ -3715,7 +3721,7 @@ def test_record_seam_rows_is_seal_gated(
     """
     from sverdrup.validation import phase14_seal
 
-    def _boom() -> None:
+    def _boom(_p: object = None) -> None:
         raise phase14_seal.SealError("no seal")
 
     monkeypatch.setattr(phase14_seal, "verify_current_seal", _boom)
@@ -3810,7 +3816,7 @@ def test_seam_pair_cli_records_rows_then_surfaces_structural_stop(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
@@ -3842,7 +3848,7 @@ def test_seam_pair_cli_stops_immediately_when_a_seam_solve_caps(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
@@ -3875,7 +3881,7 @@ def test_seam_pair_cli_stops_when_the_floor_probe_does_not_converge(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "_mem_available_mib", lambda: 1.0e6)
     evid = tmp_path / "evidence.json"
     monkeypatch.setattr(_mod, "EVIDENCE", evid)
@@ -4900,7 +4906,7 @@ def test_headroom_REACHES_THE_RECORDED_ROW_not_just_the_signature(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     kwargs = _row_kwargs("quiet_gyre")
@@ -4938,7 +4944,7 @@ def test_a_resumed_legs_halt_ALSO_reaches_the_recorded_row(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     monkeypatch.setattr(_mod, "STAGE1_DIR", tmp_path)
     _mod.record_headroom_halt(
         tmp_path / "quiet_gyre_headroom_halt.json",
@@ -5014,7 +5020,7 @@ def test_a_resumed_rescores_row_carries_the_ORIGINAL_runs_facts(
     """
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     kwargs = _row_kwargs("equatorial")
@@ -5281,7 +5287,7 @@ def _transfer_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """A store with the four diverse rows, two seam SOLVE records, and report rows."""
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / "evidence.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     for tile in ("kuroshio", "southern", "equatorial", "quiet_gyre"):
@@ -5498,7 +5504,7 @@ def _frames_store(
     """A store whose four rows carry the given (core, solve_bbox) frames."""
     from sverdrup.validation import phase14_seal
 
-    monkeypatch.setattr(phase14_seal, "verify_current_seal", lambda: None)
+    monkeypatch.setattr(phase14_seal, "verify_current_seal", _seal_ok)
     evid = tmp_path / f"frames_{abs(hash(str(sorted(frames.items()))))}.json"
     evid.write_text(json.dumps({"phase13": {"kept": True}}))
     for tile, (core, solve) in frames.items():
@@ -5787,3 +5793,77 @@ def test_revisit_tier_guard_refuses_a_non_finite_prediction() -> None:
     for bad in (float("nan"), float("inf"), -1.0):
         with pytest.raises(ValueError, match="predicted_wall_h"):
             _mod.revisit_tier_verdict(predicted_wall_h=bad)
+
+
+# ---------------------------------------------------------------------------
+# Hygiene item 45: every seal-gated writer verifies the seal of the store it
+# WRITES, not the default store (contract: phase14_seal.verify_current_seal).
+# ---------------------------------------------------------------------------
+
+
+def _writer_calls(tmp_path: Path) -> dict[str, Any]:
+    """Each seal-gated writer, called with a scratch store and valid inputs."""
+    row_kwargs = _row_kwargs("kuroshio")
+    row_kwargs["scores"] = _mod.build_scores_block(**_SCORE_KWARGS)
+    scores = _mod.build_scores_block(**_SCORE_KWARGS)
+
+    def _southern_block() -> dict[str, Any]:
+        maps = _stage1_mean_map(tmp_path, geometry=False)
+        return _mod.build_tile_report_block(tile="southern", era="2017", mean_map=maps)
+
+    return {
+        "record_evidence_row": lambda p: _mod.record_evidence_row(
+            _mod.build_evidence_row(**row_kwargs), evidence_path=p
+        ),
+        "record_probe_row": lambda p: _mod.record_probe_row(
+            {"probe": 1}, evidence_path=p
+        ),
+        "record_seam_rows": lambda p: _mod.record_seam_rows([], evidence_path=p),
+        "record_seam_block": lambda p: _mod.record_seam_block({}, evidence_path=p),
+        "record_tile_report_block": lambda p: _mod.record_tile_report_block(
+            {"tile": "kuroshio", "era": "2017"}, evidence_path=p
+        ),
+        "record_lane0_manifest": lambda p: _mod.record_lane0_manifest(
+            {}, evidence_path=p
+        ),
+        "record_anisotropy_if_elected": lambda p: _mod.record_anisotropy_if_elected(
+            tile="southern", era="2017", report_block=_southern_block(), evidence_path=p
+        ),
+        "record_land_mask_if_elected": lambda p: _mod.record_land_mask_if_elected(
+            tile="kuroshio", era="2017", n_obs=1000, scores=scores, evidence_path=p
+        ),
+    }
+
+
+@pytest.mark.parametrize(
+    "writer",
+    [
+        "record_evidence_row",
+        "record_probe_row",
+        "record_seam_rows",
+        "record_seam_block",
+        "record_tile_report_block",
+        "record_lane0_manifest",
+        "record_anisotropy_if_elected",
+        "record_land_mask_if_elected",
+    ],
+)
+def test_writer_verifies_the_seal_of_the_store_it_writes(
+    writer: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A scratch store with NO seal is refused even while the default verifies.
+
+    Bug caught (hygiene 45): the writers called ``verify_current_seal()``
+    bare, so they checked the PRODUCTION pointer and then wrote whatever
+    store they were handed — the seal tripwire was bypassed for every
+    non-default store (``recover-rows --evidence-path <sandbox>``).
+    """
+    from sverdrup.validation import phase14_seal
+    from tests.helpers import install_valid_production_seal
+
+    install_valid_production_seal(tmp_path, monkeypatch)
+    scratch = tmp_path / "scratch_store.json"
+    call = _writer_calls(tmp_path)[writer]
+    with pytest.raises(phase14_seal.SealError):
+        call(scratch)
+    assert not scratch.exists(), "nothing may be written to an unsealed store"
