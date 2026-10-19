@@ -90,3 +90,58 @@ def test_coherence_guard_still_refuses_without_evidence() -> None:
     with pytest.raises(UnresolvedScaleError) as exc:
         _coherence_guard(np.array([0.1, 0.2, 0.3]))
     assert exc.value.evidence is None
+
+
+def _vendored_writer_emitting(
+    monkeypatch: pytest.MonkeyPatch, psd_diff: np.ndarray, psd_ref: np.ndarray
+) -> None:
+    """Replace the VENDORED PSD writer (the external boundary) with a stub.
+
+    The stub writes the given spectra where the vendored code would — the
+    degenerate output real block-bootstrap resamples produce when no
+    contiguous segment survives.
+    """
+    import xarray as xr
+
+    from sverdrup.eval import spectral
+
+    spectral._ensure_vendor_importable()
+    import src.mod_spectral as vendored
+
+    def _write(*args: object) -> None:
+        xr.Dataset(
+            {"psd_diff": ("wavenumber", psd_diff), "psd_ref": ("wavenumber", psd_ref)},
+            coords={"wavenumber": np.arange(psd_diff.size, dtype="float64") + 1.0},
+        ).to_netcdf(str(args[-1]))
+
+    monkeypatch.setattr(vendored, "compute_spectral_scores", _write)
+
+
+def test_empty_psd_raises_short_track_not_a_bare_value_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty PSD is the DEFINED ShortTrackError, through the real entry.
+
+    Bug caught (hygiene 48): the pin-160a evidence assembly ran np.nanmin on
+    the empty coherence BEFORE the guard, so a bare "zero-size array"
+    ValueError escaped — and the tuning catch sites (loop, stage_a,
+    lane_compare) catch only ShortTrackError/UnresolvedScaleError.
+    """
+    _vendored_writer_emitting(monkeypatch, np.array([]), np.array([]))
+    t, lat, lon, s, m = _synthetic_track()
+    with pytest.raises(ShortTrackError, match="empty PSD"):
+        effective_resolution_lambda_x(t, lat, lon, s, m)
+
+
+def test_all_nan_psd_raises_short_track(monkeypatch: pytest.MonkeyPatch) -> None:
+    """All-NaN spectra stay the defined ShortTrackError after the reorder.
+
+    Bug caught: moving the guard ahead of the evidence but testing only
+    ``size == 0`` — all-NaN would then reach the crossing check and leave as
+    UnresolvedScaleError (or a nan-reduction warning) instead.
+    """
+    nan = np.full(8, np.nan)
+    _vendored_writer_emitting(monkeypatch, nan, nan)
+    t, lat, lon, s, m = _synthetic_track()
+    with pytest.raises(ShortTrackError, match="empty PSD"):
+        effective_resolution_lambda_x(t, lat, lon, s, m)

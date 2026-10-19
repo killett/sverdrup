@@ -145,6 +145,10 @@ def effective_resolution_lambda_x(
         # a cryptic out-of-range error. Detect it and raise the defined signal instead.
         with xr.open_dataset(str(psd_file)) as ds:
             coherence = (1.0 - ds.psd_diff / ds.psd_ref).to_numpy()
+            # An empty/all-NaN PSD is refused BEFORE the evidence is built:
+            # its nan-reductions raise a bare zero-size ValueError that the
+            # tuning catch sites do not catch (hygiene item 48).
+            _refuse_no_segment(coherence)
             # Owner pin 160(a): assembled HERE, where the PSD is open, so a
             # caller recording an absence never has to recompute one.
             evidence = _coherence_evidence(coherence, ds)
@@ -185,6 +189,19 @@ def _coherence_evidence(coherence: np.ndarray, ds: xr.Dataset) -> dict[str, Any]
     }
 
 
+def _refuse_no_segment(coherence: np.ndarray) -> None:
+    """Refuse an empty or all-NaN coherence array (no usable segment).
+
+    Args:
+        coherence: The ``1 - psd_diff/psd_ref`` array from the PSD file.
+
+    Raises:
+        ShortTrackError: Empty or all-NaN coherence.
+    """
+    if coherence.size == 0 or bool(np.all(np.isnan(coherence))):
+        raise ShortTrackError("no usable spectral segment (empty PSD); λx undefined")
+
+
 def _coherence_guard(
     coherence: np.ndarray, *, evidence: dict[str, Any] | None = None
 ) -> None:
@@ -206,8 +223,7 @@ def _coherence_guard(
         UnresolvedScaleError: No 0.5-coherence crossing (map resolves no
             scale; the vendored interp1d would throw out-of-range).
     """
-    if coherence.size == 0 or bool(np.all(np.isnan(coherence))):
-        raise ShortTrackError("no usable spectral segment (empty PSD); λx undefined")
+    _refuse_no_segment(coherence)
     if not (np.nanmin(coherence) <= 0.5 <= np.nanmax(coherence)):
         raise UnresolvedScaleError(
             "map resolves no scale; λx undefined (no 0.5 coherence crossing)",
