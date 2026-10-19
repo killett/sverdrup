@@ -67,3 +67,43 @@ def test_diagonal_noise_differs_across_cells():
     pts = np.array([[0.5, 0.5, 0.0], [10.5, 0.5, 0.0], [0.5, 10.5, 0.0]])
     vals = diagonal_noise(pts, member_index=3, noise_spec=spec)
     assert np.unique(vals).size == 3
+
+
+class _FixedZr:
+    """An injected structured source returning a hand-chosen latent."""
+
+    def __init__(self, z: list[float]) -> None:
+        self.z = np.asarray(z, dtype=float)
+        self.calls: list[tuple[int, int]] = []
+
+    def draw_one(
+        self, member_index: int, rank: int, noise_spec: NoiseSpec
+    ) -> np.ndarray:
+        self.calls.append((member_index, rank))
+        return self.z[:rank]
+
+    def draw(self, member_index, parts, support, noise_spec):  # protocol conformance
+        return [self.z for _ in parts]
+
+
+def test_realize_one_uses_the_injected_structured_source():
+    # Behavior: the latent z_r comes from the sampler's OWN structured source.
+    # Bug caught (hygiene P1-#4): realize_one hardcoded MemberSeededZr().draw_one,
+    # ignoring self.structured — the design-5c/8 swap seam was dead on this path,
+    # latent only while the default equalled the hardcoded source.
+    B = np.array([[1.0, 0.0], [0.0, 2.0], [1.0, 1.0]])
+    src = _FixedZr([3.0, -1.0])
+    sampler = CoherentSampler(structured=src)
+    spec = NoiseSpec(method="oi", params_key="p", lattice_step=1.0)
+    pts = np.array([[0.5, 0.5, 0.0], [1.5, 0.5, 0.0], [2.5, 0.5, 0.0]])
+    field = sampler.realize_one(
+        mean=np.zeros(3),
+        factor=B,
+        residual=np.zeros(3),  # isolate the structured term
+        points=pts,
+        member_index=4,
+        noise_spec=spec,
+    )
+    # by hand: B @ [3, -1] = [3, -2, 2]
+    np.testing.assert_allclose(field, [3.0, -2.0, 2.0], rtol=0, atol=1e-15)
+    assert src.calls == [(4, 2)]

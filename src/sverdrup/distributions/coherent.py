@@ -81,6 +81,12 @@ def diagonal_noise(
 class StructuredNoiseSource(Protocol):
     """Drives the structured (low-rank) part; swap point for Option-1/Option-2."""
 
+    def draw_one(
+        self, member_index: int, rank: int, noise_spec: NoiseSpec
+    ) -> np.ndarray:
+        """Return the member's latent ``z_r`` of length ``rank`` (one tile)."""
+        ...
+
     def draw(
         self,
         member_index: int,
@@ -212,7 +218,9 @@ class CoherentSampler:
             The realized field, length n.
         """
         r = factor.shape[1]
-        z_r = MemberSeededZr().draw_one(member_index, r, noise_spec)
+        # The sampler's OWN source — a hardcoded MemberSeededZr() here made the
+        # injection seam dead on this path (hygiene P1-#4).
+        z_r = self.structured.draw_one(member_index, r, noise_spec)
         z_d = diagonal_noise(points, member_index, noise_spec)
         return np.asarray(mean + factor @ z_r + np.sqrt(residual) * z_d)
 
