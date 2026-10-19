@@ -24,6 +24,7 @@ import pytest
 from sverdrup.validation.evidence_mirror import (
     detect_changes,
     detect_index_regressions,
+    detect_removals,
     digest_node,
     select_nodes,
 )
@@ -144,6 +145,32 @@ def test_detect_changes_treats_a_new_node_as_an_addition() -> None:
     incoming = {"a": {"v": 1}, "brand_new": {"v": 2}}
 
     assert detect_changes(existing, incoming) == []
+
+
+def test_detect_removals_names_witnessed_nodes_that_are_gone() -> None:
+    """A witnessed node absent from the incoming set is a REMOVAL.
+
+    Catches the hygiene-43 blind spot: ``detect_changes`` compares only
+    nodes present on both sides, so deleting a witnessed node from the
+    store read as nothing at all. Additions and unchanged nodes must NOT
+    be reported, or every new record would trip the gate.
+    """
+    existing = {"a": {"v": 1}, "gone": {"v": 2}, "also_gone": [3]}
+    incoming = {"a": {"v": 1}, "brand_new": {"v": 4}}
+
+    assert detect_removals(existing, incoming) == ["also_gone", "gone"]
+
+
+def test_detect_removals_is_empty_when_every_witness_survives() -> None:
+    """Changed-but-present is detect_changes' job, not a removal.
+
+    Catches a removal detector that compares values instead of names,
+    which would double-report every modification under two labels.
+    """
+    existing = {"a": {"v": 1}, "b": {"v": 2}}
+    incoming = {"a": {"v": 1}, "b": {"v": 99}, "c": {"v": 3}}
+
+    assert detect_removals(existing, incoming) == []
 
 
 # ---- amendment index (owner pin 64) --------------------------------------

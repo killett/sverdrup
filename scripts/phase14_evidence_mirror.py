@@ -38,6 +38,7 @@ import typer
 from sverdrup.validation.evidence_mirror import (
     detect_changes,
     detect_index_regressions,
+    detect_removals,
     digest_node,
     select_nodes,
 )
@@ -743,18 +744,43 @@ def _pending_nodes(store: dict[str, Any]) -> list[str]:
     return sorted(pending)
 
 
-def _extract() -> tuple[dict[str, Any], dict[str, Any], list[str]]:
-    """Pull the mirrored subset from the store and the seal.
+def _seal_paths(store: dict[str, Any]) -> tuple[Path, Path]:
+    """The CURRENT seal (by the store's pointer) and its mirror path.
+
+    Hygiene item 43: ``SEAL`` was hard-coded to v1, so after the one
+    sanctioned supersession the pointer would move to v2 while the mirror
+    kept witnessing v1 — and v2 would never be witnessed. Each seal version
+    is mirrored under its own file name; an older version's mirror is never
+    touched. A store with no pointer falls back to ``SEAL``/``SEAL_MIRROR``.
+
+    Args:
+        store: The evidence store document.
 
     Returns:
-        ``(nodes, seal, pending)`` — ``pending`` names registered paths the
-        store does not carry yet.
+        ``(seal_path, seal_mirror_path)``.
+    """
+    pointer = store.get("phase14", {}).get("stage0", {}).get("seal")
+    if not isinstance(pointer, dict) or not pointer.get("path"):
+        return SEAL, SEAL_MIRROR
+    seal_path = Path(pointer["path"])
+    return seal_path, MIRROR_DIR / seal_path.name
+
+
+def _extract() -> tuple[dict[str, Any], dict[str, Any], list[str], Path]:
+    """Pull the mirrored subset from the store and the current seal.
+
+    Returns:
+        ``(nodes, seal, unresolved, seal_mirror)`` — ``unresolved`` names
+        registered paths the store does not carry. The CALLER separates
+        those into PENDING (never witnessed) and REMOVED (witnessed, now
+        gone); the old code called every one of them pending, which is how
+        a deleted witnessed node passed (hygiene item 43).
     """
     store = _load(STORE)
-    pending = _pending_nodes(store)
-    nodes = select_nodes(store, [p for p in MIRRORED if p not in set(pending)])
-    seal = _load(SEAL)
-    return nodes, seal, pending
+    unresolved = _pending_nodes(store)
+    nodes = select_nodes(store, [p for p in MIRRORED if p not in set(unresolved)])
+    seal_path, seal_mirror = _seal_paths(store)
+    return nodes, _load(seal_path), unresolved, seal_mirror
 
 
 def _write_json(path: Path, payload: Any) -> None:  # noqa: ANN401
@@ -778,23 +804,31 @@ def sync(
 ) -> None:
     """Extract, gate against the existing mirror, and write.
 
+    Every refusal fires before anything is written.
+
     Raises:
-        RuntimeError: If an already-mirrored node changed and was not
-            explicitly superseded — the append-only STOP.
+        RuntimeError: If an already-mirrored node changed or was REMOVED
+            and was not explicitly superseded (the append-only STOP), or if
+            the current seal no longer matches its witnessed mirror (a seal
+            version is write-once; a new version gets its own file).
     """
-    nodes, seal, pending = _extract()
-    if pending:
-        typer.echo(
-            "PENDING (registered, not yet written — nothing to witness yet): "
-            + ", ".join(pending)
-        )
+    nodes, seal, unresolved, seal_mirror = _extract()
     allowed = set(supersede or [])
     if allowed and not reason:
         raise RuntimeError(
             "--supersede requires --reason: a silent replacement is the thing this gate exists to prevent"
         )
 
+    if seal_mirror.exists() and digest_node(_load(seal_mirror)) != digest_node(seal):
+        raise RuntimeError(
+            f"SEAL MIRROR IS WRITE-ONCE — the seal no longer matches its "
+            f"witnessed mirror {seal_mirror}. A seal version is never "
+            "rewritten; a sanctioned supersession writes a NEW version (and "
+            "moves the store's pointer), which is mirrored under its own name."
+        )
+
     prior_bodies: dict[str, Any] = {}
+    witnessed: set[str] = set()
     if MIRROR.exists():
         existing_doc = _load(MIRROR)
         regressed = detect_index_regressions(
@@ -808,7 +842,9 @@ def sync(
                 "the record that amends it is unreachable from it."
             )
         existing = {k: v["value"] for k, v in existing_doc["nodes"].items()}
+        witnessed = set(existing)
         changed = detect_changes(existing, nodes)
+        removed = detect_removals(existing, nodes)
         unauthorized = [c for c in changed if c not in allowed]
         if unauthorized:
             raise RuntimeError(
@@ -818,6 +854,16 @@ def sync(
                 "legitimate, re-run with --supersede <path> --reason <text>; "
                 "the prior digest and body are then preserved, never dropped."
             )
+        unauthorized_removals = [r for r in removed if r not in allowed]
+        if unauthorized_removals:
+            raise RuntimeError(
+                "APPEND-ONLY VIOLATION — these nodes are already witnessed in "
+                f"the mirror and have been REMOVED from the store (or "
+                f"deregistered): {unauthorized_removals}. A disappearing "
+                "witness is the event write-once forbids (hygiene item 43). If "
+                "the removal is legitimate, re-run with --supersede <path> "
+                "--reason <text>; the prior digest and body are preserved."
+            )
         for path in changed:
             prior_bodies[path] = {
                 "superseded_utc": datetime.now(UTC).isoformat(),
@@ -825,6 +871,21 @@ def sync(
                 "prior_digest": digest_node(existing[path]),
                 "prior_value": existing[path],
             }
+        for path in removed:
+            prior_bodies[path] = {
+                "superseded_utc": datetime.now(UTC).isoformat(),
+                "reason": reason,
+                "removed": True,
+                "prior_digest": digest_node(existing[path]),
+                "prior_value": existing[path],
+            }
+
+    pending = [p for p in unresolved if p not in witnessed]
+    if pending:
+        typer.echo(
+            "PENDING (registered, not yet written — nothing to witness yet): "
+            + ", ".join(pending)
+        )
 
     doc = {
         "WHAT THIS MIRROR DOES AND DOES NOT PROVE": {
@@ -893,7 +954,7 @@ def sync(
         },
     }
     _write_json(MIRROR, doc)
-    _write_json(SEAL_MIRROR, seal)
+    _write_json(seal_mirror, seal)
 
     if prior_bodies:
         log = _load(SUPERSESSIONS) if SUPERSESSIONS.exists() else {"supersessions": []}
@@ -904,7 +965,7 @@ def sync(
 
     total = sum(len(json.dumps(v)) for v in nodes.values())
     typer.echo(f"mirrored {len(nodes)} nodes ({total / 1024:.1f} KiB) -> {MIRROR}")
-    typer.echo(f"mirrored seal -> {SEAL_MIRROR} (sha {digest_node(seal)[:16]}…)")
+    typer.echo(f"mirrored seal -> {seal_mirror} (sha {digest_node(seal)[:16]}…)")
     typer.echo(
         f"excluded by name: {len(NOT_MIRRORED)} groups (see the_line_not_mirrored)"
     )
@@ -916,7 +977,10 @@ def check() -> None:
 
     Raises:
         RuntimeError: If the mirror is absent, its internal digests do
-            not match its bodies, or the store has drifted from it.
+            not match its bodies, the store has drifted from it (a witnessed
+            node CHANGED or REMOVED), or the current seal no longer matches
+            its witnessed mirror. Seal drift used to print ``DRIFTED`` and
+            exit 0 (hygiene item 43).
     """
     if not MIRROR.exists():
         raise RuntimeError(f"no mirror at {MIRROR} — run `sync` first")
@@ -930,11 +994,12 @@ def check() -> None:
     if bad:
         raise RuntimeError(f"MIRROR SELF-CHECK FAILED — digest mismatch: {bad}")
 
-    nodes, seal, pending = _extract()
+    nodes, seal, unresolved, seal_mirror = _extract()
     existing = {k: v["value"] for k, v in doc["nodes"].items()}
     drift = detect_changes(existing, nodes)
+    removed = detect_removals(existing, nodes)
+    pending = [p for p in unresolved if p not in existing]
     added = sorted(set(nodes) - set(existing))
-    seal_drift = digest_node(seal) != digest_node(_load(SEAL_MIRROR))
 
     typer.echo(f"mirror self-check: PASS ({len(doc['nodes'])} nodes, digests match)")
     if drift:
@@ -943,8 +1008,22 @@ def check() -> None:
             "store was rewritten or the mirror is stale — resolve deliberately, "
             "do not re-sync reflexively."
         )
-    typer.echo("store vs mirror: PASS (no witnessed node has changed)")
-    typer.echo(f"seal vs mirror: {'DRIFTED' if seal_drift else 'PASS'}")
+    if removed:
+        raise RuntimeError(
+            f"STORE HAS DRIFTED — witnessed nodes REMOVED from the store (or "
+            f"deregistered): {removed}. A missing witness is not PENDING; "
+            "resolve deliberately, do not re-sync reflexively."
+        )
+    typer.echo("store vs mirror: PASS (no witnessed node has changed or gone)")
+    if not seal_mirror.exists():
+        typer.echo(f"seal vs mirror: NOT YET WITNESSED ({seal_mirror}; pending sync)")
+    elif digest_node(seal) != digest_node(_load(seal_mirror)):
+        raise RuntimeError(
+            f"SEAL HAS DRIFTED from its witnessed mirror {seal_mirror}. A seal "
+            "version is write-once — resolve deliberately."
+        )
+    else:
+        typer.echo("seal vs mirror: PASS")
     idx_regressed = detect_index_regressions(doc.get("amendment_index", {}), AMENDMENTS)
     if idx_regressed:
         raise RuntimeError(f"AMENDMENT-INDEX REGRESSION: {idx_regressed}")

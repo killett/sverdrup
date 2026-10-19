@@ -38,6 +38,7 @@ from typing import Any
 __all__ = [
     "detect_changes",
     "detect_index_regressions",
+    "detect_removals",
     "digest_node",
     "select_nodes",
 ]
@@ -115,6 +116,25 @@ def detect_changes(existing: dict[str, Any], incoming: dict[str, Any]) -> list[s
         for name, value in incoming.items()
         if name in existing and digest_node(existing[name]) != digest_node(value)
     )
+
+
+def detect_removals(existing: dict[str, Any], incoming: dict[str, Any]) -> list[str]:
+    """Names of already-mirrored nodes that are ABSENT from ``incoming``.
+
+    The complement :func:`detect_changes` cannot see: it compares only
+    nodes present on both sides, so a witnessed node deleted from the store
+    (or its parent key deleted) read as nothing at all (hygiene item 43). A
+    removal is the same event write-once forbids as a rewrite — the witness
+    disappears — so callers STOP on it exactly as they do on a change.
+
+    Args:
+        existing: Previously mirrored ``name -> value``.
+        incoming: Freshly extracted ``name -> value``.
+
+    Returns:
+        Sorted names present in ``existing`` and absent from ``incoming``.
+    """
+    return sorted(set(existing) - set(incoming))
 
 
 def detect_index_regressions(

@@ -220,3 +220,141 @@ def test_a_brand_new_node_syncs_without_supersede(mirror: Any) -> None:
     nodes = json.loads(mirror.MIRROR.read_text())["nodes"]
     assert nodes["phase14.stage1.new_record"]["value"] == {"measured": 1.0}
     assert not mirror.SUPERSESSIONS.exists()
+
+
+# ---- hygiene 43: removal and seal drift are STOPs, not notes ------------
+
+
+def _delete_phase14(mod: Any) -> None:
+    """Delete the PARENT of a witnessed node — the whole subtree goes."""
+    body = json.loads(mod.STORE.read_text())
+    del body["phase14"]
+    mod.STORE.write_text(json.dumps(body, indent=2))
+
+
+def test_check_fails_naming_a_removed_witnessed_node(mirror: Any) -> None:
+    """Deleting a witnessed node from the store makes ``check`` STOP.
+
+    Catches the hygiene-43 blind spot: the unresolved path was pre-filtered
+    as PENDING ("registered, not yet written"), so ``check`` printed PENDING
+    and passed while a witnessed record was simply gone.
+    """
+    mirror.sync()
+    _delete_phase14(mirror)
+
+    with pytest.raises(RuntimeError, match="phase14.stage1.gate5") as excinfo:
+        mirror.check()
+
+    assert "REMOVED" in str(excinfo.value)
+
+
+def test_sync_refuses_to_drop_a_witnessed_node(mirror: Any) -> None:
+    """``sync`` refuses the deletion and leaves the mirror untouched.
+
+    Catches the silent drop: the old sync rebuilt the mirror from what the
+    store still held, so the witnessed node vanished with no STOP.
+    """
+    mirror.sync()
+    before = mirror.MIRROR.read_bytes()
+    _delete_phase14(mirror)
+
+    with pytest.raises(RuntimeError, match="phase14.stage1.gate5"):
+        mirror.sync()
+
+    assert mirror.MIRROR.read_bytes() == before
+
+
+def test_superseded_removal_preserves_the_prior_body(mirror: Any) -> None:
+    """A deliberate, reasoned removal keeps the record it drops.
+
+    Catches a supersede path for removals that discards the witnessed
+    body — the removal would then launder the record out of history.
+    """
+    mirror.sync()
+    prior = json.loads(mirror.MIRROR.read_text())["nodes"]["phase14.stage1.gate5"]
+    _delete_phase14(mirror)
+
+    mirror.sync(supersede=["phase14.stage1.gate5"], reason="owner ruling Y")
+
+    log = json.loads(mirror.SUPERSESSIONS.read_text())["supersessions"]
+    assert [e["path"] for e in log] == ["phase14.stage1.gate5"]
+    assert log[0]["removed"] is True
+    assert log[0]["reason"] == "owner ruling Y"
+    assert log[0]["prior_digest"] == prior["digest_sha256"]
+    assert log[0]["prior_value"] == prior["value"]
+    assert "phase14.stage1.gate5" not in json.loads(mirror.MIRROR.read_text())["nodes"]
+
+
+def test_a_never_witnessed_registration_stays_pending(mirror: Any) -> None:
+    """Registered-but-unwritten is still PENDING, and ``check`` passes.
+
+    Catches removal detection so broad that it treats every registered,
+    never-witnessed path as a removal — which would break the documented
+    practice of registering a node before the work that writes it runs.
+    """
+    mirror.MIRRORED["phase14.stage1.not_yet"] = "registered ahead of its writer"
+    mirror.sync()
+
+    pending = json.loads(mirror.MIRROR.read_text())["registered_but_not_yet_written"]
+    assert pending["paths"] == ["phase14.stage1.not_yet"]
+    mirror.check()  # must not raise
+
+
+def test_check_fails_on_seal_drift(mirror: Any) -> None:
+    """A seal that no longer matches its witnessed mirror is a STOP.
+
+    Catches the old ``check``, which printed ``seal vs mirror: DRIFTED``
+    and exited 0 — so the closure tripwire built on it passed a rewritten
+    seal.
+    """
+    mirror.sync()
+    mirror.SEAL.write_text(json.dumps({**SEAL_BODY, "sha": "tampered"}, indent=2))
+
+    with pytest.raises(RuntimeError, match="SEAL"):
+        mirror.check()
+
+
+def test_sync_refuses_to_rewrite_a_witnessed_seal(mirror: Any) -> None:
+    """A seal version is write-once; its mirror is never overwritten.
+
+    Catches the old sync, which rewrote the seal mirror unconditionally —
+    the witnessed seal would silently become whatever the file now says.
+    """
+    mirror.sync()
+    before = mirror.SEAL_MIRROR.read_bytes()
+    mirror.SEAL.write_text(json.dumps({**SEAL_BODY, "sha": "tampered"}, indent=2))
+
+    with pytest.raises(RuntimeError, match="SEAL"):
+        mirror.sync()
+
+    assert mirror.SEAL_MIRROR.read_bytes() == before
+
+
+def test_the_witnessed_seal_follows_the_store_pointer(
+    mirror: Any, tmp_path: Path
+) -> None:
+    """After a sanctioned supersession, v2 is witnessed beside v1.
+
+    Catches ``SEAL`` hard-coded to v1: once the store's seal pointer moves
+    to v2, the old sync kept mirroring v1 and v2 was never witnessed.
+    """
+    mirror.sync()
+    v1_mirror = mirror.SEAL_MIRROR.read_bytes()
+    seal_v2 = tmp_path / "phase14_evaluation_seal_v2.json"
+    seal_v2.write_text(json.dumps({"seal": "v2", "sha": "b2"}, indent=2))
+    body = json.loads(mirror.STORE.read_text())
+    body["phase14"].setdefault("stage0", {})["seal"] = {
+        "path": str(seal_v2),
+        "version": 2,
+    }
+    mirror.STORE.write_text(json.dumps(body, indent=2))
+
+    mirror.sync()
+
+    v2_mirror = mirror.MIRROR_DIR / "phase14_evaluation_seal_v2.json"
+    assert json.loads(v2_mirror.read_text()) == {"seal": "v2", "sha": "b2"}
+    assert mirror.SEAL_MIRROR.read_bytes() == v1_mirror
+    mirror.check()  # must not raise
+    seal_v2.write_text(json.dumps({"seal": "v2", "sha": "tampered"}, indent=2))
+    with pytest.raises(RuntimeError, match="SEAL"):
+        mirror.check()
