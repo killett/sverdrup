@@ -737,6 +737,7 @@ items — were not moved.
 
 ## Gotchas
 
+- **EVIDENCE-STORE WRITES ARE UNGUARDED (P0) AND MANY DOC-CITED SHAs ARE OFF-MAIN (2026-10-19)** — read `docs/hygiene-notes.md` § 2026-10-18 (items 42–46 in `docs/hygiene-priorities.md`) before rerunning ANY store-writing script.
 - **`rg -r` IS `--replace`, NOT RECURSIVE (2026-10-03).** `rg -rn "mid-ladder" …` printed every
   match with the matched text rewritten to `n` — a search that silently corrupts its own output,
   and nearly produced a false "the phrase appears nowhere". rg recurses by default; **never pass
