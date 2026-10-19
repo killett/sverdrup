@@ -46,6 +46,7 @@ import typer
 from sverdrup.validation.phase10_lanes import ALL_DIMS as _p10_ALL_DIMS
 from sverdrup.validation.phase10_lanes import BOXES as _p10_BOXES
 from sverdrup.validation.phase10_lanes import LANES as _p10_LANES
+from sverdrup.validation.write_once import refuse_if_recorded
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -1297,6 +1298,8 @@ def tier2_probe(
     )
     from sverdrup.methods.miost_windows import WindowPlan  # noqa: PLC0415
 
+    # Hygiene 44: the recorded probe is the measurement R4 derives from.
+    refuse_if_recorded(EVIDENCE, f"phase14.stage1.tier2_probe_{tile}_m{m}")
     model = tile_size_model(tile, m=m, n_windows=1)
     avail = _mem_available_mib()
     typer.echo(
@@ -1418,6 +1421,8 @@ def probe(
         RuntimeError: Tier-1 ladder refusal (via :func:`preflight`).
         typer.Exit: Nonzero when the STOP bracket trips.
     """
+    node = "probe" if maxiter == PROBE_MAXITER_DEFAULT else PROBE_CONVERGED_NODE
+    refuse_if_recorded(EVIDENCE, f"phase14.stage1.{node}")  # hygiene 44
     preflight_model = preflight(PROBE_TILE, PROBE_M)
     typer.echo(
         "preflight model: "
@@ -1425,7 +1430,6 @@ def probe(
     )
     measured = _probe_solve(maxiter=maxiter)
     row = build_probe_row(date=datetime.now(UTC).date().isoformat(), **measured)
-    node = "probe" if maxiter == PROBE_MAXITER_DEFAULT else PROBE_CONVERGED_NODE
     record_probe_row(row, evidence_path=EVIDENCE, node=node)
     typer.echo("measured_vs_model: " + json.dumps(row["measured_vs_model"]))
     typer.echo(f"convergence: {row['convergence']} (node phase14.stage1.{node})")
@@ -2533,6 +2537,7 @@ def seam_probe(
             missing solve leg, and on a CAPPED measurement (recorded
             first — an immediate owner surface).
     """
+    refuse_if_recorded(EVIDENCE, f"phase14.stage1.{SEAM_PROBE_NODE}")  # hygiene 44
     model_pre = seam_probe_size_model(_seam_obs_estimate())
     gate = seam_ram_gate(
         peak_model_mib=float(model_pre["peak_model_mib"]),
@@ -4429,6 +4434,11 @@ def seam_pair(
         typer.Exit: Nonzero on a failed RAM gate, on a capped seam solve
             (pin 23), and on a STRUCTURAL_STOP verdict.
     """
+    # Hygiene 44: a rerun (cheap — every resume store exists) would replace
+    # the rows and erase the pin-45(b) NOT_ESTABLISHED marks for good.
+    refuse_if_recorded(
+        EVIDENCE, f"phase14.stage1.{SEAM_PAIR_NODE}", f"phase14.stage1.{SEAM_ROWS_NODE}"
+    )
     models = {t: preflight(t, m) for t in SEAM_PAIR_TILES}
     peak = max(float(mo["peak_model_mib"]) for mo in models.values())
     gate = seam_ram_gate(peak_model_mib=peak, mem_available_mib=_mem_available_mib())

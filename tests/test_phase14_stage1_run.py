@@ -5867,3 +5867,85 @@ def test_writer_verifies_the_seal_of_the_store_it_writes(
     with pytest.raises(phase14_seal.SealError):
         call(scratch)
     assert not scratch.exists(), "nothing may be written to an unsealed store"
+
+
+# ---------------------------------------------------------------------------
+# Hygiene item 44: the stage-1 runners refuse to REPLACE a recorded node, and
+# refuse before any work (each stub below fails the test if work begins).
+# ---------------------------------------------------------------------------
+
+
+class _WorkBegan(AssertionError):
+    """A stubbed first-work call ran — the guard did not fire first."""
+
+
+def _stub_work(*_a: object, **_k: object) -> Any:  # noqa: ANN401
+    raise _WorkBegan("work began before the write-once refusal")
+
+
+_RERUN_CASES = [
+    # (command, kwargs, first-work function, node already recorded)
+    ("seam_pair", {}, "preflight", "seam_rows"),
+    ("seam_pair", {}, "preflight", "seam_pair"),
+    ("tier2_probe", {}, "tile_size_model", "tier2_probe_kuroshio_m100"),
+    (
+        "tier2_probe",
+        {"tile": "southern", "m": 50},
+        "tile_size_model",
+        "tier2_probe_southern_m50",
+    ),
+    ("probe", {}, "preflight", "probe"),
+    ("probe", {"maxiter": 9999}, "preflight", "probe_converged"),
+    ("seam_probe", {}, "_seam_obs_estimate", "seam_convergence_probe"),
+]
+
+
+@pytest.mark.parametrize(("command", "kwargs", "work", "node"), _RERUN_CASES)
+def test_a_rerun_over_a_recorded_node_refuses_before_any_work(
+    command: str,
+    kwargs: dict[str, Any],
+    work: str,
+    node: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Bug caught (hygiene 44): the rerun REPLACED the node — seam rows lost
+    the pin-45(b) withholding (and withhold-sigma-rows then refused to
+    restore it); tier2_probe replaced the measurement R4 derives from; the
+    probe nodes the CLI help calls "never rewritten" were rewritten."""
+    from sverdrup.validation.write_once import NodeAlreadyRecordedError
+
+    store = tmp_path / "store.json"
+    store.write_text(json.dumps({"phase14": {"stage1": {node: {"recorded": 1}}}}))
+    before = store.read_bytes()
+    monkeypatch.setattr(_mod, "EVIDENCE", store)
+    monkeypatch.setattr(_mod, work, _stub_work)
+    with pytest.raises(NodeAlreadyRecordedError, match=node):
+        getattr(_mod, command)(**kwargs)
+    assert store.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("command", "kwargs", "work"),
+    [
+        ("seam_pair", {}, "preflight"),
+        ("tier2_probe", {}, "tile_size_model"),
+        ("probe", {}, "preflight"),
+        ("seam_probe", {}, "_seam_obs_estimate"),
+    ],
+)
+def test_a_first_run_gets_past_the_write_once_guard(
+    command: str,
+    kwargs: dict[str, Any],
+    work: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Bug caught: a guard so broad it refuses a node that is NOT recorded
+    (a sibling present, or the parent present) — the first run must start."""
+    store = tmp_path / "store.json"
+    store.write_text(json.dumps({"phase14": {"stage1": {"other_node": {}}}}))
+    monkeypatch.setattr(_mod, "EVIDENCE", store)
+    monkeypatch.setattr(_mod, work, _stub_work)
+    with pytest.raises(_WorkBegan):
+        getattr(_mod, command)(**kwargs)
