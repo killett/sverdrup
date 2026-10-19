@@ -410,8 +410,32 @@ def _run(
     return row
 
 
+def refuse_stage_a_rerun(results_path: Path) -> None:
+    """Refuse a Stage-A run over an existing shared evidence store (hygiene 42).
+
+    ``main()`` builds a FRESH results dict and writes it over ``results_path``,
+    which since Stage A has become the single-copy store holding phase 8-14
+    evidence (gitignored; only the phase-14 subset is mirrored). Stage A is a
+    signed record, so a rerun has nothing to add and everything to destroy.
+
+    Args:
+        results_path: The shared evidence store.
+
+    Raises:
+        SystemExit: The store already exists.
+    """
+    if results_path.exists():
+        raise SystemExit(
+            f"REFUSED: {results_path} exists — the Stage-A run writes a fresh "
+            "dict over the WHOLE shared evidence store (phase 8-14; hygiene "
+            "item 42). Stage A is a signed record; move the store aside "
+            "deliberately if a fresh Stage-A run is really intended."
+        )
+
+
 def main() -> None:
     """Run Sobol then BO over the scope, persisting each row immediately."""
+    refuse_stage_a_rerun(RESULTS)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     scope = _scope()
     n_obs_max = _n_obs_max_window(scope)
@@ -629,13 +653,49 @@ def _interp_mean_var_on_track(
     return mu[ok], var[ok], ssh[ok]
 
 
+def refuse_completed_stage_b(results_path: Path) -> None:
+    """Refuse a stage-b run whose first flush would replace a finished block.
+
+    Hygiene item 42: ``_flush`` writes ``results["stage_b"] = sb`` with a
+    FRESH ``sb``, so a rerun erased the signed block — ``c2_acceptance``
+    included, which re-arms ``--c2-touch`` (``_assert_c2_untouched`` reads
+    only this block). Fails closed: only a RUNNING/STOPPED block with no
+    spent touch may be re-run (how a failed stage-b was retried).
+
+    Args:
+        results_path: The shared evidence store.
+
+    Raises:
+        SystemExit: The existing ``stage_b`` block is finished, carries a
+            spent touch, or has a status this guard does not recognise.
+    """
+    if not results_path.exists():
+        return
+    block = json.loads(results_path.read_text()).get("stage_b")
+    if block is None:
+        return
+    status = str(block.get("status", ""))
+    if "c2_acceptance" in block or not status.startswith(("RUNNING", "STOPPED")):
+        raise SystemExit(
+            f"REFUSED: {results_path} already holds a finished stage_b block "
+            f"(status {status[:60]!r}"
+            + ("; c2_acceptance SPENT" if "c2_acceptance" in block else "")
+            + "). A rerun would replace it on its first flush (hygiene item 42)."
+        )
+
+
 def stage_b_main() -> None:
     """Stage-B acceptance run at the signed Stage-A winner (Task 19 step 1).
 
-    Writes evidence incrementally into RESULTS under "stage_b". The single
-    c2 touch is env-gated (SVERDRUP_MIOST_C2=1) so smoke runs never spend
-    it. Owner sign-off + the capability-flip commit remain manual.
+    Writes evidence incrementally into RESULTS under "stage_b". Both refusals
+    run BEFORE any work or write: the inline c2 touch is disarmed (the env
+    flag refuses; the touch lives in --c2-touch), and a finished stage_b
+    block is never overwritten (hygiene item 42). Owner sign-off + the
+    capability-flip commit remain manual.
     """
+    refuse_inline_touch()
+    if SCOPE_MODE == "full":
+        refuse_completed_stage_b(RESULTS)
     from sverdrup.application.splits import make_splits
     from sverdrup.application.tuning.stage_a import _subset
     from sverdrup.core.seeding import derive_seed
@@ -797,7 +857,6 @@ def stage_b_main() -> None:
             "verdict": verdict[0] if verdict else "(no verdict line found)",
         }
 
-    refuse_inline_touch()
     _flush(
         "READY: evidence assembled; c2 NOT touched (the inline touch is "
         "disarmed — the single acceptance touch lives in --c2-touch)"
@@ -1026,16 +1085,46 @@ def regen_acceptance_main() -> None:
     _log(f"attribution: {correction}")
 
 
-if __name__ == "__main__":
-    if "--build-replay-cache" in sys.argv:
-        built = _build_replay_cache(LOG_FILE, RESULTS)
-        REPLAY_FILE.write_text(json.dumps(built, indent=2))
-        print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
-    elif "--regen-acceptance" in sys.argv:
-        regen_acceptance_main()
-    elif "--c2-touch" in sys.argv:
-        c2_touch_main()
-    elif "--stage-b" in sys.argv:
-        stage_b_main()
-    else:
+def build_replay_cache_main() -> None:
+    """Rebuild the trial replay cache from the dead run's log and results."""
+    built = _build_replay_cache(LOG_FILE, RESULTS)
+    REPLAY_FILE.write_text(json.dumps(built, indent=2))
+    print(f"replay cache: {len(built)} entries -> {REPLAY_FILE}")
+
+
+# Mode flag -> entry-point NAME (resolved at call time, so tests can swap one).
+MODES: dict[str, str] = {
+    "--build-replay-cache": "build_replay_cache_main",
+    "--regen-acceptance": "regen_acceptance_main",
+    "--c2-touch": "c2_touch_main",
+    "--stage-b": "stage_b_main",
+}
+
+
+def dispatch(argv: list[str]) -> None:
+    """Run exactly one mode: no argument (Stage A) or exactly one known flag.
+
+    The old ``"--x" in sys.argv`` chain sent ANY unrecognised argv — a typo
+    such as ``--stageb``, or ``--c2-touch=1`` — to its ``else``: ``main()``,
+    which overwrote the whole shared store (hygiene item 42). It also let a
+    two-flag argv silently pick one mode by chain order.
+
+    Args:
+        argv: The arguments after the script name.
+
+    Raises:
+        SystemExit: The argv is not empty and not exactly one known flag.
+    """
+    if not argv:
         main()
+        return
+    if len(argv) != 1 or argv[0] not in MODES:
+        raise SystemExit(
+            f"REFUSED: unrecognised arguments {argv!r} — pass no flag (Stage A) "
+            f"or exactly one of {sorted(MODES)}"
+        )
+    globals()[MODES[argv[0]]]()
+
+
+if __name__ == "__main__":
+    dispatch(sys.argv[1:])
