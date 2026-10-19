@@ -50,6 +50,7 @@ from sverdrup.validation.ensemble_floor_null import (
     null_t_quantile,
     null_t_samples,
 )
+from sverdrup.validation.write_once import refuse_if_recorded
 
 app = typer.Typer(add_completion=False)
 
@@ -115,6 +116,14 @@ def derive(
     record: Annotated[bool, typer.Option(help="Write the evidence block")] = True,
 ) -> None:
     """Derive the factor, check reachability, record the derivation."""
+    if record:
+        # Hygiene 44: the rubric_v2_amendment_withdrawn ruling REMOVED this
+        # node; a recording run would re-create it (or replace it).
+        refuse_if_recorded(
+            evidence_path,
+            f"phase14.stage1.{NODE}",
+            "phase14.stage1.rubric_v2_amendment_withdrawn",
+        )
     import importlib.util
     import sys
 

@@ -52,6 +52,7 @@ from sverdrup.validation.ensemble_settling import (
     settling_ratios,
 )
 from sverdrup.validation.seam_metrics import seam_delta
+from sverdrup.validation.write_once import refuse_if_recorded
 
 app = typer.Typer(add_completion=False)
 
@@ -467,6 +468,10 @@ def run(
     def echo(msg: str) -> None:
         print(f"[settling] {datetime.now(UTC).isoformat()} {msg}", flush=True)
 
+    if record:
+        # Hygiene 44: the record is rebuilt wholesale — a rerun would drop the
+        # owner-added pin_53/pin_54 blocks that no code produces.
+        refuse_if_recorded(evidence_path, f"phase14.stage1.{NODE}")
     mod = _stage1_module()
     tiles = list(mod.SEAM_PAIR_TILES)
     per_tile = {

@@ -62,6 +62,7 @@ import typer
 from numpy.typing import NDArray
 
 from sverdrup.validation.phase14_seal import EVIDENCE
+from sverdrup.validation.write_once import refuse_if_recorded
 
 SIGMA_DIAGNOSIS_NODE = "seam_sigma_diagnosis"
 DIAGNOSIS_LABEL = "DIAGNOSIS"
@@ -723,6 +724,9 @@ def run(
     """
     from sverdrup.validation import phase14_seal
 
+    if record:
+        # Hygiene 44: the σ withholding cites this node as its evidence.
+        refuse_if_recorded(EVIDENCE, f"phase14.stage1.{SIGMA_DIAGNOSIS_NODE}")
     mod = _stage1_module()
 
     def echo(msg: str) -> None:

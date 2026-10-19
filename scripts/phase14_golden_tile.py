@@ -34,6 +34,7 @@ import numpy as np
 import typer
 
 from sverdrup.core.observations import ObsWindow
+from sverdrup.validation.write_once import refuse_if_recorded
 
 if TYPE_CHECKING:
     from sverdrup.adapters.altimetry import BBox
@@ -243,6 +244,9 @@ def run(
         raise typer.BadParameter(
             "the pre-registered golden tile is signed-box x 2017 (owner pin 3)"
         )
+    # Hygiene 44: this run always records, and the row carries the
+    # hand-added mu_scale_check the anchor gate's check 2 cites.
+    refuse_if_recorded(EVIDENCE, f"phase14.stage0.golden_tile.{source_a}_vs_{source_b}")
     obs_a, desc_a, counts_a = _load_side(source_a)
     obs_b, desc_b, counts_b = _load_side(source_b)
     typer.echo(f"obs counts A {counts_a}")
