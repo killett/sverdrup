@@ -142,3 +142,39 @@ class TestJplConformance(AltimetryConformance):
             np.datetime64("2001-05-01"),
             np.datetime64("2001-05-08"),
         )
+
+
+def test_the_locked_cryosat_family_is_never_served(tmp_path: Path) -> None:
+    """A ``c2``/``c2n`` subdirectory is never a mission of this source.
+
+    Bug caught (hygiene, jpl_ssha.py:54): ``missions()`` listed EVERY
+    subdirectory, so a JPL tree carrying the CryoSat-2 family fed the
+    LOCKED evaluation tier into ``load()`` — the leak ``cmems_my`` already
+    refuses (its ``LOCKED_MISSIONS``; same message, same tier).
+    """
+    root = _fixture_dir(tmp_path)
+    for locked in ("c2", "c2n"):
+        (root / locked).mkdir()
+        (root / "tp" / "tp_cycle001.nc").rename(root / locked / "x.nc")
+        _fixture_dir(tmp_path)  # restore tp's file for the next copy
+    src = JplSshaSource(root)
+    assert src.missions() == ("j1", "tp")
+    obs = src.load(
+        BBox(0.0, 360.0, -90.0, 90.0),
+        np.datetime64("2001-05-01"),
+        np.datetime64("2001-05-02"),
+    )
+    assert obs.mission is not None
+    assert set(np.unique(obs.mission)) == {"j1", "tp"}
+    assert len(obs) == 100  # the two unlocked missions' 50 samples each
+    with pytest.raises(ValueError, match="LOCKED"):
+        src.load(
+            BBox(0.0, 360.0, -90.0, 90.0),
+            np.datetime64("2001-05-01"),
+            np.datetime64("2001-05-02"),
+            missions=["c2"],
+        )
+    assert {name for name, _ in src.descriptor().content_manifest} == {
+        "j1/j1_cycle001.nc",
+        "tp/tp_cycle001.nc",
+    }

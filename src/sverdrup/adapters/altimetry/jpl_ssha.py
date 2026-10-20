@@ -29,6 +29,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
+from sverdrup.adapters.altimetry.cmems_my import LOCKED_MISSIONS
 from sverdrup.adapters.altimetry.contract import BBox, SourceDescriptor
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 
@@ -52,8 +53,18 @@ class JplSshaSource:
         self._root = Path(root)
 
     def missions(self) -> tuple[str, ...]:
-        """Mission codes = the subdirectory names, sorted."""
-        return tuple(sorted(p.name for p in self._root.iterdir() if p.is_dir()))
+        """Mission codes = the subdirectory names, sorted; locked c2 excluded.
+
+        The CryoSat-2 family is the LOCKED evaluation tier ``cmems_my``
+        already withholds; a JPL tree carrying it never serves it.
+        """
+        return tuple(
+            sorted(
+                p.name
+                for p in self._root.iterdir()
+                if p.is_dir() and p.name not in LOCKED_MISSIONS
+            )
+        )
 
     def time_epoch(self) -> np.datetime64:
         """Epoch the ObsWindow times count days from."""
@@ -99,18 +110,26 @@ class JplSshaSource:
             bbox: Inclusive spatial box (lon compared mod 360).
             t0: Absolute start (inclusive).
             t1: Absolute end (exclusive).
-            missions: Optional mission subset; unknown codes raise.
+            missions: Optional mission subset; unknown or locked (c2-family)
+                codes raise.
 
         Returns:
             Mission-tagged ObsWindow, times in days since ``EPOCH``.
 
         Raises:
-            ValueError: On an unknown mission code.
+            ValueError: On an unknown or locked mission code.
         """
         known = self.missions()
         wanted = known if missions is None else tuple(str(m) for m in missions)
         unknown = [m for m in wanted if m not in known]
         if unknown:
+            locked = [m for m in unknown if m in LOCKED_MISSIONS]
+            if locked:
+                raise ValueError(
+                    f"mission(s) {locked} are in the LOCKED evaluation tier "
+                    "(CryoSat-2 family) and never load through the mapping "
+                    "call — the Task-10 touch ceremony is the only path"
+                )
             raise ValueError(
                 f"unknown mission code(s) {unknown}; this root serves {known}"
             )
