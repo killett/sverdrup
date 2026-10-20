@@ -436,36 +436,6 @@ def _save_window(
     os.replace(written, dest)
 
 
-def _load_window(
-    path: Path, *, wid: str, m: int, root: Seed
-) -> tuple[np.ndarray, np.ndarray, float]:
-    """Load ONE persisted window, refusing anything that is not it.
-
-    Raises:
-        RuntimeError: The file is unreadable (a crash inside its own
-            write), or it belongs to a different configuration. Neither is
-            recoverable by guessing, and adopting either silently is how a
-            leg assembles one configuration's window under another's name.
-    """
-    try:
-        ctx = np.load(path, allow_pickle=False)
-    except Exception as exc:  # noqa: BLE001 - any load failure is corruption
-        raise RuntimeError(
-            f"persisted window {path} is unreadable ({exc!r}) — it is corrupt, "
-            "most likely a crash inside its own write. Delete it and the "
-            "window will be re-solved"
-        ) from exc
-    with ctx as z:
-        if str(z["wid"]) != wid or int(z["m"]) != int(m) or str(z["root"]) != str(root):
-            raise RuntimeError(
-                f"persisted window {path} belongs to a different configuration "
-                f"(stored wid={str(z['wid'])!r} m={int(z['m'])} root={str(z['root'])!r}; "
-                f"requested wid={wid!r} m={int(m)} root={str(root)!r}) — refusing to "
-                "assemble it"
-            )
-        return np.asarray(z["eta"]), np.asarray(z["anom"]), float(z["start"])
-
-
 def _load_window_fields(
     path: Path,
     *,
@@ -498,10 +468,10 @@ def _load_window_fields(
         The requested members, in ``fields`` order.
 
     Raises:
-        RuntimeError: The file is unreadable, or it belongs to a different
-            configuration — the same two refusals :func:`_load_window`
-            makes, made in the same place so a lazy read can never be the
-            laxer path.
+        RuntimeError: The file is unreadable (a crash inside its own
+            write), or it belongs to a different configuration. Neither is
+            recoverable by guessing, and adopting either silently is how a
+            leg assembles one configuration's window under another's name.
     """
     try:
         ctx = np.load(path, allow_pickle=False)
