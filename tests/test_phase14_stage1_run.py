@@ -1848,7 +1848,7 @@ def test_relabelling_refuses_an_unknown_code() -> None:
         _mod.relabel_missions_to_challenge(np.array(["alg", "c2n"]))
 
 
-def test_relabelled_obs_survive_the_frozen_configs_r(tmp_path: Path) -> None:
+def test_relabelled_obs_survive_the_frozen_configs_r() -> None:
     """The relabelled codes actually satisfy the frozen config's R lookup.
 
     Bug caught: a relabelling that looks right but still fails the check
@@ -2092,14 +2092,17 @@ def test_run_checks_ladder_before_any_load(
     """An ineligible run dies at the ladder, never reaching the solve leg.
 
     Bug caught: loading obs before the Tier-1 check (the OOM lesson) — an
-    ineligible run must fail with the ladder refusal, NOT the solve-leg
-    NotImplementedError that sits behind it.
+    ineligible run must fail with the ladder refusal before ``_solve_leg``
+    (which loads the obs) is ever called.
     """
     from sverdrup.application import ladder
 
+    reached: list[str] = []
     monkeypatch.setattr(ladder, "tier1_eligible", lambda peak_mib: False)
+    monkeypatch.setattr(_mod, "_solve_leg", lambda tile, *_: reached.append(tile))
     with pytest.raises(RuntimeError, match="ladder"):
         _mod.run("seam_n")
+    assert reached == []
 
 
 def test_run_reaches_gated_solve_stub_when_eligible(
@@ -4803,7 +4806,7 @@ def test_headroom_is_sampled_DURING_the_run_not_only_at_launch() -> None:
     assert block["n_samples"] == 4
 
 
-def test_the_recorded_row_CARRIES_the_headroom_block(tmp_path: Path) -> None:
+def test_the_recorded_row_CARRIES_the_headroom_block() -> None:
     """The row SCHEMA carries a headroom block handed to build_evidence_row.
 
     Scope, stated (hygiene): this builds the row directly, so it cannot see

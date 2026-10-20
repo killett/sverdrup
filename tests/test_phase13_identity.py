@@ -227,8 +227,10 @@ def test_crn_elem_axis_draws_pinned_bit_exact() -> None:
 
 def test_member_path_zeros_restriction_and_structured_kinds() -> None:
     # The nesting identity runs the EXPLICIT-ZEROS restriction on the
-    # member path (σ²_m ≡ R_REF bit-exactly) under the scalar-era kind;
-    # a structured config (Task-4 sampler) produces the VERSIONED kind.
+    # member path (σ²_m ≡ R_REF bit-exactly). Zeros is still a STRUCTURED
+    # rspec, so it persists under the VERSIONED kind like any structured
+    # config (Task-4 sampler); only the unstructured config keeps the
+    # scalar-era kind.
     # Bug caught: the zeros restriction blocked, or a structured ensemble
     # persisted under the scalar-era provenance tag.
     from sverdrup.distributions.miost_ensemble import KIND, KIND_AUG

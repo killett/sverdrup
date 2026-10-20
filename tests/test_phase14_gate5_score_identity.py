@@ -12,8 +12,9 @@ quantity from the vendored area-binned ``compute_stats`` µ this scorer
 emits (see ``eval/skill_score.py``; adversarial review 2026-07-22 caught
 the near-miss of pinning it here). So gate 5 asserts the machinery
 identity now, and the compute_stats-lineage value constants are pinned AT
-the Stage-1 anchor run (recorded into ``phase14.stage1.gate5`` evidence
-when this test first runs unskipped). Owner ratifies at Gate 0.
+the Stage-1 anchor run (recorded into ``phase14.stage1.gate5`` by
+``scripts/phase14_anchor_gate.py``; this test only reads, never records).
+Owner ratifies at Gate 0.
 
 LIVE AT STAGE-1 T3 (anchor identity gate): the anchor run writes
 ``phase14_stage1/anchor_signed_maps.nc`` and pins the gate-5 constants into

@@ -152,19 +152,18 @@ def test_window_epoch_center_rule() -> None:
 def test_reference_candidates_net_of_locked() -> None:
     """Constellation counted NET of locked missions (fork-e pin 3).
 
-    The 2017-era epoch counts j3+s3a+al (+c2, +h2a where active) but c2
-    is locked: candidates need net >= 4. Hand check: 2016-03..2017-12
-    epoch has {al, j3, s3a, c2} -> net 3 (c2 out) -> NOT a candidate;
-    with j2 active through 2016-10 the earlier epoch qualifies iff its
-    net count >= 4.
+    c2 is locked, so candidates need net >= 4 with c2 removed. Hand check
+    on the shape's pinned partition: e03 {e2,en,j1,tp} and e04
+    {en,g2,j1,j2} are net 4; e08 {al,c2,h2a,j2,j3,s3a} is net 5. e06
+    {c2,en,h2a,j2} and e07 {al,c2,h2a,j2} are 4 gross but net 3 — the two
+    epochs that counting c2 would wrongly admit. The rest are net 2-3.
     """
     part = partition_epochs(build_census(_shape_catalog()))
     cands = reference_candidates(part.epochs, locked_exclusions=frozenset({"c2"}))
     for e in part.epochs:
         net = len(e.missions - {"c2"})
         assert (e.epoch_id in cands) == (net >= 4)
-    # anti-vacuity: the shape must produce BOTH candidates and non-candidates
-    assert cands and len(cands) < len(part.epochs)
+    assert cands == ["e03_2002-01-01", "e04_2003-07-01", "e08_2016-02-17"]  # time order
 
 
 def test_epoch_missions_recorded_per_epoch() -> None:

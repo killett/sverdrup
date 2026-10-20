@@ -103,11 +103,9 @@ def test_lag1_autocorr_exact_endpoints() -> None:
 def test_lag1_autocorr_time_orders_before_lagging() -> None:
     # Values [10, 20, 30, 40] carried at shuffled times [2, 4, 1, 3]:
     # time-ordered sequence is [30, 10, 40, 20] whose lag-1 corr is
-    # corr([30,10,40],[10,40,20]) = -0.5 by hand:
-    #   a=[30,10,40] mean 26.667, b=[10,40,20] mean 23.333
-    #   cov = ((3.333*-13.333)+(-16.667*16.667)+(13.333*-3.333))/3 = -122.22
-    #   sd_a = sqrt((11.11+277.78+177.78)/3)=12.472, sd_b same -> r=-0.786?
-    # (exact arithmetic done in-code below against a hand-ordered copy)
+    # corr([30,10,40],[10,40,20]) = -11/14 (~ -0.786) by hand:
+    #   deviations a=[10,-50,40]/3, b=[-40,50,-10]/3 (means 80/3, 70/3)
+    #   sum(a*b) = -3300/9, sum(a^2) = sum(b^2) = 4200/9 -> r = -33/42
     # Bug caught: lagging in ROW order (gives corr([10,20,30],[20,30,40])
     # = +1.0) instead of time order.
     rows = _rows(
@@ -119,7 +117,7 @@ def test_lag1_autocorr_time_orders_before_lagging() -> None:
     out = diag.lag1_autocorr(rows)
     seq = np.asarray([30.0, 10.0, 40.0, 20.0])  # hand time-ordering
     expected = float(np.corrcoef(seq[:-1], seq[1:])[0, 1])
-    assert not np.isclose(expected, 1.0)  # the fixture discriminates
+    assert np.isclose(expected, -11 / 14)  # the hand value above
     assert np.isclose(out[("alg", "asc")]["r1"], expected)
 
 

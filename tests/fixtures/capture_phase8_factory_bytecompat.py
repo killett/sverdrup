@@ -4,9 +4,9 @@ This script is run ONCE, against a side git worktree checked out at commit
 3f88ccb (the last commit before the Task-3 eval-time √s seam, where the shipped
 factory applied ``inflation_s`` via the old ``ens.rescaled(self.inflation_s)``
 anomaly path).  It records, via a direct ``Miost(...)`` that mirrors the
-factory's ensemble+inflation_s wiring on a compact config (m=24 —
-``shipped_miost5()`` itself bakes in members=100 / STAGE_B_ROOT, too heavy for
-a fixture), a small set of derived σ / mean / covariance probes so that the
+factory's ensemble+inflation_s wiring on a compact config (m=24 — the
+factory, ``shipped_miost()`` at 3f88ccb and ``shipped_miost5_scalar_phase8()``
+today, bakes in members=100 / STAGE_B_ROOT, too heavy for a fixture), a small set of derived σ / mean / covariance probes so that the
 current (post-seam) path can be asserted byte-compatible against it at
 rtol 1e-12 (plan Task 4, acceptance criterion 4).
 
@@ -94,7 +94,8 @@ def main(worktree: Path, out: Path) -> None:
         mission,
     )
 
-    # THROUGH THE FACTORY-equivalent config: shipped_miost5() bakes in
+    # THROUGH THE FACTORY-equivalent config: the factory (today's
+    # shipped_miost5_scalar_phase8(); shipped_miost() at 3f88ccb) bakes in
     # members=100 / STAGE_B_ROOT; we mirror its ensemble+inflation_s wiring on
     # the compact config here so the current test can reconstruct it identically.
     method = Miost(
