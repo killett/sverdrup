@@ -31,7 +31,13 @@ import xarray as xr
 
 LOCKED_ENV = "SVERDRUP_INSITU_LOCKED"
 GAUGES_DIR = Path("data/insitu")
-LOCKED_SPLIT_PATH = GAUGES_DIR / "locked_split.json"
+# The locked split is anchored to the SOURCE CHECKOUT, not the cwd: read
+# cwd-relative from any other directory, it finds no file, reads as the
+# pre-seal (empty) locked set, and the structural refusal fails OPEN.
+# GAUGES_DIR stays cwd-relative — runners record it into evidence as a path
+# string, and a data dir that is not found fails CLOSED (nothing to open).
+_CHECKOUT = Path(__file__).resolve().parents[4]
+LOCKED_SPLIT_PATH = _CHECKOUT / GAUGES_DIR / "locked_split.json"
 
 # A daily mean from fewer than this many valid hourly samples is dropped —
 # a half-empty day is a biased mean, not a measurement.

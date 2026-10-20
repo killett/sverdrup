@@ -155,3 +155,32 @@ def test_dev_pool_loads_without_env(
 def test_locked_ids_empty_when_split_absent(tmp_path: Path) -> None:
     """No split artifact yet -> empty locked set (pre-seal state), not a crash."""
     assert locked_ids(tmp_path / "nope.json") == frozenset()
+
+
+_REPO = Path(__file__).resolve().parents[2]
+
+
+def test_the_canonical_locked_split_is_anchored_to_the_checkout() -> None:
+    """Bug caught (hygiene, gauges.py:33): a cwd-relative split path. Run
+    from any other directory, ``locked_ids()`` finds no file, reads it as
+    the pre-seal state, and the structural refusal fails OPEN."""
+    from sverdrup.adapters.insitu import gauges
+
+    assert gauges.LOCKED_SPLIT_PATH.is_absolute()
+    assert gauges.LOCKED_SPLIT_PATH == _REPO / "data" / "insitu" / "locked_split.json"
+
+
+def test_a_locked_gauge_is_refused_from_a_foreign_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The same bug, end to end: from another cwd, with no ceremony env, a
+    real locked id must still refuse (before any file open)."""
+    split = _REPO / "data" / "insitu" / "locked_split.json"
+    if not split.exists():
+        pytest.skip("no locked split in this checkout (pre-seal / no data)")
+    locked = sorted(json.loads(split.read_text())["locked"])
+    assert locked, "a sealed split with no locked ids"
+    monkeypatch.delenv(ENV, raising=False)
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(LockedGaugeError, match="LOCKED"):
+        load_gauge(locked[0])
