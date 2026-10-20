@@ -60,12 +60,19 @@ def test_refuses_non_exact_string(
 def test_refuses_on_seal_mismatch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """(3) Seal verification fails -> refuse BEFORE any locked data opens."""
+    """(3) Seal verification fails -> refuse BEFORE any locked data opens.
+
+    Hygiene: the tally used to be read through ``_evidence(tmp_path)``,
+    which REWRITES the store with an empty tally — the "nothing counted"
+    check reset the store before reading it and could not fail. The store
+    is created once and the SAME store is read back.
+    """
     monkeypatch.setenv(TOUCH_ENV, "1")
+    evidence = _evidence(tmp_path)
     with pytest.raises(SealVerificationError, match="mismatch"):
-        with open_touch("prodA", ["e00"], _evidence(tmp_path), _bad_seal):
+        with open_touch("prodA", ["e00"], evidence, _bad_seal):
             pass
-    assert read_tally(_evidence(tmp_path)) == {}  # nothing counted
+    assert read_tally(evidence) == {}  # nothing counted
 
 
 def test_refuses_on_missing_seal(

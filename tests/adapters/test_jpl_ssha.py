@@ -89,13 +89,22 @@ def test_ci_clipping_normalization_and_nan_drop(tmp_path: Path) -> None:
         np.datetime64("2001-06-01"),
     )
     assert len(obs) == 1 and obs.coords()[0, 0] == 320.0
-    # lat clip drops the 50N sample; NaN ssha dropped; time t1 exclusive
+    # t1 exclusive: the 05-02T00 sample is OUT of [05-01, 05-02)
     obs2 = src.load(
         BBox(0.0, 360.0, 0.0, 20.0),
         np.datetime64("2001-05-01"),
         np.datetime64("2001-05-02"),
     )
     assert len(obs2) == 1  # only the -40-lon day-0 sample survives
+    # Over ALL four days (hygiene: the window above excluded the 50N and NaN
+    # samples by TIME, so it could not test either drop): the lat clip drops
+    # the 50N sample and the NaN filter drops the last one — 0.1 and 0.2 stay.
+    obs3 = src.load(
+        BBox(0.0, 360.0, 0.0, 20.0),
+        np.datetime64("2001-05-01"),
+        np.datetime64("2001-05-05"),
+    )
+    assert sorted(obs3.values().tolist()) == [0.1, 0.2]
 
 
 def test_manifest_shas_computed_at_ingest(tmp_path: Path) -> None:

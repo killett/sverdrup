@@ -336,7 +336,10 @@ def test_null_t_quantile_weights_reduce_the_effective_count() -> None:
 
     Concentrating the σ² weight on fewer nodes reduces the effective sample
     (1/sum w^2 < n_eff), so the null tail must move OUT. Hand-reasoned
-    direction plus the exact effective count the predictor reports.
+    direction, plus an EXACT identity through the code: unit weight on 100
+    of 1000 nodes is the unweighted n_eff=100 null (both the variance and
+    the skewness terms coincide). Hygiene: the old last line computed
+    1/sum(w^2) from the fixture alone and could not fail.
 
     Bug caught: weights accepted but not propagated into the concentration
     term — the recorded σ field is not flat, and ignoring that tightens the
@@ -347,9 +350,12 @@ def test_null_t_quantile_weights_reduce_the_effective_count() -> None:
     w = np.concatenate([np.full(100, 0.008), np.full(900, 0.0002222)])
     lumpy_q = null_t_quantile(moments=mom, n_eff=1000, confidence=0.999, weights=w)
     assert lumpy_q > flat_q
-    # 1/sum(w^2) is the exact effective count the weights imply
-    w_n = w / w.sum()
-    assert 1.0 / float(np.sum(w_n**2)) < 1000.0
+    hundred = np.concatenate([np.ones(100), np.zeros(900)])
+    concentrated = null_t_quantile(
+        moments=mom, n_eff=1000, confidence=0.999, weights=hundred
+    )
+    unweighted_100 = null_t_quantile(moments=mom, n_eff=100, confidence=0.999)
+    assert concentrated == pytest.approx(unweighted_100, rel=1e-12)
 
 
 def test_null_t_quantile_tightens_as_n_eff_grows() -> None:

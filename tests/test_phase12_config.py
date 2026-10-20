@@ -91,11 +91,18 @@ def test_five_mission_set_refuses(tmp_path: Path) -> None:
 
 
 def test_c2_in_mapping_paths_refuses(tmp_path: Path) -> None:
-    """The withheld-leak guard fires inside _mission_code before set comparison."""
+    """The withheld-leak guard fires inside _mission_code before set comparison.
+
+    Hygiene: a bare ``pytest.raises(ValueError)`` also accepted the
+    mission-SET refusal (Phase12ConfigError is a ValueError) — it could not
+    tell whether the leak guard fired at all. Pinned: the guard's own plain
+    ValueError, naming the withheld track.
+    """
     raw = _raw()
     raw["mapping_obs_paths"][0] = raw["c2_track_path"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="withheld Cryosat-2") as exc:
         load_phase12_scope(_write(tmp_path, raw))
+    assert type(exc.value) is ValueError  # not the set-comparison refusal
 
 
 def test_require_validation_track_refuses_with_pinned_text() -> None:
@@ -164,20 +171,35 @@ def test_geometry_artifact_has_j3_repeat_classification() -> None:
         assert rec["cluster_size_median"] > 2  # repeat-side corroborating axis
 
 
-def test_five_mission_files_byte_untouched() -> None:
-    """This phase never edits the five-mission scope fixture or the input adapter."""
+# Last commits to touch the five-mission scope fixture and the input
+# adapter. An edit to either must re-pin here deliberately.
+_FIVE_MISSION_PINS = {
+    "tests/validation/fixtures/stage_a_scope.json": (
+        "968ebeac9d80a532148fceb636359b5fe9b34867"
+    ),
+    "src/sverdrup/validation/input_adapter.py": (
+        "89b9cd771818137425acdcf6e2931f913ceaf62f"
+    ),
+}
+
+
+def test_five_mission_files_untouched_since_their_pinned_commits() -> None:
+    """The five-mission scope fixture and the input adapter stay as pinned.
+
+    Hygiene: ``git diff --stat <paths>`` saw only UNCOMMITTED edits, so a
+    committed edit to either file passed — the claim it guarded could not
+    fail. Now: the last commit touching each file is pinned, and nothing is
+    staged or unstaged against HEAD.
+    """
     import subprocess
 
-    out = subprocess.run(
-        [
-            "git",
-            "diff",
-            "--stat",
-            "tests/validation/fixtures/stage_a_scope.json",
-            "src/sverdrup/validation/input_adapter.py",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    assert out.stdout.strip() == ""
+    def _git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    if _git("rev-parse", "--is-shallow-repository") == "true":
+        pytest.skip("shallow clone: file history is not available")
+    for path, pinned in _FIVE_MISSION_PINS.items():
+        assert _git("log", "--format=%H", "-1", "--", path) == pinned, path
+        assert _git("diff", "--stat", "HEAD", "--", path) == "", path

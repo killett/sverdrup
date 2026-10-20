@@ -17,7 +17,6 @@ from sverdrup.distributions.ensemble import EnsemblePredictiveDistribution
 from sverdrup.distributions.miost_ensemble import (
     MiostEnsembleDistribution,
     WindowBackedAnoms,
-    exclusive_days,
 )
 from sverdrup.methods.miost import Miost
 from sverdrup.methods.miost_solver import MiostSolver
@@ -619,12 +618,17 @@ def test_resume_from_a_partial_store_is_BIT_IDENTICAL(tmp_path: Path) -> None:
 
     store = tmp_path / "windows"
     # Persist ONLY the first window, as a crash mid-leg would leave it.
-    first = sorted(exclusive_days(_method()._plan))[0]  # noqa: SLF001
+    # CHRONOLOGICALLY first, chosen by start — a lexical sort of window ids
+    # puts w-00018 after w+00027 (hygiene: the old `assert first` was a
+    # non-empty string and could not check this premise at all).
+    plan = _method()._plan  # noqa: SLF001
+    first = min(plan.windows, key=lambda w: w.start_day).id
     merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
-    for f in sorted(store.glob("window_*.npz"))[1:]:
-        f.unlink()
-    assert len(list(store.glob("window_*.npz"))) == 1
-    assert first  # the surviving window is the first one
+    for f in store.glob("window_*.npz"):
+        if f.name != f"window_{first}.npz":
+            f.unlink()
+    assert [f.name for f in store.glob("window_*.npz")] == [f"window_{first}.npz"]
+    assert len(plan.windows) > 1  # so the resume really mixes load + solve
 
     spec_b, etas_b, anoms_b, _ = merged_members(
         _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store

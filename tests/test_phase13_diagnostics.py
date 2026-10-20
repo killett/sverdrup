@@ -60,14 +60,16 @@ def test_variance_ratio_table_hand_values() -> None:
 
 
 def test_saturation_fraction_hand_values() -> None:
-    # lam 0.04 -> 2*sqrt(lam) = 0.4; |c| in [0.1, 0.3, 0.5, 0.7] exceeds
+    # lam 0.04 -> 2*sqrt(lam) = 0.4; |c| in [0.1, 0.4, 0.5, 0.7] exceeds
     # for 0.5 and 0.7 -> fraction 0.5 exactly (hand).
     # Bug caught: threshold sqrt(lam) or 2*lam instead of 2*sqrt(lam),
-    # or >= vs > at the boundary counting 0.4 itself.
+    # or >= vs > at the boundary counting 0.4 itself (-> 0.75). Hygiene:
+    # the old fixture had no value AT 0.4, so the boundary claim could not
+    # fail.
     rows = _rows(
         mission=["s3a"] * 4,
         family=["asc"] * 4,
-        c_bias=[0.1, -0.3, 0.5, -0.7],
+        c_bias=[0.1, -0.4, 0.5, -0.7],
     )
     sat = diag.saturation_fraction(rows, lam_bias=0.04, lam_tilt=0.04)
     assert np.isclose(sat["s3a"]["bias"], 0.5)
@@ -84,13 +86,14 @@ def test_lag1_autocorr_exact_endpoints() -> None:
         mission=["j3"] * 4 + ["j3"] * 4,
         family=["asc"] * 4 + ["desc"] * 4,
         c_bias=[1.0, 2.0, 3.0, 4.0, 1.0, -1.0, 1.0, -1.0],
-        t_mean_days=[3.0, 1.0, 2.0, 4.0, 1.0, 2.0, 3.0, 4.0],
+        t_mean_days=[1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0],
     )
-    # asc values by TIME order: t=[3,1,2,4] -> ordered c = [2,3,1,4]?? No:
-    # c_bias asc rows are [1,2,3,4] at t [3,1,2,4] -> time-ordered seq is
-    # [2.0 (t=1), 3.0 (t=2), 1.0 (t=3), 4.0 (t=4)] — NOT monotone, so use
-    # the desc family for the exact -1.0 and give asc aligned times below.
+    # Both families on the same times [1..4]: a family-mixing bug interleaves
+    # them into [1,1,2,-1,3,1,4,-1] and breaks BOTH exact endpoints. (Hygiene:
+    # the monotone +1.0 endpoint was claimed but never asserted — asc had
+    # shuffled times and was dropped; time ordering has its own test below.)
     out = diag.lag1_autocorr(rows)
+    assert np.isclose(out[("j3", "asc")]["r1"], 1.0)
     desc = out[("j3", "desc")]
     assert np.isclose(desc["r1"], -1.0)
     assert np.isclose(desc["null_band"], 1.0)

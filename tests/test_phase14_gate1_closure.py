@@ -220,6 +220,20 @@ def test_the_record_is_frozen_by_digest() -> None:
     assert set(on_disk) == {"reads", "contract"}
     for name, digest in on_disk.items():
         assert len(digest) == 64, name
+    # The INDEPENDENT anchor (hygiene): the constant lives in the script, so
+    # one commit editing the record AND the constant turned this green. The
+    # record as it stood at the closure commit 31e7569 cannot be re-edited.
+    import subprocess
+
+    def _git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], capture_output=True, text=True, check=True
+        ).stdout
+
+    if _git("rev-parse", "--is-shallow-repository").strip() == "true":
+        pytest.skip("shallow clone: the closure commit is not available")
+    at_closure = _git("show", f"31e7569:{_mod.RECORD.as_posix()}")
+    assert on_disk == _mod.block_digests(at_closure)
 
 
 def test_write_refuses_on_the_frozen_record() -> None:

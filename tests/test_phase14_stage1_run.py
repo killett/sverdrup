@@ -3318,12 +3318,12 @@ def test_seam_perpendicular_axis_is_latitude_in_the_map_convention() -> None:
     """
     from sverdrup.validation.seam_metrics import interior_increment_rms
 
-    stack = np.stack([np.arange(16.0).reshape(4, 4) * 4.0] * 2)  # rows differ by 16
+    # (time, lat, lon), the shape the real leg passes. Hygiene: an unused
+    # `stack` and its true-by-construction `ndim == 3` assert were removed.
     field = np.stack([np.outer(np.arange(4.0) * 4.0, np.ones(4)) + np.arange(4.0)] * 2)
     assert _mod.SEAM_PERP_AXIS == -2
     assert interior_increment_rms(field, _mod.SEAM_PERP_AXIS) == pytest.approx(4.0)
     assert interior_increment_rms(field, -1) == pytest.approx(1.0)
-    assert stack.ndim == 3  # the (time, lat, lon) shape the real leg passes
 
 
 # --- the TWO D_int denominators (different by design) ---------------------
@@ -4030,7 +4030,7 @@ def test_not_established_guard_survives_deletion_of_its_own_witness() -> None:
         row=_sigma_row_as_recorded(), diagnosis_ref=_DIAGNOSIS_REF, date="2026-07-27"
     )
     stripped = {k: v for k, v in marked.items() if k != "not_established"}
-    assert "not_established" not in stripped
+    assert "not_established" in marked  # the witness the exploit deletes
     assert stripped["verdict"].startswith("NOT_ESTABLISHED")
     with pytest.raises(ValueError, match="verdict is already"):
         _mod.mark_not_established(
@@ -4377,7 +4377,6 @@ def test_headroom_halt_is_recorded_and_distinguishable(tmp_path: Path) -> None:
         dest, tile="southern", watchdog=block, windows_done=6, window_id="w+00252.0+60"
     )
     assert rec["kind"] == "HEADROOM_HALT"
-    assert rec["kind"] != "CONVERGED"
     assert rec["clean"] is True
     assert rec["windows_completed"] == 6
     assert rec["halted_after_window"] == "w+00252.0+60"
@@ -4386,14 +4385,14 @@ def test_headroom_halt_is_recorded_and_distinguishable(tmp_path: Path) -> None:
 
 
 def test_headroom_halt_raises_only_at_a_window_boundary() -> None:
-    """The stop is CLEAN because it lands where the window is on disk.
+    """The watchdog's verdicts: a tripped reading stops, a healthy one does not.
 
-    Bug caught: stopping mid-solve. `on_window` fires AFTER `_save_window`
-    in merged_members, so raising there costs nothing already solved --
-    but a watchdog wired into the beat thread, or into the solver's
-    iteration loop, would kill the window in flight and lose ~3 h. This
-    pins the boundary contract by driving the real callback shape: a
-    tripped watchdog raises, an untripped one returns None.
+    Scope, stated (hygiene): this pins the WATCHDOG's stop flags only. It
+    drives no callback — the real `_on_window` is a closure inside
+    `_solve_leg`, and a watchdog wired into the beat thread or the PCG loop
+    would still pass here. The window-boundary ORDER (`on_window` fires
+    after `_save_window`) is pinned by test_miost_ensemble's
+    `test_a_raising_on_window_halts_AFTER_the_window_is_persisted`.
     """
     tripped = _mod.headroom_watchdog(mem_available_mib=1000.0, proc_vm_swap_mib=0.0)
     healthy = _mod.headroom_watchdog(mem_available_mib=8000.0, proc_vm_swap_mib=0.0)
@@ -4797,12 +4796,12 @@ def test_headroom_is_sampled_DURING_the_run_not_only_at_launch() -> None:
 
 
 def test_the_recorded_row_CARRIES_the_headroom_block(tmp_path: Path) -> None:
-    """A leg's row carries the minimum headroom it actually saw.
+    """The row SCHEMA carries a headroom block handed to build_evidence_row.
 
-    Bug caught: the tracker existing but never reaching the row, so the
-    in-run measurement lives in a log again — which is exactly how leg 1's
-    3,660 MiB floor was learned after the fact rather than from the record
-    (pin 151b).
+    Scope, stated (hygiene): this builds the row directly, so it cannot see
+    the tracker failing to REACH the row in production — history showed it
+    green through exactly that drop (1b007cf..18638f8, pin 151b). The
+    wiring is pinned by `test_headroom_REACHES_THE_RECORDED_ROW_not_just_the_signature`.
     """
     tracker = _mod.HeadroomTracker(initial_mib=9200.0)
     tracker.sample(4100.0)
@@ -5496,6 +5495,9 @@ def test_the_render_command_prints_the_same_section(
     assert result.output == _mod.render_transfer_readings(evidence_path=evid)
 
 
+_FIXTURE_HALO_DEG = 1.0  # the halo every _frames_store row records
+
+
 def _frames_store(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -5514,7 +5516,7 @@ def _frames_store(
             "core": core,
             "solve_bbox": solve,
             "overlap_deg": 2.0,
-            "halo_deg": 1.0,
+            "halo_deg": _FIXTURE_HALO_DEG,
             "resolution_deg": 0.2,
             "missing_neighbors": [],
         }
@@ -5585,7 +5587,9 @@ def test_a_max_edge_northern_tile_whose_OVERSHOOT_flips_the_verdict(
         evidence_path=_frames_store(tmp_path, monkeypatch, frames)
     )["kuroshio"]
 
-    nominal = 64.9 + 1.0  # what pin 210's expression would have said
+    # From the FIXTURE (hygiene: this was `64.9 + 1.0`, arithmetic on
+    # constants that a fixture edit could never move).
+    nominal = frames["kuroshio"][1][3] + _FIXTURE_HALO_DEG  # pin 210's expression
     assert nominal < 66.0, "the fixture must CLEAR on the nominal expression"
     assert edge > 66.0, "...and BREACH on the real obs frame"
     assert edge == pytest.approx(66.1, abs=1e-9)

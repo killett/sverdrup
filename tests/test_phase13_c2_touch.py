@@ -66,22 +66,67 @@ def test_protocol_first_touch_proceeds() -> None:
     assert touch.check_touch_protocol(ev, env={}) is None
 
 
-def test_provenance_tripwire_refuses_on_hash_mismatch(
-    monkeypatch: pytest.MonkeyPatch,
+_TRIPWIRE_FIELDS = (
+    "mean_maps_sha256",
+    "var_maps_sha256",
+    "member_store_sha256",
+    "field_artifact_sha256",
+    "cal_key",
+)
+
+
+def _tripwire_substrate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> dict[str, Any]:
+    """Small temp artifacts in place of the real (1.4 GB) set; the correct
+    recorded block computed INDEPENDENTLY (hashlib), not by the module."""
+    import hashlib
+
+    recorded: dict[str, Any] = {}
+    for attr, field, body in (
+        ("_MEAN", "mean_maps_sha256", b"mean"),
+        ("_VAR", "var_maps_sha256", b"var"),
+        ("_STORE", "member_store_sha256", b"store"),
+        ("_FIELD", "field_artifact_sha256", b"field"),
+    ):
+        f = tmp_path / f"{attr.strip('_').lower()}.bin"
+        f.write_bytes(body)
+        monkeypatch.setattr(touch, attr, f)
+        recorded[field] = hashlib.sha256(body).hexdigest()
+
+    class _Cal:
+        def key(self) -> str:
+            return "cal:test"
+
+    monkeypatch.setattr(touch, "_refit_cal", lambda: _Cal())
+    recorded["cal_key"] = "cal:test"
+    return recorded
+
+
+def test_provenance_tripwire_passes_the_reviewed_substrate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Bug caught: a tripwire that refuses regardless (the old test's all-zero
+    # block passed on ANY refusal — on a clean clone, the missing-artifact one).
+    recorded = _tripwire_substrate(tmp_path, monkeypatch)
+    assert touch.provenance_tripwire(recorded) is None
+
+
+@pytest.mark.parametrize("field", _TRIPWIRE_FIELDS)
+def test_provenance_tripwire_checks_EVERY_field(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str
 ) -> None:
     # The tripwire recomputes every content hash BEFORE the c2 file
     # opens; a mutated substrate refuses (owner rider: content-hash
     # asserted at touch entry against the gate-reviewed artifacts).
-    # Bug caught: touching c2 against artifacts that are not the
-    # gate-reviewed set (the Stage-B clobber class at the touch).
-    recorded = {
-        "mean_maps_sha256": "0" * 64,  # deliberately wrong
-        "var_maps_sha256": "0" * 64,
-        "member_store_sha256": "0" * 64,
-        "field_artifact_sha256": "0" * 64,
-        "cal_key": "cal:wrong",
-    }
-    with pytest.raises(SystemExit, match="PROVENANCE-TRIPWIRE"):
+    # Bug caught: a tripwire that checks only SOME fields — one wrong field,
+    # the rest correct, must refuse naming that field. (Hygiene: the old
+    # all-zero block could not tell, and it hashed the real 1.4 GB store.)
+    recorded = _tripwire_substrate(tmp_path, monkeypatch)
+    recorded[field] = "0" * 64
+    with pytest.raises(
+        SystemExit, match=rf"PROVENANCE-TRIPWIRE defect-STOP \({field}\)"
+    ):
         touch.provenance_tripwire(recorded)
 
 

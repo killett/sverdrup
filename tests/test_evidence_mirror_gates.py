@@ -16,7 +16,6 @@ script's module-level paths are redirected into ``tmp_path``.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -85,18 +84,6 @@ def _edit_gate5_mu(mod: Any, value: float) -> None:
     mod.STORE.write_text(json.dumps(body, indent=2))
 
 
-def _sha(path: Path) -> str:
-    """SHA-256 of a file's bytes.
-
-    Args:
-        path: File to hash.
-
-    Returns:
-        Hex digest.
-    """
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def test_check_passes_on_a_freshly_synced_mirror(mirror: Any) -> None:
     """The baseline: a mirror in step with its store verifies clean.
 
@@ -143,25 +130,30 @@ def test_sync_refuses_to_overwrite_a_witnessed_node(mirror: Any) -> None:
 
 
 def test_byte_identical_restore_returns_the_gate_to_pass(mirror: Any) -> None:
-    """Putting the original bytes back clears the STOP — no latch, no residue.
+    """Putting the original content back clears the STOP — no latch, no residue.
 
     Catches a gate that latches into failure once tripped (which forces
-    people to disable it), and pins that a restore is judged on BYTES:
-    the store file is compared to its own pre-tamper hash, not merely
-    re-parsed and re-serialized into something equivalent.
+    people to disable it). The judge is CONTENT, not bytes (node digests
+    are canonical JSON): a store reformatted with identical content must
+    pass too, so formatting churn can never trip the gate. (Hygiene: the
+    old version asserted the sha of bytes it had just written — a check
+    of write_bytes, not of the gate — under a docstring claiming the
+    opposite judge.)
     """
     mirror.sync()
     original_bytes = mirror.STORE.read_bytes()
-    original_sha = _sha(mirror.STORE)
 
     _edit_gate5_mu(mirror, 0.9999)
     with pytest.raises(RuntimeError):
         mirror.check()
 
     mirror.STORE.write_bytes(original_bytes)
-
-    assert _sha(mirror.STORE) == original_sha
     mirror.check()  # must not raise
+
+    reformatted = json.dumps(json.loads(original_bytes), indent=7).encode()
+    assert reformatted != original_bytes
+    mirror.STORE.write_bytes(reformatted)
+    mirror.check()  # same content, different bytes: must not raise
 
 
 def test_supersede_preserves_the_prior_digest_and_body(mirror: Any) -> None:
