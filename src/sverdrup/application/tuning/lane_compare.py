@@ -32,6 +32,7 @@ from typing import Any
 
 import numpy as np
 
+from sverdrup.application.calibration.harness import PASS_GAP_SEC
 from sverdrup.application.policy import Criterion, LexicographicPolicy, Verdict
 from sverdrup.eval.skill_score import leaderboard_nrmse
 from sverdrup.eval.spectral import (
@@ -43,10 +44,6 @@ from sverdrup.eval.spectral import (
 # λ-informative rule (spec §5): a computed band wider than the λx grid
 # resolution scale cannot separate physically plausible gains.
 LAMBDA_INFORMATIVE_KM = 25.0
-
-# Along-track pass segmentation gap (mirrors harness._PASS_GAP_SEC intent):
-# the validation-track cadence is ~1.08 s; anything > 60 s is a new pass.
-_PASS_GAP_SEC = 60.0
 
 
 class PreRegistrationError(RuntimeError):
@@ -228,7 +225,7 @@ def _segments(day: np.ndarray) -> list[np.ndarray]:
             "track time must be non-decreasing for day/pass segmentation "
             "(backward jump found — corrupted or unsorted track)"
         )
-    new_pass = np.diff(sec) > _PASS_GAP_SEC
+    new_pass = np.diff(sec) > PASS_GAP_SEC
     new_day = np.diff(np.floor(day)) != 0
     starts = np.concatenate([[0], np.flatnonzero(new_pass | new_day) + 1])
     bounds = np.concatenate([starts, [day.size]])

@@ -21,7 +21,10 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from sverdrup.application.calibration.harness import atomic_write_json
+from sverdrup.application.calibration.harness import (
+    PASS_GAP_SEC,
+    atomic_write_json,
+)
 from sverdrup.eval.phase11_constants import (
     CLUSTER_TOL_DEG,
     DERIVATION_VERSION,
@@ -32,7 +35,7 @@ from sverdrup.eval.phase11_constants import (
 from sverdrup.validation.input_adapter import _days_since_epoch, _mission_code
 
 KM_PER_DEG = 111.32
-_GAP_SEC = 60.0  # inter-pass threshold; mirrors harness._PASS_GAP_SEC
+_GAP_SEC = PASS_GAP_SEC  # the harness's inter-pass threshold, imported
 _LON_LO, _LON_HI = 295.0, 305.0  # map-box longitudes; crossings kept in-domain
 _D_PERP_FORMULA = "d_perp_km = s_lon_km * abs(cos(radians(heading_north_deg)))"
 
@@ -78,7 +81,7 @@ def split_passes(
 ) -> list[tuple[np.ndarray, np.ndarray, np.ndarray, bool]]:
     """Segment one mission's arrays into passes on time gaps > ``gap_sec``.
 
-    Reuses the harness ``_PASS_GAP_SEC`` convention (time in DAYS since epoch;
+    Reuses the harness ``PASS_GAP_SEC`` convention (time in DAYS since epoch;
     the threshold converts to days here). Each segment is labelled ascending
     or descending on the median sign of dlat/dt within the segment.
 

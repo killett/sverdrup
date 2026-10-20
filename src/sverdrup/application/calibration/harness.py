@@ -169,7 +169,9 @@ OI_DESCRIPTOR = ProductDescriptor(
 
 EPOCH = np.datetime64("2017-01-01")
 _FULL_TMIN, _FULL_TMAX = "2017-01-01", "2018-01-01"
-_PASS_GAP_SEC = 60.0  # inter-pass gap threshold; along-track cadence ~1.08 s
+# The ONE along-track pass-splitting gap: orbit_geometry and lane_compare
+# import it (P2 #11). Along-track cadence ~1.08 s; > 60 s is a new pass.
+PASS_GAP_SEC = 60.0
 
 _EVAL_REGIONS = ("SW", "SE", "NW", "NE", "jet_core", "aggregate")
 _FIT_REGIONS = ("SW", "SE", "NW", "NE", "JET")
@@ -214,11 +216,11 @@ def _pass_id(day: np.ndarray) -> np.ndarray:
     """Return a deterministic along-track pass id from the time ordering.
 
     The interp output is time-monotonic with a regular ~1.08 s cadence; a new
-    pass starts wherever the gap to the previous point exceeds ``_PASS_GAP_SEC``.
+    pass starts wherever the gap to the previous point exceeds ``PASS_GAP_SEC``.
     This is the pass grouping used for the ρ̂ along-track autocorrelation.
     """
     sec = np.asarray(day, float) * 86400.0
-    gap = np.diff(sec) > _PASS_GAP_SEC
+    gap = np.diff(sec) > PASS_GAP_SEC
     return np.concatenate([[0], np.cumsum(gap)]).astype(int)
 
 
