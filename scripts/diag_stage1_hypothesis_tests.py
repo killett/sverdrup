@@ -549,10 +549,9 @@ def main(
                 f"{got:>11.3f}  {mark}  {grid}"
             )
 
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=1, sort_keys=True) + "\n")
-    print(f"\nwritten: {out}")
-
+    # The STOP comes BEFORE the artifact write: the artifact is tracked, so
+    # writing it first recorded the very disagreement 205(d) refuses to
+    # (hygiene — the message below says "Nothing is recorded").
     if not payload["all_ruling_quotes_reproduced"]:
         failed = [v for v in payload["ruling_quote_verification"] if not v["agrees"]]
         raise SystemExit(
@@ -560,6 +559,10 @@ def main(
             f"{[(v['tile'], v['band_km']) for v in failed]}. The three-class finding "
             "rests on these numbers. Nothing is recorded; this comes to the owner."
         )
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=1, sort_keys=True) + "\n")
+    print(f"\nwritten: {out}")
 
     if record:
         _record(payload)
