@@ -129,7 +129,7 @@ def test_census_from_injected_listing() -> None:
     }
 
 
-def test_download_budget_wait_semantics(tmp_path: Path) -> None:
+def test_download_budget_wait_semantics() -> None:
     """A pull whose estimate exceeds the remaining budget REFUSES (WAIT)."""
     from tests.helpers import load_script
 

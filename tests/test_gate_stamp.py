@@ -79,7 +79,7 @@ def test_same_length_rewrite_is_detected(tmp_path: Path) -> None:
     assert file_digests(tmp_path, ["a.py"]) != before
 
 
-def test_changed_paths_names_exactly_the_modified_files(tmp_path: Path) -> None:
+def test_changed_paths_names_exactly_the_modified_files() -> None:
     """The diff names what moved, and is empty when nothing did.
 
     Catches an always-empty result, which would make the gate vacuous —
@@ -93,7 +93,7 @@ def test_changed_paths_names_exactly_the_modified_files(tmp_path: Path) -> None:
     assert changed_paths(before, before) == []
 
 
-def test_added_and_removed_files_are_reported(tmp_path: Path) -> None:
+def test_added_and_removed_files_are_reported() -> None:
     """Appearing and vanishing files count as changes.
 
     Catches a diff over common keys only. A rewriting hook can CREATE a

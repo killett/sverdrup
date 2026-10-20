@@ -11,7 +11,11 @@ is the owner's call, because they are recorded evidence.
 
 from __future__ import annotations
 
-from sverdrup.validation.gate_schema import projection_audit, validate_gate_schema
+from sverdrup.validation.gate_schema import (
+    projection_audit,
+    validate_gate_schema,
+    verdict_audit,
+)
 
 
 def test_a_projection_without_a_basis_is_REPORTED() -> None:
@@ -168,7 +172,6 @@ def test_a_verdict_block_that_never_volunteered_is_SEEN() -> None:
     block since it was written. A schema field that only inspects
     volunteers inspects nothing.
     """
-    from sverdrup.validation.gate_schema import verdict_audit
 
     block = {"pair": "seam_n/seam_s", "r_seam": 0.0827, "verdict": "CLEAN"}
     assert verdict_audit(block), "a recorded verdict with no reachability statement"
@@ -183,7 +186,6 @@ def test_report_only_blocks_are_EXEMPT() -> None:
     gating, and re-litigating it here would push authors to label
     non-gates as gates just to quiet a check.
     """
-    from sverdrup.validation.gate_schema import verdict_audit
 
     assert verdict_audit({"verdict": "CLEAN", "gates": False}) == []
 
@@ -195,7 +197,6 @@ def test_declared_reachability_clears_it() -> None:
     the richer `pin42` block the anchor gate and chi2 rows already use —
     which would refuse the blocks that got it RIGHT.
     """
-    from sverdrup.validation.gate_schema import verdict_audit
 
     assert verdict_audit({"verdict": "PASS", "both_outcomes_reachable": True}) == []
     assert (
@@ -219,7 +220,6 @@ def test_ordinary_rows_do_not_trip_the_verdict_audit() -> None:
     `rtol`) becomes a gate needing a reachability statement — 68 of them
     in this store, which would drown the signal the audit exists to give.
     """
-    from sverdrup.validation.gate_schema import verdict_audit
 
     assert (
         verdict_audit({"window": "w+00027.0+60", "iterations": 424, "rtol": 1e-06})

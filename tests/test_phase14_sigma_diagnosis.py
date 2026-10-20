@@ -10,21 +10,16 @@ read as a rubric row).
 
 from __future__ import annotations
 
-import importlib.util
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
 
-_PATH = Path(__file__).resolve().parents[1] / "scripts" / "phase14_sigma_diagnosis.py"
-_SPEC = importlib.util.spec_from_file_location("phase14_sigma_diagnosis", _PATH)
-assert _SPEC is not None and _SPEC.loader is not None
-_mod = importlib.util.module_from_spec(_SPEC)
-sys.modules["phase14_sigma_diagnosis"] = _mod
-_SPEC.loader.exec_module(_mod)
+from tests.helpers import load_script
+
+_mod = load_script("phase14_sigma_diagnosis")
 
 
 # --- the MC-floor arithmetic ----------------------------------------------

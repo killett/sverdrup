@@ -31,9 +31,7 @@ def _rows(
             "family": family[i],
             "c_bias": c_bias[i],
             "c_tilt": (c_tilt or [0.0] * n)[i],
-            "t_mean_days": (t_mean_days or [float(i)] * 1 + [float(i)] * (n - 1))[i]
-            if t_mean_days
-            else float(i),
+            "t_mean_days": t_mean_days[i] if t_mean_days else float(i),
             "field_chord_mean": (field_chord_mean or [0.0] * n)[i],
             "n_obs": (n_obs or [10] * n)[i],
         }

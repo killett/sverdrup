@@ -94,7 +94,7 @@ def test_anchors_lane0_at_lambda_box_floor_into_c() -> None:
     # Bug caught: lane-0 anchored column-absent inside C (unreachable in
     # the C space — the tie-or-win read would compare across spaces), or
     # the D winner's Λ left None.
-    floor = lanes.LOG10_LAM_BOX[0] if hasattr(lanes, "LOG10_LAM_BOX") else -6.0
+    floor = -6.0  # LOG10_LAM_BOX[0], itself pinned in test_phase13_prereg
     d_winner = lanes.sobol_trials("D", 1)[0]
     anchors = lanes.anchors_for("C", {"D": d_winner})
     assert len(anchors) == 2
