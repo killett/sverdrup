@@ -120,8 +120,11 @@ def test_rows_visible_for_every_gauge_and_ordered() -> None:
 def test_era_completeness_thresholds() -> None:
     """70%-of-days per claimed epoch and >=3-years-total both bind.
 
-    A gauge with 71% of one epoch's days passes that leg; the same span
-    compressed under 3 total years fails the total-years leg.
+    71% of an epoch passes and 69% fails (the threshold, not just a
+    direction); a gauge with 100% of a SHORT epoch but under 3 years total
+    fails on the total-years leg BY NAME. (Hygiene: the old short gauge had
+    ~20% of its epoch, so it failed the 70% leg anyway and could not show
+    the 3-year leg binding.)
     """
     e = (Epoch("e", np.datetime64("2000-01-01"), np.datetime64("2010-01-01")),)
     n_epoch_days = 3653
@@ -134,10 +137,24 @@ def test_era_completeness_thresholds() -> None:
     rows, passed = screen_gauges([enough], e, _OCEAN)
     v = {r.criterion: r.passed for r in rows}
     assert v["era_completeness"] is True
-    short = _gauge("g2y", 202.0, 21.0, _days("2000-01-01", "2002-01-01"))
-    rows2, _ = screen_gauges([short], e, _OCEAN)
-    v2 = {r.criterion: r.passed for r in rows2}
-    assert v2["era_completeness"] is False
+    thin = _gauge(
+        "g69",
+        202.0,
+        21.0,
+        _days("2000-01-01", "2010-01-01")[: int(0.69 * n_epoch_days)],
+    )
+    rows_thin, _ = screen_gauges([thin], e, _OCEAN)
+    v_thin = {r.criterion: r for r in rows_thin}
+    assert v_thin["era_completeness"].passed is False
+    assert "e:0.69" in v_thin["era_completeness"].detail
+    short_epoch = (
+        Epoch("s", np.datetime64("2000-01-01"), np.datetime64("2002-01-01")),
+    )
+    full_but_short = _gauge("g2y", 202.0, 21.0, _days("2000-01-01", "2002-01-01"))
+    rows2, _ = screen_gauges([full_but_short], short_epoch, _OCEAN)
+    v2 = {r.criterion: r for r in rows2}
+    assert v2["era_completeness"].passed is False
+    assert "< 3 y" in v2["era_completeness"].detail  # the total-years leg
 
 
 def test_proximity_uses_150km_constant() -> None:
@@ -174,27 +191,36 @@ def test_proximity_deferred_when_no_grid() -> None:
     prox = {r.gauge_id: r for r in rows if r.criterion == "proximity"}
     assert all(r.passed for r in prox.values())
     assert "DEFERRED" in prox["g_pass"].detail
-    # g_inland now passes proximity (deferred) but the OTHER fixtures'
-    # designed failures still bind
-    assert "g_inland" in passed or True  # composition asserted below
+    # g_inland's ONLY designed failure is proximity, so with it deferred it
+    # passes outright; the OTHER fixtures' designed failures still bind.
+    # (Hygiene: this was `"g_inland" in passed or True` — always true.)
+    assert passed == ("g_pass", "g_inland")
     verdict = {(r.gauge_id, r.criterion): r.passed for r in rows}
     assert verdict[("g_datum", "rlr_datum_continuity")] is False
     assert verdict[("g_baltic", "open_ocean_siting")] is False
 
 
 def test_era_class_boundaries() -> None:
-    """Era-coverage classes at their boundary dates, pinned."""
-    assert era_class(_days("1990-01-01", "1999-12-31")) == "pre-2000"
-    assert era_class(_days("2000-01-01", "2009-12-31")) == "2000-2010"
-    assert era_class(_days("2011-01-01", "2020-01-01")) == "post-2010"
+    """Era-coverage classes AT their boundary dates, pinned.
+
+    Hygiene: the old spans sat well inside each class (post-2010 started in
+    2011), so an off-by-one boundary (> vs >=) could not fail. These touch
+    each edge, and pin that a span crossing only ONE boundary is lumped into
+    full-span (the code's behaviour the sealed split was built with).
+    """
+    # last < 2000-01-01 is pre-2000; touching 2000-01-01 is not
+    assert era_class(_days("1990-01-01", "2000-01-01")) == "pre-2000"
+    assert era_class(_days("1990-01-01", "2000-01-02")) == "full-span"
+    # first >= 2000-01-01 and last < 2010-01-01
+    assert era_class(_days("2000-01-01", "2010-01-01")) == "2000-2010"
+    # first >= 2010-01-01 is post-2010; a day earlier crosses the boundary
+    assert era_class(_days("2010-01-01", "2020-01-01")) == "post-2010"
+    assert era_class(_days("2009-12-31", "2020-01-01")) == "full-span"
     assert era_class(_days("1995-01-01", "2015-01-01")) == "full-span"
 
 
-def test_stratified_split_deterministic_and_30pct() -> None:
-    """The seeded split: byte-equal on rebuild, ~30% locked per stratum,
-    locked and dev disjoint and exhaustive."""
-    rng_probe = derive_seed("insitu", "phase14-seal", "locked-split", 0)
-    assert rng_probe >= 0  # the pinned seed path exists
+def _split_gauges() -> list[GaugeRecord]:
+    """40 gauges over two basins x two era classes."""
     gauges = []
     for i in range(40):
         lon = 202.0 if i < 20 else 330.0  # two basins
@@ -204,6 +230,37 @@ def test_stratified_split_deterministic_and_30pct() -> None:
             else _days("2011-01-01", "2019-01-01")
         )
         gauges.append(_gauge(f"g{i:03d}", lon, 21.0 if i < 20 else 45.0, days))
+    return gauges
+
+
+def test_the_split_is_drawn_from_the_PINNED_seed_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Bug caught: a split not drawn from the sealed seed path (fork-f pin 3).
+    Hygiene: this used to be ``derive_seed(...) >= 0`` — always true (the
+    seed is a shifted unsigned int) and tied to nothing the split does."""
+    real = derive_seed  # the canonical function the module imports
+    calls: list[tuple[object, ...]] = []
+
+    def _spy(*parts: object) -> int:
+        calls.append(parts)
+        return real(*parts)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(screening, "derive_seed", _spy)
+    pinned = stratified_split(_split_gauges())
+    assert calls == [("insitu", "phase14-seal", "locked-split", 0)]
+    monkeypatch.setattr(
+        screening,
+        "derive_seed",
+        lambda *_p: real("insitu", "phase14-seal", "locked-split", 1),
+    )
+    assert stratified_split(_split_gauges()) != pinned  # the seed DRIVES the draw
+
+
+def test_stratified_split_deterministic_and_30pct() -> None:
+    """The seeded split: byte-equal on rebuild, ~30% locked per stratum,
+    locked and dev disjoint and exhaustive."""
+    gauges = _split_gauges()
     a = stratified_split(gauges)
     b = stratified_split(gauges)
     assert a == b

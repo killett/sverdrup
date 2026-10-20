@@ -134,7 +134,8 @@ def era_class(days: np.ndarray) -> str:
 
     Returns:
         ``pre-2000`` / ``2000-2010`` / ``post-2010`` / ``full-span``
-        (spans crossing both the 2000 and 2010 boundaries).
+        (any span crossing the 2000 OR the 2010 boundary — one crossing is
+        enough; the sealed locked split was stratified with this rule).
     """
     first, last = days.min(), days.max()
     y2000, y2010 = np.datetime64("2000-01-01"), np.datetime64("2010-01-01")
