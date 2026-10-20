@@ -22,6 +22,7 @@ dropped — an absent row reads as "no problem" in a pack.
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, cast
@@ -180,6 +181,27 @@ def field_correlation(rows: Rows) -> dict[tuple[str, str], dict[str, Any]]:
     return out
 
 
+_CTAP_START = re.compile(r"^ctap_w([+-]\d+(?:\.\d+)?)\+")
+
+
+def _window_start(path: Path) -> float:
+    """A ctap artifact's window START day, from its ``Window.id`` name.
+
+    Args:
+        path: A ``ctap_w<start:+08.1f>+<width>.npz`` artifact.
+
+    Returns:
+        The start day.
+
+    Raises:
+        ValueError: If the name is not a window-id artifact name.
+    """
+    m = _CTAP_START.match(path.name)
+    if m is None:
+        raise ValueError(f"not a ctap window artifact name: {path.name!r}")
+    return float(m.group(1))
+
+
 def read_tap_dir(tap_dir: Path) -> tuple[Rows, list[dict[str, Any]]]:
     """Load a lane's ctap artifacts into per-pass rows + per-window blocks.
 
@@ -193,12 +215,14 @@ def read_tap_dir(tap_dir: Path) -> tuple[Rows, list[dict[str, Any]]]:
         tap_dir: Directory of ``ctap_*.npz`` artifacts.
 
     Returns:
-        (deduped per-pass rows, per-window blocks sorted by window id).
+        (deduped per-pass rows, per-window blocks in window START order).
     """
     rows: Rows = []
     windows: list[dict[str, Any]] = []
     seen: set[tuple[int, int]] = set()
-    for p in sorted(tap_dir.glob("ctap_*.npz")):
+    # By window START, never lexically: '+' sorts before '-', so a lexical
+    # sort put w-00018.0+60 LAST and dropped its overlap pairs (hygiene).
+    for p in sorted(tap_dir.glob("ctap_*.npz"), key=_window_start):
         with np.load(p, allow_pickle=False) as z:
             keys = [
                 (int(m), int(s))
