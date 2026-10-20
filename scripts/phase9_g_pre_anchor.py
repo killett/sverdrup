@@ -323,7 +323,8 @@ def main() -> None:
 
     Steps:
       1. Load gate results JSON; assert phase9.miost.fit_run exists (STOP if not).
-      2. Assert phase9_field_miost.json is byte-identical to phase8_field.json
+      2. Assert phase9_field_miost.json is leaf-identical (parsed-JSON equal)
+         to phase8_field.json — NOT a byte comparison
          (leaf-identical regression check; cal_key self-consistency).
       3. Compute G_pre from selection block.
       4. Compute companions from the shipped clipped field on fixed grid.
@@ -341,13 +342,16 @@ def main() -> None:
         )
         sys.exit(1)
 
-    # Step 2: assert phase9_field_miost.json is byte-identical to phase8_field.json
+    # Step 2: phase9_field_miost.json must be LEAF-identical to phase8_field.json.
+    # This compares PARSED JSON — formatting / key-order drift is invisible to
+    # it, so it is not (and never claimed to be, after hygiene P2-#17) a byte
+    # check. Kept as recorded: this script wrote the phase-9 anchor.
     field_d = json.loads(_FIELD_ARTIFACT.read_text())
     phase8_field_d = json.loads((_DATA_ROOT / "phase8_field.json").read_text())
     if field_d != phase8_field_d:
         raise RuntimeError(
-            "phase9_field_miost.json is NOT byte-identical to phase8_field.json — "
-            "leaf-identical regression violated"
+            "phase9_field_miost.json is NOT leaf-identical to phase8_field.json "
+            "(parsed-JSON comparison) — leaf-identical regression violated"
         )
 
     # Cal key self-consistency check
