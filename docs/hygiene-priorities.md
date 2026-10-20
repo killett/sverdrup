@@ -293,9 +293,9 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 1 | RESOLVED — the `--stage-b` rerun hole (first flush erasing the signed `c2_acceptance`) closed by item 42, `3bb69f0` | `stage_miost_gate_run.py:800`, `:816-827` |
 | 2 | CHANGED (better) — guarded, not retired; `stage_miost_gate_run --stage-b` still rewrites the same canonical maps unguarded | `tune_miost_inflation.py:50` |
 | 3 | ✅ FIXED `c92c1b5` (2026-10-19; full gate suite on `d9447ea`: 1832 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:46:32, tree unchanged) — fdopen write + fsync + single close; unlink-only failure path | `harness.py` `atomic_write_json` |
-| 4 | OPEN | `coherent.py:215` |
-| 5 | OPEN | `feasibility.py:149-160` |
-| 6 | OPEN | `oi.py:124`, `gmrf.py:130`, `fem.py:194`; `observations.py:42,62` |
+| 4 | ✅ FIXED `0f1398a` (2026-10-19; gate suite `8fe55fe`) — `realize_one` draws z_r from the injected source | `coherent.py:215` |
+| 5 | ✅ FIXED `02bb173` (2026-10-19; gate suite `8fe55fe`) — a no-explain member names itself (code-fix: changes recorded exclusion text on FUTURE tuning runs) | `feasibility.py:149-160` |
+| 6 | ✅ FIXED `960b375` (2026-10-19; gate suite `8fe55fe`) — guard chosen: one accessor `core.observations.diagonal_variances` for all SEVEN vector reads of R (adds `pipeline`, `adapters`, `run`, `stage_a`); a correlated R raises NotImplementedError; both `as_matrix(n)` check n; source tripwire test | `observations.py` |
 | 7 | OPEN — the "import, never re-paste" rule was never recorded, and phase12/13 re-pasted it | `phase8_gate_run.py:442`; new: `phase12_miost6_run.py:1068`, `phase13_c2_touch.py:280` |
 | 8 | OPEN | `harness.py:550` vs `folds.py:135` |
 | 9 | OPEN | `harness.py:1028-1029` |
@@ -304,11 +304,11 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 12 | CHANGED (worse) — missed inline literal `lane_compare.py:208`; new script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
 | 13 | OPEN | `_strip_fixtures.py:137`; `_tree_gate.py:403,417` |
 | 14 | OPEN | `persisted.py:245`, `:382-383` |
-| 15 | OPEN (moved) | `miost_solver.py:171` |
-| 16 | OPEN — new instance `eval/insitu.py:162,206` | `fidelity.py:88` |
-| 17 | OPEN — new instance `phase14_seal.py:106-129` | `phase9_g_pre_anchor.py:344-349` |
-| 18 | OPEN — :313 comment fixed; stamped strings still say 5 | `generate_oi_maps.py:322`, `:350` |
-| 19 | OPEN | `report.py:121` |
+| 15 | ✅ FIXED `7f7866c` (2026-10-19; gate suite `8fe55fe`) — **DISCLOSURE: every converged window's recorded `iterations` reads one higher on future runs** (recorded values stand; capped-solve checks unaffected) | `miost_solver.py` |
+| 16 | `fidelity.py`: NOT LIVE (analysed 2026-10-19) — `split_passes` cuts only on strictly positive gaps and both sides stable-sort the same array, so a pass's first timestamp cannot occur in the previous pass; the residual is a cross-module coupling (index-returning variant optional). The `eval/insitu.py` instance ✅ FIXED `e08642e` | `fidelity.py:88` |
+| 17 | ✅ FIXED `5543fe5` (claim reworded, recorded check kept) + the `phase14_seal.verify_seal` instance `8fe55fe` (2026-10-19; gate suite `8fe55fe`) | `phase9_g_pre_anchor.py:344-349` |
+| 18 | ✅ FIXED `87cf2e9` (2026-10-19; gate suite `8fe55fe`) — count derived from `MAPPING_MISSIONS`; recorded artifacts stand as stamped ("5") | `generate_oi_maps.py` |
+| 19 | ✅ FIXED `6f4b2ef` (2026-10-19; gate suite `8fe55fe`); recorded RESULT.md files stand | `report.py:121` |
 | 20 | OPEN | `test_calibrated_distribution.py:39`; `test_miost_basis.py:72`; `test_tree_kriging_oracle.py:67` |
 | 21 | CHANGED (better) — used by `phase12_miost6_run.py:784`, no src path; docstring still recommends StoredG | `feasibility.py:210`; `stage_miost.py:38` |
 | 22 | OPEN — 25 sites / 16 files (+ `test_phase14_golden_tile.py:81`) | `grid.py:69` |
@@ -330,7 +330,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 38 | CHANGED (worse) — `_write_evidence` 4 → 10+ copies, already drifted (root of 44/45). **Erratum:** F7 pair is NOT byte-identical (161 vs 120 lines) | scripts/* |
 | 39 | OPEN | `_tree_gate.py:142,226` |
 | 40 | OPEN — 4 new near-copies of the synthetic pass builder | `test_miost_ensemble.py:35` vs `test_diag_miost_seam_dispersion.py:36` |
-| 41 | OPEN | `download_ocean_data_challenges_2023.py:3,72-74,224-227` |
+| 41 | ✅ FIXED `e9c0103` (2026-10-19; gate suite `8fe55fe`) — the CLAIM fixed (hashes NOT filled: that needs a reference other than this disk) + `not-an-archive` status | `download_ocean_data_challenges_2023.py` |
 | P4 argv | **RE-PRICED → P0 (item 42)** | `stage_miost_gate_run.py:1029-1041` |
 
 ## Added 2026-10-18
@@ -371,22 +371,55 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
 48. ✅ **FIXED `59bd9f7` (2026-10-19; same suite).** `eval/spectral.py:150` empty-PSD regression (ValueError escapes four
     tuning catch sites). Red/green. (S)
 49. ✅ **FIXED `946987d` (2026-10-19; same suite).** `provenance_guard.py:25` regex passes mission-less names silently. (S)
-50. Packaging: `scikit-sparse`, `pydantic`, `python-dotenv` imported on the
+50. ✅ **FIXED `181fdc6` (2026-10-19; gate suite `8fe55fe`) — deps declared, scikit-sparse an optional lazy extra. STILL OPEN: the `release.yml` install-smoke step (an untestable-here CI change; the owner picks what it covers).** Packaging: `scikit-sparse`, `pydantic`, `python-dotenv` imported on the
     pipeline path, declared nowhere; add an install-smoke step to
     `release.yml`. scikit-sparse's install story is the decision. (S-M)
-51. MIOST window store binds only `(wid, m, root)`; `save_state` omits the
+51. ✅ **FIXED `5bb6473` (window store bound to params-key + obs digest) + `6a51ec3` (state files keep the domain; `basis_key` checked) (2026-10-19; gate suite `8fe55fe`). Residual: a LEGACY window file (no digest) from another configuration is still adopted on (m, root) — the recorded Stage-1 stores carry no digest.** MIOST window store binds only `(wid, m, root)`; `save_state` omits the
     basis domain. Latent. (S-M)
 
 **P2 — honesty and tooling**
 
-52. ~20 new tests that cannot fail (list in hygiene-notes § 2026-10-18);
+52. ✅ **FIXED (2026-10-19; gate suite `8fe55fe`): `31d9d0b`, `dba8f71`, `27b84a2` (every listed test, plus the audit's unpersisted p02_guard/kernel_pack items), `062db58` (17 import-bound store-path defaults now resolve at call time; the sandbox tripwire watches the live store), `54d2383` (29 store-reading tests skip on a clean clone). The gate1-closure seal-drift item was already fixed by `9a13e1f`.** ~20 new tests that cannot fail (list in hygiene-notes § 2026-10-18);
     the stage-1 test sandbox misses import-time path defaults. Red/green,
     S each.
-53. `resume_checks.sh` — dirty tree never exits non-zero (CLAUDE.md step 0
+53. ✅ **FIXED `9d495b6` (2026-10-19; gate suite `8fe55fe`) — plus install_git_hooks.sh and the post-commit hook (worktree-correct hooks dir and marker).** `resume_checks.sh` — dirty tree never exits non-zero (CLAUDE.md step 0
     says it does); origin-ahead mislabelled; `ls-remote` failure reads as
     ABSENT; `--git-dir` wrong in worktrees. Session-protocol tool. (S)
-54. `phase14_gate_suite.py` attestation scope — stamps `*.py` + pyproject
+54. ✅ **FIXED `d837928` (2026-10-19; gate suite `8fe55fe` — the first run under the broadened stamp).** `phase14_gate_suite.py` attestation scope — stamps `*.py` + pyproject
     only; `verify` doesn't echo the command (pin 197c class). (S)
 55. Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
     README structure; CLAUDE.md:109; the SHA erratum not yet reflected in
     PROGRESS/archive pointers. (S)
+
+## Fixed 2026-10-19 — the "Also latent" / validation / scripts / tooling lists
+
+(hygiene-notes § 2026-10-18.) Every fix in this section and every
+status row above that cites "gate suite `8fe55fe`" is gated by ONE full
+gate suite on `8fe55fe` (all of these commits are its ancestors):
+1934 passed / 21 skipped / 2 deselected (the two @external ~1 GB
+downloads) / 2 xfailed, 1:22:24, tree unchanged across the run;
+`verify` attests the 473-file stamp and the exact command.
+
+| finding | commit | note |
+|---|---|---|
+| `contract.py:185` empty-window IndexError | `4cca25d` | |
+| `gauges.py:33` cwd-relative locked split fails OPEN | `2a00e57` | split anchored to the checkout; `GAUGES_DIR` stays relative (recorded path string) |
+| `eval/insitu.py` alignment + ZeroDivision | `e08642e` | flat gauge skipped; sorted-day results unchanged |
+| `cmems_my.py:133` empty-manifest constant sha | `a2dee6c` | refuses missing/empty |
+| `jpl_ssha.py:54` no locked-c2 exclusion | `7942ecf` | three `{"c2","c2n"}` literals remain (consolidation open) |
+| `gate_schema.py:296` boolean `extrapolation_declared` | `4a93e2e` | every recorded declaration is text — no outcome moves |
+| zero σ / flat interior x/0 (`seam_metrics`, `ensemble_settling`) | `acbe700` | |
+| `ensemble_floor_null.py:193` unchecked weights | `e689967` | |
+| lazy-npz bare `BadZipFile` (solver checkpoint, window store) | `4fc50a5` | preceded by `137bc82` (dead `_load_window` deleted) |
+| `phase13_diagnostics.py:201` lexical window sort | `ed92a78` | the recorded §8.5 number (−167 pairs) stands as recorded |
+| `diag_stage1_hypothesis_tests.py:552` write before STOP | `8f2b88d` | |
+| `download_cmems_my.py:279` ledger only on completion | `b25aaf5` | `-PARTIAL` row on any exit |
+| `download_gauges.py:127` unretried catalog, 5xx "done" | `3cd0c58` | |
+| `phase14_probe.py:229` threading tolerance mis-measured | `a412998` | pairwise; recorded `determinism` node stands |
+| `phase14_stage1_run`: lock pid −1 / non-O_EXCL, halt record non-atomic, seam resume ignoring m/maxiter/root | `fa4cb4a` | |
+| `stage1_leg_launcher.sh` `kill -0` on zombies | `47e9e58` | |
+| FIX NOW (src): stale docstrings ×4, redundant local imports ×4, dead `.rstrip` | `8fe55fe` | the remaining FIX NOW items (constants, Args, scripts, tests) stay open |
+
+Evidence correction: `062db58`'s cited targeted tests ran before a
+ruff-format rewrite of its committed bytes; re-run on the committed bytes:
+346 passed, 1 xfailed (recorded in `54d2383`'s body).
