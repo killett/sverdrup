@@ -61,3 +61,32 @@ def test_a_catalog_listing_no_files_refuses(
     _stub_get(monkeypatch, 200, "<html>maintenance</html>")
     with pytest.raises(RuntimeError, match="no rqds hourly files"):
         dl.stations_all()
+
+
+def test_a_bulk_rerun_skip_is_an_existence_check_and_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """stations-all skips present + manifested files WITHOUT re-hashing, and
+    its report does not call them verified.
+
+    Fixture: h001.nc is on disk with bytes that do NOT match its manifest
+    sha. Bug caught: "verified-skipped" printed for a file nothing verified
+    (only the single-file ``_get`` path re-hashes before skipping).
+    """
+    dl = load_script("download_gauges")
+    monkeypatch.setattr(dl, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(dl, "MANIFEST", tmp_path / "manifest.json")
+    monkeypatch.setattr(dl, "EVIDENCE", tmp_path / "absent.json")
+    (tmp_path / "uhslc").mkdir()
+    (tmp_path / "uhslc" / "h001.nc").write_bytes(b"corrupt")
+    (tmp_path / "manifest.json").write_text('{"uhslc/h001.nc": "' + "0" * 64 + '"}')
+    _stub_get(monkeypatch, 200, '<a href="h001.nc">h001.nc</a>')
+
+    def _no_fetch(*_a: Any) -> None:
+        raise AssertionError("a present + manifested file was re-fetched")
+
+    monkeypatch.setattr(dl, "_fetch", _no_fetch)
+    dl.stations_all()
+    out = capsys.readouterr().out
+    assert "verified" not in out
+    assert "1 skipped (present + manifested, not re-hashed)" in out

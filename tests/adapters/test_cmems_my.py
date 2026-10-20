@@ -254,3 +254,51 @@ def test_an_interrupted_pull_still_ledgers_the_bytes_it_downloaded(
     assert name.endswith("-PARTIAL")
     assert gib == pytest.approx(4000 / 2**30)
     assert len(json.loads((data / "manifest.json").read_text())) == 2
+
+
+def test_a_rerun_skip_is_an_existence_check_and_says_so(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Present + manifested files are skipped WITHOUT re-hashing, and the run
+    report does not call them verified.
+
+    Fixture: file 1 is on disk with bytes that do NOT match its manifest sha.
+    The skip rule (dest exists AND manifested) passes it over unread. Bug
+    caught: the summary printing "verified-skipped" for a file nothing
+    verified — a corrupt file reads as checked (hygiene, download_cmems_my
+    docstring + summary). Network/store calls are stubbed.
+    """
+    from tests.helpers import load_script
+
+    dl = load_script("download_cmems_my")
+    data = tmp_path / "cmems"
+    names = [f"dt_global_j3_phy_l3_1hz_2017010{d}_x.nc" for d in (1, 2, 3)]
+    (data / "j3").mkdir(parents=True)
+    (data / "j3" / names[0]).write_bytes(b"corrupt")
+    (data / "manifest.json").write_text(json.dumps({f"j3/{names[0]}": "0" * 64}))
+    monkeypatch.setattr(dl, "CMEMS_DATA_DIR", data)
+    monkeypatch.setattr(dl, "MANIFEST", data / "manifest.json")
+    monkeypatch.setattr(
+        dl,
+        "_dataset_native_hrefs",
+        lambda: {
+            "cmems_obs-sl_glo_phy-ssh_my_j3-l3-duacs_PT1S": f"{dl._S3_HOST}/bkt/p"
+        },
+    )
+    monkeypatch.setattr(dl, "_list_native_keys", lambda _h: [f"p/{n}" for n in names])
+    monkeypatch.setattr(dl, "check_budget", lambda *_a, **_k: None)
+    monkeypatch.setattr(dl, "_ledgered_cmems_gib", lambda: 0.0)
+    monkeypatch.setattr(dl, "_ledger_append", lambda *_a: None)
+    fetched: list[str] = []
+
+    def _fetch(_url: str, dest: Path) -> None:
+        fetched.append(dest.name)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(b"ok")
+
+    monkeypatch.setattr(dl, "_fetch_file", _fetch)
+    dl.subset(missions="j3", t0="2017-01-01", t1="2017-01-10", bbox="global")
+    out = capsys.readouterr().out
+    assert fetched == names[1:]  # the corrupt file was skipped, unread
+    assert "verified" not in out
+    assert "1 skipped (present + manifested, not re-hashed)" in out

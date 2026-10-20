@@ -1,8 +1,9 @@
 """Scoped, reproducible CMEMS multi-year downloads (phase-14 Task 3, 0c-2).
 
 The dc-download reproducer pattern: httpx + stamina retry on transient
-faults only, sha256 manifest written beside the data, re-run =
-verify-and-skip. NEVER an implicit full-globe pull: every leg is scoped by
+faults only, sha256 manifest written beside the data, re-run = skip
+what is present AND manifested — an existence check: the recorded sha is
+NOT re-hashed. NEVER an implicit full-globe pull: every leg is scoped by
 missions × time (native files are DAILY-GLOBAL — spatial subsetting
 happens at load; the ``bbox`` scope argument is recorded for the future
 ARCO-subset path and does not widen any pull).
@@ -238,7 +239,7 @@ def subset(
         ),
     ] = "global",
 ) -> None:
-    """A scoped missions × time pull (budget-checked, verify-and-skip)."""
+    """A scoped missions × time pull (budget-checked; present + manifested skip)."""
     wanted = [m.strip() for m in missions.split(",") if m.strip()]
     from sverdrup.adapters.altimetry.cmems_my import LOCKED_MISSIONS  # noqa: PLC0415
 
@@ -307,7 +308,7 @@ def subset(
             )
     typer.echo(
         f"subset done: {pulled} new files ({pulled_bytes / 2**30:.3f} GiB), "
-        f"{len(plan) - pulled} verified-skipped"
+        f"{len(plan) - pulled} skipped (present + manifested, not re-hashed)"
     )
 
 

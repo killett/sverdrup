@@ -1,12 +1,15 @@
 """Scoped, reproducible gauge downloads (phase-14 Task 8, 0a-3a).
 
 The dc-download reproducer pattern: httpx + stamina retry on transient
-faults only, sha256 manifest written beside the data, re-run =
-verify-and-skip. NEVER an implicit bulk pull — every leg is scoped
-(catalogs, or one named station series).
+faults only, sha256 manifest written beside the data. On a re-run a
+single-file leg re-hashes before it skips; the bulk ``stations-all`` leg
+skips what is present AND manifested without re-hashing. NEVER an
+implicit bulk pull — every leg is scoped (catalogs, or one named station
+series).
 
-Every completed download appends a row to the storage ledger at
-``phase14.stage0.storage_ledger`` in the standing evidence JSON.
+A completed download appends a row to the storage ledger at
+``phase14.stage0.storage_ledger`` in the standing evidence JSON — when
+that store exists; on a host without it nothing is ledgered.
 
 SINGLE-WRITER: manifest and ledger use read-modify-write — run download
 legs sequentially (the standing evidence-store discipline), never in
@@ -182,7 +185,7 @@ def stations_all() -> None:
         atomic_write_json(EVIDENCE, results)
     typer.echo(
         f"stations-all done: {pulled} new ({pulled_bytes / 2**30:.3f} GiB), "
-        f"{len(names) - pulled} verified-skipped"
+        f"{len(names) - pulled} skipped (present + manifested, not re-hashed)"
     )
 
 
