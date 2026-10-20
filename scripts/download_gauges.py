@@ -66,6 +66,21 @@ def _fetch(url: str, dest: Path) -> Path:
     return dest
 
 
+@stamina.retry(on=_is_retryable, attempts=4)
+def _get_text(url: str) -> str:
+    """GET a text page; an HTTP error RAISES (transient ones are retried).
+
+    Args:
+        url: The page.
+
+    Returns:
+        The response body.
+    """
+    r = httpx.get(url, timeout=60.0, follow_redirects=True)
+    r.raise_for_status()
+    return r.text
+
+
 def _manifest() -> dict[str, Any]:
     return json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
 
@@ -124,10 +139,15 @@ def stations_all() -> None:
     """
     import re  # noqa: PLC0415
 
-    body = httpx.get(
-        UHSLC_HOURLY_URL.format(name=""), timeout=60.0, follow_redirects=True
-    ).text
+    # A bare httpx.get(...).text parsed a 5xx error page as an empty roster
+    # and reported "done" (hygiene): errors raise, and nothing listed refuses.
+    body = _get_text(UHSLC_HOURLY_URL.format(name=""))
     names = sorted(set(re.findall(r'href="(h\w+\.nc)"', body)))
+    if not names:
+        raise RuntimeError(
+            "the UHSLC catalog page listed no rqds hourly files — a moved or "
+            "reworded listing, not an empty roster; refusing to report done"
+        )
     typer.echo(f"{len(names)} rqds hourly files in the catalog")
     man = _manifest()
     pulled = 0
