@@ -315,3 +315,58 @@ def test_full_scope_stage_b_writes_and_reads_the_canonical_maps(
     read = _run_stage_b_to_the_maps(monkeypatch, tmp_path, "full")
     assert sorted(p.name for p in tmp_path.glob("*.nc")) == sorted(_CANONICAL_MAPS)
     assert read == [(tmp_path / _CANONICAL_MAPS[0], tmp_path / _CANONICAL_MAPS[1])]
+
+
+_TIER3 = "stage_miost_acceptance_tier3_regen.nc"
+
+
+def test_regen_acceptance_refuses_over_a_recorded_attribution(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Bug caught: a rerun renaming the TRUE map onto the stale Tier-3
+    artifact (destroying it), labelling the true map "NOT the scored map",
+    and replacing the signed attribution with rms 0 / no j3 match."""
+    from sverdrup.validation.write_once import NodeAlreadyRecordedError
+
+    store = _store(
+        tmp_path,
+        {
+            "winner": {"params": {}},
+            "acceptance_artifact_correction": {"artifact_vs_true_rms_m": 0.16},
+        },
+    )
+    before = store.read_bytes()
+    monkeypatch.setattr(gate, "RESULTS", store)
+    monkeypatch.setattr(gate, "OUT_DIR", tmp_path)
+    _forbid_work(monkeypatch)
+    with pytest.raises(NodeAlreadyRecordedError) as exc:
+        gate.regen_acceptance_main()
+    assert "acceptance_artifact_correction" in str(exc.value)
+    assert store.read_bytes() == before
+
+
+def test_regen_acceptance_refuses_over_an_existing_tier3_artifact(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Bug caught: a retry after a crash past the rename (artifact moved, no
+    attribution yet) renaming whatever map is at the acceptance path onto
+    the one copy of the stale artifact."""
+    monkeypatch.setattr(gate, "RESULTS", _store(tmp_path, {"winner": {"params": {}}}))
+    monkeypatch.setattr(gate, "OUT_DIR", tmp_path)
+    (tmp_path / _TIER3).write_bytes(b"STALE ARTIFACT")
+    _forbid_work(monkeypatch)
+    with pytest.raises(SystemExit) as exc:
+        gate.regen_acceptance_main()
+    assert str(tmp_path / _TIER3) in str(exc.value)
+    assert (tmp_path / _TIER3).read_bytes() == b"STALE ARTIFACT"
+
+
+def test_regen_acceptance_proceeds_on_a_fresh_box(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Bug caught: a rerun guard that refuses unconditionally."""
+    monkeypatch.setattr(gate, "RESULTS", _store(tmp_path, {"winner": {"params": {}}}))
+    monkeypatch.setattr(gate, "OUT_DIR", tmp_path)
+    _forbid_work(monkeypatch)
+    with pytest.raises(_NoWork):
+        gate.regen_acceptance_main()

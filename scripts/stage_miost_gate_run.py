@@ -54,6 +54,7 @@ from sverdrup.methods.miost_windows import L_T_MAX, WindowPlan
 from sverdrup.validation.input_adapter import load_mapping_obs
 from sverdrup.validation.params import baseline_config
 from sverdrup.validation.run import halo_obs, run_challenge_map
+from sverdrup.validation.write_once import refuse_if_recorded
 
 DEV_FIX = Path("tests/validation/fixtures/stage_a_scope.json")
 OUT_DIR = Path("data/2021a_ssh_mapping_ose/ours")
@@ -985,6 +986,33 @@ def c2_touch_main() -> None:
     print(json.dumps(sb["c2_acceptance"], indent=2))
 
 
+def refuse_regen_rerun(results_path: Path, tier3: Path) -> None:
+    """Refuse a ``--regen-acceptance`` run that would destroy its own record.
+
+    The first run renamed the stale artifact to ``tier3`` and recorded the
+    attribution. A rerun renames the TRUE map onto ``tier3`` (the only copy
+    of the stale artifact is gone), labels it "NOT the scored map", and
+    replaces the signed attribution with one measured against itself.
+    ``tier3`` alone also refuses: a crash after the rename leaves it with
+    no attribution, and a retry would overwrite it the same way.
+
+    Args:
+        results_path: The shared evidence store.
+        tier3: Where the first run moved the stale artifact.
+
+    Raises:
+        NodeAlreadyRecordedError: The store records the attribution.
+        SystemExit: ``tier3`` exists.
+    """
+    refuse_if_recorded(results_path, "acceptance_artifact_correction")
+    if tier3.exists():
+        raise SystemExit(
+            f"REFUSED: {tier3} exists — a rerun would rename the acceptance "
+            "map onto the one copy of the stale artifact. Move it aside "
+            "deliberately (owner decision) before re-running."
+        )
+
+
 def regen_acceptance_main() -> None:
     """Regenerate the TRUE Stage-A acceptance map (owner item 3, 2026-07-07).
 
@@ -993,7 +1021,7 @@ def regen_acceptance_main() -> None:
     (the post-hoc Tier-3 regeneration that overwrote the scored map) is
     renamed + annotated; the true map is written with provenance attrs; the
     0.16 m offset is ATTRIBUTED by also building the j3-assimilating
-    variant and bit-comparing.
+    variant and bit-comparing. A rerun refuses before any work.
     """
     import netCDF4
 
@@ -1001,6 +1029,9 @@ def regen_acceptance_main() -> None:
     from sverdrup.application.tuning.stage_a import _subset
     from sverdrup.validation.input_adapter import load_mdt_grid
 
+    acc = OUT_DIR / "stage_miost_acceptance.nc"
+    tier3 = OUT_DIR / "stage_miost_acceptance_tier3_regen.nc"
+    refuse_regen_rerun(RESULTS, tier3)
     scope = _scope()
     cfg = json.loads(scope.read_text())
     results = json.loads(RESULTS.read_text())
@@ -1016,8 +1047,6 @@ def regen_acceptance_main() -> None:
     train = _subset(obs, split.train_idx)
     mdt = load_mdt_grid([Path(p) for p in cfg["mdt_paths"]], grid)
     days = [float(d) for d in range(365)]
-    acc = OUT_DIR / "stage_miost_acceptance.nc"
-    tier3 = OUT_DIR / "stage_miost_acceptance_tier3_regen.nc"
 
     if acc.exists():
         acc.rename(tier3)
