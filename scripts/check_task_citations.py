@@ -91,8 +91,14 @@ def check(doc: Path, tracker: Path = DEFAULT_TRACKER) -> CitationCheck:
     data = json.loads(tracker.read_text())
     tracker_ids = {int(t["id"]) for t in data.get("tasks", [])}
     cited = sorted({int(m.group(1)) for m in _CITATION.finditer(doc.read_text())})
+    # No (or an empty) planPath: the plan is the tracker's sibling, named by
+    # stripping ``.tasks.json``. (``Path("")`` is ``Path(".")`` — always truthy
+    # — so an ``or`` fallback never ran; hygiene.)
+    plan_path = data.get("planPath")
     headings = _plan_heading_ids(
-        Path(data.get("planPath", "")) or tracker.with_suffix("")
+        Path(plan_path)
+        if plan_path
+        else tracker.with_name(tracker.name.removesuffix(".tasks.json"))
     )
 
     return CitationCheck(

@@ -62,7 +62,7 @@ def test_tracker_only_tasks_are_NOT_phantoms(tmp_path: Path) -> None:
 
     assert result.unknown == ()
     assert result.ok
-    assert set(result.cited) == {0, 9, 13, 22} - {0}
+    assert set(result.cited) == {9, 13, 22}
     assert set(result.tracker_only) == {13, 22}, (
         "tracker-only ids are reported as INFO so the plan/tracker drift stays visible"
     )
@@ -111,3 +111,31 @@ def test_missing_tracker_refuses_rather_than_passing(tmp_path: Path) -> None:
     doc.write_text("T5\n")
     with pytest.raises(FileNotFoundError):
         _mod.check(doc, tmp_path / "nope.tasks.json")
+
+
+@pytest.mark.parametrize("plan_path", [None, ""])
+def test_a_tracker_without_planPath_reads_its_sibling_plan(
+    tmp_path: Path, plan_path: str | None
+) -> None:
+    """No (or an empty) ``planPath`` falls back to the tracker's sibling plan.
+
+    Expected by hand: sibling plan.md has heading 1, the tracker has {1, 2},
+    so T2 is tracker-only. Bug caught (hygiene, :95): ``Path(data.get(
+    "planPath", ""))`` is ``Path(".")`` — always truthy — so the fallback
+    never ran and the heading reader opened the DIRECTORY ".". The fallback
+    was wrong besides: ``with_suffix("")`` maps ``plan.md.tasks.json`` to
+    ``plan.md.tasks``, not to the plan.
+    """
+    tracker = _tracker(tmp_path, ids=[1, 2], headings=[1])
+    data = json.loads(tracker.read_text())
+    if plan_path is None:
+        del data["planPath"]
+    else:
+        data["planPath"] = plan_path
+    tracker.write_text(json.dumps(data))
+    doc = tmp_path / "doc.md"
+    doc.write_text("T1 and T2.\n")
+
+    result = _mod.check(doc, tracker)
+
+    assert result.tracker_only == (2,)
