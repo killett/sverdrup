@@ -276,26 +276,35 @@ def subset(
     man = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
     pulled = 0
     pulled_bytes = 0
-    for mission, key, url in plan:
-        name = key.rsplit("/", 1)[-1]
-        dest = CMEMS_DATA_DIR / mission / name
-        rel = f"{mission}/{name}"
-        if dest.exists() and rel in man:
-            continue
-        _fetch_file(url, dest)
-        h = hashlib.sha256(dest.read_bytes()).hexdigest()
-        man[rel] = h
-        pulled += 1
-        pulled_bytes += dest.stat().st_size
-        if pulled % 200 == 0:
-            MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
-            typer.echo(f"  …{pulled}/{len(plan)}")
-    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
-    if pulled:
-        _ledger_append(
-            f"cmems-subset-{'-'.join(wanted)}-{t0}-{t1}", pulled_bytes / 2**30
-        )
+    completed = False
+    try:
+        for mission, key, url in plan:
+            name = key.rsplit("/", 1)[-1]
+            dest = CMEMS_DATA_DIR / mission / name
+            rel = f"{mission}/{name}"
+            if dest.exists() and rel in man:
+                continue
+            _fetch_file(url, dest)
+            h = hashlib.sha256(dest.read_bytes()).hexdigest()
+            man[rel] = h
+            pulled += 1
+            pulled_bytes += dest.stat().st_size
+            if pulled % 200 == 0:
+                MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
+                typer.echo(f"  …{pulled}/{len(plan)}")
+        completed = True
+    finally:
+        # On ANY exit: bytes on disk are bytes spent. Ledgering only after a
+        # clean loop left an interrupted pull's files out of the budget for
+        # good — a rerun skips them as already present (hygiene).
+        MANIFEST.parent.mkdir(parents=True, exist_ok=True)
+        MANIFEST.write_text(json.dumps(man, indent=1, sort_keys=True) + "\n")
+        if pulled:
+            _ledger_append(
+                f"cmems-subset-{'-'.join(wanted)}-{t0}-{t1}"
+                + ("" if completed else "-PARTIAL"),
+                pulled_bytes / 2**30,
+            )
     typer.echo(
         f"subset done: {pulled} new files ({pulled_bytes / 2**30:.3f} GiB), "
         f"{len(plan) - pulled} verified-skipped"

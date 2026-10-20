@@ -205,3 +205,52 @@ def test_descriptor_refuses_a_missing_or_empty_manifest(
         (root / "manifest.json").write_text(manifest)
     with pytest.raises(error, match="manifest"):
         CmemsMySource(root).descriptor()
+
+
+def test_an_interrupted_pull_still_ledgers_the_bytes_it_downloaded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bug caught (hygiene, download_cmems_my.py:279): the ledger row was
+    appended only after the WHOLE loop — a pull dying at file 3 left two
+    files' bytes on disk and out of the budget ledger, and a rerun skips
+    those files, so they were never counted (the budget check
+    under-counts for good). Network/store calls are stubbed; expected
+    bytes are the two stub payloads' sizes."""
+    from tests.helpers import load_script
+
+    dl = load_script("download_cmems_my")
+    data = tmp_path / "cmems"
+    monkeypatch.setattr(dl, "CMEMS_DATA_DIR", data)
+    monkeypatch.setattr(dl, "MANIFEST", data / "manifest.json")
+    monkeypatch.setattr(
+        dl,
+        "_dataset_native_hrefs",
+        lambda: {
+            "cmems_obs-sl_glo_phy-ssh_my_j3-l3-duacs_PT1S": f"{dl._S3_HOST}/bkt/p"
+        },
+    )
+    monkeypatch.setattr(
+        dl,
+        "_list_native_keys",
+        lambda _h: [f"p/dt_global_j3_phy_l3_1hz_2017010{d}_x.nc" for d in (1, 2, 3)],
+    )
+    monkeypatch.setattr(dl, "check_budget", lambda *_a, **_k: None)
+    monkeypatch.setattr(dl, "_ledgered_cmems_gib", lambda: 0.0)
+    ledger: list[tuple[str, float]] = []
+    monkeypatch.setattr(dl, "_ledger_append", lambda n, g: ledger.append((n, g)))
+    payloads = [b"a" * 1000, b"b" * 3000]
+
+    def _fetch(_url: str, dest: Path) -> None:
+        if not payloads:
+            raise ConnectionError("network died on file 3")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(payloads.pop(0))
+
+    monkeypatch.setattr(dl, "_fetch_file", _fetch)
+    with pytest.raises(ConnectionError):
+        dl.subset(missions="j3", t0="2017-01-01", t1="2017-01-10", bbox="global")
+    assert len(ledger) == 1
+    name, gib = ledger[0]
+    assert name.endswith("-PARTIAL")
+    assert gib == pytest.approx(4000 / 2**30)
+    assert len(json.loads((data / "manifest.json").read_text())) == 2
