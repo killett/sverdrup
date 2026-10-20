@@ -30,7 +30,7 @@ from typing import Protocol, runtime_checkable
 
 import numpy as np
 
-from sverdrup.core.observations import ObsWindow
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 
 
 @dataclass(frozen=True)
@@ -207,7 +207,6 @@ def apply_superobs(obs: ObsWindow, cfg: object | None = None) -> ObsWindow:
         ):
             out.append(arr.reshape(k, n).mean(axis=1))
         miss.append(np.repeat(mission[sel[0]], k))
-    from sverdrup.core.observations import DiagonalErrorModel  # noqa: PLC0415
 
     v = np.concatenate(vals) if vals else np.empty(0)
     var = getattr(obs.error_model, "variance", None)

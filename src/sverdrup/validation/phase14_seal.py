@@ -104,7 +104,11 @@ def build_seal(content: dict[str, Any], path: Path = SEAL_V1) -> str:
 
 
 def verify_seal(path: Path, expected_sha: str) -> None:
-    """Byte-recompute verification — a single flipped byte refuses.
+    """Content-recompute verification: the seal's content is re-hashed.
+
+    The sha is over the CANONICAL content (``seal_sha``), so a changed value
+    refuses; reformatting the file (whitespace, key order) does not — this
+    is not a byte comparison.
 
     Args:
         path: The seal file.

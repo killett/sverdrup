@@ -126,9 +126,7 @@ def _distinct_partition_count(m_total: int, size: int) -> int:
     Returns:
         Count of distinct unordered partitions.
     """
-    from math import comb  # noqa: PLC0415
-
-    return comb(m_total, size) * comb(m_total - size, size) // 2
+    return math.comb(m_total, size) * math.comb(m_total - size, size) // 2
 
 
 def member_sigma(

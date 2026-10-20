@@ -215,7 +215,8 @@ class MiostSolver:
                     b_hash=b_hash,
                     shape=np.asarray(b2.shape),
                 )
-                # np.savez appends .npz when the target has no suffix; the
+                # np.savez appends .npz unless the name ENDS in .npz (so
+                # "ck.npz.tmp" is written as "ck.npz.tmp.npz"); the
                 # rename must move whatever it actually wrote.
                 written = tmp if tmp.exists() else tmp.with_name(tmp.name + ".npz")
                 os.replace(written, checkpoint)

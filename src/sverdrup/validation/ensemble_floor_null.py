@@ -217,13 +217,14 @@ def null_t_quantile(
 
 
 def _normal_quantile(p: float) -> float:
-    """Standard-normal quantile via the inverse error function."""
-    from math import erf  # noqa: PLC0415 - local, tiny
+    """Standard-normal quantile by BISECTION on the normal CDF (via erf).
 
+    200 halvings of [-10, 10] — not an inverse-erf formula.
+    """
     lo, hi = -10.0, 10.0
     for _ in range(200):
         mid = 0.5 * (lo + hi)
-        if 0.5 * (1.0 + erf(mid / math.sqrt(2.0))) < p:
+        if 0.5 * (1.0 + math.erf(mid / math.sqrt(2.0))) < p:
             lo = mid
         else:
             hi = mid

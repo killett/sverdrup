@@ -26,6 +26,7 @@ from typing import Any
 
 import numpy as np
 
+from sverdrup.adapters.insitu.gauges import MIN_HOURS_PER_DAY
 from sverdrup.core.seeding import derive_seed
 
 # Proximity ceiling [km] ≈ the shipped λx neighborhood (151.86 km at the
@@ -328,8 +329,6 @@ def screening_config_record() -> dict[str, Any]:
     hand-maintained copy could silently drift from the constants screening
     actually runs on.
     """
-    from sverdrup.adapters.insitu.gauges import MIN_HOURS_PER_DAY  # noqa: PLC0415
-
     return {
         "criteria_order": list(_CRITERIA_ORDER),
         "min_valid_hours_per_day": MIN_HOURS_PER_DAY,

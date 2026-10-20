@@ -177,7 +177,7 @@ def load_psmsl_catalog(zip_path: Path) -> tuple[PsmslStation, ...]:
                 psmsl_id=int(parts[0]),
                 lat=float(parts[1]),
                 lon=float(parts[2]),
-                name=parts[3].rstrip(";").strip(),
+                name=parts[3],  # already split on ";" and stripped
                 coastline=_int_or_none(parts[4]),
                 station=_int_or_none(parts[5]),
             )

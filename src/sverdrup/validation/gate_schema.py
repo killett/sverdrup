@@ -34,9 +34,10 @@ declare anything: the pin-89 probe scaled ONE window to nine in
 came back 0.63× on wall and 1.69× on RAM.
 
 :func:`projection_audit` closes the blindness by keying on the SHAPE of a
-block rather than on what it calls itself. It REPORTS; it does not refuse.
-Twelve pre-existing blocks are caught, and retro-refusing recorded
-evidence is the owner's decision, not this module's.
+block rather than on what it calls itself. It returns findings; the seal
+``check`` (scripts/phase14_seal_run.py) treats them as REFUSALS since owner
+pins 134 + 139(a), and the pre-existing blocks are declared by forward
+pointer (139b) rather than rewritten.
 """
 
 from __future__ import annotations
