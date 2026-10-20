@@ -915,7 +915,7 @@ def preflight_scores_construction() -> None:
     )
 
 
-def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
+def record_evidence_row(row: dict[str, Any], evidence_path: Path | None = None) -> None:
     """Record one row under ``phase14.stage1.tiles.<tile>`` — seal-gated.
 
     Verifies the CURRENT evaluation seal FIRST (the Task-10 ceremony
@@ -936,6 +936,7 @@ def record_evidence_row(row: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
         sverdrup.validation.phase14_seal.SealError: No verified seal.
         ValueError: The serialized row carries an interpretation word.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -1045,7 +1046,7 @@ def build_probe_row(
 
 
 def record_probe_row(
-    row: dict[str, Any], evidence_path: Path = EVIDENCE, node: str = "probe"
+    row: dict[str, Any], evidence_path: Path | None = None, node: str = "probe"
 ) -> None:
     """Record the probe row under ``phase14.stage1.<node>`` — seal-gated.
 
@@ -1065,6 +1066,7 @@ def record_probe_row(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -3320,7 +3322,7 @@ def seam_rows_from_read(
 
 
 def record_seam_rows(
-    rows: list[dict[str, Any]], evidence_path: Path = EVIDENCE
+    rows: list[dict[str, Any]], evidence_path: Path | None = None
 ) -> None:
     """Record the rubric rows under ``phase14.stage1.seam_rows`` — seal-gated.
 
@@ -3331,6 +3333,7 @@ def record_seam_rows(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -3345,7 +3348,7 @@ def record_seam_rows(
     atomic_write_json(evidence_path, results)
 
 
-def record_seam_block(block: dict[str, Any], evidence_path: Path = EVIDENCE) -> None:
+def record_seam_block(block: dict[str, Any], evidence_path: Path | None = None) -> None:
     """Record the run block under ``phase14.stage1.seam_pair`` — seal-gated.
 
     Args:
@@ -3355,6 +3358,7 @@ def record_seam_block(block: dict[str, Any], evidence_path: Path = EVIDENCE) -> 
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -5088,7 +5092,7 @@ def build_tile_report_block(*, tile: str, era: str, mean_map: Path) -> dict[str,
 
 
 def record_tile_report_block(
-    block: dict[str, Any], evidence_path: Path = EVIDENCE
+    block: dict[str, Any], evidence_path: Path | None = None
 ) -> None:
     """Record one report block at ``phase14.stage1.report_rows.<tile>.<era>``.
 
@@ -5103,6 +5107,7 @@ def record_tile_report_block(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -5345,7 +5350,7 @@ def record_tile_leg(
     pcg_maxiter: int,
     scores: dict[str, Any],
     date: str,
-    evidence_path: Path = EVIDENCE,
+    evidence_path: Path | None = None,
 ) -> dict[str, Any]:
     """Build the tile row and record it — THE production write path.
 
@@ -5381,6 +5386,7 @@ def record_tile_leg(
     Returns:
         The recorded row.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     row = build_evidence_row(
         seal_sha=seal_sha,
         tile=tile,
@@ -5610,7 +5616,7 @@ def _composition_lines(tile: str, stage1: dict[str, Any]) -> list[str]:
     ]
 
 
-def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
+def render_transfer_readings(evidence_path: Path | None = None) -> str:
     """The pack's transfer-readings section, from recorded row fields only.
 
     Args:
@@ -5623,6 +5629,7 @@ def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
         RuntimeError: The store's set of scored diverse tiles is not exactly
             :data:`TRANSFER_TILES` (owner pin 97a — the count must not drift).
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     doc = json.loads(evidence_path.read_text())
     stage1 = doc.get("phase14", {}).get("stage1", {})
     tiles = stage1.get("tiles", {})
@@ -5702,7 +5709,7 @@ def render_transfer_readings(evidence_path: Path = EVIDENCE) -> str:
     return "\n".join(out) + "\n"
 
 
-def poleward_obs_edges(evidence_path: Path = EVIDENCE) -> dict[str, float]:
+def poleward_obs_edges(evidence_path: Path | None = None) -> dict[str, float]:
     """Each diverse tile's POLEWARD observation edge, from the REAL obs frame.
 
     Owner pin 215, correcting pin 210. Pins 10/16 put the ±66 breach on the
@@ -5731,6 +5738,7 @@ def poleward_obs_edges(evidence_path: Path = EVIDENCE) -> dict[str, float]:
             ``solve_bbox`` when rebuilt — the store and the framing code
             would then disagree about the geometry the leg ran under.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.adapters.altimetry import BBox  # noqa: PLC0415
     from sverdrup.application.spatial_tiles import TileFrame  # noqa: PLC0415
 
@@ -5875,7 +5883,7 @@ def persist_lane0_bundle(
     row: dict[str, Any],
     report_block: dict[str, Any],
     fold_eval_frame: dict[str, Any],
-    dest: Path = LANE0_DIR,
+    dest: Path | None = None,
 ) -> dict[str, Any]:
     """Persist the lane-0 substrate and return its manifest (fork-b pin 1).
 
@@ -5899,6 +5907,7 @@ def persist_lane0_bundle(
     Returns:
         The manifest (also written to ``dest/lane0_manifest.json``).
     """
+    dest = LANE0_DIR if dest is None else dest
     import shutil  # noqa: PLC0415
 
     dest.mkdir(parents=True, exist_ok=True)
@@ -5968,7 +5977,7 @@ def persist_lane0_bundle(
 
 
 def record_lane0_manifest(
-    manifest: dict[str, Any], evidence_path: Path = EVIDENCE
+    manifest: dict[str, Any], evidence_path: Path | None = None
 ) -> None:
     """Record the lane-0 manifest at its own node — seal-gated.
 
@@ -5983,6 +5992,7 @@ def record_lane0_manifest(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
         atomic_write_json,
     )
@@ -6005,8 +6015,8 @@ def persist_lane0_if_elected(
     mean_map: Path,
     std_map: Path,
     fold_eval_frame: dict[str, Any],
-    evidence_path: Path = EVIDENCE,
-    dest: Path = LANE0_DIR,
+    evidence_path: Path | None = None,
+    dest: Path | None = None,
 ) -> dict[str, Any] | None:
     """Lay down the lane-0 bundle — for the ELECTED tile and no other.
 
@@ -6027,6 +6037,8 @@ def persist_lane0_if_elected(
     Returns:
         The manifest, or None when the tile is not the elected one.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
+    dest = LANE0_DIR if dest is None else dest
     if tile != LANE0_TILE:
         return None
     manifest = persist_lane0_bundle(
@@ -6146,7 +6158,7 @@ def record_anisotropy_if_elected(
     tile: str,
     era: str,
     report_block: dict[str, Any],
-    evidence_path: Path = EVIDENCE,
+    evidence_path: Path | None = None,
 ) -> dict[str, Any] | None:
     """Record T6's anisotropy inputs — for the SOUTHERN tile and no other.
 
@@ -6165,6 +6177,7 @@ def record_anisotropy_if_elected(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     if tile != ANISOTROPY_TILE:
         return None
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
@@ -6253,7 +6266,7 @@ def record_land_mask_if_elected(
     era: str,
     n_obs: int,
     scores: dict[str, Any],
-    evidence_path: Path = EVIDENCE,
+    evidence_path: Path | None = None,
 ) -> dict[str, Any] | None:
     """Record the land-mask exercise — for the KUROSHIO tile and no other.
 
@@ -6273,6 +6286,7 @@ def record_land_mask_if_elected(
     Raises:
         sverdrup.validation.phase14_seal.SealError: No verified seal.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     if tile != LAND_MASK_TILE:
         return None
     from sverdrup.application.calibration.harness import (  # noqa: PLC0415
@@ -6388,13 +6402,14 @@ def recover_report_rows(
 @app.command()
 def recover_rows(
     era: Annotated[str, typer.Option(help="Era the rows describe")] = STAGE1_ERA,
-    evidence_path: Annotated[Path, typer.Option("--evidence-path")] = EVIDENCE,
+    evidence_path: Annotated[Path | None, typer.Option("--evidence-path")] = None,
 ) -> None:
     """Append the closed-leg tiles' report rows (owner pin 114).
 
     No solve, no leg re-run: the rows are computed from the maps those
     legs already wrote. Stops on any contradiction.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     blocks = recover_report_rows(era=era, evidence_path=evidence_path)
     for tile, block in blocks.items():
         standing = sorted(str(r["evaluator"]) for r in block["rows"])
@@ -6429,7 +6444,7 @@ def record_leg_evidence(
     pcg_maxiter: int,
     scores: dict[str, Any],
     date: str,
-    evidence_path: Path = EVIDENCE,
+    evidence_path: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Record BOTH sides of one leg: the evidence row and the report rows.
 
@@ -6466,6 +6481,7 @@ def record_leg_evidence(
     Returns:
         ``(row, report_block)`` — both recorded.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     row = record_tile_leg(
         seal_sha=seal_sha,
         tile=tile,
@@ -6889,7 +6905,7 @@ NOT_ESTABLISHED_NODE = "sigma_rows_not_established"
 
 @app.command()
 def withhold_sigma_rows(
-    evidence_path: Annotated[Path, typer.Option("--evidence-path")] = EVIDENCE,
+    evidence_path: Annotated[Path | None, typer.Option("--evidence-path")] = None,
 ) -> None:
     """Withhold both σ rows under the not-established firewall (pin 45b).
 
@@ -6903,6 +6919,7 @@ def withhold_sigma_rows(
         typer.BadParameter: If the rows, the diagnosis or the seal pointer
             are missing, or if the rows are already withheld.
     """
+    evidence_path = EVIDENCE if evidence_path is None else evidence_path
     from sverdrup.validation import phase14_seal  # noqa: PLC0415
 
     phase14_seal.verify_current_seal(evidence_path)

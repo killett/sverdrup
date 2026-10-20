@@ -105,11 +105,19 @@ def _sandbox_stage1_paths(
 
 
 def _data_tree_inventory() -> set[str]:
-    """Every path under the real Stage-1 data directory (names + mtimes)."""
+    """Every path under the real Stage-1 data directory (names + mtimes),
+    AND the live evidence store itself (hygiene: the tripwire watched the
+    directory but not the store a stray write would most likely hit)."""
     root = _REAL_DATA_ROOT / "phase14_stage1"
-    if not root.exists():
-        return set()
-    return {f"{p.relative_to(root)}:{p.stat().st_mtime_ns}" for p in root.rglob("*")}
+    out: set[str] = set()
+    if root.exists():
+        out |= {
+            f"{p.relative_to(root)}:{p.stat().st_mtime_ns}" for p in root.rglob("*")
+        }
+    store = _REAL_DATA_ROOT / "stage_miost_gate_results.json"
+    if store.exists():
+        out.add(f"<store>:{store.stat().st_mtime_ns}:{store.stat().st_size}")
+    return out
 
 
 class _SolveStopped(Exception):
