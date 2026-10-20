@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 
 from sverdrup.distributions.calibration import ClipSpec, PolyCalibration
-from tests.helpers import load_script
+from tests.helpers import LIVE_STORE, load_script, requires_live_store
 
 _mod = load_script("phase14_anchor_gate")
 
@@ -577,9 +577,10 @@ def test_check4_crn_mismatch_fails() -> None:
 _ANCHOR_MAPS = Path(
     "data/2021a_ssh_mapping_ose/ours/phase14_stage1/anchor_signed_maps.nc"
 )
-_EVIDENCE = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
+_EVIDENCE = LIVE_STORE
 
 
+@requires_live_store
 @pytest.mark.skipif(
     not _ANCHOR_MAPS.exists(),
     reason=f"anchor gate real leg not run yet: {_ANCHOR_MAPS} absent",
@@ -598,10 +599,7 @@ def test_anchor_gate_block_recorded_after_real_leg() -> None:
         assert isinstance(gate5[key], float)
 
 
-@pytest.mark.skipif(
-    not _EVIDENCE.exists(),
-    reason=f"evidence store absent: {_EVIDENCE}",
-)
+@requires_live_store
 def test_recorded_split_matches_what_a_rerun_would_build() -> None:
     # Bug caught: a re-run REVERTS the owner's amended shape — it re-records
     # a passing era_noop, drops the accounting or the pin-30 conditionality,

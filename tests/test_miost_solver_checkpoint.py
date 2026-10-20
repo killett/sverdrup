@@ -21,16 +21,21 @@ from sverdrup.methods.miost_solver import MiostSolver, rhs_from_obs
 from tests.helpers import corrupt_npz_member
 
 SPEC = BasisSpec(alpha=1.5, l_t_days=10.0, ladder=(320.0, 452.548))
-RNG = np.random.default_rng(11)
 
 
-def _small_system() -> tuple[MiostSolver, np.ndarray]:
+def _small_system(seed: int = 11) -> tuple[MiostSolver, np.ndarray]:
+    """The same small system on every call with the same ``seed``.
+
+    A module-level RNG made each call a different system, so a test's
+    system depended on which tests ran before it in the session.
+    """
+    rng = np.random.default_rng(seed)
     els = SPEC.elements_for_window(0.0)
     n = 50
-    lon = RNG.uniform(296, 304, n)
-    lat = RNG.uniform(34, 42, n)
-    t = RNG.uniform(10, 50, n)
-    y = RNG.standard_normal(n) * 0.1
+    lon = rng.uniform(296, 304, n)
+    lat = rng.uniform(34, 42, n)
+    t = rng.uniform(10, 50, n)
+    y = rng.standard_normal(n) * 0.1
     r = np.full(n, 0.01)
     q = DiagonalQ(rho=20.0, q_slope=2.0).variances_for(els)
     g = build_g(SPEC, els, lon, lat, t)
@@ -238,8 +243,7 @@ def test_a_checkpoint_with_a_corrupt_member_refuses_naming_it(
     with np.load(ck) as z:  # precondition: the archive itself still opens
         with pytest.raises(zipfile.BadZipFile):
             z["x"]
-    # The SAME system resumes (``_small_system`` draws from a module RNG, so
-    # a second call is a different system the stale check would refuse
-    # before any member is read).
+    # The SAME system resumes (a different system is refused by the stale
+    # check before any member is read).
     with pytest.raises(RuntimeError, match=r"ck\.npz is unreadable"):
         solver.solve(b, checkpoint=ck, checkpoint_every=5)

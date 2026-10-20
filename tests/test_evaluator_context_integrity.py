@@ -167,6 +167,15 @@ def test_all_evaluators_covers_every_fixture() -> None:
     assert {f().name for f in ALL_EVALUATORS} == set(_fixtures())
 
 
+def test_every_fixture_offers_every_context_key() -> None:
+    """Bug caught: a ContextKey member added without a fixture entry — an
+    undeclared read of it would meet a missing key and could take a skip
+    path instead of showing up in the spy, so the integrity check above
+    would pass blind to it."""
+    for name, (_result, items) in _fixtures().items():
+        assert set(items) == set(ContextKey), name
+
+
 class _DeclaresNeverReads:
     """The old stub pattern, kept as a regression canary."""
 

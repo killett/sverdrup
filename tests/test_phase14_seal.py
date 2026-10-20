@@ -95,7 +95,9 @@ def test_supersession_chain(tmp_path: Path) -> None:
         supersede_seal(p2, new, owner_signoff="  ")
 
 
-def test_ceremony_wired_to_real_verifier(tmp_path: Path) -> None:
+def test_ceremony_wired_to_real_verifier(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """open_touch with verify_seal-based verifier: mismatch refuses the
     ceremony BEFORE any locked open; a good seal opens it."""
     from sverdrup.validation.locked_tier import open_touch
@@ -104,14 +106,9 @@ def test_ceremony_wired_to_real_verifier(tmp_path: Path) -> None:
     sha = build_seal(_content(), p)
     ev = tmp_path / "evidence.json"
     ev.write_text(json.dumps({"phase14": {"locked_tally": {}}}))
-    import os
-
-    os.environ["SVERDRUP_PHASE14_TOUCH"] = "1"
-    try:
-        with pytest.raises(SealError):
-            with open_touch("prod", ["e00"], ev, lambda: verify_seal(p, "0" * 64)):
-                pass
-        with open_touch("prod", ["e00"], ev, lambda: verify_seal(p, sha)):
+    monkeypatch.setenv("SVERDRUP_PHASE14_TOUCH", "1")
+    with pytest.raises(SealError):
+        with open_touch("prod", ["e00"], ev, lambda: verify_seal(p, "0" * 64)):
             pass
-    finally:
-        os.environ.pop("SVERDRUP_PHASE14_TOUCH", None)
+    with open_touch("prod", ["e00"], ev, lambda: verify_seal(p, sha)):
+        pass
