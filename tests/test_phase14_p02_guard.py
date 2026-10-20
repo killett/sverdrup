@@ -21,12 +21,16 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tune_miost_inflation
 ENV = "SVERDRUP_ALLOW_STAGEB_EVIDENCE"
 
 
-def _delegate_factory(target: Path) -> tuple[list[tuple[object, ...]], object]:
-    """A recording delegate that clobbers ``target`` when invoked."""
-    calls: list[tuple[object, ...]] = []
+_Call = tuple[tuple[object, ...], dict[str, object]]
+
+
+def _delegate_factory(target: Path) -> tuple[list[_Call], object]:
+    """A recording delegate (positional AND keyword args) that clobbers
+    ``target`` when invoked."""
+    calls: list[_Call] = []
 
     def delegate(*args: object, **kwargs: object) -> str:
-        calls.append(args)
+        calls.append((args, kwargs))
         target.write_bytes(b"CLOBBERED")
         return "wrote"
 
@@ -67,16 +71,23 @@ def test_refuses_on_non_exact_string(
 
 
 def test_writes_with_env_set(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """With the exact-string opt-in the delegate runs with the original args."""
+    """With the exact-string opt-in the delegate runs with the original args.
+
+    Keyword arguments included (hygiene): the delegate used to record only
+    ``args``, so a guard dropping ``**kwargs`` passed — and the production
+    calls pass ``assimilated_missions=``.
+    """
     monkeypatch.setenv(ENV, "1")
     evidence = tmp_path / "stage_b_mean_maps.nc"
     evidence.write_bytes(b"SIGNED-EVIDENCE")
     calls, delegate = _delegate_factory(evidence)
 
-    result = _write_evidence_guarded(delegate, evidence, tag="x")
+    result = _write_evidence_guarded(
+        delegate, evidence, tag="x", assimilated_missions=("alg", "j3")
+    )
 
     assert result == "wrote"
-    assert calls == [(evidence,)]
+    assert calls == [((evidence,), {"tag": "x", "assimilated_missions": ("alg", "j3")})]
     assert evidence.read_bytes() == b"CLOBBERED"
 
 

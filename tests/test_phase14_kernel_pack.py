@@ -405,6 +405,9 @@ def test_the_edge_expression_matches_the_REAL_obs_frame(tmp_path: Path) -> None:
     `np.arange` can overshoot (the recorded 43.2°N quirk). At the
     poleward (min) end of a southern tile the two coincide by
     construction — this test is what proves that rather than assuming it.
+    The edge is READ from the pack's own output (the shipped-halo row of
+    ``breach_table``); hygiene: it used to be recomputed here as
+    ``solve_bbox[2] - halo``, so a pack that computed something else passed.
     """
     from sverdrup.adapters.altimetry import BBox
     from sverdrup.application.spatial_tiles import TileFrame
@@ -419,7 +422,9 @@ def test_the_edge_expression_matches_the_REAL_obs_frame(tmp_path: Path) -> None:
         halo_deg=frame_row["halo_deg"],
     )
     real = frame.obs_bbox(resolution_deg=0.2)
-    pack_edge = float(frame_row["solve_bbox"][2]) - float(frame_row["halo_deg"])
+    shipped = _pack.breach_table(evidence_path=_evidence(tmp_path))["rows"][0]
+    assert shipped["halo_deg"] == float(frame_row["halo_deg"])  # the shipped row
+    pack_edge = float(shipped["so_obs_south_edge"])
 
     assert real.lat_min == pytest.approx(pack_edge, abs=1e-9)
 
