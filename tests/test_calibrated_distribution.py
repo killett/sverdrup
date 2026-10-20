@@ -35,10 +35,9 @@ from sverdrup.distributions.gaussian import GaussianPredictiveDistribution
 # OI wrapper integration artifact paths
 # ---------------------------------------------------------------------------
 
+# The OI tests read only the field artifact, so they gate on it alone — a
+# missing jet-core mask (which they never open) is no reason to skip them.
 _OI_FIELD_ARTIFACT = Path("data/2021a_ssh_mapping_ose/ours/phase9_field_oi.json")
-_OI_MASK_ARTIFACT = Path("data/2021a_ssh_mapping_ose/ours/phase9_jet_core_mask_oi.json")
-
-_OI_ARTIFACTS_PRESENT = _OI_FIELD_ARTIFACT.exists() and _OI_MASK_ARTIFACT.exists()
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -895,8 +894,8 @@ def _oi_underlying(
 
 
 @pytest.mark.skipif(
-    not _OI_ARTIFACTS_PRESENT,
-    reason="phase9_field_oi.json or phase9_jet_core_mask_oi.json absent",
+    not _OI_FIELD_ARTIFACT.exists(),
+    reason="phase9_field_oi.json absent",
 )
 def test_oi_wrapper_marginal_variance_pointwise_identity() -> None:
     """OI wrapper marginal_variance == s(x)·v pointwise (rtol 1e-12).
@@ -954,8 +953,8 @@ def test_oi_wrapper_marginal_variance_pointwise_identity() -> None:
 
 
 @pytest.mark.skipif(
-    not _OI_ARTIFACTS_PRESENT,
-    reason="phase9_field_oi.json or phase9_jet_core_mask_oi.json absent",
+    not _OI_FIELD_ARTIFACT.exists(),
+    reason="phase9_field_oi.json absent",
 )
 def test_oi_wrapper_coverage_identity_via_sigma_floor() -> None:
     """Coverage recomputed through wrapper + SIGMA_OBS2 floor == direct formula (rtol 1e-9).

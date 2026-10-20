@@ -65,8 +65,9 @@ def test_root_tile_is_exact_unconditional_posterior():
 
 
 def test_two_white_streams_independent():
-    # Behavior (C2'): two tiles' unconditional draws use distinct seeds and are ~uncorrelated.
-    # Bug caught: a shared seed correlating a child's unconditional draw with its parent target.
+    # Behavior (C2', seeding layer): derive_seed's per-tile labels give distinct, ~uncorrelated
+    #   streams. The DRIVER's use of those labels is pinned by the test below.
+    # Bug caught: a label collision in derive_seed (the tile label not reaching the hash).
     s0 = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:0", 7)
     s1 = derive_seed(_NOISE.method, _NOISE.params_key, "gmrf-tile:1", 7)
     assert s0 != s1
@@ -91,6 +92,36 @@ def test_two_white_streams_independent():
         ]
     )
     assert abs(np.corrcoef(a, b)[0, 1]) < 0.1
+
+
+def test_driver_draws_each_tile_from_its_own_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Behavior (C2', driver level): one sweep draws each tile's unconditional white from its OWN
+    #   stream — one seed per tile, pairwise distinct — and every member gets fresh seeds.
+    # Bug caught: the driver keying the stream by member alone (tile index dropped from the
+    #   label), handing every tile the same white and correlating a child's unconditional draw
+    #   with its parent target. The seeding-layer test above never runs the driver.
+    fix = make_2x2()
+    real = np.random.default_rng
+    seeds: list[object] = []
+
+    def recording_rng(seed: object = None) -> np.random.Generator:
+        seeds.append(seed)
+        return real(cast(Any, seed))
+
+    monkeypatch.setattr(np.random, "default_rng", recording_rng)
+    drv = GmrfTreeKrigingSolve()
+    per_member = []
+    for m in (0, 1):
+        seeds.clear()
+        drv._sweep_tree(fix.parts, 2.0, m, _NOISE)
+        per_member.append(list(seeds))
+    n = len(fix.parts)
+    assert n == 4
+    for s in per_member:
+        assert len(s) == n and len(set(s)) == n, s
+    assert set(per_member[0]).isdisjoint(per_member[1])
 
 
 def test_tree_dropped_and_conservative_contracts():

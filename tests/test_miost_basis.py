@@ -66,11 +66,29 @@ def test_directions_and_phases() -> None:
 
 
 def test_global_slot_identity_window_independent() -> None:
-    """Same physical element enumerated from two overlapping windows -> same identity."""
+    """One identity names one physical element, whichever window enumerates it.
+
+    Bug caught: a window-relative temporal index (slot counted from the
+    window's first slot). Windows at day 0 and day 45 would then share
+    identities for elements 45 days apart — a bare "some identity is shared"
+    check passes under exactly that bug, which shares MORE tuples, not fewer.
+    Expected sets come from slot times alone: the windows [0, 60] and
+    [45, 105] overlap on [45, 60].
+    """
     a = SPEC.elements_for_window(start_day=0.0)
     b = SPEC.elements_for_window(start_day=45.0)
-    shared = set(map(tuple, a.identity)) & set(map(tuple, b.identity))
-    assert shared  # the 15-day overlap shares temporal slots
+    ia = {tuple(r): n for n, r in enumerate(a.identity.tolist())}
+    ib = {tuple(r): n for n, r in enumerate(b.identity.tolist())}
+    shared = ia.keys() & ib.keys()
+    a_overlap = {tuple(r) for r in a.identity[a.t_days >= 45.0].tolist()}
+    b_overlap = {tuple(r) for r in b.identity[b.t_days <= 60.0].tolist()}
+    assert a_overlap
+    assert shared == a_overlap == b_overlap
+    keys = sorted(shared)
+    na = np.array([ia[k] for k in keys])
+    nb = np.array([ib[k] for k in keys])
+    for f in ("x_km", "y_km", "t_days", "kx", "ky", "phase", "half_width_km"):
+        np.testing.assert_array_equal(getattr(a, f)[na], getattr(b, f)[nb], f)
 
 
 def test_elements_for_window_custom_w_days() -> None:
