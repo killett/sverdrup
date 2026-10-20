@@ -259,7 +259,11 @@ def check(
     evidence_path: _EvidencePathOpt = EVIDENCE,
 ) -> None:
     """Re-derive the sha from the LIVE artifacts; FAIL on any drift."""
-    recorded = json.loads(evidence_path.read_text())["phase14"]["stage0"]["seal"]
+    # ONE snapshot of the store for the pointer and every audit below: it is
+    # shared state that may be written concurrently (pin 191), and the audits
+    # only read it.
+    store = json.loads(evidence_path.read_text())
+    recorded = store["phase14"]["stage0"]["seal"]
     content = _assemble(epoch_table, locked_split)
     sealed_path = Path(recorded["path"])
     if sealed_path.exists():
@@ -279,16 +283,16 @@ def check(
     # and refuse a validation applied outside the span it was validated
     # over unless the extrapolation is DECLARED at the point of use. Keys
     # on self-declared `kind`, so existing recorded content is untouched.
-    failures.extend(_schema_refusals(json.loads(evidence_path.read_text())))
+    failures.extend(_schema_refusals(store))
     # Owner pins 134 + 139(a): the refusals above are opt-in by self-declared
     # `kind`, and in this store nothing opts in. The shape-keyed check below
     # is what they could not see, and it REFUSES. The eleven pre-existing
     # blocks are declared by forward pointer (139b) rather than rewritten.
-    failures.extend(_projection_findings(json.loads(evidence_path.read_text())))
+    failures.extend(_projection_findings(store))
     # Owner pin 152: the re-keyed pin-42 check REFUSES too, now that the
     # sweep has a resting state — 24 declared, 9 uncited recorded as found.
     # The recorded-as-found nine are printed, never fatal (pin 145b).
-    verdicts = _verdict_findings(json.loads(evidence_path.read_text()))
+    verdicts = _verdict_findings(store)
     noted = [v for v in verdicts if v.startswith("RECORDED-AS-FOUND ")]
     failures.extend(v for v in verdicts if not v.startswith("RECORDED-AS-FOUND "))
     if noted:

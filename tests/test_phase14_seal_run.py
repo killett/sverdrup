@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from typer.testing import CliRunner
@@ -346,3 +347,30 @@ def test_build_refuses_a_recorded_pointer_before_writing_any_seal_file(
     assert res.exit_code != 0
     assert "already recorded" in res.output
     assert not p["seal"].exists()
+
+
+def test_check_audits_ONE_snapshot_of_the_store(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """check reads the evidence store exactly once, then audits that snapshot.
+
+    The store is shared state the owner may write concurrently (pin 191).
+    Re-reading it for the seal pointer and each audit lets one verdict mix
+    two store versions. Bug caught: a per-audit ``json.loads(read_text())``
+    (four reads before this fix).
+    """
+    p = _fixtures(tmp_path)
+    p["evidence"].write_text(json.dumps({"phase14": {"stage0": {}}}))
+    assert runner.invoke(_mod.app, _args(p, "build")).exit_code == 0
+    reads: list[Path] = []
+    real = Path.read_text
+
+    def counting(self: Path, *a: Any, **k: Any) -> str:
+        if self == p["evidence"]:
+            reads.append(self)
+        return real(self, *a, **k)
+
+    monkeypatch.setattr(Path, "read_text", counting)
+    res = runner.invoke(_mod.app, _args(p, "check"))
+    assert res.exit_code == 0, res.output
+    assert len(reads) == 1
