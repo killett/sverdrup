@@ -47,6 +47,13 @@ ATTEMPT=0
 
 log() { printf '%s %s\n' "$(date -Iseconds)" "$1" >> "$OUT/launcher.log"; }
 
+# Liveness by process STATE: kill -0 succeeds on a zombie (exited, not yet
+# reaped), which kept the sampling loop spinning on a dead leg (hygiene).
+proc_alive() {
+  _st=$(ps -o stat= -p "$1" 2>/dev/null | cut -c1)
+  [ -n "$_st" ] && [ "$_st" != "Z" ]
+}
+
 while :; do
   ATTEMPT=$((ATTEMPT + 1))
   OUT=$(pixi run python scripts/phase14_stage1_run.py log-dir "$TILE")
@@ -82,12 +89,16 @@ while :; do
     sleep 1
   done
   echo "$PID" > "$OUT/leg.pid"
-  log "real pid ${PID} (wrapper ${WRAP})"
+  if [ -n "$PID" ]; then
+    log "real pid ${PID} (wrapper ${WRAP})"
+  else
+    log "⚠ real pid NOT resolved in 120 s — sampling disabled for this attempt; waiting on wrapper ${WRAP}"
+  fi
 
   # Sample at the SAME cadence the in-run tracker uses (pin 156c), so the two
   # cannot disagree about the same run the way they did on leg 2.
   START=$(date +%s)
-  while kill -0 "$PID" 2>/dev/null; do
+  while proc_alive "$PID"; do
     HWM=$(awk '/VmHWM/{print $2}' /proc/$PID/status 2>/dev/null || echo 0)
     RSS=$(awk '/VmRSS/{print $2}' /proc/$PID/status 2>/dev/null || echo 0)
     SWP=$(awk '/VmSwap/{print $2}' /proc/$PID/status 2>/dev/null || echo 0)
