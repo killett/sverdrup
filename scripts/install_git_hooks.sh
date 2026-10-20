@@ -6,7 +6,9 @@
 set -e
 
 root=$(git rev-parse --show-toplevel)
-hooks=$(git rev-parse --git-dir)/hooks
+# Where git RUNS hooks: the common dir in a linked worktree (or core.hooksPath)
+# — --git-dir/hooks there is a directory git never consults (hygiene).
+hooks=$(git rev-parse --path-format=absolute --git-path hooks)
 mkdir -p "$hooks"
 
 for src in "$root"/scripts/git_hooks/*; do

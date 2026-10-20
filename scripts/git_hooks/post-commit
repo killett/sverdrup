@@ -16,7 +16,8 @@
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 local_sha=$(git rev-parse HEAD)
-marker="$(git rev-parse --git-dir)/UNPUSHED_COMMITS"
+# The COMMON dir: one marker every worktree (and resume_checks.sh) sees.
+marker="$(git rev-parse --path-format=absolute --git-common-dir)/UNPUSHED_COMMITS"
 
 loud() {
     echo "" >&2
