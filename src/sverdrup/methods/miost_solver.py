@@ -129,9 +129,25 @@ class MiostSolver:
         start_it = 1
         if checkpoint is not None and checkpoint.exists():
             try:
-                ck_ctx = np.load(checkpoint)
+                # EVERY member is read inside the guard: npz members load
+                # lazily, so a member failing its CRC would otherwise escape
+                # later, from ck["x"], as a bare BadZipFile.
+                with np.load(checkpoint) as ck:
+                    saved = {
+                        name: np.asarray(ck[name])
+                        for name in (
+                            "b_hash",
+                            "shape",
+                            "x",
+                            "r",
+                            "p",
+                            "rz",
+                            "iters",
+                            "it",
+                        )
+                    }
             except Exception as exc:  # noqa: BLE001 - any load failure is corruption
-                # Owner pin 122: a truncated checkpoint REFUSES, naming
+                # Owner pin 122: a corrupt checkpoint REFUSES, naming
                 # itself. Resuming from a partially-loaded state would
                 # produce a solve that is neither the interrupted one nor a
                 # fresh one, with nothing to say so. A bare BadZipFile
@@ -141,19 +157,18 @@ class MiostSolver:
                     "is corrupt, most likely a crash inside its own write. "
                     "Delete it to solve fresh; do NOT resume from it"
                 ) from exc
-            with ck_ctx as ck:
-                if str(ck["b_hash"]) != b_hash or tuple(ck["shape"]) != b2.shape:
-                    raise ValueError(
-                        "stale PCG checkpoint: saved state belongs to a "
-                        "different system (RHS hash/shape mismatch) — delete "
-                        f"{checkpoint} to solve fresh"
-                    )
-                x = np.asarray(ck["x"])
-                r = np.asarray(ck["r"])
-                p = np.asarray(ck["p"])
-                rz = np.asarray(ck["rz"])
-                iters = np.asarray(ck["iters"])
-                start_it = int(ck["it"]) + 1
+            if str(saved["b_hash"]) != b_hash or tuple(saved["shape"]) != b2.shape:
+                raise ValueError(
+                    "stale PCG checkpoint: saved state belongs to a "
+                    "different system (RHS hash/shape mismatch) — delete "
+                    f"{checkpoint} to solve fresh"
+                )
+            x = saved["x"]
+            r = saved["r"]
+            p = saved["p"]
+            rz = saved["rz"]
+            iters = saved["iters"]
+            start_it = int(saved["it"]) + 1
         else:
             x = np.zeros_like(b2)
             r = b2 - self.apply_a(x)

@@ -81,3 +81,25 @@ def install_valid_production_seal(tmp_path: Path, monkeypatch: Any) -> Path:  # 
     monkeypatch.setattr(phase14_seal, "EVIDENCE", production)
     phase14_seal.verify_current_seal()  # the precondition: default verifies
     return production
+
+
+def corrupt_npz_member(path: Path, member: str) -> None:
+    """Flip the last data byte of ONE stored npz member, directory intact.
+
+    The archive still opens; the CRC error surfaces only when that member is
+    READ — the lazy-npz failure mode a truncated file never exercises.
+
+    Args:
+        path: An uncompressed ``.npz`` (``np.savez``, ZIP_STORED).
+        member: The member name inside it, e.g. ``"x.npy"``.
+    """
+    import zipfile  # noqa: PLC0415 - helper-local
+
+    with zipfile.ZipFile(path) as zf:
+        info = zf.getinfo(member)
+    data = bytearray(path.read_bytes())
+    h = info.header_offset  # local header: 30 fixed bytes + name + extra
+    name_len = int.from_bytes(data[h + 26 : h + 28], "little")
+    extra_len = int.from_bytes(data[h + 28 : h + 30], "little")
+    data[h + 30 + name_len + extra_len + info.compress_size - 1] ^= 0xFF
+    path.write_bytes(bytes(data))

@@ -840,3 +840,34 @@ def test_a_legacy_window_without_a_config_record_is_still_readable(
     )
     np.testing.assert_array_equal(eta, np.ones(3))
     assert start == 4.5
+
+
+@pytest.mark.parametrize("member", ["wid.npy", "eta.npy", "anom.npy"])
+def test_a_window_with_a_corrupt_member_refuses_naming_it(
+    tmp_path: Path, member: str
+) -> None:
+    """Owner pin 122, the lazy half, for the window store.
+
+    Bug caught (hygiene, miost_ensemble.py window loads): only ``np.load``
+    sat in the guard and npz members load lazily (pin 133 depends on it),
+    so a member failing its CRC escaped as a bare ``BadZipFile`` — from the
+    config check (``wid``), the eager fields (``eta``) or the on-demand
+    anomaly reader (``anom``) — instead of the refusal naming the file.
+    """
+    from sverdrup.distributions.miost_ensemble import (
+        _load_window_fields,
+        _save_window,
+    )
+    from tests.helpers import corrupt_npz_member
+
+    store = tmp_path / "w"
+    _save_window(
+        store, "w0", eta=np.ones(3), anom=np.zeros((3, 2)), start=4.5, m=2, root=1
+    )
+    path = store / "window_w0.npz"
+    corrupt_npz_member(path, member)
+    with pytest.raises(RuntimeError, match=r"window_w0\.npz is unreadable"):
+        if member == "anom.npy":
+            WindowBackedAnoms(store, ["w0"], m=2, root=1)["w0"]
+        else:
+            _load_window_fields(path, wid="w0", m=2, root=1, fields=("eta", "start"))

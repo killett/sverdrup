@@ -482,24 +482,58 @@ def _load_window_fields(
             "window will be re-solved"
         ) from exc
     with ctx as z:
-        if str(z["wid"]) != wid or int(z["m"]) != int(m) or str(z["root"]) != str(root):
+        has_config = "config" in z.files
+        meta = _read_members(
+            z, path, ("wid", "m", "root", *(("config",) if has_config else ()))
+        )
+        s_wid, s_m, s_root = str(meta["wid"]), int(meta["m"]), str(meta["root"])
+        if s_wid != wid or s_m != int(m) or s_root != str(root):
             raise RuntimeError(
                 f"persisted window {path} belongs to a different configuration "
-                f"(stored wid={str(z['wid'])!r} m={int(z['m'])} root={str(z['root'])!r}; "
+                f"(stored wid={s_wid!r} m={s_m} root={s_root!r}; "
                 f"requested wid={wid!r} m={int(m)} root={str(root)!r}) — refusing to "
                 "assemble it"
             )
-        if config is not None and "config" in z.files and str(z["config"]) != config:
+        if config is not None and has_config and str(meta["config"]) != config:
             raise RuntimeError(
                 f"persisted window {path} belongs to a different configuration "
-                f"(stored config {str(z['config'])!r}; requested {config!r}: "
+                f"(stored config {str(meta['config'])!r}; requested {config!r}: "
                 "different params, training obs or solver cap) — refusing to "
                 "assemble it"
             )
-        out: list[np.ndarray | float] = []
-        for name in fields:
-            out.append(float(z[name]) if name == "start" else np.asarray(z[name]))
-        return tuple(out)
+        got = _read_members(z, path, fields)
+        return tuple(float(got[n]) if n == "start" else got[n] for n in fields)
+
+
+def _read_members(
+    z: Mapping[str, np.ndarray], path: Path, names: tuple[str, ...]
+) -> dict[str, np.ndarray]:
+    """Read NAMED members of an open window file, refusing a corrupt one.
+
+    npz members load lazily (pin 133 depends on it: only the named members
+    are read), so a member failing its CRC raises HERE, not at ``np.load`` —
+    owner pin 122 wants that refusal naming the file, not a bare
+    ``BadZipFile``.
+
+    Args:
+        z: The open npz.
+        path: Its path, for the refusal message.
+        names: Member names to read.
+
+    Returns:
+        name -> member array.
+
+    Raises:
+        RuntimeError: If any named member cannot be read.
+    """
+    try:
+        return {name: np.asarray(z[name]) for name in names}
+    except Exception as exc:  # noqa: BLE001 - any member failure is corruption
+        raise RuntimeError(
+            f"persisted window {path} is unreadable ({exc!r}) — it is corrupt, "
+            "most likely a crash inside its own write. Delete it and the "
+            "window will be re-solved"
+        ) from exc
 
 
 class WindowBackedAnoms(Mapping[str, np.ndarray]):

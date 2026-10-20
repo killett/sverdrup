@@ -18,6 +18,7 @@ import pytest
 
 from sverdrup.methods.miost_basis import BasisSpec, DiagonalQ, build_g
 from sverdrup.methods.miost_solver import MiostSolver, rhs_from_obs
+from tests.helpers import corrupt_npz_member
 
 SPEC = BasisSpec(alpha=1.5, l_t_days=10.0, ladder=(320.0, 452.548))
 RNG = np.random.default_rng(11)
@@ -202,3 +203,43 @@ def test_truncated_checkpoint_refuses_with_a_message_naming_it(
     solver2, b2 = _small_system()
     with pytest.raises(RuntimeError, match="unreadable"):
         solver2.solve(b2, checkpoint=ck, checkpoint_every=5)
+
+
+def test_a_checkpoint_with_a_corrupt_member_refuses_naming_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner pin 122, the lazy half: a bad MEMBER refuses like a bad file.
+
+    Bug caught (hygiene, miost_solver.py:130-156): only ``np.load`` sat in
+    the guard, and npz members load lazily — a member whose bytes fail
+    their CRC escaped as a bare ``BadZipFile`` from ``ck["x"]``, exactly
+    the outcome pin 122 forbids.
+    """
+    import zipfile
+    from typing import Any
+
+    solver, b = _small_system()
+    ck = tmp_path / "ck.npz"
+    orig = np.savez
+    calls = {"n": 0}
+
+    def _die_after_a_few(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        orig(*args, **kwargs)
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise KeyboardInterrupt
+
+    with monkeypatch.context() as mp:
+        mp.setattr(np, "savez", _die_after_a_few)
+        with pytest.raises(KeyboardInterrupt):
+            solver.solve(b, checkpoint=ck, checkpoint_every=5)
+
+    corrupt_npz_member(ck, "x.npy")
+    with np.load(ck) as z:  # precondition: the archive itself still opens
+        with pytest.raises(zipfile.BadZipFile):
+            z["x"]
+    # The SAME system resumes (``_small_system`` draws from a module RNG, so
+    # a second call is a different system the stale check would refuse
+    # before any member is read).
+    with pytest.raises(RuntimeError, match=r"ck\.npz is unreadable"):
+        solver.solve(b, checkpoint=ck, checkpoint_every=5)
