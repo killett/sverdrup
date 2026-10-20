@@ -785,3 +785,58 @@ def test_a_raising_on_window_halts_AFTER_the_window_is_persisted(
         _method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store
     )
     assert _digests(etas_a, anoms_a) == _digests(etas_b, anoms_b)
+
+
+@pytest.mark.parametrize("change", ["params", "obs", "pcg_cap"])
+def test_window_store_refuses_a_store_from_another_solve_configuration(
+    tmp_path: Path, change: str
+) -> None:
+    """Same m and root, different solve -> REFUSED, never adopted.
+
+    Bug caught (hygiene 51): the store bound only (wid, m, root), and the
+    all-loaded resume path re-derives the spec from the CURRENT params — so
+    one configuration's coefficients were silently evaluated as another's
+    (different params, different training obs, a different PCG cap).
+    """
+    from sverdrup.distributions.miost_ensemble import merged_members
+
+    store = tmp_path / "windows"
+    merged_members(_method(), _obs(), GRID, PARAMS, M, ROOT, window_store=store)
+    method, obs, params = _method(), _obs(), PARAMS
+    if change == "params":
+        params = ConstantProvider(
+            {"spacing_alpha": 1.5, "log10_rho": 1.3, "q_slope": 3.0, "l_t_days": 10.0}
+        )
+    elif change == "obs":
+        obs = _obs(n=60)
+    else:
+        method = Miost(plan=WindowPlan(starts=(0.0, 45.0)), pcg_maxiter=7)
+    with pytest.raises(RuntimeError, match="different configuration"):
+        merged_members(method, obs, GRID, params, M, ROOT, window_store=store)
+
+
+def test_a_legacy_window_without_a_config_record_is_still_readable(
+    tmp_path: Path,
+) -> None:
+    """Bug caught: a binding check that refuses every store written before
+    it existed — the recorded Stage-1 stores (the seam/anchor resume path)
+    would become unreadable."""
+    from sverdrup.distributions.miost_ensemble import (
+        _load_window_fields,
+        _save_window,
+    )
+
+    store = tmp_path / "w"
+    _save_window(
+        store, "w0", eta=np.ones(3), anom=np.zeros((3, 2)), start=4.5, m=2, root=1
+    )
+    eta, start = _load_window_fields(
+        store / "window_w0.npz",
+        wid="w0",
+        m=2,
+        root=1,
+        fields=("eta", "start"),
+        config="any-current-config",
+    )
+    np.testing.assert_array_equal(eta, np.ones(3))
+    assert start == 4.5

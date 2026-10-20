@@ -371,6 +371,31 @@ def exclusive_days(plan: WindowPlan) -> dict[str, float]:
     return out
 
 
+def _window_store_config(
+    method: Miost, obs: ObsWindow, grid: GridSpec, params: ParameterProvider
+) -> str:
+    """Digest of everything a stored window's coefficients depend on.
+
+    Args:
+        method: The MIOST method (its params key carries the basis spec with
+            its domain, rho, q_slope, PCG rtol/cap, calibration and rspec).
+        obs: The training observations.
+        grid: The output grid.
+        params: The parameter provider.
+
+    Returns:
+        ``"<params-key hash>:<obs fingerprint>"``.
+    """
+    from sverdrup.methods.miost import (  # noqa: PLC0415 - genuine cycle
+        _obs_fingerprint,
+        _params_key_hash,
+    )
+
+    return (
+        f"{_params_key_hash(method._params_key(params, grid))}:{_obs_fingerprint(obs)}"
+    )
+
+
 def _window_store_file(store: Path, wid: str) -> Path:
     """Path of one window's persisted members inside ``store``."""
     return store / f"window_{wid}.npz"
@@ -385,26 +410,31 @@ def _save_window(
     start: float,
     m: int,
     root: Seed,
+    config: str | None = None,
 ) -> None:
     """Persist ONE window's members atomically (owner pins 121a, 122).
 
     Temp-and-rename, so a crash inside the write leaves the previous state
     intact rather than a half-written window a later leg would read as
-    complete. ``m`` and ``root`` ride along so a store from a different
-    configuration is refused rather than adopted.
+    complete. ``m``, ``root`` and the solve ``config`` digest ride along so
+    a store from a different configuration is refused rather than adopted
+    (``config`` added by hygiene item 51: ``m``/``root`` alone let another
+    params / obs / PCG-cap configuration's store be adopted).
     """
     store.mkdir(parents=True, exist_ok=True)
     dest = _window_store_file(store, wid)
     tmp = dest.with_name(dest.name + ".tmp")
-    np.savez(
-        tmp,
-        eta=eta,
-        anom=anom,
-        start=float(start),
-        wid=wid,
-        m=int(m),
-        root=str(root),
-    )
+    payload: dict[str, np.ndarray | float | int | str] = {
+        "eta": eta,
+        "anom": anom,
+        "start": float(start),
+        "wid": wid,
+        "m": int(m),
+        "root": str(root),
+    }
+    if config is not None:
+        payload["config"] = str(config)
+    np.savez(tmp, **payload)  # type: ignore[arg-type]  # numpy stub: allow_pickle
     written = tmp if tmp.exists() else tmp.with_name(tmp.name + ".npz")
     os.replace(written, dest)
 
@@ -440,7 +470,13 @@ def _load_window(
 
 
 def _load_window_fields(
-    path: Path, *, wid: str, m: int, root: Seed, fields: tuple[str, ...]
+    path: Path,
+    *,
+    wid: str,
+    m: int,
+    root: Seed,
+    fields: tuple[str, ...],
+    config: str | None = None,
 ) -> tuple[np.ndarray | float, ...]:
     """Load NAMED members of one persisted window, refusing anything else.
 
@@ -455,6 +491,11 @@ def _load_window_fields(
         m: Member count this file must have been written under.
         root: CRN root this file must have been written under.
         fields: Member names to read, in the order they are returned.
+        config: The solve-configuration digest this file must carry. A
+            LEGACY file written before the digest existed carries none and
+            is accepted on ``m``/``root`` alone (the recorded Stage-1
+            stores stay readable); a file that carries a DIFFERENT digest
+            is refused (hygiene item 51).
 
     Returns:
         The requested members, in ``fields`` order.
@@ -479,6 +520,13 @@ def _load_window_fields(
                 f"persisted window {path} belongs to a different configuration "
                 f"(stored wid={str(z['wid'])!r} m={int(z['m'])} root={str(z['root'])!r}; "
                 f"requested wid={wid!r} m={int(m)} root={str(root)!r}) — refusing to "
+                "assemble it"
+            )
+        if config is not None and "config" in z.files and str(z["config"]) != config:
+            raise RuntimeError(
+                f"persisted window {path} belongs to a different configuration "
+                f"(stored config {str(z['config'])!r}; requested {config!r}: "
+                "different params, training obs or solver cap) — refusing to "
                 "assemble it"
             )
         out: list[np.ndarray | float] = []
@@ -510,6 +558,7 @@ class WindowBackedAnoms(Mapping[str, np.ndarray]):
         m: int,
         root: Seed,
         max_resident: int = 2,
+        config: str | None = None,
     ) -> None:
         """Bind the mapping to a store without reading anything.
 
@@ -519,6 +568,8 @@ class WindowBackedAnoms(Mapping[str, np.ndarray]):
             m: Member count every file must carry.
             root: CRN root every file must carry.
             max_resident: How many blocks may stay live at once.
+            config: Solve-configuration digest every file must carry (see
+                :func:`_load_window_fields`).
         """
         if max_resident < 1:
             raise ValueError("max_resident must be at least 1")
@@ -526,6 +577,7 @@ class WindowBackedAnoms(Mapping[str, np.ndarray]):
         self._ids = tuple(window_ids)
         self._m = int(m)
         self._root = root
+        self._config = config
         self._max_resident = int(max_resident)
         self._cache: OrderedDict[str, np.ndarray] = OrderedDict()
 
@@ -542,6 +594,7 @@ class WindowBackedAnoms(Mapping[str, np.ndarray]):
             m=self._m,
             root=self._root,
             fields=("anom",),
+            config=self._config,
         )
         block = np.asarray(anom)
         self._cache[wid] = block
@@ -611,6 +664,14 @@ def merged_members(
     etas_a: dict[str, np.ndarray] = {}
     anoms: dict[str, np.ndarray] = {}
     starts: dict[str, float] = {}
+    # Hygiene item 51: bind the store to EVERYTHING eta depends on — the
+    # params key (spec incl. domain, rho, q_slope, PCG rtol/cap, calibration,
+    # rspec) and the training obs — not only (wid, m, root).
+    config = (
+        None
+        if window_store is None
+        else _window_store_config(method, obs, grid, params)
+    )
     for wid, day in exclusive_days(method._plan).items():
         stored = None if window_store is None else _window_store_file(window_store, wid)
         if stored is not None and stored.exists():
@@ -618,7 +679,12 @@ def merged_members(
             # on disk until a consumer asks for it — at leg-1 kuroshio shape
             # that is 373.8 MiB per window not held.
             eta, start = _load_window_fields(
-                stored, wid=wid, m=m, root=root, fields=("eta", "start")
+                stored,
+                wid=wid,
+                m=m,
+                root=root,
+                fields=("eta", "start"),
+                config=config,
             )
             etas_a[wid] = np.asarray(eta)
             starts[wid] = float(start)
@@ -640,6 +706,7 @@ def merged_members(
                 start=dist._window_starts[wid],
                 m=m,
                 root=root,
+                config=config,
             )
             # Pin 133. The block is on disk now; the only thing keeping it
             # live is this scope, and `dist` is rebound next iteration.
@@ -662,7 +729,9 @@ def merged_members(
         return (
             spec,
             etas_a,
-            WindowBackedAnoms(window_store, list(etas_a), m=m, root=root),
+            WindowBackedAnoms(
+                window_store, list(etas_a), m=m, root=root, config=config
+            ),
             starts,
         )
     return spec, etas_a, anoms, starts
