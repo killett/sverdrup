@@ -176,3 +176,32 @@ class TestCmemsConformance(AltimetryConformance):
             np.datetime64("2017-01-05"),
             np.datetime64("2017-01-09"),
         )
+
+
+def test_descriptor_carries_the_download_manifest(tmp_path: Path) -> None:
+    """Positive control for the refusal below: a manifested tree's identity
+    IS its manifest (the four fixture entries, sorted)."""
+    root = _fixture_tree(tmp_path)
+    entries = json.loads((root / "manifest.json").read_text())
+    desc = CmemsMySource(root).descriptor()
+    assert desc.content_manifest == tuple(sorted(entries.items()))
+    assert len(desc.content_manifest) == 4
+
+
+@pytest.mark.parametrize(
+    ("manifest", "error"), [(None, FileNotFoundError), ("{}", ValueError)]
+)
+def test_descriptor_refuses_a_missing_or_empty_manifest(
+    tmp_path: Path, manifest: str | None, error: type[Exception]
+) -> None:
+    """Bug caught (hygiene, cmems_my.py:133): with no manifest the
+    descriptor hashed an EMPTY manifest — one constant shared by every
+    unmanifested directory (including the cwd-relative default read from
+    the wrong cwd) — and recorded it as a content identity."""
+    root = _fixture_tree(tmp_path)
+    if manifest is None:
+        (root / "manifest.json").unlink()
+    else:
+        (root / "manifest.json").write_text(manifest)
+    with pytest.raises(error, match="manifest"):
+        CmemsMySource(root).descriptor()

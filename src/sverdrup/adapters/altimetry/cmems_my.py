@@ -129,11 +129,28 @@ class CmemsMySource:
         return EPOCH
 
     def descriptor(self) -> SourceDescriptor:
-        """Content-addressed identity from the download-time manifest."""
+        """Content-addressed identity from the download-time manifest.
+
+        Raises:
+            FileNotFoundError: If the root carries no ``manifest.json``.
+            ValueError: If the manifest is empty.
+
+        Both refuse because an empty manifest hashes to ONE constant shared
+        by every unmanifested directory (a wrong cwd under the relative
+        default included) — recorded, it would read as a content identity.
+        """
         manifest_path = self._dir / "manifest.json"
-        entries = (
-            json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
-        )
+        if not manifest_path.exists():
+            raise FileNotFoundError(
+                f"no download manifest at {manifest_path} — the descriptor is "
+                "the manifest; without it there is no content identity to state"
+            )
+        entries = json.loads(manifest_path.read_text())
+        if not entries:
+            raise ValueError(
+                f"empty download manifest at {manifest_path} — its sha is a "
+                "constant shared by every unmanifested tree, not an identity"
+            )
         return SourceDescriptor(
             source_id="cmems_my",
             dataset_version=DATASET_VERSION,
