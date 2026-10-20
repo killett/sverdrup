@@ -36,6 +36,8 @@ from sverdrup.methods.miost_basis import (
     W_DAYS,
     BasisSpec,
     Elements,
+    basis_spec_from_state,
+    basis_state_arrays,
     build_s_spatial,
     lonlat_to_km,
     time_contract,
@@ -280,10 +282,7 @@ class MiostEnsembleDistribution:
         """
         arrays: dict[str, object] = {
             "kind": self.state_kind,
-            "alpha": self._spec.alpha,
-            "l_t_days": self._spec.l_t_days,
-            "n_dir": self._spec.n_dir,
-            "ladder": np.asarray(self._spec.ladder),
+            **basis_state_arrays(self._spec),
             "time_days": self.time_days,
             "w_days": self._w_days,
             "m": self.m,
@@ -305,7 +304,10 @@ class MiostEnsembleDistribution:
 
         Raises:
             ValueError: If the file's kind tag is not one of the known
-                ensemble kinds (scalar-era or the phase-13 augmented tag).
+                ensemble kinds (scalar-era or the phase-13 augmented tag), or
+                if its stored ``basis_key`` disagrees with the spec rebuilt
+                from the file (see
+                :func:`~sverdrup.methods.miost_basis.basis_spec_from_state`).
         """
         with np.load(path) as z:
             if "kind" not in z or str(z["kind"]) not in _KNOWN_KINDS:
@@ -314,12 +316,7 @@ class MiostEnsembleDistribution:
                     f"kind={str(z['kind']) if 'kind' in z else 'MISSING'!r}"
                 )
             loaded_kind = str(z["kind"])
-            spec = BasisSpec(
-                alpha=float(z["alpha"]),
-                l_t_days=float(z["l_t_days"]),
-                n_dir=int(z["n_dir"]),
-                ladder=tuple(float(s) for s in z["ladder"]),
-            )
+            spec = basis_spec_from_state(z, path)
             wids = [str(w) for w in z["window_ids"]]
             m = int(z["m"])
             # cal_* keys, if present (wrapper-written files), are IGNORED here:

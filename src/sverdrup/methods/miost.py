@@ -30,6 +30,8 @@ from sverdrup.methods.miost_basis import (
     BasisSpec,
     DiagonalQ,
     Elements,
+    basis_spec_from_state,
+    basis_state_arrays,
     build_g,
     build_s_spatial,
     lonlat_to_km,
@@ -181,11 +183,7 @@ class MiostPointDistribution:
             path: Destination ``.npz`` path.
         """
         arrays: dict[str, object] = {
-            "basis_key": self._spec.key(),
-            "alpha": self._spec.alpha,
-            "l_t_days": self._spec.l_t_days,
-            "n_dir": self._spec.n_dir,
-            "ladder": np.asarray(self._spec.ladder),
+            **basis_state_arrays(self._spec),
             "time_days": self.time_days,
             "w_days": self._w_days,
             "mean": np.asarray(self.mean),
@@ -206,14 +204,14 @@ class MiostPointDistribution:
 
         Returns:
             The reconstructed POINT distribution.
+
+        Raises:
+            ValueError: If the stored ``basis_key`` disagrees with the spec
+                rebuilt from the file (see
+                :func:`~sverdrup.methods.miost_basis.basis_spec_from_state`).
         """
         with np.load(path) as z:
-            spec = BasisSpec(
-                alpha=float(z["alpha"]),
-                l_t_days=float(z["l_t_days"]),
-                n_dir=int(z["n_dir"]),
-                ladder=tuple(float(s) for s in z["ladder"]),
-            )
+            spec = basis_spec_from_state(z, path)
             wids = [str(w) for w in z["window_ids"]]
             etas = {wid: np.asarray(z[f"eta_{wid}"]) for wid in wids}
             starts = {wid: float(z[f"start_{wid}"]) for wid in wids}

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
@@ -158,6 +161,90 @@ class BasisSpec:
         )
         tap = _cos_tap(dx / hx) * _cos_tap(dy / hx) * _cos_tap(dt / self.l_t_days)
         return np.asarray(carrier * tap)
+
+
+_DOMAIN_FIELDS = ("x0_km", "y0_km", "d_x_km", "d_y_km")
+
+
+def _spec_from_fields(fields: Mapping[str, Any]) -> BasisSpec:
+    """A spec from persisted fields, in canonical Python types.
+
+    Args:
+        fields: ``alpha`` / ``l_t_days`` / ``n_dir`` / ``ladder`` and any of
+            the domain fields (absent ones take the dataclass defaults).
+
+    Returns:
+        The spec.
+    """
+    return BasisSpec(
+        alpha=float(fields["alpha"]),
+        l_t_days=float(fields["l_t_days"]),
+        n_dir=int(fields["n_dir"]),
+        ladder=tuple(float(s) for s in fields["ladder"]),
+        **{name: float(fields[name]) for name in _DOMAIN_FIELDS if name in fields},
+    )
+
+
+def basis_state_arrays(spec: BasisSpec) -> dict[str, object]:
+    """Every field a state file needs to rebuild ``spec``, plus its key.
+
+    The single persisted layout of a spec (hygiene item 51: the domain was
+    missing). The stored ``basis_key`` is the key of the spec AS IT WILL BE
+    REBUILT — canonical Python floats/ints — not ``spec.key()``: ``Miost``
+    passes ``basis_domain`` through uncoerced, and a numpy scalar's repr
+    (``np.float64(-300.0)``) would make a correctly saved file fail its own
+    check. A change in the basis module constants still moves the key.
+
+    Args:
+        spec: The basis spec being persisted.
+
+    Returns:
+        ``alpha`` / ``l_t_days`` / ``n_dir`` / ``ladder`` / ``x0_km`` /
+        ``y0_km`` / ``d_x_km`` / ``d_y_km`` / ``basis_key`` -> value.
+    """
+    fields: dict[str, object] = {
+        "alpha": float(spec.alpha),
+        "l_t_days": float(spec.l_t_days),
+        "n_dir": int(spec.n_dir),
+        "ladder": np.asarray(spec.ladder, dtype=float),
+        **{name: float(getattr(spec, name)) for name in _DOMAIN_FIELDS},
+    }
+    return {**fields, "basis_key": _spec_from_fields(fields).key()}
+
+
+def basis_spec_from_state(z: Mapping[str, Any], path: Path) -> BasisSpec:
+    """Rebuild a persisted spec, refusing one that cannot be rebuilt EXACTLY.
+
+    State files written before the domain was persisted carry no domain
+    fields and rebuild on the dataclass defaults (the signed box — every
+    such recorded file is box-domain). When the file carries a
+    ``basis_key`` (the point state always has; the ensemble state since
+    hygiene item 51), the rebuilt spec's key must equal it: a pre-fix
+    TILE-domain file (key carries ``;dom=``, fields absent) or a file from
+    different basis constants would otherwise enumerate DIFFERENT elements
+    under its coefficients — a shape error at best, misplaced at worst.
+
+    Args:
+        z: The opened state file.
+        path: Its path, for the refusal message.
+
+    Returns:
+        The rebuilt spec.
+
+    Raises:
+        ValueError: If the stored ``basis_key`` disagrees with the rebuilt
+            spec's key.
+    """
+    spec = _spec_from_fields(z)
+    if "basis_key" in z and str(z["basis_key"]) != spec.key():
+        raise ValueError(
+            f"state file {path}: stored basis_key {str(z['basis_key'])!r} does "
+            f"not match the spec rebuilt from its fields ({spec.key()!r}) — a "
+            "tile-domain file written before the domain was persisted, or one "
+            "from different basis constants; refusing rather than enumerating "
+            "different elements under its coefficients"
+        )
+    return spec
 
 
 def _cos_tap(d: np.ndarray) -> np.ndarray:
