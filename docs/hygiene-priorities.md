@@ -302,7 +302,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 10 | CHANGED (worse) — 07-16 missed `application/tiling.py:20` (111.195); new 111.195 `phase14_kernel_pack.py:61`, new 111.32 `phase12_miost6_run.py:72` | — |
 | 11 | ✅ FIXED `af3a390` (2026-10-19; gate suite `d26f2d8`) — `harness.PASS_GAP_SEC` public owner; `orbit_geometry._GAP_SEC` aliases it (importers untouched), `lane_compare` imports it; identity tripwire test | `harness.py`, `lane_compare.py`, `orbit_geometry.py` |
 | 12 | NEEDS A LAYERING CALL (2026-10-19) — the canonical `EPOCH` is `validation.params`; a top-level import from `harness` would load `validation/__init__` (pydantic + dotenv config) at harness import, where harness imports `validation` only lazily today. Also: inline literal `lane_compare.py:208`; script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
-| 13 | OPEN | `_strip_fixtures.py:137`; `_tree_gate.py:403,417` |
+| 13 | ✅ FIXED `0892296` (2026-10-20; gate suite `0892296`) — a nonstationary provider (`LatLinearRange`, 100→800 km) now runs through the tree blend; the test catches every tile drawn from the root's factor (|log var ratio| 2.94 vs the in-test bound 1.17) that all nine prior tree tests passed; dead C4 fixtures deleted. **NOT caught (measured, recorded in the test):** the root's covariance in the kriging update | `test_tree_kriging_oracle.py`, `_tree_gate.py`, `_strip_fixtures.py` |
 | 14 | ✅ FIXED `c7cf637` (2026-10-19; gate suite `d26f2d8`) — intent settled by the phase-1 design ("fraction of trace(P) captured by BBᵀ"); one helper `captured_energy_fraction` for all four writers (+ `solve._reduce_derived`, a third instance). **DISCLOSURE: future manifests report the true share where they said 1.0**; `seed=0` kept, documented inert | `persisted.py`, `solve.py` |
 | 15 | ✅ FIXED `7f7866c` (2026-10-19; gate suite `8fe55fe`) — **DISCLOSURE: every converged window's recorded `iterations` reads one higher on future runs** (recorded values stand; capped-solve checks unaffected) | `miost_solver.py` |
 | 16 | `fidelity.py`: NOT LIVE (analysed 2026-10-19) — `split_passes` cuts only on strictly positive gaps and both sides stable-sort the same array, so a pass's first timestamp cannot occur in the previous pass; the residual is a cross-module coupling (index-returning variant optional). The `eval/insitu.py` instance ✅ FIXED `e08642e` | `fidelity.py:88` |
@@ -387,7 +387,7 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
     ABSENT; `--git-dir` wrong in worktrees. Session-protocol tool. (S)
 54. ✅ **FIXED `d837928` (2026-10-19; gate suite `8fe55fe` — the first run under the broadened stamp).** `phase14_gate_suite.py` attestation scope — stamps `*.py` + pyproject
     only; `verify` doesn't echo the command (pin 197c class). (S)
-55. Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
+55. ✅ **PARTLY FIXED `ebd9c76` (2026-10-20; docs-only): README structure + ToC, CLAUDE.md:109, `project-context.md:170`. OPEN: PROGRESS "Current work" (owner-governed) and the SHA-erratum pointers.** Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
     README structure; CLAUDE.md:109; the SHA erratum not yet reflected in
     PROGRESS/archive pointers. (S)
 
@@ -455,4 +455,44 @@ blend-level nonstationary test must name a seam property a
 stationary-ization bug would move), #7/#8/#10 (owner/layering calls); #50's
 `release.yml` install-smoke step; #51's legacy-store residual; the three
 `{"c2","c2n"}` literals; #55 docs; the test-side FIX NOW list
-(hygiene-notes § 2026-10-18, ~30 items).
+(hygiene-notes § 2026-10-18, ~30 items). *(Superseded by batch 3 below.)*
+
+## Fixed 2026-10-20 (batch 3) — the test-side FIX NOW list, P2 #13, the c2 literals, #55 docs
+
+All gated by one full gate suite on `0892296` (all batch-3 commits are
+its ancestors): 1955 passed / 21 skipped / 2 deselected (@external
+downloads) / 2 xfailed, 1:39:58, tree unchanged across the run; `verify`
+attests the 475-file stamp and the exact command. The preceding suite,
+on `ebd9c76` (every row below except #13): 1954 passed / 21 skipped / 2
+deselected / 2 xfailed, 1:49:47, tree unchanged; 13 of its 16 warnings
+were dask port collisions with a concurrent scratch probe, not code.
+
+| item | commit | note |
+|---|---|---|
+| batch-2 record | `eef4ebf` | docs-only |
+| test correctness: anchor-gate skip read the wrong file; `ContextKey` coverage; checkpoint module RNG; seal env leak | `f52dcae` | reds shown first (foreign-cwd run; an added enum member) |
+| test tidy: sigma loader → `load_script`; lanes dead `hasattr` → literal −6.0; diagnostics dead `or`; unused `tmp_path` ×3; `verdict_audit` local imports ×4 | `17e3736` | behavior-preserving |
+| stale test claims ×6 (stage-1 ladder, epochs hand check, diagnostics −11/14, identity `KIND_AUG`, gate-5 recorder, capture factory name) + unused `tmp_path` ×2 | `6a9a232` | ladder, epochs and diagnostics now asserted; ladder red shown under a reorder mutation |
+| three `{"c2","c2n"}` literals | `ec6d2e4` | one `contract.LOCKED_MISSIONS`; seal content sha unchanged (read-only `_assemble`); `phase14_osse_pricing` (ruled-WAIT record) and `DRIFTING` (orbit class) left |
+| #55 docs (partial) | `ebd9c76` | docs-only |
+| P2 #13 nonstationary blend coverage | `0892296` | see row 13 |
+
+Already closed before this batch (checked, not re-done): the eviction
+bound, the c2-touch tmp-path, and every "tests that cannot fail" item
+(row 52).
+
+**Deferred, recorded (churn > value):** one named seal-bypass fixture
+(after row 45 the "29 `lambda: None` stubs" are 36 `verify_current_seal`
+patches in 4 files, mostly per-test recorders or refusals; only 3 are bare
+no-op lambdas); `test_phase14_stage1_run` function-local re-imports;
+`test_miost_augmented_oracle` verbatim setup ×3; the duplicated `_dates` /
+catalog fixtures (`test_phase14_epochs` vs `test_phase14_epoch_table`).
+
+**Still open — every one needs an owner or layering decision:** #12 (the
+`EPOCH` import would load `validation/__init__` into harness); #7/#8/#10;
+#46 (clean-completion-only tally vs the misfire ruling); #50's
+`release.yml` install-smoke step; #51's legacy-store residual; #55's
+PROGRESS "Current work" and SHA-erratum pointers; pyproject's per-module
+`strict = false` and the 3.14 classifier vs pixi's `<3.14`; and the
+owner-attention item above (`phase14_seal_run.py check` exits 1 on the
+live store).
