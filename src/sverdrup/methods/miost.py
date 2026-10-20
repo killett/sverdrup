@@ -625,7 +625,12 @@ class Miost:
 
         Per covering window: build the m member RHS
         ``G^T R^-1 (y + eps'_i) + Q^-1 eta~_i`` with identity-keyed CRN
-        perturbations and run ONE batched solve. The unperturbed eta^a path
+        perturbations and run ONE batched solve. Under a structured rspec
+        (spec §5) ``R`` is the per-mission diagonal (eps' stays white per
+        obs); with its modes active the system is AUGMENTED — ``G`` becomes
+        ``[G B]`` (the pass-error basis), ``Q`` gains the ``Lambda`` block,
+        and the c~ prior draws ride the ``"err"`` axis on time-based
+        identities (:func:`member_rhs_matrix`). The unperturbed eta^a path
         (:meth:`solve` / ``_solve_window``) is untouched; the ensemble mean
         IS the Stage-A mean (D6).
 

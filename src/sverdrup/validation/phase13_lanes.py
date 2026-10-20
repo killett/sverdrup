@@ -181,6 +181,9 @@ def lane_bars() -> tuple[HardBar, ...]:
 
     Lane trials are POINT solves (members are generated at tuned winners
     only, spec 6.1) — no variance maps exist per trial, so no coverage bar.
+
+    Returns:
+        The POINT-capability hard bars.
     """
     return bars_for(UncertaintyCapability.POINT)
 
@@ -193,5 +196,8 @@ def trial_admissible(
     Args:
         scores: The trial's score vector.
         bars: Override bars (default :func:`lane_bars`).
+
+    Returns:
+        Whether every bar passes.
     """
     return all(b.passes(scores) for b in (bars if bars is not None else lane_bars()))

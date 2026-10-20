@@ -37,7 +37,14 @@ def _canonical(content: dict[str, Any]) -> bytes:
 
 
 def seal_sha(content: dict[str, Any]) -> str:
-    """sha256 of the canonical content bytes."""
+    """sha256 of the canonical content bytes.
+
+    Args:
+        content: The seal content (:func:`assemble_content`).
+
+    Returns:
+        64-char lowercase hex digest of the canonical JSON bytes.
+    """
     return hashlib.sha256(_canonical(content)).hexdigest()
 
 

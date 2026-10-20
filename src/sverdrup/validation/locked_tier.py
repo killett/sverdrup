@@ -62,7 +62,14 @@ def default_seal_verifier(evidence_path: Path | None = None) -> None:
 
 
 def read_tally(evidence_path: Path) -> dict[str, Any]:
-    """The tally ledger ``{product_id: {era_id: n_touches}}`` (empty ok)."""
+    """The tally ledger ``{product_id: {era_id: n_touches}}`` (empty ok).
+
+    Args:
+        evidence_path: The evidence store holding the ledger.
+
+    Returns:
+        The ledger; empty when the store or the ledger node is absent.
+    """
     if not evidence_path.exists():
         return {}
     node: Any = json.loads(evidence_path.read_text())

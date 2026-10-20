@@ -37,7 +37,10 @@ def _keyed_uniform(key: bytes, rows: np.ndarray) -> np.ndarray:
 
 
 def _member_key(root: Seed, member: int, axis: str) -> bytes:
-    """16-byte stream key separating (root, member) and the obs/elem axes."""
+    """16-byte stream key separating (root, member) and the draw axis.
+
+    Axes in use: ``"obs"``, ``"elem"`` and the phase-13 ``"err"``.
+    """
     return hashlib.blake2b(f"{root}|{member}|{axis}".encode(), digest_size=16).digest()
 
 

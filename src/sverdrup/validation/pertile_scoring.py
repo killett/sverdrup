@@ -185,6 +185,8 @@ def score_tile(
     Raises:
         TrainScoreLeakError: If the track's mission is in the map's
             assimilated list (or provenance cannot prove separation).
+        ValueError: If no validation-track point survives in the tile
+            core — an empty tile is the caller's to handle, never scored.
     """
     assert_scored_not_assimilated(map_path, track_path)
     ds_track = extract_core_track(frame, track_path, time_min, time_max)

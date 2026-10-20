@@ -53,8 +53,8 @@ class UnresolvedScaleError(ValueError):
     "λx absent" with nothing attached produces a row indistinguishable from
     one where the map was fine and the scorer broke. Carrying it here means
     no catcher has to recompute a PSD to record honestly. ``evidence`` is
-    None when the guard was called without it (the tuner paths, which record
-    NaN and do not need it).
+    None only when the guard is called without it — direct unit tests; the
+    one production call (:func:`effective_resolution_lambda_x`) attaches it.
     """
 
     def __init__(self, *args: object, evidence: dict[str, Any] | None = None) -> None:
@@ -216,7 +216,8 @@ def _coherence_guard(
         coherence: The ``1 - psd_diff/psd_ref`` array from the PSD file.
         evidence: Optional coherence statistics carried out on the raised
             :class:`UnresolvedScaleError` (owner pin 160a — an absence is
-            never bare). Callers that only record NaN may omit it.
+            never bare). The production call always attaches it; only
+            direct unit tests omit it.
 
     Raises:
         ShortTrackError: Empty or all-NaN coherence (no usable segment).

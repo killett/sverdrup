@@ -107,7 +107,10 @@ def load_phase12_scope(path: Path | str) -> Phase12Scope:
 
 
 def require_validation_track(scope: Phase12Scope) -> None:
-    """Every validation-flavored entry point refuses here with the declared reason.
+    """Refuse validation for this product, with its declared reason.
+
+    The one refusal a validation-flavored entry point can call (the plan's
+    wording). No production entry point calls it yet — only tests do.
 
     Args:
         scope: The validated phase12 scope (unused beyond its declared state —

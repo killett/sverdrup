@@ -104,7 +104,7 @@ class SyntheticSource:
     def _day_track(
         self, mission: str, day: int
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Analytic (lon, lat, t_days) for one mission-day, 500 obs."""
+        """Analytic (lon, lat, t_days) for one mission-day, ``_N_PER_DAY`` obs."""
         lon_phase, lat_phase = self._phase[mission]
         s = np.arange(_N_PER_DAY, dtype=np.float64) / _N_PER_DAY
         if mission == "synA":
