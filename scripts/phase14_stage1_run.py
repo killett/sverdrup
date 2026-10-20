@@ -30,6 +30,7 @@ Standing refusals wired here:
 from __future__ import annotations
 
 import contextlib
+import fcntl
 import json
 import math
 import os
@@ -1798,8 +1799,14 @@ def record_headroom_halt(
         ),
         "pin": "156(a)(ii)",
     }
+    from sverdrup.application.calibration.harness import (  # noqa: PLC0415
+        atomic_write_json,
+    )
+
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(record, indent=2))
+    # Atomic (hygiene): a torn record reads as "never halted" in
+    # _prior_halts_block, silently dropping the resumed row's halt warning.
+    atomic_write_json(dest, record)
     return record
 
 
@@ -1884,7 +1891,15 @@ class HeadroomTracker:
 
 
 def _lock_holder_alive(pid: int) -> bool:
-    """True when a pid is a live process this user can signal."""
+    """True when a pid is a live process this user can signal.
+
+    A pid <= 0 is never a holder: ``os.kill(-1, 0)`` / ``os.kill(0, 0)``
+    signal a process GROUP and succeed whenever any process is signalable,
+    so an unreadable lock (recorded as pid -1) read as held forever
+    (hygiene).
+    """
+    if pid <= 0:
+        return False
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -1922,29 +1937,45 @@ def stage1_solve_lock(
     """
     dest = STAGE1_SOLVE_LOCK if path is None else path
     dest.parent.mkdir(parents=True, exist_ok=True)
-    stale: dict[str, Any] | None = None
-    if dest.exists():
+    # Acquisition is serialized through an flock'd guard (the kernel drops
+    # it when its holder dies, so the guard itself can never go stale), and
+    # the lock is CREATED with O_EXCL: check-then-write_text let two
+    # acquirers both hold it (hygiene).
+    with open(dest.with_name(dest.name + ".guard"), "a") as guard:
+        fcntl.flock(guard, fcntl.LOCK_EX)
+        stale: dict[str, Any] | None = None
+        if dest.exists():
+            try:
+                held = json.loads(dest.read_text())
+            except Exception:  # noqa: BLE001 - an unreadable lock is a stale lock
+                held = {"pid": -1, "label": "unreadable"}
+            if _lock_holder_alive(int(held.get("pid", -1))):
+                raise RuntimeError(
+                    f"pid {held.get('pid')} ({held.get('label')!r}, since "
+                    f"{held.get('started')}) already holds the Stage-1 solve lock "
+                    f"at {dest}. Two production-shaped solves must not share the "
+                    "box: the launch gate reads MemAvailable ONCE, and a second "
+                    "job arriving afterwards makes that reading a fiction (pin 151a)"
+                )
+            stale = held
+            dest.unlink(missing_ok=True)
+        block: dict[str, Any] = {
+            "pid": os.getpid(),
+            "label": label,
+            "started": datetime.now(UTC).isoformat(),
+        }
+        if stale is not None:
+            block["took_over_stale"] = stale
         try:
-            held = json.loads(dest.read_text())
-        except Exception:  # noqa: BLE001 - an unreadable lock is a stale lock
-            held = {"pid": -1, "label": "unreadable"}
-        if _lock_holder_alive(int(held.get("pid", -1))):
+            fd = os.open(dest, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError as exc:
             raise RuntimeError(
-                f"pid {held.get('pid')} ({held.get('label')!r}, since "
-                f"{held.get('started')}) already holds the Stage-1 solve lock at "
-                f"{dest}. Two production-shaped solves must not share the box: "
-                "the launch gate reads MemAvailable ONCE, and a second job "
-                "arriving afterwards makes that reading a fiction (pin 151a)"
-            )
-        stale = held
-    block: dict[str, Any] = {
-        "pid": os.getpid(),
-        "label": label,
-        "started": datetime.now(UTC).isoformat(),
-    }
-    if stale is not None:
-        block["took_over_stale"] = stale
-    dest.write_text(json.dumps(block))
+                f"the Stage-1 solve lock at {dest} appeared DURING acquisition — "
+                "another process created it after this one checked; refusing "
+                "rather than overwriting its record (pin 151a)"
+            ) from exc
+        with os.fdopen(fd, "w") as fh:
+            fh.write(json.dumps(block))
     try:
         yield block
     finally:
@@ -3570,8 +3601,14 @@ def _store_payload(
     pcg_rows: list[dict[str, Any]],
     wall_s: float,
     label: str,
+    *,
+    binding: Mapping[str, object] | None = None,
 ) -> dict[str, Any]:
-    """Npz payload for a leg's own member store (crash-resume substrate)."""
+    """Npz payload for a leg's own member store (crash-resume substrate).
+
+    ``binding`` (m / maxiter / root) is what :func:`_load_seam_store`
+    checks before a resume adopts the store (hygiene).
+    """
     import numpy as np  # noqa: PLC0415
 
     payload: dict[str, Any] = {
@@ -3580,6 +3617,8 @@ def _store_payload(
         "solve_wall_s": wall_s,
         "label": label,
     }
+    if binding is not None:
+        payload["binding"] = json.dumps(dict(binding), sort_keys=True)
     for w in anoms:
         payload[f"eta_{w}"] = etas_a[w]
         payload[f"anom_{w}"] = anoms[w]
@@ -3662,6 +3701,67 @@ def _load_window_coefficients(store: Path, window_id: str) -> dict[str, Any]:
         }
 
 
+def _load_seam_store(
+    store: Path, *, m: int, maxiter: int, root: int
+) -> tuple[
+    dict[str, NDArray[np.float64]],
+    dict[str, NDArray[np.float64]],
+    dict[str, float],
+    list[dict[str, Any]],
+    float,
+    list[str],
+]:
+    """Read a seam leg's own member store, refusing one from another solve.
+
+    A resume used to adopt the store whatever m / PCG cap / CRN root
+    produced it and record the CURRENT arguments as its provenance
+    (hygiene). A store carrying a ``binding`` must match all three; a
+    LEGACY store (written before the binding existed) is still checked on
+    m — from its anomaly shape — and the fields it cannot vouch for are
+    returned so the leg records them as unverified.
+
+    Args:
+        store: The member store.
+        m: Ensemble members this leg asks for.
+        maxiter: This leg's PCG cap.
+        root: This leg's CRN root.
+
+    Returns:
+        (etas_a, anoms, starts, pcg_rows, solve_wall_s, unverified fields).
+
+    Raises:
+        RuntimeError: If the store was solved under a different m / maxiter
+            / root (a legacy store: a different m).
+    """
+    import numpy as np  # noqa: PLC0415
+
+    want = {"m": int(m), "maxiter": int(maxiter), "root": str(root)}
+    with np.load(store, allow_pickle=False) as z:
+        wids = [str(w) for w in np.asarray(z["window_ids"])]
+        etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
+        anoms = {w: np.asarray(z[f"anom_{w}"]) for w in wids}
+        starts = {w: float(z[f"start_{w}"]) for w in wids}
+        pcg_rows = json.loads(str(z["pcg_rows"][()]))
+        solve_wall_s = float(z["solve_wall_s"])
+        stored = json.loads(str(z["binding"][()])) if "binding" in z.files else None
+    if stored is not None:
+        differ = [k for k in want if str(stored.get(k)) != str(want[k])]
+        if differ:
+            raise RuntimeError(
+                f"member store {store} was solved under {stored}, this leg asks "
+                f"{want} (differs: {', '.join(differ)}) — resuming would score and "
+                "label one solve as another; delete the store to re-solve"
+            )
+        return etas_a, anoms, starts, pcg_rows, solve_wall_s, []
+    held = sorted({int(a.shape[1]) for a in anoms.values()})
+    if held != [int(m)]:
+        raise RuntimeError(
+            f"legacy member store {store} holds m={held} members, this leg asks "
+            f"m={int(m)} — refusing to resume it; delete the store to re-solve"
+        )
+    return etas_a, anoms, starts, pcg_rows, solve_wall_s, ["maxiter", "root"]
+
+
 def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, Any]:
     """Solve one seam tile (m members, full production plan) and PERSIST it.
 
@@ -3709,17 +3809,15 @@ def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, A
 
     store = SEAM_MEMBER_STORE[tile]
     resumed = store.exists()
+    unverified: list[str] = []
+    anoms: Mapping[str, NDArray[np.float64]]
     if resumed:
         _seam_echo(f"{tile}: RESUME from own member store {store}")
-        with np.load(store, allow_pickle=False) as z:
-            wids = [str(w) for w in np.asarray(z["window_ids"])]
-            etas_a = {w: np.asarray(z[f"eta_{w}"]) for w in wids}
-            anoms: Mapping[str, NDArray[np.float64]] = {
-                w: np.asarray(z[f"anom_{w}"]) for w in wids
-            }
-            starts = {w: float(z[f"start_{w}"]) for w in wids}
-            pcg_rows = json.loads(str(z["pcg_rows"][()]))
-            solve_wall_s = float(z["solve_wall_s"])
+        etas_a, anoms, starts, pcg_rows, solve_wall_s, unverified = _load_seam_store(
+            store, m=m, maxiter=maxiter, root=root
+        )
+        if unverified:
+            _seam_echo(f"{tile}: legacy store — {unverified} unverified")
         spec = method._spec_from(provider, grid)  # noqa: SLF001
     else:
         t_solve = time.monotonic()
@@ -3749,6 +3847,7 @@ def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, A
                 solve_wall_s,
                 f"SEAM-PAIR leg member store ({tile}); crash-resume "
                 "substrate, never a reference",
+                binding={"m": int(m), "maxiter": int(maxiter), "root": str(root)},
             ),
         )
         _seam_echo(f"{tile}: member store persisted -> {store}")
@@ -3794,6 +3893,7 @@ def _seam_tile_leg(tile: str, *, m: int, maxiter: int, root: int) -> dict[str, A
         "m": m,
         "root_int": root,
         "resumed_from_own_store": resumed,
+        "resume_binding_unverified": unverified,
         "frame": {
             "core": list(TILES[tile]["core"]),
             "overlap_deg": frame.overlap_deg,
