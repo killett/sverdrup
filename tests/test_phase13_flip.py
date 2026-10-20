@@ -22,6 +22,7 @@ from sverdrup.methods.miost import (
     shipped_miost5,
     shipped_miost5_scalar_phase8,
 )
+from tests.helpers import requires_live_store
 
 _RESULTS = Path("data/2021a_ssh_mapping_ose/ours/stage_miost_gate_results.json")
 
@@ -30,6 +31,7 @@ def _evidence() -> dict[str, Any]:
     return json.loads(_RESULTS.read_text())
 
 
+@requires_live_store
 def test_flipped_lineage_carries_the_winner_rspec() -> None:
     # The lineage entry's per-mission R must equal the recorded D-winner
     # trial EXACTLY (deltas as CONTRASTS; gauge: delta_s3a = -sum; modes
@@ -48,6 +50,7 @@ def test_flipped_lineage_carries_the_winner_rspec() -> None:
     )
 
 
+@requires_live_store
 def test_flipped_lineage_carries_the_refit_field() -> None:
     # The lineage s(x) is the phase-13 REFIT field byte-for-byte (the
     # miost5 Phase-8 field is not transferable across an R change).
@@ -58,6 +61,7 @@ def test_flipped_lineage_carries_the_refit_field() -> None:
     assert shipped_miost5()._calibration.key() == cal_key  # noqa: SLF001
 
 
+@requires_live_store
 def test_flipped_lineage_winner_params_match_the_record() -> None:
     # Solve params ride the ParameterProvider: the exported constant must
     # equal signed alpha/q_slope/l_t + the winner's log10_rho.

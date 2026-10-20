@@ -9,6 +9,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+import pytest
+
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 
 
@@ -103,3 +105,21 @@ def corrupt_npz_member(path: Path, member: str) -> None:
     extra_len = int.from_bytes(data[h + 28 : h + 30], "little")
     data[h + 30 + name_len + extra_len + info.compress_size - 1] ^= 0xFF
     path.write_bytes(bytes(data))
+
+
+# The live evidence store is gitignored: on a clean clone it does not exist.
+# Tests that READ it (rather than a temp store) skip there instead of
+# failing with FileNotFoundError (hygiene: 29 such tests across 7 modules).
+LIVE_STORE = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "2021a_ssh_mapping_ose"
+    / "ours"
+    / "stage_miost_gate_results.json"
+)
+
+
+requires_live_store: pytest.MarkDecorator = pytest.mark.skipif(
+    not LIVE_STORE.exists(),
+    reason="the gitignored evidence store is absent (clean clone)",
+)

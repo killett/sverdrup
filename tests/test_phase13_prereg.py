@@ -17,7 +17,7 @@ from sverdrup.application.tuning.lane_compare import (
     seal_protocol,
 )
 from sverdrup.validation import phase13_boxes as boxes
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 prereg = load_script("phase13_prereg")
 
@@ -44,6 +44,7 @@ def test_lane0_mu_mismatch_refuses() -> None:
     prereg.assert_lane0_mu(prereg.RECORDED_LANE0_MU, prereg.RECORDED_LANE0_MU)
 
 
+@requires_live_store
 def test_recorded_mu_constant_matches_signed_record() -> None:
     # Bug caught: the frozen literal drifting from the signed record
     # (the phase-12 assert-against-record precedent, applied to µ).

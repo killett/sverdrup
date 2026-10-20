@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 touch = load_script("phase13_c2_touch")
 
@@ -143,6 +143,7 @@ def test_migrate_defect_run_moves_acceptance_under_dated_key() -> None:
     assert touch.migrate_defect_run(ev, "20260721") is False
 
 
+@requires_live_store
 def test_refit_cal_key_roundtrip_against_recorded_evidence() -> None:
     # The touch's s(x) is reconstructed from the recorded refit evidence;
     # the reconstructed key must equal the recorded cal_key byte-for-byte.

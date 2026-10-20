@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from sverdrup.validation import phase13_lanes as lanes
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 
 def test_pairing_shared_dims_equal_across_lanes() -> None:
@@ -51,6 +51,7 @@ def test_lane0_trial_is_the_signed_restriction() -> None:
     assert t["log_lam_bias"] is None and t["log_lam_tilt"] is None
 
 
+@requires_live_store
 def test_signed_params_match_record() -> None:
     # Bug caught: the frozen literal drifting from the signed record.
     rec = json.loads(

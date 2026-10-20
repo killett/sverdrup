@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 _mod = load_script("phase14_osse_pricing")
 
@@ -34,6 +34,7 @@ def _block() -> dict[str, Any]:
     return _mod.wait_record()
 
 
+@requires_live_store
 def test_t8_is_a_wait_with_pricing_explicitly_withdrawn() -> None:
     """The verdict is WAIT and the record says pricing is withdrawn.
 
@@ -51,6 +52,7 @@ def test_t8_is_a_wait_with_pricing_explicitly_withdrawn() -> None:
     assert b["decision_cell"] == "EMPTY"
 
 
+@requires_live_store
 def test_no_price_figure_survives_anywhere_in_the_record() -> None:
     """No hours, no band, no leg-equivalents.
 
@@ -85,6 +87,7 @@ def test_no_price_figure_survives_anywhere_in_the_record() -> None:
     walk(_block())
 
 
+@requires_live_store
 def test_all_three_overturns_are_recorded_with_their_defects() -> None:
     """Each round names its DEFECT, not its fix.
 
@@ -107,6 +110,7 @@ def test_all_three_overturns_are_recorded_with_their_defects() -> None:
     assert "CONFIRMED" in ov[0]["found_by"]
 
 
+@requires_live_store
 def test_the_exit_names_a_nature_run_and_why_glorys_fails() -> None:
     """Pin 251's exit is recorded with its reason and its consequences.
 
@@ -126,6 +130,7 @@ def test_the_exit_names_a_nature_run_and_why_glorys_fails() -> None:
     assert "UNPRICED" in e["replication_is_required_and_unpriced"]
 
 
+@requires_live_store
 def test_the_237_measurement_is_marked_as_the_wrong_object() -> None:
     """The truth volume was measured correctly, of the wrong thing.
 
@@ -139,6 +144,7 @@ def test_the_237_measurement_is_marked_as_the_wrong_object() -> None:
     assert "The measurement was correct; the object was not." in note
 
 
+@requires_live_store
 def test_value_case_is_recorded_as_what_is_at_risk() -> None:
     """The value case is quoted, and the threat to it is stated.
 
@@ -155,6 +161,7 @@ def test_value_case_is_recorded_as_what_is_at_risk() -> None:
     assert "no longer FIXED" in risk
 
 
+@requires_live_store
 def test_surviving_facts_are_derived_not_typed(tmp_path: Path) -> None:
     """The census and decomposition recompute from the store and seal.
 
@@ -181,6 +188,7 @@ def test_surviving_facts_are_derived_not_typed(tmp_path: Path) -> None:
     assert hi_o == pytest.approx(hi_r / 2)
 
 
+@requires_live_store
 def test_decomposition_and_iteration_span_match_the_store() -> None:
     """57.9-63.3 us, and 375-626 PCG iterations.
 
@@ -198,6 +206,7 @@ def test_decomposition_and_iteration_span_match_the_store() -> None:
     assert set(leg["tile"] for leg in d["legs"]) == set(_WALL_S)
 
 
+@requires_live_store
 def test_convexity_crossover_is_solved_not_asserted(tmp_path: Path) -> None:
     """The 0.638 crossover is computed from the sealed counts.
 
@@ -225,6 +234,7 @@ def test_convexity_crossover_is_solved_not_asserted(tmp_path: Path) -> None:
     assert out["convexity_crossover_p"] != pytest.approx(0.638, abs=0.001)
 
 
+@requires_live_store
 def test_platform_convention_and_99c_attestation_are_kept() -> None:
     """Both survived every round and are carried forward.
 
@@ -241,6 +251,7 @@ def test_platform_convention_and_99c_attestation_are_kept() -> None:
     assert "CAPPED T2 probe" in sf["pin_99c_attestation"]
 
 
+@requires_live_store
 def test_the_withdrawn_document_is_preserved_not_deleted() -> None:
     """The v3 document is kept as the record of why.
 

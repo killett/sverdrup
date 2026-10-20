@@ -35,7 +35,7 @@ from typing import Any
 
 import pytest
 
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 _mod = load_script("phase14_gate1_closure")
 
@@ -144,6 +144,7 @@ def test_read_ii_trips_when_the_c2_tally_moves(tmp_path: Path) -> None:
     assert _mod.read_c2_tally(store_path=store)["trips"] is True
 
 
+@requires_live_store
 def test_nothing_has_opened_since_stage1_closure() -> None:
     """TRIPWIRE for pin 267 — not a re-derivation of the closure.
 
@@ -192,6 +193,7 @@ def test_nothing_has_opened_since_stage1_closure() -> None:
         assert read["value"].strip()
 
 
+@requires_live_store
 def test_the_tripwire_runs_the_mirror_check_in_process() -> None:
     """Read (iii)'s failable half, made part of the tripwire (269d).
 
@@ -248,6 +250,7 @@ def test_write_refuses_on_the_frozen_record() -> None:
         _mod.main(write=True)
 
 
+@requires_live_store
 def test_a_record_without_the_markers_refuses_to_be_written(tmp_path: Path) -> None:
     """A record missing its DERIVED markers raises.
 
@@ -259,6 +262,7 @@ def test_a_record_without_the_markers_refuses_to_be_written(tmp_path: Path) -> N
         _mod.splice("# a record with no markers\n", _mod.derived_blocks())
 
 
+@requires_live_store
 def test_read_iii_trips_when_the_store_differs_from_the_mirror(tmp_path: Path) -> None:
     """Read (iii) can see the STORE, not only the mirror's own digest.
 

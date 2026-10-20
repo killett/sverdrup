@@ -21,7 +21,7 @@ from typing import Any
 
 import pytest
 
-from tests.helpers import load_script
+from tests.helpers import load_script, requires_live_store
 
 _mod = load_script("phase14_refresh_election")
 
@@ -36,6 +36,7 @@ def _block() -> dict[str, Any]:
     return _mod.election_record()
 
 
+@requires_live_store
 def test_the_outcome_is_elected_with_its_scope_and_authority() -> None:
     """The node records the ruled OUTCOME, not the presented question.
 
@@ -56,6 +57,7 @@ def test_the_outcome_is_elected_with_its_scope_and_authority() -> None:
     assert b["presented_rule_is_not_the_decision"]
 
 
+@requires_live_store
 def test_no_touch_is_spent_and_the_tally_is_the_phase13_close_tally() -> None:
     """BUNDLED means the c2 tally does not move (pin 255c).
 
@@ -73,6 +75,7 @@ def test_no_touch_is_spent_and_the_tally_is_the_phase13_close_tally() -> None:
     assert "global-domain transition" in ct["bundling_rule_verbatim"]
 
 
+@requires_live_store
 def test_the_tally_is_read_from_the_store_not_from_the_script() -> None:
     """The recorded tally is the store's own, by node path.
 
@@ -91,6 +94,7 @@ def test_the_tally_is_read_from_the_store_not_from_the_script() -> None:
     assert b["chain_and_touch"]["c2_touch_tally_observed"] == node
 
 
+@requires_live_store
 def test_it_reunifies_and_is_not_a_mission_count_change() -> None:
     """What the election joins, in the ruling's own terms (pin 255d).
 
@@ -107,6 +111,7 @@ def test_it_reunifies_and_is_not_a_mission_count_change() -> None:
     assert r["is_a_mission_count_change"] is False
 
 
+@requires_live_store
 def test_delta_j3_is_provisional_and_is_not_a_condition_of_the_election() -> None:
     """δ_j3 := δ_j2n is inherited, never fitted (pin 256).
 
@@ -125,6 +130,7 @@ def test_delta_j3_is_provisional_and_is_not_a_condition_of_the_election() -> Non
     assert "election stands unchanged" in d["if_stage2_fits_it"]
 
 
+@requires_live_store
 def test_e10_needs_a_replacement_holdout_before_2g_runs() -> None:
     """The holdout consequence is a precondition, unresolved (pin 257).
 
@@ -140,6 +146,7 @@ def test_e10_needs_a_replacement_holdout_before_2g_runs() -> None:
     assert "does not run" in e["statement"]
 
 
+@requires_live_store
 def test_the_election_claims_nothing_about_the_transfer_result() -> None:
     """The 258 firewall is in the record, and nothing breaches it.
 
@@ -177,6 +184,7 @@ def test_the_election_claims_nothing_about_the_transfer_result() -> None:
         assert banned not in text, banned
 
 
+@requires_live_store
 def test_pins_255_to_258_are_carried_verbatim_and_259_is_not() -> None:
     """The node quotes the landed ruling, and only the outcome pins.
 
