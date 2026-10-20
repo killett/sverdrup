@@ -197,10 +197,12 @@ def settling_ratios(
         distribution itself, which is what pin 43 ordered measured.
 
     Raises:
-        ValueError: If ``partitions`` is not ``(n, 2, size)``, or if any
-            index falls outside ``[0, m)``. Negative indices are refused
+        ValueError: If ``partitions`` is not ``(n, 2, size)``, if any
+            index falls outside ``[0, m)`` (negative indices are refused
             rather than wrapped: numpy would silently select a member
-            from the other end and the two sides would share it.
+            from the other end and the two sides would share it), or if a
+            partition's pooled σ level is zero (identical members — from
+            :func:`~sverdrup.validation.seam_metrics.sigma_level_rms`).
     """
     fields = np.asarray(member_fields, dtype=np.float64)
     parts = np.asarray(partitions, dtype=np.int64)

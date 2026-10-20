@@ -706,3 +706,40 @@ def test_sigma_level_rms_refuses_all_nan_pool() -> None:
     """
     with pytest.raises(ValueError, match="all-NaN"):
         seam_metrics.sigma_level_rms([np.nan], [np.nan])
+
+
+@pytest.mark.parametrize("route", ["mean", "sigma"])
+def test_seam_read_refuses_a_flat_interior(route: str) -> None:
+    """A flat interior has no dispersion to scale a seam disagreement by.
+
+    Bug caught (hygiene, seam_metrics.py:377/382): a spatially constant
+    interior — e.g. a σ field from identical members, zero everywhere —
+    pools to ``D_int = 0`` and ``rms_delta / d_int`` raised a bare
+    ZeroDivisionError. It now refuses like the all-NaN pool does, naming
+    the route.
+    """
+    interiors = (_arange_4x4(), _arange_4x4())
+    sigma = _sigma_read_kwargs()
+    if route == "mean":
+        interiors = (np.full((4, 4), 0.3), np.full((4, 4), 0.3))
+    else:
+        sigma["sigma_interior_a"] = np.zeros((4, 4))
+        sigma["sigma_interior_b"] = np.zeros((4, 4))
+    kind = "interior" if route == "mean" else "sigma interior"
+    with pytest.raises(ValueError, match=f"zero-dispersion {kind}"):
+        seam_read(
+            np.zeros(3),
+            np.full(3, 0.5),
+            *interiors,
+            axis=1,
+            **sigma,
+            **_valid_read_kwargs(),
+        )
+
+
+def test_sigma_level_rms_refuses_a_zero_level() -> None:
+    """Bug caught: an all-zero σ pool returned level 0.0 — the docstring's
+    own "F_ens zero, every σ verdict licensed vacuously" case, guarded
+    only for all-NaN."""
+    with pytest.raises(ValueError, match="zero σ level"):
+        seam_metrics.sigma_level_rms(np.zeros(4), np.array([0.0, np.nan]))

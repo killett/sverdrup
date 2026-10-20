@@ -349,3 +349,13 @@ def test_expected_t_refuses_a_degenerate_size() -> None:
     """
     with pytest.raises(ValueError, match="at least 2"):
         expected_t(1)
+
+
+def test_identical_members_refuse_instead_of_dividing_by_zero() -> None:
+    """Bug caught (hygiene, ensemble_settling.py:222): identical members
+    give σ = 0 on both sides, a zero floor, and ``0.0 / 0.0`` raised a bare
+    ZeroDivisionError from inside the ratio loop."""
+    fields = np.ones((5, 4))  # 5 nodes, 4 identical members
+    parts = np.array([[[0, 1], [2, 3]]])
+    with pytest.raises(ValueError, match="zero σ level"):
+        settling_ratios(fields, parts)

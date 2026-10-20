@@ -220,9 +220,9 @@ def sigma_level_rms(sigma_a: ArrayLike, sigma_b: ArrayLike) -> float:
         Pooled RMS σ level.
 
     Raises:
-        ValueError: If the pooled set has no finite value (all-NaN) — a
-            zero level would make ``F_ens`` zero and license every σ
-            verdict vacuously.
+        ValueError: If the pooled set has no finite value (all-NaN), or
+            its level is zero (identical members) — a zero level would make
+            ``F_ens`` zero and license every σ verdict vacuously.
     """
     pooled = np.concatenate(
         [
@@ -233,7 +233,13 @@ def sigma_level_rms(sigma_a: ArrayLike, sigma_b: ArrayLike) -> float:
     finite = pooled[np.isfinite(pooled)]
     if finite.size == 0:
         raise ValueError("all-NaN σ pool: no finite value to take a σ level from")
-    return _rms(finite)
+    level = _rms(finite)
+    if level == 0.0:
+        raise ValueError(
+            "zero σ level: every finite pooled σ is 0 (identical members) — "
+            "F_ens would be zero and license every σ verdict vacuously"
+        )
+    return level
 
 
 @dataclass(frozen=True)
@@ -292,7 +298,8 @@ def _pooled_interior_rms(
 
     Raises:
         ValueError: If the pooled increment set is empty (all-NaN
-            interiors for this field kind).
+            interiors for this field kind), or every increment is zero (a
+            flat interior — e.g. a σ field from identical members).
     """
     pooled = np.concatenate(
         [
@@ -302,7 +309,14 @@ def _pooled_interior_rms(
     )
     if pooled.size == 0:
         raise ValueError(f"all-NaN {kind}: no finite one-grid-step increments to pool")
-    return _rms(pooled)
+    level = _rms(pooled)
+    if level == 0.0:
+        raise ValueError(
+            f"zero-dispersion {kind}: every pooled one-grid-step increment is "
+            "0 — a flat field has no dispersion to scale a seam disagreement "
+            "by (the ratio would be x/0)"
+        )
+    return level
 
 
 def seam_read(
@@ -359,8 +373,9 @@ def seam_read(
     Raises:
         ValueError: If either solve is invalid (residual not known to be
             within rtol, including NaN), if a seam or pooled interior of
-            either field kind is all-NaN, or if the seam fields of either
-            field kind are not co-located.
+            either field kind is all-NaN, if a pooled interior has zero
+            dispersion, or if the seam fields of either field kind are not
+            co-located.
     """
     for label, residual, rtol in (
         ("A", final_rel_residual_a, rtol_a),
