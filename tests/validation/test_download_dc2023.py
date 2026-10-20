@@ -83,3 +83,39 @@ def test_mapmed_downloads_and_verifies(tmp_path):
     for entry in ch.files:
         got = tmp_path / ch.subdir / entry.relpath
         assert got.exists() and got.stat().st_size > 0, entry.relpath
+
+
+def test_extract_existing_reports_a_raw_file_as_not_an_archive(tmp_path):
+    """Bug caught (hygiene P3-#41): ``--extract-existing`` stamped every
+    present file "extracted", though ``extract_archive`` returned False for
+    a raw ``.nc`` and extracted nothing. Offline: files are made locally."""
+    import io
+    import tarfile
+
+    ch = dl.Challenge(
+        "t",
+        "https://example.invalid",
+        "sub",
+        (dl.FileEntry("a.tar.gz", ""), dl.FileEntry("b.nc", "")),
+    )
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    with tarfile.open(sub / "a.tar.gz", "w:gz") as tar:
+        payload = b"inner"
+        info = tarfile.TarInfo("inner.txt")
+        info.size = len(payload)
+        tar.addfile(info, io.BytesIO(payload))
+    (sub / "b.nc").write_bytes(b"\x89HDF not an archive")
+    out = dl.run([ch], tmp_path, extract=False, extract_existing=True)
+    assert out == {"sub/a.tar.gz": "extracted", "sub/b.nc": "not-an-archive"}
+    assert (sub / "inner.txt").read_bytes() == b"inner"
+
+
+def test_the_module_claims_sha256_verification_only_when_a_hash_exists():
+    """Bug caught (hygiene P3-#41): the docstring promised "SHA256-verified
+    for exact reproduction" while every manifest sha256 is "" — only the
+    Content-Length size check runs, and the "skipped" branch is unreachable
+    (every rerun re-downloads)."""
+    hashed = [e for c in dl.CHALLENGES.values() for e in c.files if e.sha256]
+    if not hashed:
+        assert "SHA256-verified for exact" not in (dl.__doc__ or "")

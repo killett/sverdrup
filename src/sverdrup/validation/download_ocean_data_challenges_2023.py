@@ -1,7 +1,12 @@
 """Reproduce the 2023 Ocean Data Challenges data downloads (4 challenges).
 
-One script, selectable per challenge or ``--all``, SHA256-verified for exact
-reproduction. Sibling to ``download_ssh_mapping_data_challenge_2021a.py``.
+One script, selectable per challenge or ``--all``. Every download is
+verified COMPLETE (local size == the server's Content-Length); a file is
+also SHA256-verified, and a present one skipped, only when its manifest
+entry carries a hash — none does yet, so today every rerun re-downloads and
+nothing is content-verified (hygiene P3-#41; filling the hashes needs a
+reference that is not just whatever is on this disk). Sibling to
+``download_ssh_mapping_data_challenge_2021a.py``.
 
 Challenges (official Ocean Data Challenges names):
 
@@ -213,7 +218,7 @@ def run(
 
     Returns:
         A mapping ``"<subdir>/<relpath>" -> status`` ("downloaded"/"skipped"/
-        "extracted"/"missing").
+        "extracted"/"not-an-archive"/"missing").
     """
     cfg = _mirror_config()
     results: dict[str, str] = {}
@@ -223,8 +228,9 @@ def run(
             dest = data_root / challenge.subdir / entry.relpath
             if extract_existing:
                 if dest.exists():
-                    extract_archive(dest)
-                    results[key] = "extracted"
+                    results[key] = (
+                        "extracted" if extract_archive(dest) else "not-an-archive"
+                    )
                 else:
                     results[key] = "missing"
                 print(f"  [{results[key]:10}] {key}", flush=True)
