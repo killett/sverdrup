@@ -29,7 +29,9 @@ uncertainty. Reconstructions are scored two ways: **OSSE** (against gridded trut
   - [Methods and their parameters](#methods-and-their-parameters)
 - [Cheatsheet](#cheatsheet)
 - [Output](#output)
+- [Validation — scored by the 2021a SSH-mapping OSE challenge](#validation--scored-by-the-2021a-ssh-mapping-ose-challenge)
 - [Troubleshooting](#troubleshooting)
+- [Project structure](#project-structure)
 - [Links and license](#links-and-license)
 
 ## Quickstart
@@ -346,6 +348,35 @@ identity-preserving on MIOST and demonstrated end-to-end on OI.
 | Want output somewhere other than local disk | `out_url` is any fsspec URL — `s3://bucket/key.zarr`, `gcs://…`, etc. (install the matching fsspec backend). |
 | Reconstruction is slow / over-subscribes CPUs | Tune `executor` (`n_processes`, `threads_per_process`). One BLAS thread per worker is usually fastest; set thread env vars *before* numpy/BLAS loads. |
 | macOS install fails to solve a Linux-only dependency | A few conda deps are linux-64-only; this affects the pixi dev environment, not the PyPI install. Use `pip install 'sverdrup[all]'`. |
+
+## Project structure
+
+```
+src/sverdrup/            the package (src layout; `python -m sverdrup <config.json>`)
+  core/                  domain types and ports: grid, observations, distribution,
+                         method/evaluation protocols, provenance, seeding
+  adapters/              data sources and infrastructure: altimetry (dc2021a, CMEMS MY,
+                         JPL SSHA, synthetic), in-situ tide gauges, ODC/NATL60 fixtures,
+                         the dask executor, fsspec storage
+  methods/               mapping methods (OI, GMRF, FEM, MIOST, trivial); see registry.py
+  distributions/         posterior products: gaussian, ensemble, coherent tiling, blend,
+                         calibration, persisted, reduction
+  derived/               derived quantities: velocity, EKE, transport, area average,
+                         first differences
+  eval/                  evaluators (ALL_EVALUATORS): accuracy, calibration, skill,
+                         spectral, groundtrack, in-situ, ...
+  application/           pipeline wiring, tiling, epochs, plus calibration/ and tuning/
+  validation/            the 2021a OSE challenge harness and the phase gates
+tests/                   pytest suite (unit, integration, validation, adapters, oracle)
+scripts/                 phase runners, data downloads, gate and evidence tools
+docs/                    design specs, plans, validation results, hygiene notes
+vendor/2021a_SSH_mapping_OSE/   git submodule: the challenge's own scoring code
+sealed/                  the phase-14 evaluation seal and gate-0 evidence snapshot
+sky/                     the phase-14 tier-2 cloud probe task (SkyPilot)
+conda-recipe/            conda build recipe
+data/                    git-ignored inputs and evidence (~37 GB here; one tracked file)
+PROGRESS.md              the running project notebook (current work, decisions, gotchas)
+```
 
 ## Links and license
 
