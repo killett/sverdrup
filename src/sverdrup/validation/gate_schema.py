@@ -279,6 +279,10 @@ def _gate_violations(block: dict[str, Any]) -> list[str]:
 def _validation_violations(block: dict[str, Any]) -> list[str]:
     """Pin 78: the validated span must cover the application span.
 
+    An out-of-span application clears only with ``extrapolation_declared``
+    as non-blank TEXT — a flag (``true``) or whitespace states nothing,
+    the shape :func:`projection_audit` refuses under pin 139(c).
+
     Args:
         block: A block whose ``kind`` is ``validation``.
 
@@ -293,15 +297,21 @@ def _validation_violations(block: dict[str, Any]) -> list[str]:
             "compliance, and an unstated span is what the prior instances "
             "looked like at authorship time"
         ]
-    if applied is None or block.get("extrapolation_declared"):
+    declared = block.get("extrapolation_declared")
+    if applied is None or (isinstance(declared, str) and declared.strip()):
         return []
     lo_v, hi_v = float(validated[0]), float(validated[1])
     lo_a, hi_a = float(applied[0]), float(applied[1])
     if lo_a < lo_v or hi_a > hi_v:
+        why = (
+            "no `extrapolation_declared`"
+            if not declared
+            else f"`extrapolation_declared` = {declared!r}, which states "
+            "nothing (pin 139(c): a flag or a blank is not a declaration)"
+        )
         return [
             f"pin 78: application range [{lo_a}, {hi_a}] falls outside the "
-            f"validated range [{lo_v}, {hi_v}] with no "
-            "`extrapolation_declared` — declare the extrapolation at the "
-            "point of use or the gate refuses"
+            f"validated range [{lo_v}, {hi_v}] with {why} — declare the "
+            "extrapolation at the point of use or the gate refuses"
         ]
     return []

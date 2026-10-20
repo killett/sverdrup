@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from sverdrup.validation.gate_schema import validate_gate_schema
 
 REACHABLE_GATE: dict[str, Any] = {
@@ -132,3 +134,38 @@ def test_non_gate_blocks_are_ignored() -> None:
     """
     assert validate_gate_schema({"label": "MEASUREMENT", "value": 1.0}) == []
     assert validate_gate_schema({"mu": 0.769, "sigma": 0.284}) == []
+
+
+def _extrapolating_validation(declared: object) -> dict[str, object]:
+    return {
+        "kind": "validation",
+        "model": "rho = r^2",
+        "validated_range": [0.0, 0.2523],
+        "application_range": [0.0, 0.9],
+        "extrapolation_declared": declared,
+    }
+
+
+@pytest.mark.parametrize("declared", [True, 1, "   ", ""])
+def test_a_flag_or_blank_declaration_does_not_clear_an_extrapolation(
+    declared: object,
+) -> None:
+    """Pin 78 wants the extrapolation DECLARED — stated, in words.
+
+    Bug caught (hygiene, gate_schema.py:296): any truthy value cleared the
+    check, so ``extrapolation_declared: true`` (or whitespace) sealed an
+    out-of-range application while stating nothing — the exact shape
+    ``projection_audit`` already refuses under pin 139(c).
+    """
+    violations = validate_gate_schema(_extrapolating_validation(declared))
+    assert len(violations) == 1
+    assert "pin 78" in violations[0]
+    assert "extrapolation_declared" in violations[0]
+
+
+def test_a_flag_is_moot_when_the_application_is_inside_the_span() -> None:
+    """Bug caught: a fix that refuses every non-text declaration even where
+    nothing is extrapolated (no declaration is needed there at all)."""
+    block = _extrapolating_validation(True)
+    block["application_range"] = [0.0, 0.2]
+    assert validate_gate_schema(block) == []
