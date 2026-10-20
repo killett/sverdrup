@@ -94,3 +94,29 @@ def test_render_table_contains_rows_and_verdict():
     assert "DUACS (published)" in md
     assert "Verdict: PASS" in md
     assert "±0.03" in md
+
+
+def test_the_cross_check_names_the_metric_it_actually_is():
+    """Bug caught (hygiene P2-#19): RESULT.md called the parallel
+    cross-check "our `area_weighted_rmse` µ", but main() computes a GLOBAL,
+    UNWEIGHTED skill ``1 - rmse/rms`` along the track (report.py's own
+    print says so) — a reader would compare it to the wrong thing."""
+    verdict = classify_result(
+        ours=_row(0.85),
+        baseline_published=_row(0.85),
+        baseline_reproduced=_row(0.85),
+        our_eval_mu_same_map=0.85,
+        tol_mu=0.03,
+    )
+    md = render_table(
+        ours=_row(0.85),
+        baseline_published=_row(0.85, 0.09, 140),
+        duacs_published=_row(0.88, 0.07, 152),
+        sanity_reproduced=_row(0.877, 0.065, 152.3),
+        sanity_name="DUACS",
+        our_eval_mu_same_map=0.85,
+        verdict=verdict,
+        tol_mu=0.03,
+    )
+    assert "area_weighted" not in md
+    assert "global, unweighted `1 - RMSE/RMS`" in md

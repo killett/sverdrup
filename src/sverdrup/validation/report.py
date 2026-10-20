@@ -40,7 +40,8 @@ def classify_result(
         baseline_published: The leaderboard row (0.85/0.09/140).
         baseline_reproduced: Their eval on a shipped sanity-anchor map (the
             BASELINE map if available, else a stand-in published row).
-        our_eval_mu_same_map: Our area-weighted RMSE mu on OUR map.
+        our_eval_mu_same_map: Our parallel skill on OUR map — a GLOBAL,
+            UNWEIGHTED ``1 - rmse/rms`` along the track (not area-weighted).
         tol_mu: The agreed mu tolerance (set after seeing the spread).
 
     Returns:
@@ -87,7 +88,8 @@ def render_table(
         duacs_published: Published DUACS row (0.88/0.07/152).
         sanity_reproduced: Their eval reproducing a shipped published row.
         sanity_name: Name of the sanity-anchor method reproduced.
-        our_eval_mu_same_map: Our area-weighted RMSE mu on our map.
+        our_eval_mu_same_map: Our parallel skill on our map — a GLOBAL,
+            UNWEIGHTED ``1 - rmse/rms`` along the track (not area-weighted).
         verdict: The decomposed read.
         tol_mu: The mu tolerance applied.
 
@@ -118,7 +120,8 @@ def render_table(
         "",
         "## Parallel cross-check (our eval vs theirs, same map)",
         "",
-        f"Our `area_weighted_rmse` µ on our map: **{our_eval_mu_same_map:.3f}** "
+        "Our parallel skill (global, unweighted `1 - RMSE/RMS` along the "
+        f"track) on our map: **{our_eval_mu_same_map:.3f}** "
         f"vs their µ on our map **{ours.mu:.3f}** "
         f"(Δ = {abs(our_eval_mu_same_map - ours.mu):.3f}).",
         "",
