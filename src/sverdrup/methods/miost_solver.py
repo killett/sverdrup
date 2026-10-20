@@ -176,14 +176,21 @@ class MiostSolver:
             p = z.copy()
             rz = np.einsum("ij,ij->j", r, z)
             iters = np.zeros(b2.shape[1], dtype=int)
+        # Columns still above rtol on ENTRY to an iteration are the ones it
+        # is spent on (hygiene P2-#15: recording after the convergence test
+        # left a column converging at iteration k reported as k-1). Derived
+        # from r, so a resumed solve reproduces it exactly from the saved r.
+        active = np.linalg.norm(r, axis=0) / b_norm > self.pcg_rtol
         for it in range(start_it, self.pcg_maxiter + 1):
+            if not active.any():
+                break
             ap = self.apply_a(p)
             alpha = rz / np.maximum(np.einsum("ij,ij->j", p, ap), 1e-300)
             x += alpha * p
             r -= alpha * ap
+            iters[active] = it
             rel = np.linalg.norm(r, axis=0) / b_norm
             active = rel > self.pcg_rtol
-            iters[active] = it
             if not active.any():
                 break
             z = self._m_inv[:, None] * r

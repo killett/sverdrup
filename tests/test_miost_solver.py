@@ -67,3 +67,48 @@ def test_zero_obs_total() -> None:
     b = RNG.standard_normal(10)
     x, _ = s.solve(b)
     np.testing.assert_allclose(x, q * b, rtol=1e-10)
+
+
+def _capped_converges(
+    g: sparse.csr_matrix, r: np.ndarray, q: np.ndarray, b: np.ndarray, cap: int
+) -> bool:
+    s = MiostSolver(g, r_diag=r, q_diag=q, pcg_rtol=1e-10, pcg_maxiter=cap)
+    return bool(s.solve(b)[1].final_rel_residual[0] <= 1e-10)
+
+
+def test_reported_iterations_are_the_iterations_it_took() -> None:
+    """``iterations`` is the iteration at which the residual met rtol.
+
+    Bug caught (hygiene P2-#15): ``iters[active] = it`` ran AFTER the
+    convergence test, so a column converging at iteration k kept the k-1
+    written on the previous pass — every converged column under-reported
+    by one. Expected value without the report: with ONE right-hand side
+    the solve stops at the first converging iteration, so k is the
+    smallest ``pcg_maxiter`` at which a capped solve converges (binary
+    search; monotone because no iterate before k meets rtol).
+    """
+    g, r, q = _small_system()
+    b = np.random.default_rng(21).standard_normal(g.shape[1])
+    lo, hi = 1, 2000
+    assert _capped_converges(g, r, q, b, hi)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if _capped_converges(g, r, q, b, mid):
+            hi = mid
+        else:
+            lo = mid + 1
+    k = lo
+    assert k > 1  # a one-iteration system could not show an off-by-one
+    _, report = MiostSolver(g, r_diag=r, q_diag=q, pcg_rtol=1e-10).solve(b)
+    assert int(report.iterations[0]) == k
+
+
+def test_a_capped_unconverged_solve_reports_the_cap() -> None:
+    """Bug caught: a fix that shifts EVERY count by one, so a solve that
+    hit its cap reports cap+1 iterations it never ran."""
+    g, r, q = _small_system()
+    b = np.random.default_rng(21).standard_normal(g.shape[1])
+    s = MiostSolver(g, r_diag=r, q_diag=q, pcg_rtol=1e-10, pcg_maxiter=3)
+    _, report = s.solve(b)
+    assert report.final_rel_residual[0] > 1e-10
+    assert int(report.iterations[0]) == 3
