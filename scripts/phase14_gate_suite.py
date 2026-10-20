@@ -17,6 +17,7 @@ Commands:
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,10 +35,22 @@ app = typer.Typer(add_completion=False)
 
 ROOT = Path()
 STAMP = Path("logs/gate_stamp.json")
-# Only files a rewriting hook or an edit could touch. Data and logs are
-# excluded deliberately: a suite that writes a log must not invalidate
-# its own evidence.
-TRACKED_GLOBS = ("src/**/*.py", "scripts/**/*.py", "tests/**/*.py", "pyproject.toml")
+# Every file a rewriting hook or an edit could touch AND a test reads. Data
+# and logs are excluded deliberately: a suite that writes a log must not
+# invalidate its own evidence. The shell scripts, the git hook, the JSON
+# fixtures, the evidence mirror and pixi.toml joined after the 2026-10-18
+# audit: tests read them, and a mid-run edit to one left `verify` green.
+TRACKED_GLOBS = (
+    "src/**/*.py",
+    "scripts/**/*.py",
+    "scripts/**/*.sh",
+    "scripts/git_hooks/*",
+    "tests/**/*.py",
+    "tests/**/*.json",
+    "docs/validation/evidence-mirror/**/*.json",
+    "pyproject.toml",
+    "pixi.toml",
+)
 
 
 def _tracked() -> list[str]:
@@ -54,6 +67,21 @@ def _tracked() -> list[str]:
     return sorted(seen)
 
 
+def _suite_argv(suite: str) -> list[str]:
+    """Split the suite command the way a shell would.
+
+    ``str.split`` broke a quoted argument — a ``--deselect`` node id with
+    spaces — into pieces (hygiene).
+
+    Args:
+        suite: The suite command line.
+
+    Returns:
+        Its argument vector.
+    """
+    return shlex.split(suite)
+
+
 def _run(cmd: list[str]) -> int:
     """Run a command, streaming its output.
 
@@ -63,7 +91,7 @@ def _run(cmd: list[str]) -> int:
     Returns:
         The process exit code.
     """
-    typer.echo(f"$ {' '.join(cmd)}")
+    typer.echo(f"$ {shlex.join(cmd)}")
     return subprocess.run(cmd, check=False).returncode  # noqa: S603
 
 
@@ -107,7 +135,7 @@ def run(
 
     if skip_suite:
         return
-    code = _run(suite.split())
+    code = _run(_suite_argv(suite))
     after = file_digests(ROOT, _tracked())
     drift = changed_paths(before, after)
     if drift:
@@ -157,7 +185,8 @@ def verify() -> None:
     typer.echo(
         f"stamp verified: {len(before)} files unchanged since the suite ran, "
         f"and the stamp records a suite that COMPLETED with exit "
-        f"{stamp['suite']['exit_code']}"
+        f"{stamp['suite']['exit_code']}. It attests EXACTLY this command — "
+        f"cite it as the evidence's scope (pin 197c): {stamp['suite']['command']}"
     )
 
 
