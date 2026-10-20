@@ -17,6 +17,7 @@ from sverdrup.core.geometry import Tile, Window
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.core.parameters import ConstantProvider, ParameterProvider
+from sverdrup.core.types import ScalarOrField
 from sverdrup.distributions.blend import BlendInput, partition_weights
 from sverdrup.distributions.coherent import (
     GmrfKrigingSolve,
@@ -36,6 +37,32 @@ _DEFAULT = ConstantProvider(
     {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 5.0}
 )
 _T = 2.0
+
+
+class LatLinearRange:
+    """A STRONGLY nonstationary range field for the 0..9 gate grids (C4', blend level).
+
+    ``range`` runs linearly from ``lo_km`` at lat 0 to ``hi_km`` at lat 9, so tiles at
+    different latitudes carry genuinely different priors; the other parameters are
+    ``_DEFAULT``'s. (A cos(lat) field is near-constant on 0..9 degrees and would not bite.)
+    """
+
+    def __init__(self, lo_km: float, hi_km: float) -> None:
+        self.lo_km = lo_km
+        self.hi_km = hi_km
+
+    def resolve(self, name: str, grid: GridSpec) -> ScalarOrField:
+        """Return the lat-linear ``range`` field; other parameters constant."""
+        if name == "range":
+            _, lat = grid._lonlat_nodes()
+            frac = np.asarray(lat, dtype=float) / 9.0
+            return np.asarray(self.lo_km + (self.hi_km - self.lo_km) * frac)
+        return _DEFAULT.resolve(name, grid)
+
+    def params_key(self) -> str:
+        """Return a canonical key string for seed derivation."""
+        return f"latlinear(lo={self.lo_km},hi={self.hi_km})"
+
 
 _Win = tuple[tuple[float, float], tuple[float, float]]
 _Quad = tuple[np.ndarray, np.ndarray, _Win, _Win]
@@ -400,24 +427,9 @@ def make_chain(prov: ParameterProvider | None = None) -> GateFixture:
 _NATL60_PARAMS = {"range": 300.0, "variance": 0.05, "temporal_taper_scale": 10.0}
 
 
-class _LatVaryingRange:
-    """Latitude-varying range field (nonstationary κ, C4') for the gate's nonstationary case."""
-
-    def resolve(self, name: str, grid: GridSpec) -> object:
-        if name == "range":
-            _, lat = grid._lonlat_nodes()
-            c = np.cos(np.deg2rad(lat))
-            return np.asarray(100.0 + 700.0 * c)
-        return _NATL60_PARAMS[name]
-
-    def params_key(self) -> str:
-        return "latrange(eq=800,pole=100)"
-
-
 def make_natl60(
     n_lon: int,
     n_lat: int,
-    nonstationary: bool = False,
     *,
     source: Any | None = None,
     lon_range: tuple[float, float] = (-64.0, -56.0),
@@ -427,7 +439,7 @@ def make_natl60(
 
     The decisive Stage-B regime: sparse nadir obs leave the ``(κ²−Δ)²`` low-frequency mode
     under-determined (global ``Q_post`` eigmin ~1e-7), exactly where the synthesized-field sampler
-    blew up 376x. ``nonstationary`` swaps in a latitude-varying κ field (C4').
+    blew up 376x.
 
     Args:
         source: Optional obs source override. Defaults to the committed ``natl60_tiny``
@@ -447,10 +459,7 @@ def make_natl60(
     )
     from sverdrup.application.tiling import LonLatPartition, ScaleAwareHalo
 
-    prov: ParameterProvider = cast(
-        ParameterProvider,
-        _LatVaryingRange() if nonstationary else ConstantProvider(_NATL60_PARAMS),
-    )
+    prov: ParameterProvider = ConstantProvider(_NATL60_PARAMS)
     inp = PipelineInputs(
         mode="OSSE",
         method_name="gmrf",

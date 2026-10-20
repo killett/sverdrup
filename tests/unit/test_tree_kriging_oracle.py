@@ -19,7 +19,7 @@ from sverdrup.distributions.coherent import (  # noqa: E402
     GmrfTreeKrigingSolve,
     NoiseSpec,
 )
-from tests.unit._tree_gate import make_2x2, make_chain  # noqa: E402
+from tests.unit._tree_gate import LatLinearRange, make_2x2, make_chain  # noqa: E402
 
 _NOISE = NoiseSpec(method="gmrf", params_key="p", lattice_step=0.5)
 _SLACK = (
@@ -153,6 +153,35 @@ def test_tree_dropped_and_conservative_contracts():
         assert fix.edge_dir_ratio(bs, rs, i, j) >= 0.9, (
             f"dropped edge {i}-{j} under-dispersed at the seam"
         )
+
+
+def test_nonstationary_blend_variance_tracks_the_dense_reference() -> None:
+    # Behavior (C4', blend level): on a strongly nonstationary 2x2 (range 100 -> 800 km across
+    #   the grid's latitudes), every blended node's marginal variance stays within the validated
+    #   chain driver's own worst log-deviation from ITS dense reference (same provider, measured
+    #   in-test), with the module slack. Every other test here runs a stationary provider.
+    # Bug caught: a stationary-ization of the sweep — every tile drawn with the ROOT tile's
+    #   factor, one shared prior as if the field were stationary. All the other tests in this
+    #   module pass under it; here (measured 2026-10-20 at m=_M) its worst |log ratio| is 2.94
+    #   against a bound of 1.019*(1+_SLACK) = 1.17 (real driver 0.58).
+    #   NOT caught, measured and recorded: the root's covariance in the kriging UPDATE (~0.81,
+    #   inside the bound, so marginal variance cannot separate it at this size).
+    prov = LatLinearRange(100.0, 800.0)
+    chain = make_chain(prov)
+    chain_ratio = np.diag(chain.cov(chain.chain_samples(m=_M))) / np.diag(chain.sig_g)
+    baseline = float(np.max(np.abs(np.log(chain_ratio))))
+    fix = make_2x2(prov)
+    rng_km = np.asarray(prov.resolve("range", fix.grid))
+    assert (rng_km.min(), rng_km.max()) == (
+        100.0,
+        800.0,
+    )  # the fixture IS nonstationary
+    tree_ratio = np.diag(fix.cov(fix.tree_samples(m=_M))) / np.diag(fix.sig_g)
+    worst = float(np.max(np.abs(np.log(tree_ratio))))
+    assert worst <= baseline * (1 + _SLACK), (
+        f"blend variance off the dense reference by |log| {worst:.3f} > chain "
+        f"baseline {baseline:.3f}*(1+{_SLACK}) on a nonstationary provider"
+    )
 
 
 def _alt_tree(
