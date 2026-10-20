@@ -7,7 +7,7 @@ from collections.abc import Callable
 import numpy as np
 
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.observations import ObsWindow
+from sverdrup.core.observations import ObsWindow, diagonal_variances
 from sverdrup.core.provenance import (
     KnownBias,
     TransformKind,
@@ -51,7 +51,7 @@ def perturb_and_ensemble(
     coords = obs.coords()
     lon, lat, time = coords[:, 0], coords[:, 1], coords[:, 2]
     base_vals = obs.values()
-    std = np.sqrt(np.diag(obs.error_model.as_matrix(len(obs))))
+    std = np.sqrt(diagonal_variances(obs.error_model, len(obs)))
     members = np.empty((m, *grid.shape))
     for i in range(m):
         rng = np.random.default_rng(derive_seed("perturb", str(seed), "ensemble", i))

@@ -20,7 +20,7 @@ from sverdrup.application.uow import UnitOfWork
 from sverdrup.core.distribution import PredictiveDistribution
 from sverdrup.core.geometry import Tile, Window
 from sverdrup.core.grid import GridSpec, PointSet
-from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow, diagonal_variances
 from sverdrup.core.parameters import ConstantProvider
 from sverdrup.core.product import Product
 from sverdrup.core.seeding import derive_seed
@@ -314,7 +314,7 @@ def _evaluate_blended(
 def _subset_obs(obs: ObsWindow, idx: np.ndarray) -> ObsWindow:
     """Return the sub-window of ``obs`` at the given indices (preserves error variances)."""
     coords = obs.coords()
-    var = np.diag(obs.error_model.as_matrix(len(obs)))
+    var = diagonal_variances(obs.error_model, len(obs))
     mission = obs.mission[idx] if obs.mission is not None else None
     return ObsWindow.from_arrays(
         coords[idx, 0],

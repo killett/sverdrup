@@ -8,7 +8,7 @@ import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.observations import ObsWindow
+from sverdrup.core.observations import ObsWindow, diagonal_variances
 from sverdrup.core.parameters import ParameterProvider, ParameterSpace
 from sverdrup.core.provenance import (
     KnownBias,
@@ -127,7 +127,7 @@ class MaternGMRF:
 
         projection = GridIdentityProjection(grid)
         a_op = projection.weights(obs.coords())  # (n_obs, n_nodes): node -> obs
-        r_diag = np.diag(obs.error_model.as_matrix(len(obs))).astype(float)
+        r_diag = diagonal_variances(obs.error_model, len(obs)).astype(float)
         dt = np.abs(obs.coords()[:, 2] - time_days)
         r_inflated = r_diag * np.exp(dt / max(taper, 1e-9))  # temporal taper into R
         r_inv = sparse.diags(1.0 / r_inflated)

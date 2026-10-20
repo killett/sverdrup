@@ -16,7 +16,7 @@ from scipy import sparse  # type: ignore[import-untyped]
 from scipy.spatial import Delaunay  # type: ignore[import-untyped]
 
 from sverdrup.core.grid import GridSpec, PointSet
-from sverdrup.core.observations import ObsWindow
+from sverdrup.core.observations import ObsWindow, diagonal_variances
 from sverdrup.core.parameters import ParameterProvider, ParameterSpace
 from sverdrup.core.provenance import (
     KnownBias,
@@ -191,7 +191,7 @@ class FEMMatern:
 
         projection = FEMBasisProjection(mesh)
         a_op = projection.weights(obs.coords())  # (n_obs, n_nodes)
-        r_diag = np.diag(obs.error_model.as_matrix(len(obs))).astype(float)
+        r_diag = diagonal_variances(obs.error_model, len(obs)).astype(float)
         dt = np.abs(obs.coords()[:, 2] - time_days)
         r_inflated = r_diag * np.exp(dt / max(taper, 1e-9))
         r_inv = sparse.diags(1.0 / r_inflated)

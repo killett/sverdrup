@@ -34,7 +34,7 @@ from sverdrup.application.tuning.scorer import ValidationTrackScorer
 from sverdrup.application.tuning.strategy import SearchStrategy, SobolSearch
 from sverdrup.application.tuning.trial import TrialHistory, TrialRecord
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow, diagonal_variances
 from sverdrup.core.parameters import ConstantProvider, ParameterSpace
 from sverdrup.core.types import UncertaintyCapability
 from sverdrup.eval.spectral import ShortTrackError, UnresolvedScaleError
@@ -89,12 +89,7 @@ class _Win:
 def _subset(obs: ObsWindow, idx: np.ndarray) -> ObsWindow:
     """Return the obs at ``idx`` (diagonal error preserved), mirroring run._subset."""
     c = obs.coords()
-    em = obs.error_model
-    var = (
-        np.asarray(em.variance, dtype=float)
-        if isinstance(em, DiagonalErrorModel)
-        else np.asarray(em.as_matrix(len(obs)).diagonal(), dtype=float)
-    )
+    var = np.asarray(diagonal_variances(obs.error_model, len(obs)), dtype=float)
     mission = None if obs.mission is None else np.asarray(obs.mission)[idx]
     return ObsWindow.from_arrays(
         c[idx, 0],

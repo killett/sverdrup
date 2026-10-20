@@ -25,6 +25,20 @@ class ObservationErrorModel(Protocol):
         """Materialise the (n, n) R (used for correlated models / tests)."""
 
 
+def _check_count(n_var: int, n: int) -> None:
+    """Refuse an R sized for a different number of observations.
+
+    Args:
+        n_var: How many variances the model carries.
+        n: How many observations the caller has.
+
+    Raises:
+        ValueError: If they differ.
+    """
+    if n_var != n:
+        raise ValueError(f"error model has {n_var} variances for {n} observations")
+
+
 @dataclass(frozen=True)
 class DiagonalErrorModel:
     """White (uncorrelated) per-observation variances — the nadir default."""
@@ -47,7 +61,11 @@ class DiagonalErrorModel:
 
         Returns:
             The diagonal ``(n, n)`` observation-error covariance.
+
+        Raises:
+            ValueError: If ``n`` is not the number of variances.
         """
+        _check_count(np.size(self.variance), n)
         return np.diag(self.variance)
 
 
@@ -67,7 +85,11 @@ class BandedErrorModel:
 
         Returns:
             A symmetric ``(n, n)`` covariance with exponential off-diagonal decay.
+
+        Raises:
+            ValueError: If ``n`` is not the number of variances.
         """
+        _check_count(np.size(self.variance), n)
         d = np.abs(self.coords1d[:, None] - self.coords1d[None, :])
         corr = np.exp(-d / self.corr_length)
         s = np.sqrt(self.variance)
@@ -83,6 +105,45 @@ class BandedErrorModel:
             k: The obs-obs kernel matrix, modified in place.
         """
         k += self.as_matrix(k.shape[0])
+
+
+def diagonal_variances(model: ObservationErrorModel, n: int) -> np.ndarray:
+    """Per-observation variances of a DIAGONAL R, refusing anything else.
+
+    Every path that reads R as a vector — OI's ``noise_diag``, GMRF/FEM's
+    ``R^-1``, the subset rebuilders, the perturbation adapter — is
+    diagonal-only. Each used to take ``np.diag(as_matrix(n))`` (or
+    ``.diagonal()``), which silently dropped a correlated model's
+    off-diagonal (hygiene P1-#6) and densified an ``(n, n)`` matrix to do
+    it. A :class:`DiagonalErrorModel` is read directly; any other model is
+    accepted only if its R has no off-diagonal entry.
+
+    Args:
+        model: The observation-error model.
+        n: Number of observations it must describe.
+
+    Returns:
+        A fresh ``(n,)`` copy of the variances (dtype preserved).
+
+    Raises:
+        NotImplementedError: If R has an off-diagonal entry (a correlated
+            model such as :class:`BandedErrorModel`) — this path would drop
+            its correlations.
+        ValueError: If the model does not describe ``n`` observations.
+    """
+    if isinstance(model, DiagonalErrorModel):
+        var = np.array(model.variance)
+        _check_count(var.size, n)
+        return var
+    mat = np.asarray(model.as_matrix(n))
+    if mat.shape != (n, n):
+        raise ValueError(f"error model has a {mat.shape} R for {n} observations")
+    if np.any(mat[~np.eye(n, dtype=bool)] != 0.0):
+        raise NotImplementedError(
+            f"{type(model).__name__} is a correlated R; this path is "
+            "diagonal-only and would silently drop its correlations"
+        )
+    return np.array(np.diag(mat))
 
 
 @dataclass(frozen=True)

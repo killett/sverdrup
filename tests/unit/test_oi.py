@@ -59,3 +59,27 @@ def test_solve_returns_native_gaussian():
     assert method.native_capability is UncertaintyCapability.SAMPLES
     assert dist.cov_op.fidelity is CovFidelity.EXACT
     assert dist.provenance.is_synthesized is False
+
+
+def test_oi_refuses_a_correlated_error_model():
+    """Bug caught (hygiene P1-#6): OI fed ``np.diag(as_matrix(n))`` to its
+    noise_diag, so a BandedErrorModel solved as white noise, silently."""
+    import pytest
+
+    from sverdrup.core.observations import BandedErrorModel
+
+    kern_params = ConstantProvider(
+        {"length_scale": 200.0, "time_scale": 10.0, "variance": 1.0}
+    )
+    grid = GridSpec.lonlat(np.linspace(0, 2, 3), np.linspace(0, 2, 3))
+    obs = ObsWindow.from_arrays(
+        np.array([0.0, 1.0]),
+        np.array([0.5, 1.5]),
+        np.zeros(2),
+        np.array([0.1, -0.2]),
+        BandedErrorModel(
+            variance=np.full(2, 0.01), corr_length=1.0, coords1d=np.arange(2.0)
+        ),
+    )
+    with pytest.raises(NotImplementedError, match="diagonal-only"):
+        OptimalInterpolation().solve(obs, grid, kern_params, time_days=0.0)

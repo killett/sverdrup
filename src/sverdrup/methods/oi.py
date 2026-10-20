@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.observations import ObsWindow
+from sverdrup.core.observations import ObsWindow, diagonal_variances
 from sverdrup.core.parameters import ParameterProvider, ParameterSpace
 from sverdrup.core.provenance import UncertaintyProvenance
 from sverdrup.core.types import CovFidelity, Points, Seed, UncertaintyCapability
@@ -121,7 +121,7 @@ class OptimalInterpolation:
                 time_scale=float(params.resolve("time_scale", grid)),
             )
         obs_pts = obs.coords()
-        noise = np.diag(obs.error_model.as_matrix(len(obs)))
+        noise = diagonal_variances(obs.error_model, len(obs))
         op = GPCovarianceOperator(kernel, obs_pts, obs.values(), noise_diag=noise)
         mean = op.posterior_mean(grid.points(time_days)).reshape(grid.shape)
         prov = UncertaintyProvenance(

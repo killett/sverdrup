@@ -8,7 +8,7 @@ from typing import Any, cast
 import numpy as np
 
 from sverdrup.core.grid import GridSpec
-from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
+from sverdrup.core.observations import DiagonalErrorModel, ObsWindow, diagonal_variances
 from sverdrup.core.parameters import LatitudeField, ParameterProvider
 from sverdrup.methods.kernel import (
     GaussianSpaceTimeDegrees,
@@ -141,12 +141,8 @@ def _resolve_oi_kernel(
 
 
 def _diag_variance(obs: ObsWindow) -> np.ndarray:
-    """Return the per-obs error variances without densifying the error matrix."""
-    em = obs.error_model
-    if isinstance(em, DiagonalErrorModel):
-        return np.asarray(em.variance, dtype=float)
-    # Non-diagonal models are small by construction; fall back to the dense diag.
-    return np.asarray(em.as_matrix(len(obs)).diagonal(), dtype=float)
+    """Return the per-obs error variances (diagonal R only — P1-#6)."""
+    return np.asarray(diagonal_variances(obs.error_model, len(obs)), dtype=float)
 
 
 def _subset(obs: ObsWindow, mask: np.ndarray) -> ObsWindow:
