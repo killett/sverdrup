@@ -15,6 +15,7 @@ the timed run (standing memory).
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import resource
@@ -210,7 +211,7 @@ def tile_sizing(
 def assemble_tier2_report(
     crn_equal: bool,
     cross_host_deltas: dict[str, dict[str, float]],
-    multithread_runs: list[dict[str, dict[str, float]]],
+    multithread_pairs: list[dict[str, dict[str, float]]],
     cost_usd: float,
     wall_s: float,
     egress_gib: float,
@@ -219,16 +220,20 @@ def assemble_tier2_report(
 
     The TWO tolerances land as SEPARATE numbers (fork-g pin 2):
     ``tolerance_gate`` = the cross-host single-thread deltas;
-    ``tolerance_threading`` = the same-host multi-thread spread (max
-    pairwise max-abs across the repeated runs). The production spot-check
+    ``tolerance_threading`` = the same-host multi-thread spread: the max,
+    over every PAIR of repeated runs, of that pair's max-abs field
+    difference (``multithread_pairs`` holds one deltas dict per pair —
+    hygiene: it was the spread of each run's max-abs deviation from the
+    LOCAL solve, which reads 0 for two runs deviating by +d and -d at the
+    same node while they differ by 2d). The production spot-check
     tolerance = their per-key envelope (max), computed and recorded
     BESIDE, formula in the record. A CRN mismatch is a STOP marker —
     owner adjudication, it breaks the CRN identity assumption.
     """
-    spread: dict[str, float] = {}
-    for key in cross_host_deltas:
-        vals = [r[key]["max_abs"] for r in multithread_runs]
-        spread[key] = max(vals) - min(vals) if len(vals) > 1 else 0.0
+    spread: dict[str, float] = {
+        key: max((pair[key]["max_abs"] for pair in multithread_pairs), default=0.0)
+        for key in cross_host_deltas
+    }
     envelope = {
         key: max(cross_host_deltas[key]["max_abs"], spread[key])
         for key in cross_host_deltas
@@ -281,7 +286,9 @@ def tier2_report(
     mb = json.loads(crn_b.read_text())
     crn_equal = ma["axes"] == mb["axes"] and ma["root"] == mb["root"]
     cross = _deltas(solve_local, solve_cloud)
-    mt = [_deltas(solve_local, Path(p)) for p in mt_runs.split(",") if p.strip()]
+    mt_paths = [Path(p) for p in mt_runs.split(",") if p.strip()]
+    # Pairwise AMONG the multi-thread runs — not each against the local solve.
+    mt = [_deltas(a, b) for a, b in itertools.combinations(mt_paths, 2)]
     report = assemble_tier2_report(crn_equal, cross, mt, cost_usd, wall_s, egress_gib)
     if EVIDENCE.exists():
         from sverdrup.application.calibration.harness import (  # noqa: PLC0415
