@@ -32,6 +32,11 @@ import numpy as np
 
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 
+# The locked evaluation family (CryoSat-2): no altimetry source serves it to
+# a mapping load, no epoch fits on it, and the seal records its era windows.
+# The one definition every one of those readers imports.
+LOCKED_MISSIONS: frozenset[str] = frozenset({"c2", "c2n"})
+
 
 @dataclass(frozen=True)
 class BBox:

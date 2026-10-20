@@ -19,6 +19,7 @@ from typing import Annotated, Any
 
 import typer
 
+from sverdrup.adapters.altimetry.contract import LOCKED_MISSIONS
 from sverdrup.adapters.insitu.screening import screening_config_record
 from sverdrup.core.seeding import derive_seed
 from sverdrup.validation.phase14_instruments import serialize_instrument_configs
@@ -47,7 +48,7 @@ def _assemble(epoch_table: Path, locked_split: Path) -> dict[str, object]:
     table_bytes = epoch_table.read_bytes()
     rows = json.loads(table_bytes)
     c2_windows = sorted(
-        r["epoch_id"] for r in rows if {"c2", "c2n"} & set(r["locked_instruments"])
+        r["epoch_id"] for r in rows if LOCKED_MISSIONS & set(r["locked_instruments"])
     )
     return assemble_content(
         epoch_table_bytes=table_bytes,

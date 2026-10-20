@@ -241,7 +241,7 @@ def subset(
 ) -> None:
     """A scoped missions × time pull (budget-checked; present + manifested skip)."""
     wanted = [m.strip() for m in missions.split(",") if m.strip()]
-    from sverdrup.adapters.altimetry.cmems_my import LOCKED_MISSIONS  # noqa: PLC0415
+    from sverdrup.adapters.altimetry.contract import LOCKED_MISSIONS  # noqa: PLC0415
 
     locked = [m for m in wanted if m in LOCKED_MISSIONS]
     if locked:

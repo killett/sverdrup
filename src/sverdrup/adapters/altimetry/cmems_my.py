@@ -35,7 +35,11 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from sverdrup.adapters.altimetry.contract import BBox, SourceDescriptor
+from sverdrup.adapters.altimetry.contract import (
+    LOCKED_MISSIONS,
+    BBox,
+    SourceDescriptor,
+)
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 from sverdrup.validation.params import OBS_NOISE_VARIANCE
 
@@ -45,9 +49,6 @@ DATASET_VERSION = f"{PRODUCT_ID}_{DT_TAG}"
 
 CMEMS_DATA_DIR = Path("data/cmems_my")
 EPOCH = np.datetime64("1993-01-01")
-
-# The locked evaluation family: never served through the mapping load.
-LOCKED_MISSIONS = frozenset({"c2", "c2n"})
 
 # Challenge box codes -> CMEMS dataset codes (golden-tile consumer).
 CHALLENGE_TO_CMEMS = {

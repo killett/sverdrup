@@ -29,8 +29,11 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from sverdrup.adapters.altimetry.cmems_my import LOCKED_MISSIONS
-from sverdrup.adapters.altimetry.contract import BBox, SourceDescriptor
+from sverdrup.adapters.altimetry.contract import (
+    LOCKED_MISSIONS,
+    BBox,
+    SourceDescriptor,
+)
 from sverdrup.core.observations import DiagonalErrorModel, ObsWindow
 
 JPL_DIR_ENV = "SVERDRUP_JPL_SSHA_DIR"

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from sverdrup.adapters.altimetry.contract import LOCKED_MISSIONS
 from sverdrup.application.epochs import (
     REFERENCE_MIN_NET_MISSIONS,
     CensusArtifact,
@@ -75,7 +76,7 @@ DRIFTING: frozenset[str] = frozenset(
     {"e1g", "j1g", "j2g", "alg", "h2ag", "c2", "c2n", "enn", "g2"}
 )
 
-LOCKED_ALTIMETERS: frozenset[str] = frozenset({"c2", "c2n"})
+LOCKED_ALTIMETERS: frozenset[str] = LOCKED_MISSIONS
 
 
 @dataclass(frozen=True)
