@@ -110,3 +110,21 @@ def test_serialization_deterministic_bytes() -> None:
     a = serialize_epoch_table(_table())
     b = serialize_epoch_table(_table())
     assert a == b and isinstance(a, bytes)
+
+
+def test_table_reference_rows_are_the_reference_candidates() -> None:
+    """The table's fit rows are exactly epochs.reference_candidates.
+
+    The "net >= 4" reference rule lived twice (build_epoch_table and
+    reference_candidates). Bug caught: one copy moving (say to 5) — the
+    table would then mark fit epochs the candidate list does not name.
+    Anti-vacuity: the catalog yields both fit and transferred rows.
+    """
+    from sverdrup.application.epoch_table import LOCKED_ALTIMETERS
+    from sverdrup.application.epochs import reference_candidates
+
+    part = partition_epochs(build_census(_catalog()))
+    table = build_epoch_table(part.epochs, build_census(_catalog()))
+    fit = {r.epoch_id for r in table.rows if r.fit_or_transferred == "fit"}
+    assert fit == set(reference_candidates(part.epochs, LOCKED_ALTIMETERS))
+    assert fit and len(fit) < len(table.rows)

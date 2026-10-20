@@ -23,6 +23,10 @@ MISSION_GAP_SPLIT_D = 90
 # chatter cannot support per-epoch calibration).
 MIN_EPOCH_DAYS = 365
 
+# A reference (fit) epoch needs at least this many missions NET of the
+# locked ones (fork-e pin 3). One rule: epoch_table imports it.
+REFERENCE_MIN_NET_MISSIONS = 4
+
 
 @dataclass(frozen=True)
 class CensusArtifact:
@@ -224,6 +228,11 @@ def reference_candidates(
         locked_exclusions: Locked mission codes (never fit substrate).
 
     Returns:
-        Epoch ids whose net mission count is ≥ 4, in time order.
+        Epoch ids whose net mission count is ≥ ``REFERENCE_MIN_NET_MISSIONS``,
+        in time order.
     """
-    return [e.epoch_id for e in epochs if len(e.missions - locked_exclusions) >= 4]
+    return [
+        e.epoch_id
+        for e in epochs
+        if len(e.missions - locked_exclusions) >= REFERENCE_MIN_NET_MISSIONS
+    ]

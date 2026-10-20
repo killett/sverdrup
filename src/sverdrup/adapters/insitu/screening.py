@@ -33,6 +33,12 @@ from sverdrup.core.seeding import derive_seed
 # phase-13 acceptance): a gauge farther than the product's resolved scale
 # from the nearest wet gridpoint cannot be compared to the map.
 L_PROX_KM = 150.0
+# Stage-0 proximity disposition when no target grid exists yet. ONE string:
+# the verdict row and screening_config_record (the seal's input) both use it.
+PROXIMITY_DEFERRED = (
+    "DEFERRED to consumption grid (Stage-0 recorded interpretation; "
+    "Gate-0 owner attention item)"
+)
 
 # Era-completeness rule (criterion 2): coverage per claimed epoch + floor.
 ERA_COMPLETENESS_MIN_FRAC = 0.70
@@ -155,7 +161,7 @@ def _check_era_completeness(
     """≥ 70% of days in each epoch the gauge claims + ≥ 3 years total."""
     total_years = g.days.size / 365.25
     if total_years < MIN_TOTAL_YEARS:
-        return False, f"total {total_years:.1f} y < 3 y"
+        return False, f"total {total_years:.1f} y < {MIN_TOTAL_YEARS:g} y"
     details = []
     ok = True
     for e in epochs:
@@ -213,11 +219,7 @@ def screen_gauges(
             ),
         )
         if ocean_points is None:
-            verdicts["proximity"] = (
-                True,
-                "DEFERRED to consumption grid (Stage-0 recorded "
-                "interpretation; Gate-0 owner attention item)",
-            )
+            verdicts["proximity"] = (True, PROXIMITY_DEFERRED)
         else:
             ocean_lon, ocean_lat = ocean_points
             d_km = float(_haversine_km(g.lon, g.lat, ocean_lon, ocean_lat).min())
@@ -336,10 +338,7 @@ def screening_config_record() -> dict[str, Any]:
         "min_total_years": MIN_TOTAL_YEARS,
         "rlr_match_deg": RLR_MATCH_DEG,
         "l_prox_km": L_PROX_KM,
-        "proximity": (
-            "DEFERRED to consumption grid (Stage-0 recorded interpretation; "
-            "Gate-0 owner attention item)"
-        ),
+        "proximity": PROXIMITY_DEFERRED,
         "excluded_basins": [b[0] for b in EXCLUDED_BASINS],
         "split": {
             "strata": "8-box basin x era-coverage class",

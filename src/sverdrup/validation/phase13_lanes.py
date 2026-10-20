@@ -20,7 +20,7 @@ from scipy.stats import qmc  # type: ignore[import-untyped]
 from sverdrup.application.tuning.objective import HardBar, bars_for
 from sverdrup.core.seeding import derive_seed
 from sverdrup.core.types import UncertaintyCapability
-from sverdrup.methods.miost_rspec import RSpec
+from sverdrup.methods.miost_rspec import SWEPT_MISSIONS, RSpec
 from sverdrup.validation.phase13_boxes import (
     DELTA_BOX,
     LOG10_LAM_BOX,
@@ -113,9 +113,7 @@ def rspec_for_trial(trial: Trial) -> RSpec:
         The RSpec: δ from the four contrast dims (s3a derived inside);
         modes active iff BOTH Λ dims carry values.
     """
-    deltas = {
-        m: float(trial[f"delta_{m}"] or 0.0) for m in ("alg", "h2g", "j2g", "j2n")
-    }
+    deltas = {m: float(trial[f"delta_{m}"] or 0.0) for m in SWEPT_MISSIONS}
     lb, lt = trial["log_lam_bias"], trial["log_lam_tilt"]
     return RSpec(
         deltas=deltas,

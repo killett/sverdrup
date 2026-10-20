@@ -336,3 +336,40 @@ def test_screening_config_record_matches_constants() -> None:
     assert cfg["min_valid_hours_per_day"] == MIN_HOURS_PER_DAY
     assert cfg["excluded_basins"] == [b[0] for b in EXCLUDED_BASINS]
     assert cfg["split"]["seed_path"] == ["insitu", "phase14-seal", "locked-split", 0]
+
+
+# The proximity-deferral text as SEALED (docs/validation/evidence-mirror/
+# phase14_evaluation_seal_v1.json, screening_config.proximity) — copied by
+# hand from the seal, not from the module.
+_SEALED_PROXIMITY = (
+    "DEFERRED to consumption grid (Stage-0 recorded interpretation; "
+    "Gate-0 owner attention item)"
+)
+
+
+def test_proximity_deferral_text_is_the_sealed_string() -> None:
+    """The deferred row and the recorded config carry the SEALED text.
+
+    Bug caught: the two hand-kept copies of the deferral string (the
+    screening verdict and screening_config_record) drifting apart, so
+    screening rows say one thing while the seal pins another.
+    """
+    rows, _ = screen_gauges(_FIXTURES, _EPOCHS, None)
+    prox = {r.gauge_id: r.detail for r in rows if r.criterion == "proximity"}
+    assert set(prox.values()) == {_SEALED_PROXIMITY}
+    assert screening.screening_config_record()["proximity"] == _SEALED_PROXIMITY
+
+
+def test_short_record_reason_renders_the_threshold() -> None:
+    """A ~2-year record fails era completeness with the exact recorded text.
+
+    Expected by hand: 731 days / 365.25 = 2.001 y -> "2.0"; the threshold
+    renders "3" (this text lands in screening-rows evidence). Bug caught:
+    deriving the threshold from MIN_TOTAL_YEARS with the wrong format
+    ("3.0"), or the reason drifting from the constant it reports.
+    """
+    g = _gauge("g_short", 202.1, 21.3, _days("1995-01-01", "1997-01-01"))
+    rows, passed = screen_gauges([g], _EPOCHS, None)
+    era = next(r for r in rows if r.criterion == "era_completeness")
+    assert (era.passed, era.detail) == (False, "total 2.0 y < 3 y")
+    assert passed == ()

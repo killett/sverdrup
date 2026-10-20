@@ -26,7 +26,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from sverdrup.application.epochs import CensusArtifact, Epoch
+from sverdrup.application.epochs import (
+    REFERENCE_MIN_NET_MISSIONS,
+    CensusArtifact,
+    Epoch,
+)
 
 ANCHOR_DATE = np.datetime64("2017-07-01")
 
@@ -159,7 +163,7 @@ def build_epoch_table(epochs: tuple[Epoch, ...], census: CensusArtifact) -> Epoc
             holdout, criterion = "j3", "signed-workhorse-by-construction"
         else:
             holdout, criterion = _select_holdout(e.missions)
-        reference = len(net) >= 4
+        reference = len(net) >= REFERENCE_MIN_NET_MISSIONS
         locked = ["gauges"]
         if e.missions & LOCKED_ALTIMETERS:
             locked.extend(sorted(e.missions & LOCKED_ALTIMETERS))
