@@ -282,12 +282,12 @@ class InSituGauges:
         if not rows:
             return {}
         return {
-            "insitu_corr_mean": float(np.mean([r["corr"] for r in rows])),
+            "insitu_corr_mean": float(np.mean([row["corr"] for row in rows])),
             "insitu_rmse_reduction_climo": float(
-                np.mean([r["reduction_climo"] for r in rows])
+                np.mean([row["reduction_climo"] for row in rows])
             ),
             "insitu_rmse_reduction_persist": float(
-                np.mean([r["reduction_persist"] for r in rows])
+                np.mean([row["reduction_persist"] for row in rows])
             ),
             "insitu_n_gauges": float(len(rows)),
         }
