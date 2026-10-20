@@ -291,7 +291,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | # | status | current location / note |
 |---|---|---|
 | 1 | RESOLVED — the `--stage-b` rerun hole (first flush erasing the signed `c2_acceptance`) closed by item 42, `3bb69f0` | `stage_miost_gate_run.py:800`, `:816-827` |
-| 2 | CHANGED (better) — guarded, not retired; `stage_miost_gate_run --stage-b` still rewrites the same canonical maps unguarded | `tune_miost_inflation.py:50` |
+| 2 | ✅ RESIDUAL FIXED `1e0068b` (2026-10-20; gate suite `a1098af`) — a full-scope `--stage-b` rerun over a finished block was already refused before any work (item 42); the live hole was a DEV-scope smoke, which item 42 lets through and which wrote its 12-day maps over the canonical `stage_b_{mean,var}_maps.nc`; it now writes `stage_b_dev_smoke_*`. `tune_miost_inflation` stays env-guarded, not retired | `tune_miost_inflation.py:50`; `stage_miost_gate_run.py` `stage_b_main` |
 | 3 | ✅ FIXED `c92c1b5` (2026-10-19; full gate suite on `d9447ea`: 1832 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:46:32, tree unchanged) — fdopen write + fsync + single close; unlink-only failure path | `harness.py` `atomic_write_json` |
 | 4 | ✅ FIXED `0f1398a` (2026-10-19; gate suite `8fe55fe`) — `realize_one` draws z_r from the injected source | `coherent.py:215` |
 | 5 | ✅ FIXED `02bb173` (2026-10-19; gate suite `8fe55fe`) — a no-explain member names itself (code-fix: changes recorded exclusion text on FUTURE tuning runs) | `feasibility.py:149-160` |
@@ -496,3 +496,38 @@ PROGRESS "Current work" and SHA-erratum pointers; pyproject's per-module
 `strict = false` and the 3.14 classifier vs pixi's `<3.14`; and the
 owner-attention item above (`phase14_seal_run.py check` exits 1 on the
 live store).
+
+## Fixed 2026-10-20 (batch 4) — P0-2's residual and two siblings found by sweep
+
+All gated by one full gate suite on `a1098af` (all batch-4 commits are its
+ancestors): 1964 passed / 21 skipped / 2 deselected (@external
+downloads) / 2 xfailed, 1:18:08, tree unchanged across the run; `verify`
+attests the 476-file stamp and the exact command.
+
+| item | commit | note |
+|---|---|---|
+| P0-2 residual: a DEV-scope `--stage-b` smoke wrote its 12-day maps over the canonical `stage_b_{mean,var}_maps.nc` (item 42's guard lets dev scope through on the premise it "never writes RESULTS") | `1e0068b` | dev maps → `stage_b_dev_smoke_*`; s* reads them; full scope pinned unchanged. Red: canonical file became HDF bytes |
+| NEW: a `--regen-acceptance` rerun renamed the TRUE map onto `stage_miost_acceptance_tier3_regen.nc` (the one copy of the stale artifact), labelled it "NOT the scored map", and replaced the signed `acceptance_artifact_correction` with one measured against itself | `f4e2402` | `refuse_regen_rerun` before any work: `write_once.refuse_if_recorded` on the node, plus tier3-exists (crash after the rename). The live store holds both |
+| NEW: a bare `generate_oi_maps.py` (full scope is the default) regenerated the signed Phase-9 `oi_{mean,var}_maps.nc` in place — non-atomic, and a clean rerun still breaks the sha phase-11 retro recorded | `a1098af` | `refuse_existing_maps` before any work in full scope; dev and audit modes unchanged. All four files exist live |
+
+The sweep (read-only, every map/netCDF write site in `scripts/`):
+`phase14_stage1_run` (member store, seam/tile maps, j3 track: written only
+when absent), `phase13_lane_run` winner maps, `phase12_miost6_run` maps
+and `phase13_prereg` lane-0 mean are all refused before any work by their
+node guards. The rest are tempdir or unread diagnostics, and
+`golden_tile` is labelled PROBE. Residual: if a crash lands between the
+two map writes of a stage-1 pair, the rerun rewrites both. Both come from
+the same member store, so the bytes match unless the code has changed.
+
+**Recorded, not changed: owner call.** `phase14_anchor_gate.py run`
+rewrites `anchor_{signed,member_std}_maps.nc` (`:1332-1340`) on every
+re-walk, including after a GREEN. The gate-5 conflict check (`:1389`)
+then compares only mu/sigma/lambda_x, and only after the maps have been
+replaced. `stage1_run` reads those maps as the seamless reference. The
+node is deliberately not write-once (`record_anchor_gate`: "a re-walk
+after a RED records the latest reading"), so guarding the maps changes
+the gate protocol. There are two options: refuse a re-walk after a
+GREEN, or score a temp map and replace only on no conflict. Also noted,
+outside the file class: `phase13_lane_run.main_winner_ensemble` records
+dev scope under the full-scope key `phase13.miost.members`. The refusal
+at `:478` blocks that once the full-scope node exists.
