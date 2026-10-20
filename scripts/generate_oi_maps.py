@@ -62,7 +62,8 @@ One writer per nc file (race discipline):
 
     - audit mode  → ``oi_mean_maps_audit_j3incl.nc`` + the JSON sidecar
     - SCOPE=dev   → ``oi_{mean,var}_maps_dev.nc``
-    - SCOPE=full  → ``oi_{mean,var}_maps.nc``
+    - SCOPE=full  → ``oi_{mean,var}_maps.nc`` (signed evidence: a full-scope
+      run refuses before any work if either already exists)
 
 Reference-frame note:
     The signed artifact is in SSH space (SLA + MDT from the mapping tracks).
@@ -507,17 +508,43 @@ def run_config_audit() -> None:
     )
 
 
+def refuse_existing_maps(*dests: Path) -> None:
+    """Refuse a full-scope run whose outputs already exist.
+
+    The full-scope maps are the signed Phase-9 OI evidence (the calibration
+    harness reads them; the phase-11 retro recorded their sha). Regenerating
+    them is not atomic, so a crash mid-year truncates them, and even a clean
+    rerun's fresh bytes break the recorded sha.
+
+    Args:
+        *dests: The map paths this run would write.
+
+    Raises:
+        SystemExit: Naming every destination that already exists.
+    """
+    present = [str(p) for p in dests if p.exists()]
+    if present:
+        raise SystemExit(
+            f"REFUSED: {present} already exist — a full-scope rerun would "
+            "rewrite the signed OI maps in place. Regenerating them is an owner "
+            "decision: move them aside deliberately before re-running."
+        )
+
+
 def main() -> None:
     """Run OI mean/variance map generation at the signed baseline config.
 
     Raises:
         AssertionError: If the resolved baseline_config values do not match
             the audit-trail constants (config integrity check).
-        SystemExit: If the matched-day audit detects a config mismatch.
+        SystemExit: If the matched-day audit detects a config mismatch, or a
+            full-scope output already exists (refused before any work).
     """
     if _AUDIT_MODE == "j3_inclusive":
         run_config_audit()
         return
+    if _SCOPE == "full":
+        refuse_existing_maps(_MEAN_DEST, _VAR_DEST)
 
     t0 = time.monotonic()
     print(f"[generate_oi_maps] scope={_SCOPE!r}", flush=True)
