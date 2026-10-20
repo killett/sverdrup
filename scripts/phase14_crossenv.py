@@ -46,6 +46,10 @@ PINNED_ENV = {
     "PYTHONHASHSEED": "0",
 }
 
+# The dc2021a mapping five — the pinned subject's missions (identities and
+# solve both load exactly these; one tuple, so they cannot disagree).
+_MAPPING_FIVE = ("alg", "h2g", "j2g", "j2n", "s3a")
+
 # Window-obs subset rule for the pinned subject — THE PRODUCTION MASK
 # (methods.miost._window_mask): inclusive temporal support with L_t halo.
 _W0_RULE = "t >= w0.start - l_t_days and t <= w0.end + l_t_days (inclusive)"
@@ -120,13 +124,12 @@ def _pinned_identities() -> tuple[dict[str, np.ndarray], int, dict[str, Any]]:
     from sverdrup.validation.params import baseline_config  # noqa: PLC0415
     from sverdrup.validation.run import halo_obs  # noqa: PLC0415
 
-    mapping_five = ("alg", "h2g", "j2g", "j2n", "s3a")
     src = Dc2021aSource()
     obs = src.load(
         BBox(0.0, 360.0, -90.0, 90.0),
         np.datetime64("2016-11-01"),
         np.datetime64("2018-03-01"),
-        missions=mapping_five,
+        missions=_MAPPING_FIVE,
     )
     grid = baseline_config()[1]
     framed = halo_obs(obs, grid, halo_deg=1.0)
@@ -249,7 +252,7 @@ def solve(
         BBox(0.0, 360.0, -90.0, 90.0),
         np.datetime64("2016-11-01"),
         np.datetime64("2018-03-01"),
-        missions=("alg", "h2g", "j2g", "j2n", "s3a"),
+        missions=_MAPPING_FIVE,
     )
     grid = baseline_config()[1]
     framed = halo_obs(obs, grid, halo_deg=1.0)
@@ -290,14 +293,14 @@ def compare_solve(a: Path, b: Path) -> None:
     Reports only — the tolerance is recorded from the Task-18 measurement,
     never asserted before it exists.
     """
-    da, db = np.load(a), np.load(b)
     report = {}
-    for key in ("mean", "member0_anom"):
-        delta = np.asarray(da[key], dtype=float) - np.asarray(db[key], dtype=float)
-        report[key] = {
-            "max_abs": float(np.nanmax(np.abs(delta))),
-            "rms": float(np.sqrt(np.nanmean(delta**2))),
-        }
+    with np.load(a) as da, np.load(b) as db:
+        for key in ("mean", "member0_anom"):
+            delta = np.asarray(da[key], dtype=float) - np.asarray(db[key], dtype=float)
+            report[key] = {
+                "max_abs": float(np.nanmax(np.abs(delta))),
+                "rms": float(np.sqrt(np.nanmean(delta**2))),
+            }
     typer.echo(json.dumps(report, indent=1))
 
 

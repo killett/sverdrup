@@ -113,3 +113,24 @@ def test_print_env_recipe() -> None:
         "PYTHONHASHSEED=0",
     ):
         assert var in res.output
+
+
+def test_compare_solve_reports_hand_computed_deltas(tmp_path: Path) -> None:
+    """compare-solve reports per-key max-abs and RMS of a − b, NaN-skipping.
+
+    Hand values: mean a−b = [0, −2] → max_abs 2, rms √((0+4)/2) = √2;
+    member0_anom a−b = [−3, NaN] → max_abs 3, rms 3 (NaN skipped). Bug
+    caught: a sign/axis slip, NaN poisoning the report, or the npz handles
+    closing before the arrays are read (the loads are context-managed).
+    """
+    import math
+
+    a, b = tmp_path / "a.npz", tmp_path / "b.npz"
+    np.savez(a, mean=np.array([1.0, 2.0]), member0_anom=np.array([0.0, 0.0]))
+    np.savez(b, mean=np.array([1.0, 4.0]), member0_anom=np.array([3.0, np.nan]))
+    res = CliRunner().invoke(_mod.app, ["compare-solve", str(a), str(b)])
+    assert res.exit_code == 0, res.output
+    rep = json.loads(res.output)
+    assert rep["mean"]["max_abs"] == 2.0
+    assert math.isclose(rep["mean"]["rms"], math.sqrt(2.0), rel_tol=1e-15)
+    assert rep["member0_anom"] == {"max_abs": 3.0, "rms": 3.0}

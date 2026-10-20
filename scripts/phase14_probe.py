@@ -272,14 +272,14 @@ def tier2_report(
     """
 
     def _deltas(a: Path, b: Path) -> dict[str, dict[str, float]]:
-        da, db = np.load(a), np.load(b)
         out = {}
-        for key in ("mean", "member0_anom"):
-            d = np.asarray(da[key], float) - np.asarray(db[key], float)
-            out[key] = {
-                "max_abs": float(np.nanmax(np.abs(d))),
-                "rms": float(np.sqrt(np.nanmean(d**2))),
-            }
+        with np.load(a) as da, np.load(b) as db:
+            for key in ("mean", "member0_anom"):
+                d = np.asarray(da[key], float) - np.asarray(db[key], float)
+                out[key] = {
+                    "max_abs": float(np.nanmax(np.abs(d))),
+                    "rms": float(np.sqrt(np.nanmean(d**2))),
+                }
         return out
 
     ma = json.loads(crn_a.read_text())

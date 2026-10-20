@@ -115,17 +115,17 @@ def mc_floor(sigma_level: float, m: int) -> float:
     estimates therefore has standard deviation ``√2 · σ/√(2(m−1))`` =
     ``σ/√(m−1)``.
 
+    Since the rubric v2 amendment (owner ruling 2026-07-27, pin 32) this
+    quantity IS the rubric's ensemble floor ``F_ens``, so this diagnosis
+    helper delegates to the sealed implementation rather than carrying a
+    second copy of the arithmetic.
+
     Args:
         sigma_level: The σ field's own RMS level over the domain [m].
         m: Members behind each of the two σ estimates.
 
     Returns:
         Predicted ``RMS`` of the difference of the two σ fields [m].
-
-    Since the rubric v2 amendment (owner ruling 2026-07-27, pin 32) this
-    quantity IS the rubric's ensemble floor ``F_ens``, so this diagnosis
-    helper delegates to the sealed implementation rather than carrying a
-    second copy of the arithmetic.
 
     Raises:
         ValueError: If ``m`` is below 2 (a single member has no σ).

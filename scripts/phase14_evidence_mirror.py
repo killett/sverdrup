@@ -806,11 +806,17 @@ def sync(
 
     Every refusal fires before anything is written.
 
+    Args:
+        supersede: Dotted paths whose mirrored record may be replaced.
+        reason: Why the supersession is warranted (required with
+            ``supersede``).
+
     Raises:
-        RuntimeError: If an already-mirrored node changed or was REMOVED
-            and was not explicitly superseded (the append-only STOP), or if
-            the current seal no longer matches its witnessed mirror (a seal
-            version is write-once; a new version gets its own file).
+        RuntimeError: If ``supersede`` is given without a ``reason``; if an
+            already-mirrored node changed or was REMOVED and was not
+            explicitly superseded (the append-only STOP); or if the current
+            seal no longer matches its witnessed mirror (a seal version is
+            write-once; a new version gets its own file).
     """
     nodes, seal, unresolved, seal_mirror = _extract()
     allowed = set(supersede or [])
