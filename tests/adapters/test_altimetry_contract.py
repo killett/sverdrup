@@ -141,6 +141,30 @@ def test_apply_superobs_coarsen_blocks_never_cross_missions() -> None:
     assert out.values()[1] == pytest.approx(101.0)  # synB pair only
 
 
+@pytest.mark.parametrize("mission", [np.array([], dtype="<U4"), None])
+def test_apply_superobs_coarsen_of_an_empty_window_is_empty(
+    mission: np.ndarray | None,
+) -> None:
+    """A window with no obs (a mission gap, an empty tile-day) coarsens to
+    an empty window. Bug caught (hygiene, contract.py:185): ``change[0] =
+    True`` on a length-0 array raised IndexError before the function's own
+    empty-handling tail was reached."""
+    from sverdrup.core.observations import DiagonalErrorModel
+
+    obs = ObsWindow.from_arrays(
+        np.empty(0),
+        np.empty(0),
+        np.empty(0),
+        np.empty(0),
+        DiagonalErrorModel(np.empty(0)),
+        mission=mission,
+    )
+    out = apply_superobs(obs, cfg={"kind": "challenge-coarsen", "n": 5})
+    assert len(out) == 0
+    assert out.coords().shape == (0, 3)
+    assert out.values().shape == (0,)
+
+
 # ---------------------------------------------------------------------------
 # The conformance suite (adapters subclass with fixture overrides only)
 # ---------------------------------------------------------------------------

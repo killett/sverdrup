@@ -177,6 +177,8 @@ def apply_superobs(obs: ObsWindow, cfg: object | None = None) -> ObsWindow:
             "has landed (fork-a pin 4: transforms land with their consumer)"
         )
     n = int(cfg["n"])
+    if len(obs) == 0:
+        return obs  # nothing to coarsen (a mission gap, an empty tile-day)
     c = obs.coords()
     values = obs.values()
     mission = obs.mission if obs.mission is not None else np.zeros(len(obs))
