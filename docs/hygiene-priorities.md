@@ -298,18 +298,18 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 6 | ✅ FIXED `960b375` (2026-10-19; gate suite `8fe55fe`) — guard chosen: one accessor `core.observations.diagonal_variances` for all SEVEN vector reads of R (adds `pipeline`, `adapters`, `run`, `stage_a`); a correlated R raises NotImplementedError; both `as_matrix(n)` check n; source tripwire test | `observations.py` |
 | 7 | OPEN — the "import, never re-paste" rule was never recorded, and phase12/13 re-pasted it | `phase8_gate_run.py:442`; new: `phase12_miost6_run.py:1068`, `phase13_c2_touch.py:280` |
 | 8 | OPEN | `harness.py:550` vs `folds.py:135` |
-| 9 | OPEN | `harness.py:1028-1029` |
+| 9 | ✅ FIXED `bbbb215` (2026-10-19; gate suite `d26f2d8`) — `harness._lane_eligibility` calls `folds._beats_beyond_band`/`_no_worse_than`; leaf-identical + byte-exact Phase-8 gates re-run green | `harness.py` |
 | 10 | CHANGED (worse) — 07-16 missed `application/tiling.py:20` (111.195); new 111.195 `phase14_kernel_pack.py:61`, new 111.32 `phase12_miost6_run.py:72` | — |
-| 11 | OPEN — private `_GAP_SEC` now imported cross-layer (`miost_error_basis.py:29`, `phase13_probe.py:44`) | `harness.py:173`, `lane_compare.py:49`, `orbit_geometry.py:35` |
-| 12 | CHANGED (worse) — missed inline literal `lane_compare.py:208`; new script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
+| 11 | ✅ FIXED `af3a390` (2026-10-19; gate suite `d26f2d8`) — `harness.PASS_GAP_SEC` public owner; `orbit_geometry._GAP_SEC` aliases it (importers untouched), `lane_compare` imports it; identity tripwire test | `harness.py`, `lane_compare.py`, `orbit_geometry.py` |
+| 12 | NEEDS A LAYERING CALL (2026-10-19) — the canonical `EPOCH` is `validation.params`; a top-level import from `harness` would load `validation/__init__` (pydantic + dotenv config) at harness import, where harness imports `validation` only lazily today. Also: inline literal `lane_compare.py:208`; script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
 | 13 | OPEN | `_strip_fixtures.py:137`; `_tree_gate.py:403,417` |
-| 14 | OPEN | `persisted.py:245`, `:382-383` |
+| 14 | ✅ FIXED `c7cf637` (2026-10-19; gate suite `d26f2d8`) — intent settled by the phase-1 design ("fraction of trace(P) captured by BBᵀ"); one helper `captured_energy_fraction` for all four writers (+ `solve._reduce_derived`, a third instance). **DISCLOSURE: future manifests report the true share where they said 1.0**; `seed=0` kept, documented inert | `persisted.py`, `solve.py` |
 | 15 | ✅ FIXED `7f7866c` (2026-10-19; gate suite `8fe55fe`) — **DISCLOSURE: every converged window's recorded `iterations` reads one higher on future runs** (recorded values stand; capped-solve checks unaffected) | `miost_solver.py` |
 | 16 | `fidelity.py`: NOT LIVE (analysed 2026-10-19) — `split_passes` cuts only on strictly positive gaps and both sides stable-sort the same array, so a pass's first timestamp cannot occur in the previous pass; the residual is a cross-module coupling (index-returning variant optional). The `eval/insitu.py` instance ✅ FIXED `e08642e` | `fidelity.py:88` |
 | 17 | ✅ FIXED `5543fe5` (claim reworded, recorded check kept) + the `phase14_seal.verify_seal` instance `8fe55fe` (2026-10-19; gate suite `8fe55fe`) | `phase9_g_pre_anchor.py:344-349` |
 | 18 | ✅ FIXED `87cf2e9` (2026-10-19; gate suite `8fe55fe`) — count derived from `MAPPING_MISSIONS`; recorded artifacts stand as stamped ("5") | `generate_oi_maps.py` |
 | 19 | ✅ FIXED `6f4b2ef` (2026-10-19; gate suite `8fe55fe`); recorded RESULT.md files stand | `report.py:121` |
-| 20 | OPEN | `test_calibrated_distribution.py:39`; `test_miost_basis.py:72`; `test_tree_kriging_oracle.py:67` |
+| 20 | ✅ FIXED `d663e00` (2026-10-19; gate suite `d26f2d8`) — basis identity test pins attributes + the exact overlap set; new driver-level per-tile seed test; OI tests gate on the field artifact they read | `test_calibrated_distribution.py`, `test_miost_basis.py`, `test_tree_kriging_oracle.py` |
 | 21 | CHANGED (better) — used by `phase12_miost6_run.py:784`, no src path; docstring still recommends StoredG | `feasibility.py:210`; `stage_miost.py:38` |
 | 22 | OPEN — 25 sites / 16 files (+ `test_phase14_golden_tile.py:81`) | `grid.py:69` |
 | 23 | OPEN — `evaluator_names` gained a test-only caller (`test_phase14_stage1_run.py:833`) | see item |
@@ -423,3 +423,36 @@ downloads) / 2 xfailed, 1:22:24, tree unchanged across the run;
 Evidence correction: `062db58`'s cited targeted tests ran before a
 ruff-format rewrite of its committed bytes; re-run on the committed bytes:
 346 passed, 1 xfailed (recorded in `54d2383`'s body).
+
+## Fixed 2026-10-19 (batch 2) — P2 rows and the src/scripts FIX NOW backlog
+
+All gated by one full gate suite on `d26f2d8` (all batch-2 commits are its ancestors): 1952 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:12:19, tree unchanged across the run; `verify` attests the 474-file stamp and the exact command.
+
+| item | commit | note |
+|---|---|---|
+| P2 #20 three weak test escapes | `d663e00` | each red shown by a reverted src mutation |
+| P2 #14 `captured_energy` constant 1.0 | `c7cf637` | **manifest values change (disclosed)** |
+| P2 #9 recorded eligibility re-pasted the rule | `bbbb215` | Phase-8 leaf-identical + field byte-exact gates re-run green |
+| P2 #11 pass gap ×3 | `af3a390` | |
+| FIX NOW src docstrings + Args/Returns (miost_crn, spectral ×2, synthetic, phase12_config, pertile_scoring, miost.sample_members, phase13_lanes ×2, phase14_seal, locked_tier) | `3e92e76` | AST identical to HEAD minus docstrings, file by file |
+| FIX NOW constants ×4 (proximity string, "< 3 y", "net ≥ 4", `SWEPT_MISSIONS`) | `e193e24` | sealed `content.screening` == refactored code, checked |
+| FIX NOW naming (`eval/insitu.py` rows) | `8150668` | |
+| FIX NOW `phase14_seal_run check` parsed the store 4× | `5325d49` | one snapshot (pin 191 concurrency) |
+| FIX NOW download re-run "verified-skipped" (cmems + gauges `stations-all`, the latter a new instance) | `31699de` | **stdout wording changes (disclosed)** |
+| FIX NOW scripts: npz handles ×2, mapping-five tuple, `sync` Args, `mc_floor` section order | `12ce853` | compare-solve output byte-identical vs HEAD |
+| FIX NOW `check_task_citations` dead/wrong plan fallback (+ test set literal) | `d26f2d8` | latent: all 22 trackers carry `planPath` |
+
+**Owner attention (found 2026-10-19; NOT changed — evidence-store
+governed):** `phase14_seal_run.py check` on the LIVE store exits 1. Pin 42
+refuses `phase14.stage1.osse_pricing` and `phase14.stage1.refresh_election`
+(2026-09-20 blocks that gate on a verdict/outcome with no reachability
+declaration, after the pin-152 sweep). So the stage-1 pack's "seal `check`
+PASS" attestation does not currently hold. HEAD's script and `5325d49`'s
+print byte-identical output.
+
+**Still open:** P2 #12 (layering call, row above), #13 (Effort M: a
+blend-level nonstationary test must name a seam property a
+stationary-ization bug would move), #7/#8/#10 (owner/layering calls); #50's
+`release.yml` install-smoke step; #51's legacy-store residual; the three
+`{"c2","c2n"}` literals; #55 docs; the test-side FIX NOW list
+(hygiene-notes § 2026-10-18, ~30 items).
