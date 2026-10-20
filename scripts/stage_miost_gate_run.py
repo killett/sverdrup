@@ -779,8 +779,15 @@ def stage_b_main() -> None:
     epoch = np.datetime64("2017-01-01")
     times = epoch + np.asarray(days, dtype="int64") * np.timedelta64(1, "D")
     assimilated = tuple(sorted({str(x) for x in np.asarray(obs.mission)}))
-    mean_nc = OUT_DIR / "stage_b_mean_maps.nc"
-    var_nc = OUT_DIR / "stage_b_var_maps.nc"
+    # A dev smoke must not overwrite the canonical maps either: --c2-touch
+    # scores them, and the harness and the phase-8+ runners read them
+    # (hygiene P0-2 residual).
+    if SCOPE_MODE == "full":
+        mean_nc = OUT_DIR / "stage_b_mean_maps.nc"
+        var_nc = OUT_DIR / "stage_b_var_maps.nc"
+    else:
+        mean_nc = OUT_DIR / "stage_b_dev_smoke_mean_maps.nc"
+        var_nc = OUT_DIR / "stage_b_dev_smoke_var_maps.nc"
     write_map(
         times, grid.y, grid.x, mean_stack, mean_nc, assimilated_missions=assimilated
     )
