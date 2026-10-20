@@ -31,6 +31,26 @@ class PersistedFields:
     sampler_spec: str = "lowrank+diag"
 
 
+def captured_energy_fraction(factor: np.ndarray, total_variance: float) -> float:
+    """The captured-energy diagnostic: the share of ``trace(P)`` carried by ``B Bᵀ``.
+
+    The phase-1 design defines it so LOW_RANK quality is monitorable per
+    product. The marginal variance is exact through the residual at any rank,
+    so this share — never a constant — is the only thing it can report.
+
+    Args:
+        factor: The ``(n, r)`` low-rank factor ``B`` (``r`` may be 0).
+        total_variance: ``trace(P)``, the sum of the exact marginal variances.
+
+    Returns:
+        ``sum(B**2) / total_variance`` clipped to 1 (a randomized factor can
+        overshoot), or 0.0 when the total is not positive (NaN included).
+    """
+    if not total_variance > 0:
+        return 0.0
+    return min(float(np.sum(factor**2)) / total_variance, 1.0)
+
+
 @dataclass(frozen=True)
 class GridBasis:
     """The orthonormal/singular basis of one grid reduction, reused for eval-point rows.
@@ -86,8 +106,6 @@ def reduce_with_basis(
     factor = (q @ u_r) * sqrt_s
     exact_var = np.asarray(operator.marginal_var(points))
     residual = np.clip(exact_var - np.sum(factor**2, axis=1), 0.0, None)
-    total = float(exact_var.sum())
-    captured = float(np.sum(factor**2)) / total if total > 0 else 0.0
     ny, nx = _grid_shape(points)
     fields = PersistedFields(
         mean=mean,
@@ -96,7 +114,7 @@ def reduce_with_basis(
         residual=residual,
         rank=r,
         seed=seed,
-        captured_energy=min(captured, 1.0),
+        captured_energy=captured_energy_fraction(factor, float(exact_var.sum())),
     )
     basis = GridBasis(q=q, u_r=u_r, sqrt_s=sqrt_s, inv_sqrt_s=inv_sqrt_s)
     return fields, basis
@@ -242,7 +260,7 @@ class PersistedDistribution:
             residual=residual,
             rank=r,
             seed=self.fields.seed,
-            captured_energy=1.0,
+            captured_energy=captured_energy_fraction(factor, float(var_t.sum())),
         )
         return PersistedDistribution(target, fields, self.provenance, t)
 
@@ -373,12 +391,15 @@ class PersistedPoints:
     @property
     def fields(self) -> PersistedFields:
         """Expose the same field bundle the blend reads from a gridded Persisted."""
+        mv = np.sum(self.factor**2, axis=1) + self.residual
         return PersistedFields(
             mean=self.mean,
-            marginal_variance=np.sum(self.factor**2, axis=1) + self.residual,
+            marginal_variance=mv,
             factor=self.factor,
             residual=self.residual,
             rank=self.factor.shape[1],
+            # inert placeholder: a point-set predictive draws nothing itself,
+            # and the only reader of ``fields.seed`` is the GRID rep's regrid
             seed=0,
-            captured_energy=1.0,
+            captured_energy=captured_energy_fraction(self.factor, float(mv.sum())),
         )

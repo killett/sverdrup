@@ -18,6 +18,7 @@ from sverdrup.distributions.persisted import (
     PersistedFields,
     PrecisionDistribution,
     PrecisionFields,
+    captured_energy_fraction,
 )
 from sverdrup.distributions.reduction import select_reduction
 from sverdrup.methods.registry import METHODS
@@ -90,14 +91,15 @@ def _reduce_derived(
         dist
     )  # exact covariance path while operator is live
     var = out.marginal_variance()
+    factor = np.zeros((var.size, 0))
     fields = PersistedFields(
         mean=var * 0.0,
         marginal_variance=var,
-        factor=np.zeros((var.size, 0)),
+        factor=factor,
         residual=var.ravel(),
         rank=0,
         seed=uow.seed,
-        captured_energy=1.0,
+        captured_energy=captured_energy_fraction(factor, float(var.sum())),
     )
     diff_grid = _shrunk_grid(uow.grid)
     return PersistedDistribution(diff_grid, fields, d.provenance, d.time_days)
