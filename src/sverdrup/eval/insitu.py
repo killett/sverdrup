@@ -155,8 +155,14 @@ def bilinear_wet(
 
 def _gauge_series(
     result: dict[str, Any], gauge: dict[str, Any]
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(common days, map series, gauge series) at the gauge location."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """(common days, map series, gauge series, gauge indices) at the gauge.
+
+    Every series is in SORTED common-day order (``intersect1d``); the gauge
+    indices map that order back into the gauge's own arrays, so anything
+    else read per gauge day (the nulls) is taken through them — never by a
+    mask in the gauge's input order.
+    """
     map_days = np.asarray(result["map_days"], dtype="datetime64[D]")
     g_days = np.asarray(gauge["days"], dtype="datetime64[D]")
     common, mi, gi = np.intersect1d(map_days, g_days, return_indices=True)
@@ -169,7 +175,7 @@ def _gauge_series(
             for i in mi
         ]
     )
-    return common, series, np.asarray(gauge["anomaly_m"], dtype=float)[gi]
+    return common, series, np.asarray(gauge["anomaly_m"], dtype=float)[gi], gi
 
 
 def _rmse(a: np.ndarray, b: np.ndarray) -> float:
@@ -190,7 +196,9 @@ def per_gauge_rows(
         cfg: The sealed null config.
 
     Returns:
-        One row per gauge with ≥ 2 usable common days. ONE day population
+        One row per gauge with ≥ 2 usable common days and a non-zero
+        error for both nulls (a flat gauge series makes both nulls exact
+        and the reduction undefined — skipped). ONE day population
         per gauge (map, gauge, and BOTH nulls all finite) and ONE demeaning
         convention (every series demeaned over that same population) — the
         three RMSEs are commensurable and no mean offset leaks into any
@@ -198,14 +206,13 @@ def per_gauge_rows(
     """
     rows: list[dict[str, Any]] = []
     for gauge in bag["gauges"]:
-        common, map_s, gauge_s = _gauge_series(result, gauge)
+        _, map_s, gauge_s, gi = _gauge_series(result, gauge)
         g_all = np.asarray(gauge["anomaly_m"], dtype=float)
         d_all = np.asarray(gauge["days"], dtype="datetime64[D]")
-        climo_all = null_climo(d_all, g_all, cfg)
-        persist_all = null_persist(d_all, g_all, cfg)
-        sel = np.isin(d_all, common)
-        climo = climo_all[sel]
-        persist = persist_all[sel]
+        # Through the SAME indices as gauge_s: a mask (``isin``) would keep
+        # the gauge's input order and misalign unsorted days.
+        climo = null_climo(d_all, g_all, cfg)[gi]
+        persist = null_persist(d_all, g_all, cfg)[gi]
         ok = (
             np.isfinite(map_s)
             & np.isfinite(gauge_s)
@@ -221,6 +228,10 @@ def per_gauge_rows(
         rmse_map = _rmse(m, g)
         rmse_climo = _rmse(c, g)
         rmse_persist = _rmse(p, g)
+        if rmse_climo == 0.0 or rmse_persist == 0.0:
+            # A null with zero error (a flat gauge series makes both exact)
+            # leaves the reduction undefined: skip, like a thin gauge.
+            continue
         rows.append(
             {
                 "gauge_id": gauge["gauge_id"],

@@ -216,3 +216,57 @@ def test_report_only_no_bar_semantics() -> None:
         result, EvalContext({ContextKey.INSITU_GAUGES: bag})
     )
     assert not any(("bar" in k or "floor" in k) for k in metrics)
+
+
+_ROW_NUMBERS = (
+    "n_days",
+    "corr",
+    "rmse_m",
+    "rmse_climo_m",
+    "rmse_persist_m",
+    "reduction_climo",
+    "reduction_persist",
+)
+
+
+def test_a_gauge_given_in_reverse_day_order_scores_identically() -> None:
+    """A gauge's row cannot depend on the ORDER its days arrive in.
+
+    Bug caught (hygiene, insitu.py:206 — a P2-#16 instance): the map and
+    gauge series come out of ``intersect1d`` in SORTED common-day order,
+    but the nulls were picked with ``isin`` in the gauge's INPUT order —
+    for unsorted days, climatology and persistence were scored against the
+    wrong days. Expected value: the same gauge in ascending order. The map
+    carries a deterministic error so no RMSE is 0 and every metric moves.
+    """
+    result, bag = _fixture()
+    n = result["map_ssha"].shape[0]
+    error = 0.02 * np.cos(2 * np.pi * np.arange(n) / 23.0)
+    result = {**result, "map_ssha": result["map_ssha"] + error[:, None, None]}
+    g = bag["gauges"][0]
+    reversed_gauge = {**g, "days": g["days"][::-1], "anomaly_m": g["anomaly_m"][::-1]}
+    (expected,) = per_gauge_rows(result, bag, InSituNullConfig())
+    (got,) = per_gauge_rows(result, {"gauges": [reversed_gauge]}, InSituNullConfig())
+    for key in _ROW_NUMBERS:
+        assert got[key] == pytest.approx(expected[key], rel=1e-12), key
+
+
+def test_a_flat_gauge_is_skipped_not_a_zero_division() -> None:
+    """A gauge with no variability over its days cannot score a reduction.
+
+    Bug caught (hygiene, insitu.py:232): demeaned, a flat series makes both
+    nulls exact (RMSE 0.0), and ``rmse_map / rmse_climo`` raised
+    ZeroDivisionError — one stuck sensor took down the whole report. It is
+    skipped like an under-populated gauge; the other gauge still scores.
+    """
+    result, bag = _fixture()
+    good = bag["gauges"][0]
+    flat = {**good, "gauge_id": "gFlat", "anomaly_m": np.full(good["days"].size, 0.05)}
+    two = {"gauges": [good, flat]}
+    rows = per_gauge_rows(result, two, InSituNullConfig())
+    assert [r["gauge_id"] for r in rows] == ["gX"]
+    metrics = InSituGauges().evaluate(
+        result, EvalContext({ContextKey.INSITU_GAUGES: two})
+    )
+    assert metrics["insitu_n_gauges"] == 1.0
+    assert metrics["insitu_corr_mean"] == pytest.approx(1.0, abs=1e-12)
