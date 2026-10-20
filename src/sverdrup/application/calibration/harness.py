@@ -42,7 +42,6 @@ from sverdrup.application.calibration.constants import (
     MIN_N_EFF,
     S_STAR,
     SIGMA_OBS2,
-    TIE_BAND,
 )
 from sverdrup.core.seeding import derive_seed
 from sverdrup.distributions.calibration import (
@@ -952,6 +951,43 @@ def _proxy(desc: ProductDescriptor) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 
+def _lane_eligibility(lane_records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Record each candidate lane's eligibility against lane-0 (``lane_records[0]``).
+
+    Args:
+        lane_records: The lane records passed to ``folds.select`` — each with
+            ``name``, ``s_stat`` and ``t_stat``; ``lane_records[0]`` is lane-0.
+
+    Returns:
+        Per candidate lane name: ``eligible``, both statistics, the two rule
+        outcomes (``beats_primary``, ``no_worse_secondary``) and the reasons.
+    """
+    l0_s, l0_t = lane_records[0]["s_stat"], lane_records[0]["t_stat"]
+    eligibility: dict[str, dict[str, Any]] = {}
+    for rec in lane_records[1:]:
+        nm = str(rec["name"])
+        # the SAME banded helpers folds.select decides with (P2 #9): a
+        # re-pasted comparison would let a rule change there desynchronize
+        # this record from the selection it explains
+        beats_primary = F._beats_beyond_band(rec["s_stat"], l0_s)
+        no_worse_secondary = F._no_worse_than(rec["t_stat"], l0_t)
+        elig = bool(beats_primary and no_worse_secondary)
+        reasons = []
+        if not beats_primary:
+            reasons.append("does not beat lane-0 S-stat beyond ±0.01 absolute band")
+        if not no_worse_secondary:
+            reasons.append("worse than lane-0 T-stat beyond band")
+        eligibility[nm] = {
+            "eligible": elig,
+            "s_stat": rec["s_stat"],
+            "t_stat": rec["t_stat"],
+            "beats_primary": beats_primary,
+            "no_worse_secondary": no_worse_secondary,
+            "reasons": reasons or ["eligible"],
+        }
+    return eligibility
+
+
 def build_evidence(
     desc: ProductDescriptor,
     trk: Track,
@@ -1022,25 +1058,7 @@ def build_evidence(
 
     # Recompute + record per-lane eligibility (folds.select returns lanes as-is).
     l0_s, l0_t = s_stats["scalar"], t_stats["scalar"]
-    eligibility: dict[str, dict[str, Any]] = {}
-    for rec in lane_records[1:]:
-        nm = str(rec["name"])
-        beats_primary = rec["s_stat"] < l0_s - TIE_BAND
-        no_worse_secondary = rec["t_stat"] <= l0_t + TIE_BAND
-        elig = bool(beats_primary and no_worse_secondary)
-        reasons = []
-        if not beats_primary:
-            reasons.append("does not beat lane-0 S-stat beyond ±0.01 absolute band")
-        if not no_worse_secondary:
-            reasons.append("worse than lane-0 T-stat beyond band")
-        eligibility[nm] = {
-            "eligible": elig,
-            "s_stat": rec["s_stat"],
-            "t_stat": rec["t_stat"],
-            "beats_primary": beats_primary,
-            "no_worse_secondary": no_worse_secondary,
-            "reasons": reasons or ["eligible"],
-        }
+    eligibility = _lane_eligibility(lane_records)
 
     evidence: dict[str, Any] = {
         "scope": scope,

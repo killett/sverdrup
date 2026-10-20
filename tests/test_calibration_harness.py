@@ -856,3 +856,62 @@ def test_report_only_instruments_block_in_dev_scope_pack() -> None:
     assert "spectral_fidelity" in names
     fid = next(r for r in rows if r["evaluator"] == "spectral_fidelity")
     assert any(f.startswith("wedge_exclusion:") for f in fid["flags"])
+
+
+# ---------------------------------------------------------------------------
+# Recorded eligibility follows folds.select's rule (hygiene P2 #9)
+# ---------------------------------------------------------------------------
+
+
+def _lanes(*rows: tuple[str, float, float]) -> list[dict[str, Any]]:
+    return [{"name": n, "s_stat": s, "t_stat": t} for n, s, t in rows]
+
+
+def test_recorded_eligibility_at_the_band_edges() -> None:
+    """Recorded per-lane eligibility applies the owner-ruled ABSOLUTE band.
+
+    Expected by hand from the 2026-07-11 ruling: beat lane-0 on S strictly
+    beyond the band, and be no worse on T within it (inclusive). Bug caught:
+    a strict/inclusive flip at either edge (``<=`` on S, ``<`` on T).
+    """
+    from sverdrup.application.calibration.constants import TIE_BAND
+    from sverdrup.application.calibration.harness import _lane_eligibility
+
+    elig = _lane_eligibility(
+        _lanes(
+            ("scalar", 0.30, 0.30),
+            ("edge_s", 0.30 - TIE_BAND, 0.30),  # exactly AT the S band: no
+            ("beats", 0.25, 0.30),
+            ("edge_t", 0.25, 0.30 + TIE_BAND),  # exactly AT the T band: yes
+            ("worse_t", 0.25, 0.35),
+        )
+    )
+    assert {n for n, e in elig.items() if e["eligible"]} == {"beats", "edge_t"}
+    assert elig["edge_s"]["reasons"] == [
+        "does not beat lane-0 S-stat beyond ±0.01 absolute band"
+    ]
+    assert elig["worse_t"]["reasons"] == ["worse than lane-0 T-stat beyond band"]
+    assert elig["beats"]["reasons"] == ["eligible"]
+
+
+def test_recorded_eligibility_follows_the_selection_rule(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Recorded eligibility is decided by the rule folds.select applies.
+
+    Oracle: with a single candidate, ``F.select`` returns a winner iff that
+    lane is eligible. The rule is swapped for the REJECTED relative-band
+    reading (candidate < baseline·(1 − 0.01)), under which a lane 0.002
+    below a 0.30 baseline flips from ineligible to eligible. Bug caught:
+    harness re-pasting the comparison instead of calling the folds helpers,
+    so a rule change there desynchronizes the recorded evidence from the
+    selection it explains (P2 #9).
+    """
+    from sverdrup.application.calibration import folds as F
+    from sverdrup.application.calibration.harness import _lane_eligibility
+
+    monkeypatch.setattr(F, "_beats_beyond_band", lambda c, b: c < b * (1 - 0.01))
+    records = _lanes(("scalar", 0.30, 0.30), ("poly", 0.2965, 0.30))
+    winner, _ = F.select(records)
+    assert winner is not None  # the swapped rule really is in force
+    assert _lane_eligibility(records)["poly"]["eligible"] is True
