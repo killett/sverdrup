@@ -94,7 +94,11 @@ import numpy as np
 import xarray as xr
 
 from sverdrup.application.splits import make_splits
-from sverdrup.validation.input_adapter import load_mapping_obs, load_mdt_grid
+from sverdrup.validation.input_adapter import (
+    MAPPING_MISSIONS,
+    load_mapping_obs,
+    load_mdt_grid,
+)
 from sverdrup.validation.params import (
     SIGNAL_VARIANCE,
     SPATIAL_CORR_DEG,
@@ -153,6 +157,17 @@ _AUDIT_SIDECAR = _OUT_ROOT / "oi_config_audit.json"
 # Max abs threshold for the j3-inclusive proof: anything worse than 1e-6 m
 # cannot be solver/BLAS version noise and is a REAL config mismatch.
 _AUDIT_MAX_ABS_M = 1e-6
+
+# The signed artifact's obs set is EVERY mapping mission (j3 included): six,
+# not the train-only five (hygiene P2-#18 — the note said "all 5"). Derived,
+# so the stamped count cannot drift from the mission set again.
+_N_ALL_MISSIONS = len(MAPPING_MISSIONS)
+OBS_SET_NOTE = (
+    "EXPECTED DIFFERENCE — regenerated maps use train-only obs (j3 excluded); "
+    f"signed artifact used all {_N_ALL_MISSIONS} mapping missions including j3 "
+    "(Phase-4 run_year protocol, no train/val split). Differences at this "
+    "scale are obs-set divergence, NOT a config mismatch."
+)
 
 # Dev smoke: days 60-71 (2017-03-02 to 2017-03-13, matching the stage_a fixture).
 # Full year: days 0-364 (2017-01-01 to 2017-12-31).
@@ -317,12 +332,7 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
     # divergence) and are not a config mismatch.  A config mismatch (wrong kernel /
     # params / grid) would manifest as a systematic offset inconsistent with the
     # ~5 cm level noise seen in the SLA field.
-    obs_set_note = (
-        "EXPECTED DIFFERENCE — regenerated maps use train-only obs (j3 excluded); "
-        "signed artifact used all 5 mapping missions including j3 (Phase-4 run_year "
-        "protocol, no train/val split). Differences at this scale are obs-set "
-        "divergence, NOT a config mismatch."
-    )
+    obs_set_note = OBS_SET_NOTE
 
     # Config-mismatch STOP criterion: a systematic mean offset >> field std is
     # the Phase-7 0.16 m lesson pattern.  The MDT offset was ~0.3 m; a correct
@@ -347,7 +357,8 @@ def _matched_day_audit(mean_path: Path, signed_path: Path) -> dict[str, object]:
     verdict = (
         f"PASS (obs-set divergence) — max_abs={max_abs:.4f} m, "
         f"mean_abs={mean_abs:.4f} m, max_rel={max_rel:.4f}; "
-        f"differences consistent with j3-exclusion (train-only vs all-5-missions). "
+        "differences consistent with j3-exclusion (train-only vs "
+        f"all-{_N_ALL_MISSIONS}-missions). "
         f"Config constants VERIFIED consistent with signed baseline."
     )
 
