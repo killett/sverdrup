@@ -184,7 +184,8 @@ def null_t_quantile(
 
     Raises:
         ValueError: If ``n_eff`` < 1, ``confidence`` is outside (0, 1), or
-            ``weights`` has the wrong length.
+            ``weights`` has the wrong length, a non-finite or negative
+            entry, or a non-positive sum.
     """
     if n_eff < 1:
         raise ValueError(f"n_eff must be >= 1, got {n_eff}")
@@ -196,6 +197,14 @@ def null_t_quantile(
         w_in = np.asarray(weights, dtype=np.float64).ravel()
         if w_in.size != n_eff:
             raise ValueError(f"weights length {w_in.size} != n_eff {n_eff}")
+        n_bad = int(np.sum(~np.isfinite(w_in)))
+        n_neg = int(np.sum(w_in < 0.0))
+        if n_bad or n_neg or not w_in.sum() > 0.0:
+            raise ValueError(
+                "weights must be finite, non-negative σ² values with a positive "
+                f"sum (else a NaN or meaningless quantile): {n_bad} non-finite, "
+                f"{n_neg} negative, sum {float(w_in.sum())}"
+            )
         w = w_in / w_in.sum()
     s2 = float(np.sum(w**2))
     s3 = float(np.sum(w**3))

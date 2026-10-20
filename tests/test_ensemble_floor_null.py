@@ -363,3 +363,39 @@ def test_null_t_quantile_tightens_as_n_eff_grows() -> None:
     q_small = null_t_quantile(moments=mom, n_eff=500, confidence=0.999)
     q_large = null_t_quantile(moments=mom, n_eff=50_000, confidence=0.999)
     assert q_small > q_large > 1.0
+
+
+# Hand moments: null_t_quantile reads only mean / var / skew.
+_HAND_MOMENTS = {"mean": 1.0, "var": 0.5, "skew": 0.3}
+
+
+@pytest.mark.parametrize(
+    "weights",
+    [[1.0, np.nan, 1.0], [1.0, np.inf, 1.0], [1.0, -0.5, 1.0], [0.0, 0.0, 0.0]],
+    ids=["nan", "inf", "negative", "all-zero"],
+)
+def test_null_t_quantile_refuses_weights_that_are_not_sigma_squared(
+    weights: list[float],
+) -> None:
+    """σ² weights are finite, non-negative, and not all zero.
+
+    Bug caught (hygiene, ensemble_floor_null.py:193): ``w / w.sum()`` took
+    anything — a NaN weight came back as a NaN quantile (``max(nan, 0.0)``
+    is nan), an all-zero set as 0/0, and a negative "variance" as a finite
+    but meaningless number. Each now refuses, naming the weights.
+    """
+    with pytest.raises(ValueError, match="weights"):
+        null_t_quantile(
+            moments=_HAND_MOMENTS, n_eff=3, confidence=0.99, weights=weights
+        )
+
+
+def test_a_zero_weight_node_is_legal_and_contributes_nothing() -> None:
+    """Bug caught: a validity check so strict it refuses a σ² = 0 node.
+    Expected value (a simpler route): weights (1, 1, 0) at n_eff=3 imply
+    the same normalized set as the unweighted n_eff=2 quantile."""
+    got = null_t_quantile(
+        moments=_HAND_MOMENTS, n_eff=3, confidence=0.99, weights=[1.0, 1.0, 0.0]
+    )
+    want = null_t_quantile(moments=_HAND_MOMENTS, n_eff=2, confidence=0.99)
+    assert got == pytest.approx(want, rel=1e-12)
