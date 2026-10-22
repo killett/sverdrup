@@ -170,5 +170,11 @@ def select_reduction(dist: object) -> ReductionStrategy:
     op = getattr(dist, "cov_op", None)
     if op is None:
         return EmpiricalReduction()
-    rep = getattr(op, "representation", "lowrank+diag")
+    try:
+        rep = op.representation
+    except AttributeError as exc:
+        raise TypeError(
+            f"{type(op).__name__} declares no `representation`: every "
+            "CovarianceOperator names its persistence form (hygiene #32)"
+        ) from exc
     return cast(ReductionStrategy, _REDUCTIONS[rep]())
