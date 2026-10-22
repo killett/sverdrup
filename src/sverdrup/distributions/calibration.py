@@ -776,7 +776,7 @@ class CalibratedDistribution:
     def __init__(
         self,
         underlying: Any,
-        cal: CalibrationField,
+        calibration: CalibrationField,
         capability: UncertaintyCapability,
     ) -> None:
         """Construct a CalibratedDistribution.
@@ -785,7 +785,8 @@ class CalibratedDistribution:
             underlying: Any PredictiveDistribution; must have a ``.grid``
                 attribute (PIN B). The wrapper does NOT call ``hasattr`` on
                 optional routes at construction — those raise at call-time.
-            cal: The calibration field supplying s(x).
+            calibration: The calibration field supplying s(x) (the dataclass
+                field of the same name, so ``dataclasses.replace`` works).
             capability: The underlying's UncertaintyCapability, passed
                 EXPLICITLY (no introspectable attribute required on distributions;
                 PIN B). POINT raises immediately — nothing to calibrate.
@@ -804,16 +805,16 @@ class CalibratedDistribution:
                 f"got {type(underlying)!r}"
             )
         self.underlying = underlying
-        self.calibration = cal
+        self.calibration = calibration
         self.capability = capability
-        if isinstance(cal, ScalarCalibration) and cal.s == 1.0:
+        if isinstance(calibration, ScalarCalibration) and calibration.s == 1.0:
             # Identity calibration: Phase-8's uncalibrated product carries NO
             # inflation transform — recording a no-op DIAGONAL_INFLATION(s=1)
             # would misreport an inflation that never happened (PIN D:
             # transforms are appended only when a real calibration applies).
             self.provenance = underlying.provenance
         else:
-            self.provenance = _prov_with(underlying.provenance, cal)
+            self.provenance = _prov_with(underlying.provenance, calibration)
         self._grid_sqrt_s = None
 
     # ------------------------------------------------------------------

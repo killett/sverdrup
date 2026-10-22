@@ -1019,3 +1019,24 @@ def test_oi_wrapper_coverage_identity_via_sigma_floor() -> None:
         "Bug: wrapper.marginal_variance() does not reproduce s(x)·v exactly, "
         "or the SIGMA_OBS2 floor was applied differently."
     )
+
+
+def test_dataclass_replace_swaps_the_calibration(grid: GridSpec) -> None:
+    """``CalibratedDistribution`` is a dataclass, so ``dataclasses.replace`` works.
+
+    Bug caught: the hand-written ``__init__`` naming the field ``cal`` —
+    ``replace`` passes ``calibration=`` and raised ``TypeError`` (hygiene #34).
+    """
+    underlying = _StubMarginalOnly(grid=grid, mean=np.zeros((4, 3)))
+    wrapped = CalibratedDistribution(
+        underlying, ScalarCalibration(2.0), UC.MARGINAL_VARIANCE
+    )
+    swapped = replace(wrapped, calibration=ScalarCalibration(3.0))
+    assert isinstance(swapped.calibration, ScalarCalibration)
+    assert swapped.calibration.s == 3.0
+    assert swapped.underlying is underlying
+    assert isinstance(wrapped.calibration, ScalarCalibration)
+    assert wrapped.calibration.s == 2.0  # the original is untouched
+    assert len(swapped.provenance.transformations) == (
+        len(underlying.provenance.transformations) + 1
+    )
