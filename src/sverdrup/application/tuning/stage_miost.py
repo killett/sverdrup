@@ -35,8 +35,12 @@ def run_stage_miost(
 
     Args:
         scope: Stage scope JSON (paths, days, validation mission).
-        predicate: Feasibility predicate — pass the CompositeFeasibility of
-            ``StoredGFeasibility`` (halo-inclusive obs count) + ``CoherenceFeasibility``.
+        predicate: Feasibility predicate — the CompositeFeasibility of a
+            pricing predicate + ``CoherenceFeasibility``. The pricing predicate
+            is ``PeakFeasibility`` (Task 22, owner-ordered: the component-sum
+            peak model); ``StoredGFeasibility`` (halo-inclusive obs count
+            against a fixed 8e9) is the Phase-8 pricing the frozen gate runner
+            used.
         n_trials: Trials per round.
         seed: Search seed.
         strategy: Drop-in search strategy (None = seeded Sobol).

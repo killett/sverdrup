@@ -75,7 +75,8 @@ def _ensure_vendor_importable() -> None:
     matplotlib backend, and stubs the unused ``hvplot`` import that ``src.mod_plot``
     performs at module top (it is only used by interactive plotters, never by
     ``find_wavelength_05_crossing``). Mirrors the subset of
-    ``their_eval._prepare_imports`` the spectral path needs, without importing it.
+    ``sverdrup.validation.vendor.prepare_vendored_imports`` the spectral path
+    needs (no pyinterp shim), without importing the validation package.
     """
     if str(_VENDOR) not in sys.path:
         sys.path.insert(0, str(_VENDOR))
