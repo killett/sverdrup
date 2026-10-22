@@ -202,8 +202,10 @@ def _day_float(time: np.ndarray) -> np.ndarray:
     """Return float days from a time column (datetime64 or numeric days)."""
     t = np.asarray(time)
     if np.issubdtype(t.dtype, np.datetime64):
-        epoch = np.datetime64("2017-01-01")
-        return np.asarray((t - epoch) / np.timedelta64(1, "s"), float) / 86400.0
+        # Lazy, as in the harness: validation/__init__ loads the pydantic config.
+        from sverdrup.validation.params import EPOCH
+
+        return np.asarray((t - EPOCH) / np.timedelta64(1, "s"), float) / 86400.0
     return np.asarray(t, float)
 
 

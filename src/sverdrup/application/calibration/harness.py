@@ -167,7 +167,6 @@ OI_DESCRIPTOR = ProductDescriptor(
 # Module constants (pipeline internals)
 # ---------------------------------------------------------------------------
 
-EPOCH = np.datetime64("2017-01-01")
 _FULL_TMIN, _FULL_TMAX = "2017-01-01", "2018-01-01"
 # The ONE along-track pass-splitting gap: orbit_geometry and lane_compare
 # import it (P2 #11). Along-track cadence ~1.08 s; > 60 s is a new pass.
@@ -319,6 +318,7 @@ def load_track(desc: ProductDescriptor, scope: str) -> Track:
         A :class:`Track` with per-point day/lon/lat/resid/v/month/pass_id plus
         the fit-partition labels and per-point jet-core membership.
     """
+    from sverdrup.validation.params import EPOCH
     from sverdrup.validation.provenance_guard import assert_scored_not_assimilated
     from sverdrup.validation.vendor import prepare_vendored_imports
 
