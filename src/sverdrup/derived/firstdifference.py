@@ -17,12 +17,17 @@ _DEG2M = 111195.0
 
 @dataclass
 class _DiffField:
-    """A predictive distribution over the first-difference field (LINEAR functional)."""
+    """A predictive distribution over the first-difference field (LINEAR functional).
+
+    Attributes:
+        metric_scale: Metres per index step along the differenced axis, sampled
+            on the first row (``axis="x"``) or the first column (``axis="y"``).
+    """
 
     grid: GridSpec
     mean: Field
     var: Field
-    metric_scale_x: np.ndarray
+    metric_scale: np.ndarray
     provenance: UncertaintyProvenance
     time_days: float
 
@@ -62,7 +67,9 @@ class FirstDifference:
         """Apply the metric-scaled neighbour difference to ``dist``.
 
         Args:
-            dist: The base predictive distribution (Gaussian or Ensemble).
+            dist: The base predictive distribution (Gaussian or Ensemble). It
+                must carry ``time_days`` (both do); the protocol does not
+                declare it, so any other distribution raises ``AttributeError``.
 
         Returns:
             A ``_DiffField`` carrying the difference mean and exact propagated variance.
@@ -77,9 +84,9 @@ class FirstDifference:
             scale = _DEG2M * step_deg[:, None] * np.ones_like(lat[:-1, :])
         mean = self._diff(_mean_of(dist), scale)
         var = self._diff_var(dist, scale)
-        metric_scale_x = scale[0] if self.axis == "x" else scale[:, 0]
+        metric_scale = scale[0] if self.axis == "x" else scale[:, 0]
         time_days = float(cast(Any, dist).time_days)
-        return _DiffField(grid, mean, var, metric_scale_x, dist.provenance, time_days)
+        return _DiffField(grid, mean, var, metric_scale, dist.provenance, time_days)
 
     def _diff(self, field: Field, scale: np.ndarray) -> Field:
         """Return the metric-scaled neighbour difference of ``field``."""

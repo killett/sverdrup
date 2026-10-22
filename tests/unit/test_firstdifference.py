@@ -32,7 +32,7 @@ def test_uses_crs_metric_not_index():
     fd = FirstDifference(axis="x")
     out = fd.apply(_gauss())
     # metres-per-degree-lon at lat~42 is ~ cos(42)*111195; a unit index diff must scale by it
-    assert out.metric_scale_x[0] == pytest.approx(
+    assert out.metric_scale[0] == pytest.approx(
         np.cos(np.deg2rad(40)) * 111195.0, rel=0.05
     )
 
