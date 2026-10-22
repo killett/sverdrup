@@ -16,8 +16,9 @@ from sverdrup.core.parameters import ParameterProvider
 from sverdrup.core.product import Product
 from sverdrup.core.seeding import derive_seed
 from sverdrup.distributions.blend import BlendedDistribution, BlendInput, BlendOperator
+from sverdrup.methods.kernel import KM_PER_DEG
 
-_KM_PER_DEG_LAT = 111.195
+_KM_PER_DEG_LAT = KM_PER_DEG
 
 
 @runtime_checkable

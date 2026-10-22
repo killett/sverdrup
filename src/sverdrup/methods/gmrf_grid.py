@@ -16,8 +16,9 @@ from scipy import sparse  # type: ignore[import-untyped]
 
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.types import Points
+from sverdrup.methods.kernel import KM_PER_DEG
 
-_DEG2KM = 111.195
+_DEG2KM = KM_PER_DEG
 _NU = 1.0  # alpha = 2 in 2-D -> nu = alpha - d/2 = 1
 
 

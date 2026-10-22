@@ -27,7 +27,7 @@ import numpy as np
 
 from sverdrup.core.grid import GridSpec
 from sverdrup.core.parameters import ConstantProvider
-from sverdrup.methods.kernel import GaussianSpaceTimeDegrees
+from sverdrup.methods.kernel import KM_PER_DEG, GaussianSpaceTimeDegrees
 
 # --- exact scalars from baseline_oi.ipynb cell 7 ---
 SIGNAL_VARIANCE = 1.0  # OI uses a correlation (B with unit variance); noise is relative
@@ -50,7 +50,7 @@ EPOCH = np.datetime64("2017-01-01")
 # Obs influence window: oi_core keeps |obs.time - grid.time| < 2*Lt.
 TEMPORAL_HALF_WINDOW_DAYS = 2.0 * TEMPORAL_CORR_DAYS  # 14 days
 
-_KM_PER_DEG = 111.195  # matches Matern32SpaceTime._DEG2KM
+_KM_PER_DEG = KM_PER_DEG  # the kernel's, so km and degrees agree everywhere
 
 
 def baseline_config() -> tuple[ConstantProvider, GridSpec, float]:

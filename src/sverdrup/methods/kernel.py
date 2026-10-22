@@ -10,7 +10,11 @@ import numpy as np
 from sverdrup.core.parameters import LatitudeField
 from sverdrup.core.types import Points
 
-_DEG2KM = 111.195  # approx km per degree on a sphere of R=6371 km
+# The GP/Matérn family's deg->km analog (sphere of R=6371 km); the baseline
+# config, the GMRF grid and the tiling alias it (hygiene #10). The MIOST/
+# orbit/spectral family's 111.32 is a separate, deliberately pinned split.
+KM_PER_DEG = 111.195
+_DEG2KM = KM_PER_DEG
 
 
 @runtime_checkable
