@@ -296,12 +296,12 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 4 | ✅ FIXED `0f1398a` (2026-10-19; gate suite `8fe55fe`) — `realize_one` draws z_r from the injected source | `coherent.py:215` |
 | 5 | ✅ FIXED `02bb173` (2026-10-19; gate suite `8fe55fe`) — a no-explain member names itself (code-fix: changes recorded exclusion text on FUTURE tuning runs) | `feasibility.py:149-160` |
 | 6 | ✅ FIXED `960b375` (2026-10-19; gate suite `8fe55fe`) — guard chosen: one accessor `core.observations.diagonal_variances` for all SEVEN vector reads of R (adds `pipeline`, `adapters`, `run`, `stage_a`); a correlated R raises NotImplementedError; both `as_matrix(n)` check n; source tripwire test | `observations.py` |
-| 7 | OPEN — the "import, never re-paste" rule was never recorded, and phase12/13 re-pasted it | `phase8_gate_run.py:442`; new: `phase12_miost6_run.py:1068`, `phase13_c2_touch.py:280` |
-| 8 | OPEN | `harness.py:550` vs `folds.py:135` |
+| 7 | ✅ RULE RECORDED `2180c4c` (2026-10-22; docs-only) — PROGRESS.md cross-cutting decisions: gate runners import scoring numerics from the harness, never re-paste; the three re-paste sites named. Scripts untouched (frozen records) | `phase8_gate_run.py:442`; `phase12_miost6_run.py:1068`; `phase13_c2_touch.py:280` |
+| 8 | ✅ FIXED `38d0efd` (2026-10-22; gate suite `38d0efd`) — `draw_s_layout` draws through `folds.s_fold_layout(salt, seed_args)`; both Phase-8 external gates re-run green (leaf-identical fit_run evidence + field byte-exact, 2 passed in 3:22) | `harness.py`, `folds.py` |
 | 9 | ✅ FIXED `bbbb215` (2026-10-19; gate suite `d26f2d8`) — `harness._lane_eligibility` calls `folds._beats_beyond_band`/`_no_worse_than`; leaf-identical + byte-exact Phase-8 gates re-run green | `harness.py` |
-| 10 | CHANGED (worse) — 07-16 missed `application/tiling.py:20` (111.195); new 111.195 `phase14_kernel_pack.py:61`, new 111.32 `phase12_miost6_run.py:72` | — |
+| 10 | ✅ PARTLY FIXED `6ed332e` (2026-10-22; gate suite `38d0efd`) — the 111.195 GP/Matérn family has one owner, `kernel.KM_PER_DEG` (`params`, `gmrf_grid`, `tiling` alias it; identity tripwire). OPEN, owner call: the 111.32 family's home (`orbit_geometry`, `map_spectrum`, `miost_sizing`; eval→methods would be a new import direction). Scripts' literals frozen. **Erratum:** that commit's body says "100 passed" for its targeted run; the run was 39 passed | `kernel.py:13` |
 | 11 | ✅ FIXED `af3a390` (2026-10-19; gate suite `d26f2d8`) — `harness.PASS_GAP_SEC` public owner; `orbit_geometry._GAP_SEC` aliases it (importers untouched), `lane_compare` imports it; identity tripwire test | `harness.py`, `lane_compare.py`, `orbit_geometry.py` |
-| 12 | NEEDS A LAYERING CALL (2026-10-19) — the canonical `EPOCH` is `validation.params`; a top-level import from `harness` would load `validation/__init__` (pydantic + dotenv config) at harness import, where harness imports `validation` only lazily today. Also: inline literal `lane_compare.py:208`; script literals `phase14_stage1_run.py:3762,6612` (synthetic `_EPOCH` is descriptor-hashed → KEEP) | `harness.py:171` |
+| 12 | ✅ FIXED `adccf62` (2026-10-22; gate suite `38d0efd`) — no layering change needed: `harness.EPOCH` was used in one function that already imports `validation` lazily, so the copy is gone and that function imports `params.EPOCH` the same way; `lane_compare._day_float` likewise. Behavior test (sentinel epoch) + re-paste tripwire. Script literals and the descriptor-hashed `_EPOCH` left | `harness.py`, `lane_compare.py` |
 | 13 | ✅ FIXED `0892296` (2026-10-20; gate suite `0892296`) — a nonstationary provider (`LatLinearRange`, 100→800 km) now runs through the tree blend; the test catches every tile drawn from the root's factor (|log var ratio| 2.94 vs the in-test bound 1.17) that all nine prior tree tests passed; dead C4 fixtures deleted. **NOT caught (measured, recorded in the test):** the root's covariance in the kriging update | `test_tree_kriging_oracle.py`, `_tree_gate.py`, `_strip_fixtures.py` |
 | 14 | ✅ FIXED `c7cf637` (2026-10-19; gate suite `d26f2d8`) — intent settled by the phase-1 design ("fraction of trace(P) captured by BBᵀ"); one helper `captured_energy_fraction` for all four writers (+ `solve._reduce_derived`, a third instance). **DISCLOSURE: future manifests report the true share where they said 1.0**; `seed=0` kept, documented inert | `persisted.py`, `solve.py` |
 | 15 | ✅ FIXED `7f7866c` (2026-10-19; gate suite `8fe55fe`) — **DISCLOSURE: every converged window's recorded `iterations` reads one higher on future runs** (recorded values stand; capped-solve checks unaffected) | `miost_solver.py` |
@@ -310,7 +310,7 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 18 | ✅ FIXED `87cf2e9` (2026-10-19; gate suite `8fe55fe`) — count derived from `MAPPING_MISSIONS`; recorded artifacts stand as stamped ("5") | `generate_oi_maps.py` |
 | 19 | ✅ FIXED `6f4b2ef` (2026-10-19; gate suite `8fe55fe`); recorded RESULT.md files stand | `report.py:121` |
 | 20 | ✅ FIXED `d663e00` (2026-10-19; gate suite `d26f2d8`) — basis identity test pins attributes + the exact overlap set; new driver-level per-tile seed test; OI tests gate on the field artifact they read | `test_calibrated_distribution.py`, `test_miost_basis.py`, `test_tree_kriging_oracle.py` |
-| 21 | CHANGED (better) — used by `phase12_miost6_run.py:784`, no src path; docstring still recommends StoredG | `feasibility.py:210`; `stage_miost.py:38` |
+| 21 | DOCSTRING FIXED `e2e8273` (2026-10-22) — `run_stage_miost` now names `PeakFeasibility` (Task 22) as the pricing predicate, `StoredGFeasibility` as the frozen runner's. OPEN: wiring `PeakFeasibility` into a src path (owner) | `feasibility.py:235`; `stage_miost.py:37` |
 | 22 | OPEN — 25 sites / 16 files (+ `test_phase14_golden_tile.py:81`) | `grid.py:69` |
 | 23 | OPEN — `evaluator_names` gained a test-only caller (`test_phase14_stage1_run.py:833`) | see item |
 | 24 | OPEN | `coherent.py:81-117` |
@@ -321,11 +321,11 @@ RESOLVED (main-line commits `da401d1`, `8a46777`, `ddc377e`).
 | 29 | OPEN | `pipeline.py:256,349,314` |
 | 30 | CHANGED (worse) — new src consumer `phase12_evidence.py:125`; 32 scripts reference it | `harness.py:1186` |
 | 31 | OPEN | `ensemble.py:54`, `persisted.py:250`, `coherent.py:24`, `gaussian.py:63` |
-| 32 | OPEN | `reduction.py:173` |
+| 32 | ✅ FIXED `fdf1a0b` (2026-10-22; gate suite `38d0efd`) — the guard: an operator with no `representation` raises `TypeError` naming its type (was a silent low-rank default). Protocol declaration NOT added: six structural test fakes + `adapters._DiagonalOperator` (which also lacks `posterior_mean`, so it never reduced; test-only caller) | `reduction.py:168` |
 | 33 | OPEN — `build_s` edited (domain hook) though never wired | `gmrf_grid.py:173,212`; `miost_basis.py:367,519,569`; `gmrf.py:99` |
-| 34 | OPEN | `calibration.py:750`; `coherent.py:406` |
-| 35 | OPEN | `firstdifference.py:80-92` |
-| 36 | OPEN — `_is_retryable` gained two script importers | `their_eval.py:37`; `download.py:15` vs `access.py:21`; `spectral.py:77` |
+| 34 | ✅ PARTLY FIXED `66d0105` (2026-10-22; gate suite `38d0efd`) — `CalibratedDistribution.__init__` names the field `calibration`, so `dataclasses.replace` works (red first); no caller used the keyword. OPEN, owner call: `_strip_network` (tested, Stage-B-reserved) | `calibration.py:750`; `coherent.py:414` |
+| 35 | ✅ FIXED `ebe0ff1` (2026-10-22; gate suite `38d0efd`) — `_DiffField.metric_scale` (was `metric_scale_x`, carrying the y scale for `axis="y"`); the `time_days` narrowing documented on `apply` | `firstdifference.py` |
+| 36 | ✅ FIXED `3d634df` + `e2e8273` (2026-10-22; gate suite `38d0efd`) — one `is_retryable`, owned by `adapters/odc/download` (CLAUDE.md's reference), re-exported by `validation/access`; `_is_retryable` kept as an alias for the two scripts; identity tripwire. Disclosed: access's copy said False for status ≥600 (not an HTTP range). The `spectral.py` xref now names `validation.vendor.prepare_vendored_imports`; `their_eval._prepare_imports` left (live delegate) | `download.py`, `access.py`, `spectral.py` |
 | 37 | OPEN | `stage_a.py:137` |
 | 38 | CHANGED (worse) — `_write_evidence` 4 → 10+ copies, already drifted (root of 44/45). **Erratum:** F7 pair is NOT byte-identical (161 vs 120 lines) | scripts/* |
 | 39 | OPEN | `_tree_gate.py:142,226` |
@@ -387,7 +387,7 @@ store exists (`docs/hygiene-notes.md` § 2026-10-18).
     ABSENT; `--git-dir` wrong in worktrees. Session-protocol tool. (S)
 54. ✅ **FIXED `d837928` (2026-10-19; gate suite `8fe55fe` — the first run under the broadened stamp).** `phase14_gate_suite.py` attestation scope — stamps `*.py` + pyproject
     only; `verify` doesn't echo the command (pin 197c class). (S)
-55. ✅ **PARTLY FIXED `ebd9c76` (2026-10-20; docs-only): README structure + ToC, CLAUDE.md:109, `project-context.md:170`. OPEN: PROGRESS "Current work" (owner-governed) and the SHA-erratum pointers.** Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
+55. ✅ **PARTLY FIXED `ebd9c76` (2026-10-20; docs-only): README structure + ToC, CLAUDE.md:109, `project-context.md:170`. Archive SHA-erratum pointers added `2180c4c` (2026-10-22). OPEN: PROGRESS "Current work" (owner-governed).** Docs: PROGRESS "Current work" frozen at Phase 11/4 (owner-governed);
     README structure; CLAUDE.md:109; the SHA erratum not yet reflected in
     PROGRESS/archive pointers. (S)
 
@@ -495,7 +495,7 @@ catalog fixtures (`test_phase14_epochs` vs `test_phase14_epoch_table`).
 PROGRESS "Current work" and SHA-erratum pointers; pyproject's per-module
 `strict = false` and the 3.14 classifier vs pixi's `<3.14`; and the
 owner-attention item above (`phase14_seal_run.py check` exits 1 on the
-live store).
+live store). *(Superseded by batch 5 below.)*
 
 ## Fixed 2026-10-20 (batch 4) — P0-2's residual and two siblings found by sweep
 
@@ -531,3 +531,39 @@ GREEN, or score a temp map and replace only on no conflict. Also noted,
 outside the file class: `phase13_lane_run.main_winner_ensemble` records
 dev scope under the full-scope key `phase13.miost.members`. The refusal
 at `:478` blocks that once the full-scope node exists.
+
+## Fixed 2026-10-22 (batch 5) — the clear-cut open items (owner's ask, 2026-10-21: fix what will not make things worse)
+
+All gated by one full gate suite on `38d0efd` (all batch-5 commits are its ancestors): 1975 passed / 21 skipped / 2 deselected (@external downloads) / 2 xfailed, 1:21:45, tree unchanged across the run; `verify` attests the 481-file stamp and the exact command.
+
+| item | commit | note |
+|---|---|---|
+| pyproject: no-op per-module `strict = false` dropped (mypy acts on the key only when true); 3.14 classifier dropped (pixi + recipe cap `<3.14`; env 3.13.14) | `cfc9d80` | config-only; `mypy .` identical before/after |
+| #36 vendor xref + #21 pricing-predicate docstring | `e2e8273` | docs-only |
+| #36 one `is_retryable` | `3d634df` | identity tripwire; `_is_retryable` alias for 2 scripts; CLAUDE.md pointer |
+| #10 GP family 111.195 → `kernel.KM_PER_DEG` | `6ed332e` | identity tripwire. **Body erratum: "100 passed" was 39 passed** |
+| #12 EPOCH: lazy imports from `validation.params` | `adccf62` | sentinel-epoch behavior test + re-paste tripwire |
+| #32 `select_reduction` representation guard | `fdf1a0b` | red first; protocol declaration deferred (6 fakes + the diagonal adapter) |
+| #34 dataclass `replace` on `CalibratedDistribution` | `66d0105` | red first; keyword `cal=` unused by all 35 sites |
+| #35 `_DiffField.metric_scale` | `ebe0ff1` | rename on a private class + docstrings |
+| #7 rule + #55 archive pointers | `2180c4c` | docs-only |
+| #8 `draw_s_layout` → `folds.s_fold_layout` | `38d0efd` | Phase-8 external gates re-run green: leaf-identical + byte-exact, 2 passed in 3:22 |
+
+Process notes, recorded so the next pass does not repeat them: the mypy
+hook checks untracked tests, so a red test for a not-yet-applied item
+blocks an unrelated commit (park it in the scratchpad meanwhile); the tool
+shell does not honour `set -e`, chain with `&&`; a trailing `&`
+backgrounds a whole `&&` chain (this launched a duplicate gate suite on
+`38d0efd`, both killed; the resulting `mv` lost the raw log of the
+`a1098af` suite, whose result stands as verified and recorded in batch 4);
+`pkill -f` / `pgrep -f` self-match the tool shell — use `patter[n]` forms
+and never put the launch line in the same call.
+
+**Still open — one decision each (recommendations in the 2026-10-22
+session report):** #10's 111.32 family owner; #30 `atomic_write_json`
+home (moving it alone leaves the documented cycle: `orbit_geometry` also
+imports `PASS_GAP_SEC`); #22 bless `_lonlat_nodes` public (25 sites);
+#37 / #39 / #34b `_strip_network` (recommend leave); #23 and the
+numeric-path refactors #24–29, #31, #33, #38, #40 (leave); #21 wiring
+`PeakFeasibility`; #46, #50, #51, the anchor-gate map rewrite, the live
+seal-check FAIL, PROGRESS "Current work".
