@@ -43,7 +43,6 @@ from sverdrup.application.calibration.constants import (
     S_STAR,
     SIGMA_OBS2,
 )
-from sverdrup.core.seeding import derive_seed
 from sverdrup.distributions.calibration import (
     CalibrationField,
     ClipSpec,
@@ -544,17 +543,13 @@ def _n_eff_per_block(trk: Track, rhos: np.ndarray) -> dict[int, float]:
 # ---------------------------------------------------------------------------
 
 
-_S_FOLD_N_BLOCKS = 25
-_S_FOLD_SIZES = (7, 6, 6, 6)  # matches folds._S_FOLD_SIZES (invariant)
-
-
 def draw_s_layout(
     trk: Track, fold_seed_tuple: tuple[str, str, str]
 ) -> tuple[tuple[frozenset[int], ...], int, list[int]]:
     """Return (layout, final_salt, redraws) respecting the partition constraint.
 
-    Uses ``derive_seed(*fold_seed_tuple, salt)`` so that each product has its own
-    seed lineage.  MIOST's ``fold_seed_tuple = ("miost", "phase8", "s-folds")``
+    Draws ``folds.s_fold_layout(salt, fold_seed_tuple)`` so that each product has
+    its own seed lineage.  MIOST's ``fold_seed_tuple = ("miost", "phase8", "s-folds")``
     exactly matches the Phase-8 ``S_FOLD_SEED_ARGS``, guaranteeing bit-identical
     reproduction of the Phase-8 evidence.
 
@@ -568,15 +563,7 @@ def draw_s_layout(
     salt = 0
     redraws: list[int] = []
     while True:
-        seed = derive_seed(*fold_seed_tuple, salt)
-        rng = np.random.default_rng(seed)
-        perm = rng.permutation(_S_FOLD_N_BLOCKS)
-        folds_out: list[frozenset[int]] = []
-        start = 0
-        for size in _S_FOLD_SIZES:
-            folds_out.append(frozenset(int(b) for b in perm[start : start + size]))
-            start += size
-        layout = tuple(folds_out)
+        layout = F.s_fold_layout(salt, fold_seed_tuple)
         if F.layout_respects_partition(trk.lon, trk.lat, trk.labels, layout):
             return layout, salt, redraws
         redraws.append(salt)

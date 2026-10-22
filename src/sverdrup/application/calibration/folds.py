@@ -132,23 +132,28 @@ def t_folds(months: np.ndarray) -> Iterator[tuple[np.ndarray, np.ndarray]]:
 # ---------------------------------------------------------------------------
 
 
-def s_fold_layout(salt: int = 0) -> tuple[frozenset[int], ...]:
+def s_fold_layout(
+    salt: int = 0, seed_args: tuple[str, str, str] = S_FOLD_SEED_ARGS
+) -> tuple[frozenset[int], ...]:
     """Return the seeded spatial fold layout of the 25 blocks.
 
     The 25 block ids are permuted by ``default_rng`` seeded from
-    ``derive_seed(*S_FOLD_SEED_ARGS, salt)``, then sliced into contiguous
+    ``derive_seed(*seed_args, salt)``, then sliced into contiguous
     groups of sizes ``(7, 6, 6, 6)`` in permutation order.
 
     Args:
         salt: Re-draw counter; incremented by the caller when
             ``layout_respects_partition`` is False. Threaded into the seed as
             ``derive_seed``'s ``member_index``.
+        seed_args: The product's seed lineage (``derive_seed``'s method,
+            params_key and window_id). The default is Phase 8's MIOST
+            lineage; the harness passes each descriptor's own.
 
     Returns:
         Tuple of ``S_FOLD_COUNT`` frozensets of block ids; the sets are
         disjoint and their union is ``{0, ..., 24}``.
     """
-    seed = derive_seed(*S_FOLD_SEED_ARGS, salt)
+    seed = derive_seed(*seed_args, salt)
     rng = np.random.default_rng(seed)
     perm = rng.permutation(_N_BLOCKS)
 
