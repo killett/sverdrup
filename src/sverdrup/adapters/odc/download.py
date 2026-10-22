@@ -12,7 +12,7 @@ import xarray as xr
 CACHE = Path("data/cache")
 
 
-def _is_retryable(exc: Exception) -> bool:
+def is_retryable(exc: Exception) -> bool:
     """Decide whether a download failure is worth retrying.
 
     Retries only transient faults: transport errors (connect/read timeouts,
@@ -32,6 +32,10 @@ def _is_retryable(exc: Exception) -> bool:
     return False
 
 
+# Script importers predate the public name: the same object, never a copy.
+_is_retryable = is_retryable
+
+
 class ODCCache:
     """A local content cache for ODC THREDDS files under ``./data/cache/``."""
 
@@ -49,7 +53,7 @@ class ODCCache:
         h = hashlib.blake2b(url.encode(), digest_size=8).hexdigest()
         return self.root / f"{h}_{url.rsplit('/', 1)[-1]}"
 
-    @stamina.retry(on=_is_retryable, attempts=4)
+    @stamina.retry(on=is_retryable, attempts=4)
     def fetch_file(self, url: str) -> Path:
         """Download ``url`` to the cache (skipped if already present).
 

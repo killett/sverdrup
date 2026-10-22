@@ -15,24 +15,10 @@ from pathlib import Path
 import httpx
 import stamina
 
+# The one transient-fault predicate (CLAUDE.md's reference), re-exported for
+# the callers that read it from here.
+from sverdrup.adapters.odc.download import is_retryable as is_retryable
 from sverdrup.validation.config import ValidationConfig
-
-
-def is_retryable(exc: Exception) -> bool:
-    """Return True only for transient faults (transport errors + HTTP 5xx).
-
-    Args:
-        exc: The exception raised during a fetch attempt.
-
-    Returns:
-        True for httpx transport errors and 5xx responses; False for 4xx
-        (e.g. 401/404) and any non-transport exception.
-    """
-    if isinstance(exc, httpx.TransportError):
-        return True
-    if isinstance(exc, httpx.HTTPStatusError):
-        return 500 <= exc.response.status_code < 600
-    return False
 
 
 def render_netrc(host: str, user: str, password: str) -> str:

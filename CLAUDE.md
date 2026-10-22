@@ -93,7 +93,7 @@ not permission to use them.
   `with httpx.stream("GET", url, ...) as r: ... r.iter_bytes(...)`.
 - **Retry — `stamina`, not `tenacity`.** `@stamina.retry(on=..., attempts=N)`.
   `on=` is mandatory and must be an explicit exception type/tuple/predicate;
-  retry only transient faults — never `on=Exception`. See `_is_retryable` in
+  retry only transient faults — never `on=Exception`. See `is_retryable` in
   `adapters/odc/download.py` for the reference predicate (transport errors + 5xx).
 - **Progress — `rich.progress`, not `tqdm`.** `track(iterable, description=...)`
   for loops; `Progress` for manual/multi-task bars.
