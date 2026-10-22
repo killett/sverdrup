@@ -450,6 +450,12 @@ items — were not moved.
 
 ## Cross-cutting decisions (canonical — lives nowhere else)
 
+- **GATE RUNNERS IMPORT SCORING NUMERICS FROM THE HARNESS; THEY NEVER RE-PASTE THEM
+  (hygiene #7, recorded 2026-10-22).** `phase8_gate_run.py:440` re-pasted the harness's
+  `_coverage_count`/`_gaussian_crps`/`_var_track`, and phase 12/13 re-pasted it again
+  (`phase12_miost6_run.py:1068`, `phase13_c2_touch.py:280`); a band-rule or numerics
+  change then desynchronises a runner's evidence from the harness's selection. Ran
+  runners stay frozen as records; **the next runner imports.**
 - **⚖ DESIGN CONFLICT, NOT AN EXECUTION GAP — "GroundTrack per tile×era" vs "zero new
   surfaces" (owner pin 106, 2026-08-30; ⚖ AMENDED IN SCOPE by pin 112(b), same day).**
   **THE AMENDMENT, recorded against 106 with the 109(a) sweep as its cause:** 106 stands

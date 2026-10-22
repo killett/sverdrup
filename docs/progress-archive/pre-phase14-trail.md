@@ -1,5 +1,10 @@
 # Pre-Phase-14 PROGRESS trail archive (MIOST brief, Stage-A/B/C, autotune, OI validation)
 
+> **SHA erratum (2026-10-19):** many commit SHAs cited below are not on `main` — history
+> was rewritten at or after 2026-07-21, and each cited SHA has a same-date, same-subject
+> twin with an identical tree. Read them as such; the records stand as written. Detail:
+> `docs/hygiene-notes.md` § "ERRATUM — SHAs cited here and in PROGRESS/archive are not on main".
+
 **What this is.** The older, unquoted sections that sat in PROGRESS.md between the Phase-14
 CURRENT STATE block (and its archived trail pointer) and the canonical `Current work` index —
 the MIOST method brief (2026-07-02), the Stage-A validation strategy, the Stage-C redesign

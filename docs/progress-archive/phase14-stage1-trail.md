@@ -1,5 +1,10 @@
 # Phase 14 Stage 1 — PROGRESS trail archive
 
+> **SHA erratum (2026-10-19):** many commit SHAs cited below are not on `main` — history
+> was rewritten at or after 2026-07-21, and each cited SHA has a same-date, same-subject
+> twin with an identical tree. Read them as such; the records stand as written. Detail:
+> `docs/hygiene-notes.md` § "ERRATUM — SHAs cited here and in PROGRESS/archive are not on main".
+
 **What this is.** The `[TRAIL — superseded by CURRENT STATE above; kept, not deleted]`
 blocks that sat between PROGRESS.md's CURRENT STATE block and its older phase sections,
 moved here **verbatim** on 2026-09-18 (from PROGRESS.md as of commit `f3c7aa0`, lines
