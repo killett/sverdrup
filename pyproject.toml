@@ -14,7 +14,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Typing :: Typed",
 ]
@@ -119,9 +118,9 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]  # Tests often have untyped functions and use dynamic features, so relax mypy rules for them.
 module = ["tests.*"]
-strict = false
+# mypy ignores `strict` in a per-module override (its config parser acts on
+# the key only when it is true), so the relaxation is the individual flags.
 warn_return_any = false
-# Claude Opus 4.7 says: the test override has strict = false but that doesn't disable specific checks already enabled globally. So we also need to disable these individually:
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 
